@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
  *   MySQL        → Basics, Joins, Indexes, Stored Procedures, Transactions
  *   AWS          → EC2, S3, RDS, Lambda, API Gateway
  */
- @Component
+ //@Component
 @RequiredArgsConstructor
 @Slf4j
 @Order(1)

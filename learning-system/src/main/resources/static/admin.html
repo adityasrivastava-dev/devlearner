@@ -231,6 +231,193 @@
     .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
     .muted { color: var(--text3); font-size: 13px; }
     .hint-text { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+    /* ══ SEED PANEL ═══════════════════════════════════════════════════════ */
+    .seed-btn {
+      margin: 10px 12px 0;
+      width: calc(100% - 24px);
+      padding: 8px 14px;
+      background: rgba(96,165,250,.1);
+      border: 1px solid rgba(96,165,250,.25);
+      border-radius: 6px;
+      color: var(--blue);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .15s;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .seed-btn:hover { background: rgba(96,165,250,.18); border-color: var(--blue); }
+
+    /* Seed overlay */
+    .seed-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.75);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; padding: 20px;
+    }
+    .seed-overlay.hidden { display: none; }
+    .seed-modal {
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 12px; width: 680px; max-width: 100%;
+      max-height: 90vh; overflow-y: auto;
+      display: flex; flex-direction: column;
+    }
+    .seed-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .seed-header h2 { font-size: 17px; font-weight: 800; }
+    .seed-close {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: var(--bg3); border: 1px solid var(--border2);
+      color: var(--text2); font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: .15s;
+    }
+    .seed-close:hover { color: var(--red); border-color: var(--red); }
+    .seed-body { padding: 20px 24px; flex: 1; }
+
+    /* Drop zone */
+    .drop-zone {
+      border: 2px dashed var(--border2);
+      border-radius: 10px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: .2s;
+      background: var(--bg3);
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--blue);
+      background: rgba(96,165,250,.05);
+    }
+    .drop-zone input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-icon { font-size: 36px; margin-bottom: 10px; }
+    .drop-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .drop-sub { font-size: 12px; color: var(--text3); }
+    .drop-zone.has-file { border-color: var(--accent); background: var(--adim); }
+    .file-name {
+      margin-top: 12px; font-size: 12px; font-family: var(--mono);
+      color: var(--accent); display: none;
+    }
+    .drop-zone.has-file .file-name { display: block; }
+    .drop-zone.has-file .drop-icon { display: none; }
+    .drop-zone.has-file .drop-title { display: none; }
+    .drop-zone.has-file .drop-sub   { display: none; }
+
+    /* Preview section */
+    .seed-preview {
+      margin-top: 16px; background: var(--bg3);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 14px 16px; display: none;
+    }
+    .seed-preview.visible { display: block; }
+    .preview-title { font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--text3); margin-bottom: 10px; }
+    .preview-stats { display: flex; gap: 20px; flex-wrap: wrap; }
+    .prev-stat { display: flex; flex-direction: column; gap: 2px; }
+    .prev-num { font-size: 20px; font-weight: 800; color: var(--accent); font-family: var(--mono); }
+    .prev-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; }
+    .preview-topics {
+      margin-top: 12px; max-height: 180px; overflow-y: auto;
+      font-size: 12px; color: var(--text2);
+    }
+    .preview-topics::-webkit-scrollbar { width: 4px; }
+    .preview-topics::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+    .preview-topic-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 4px 0; border-bottom: 1px solid var(--border);
+    }
+    .preview-topic-row:last-child { border-bottom: none; }
+
+    /* Options */
+    .seed-options {
+      margin-top: 14px; display: flex; align-items: center; gap: 14px;
+      flex-wrap: wrap;
+    }
+    .option-toggle {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--text2); cursor: pointer;
+    }
+    .option-toggle input { accent-color: var(--accent); width: 14px; height: 14px; }
+
+    /* Progress */
+    .seed-progress {
+      margin-top: 16px; display: none;
+    }
+    .seed-progress.visible { display: block; }
+    .progress-bar-wrap {
+      height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; margin-bottom: 8px;
+    }
+    .progress-bar-fill {
+      height: 100%; background: var(--accent);
+      border-radius: 3px; transition: width .3s;
+      width: 0%;
+    }
+    .progress-log {
+      max-height: 120px; overflow-y: auto;
+      font-size: 11px; font-family: var(--mono); color: var(--text2);
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 6px; padding: 8px 10px;
+    }
+    .progress-log::-webkit-scrollbar { width: 4px; }
+    .progress-log::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+    .log-line { padding: 1px 0; }
+    .log-ok   { color: var(--accent); }
+    .log-err  { color: var(--red); }
+    .log-info { color: var(--blue); }
+
+    /* Result card */
+    .seed-result {
+      margin-top: 14px; border-radius: 8px; padding: 14px 16px;
+      display: none;
+    }
+    .seed-result.visible  { display: block; }
+    .seed-result.success  { background: var(--adim); border: 1px solid rgba(74,222,128,.3); }
+    .seed-result.error    { background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.25); }
+    .result-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+    .result-stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; font-family: var(--mono); }
+    .result-errors { margin-top: 8px; font-size: 11px; color: var(--red); }
+
+    /* Footer */
+    .seed-footer {
+      padding: 14px 24px 18px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+      flex-shrink: 0;
+    }
+    .btn-seed-run {
+      padding: 9px 24px; background: var(--blue); color: #fff;
+      border: none; border-radius: 7px; font-family: var(--sans);
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      transition: .15s; display: flex; align-items: center; gap: 8px;
+    }
+    .btn-seed-run:hover { background: #3b82f6; }
+    .btn-seed-run:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-seed-clear {
+      padding: 9px 18px; background: rgba(248,113,113,.08);
+      color: var(--red); border: 1px solid rgba(248,113,113,.25);
+      border-radius: 7px; font-family: var(--sans);
+      font-size: 13px; font-weight: 700; cursor: pointer; transition: .15s;
+    }
+    .btn-seed-clear:hover { background: rgba(248,113,113,.16); }
+    .btn-seed-cancel {
+      padding: 9px 16px; background: var(--bg3); color: var(--text2);
+      border: 1px solid var(--border2); border-radius: 7px;
+      font-family: var(--sans); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: .15s; margin-left: auto;
+    }
+    .btn-seed-cancel:hover { color: var(--text); }
+
   </style>
 </head>
 <body>
@@ -245,6 +432,9 @@
     </div>
 
     <button class="add-topic-btn" onclick="openNewTopic()">+ New Topic</button>
+    <button class="seed-btn" onclick="openSeedPanel()">📦 Import JSON Batch</button>
+
+
 
     <div class="topics-list" id="topicsList">
       <p class="muted" style="padding:12px">Loading topics…</p>
@@ -953,5 +1143,319 @@
     return res.json();
   }
 </script>
+
+<!-- ═══ SEED / IMPORT MODAL ══════════════════════════════════════════════ -->
+<div class="seed-overlay hidden" id="seedOverlay">
+  <div class="seed-modal">
+
+    <!-- Header -->
+    <div class="seed-header">
+      <div>
+        <h2>📦 Import JSON Batch</h2>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">
+          Upload <code>batch1_java.json</code> or <code>batch2_dsa.json</code> to seed all topics
+        </div>
+      </div>
+      <button class="seed-close" onclick="closeSeedPanel()">✕</button>
+    </div>
+
+    <!-- Body -->
+    <div class="seed-body">
+
+      <!-- Drop zone -->
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="seedFileInput" accept=".json" onchange="onFileSelected(event)"/>
+        <div class="drop-icon">📂</div>
+        <div class="drop-title">Drop JSON file here or click to browse</div>
+        <div class="drop-sub">Accepts batch JSON files generated by DevLearn</div>
+        <div class="file-name" id="fileName">No file selected</div>
+      </div>
+
+      <!-- Preview (shown after file selected) -->
+      <div class="seed-preview" id="seedPreview">
+        <div class="preview-title">Batch Preview</div>
+        <div class="preview-stats" id="previewStats"></div>
+        <div class="preview-topics" id="previewTopics"></div>
+      </div>
+
+      <!-- Options -->
+      <div class="seed-options">
+        <label class="option-toggle">
+          <input type="checkbox" id="optSkipExisting" checked/>
+          Skip topics that already exist (safe re-run)
+        </label>
+        <label class="option-toggle">
+          <input type="checkbox" id="optClearFirst"/>
+          <span style="color:var(--red)">⚠ Clear ALL data first (fresh seed)</span>
+        </label>
+      </div>
+
+      <!-- Progress (shown during upload) -->
+      <div class="seed-progress" id="seedProgress">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-log" id="progressLog"></div>
+      </div>
+
+      <!-- Result (shown after completion) -->
+      <div class="seed-result" id="seedResult">
+        <div class="result-title" id="resultTitle"></div>
+        <div class="result-stats" id="resultStats"></div>
+        <div class="result-errors" id="resultErrors"></div>
+      </div>
+
+    </div><!-- /seed-body -->
+
+    <!-- Footer -->
+    <div class="seed-footer">
+      <button class="btn-seed-run" id="btnSeedRun" onclick="runSeed()" disabled>
+        ⬆ Import Now
+      </button>
+      <button class="btn-seed-clear" onclick="clearAllData()">
+        🗑 Clear All Data
+      </button>
+      <button class="btn-seed-cancel" onclick="closeSeedPanel()">Close</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ══════════════════════════════════════════════════════════════════════════
+  //  SEED PANEL LOGIC
+  // ══════════════════════════════════════════════════════════════════════════
+
+  let seedFileData = null; // parsed JSON from the uploaded file
+
+  // ── Open / Close ──────────────────────────────────────────────────────────
+  function openSeedPanel() {
+    document.getElementById('seedOverlay').classList.remove('hidden');
+    resetSeedPanel();
+  }
+
+  function closeSeedPanel() {
+    document.getElementById('seedOverlay').classList.add('hidden');
+  }
+
+  function resetSeedPanel() {
+    seedFileData = null;
+    document.getElementById('dropZone').classList.remove('has-file');
+    document.getElementById('fileName').textContent = 'No file selected';
+    document.getElementById('seedFileInput').value = '';
+    document.getElementById('seedPreview').classList.remove('visible');
+    document.getElementById('seedProgress').classList.remove('visible');
+    document.getElementById('progressLog').innerHTML = '';
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('seedResult').classList.remove('visible','success','error');
+    document.getElementById('btnSeedRun').disabled = true;
+    document.getElementById('optClearFirst').checked = false;
+  }
+
+  // ── File Selection ────────────────────────────────────────────────────────
+  function onFileSelected(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    handleFile(file);
+  }
+
+  // Drag & Drop
+  const dropZone = document.getElementById('dropZone');
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith('.json')) handleFile(file);
+    else toast('Please drop a .json file', 'error');
+  });
+
+  function handleFile(file) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        seedFileData = JSON.parse(ev.target.result);
+        showPreview(file.name, seedFileData);
+        document.getElementById('dropZone').classList.add('has-file');
+        document.getElementById('fileName').textContent = '✓ ' + file.name;
+        document.getElementById('btnSeedRun').disabled = false;
+        logLine(`Loaded: ${file.name} (${(file.size/1024).toFixed(1)} KB)`, 'info');
+      } catch(err) {
+        toast('Invalid JSON file: ' + err.message, 'error');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // ── Preview ───────────────────────────────────────────────────────────────
+  function showPreview(fileName, data) {
+    const topics  = data.topics || [];
+    const examples = topics.reduce((s,t) => s + (t.examples?.length || 0), 0);
+    const problems = topics.reduce((s,t) => s + (t.problems?.length || 0), 0);
+    const cats    = [...new Set(topics.map(t => t.category))];
+
+    // Stats row
+    document.getElementById('previewStats').innerHTML = `
+    <div class="prev-stat"><span class="prev-num">${topics.length}</span><span class="prev-lbl">Topics</span></div>
+    <div class="prev-stat"><span class="prev-num">${examples}</span><span class="prev-lbl">Examples</span></div>
+    <div class="prev-stat"><span class="prev-num">${problems}</span><span class="prev-lbl">Problems</span></div>
+    <div class="prev-stat"><span class="prev-num">${cats.length}</span><span class="prev-lbl">Categories</span></div>
+    ${data.batchName ? `<div class="prev-stat" style="min-width:200px"><span class="prev-num" style="font-size:12px;color:var(--blue)">${esc(data.batchName)}</span><span class="prev-lbl">Batch</span></div>` : ''}
+  `;
+
+    // Topic list
+    const catColors = {
+      DSA:'var(--blue)', JAVA:'var(--yellow)', ADVANCED_JAVA:'var(--purple)',
+      MYSQL:'#fb923c', AWS:'var(--red)'
+    };
+    document.getElementById('previewTopics').innerHTML = topics.map((t,i) => `
+    <div class="preview-topic-row">
+      <span style="font-size:10px;color:var(--text3);width:20px;text-align:right;flex-shrink:0">${i+1}</span>
+      <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;
+        background:${catColors[t.category]||'var(--text3)'}22;
+        color:${catColors[t.category]||'var(--text3)'};">${t.category}</span>
+      <span style="flex:1">${esc(t.title)}</span>
+      <span style="font-size:10px;color:var(--text3);">${(t.examples||[]).length}ex/${(t.problems||[]).length}pr</span>
+    </div>
+  `).join('');
+
+    document.getElementById('seedPreview').classList.add('visible');
+  }
+
+  // ── Run Seed ──────────────────────────────────────────────────────────────
+  async function runSeed() {
+    if (!seedFileData) { toast('No file selected', 'error'); return; }
+
+    const btn      = document.getElementById('btnSeedRun');
+    const clearFirst = document.getElementById('optClearFirst').checked;
+    const skipExisting = document.getElementById('optSkipExisting').checked;
+
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Importing…';
+
+    // Show progress
+    document.getElementById('seedProgress').classList.add('visible');
+    document.getElementById('seedResult').classList.remove('visible','success','error');
+    document.getElementById('progressFill').style.width = '10%';
+
+    try {
+      // Step 1: optionally clear all data
+      if (clearFirst) {
+        logLine('🗑 Clearing all existing data…', 'info');
+        const clr = await fetch('/api/admin/seed-batch/clear', { method: 'DELETE' });
+        if (!clr.ok) throw new Error('Clear failed: ' + clr.status);
+        logLine('✓ All data cleared', 'ok');
+        document.getElementById('progressFill').style.width = '25%';
+      }
+
+      // Step 2: post the batch
+      logLine(`📤 Uploading ${seedFileData.topics?.length || 0} topics…`, 'info');
+      document.getElementById('progressFill').style.width = '40%';
+
+      const payload = {
+        ...seedFileData,
+        skipExisting
+      };
+
+      const res = await fetch('/api/admin/seed-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      document.getElementById('progressFill').style.width = '85%';
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Server error ${res.status}: ${txt}`);
+      }
+
+      const result = await res.json();
+      document.getElementById('progressFill').style.width = '100%';
+
+      // Log result
+      logLine(`✓ Seeded ${result.topicsSeeded} topics`, 'ok');
+      logLine(`✓ ${result.examplesSeeded} examples, ${result.problemsSeeded} problems`, 'ok');
+      if (result.topicsSkipped > 0) logLine(`⚠ Skipped ${result.topicsSkipped} existing topics`, 'info');
+      if (result.errors?.length) result.errors.forEach(e => logLine('✕ ' + e, 'err'));
+
+      // Show result card
+      showResult(result);
+      toast('Import complete! ' + result.topicsSeeded + ' topics loaded ✓', 'success');
+
+      // Reload sidebar
+      loadTopics();
+
+    } catch(err) {
+      document.getElementById('progressFill').style.width = '100%';
+      document.getElementById('progressFill').style.background = 'var(--red)';
+      logLine('✕ Error: ' + err.message, 'err');
+      showResultError(err.message);
+      toast('Import failed: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '⬆ Import Now';
+    }
+  }
+
+  function showResult(r) {
+    const el = document.getElementById('seedResult');
+    el.className = 'seed-result visible ' + (r.success ? 'success' : 'error');
+    document.getElementById('resultTitle').innerHTML =
+            r.success ? '✅ Import Successful' : '⚠ Import completed with errors';
+    document.getElementById('resultStats').innerHTML = `
+    <span style="color:var(--accent)">Topics seeded: ${r.topicsSeeded}</span>
+    <span style="color:var(--text2)">Skipped: ${r.topicsSkipped}</span>
+    <span style="color:var(--blue)">Examples: ${r.examplesSeeded}</span>
+    <span style="color:var(--purple)">Problems: ${r.problemsSeeded}</span>
+  `;
+    const errs = r.errors || [];
+    document.getElementById('resultErrors').innerHTML =
+            errs.length ? errs.map(e => `<div>• ${esc(e)}</div>`).join('') : '';
+  }
+
+  function showResultError(msg) {
+    const el = document.getElementById('seedResult');
+    el.className = 'seed-result visible error';
+    document.getElementById('resultTitle').textContent = '✕ Import Failed';
+    document.getElementById('resultStats').innerHTML = '';
+    document.getElementById('resultErrors').innerHTML = `<div>${esc(msg)}</div>`;
+  }
+
+  function logLine(msg, type = '') {
+    const log = document.getElementById('progressLog');
+    const div = document.createElement('div');
+    div.className = 'log-line' + (type ? ' log-' + type : '');
+    div.textContent = new Date().toLocaleTimeString() + '  ' + msg;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  // ── Clear All ─────────────────────────────────────────────────────────────
+  async function clearAllData() {
+    if (!confirm('⚠ This will DELETE all topics, examples, and problems from the database.\n\nAre you absolutely sure?')) return;
+    if (!confirm('Second confirmation: this cannot be undone. Proceed?')) return;
+
+    try {
+      logLine('🗑 Clearing all data…', 'info');
+      document.getElementById('seedProgress').classList.add('visible');
+      document.getElementById('progressFill').style.width = '50%';
+
+      const res = await fetch('/api/admin/seed-batch/clear', { method: 'DELETE' });
+      if (!res.ok) throw new Error('Clear failed: ' + res.status);
+
+      document.getElementById('progressFill').style.width = '100%';
+      logLine('✓ All data cleared successfully', 'ok');
+      toast('All data cleared', 'success');
+      loadTopics();
+      resetSeedPanel();
+    } catch(err) {
+      logLine('✕ ' + err.message, 'err');
+      toast('Clear failed: ' + err.message, 'error');
+    }
+  }
+</script>
+
 </body>
 </html>
