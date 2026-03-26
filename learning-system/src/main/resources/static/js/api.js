@@ -8,8 +8,8 @@ const API = {
   // ── Topics ────────────────────────────────────────────────────────────────
   async getTopics(category = null) {
     const url = category && category !== 'ALL'
-      ? `/api/topics?category=${category}`
-      : '/api/topics';
+        ? `/api/topics?category=${category}`
+        : '/api/topics';
     const res = await fetch(url);
     if (!res.ok) throw new Error('Failed to fetch topics');
     return res.json();
@@ -39,12 +39,12 @@ const API = {
     return res.json();
   },
 
-  // ── Execute (free run) ────────────────────────────────────────────────────
-  async execute(code, stdin = '') {
+  // ── Execute (free run) — now carries javaVersion ─────────────────────────
+  async execute(code, stdin = '', javaVersion = '17') {
     const res = await fetch('/api/execute', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, stdin })
+      body: JSON.stringify({ code, stdin, javaVersion })
     });
     return res.json();
   },
@@ -59,12 +59,33 @@ const API = {
     return res.json();
   },
 
+  // ── Syntax Check — now carries javaVersion ───────────────────────────────
+  async syntaxCheck(code, javaVersion = '17') {
+    const res = await fetch('/api/syntax-check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, javaVersion })
+    });
+    if (!res.ok) throw new Error('Syntax check failed');
+    return res.json();
+  },
+
+  // ── Complexity Analysis ───────────────────────────────────────────────────
+  async analyzeComplexity(code) {
+    const res = await fetch('/api/analyze-complexity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    if (!res.ok) throw new Error('Complexity analysis failed');
+    return res.json();
+  },
+
   // ── Visualize ─────────────────────────────────────────────────────────────
   async visualize(algorithm, array, target) {
     const body = { algorithm };
     if (array && array.length)  body.array  = array;
     if (target !== undefined)   body.target = target;
-
     const res = await fetch('/api/visualize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -1,23 +1,37 @@
 /* ══════════════════════════════════════════════════════════════════════════════
    editor.js — App Controller
-   Handles: sidebar loading, tab switching, Monaco editor, run/submit
+   Handles: sidebar, tabs, Monaco + real-time syntax check, LeetCode-style output
 ══════════════════════════════════════════════════════════════════════════════ */
 
-let monacoEditor      = null;
-let practiceEditor    = null;
-let currentTopic      = null;
-let currentProblems   = [];
-let currentProblem    = null;
-let activeCategory    = 'ALL';
+let monacoEditor        = null;
+let practiceEditor      = null;
+let currentTopic        = null;
+let currentProblems     = [];
+let currentProblem      = null;
+let activeCategory      = 'ALL';
+let syntaxDebounceTimer = null;
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   initMonaco();
-  loadTopics();
+  loadTopics().then(() => {
+    // Deep-link: /?topic=123
+    const params  = new URLSearchParams(window.location.search);
+    const topicId = params.get('topic');
+    if (topicId) {
+      const waitForMonaco = setInterval(() => {
+        if (monacoEditor) {
+          clearInterval(waitForMonaco);
+          selectTopic(parseInt(topicId));
+        }
+      }, 150);
+    }
+  });
   bindCategoryTabs();
   bindTabBar();
   bindSearch();
   bindRunButton();
+  bindOutputTabs();
   bindPracticeButtons();
 });
 
@@ -37,6 +51,8 @@ function initMonaco() {
       renderLineHighlight: 'line',
       automaticLayout: true,
       padding: { top: 10 },
+      glyphMargin: true,
+      folding: true,
     };
 
     monacoEditor = monaco.editor.create(document.getElementById('monacoEditor'), {
@@ -48,7 +64,257 @@ function initMonaco() {
       ...commonOptions,
       value: '// Select a problem to load starter code'
     });
+
+    // Real-time syntax check — fires 800ms after user stops typing
+    monacoEditor.onDidChangeModelContent(() => {
+      clearTimeout(syntaxDebounceTimer);
+      setStatusBar('checking');
+      syntaxDebounceTimer = setTimeout(() => runSyntaxCheck(monacoEditor, 'main'), 800);
+    });
+
+    practiceEditor.onDidChangeModelContent(() => {
+      clearTimeout(syntaxDebounceTimer);
+      syntaxDebounceTimer = setTimeout(() => runSyntaxCheck(practiceEditor, 'practice'), 800);
+    });
   });
+}
+
+// ── Real-time Syntax Check ────────────────────────────────────────────────────
+async function runSyntaxCheck(editor, context) {
+  if (!editor) return;
+  const code = editor.getValue();
+  if (!code.trim()) { clearMarkers(editor); setStatusBar('ok', 0, 0); return; }
+  try {
+    const result = await API.syntaxCheck(code, getJavaVersion());
+    applyMarkers(editor, result.errors || []);
+    if (context === 'main') {
+      setStatusBar(result.valid ? 'ok' : 'errors', result.errorCount, result.warningCount);
+      renderErrorPanel(result.errors || []);
+    }
+  } catch (e) { /* silent — server may not be running during dev */ }
+}
+
+function applyMarkers(editor, errors) {
+  if (!window.monaco || !editor?.getModel()) return;
+  const model = editor.getModel();
+  const markers = errors.map(err => ({
+    severity:        err.severity === 'error' ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
+    startLineNumber: err.line,
+    startColumn:     err.column || 1,
+    endLineNumber:   err.line,
+    endColumn:       err.column ? err.column + 15 : model.getLineMaxColumn(err.line),
+    message:         err.message,
+    source:          'javac',
+  }));
+  monaco.editor.setModelMarkers(model, 'javac', markers);
+}
+
+function clearMarkers(editor) {
+  if (!window.monaco || !editor?.getModel()) return;
+  monaco.editor.setModelMarkers(editor.getModel(), 'javac', []);
+}
+
+// ── Status Bar ────────────────────────────────────────────────────────────────
+function setStatusBar(state, errors = 0, warnings = 0) {
+  const el = document.getElementById('statusErrors');
+  if (!el) return;
+  if (state === 'checking') {
+    el.innerHTML = '<span style="color:var(--text3)">⟳ Checking syntax…</span>';
+  } else if (state === 'ok') {
+    el.innerHTML = '<span style="color:var(--accent)">✓ No errors</span>';
+  } else {
+    const parts = [];
+    if (errors)   parts.push(`<span style="color:var(--red)">✕ ${errors} error${errors>1?'s':''}</span>`);
+    if (warnings) parts.push(`<span style="color:var(--yellow)">⚠ ${warnings} warning${warnings>1?'s':''}</span>`);
+    el.innerHTML = parts.join('&nbsp;&nbsp;');
+  }
+  const badge = document.getElementById('errBadge');
+  if (badge) {
+    badge.textContent = errors;
+    badge.classList.toggle('hidden', errors === 0);
+  }
+}
+
+// ── Error Panel ───────────────────────────────────────────────────────────────
+function renderErrorPanel(errors) {
+  const el = document.getElementById('errorsList');
+  if (!el) return;
+  if (!errors.length) {
+    el.innerHTML = '<p class="no-errors-msg">✓ No compile errors</p>';
+    return;
+  }
+  el.innerHTML = errors.map(err => `
+    <div class="error-card ${err.severity}" onclick="jumpToLine(${err.line})">
+      <div class="error-card-top">
+        <span class="error-icon">${err.severity === 'error' ? '✕' : '⚠'}</span>
+        <span class="error-msg">${escHtml(err.message)}</span>
+        <span class="error-line-badge">Line ${err.line}${err.column > 1 ? ':' + err.column : ''}</span>
+      </div>
+      ${err.code ? `<pre class="error-source-line">${escHtml(err.code)}<br>${' '.repeat(Math.max(0,(err.column||1)-1))}<span class="error-caret">^</span></pre>` : ''}
+    </div>
+  `).join('');
+}
+
+function jumpToLine(line) {
+  if (!monacoEditor) return;
+  monacoEditor.revealLineInCenter(line);
+  monacoEditor.setPosition({ lineNumber: line, column: 1 });
+  monacoEditor.focus();
+  switchOutputTab('errors');
+}
+
+// ── Output Tab Switcher ───────────────────────────────────────────────────────
+function bindOutputTabs() {
+  document.querySelectorAll('.lc-out-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchOutputTab(btn.dataset.out));
+  });
+}
+
+function switchOutputTab(name) {
+  document.querySelectorAll('.lc-out-tab').forEach(b =>
+      b.classList.toggle('active', b.dataset.out === name));
+  document.querySelectorAll('.lc-out-panel').forEach(p =>
+      p.classList.toggle('hidden', p.id !== `out-${name}`));
+}
+
+// ── Java Version Selector helper ─────────────────────────────────────────────
+function getJavaVersion() {
+  return document.getElementById('javaVersionSelect')?.value || '17';
+}
+
+// ── Run Button ────────────────────────────────────────────────────────────────
+function bindRunButton() {
+  document.getElementById('runBtn')?.addEventListener('click', async () => {
+    if (!monacoEditor) return;
+    const code    = monacoEditor.getValue();
+    const stdin   = document.getElementById('stdinInput')?.value || '';
+    const version = getJavaVersion();
+
+    switchOutputTab('output');
+    const box       = document.getElementById('outputBox');
+    const statusRow = document.getElementById('outStatusRow');
+    if (box)       { box.textContent = '⏳ Compiling with Java ' + version + '…'; box.className = 'lc-output-box'; }
+    if (statusRow) statusRow.innerHTML = '';
+    document.getElementById('execTime').textContent = '';
+
+    try {
+      const result = await API.execute(code, stdin, version);
+      renderRunResult(result);
+      // Auto-analyze complexity after every run (success or runtime error)
+      if (result.status !== 'COMPILE_ERROR') {
+        analyzeAndRenderComplexity(code);
+      }
+    } catch (e) {
+      if (box) { box.textContent = '⚠ Server unreachable — is the backend running?'; box.className = 'lc-output-box error'; }
+    }
+  });
+
+  document.getElementById('resetBtn')?.addEventListener('click', () => {
+    if (monacoEditor && currentTopic?.starterCode) {
+      monacoEditor.setValue(currentTopic.starterCode.trim());
+    }
+    const box = document.getElementById('outputBox');
+    if (box) { box.textContent = '// Press ▶ Run Code to see output here'; box.className = 'lc-output-box'; }
+    const sr = document.getElementById('outStatusRow');
+    if (sr) sr.innerHTML = '';
+    document.getElementById('execTime').textContent = '';
+    // Clear complexity panel on reset
+    const cp = document.getElementById('complexityPanel');
+    if (cp) cp.innerHTML = '<p class="complexity-hint">Run your code to analyze complexity.</p>';
+  });
+}
+
+// ── Complexity Analysis ───────────────────────────────────────────────────────
+async function analyzeAndRenderComplexity(code) {
+  const panel = document.getElementById('complexityPanel');
+  if (!panel) return;
+  panel.innerHTML = '<p class="complexity-hint">⏳ Analyzing complexity…</p>';
+
+  try {
+    const r = await API.analyzeComplexity(code);
+    const confColor = { HIGH: 'var(--accent)', MEDIUM: 'var(--yellow)', LOW: 'var(--text3)' }[r.confidence] || 'var(--text3)';
+    const patternTags = (r.detectedPatterns || []).map(p =>
+        `<span class="complexity-tag">${escHtml(p)}</span>`).join('');
+
+    panel.innerHTML = `
+      <div class="complexity-cards">
+
+        <div class="cx-card cx-time">
+          <div class="cx-label">⏱ Time Complexity</div>
+          <div class="cx-notation">${escHtml(r.timeComplexity || 'O(?)')}</div>
+          <div class="cx-explanation">${escHtml(r.timeExplanation || '')}</div>
+        </div>
+
+        <div class="cx-card cx-space">
+          <div class="cx-label">💾 Space Complexity</div>
+          <div class="cx-notation cx-space-val">${escHtml(r.spaceComplexity || 'O(?)')}</div>
+          <div class="cx-explanation">${escHtml(r.spaceExplanation || '')}</div>
+        </div>
+
+      </div>
+
+      ${patternTags ? `
+      <div class="cx-patterns">
+        <span class="cx-patterns-label">Detected patterns:</span>
+        ${patternTags}
+      </div>` : ''}
+
+      <div class="cx-confidence" style="color:${confColor}">
+        Confidence: ${r.confidence || 'LOW'}
+        <span class="cx-note"> — based on static code structure</span>
+      </div>
+    `;
+  } catch(e) {
+    panel.innerHTML = '<p class="complexity-hint">⚠ Could not analyze complexity.</p>';
+  }
+}
+
+function renderRunResult(result) {
+  const box       = document.getElementById('outputBox');
+  const statusRow = document.getElementById('outStatusRow');
+  const timeEl    = document.getElementById('execTime');
+  if (!box) return;
+
+  if (result.status === 'COMPILE_ERROR') {
+    applyMarkers(monacoEditor, result.compileErrors || []);
+    renderErrorPanel(result.compileErrors || []);
+    const ec = (result.compileErrors||[]).filter(e=>e.severity==='error').length;
+    const wc = (result.compileErrors||[]).filter(e=>e.severity==='warning').length;
+    setStatusBar('errors', ec, wc);
+    box.textContent = result.error || 'Compilation failed';
+    box.className   = 'lc-output-box error';
+    if (statusRow) statusRow.innerHTML = statusBadge('COMPILE_ERROR');
+    switchOutputTab('errors');
+    return;
+  }
+
+  if (result.status === 'TIMEOUT') {
+    box.textContent = result.error;
+    box.className   = 'lc-output-box error';
+    if (statusRow) statusRow.innerHTML = statusBadge('TIMEOUT');
+  } else if (result.status === 'RUNTIME_ERROR') {
+    box.textContent = result.error || 'Runtime error';
+    box.className   = 'lc-output-box error';
+    if (statusRow) statusRow.innerHTML = statusBadge('RUNTIME_ERROR');
+  } else {
+    box.textContent = result.output || '(no output)';
+    box.className   = 'lc-output-box success';
+    if (statusRow) statusRow.innerHTML = statusBadge('SUCCESS');
+  }
+  if (timeEl && result.executionTimeMs) {
+    timeEl.textContent = `⏱ ${result.executionTimeMs}ms`;
+  }
+}
+
+function statusBadge(status) {
+  const map = {
+    SUCCESS:       ['var(--accent)',  '✓ Accepted'],
+    COMPILE_ERROR: ['var(--red)',     '✕ Compile Error'],
+    RUNTIME_ERROR: ['var(--red)',     '✕ Runtime Error'],
+    TIMEOUT:       ['var(--yellow)',  '⏱ Time Limit Exceeded'],
+  };
+  const [color, label] = map[status] || ['var(--text2)', status];
+  return `<span class="out-status-badge" style="color:${color};border-color:${color}20;background:${color}12">${label}</span>`;
 }
 
 // ── Load Topics into Sidebar ──────────────────────────────────────────────────
@@ -58,8 +324,10 @@ async function loadTopics(category = 'ALL') {
   try {
     const topics = await API.getTopics(category === 'ALL' ? null : category);
     renderTopicList(topics);
+    return topics;
   } catch (e) {
     list.innerHTML = '<li class="loading-item">⚠ Could not load topics</li>';
+    return [];
   }
 }
 
@@ -78,10 +346,12 @@ function renderTopicList(topics) {
 }
 
 function tagClass(cat) {
-  return { DSA: 'tag-dsa', JAVA: 'tag-java', ADVANCED_JAVA: 'tag-adv' }[cat] || 'tag-dsa';
+  const m = { DSA:'tag-dsa', JAVA:'tag-java', ADVANCED_JAVA:'tag-adv', MYSQL:'tag-mysql', AWS:'tag-aws' };
+  return m[cat] || 'tag-dsa';
 }
 function tagLabel(cat) {
-  return { DSA: 'DSA', JAVA: 'Java', ADVANCED_JAVA: 'Adv' }[cat] || cat;
+  const m = { DSA:'DSA', JAVA:'Java', ADVANCED_JAVA:'Adv', MYSQL:'MySQL', AWS:'AWS' };
+  return m[cat] || cat;
 }
 
 // ── Select Topic ──────────────────────────────────────────────────────────────
@@ -110,7 +380,11 @@ function showTopicView(topic) {
 
   const badge = document.getElementById('topicCategoryBadge');
   badge.textContent = tagLabel(topic.category);
-  badge.className   = `topic-category-badge badge-${topic.category === 'ADVANCED_JAVA' ? 'adv' : topic.category.toLowerCase()}`;
+  const catSuffix = topic.category === 'ADVANCED_JAVA' ? 'adv'
+      : topic.category === 'MYSQL' ? 'mysql'
+          : topic.category === 'AWS'   ? 'aws'
+              : topic.category.toLowerCase();
+  badge.className = `topic-category-badge badge-${catSuffix}`;
 
   const complexity = document.getElementById('topicComplexity');
   complexity.textContent = topic.timeComplexity ? `⏱ ${topic.timeComplexity}  |  💾 ${topic.spaceComplexity}` : '';
@@ -265,7 +539,7 @@ function loadOptimize() {
   setOptContent('optOptimizedContent', currentTopic.optimizedApproach || 'N/A');
   setOptContent('optWhenContent',      currentTopic.whenToUse        || 'N/A');
   setOptContent('optComplexityContent',
-    `<strong style="color:var(--accent)">Time:</strong> ${currentTopic.timeComplexity || 'N/A'}<br>
+      `<strong style="color:var(--accent)">Time:</strong> ${currentTopic.timeComplexity || 'N/A'}<br>
      <strong style="color:var(--blue)">Space:</strong> ${currentTopic.spaceComplexity || 'N/A'}`);
 }
 
@@ -390,8 +664,8 @@ function showPracticeResult(result, loading) {
 // ── Utils ─────────────────────────────────────────────────────────────────────
 function escHtml(str) {
   return String(str)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ── Trace tab: auto-select algorithm dropdown based on topic title ─────────────

@@ -56,6 +56,6 @@ public class Topic {
     private List<Problem> problems;
 
     public enum Category {
-        DSA, JAVA, ADVANCED_JAVA
+        DSA, JAVA, ADVANCED_JAVA, MYSQL, AWS
     }
 }

@@ -19,17 +19,23 @@ public class ExecutionService {
     private static final int  TIMEOUT_SECONDS  = 10;
     private static final long MAX_OUTPUT_BYTES = 10_000;
 
+    // Valid Java source versions we'll pass to javac -source / --release
+    private static final Set<String> VALID_VERSIONS = Set.of("8","11","17","21");
+    private static final String      DEFAULT_VERSION = "17";
+
     private static final Pattern JAVAC_ERROR_PATTERN =
             Pattern.compile("^Main\\.java:(\\d+):\\s*(error|warning):\\s*(.+)$");
 
-    public ExecuteResponse execute(String code, String stdin) {
+    // ── Public API ────────────────────────────────────────────────────────────
+
+    public ExecuteResponse execute(String code, String stdin, String javaVersion) {
         Path tempDir = null;
         try {
             tempDir = Files.createTempDirectory("learnsystem_");
             Path sourceFile = tempDir.resolve("Main.java");
             Files.writeString(sourceFile, code);
 
-            CompileResult cr = compile(tempDir, sourceFile, code);
+            CompileResult cr = compile(tempDir, sourceFile, code, javaVersion);
             if (!cr.success()) {
                 return ExecuteResponse.builder()
                         .success(false).status("COMPILE_ERROR")
@@ -43,14 +49,19 @@ public class ExecutionService {
         } finally { cleanup(tempDir); }
     }
 
-    public SyntaxCheckResponse syntaxCheck(String code) {
+    // Backwards-compat overload (used by evaluate/submit paths)
+    public ExecuteResponse execute(String code, String stdin) {
+        return execute(code, stdin, DEFAULT_VERSION);
+    }
+
+    public SyntaxCheckResponse syntaxCheck(String code, String javaVersion) {
         Path tempDir = null;
         try {
             tempDir = Files.createTempDirectory("learnsystem_syntax_");
             Path sourceFile = tempDir.resolve("Main.java");
             Files.writeString(sourceFile, code);
 
-            CompileResult cr = compile(tempDir, sourceFile, code);
+            CompileResult cr = compile(tempDir, sourceFile, code, javaVersion);
             long errors   = cr.errors().stream().filter(e -> "error"  .equals(e.getSeverity())).count();
             long warnings = cr.errors().stream().filter(e -> "warning".equals(e.getSeverity())).count();
 
@@ -65,8 +76,24 @@ public class ExecutionService {
         } finally { cleanup(tempDir); }
     }
 
-    private CompileResult compile(Path tempDir, Path sourceFile, String code) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder("javac", "-Xlint:all", sourceFile.toString())
+    public SyntaxCheckResponse syntaxCheck(String code) {
+        return syntaxCheck(code, DEFAULT_VERSION);
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    private CompileResult compile(Path tempDir, Path sourceFile, String code, String version) throws Exception {
+        String safeVersion = VALID_VERSIONS.contains(version) ? version : DEFAULT_VERSION;
+
+        // Use --release flag (works on Java 9+); fall back to -source for older javac
+        List<String> cmd = new ArrayList<>(List.of(
+                "javac",
+                "--release", safeVersion,
+                "-Xlint:all",
+                sourceFile.toString()
+        ));
+
+        ProcessBuilder pb = new ProcessBuilder(cmd)
                 .directory(tempDir.toFile()).redirectErrorStream(true);
 
         Process process = pb.start();
@@ -74,6 +101,21 @@ public class ExecutionService {
         boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
         if (!finished) { process.destroyForcibly(); return new CompileResult(false, "Compilation timed out", List.of()); }
+
+        // If --release fails (e.g. requesting Java 8 on a JDK that doesn't support it), retry without
+        if (process.exitValue() != 0 && rawOutput.contains("invalid flag")) {
+            return compileWithoutRelease(tempDir, sourceFile, code);
+        }
+        if (process.exitValue() != 0) return new CompileResult(false, rawOutput, parseJavacOutput(rawOutput, code));
+        return new CompileResult(true, rawOutput, parseJavacOutput(rawOutput, code));
+    }
+
+    private CompileResult compileWithoutRelease(Path tempDir, Path sourceFile, String code) throws Exception {
+        ProcessBuilder pb = new ProcessBuilder("javac", "-Xlint:all", sourceFile.toString())
+                .directory(tempDir.toFile()).redirectErrorStream(true);
+        Process process = pb.start();
+        String rawOutput = readStream(process.getInputStream(), MAX_OUTPUT_BYTES);
+        process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         if (process.exitValue() != 0) return new CompileResult(false, rawOutput, parseJavacOutput(rawOutput, code));
         return new CompileResult(true, rawOutput, parseJavacOutput(rawOutput, code));
     }

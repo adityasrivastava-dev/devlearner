@@ -18,6 +18,8 @@
     <span class="logo">⟨dev<span>learn</span>⟩</span>
     <a href="/admin.html" style="font-size:11px;color:var(--text3);text-decoration:none;padding:3px 8px;border:1px solid var(--border2);border-radius:5px;font-family:var(--font-ui);font-weight:600;transition:.15s"
        onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">⚙ Admin</a>
+    <a href="/roadmap.html" style="font-size:11px;color:var(--text3);text-decoration:none;padding:3px 8px;border:1px solid var(--border2);border-radius:5px;font-family:var(--font-ui);font-weight:600;transition:.15s;margin-left:4px"
+       onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">🗺 Roadmaps</a>
   </div>
 
   <div class="category-tabs">
@@ -25,6 +27,8 @@
     <button class="cat-btn" data-cat="DSA">DSA</button>
     <button class="cat-btn" data-cat="JAVA">Java</button>
     <button class="cat-btn" data-cat="ADVANCED_JAVA">Adv Java</button>
+    <button class="cat-btn" data-cat="MYSQL">MySQL</button>
+    <button class="cat-btn" data-cat="AWS">AWS</button>
   </div>
 
   <div class="search-box">
@@ -162,27 +166,78 @@
 
     <!-- ── TAB: CODE ──────────────────────────────────────────────────── -->
     <div class="tab-panel hidden" id="tab-code">
-      <div class="editor-layout">
-        <div class="editor-pane">
-          <div class="editor-toolbar">
-            <span class="editor-label">Main.java</span>
-            <button id="runBtn" class="btn btn-primary btn-sm">▶ Run</button>
-            <button id="resetBtn" class="btn btn-ghost btn-sm">↺ Reset</button>
-          </div>
-          <div id="monacoEditor" style="height:420px; border-radius:0 0 8px 8px;"></div>
-        </div>
-        <div class="output-pane">
-          <div class="output-toolbar">
-            <span class="editor-label">Output</span>
-            <span class="exec-time" id="execTime"></span>
-          </div>
-          <pre id="outputBox" class="output-box">// Press Run to execute your code</pre>
-        </div>
+
+      <!-- Status bar -->
+      <div class="code-status-bar">
+        <span class="status-file">📄 Main.java</span>
+        <span class="status-errors" id="statusErrors">✓ No errors</span>
+        <span class="status-spacer"></span>
+        <span class="status-lang">Java 17</span>
       </div>
-      <div class="stdin-row">
-        <label>stdin (optional):</label>
-        <input type="text" id="stdinInput" placeholder="Enter program input here…" />
-      </div>
+
+      <!-- Editor + Output split -->
+      <div class="lc-layout">
+
+        <!-- Editor pane -->
+        <div class="lc-editor-pane">
+          <div class="lc-toolbar">
+            <div class="lc-toolbar-left">
+              <button id="runBtn"   class="lc-btn lc-run">▶ Run Code</button>
+              <button id="resetBtn" class="lc-btn lc-ghost">↺ Reset</button>
+              <select id="javaVersionSelect" class="lc-version-select" title="Java version">
+                <option value="8">Java 8</option>
+                <option value="11">Java 11</option>
+                <option value="17" selected>Java 17</option>
+                <option value="21">Java 21</option>
+              </select>
+            </div>
+            <div class="lc-toolbar-right">
+              <span class="lc-meta" id="execTime"></span>
+            </div>
+          </div>
+          <div id="monacoEditor" style="flex:1; min-height:0;"></div>
+        </div>
+
+        <!-- Output pane -->
+        <div class="lc-output-pane" id="lcOutputPane">
+
+          <!-- Output tab bar -->
+          <div class="lc-out-tabs">
+            <button class="lc-out-tab active" data-out="testcase">Testcase</button>
+            <button class="lc-out-tab"        data-out="output">Output</button>
+            <button class="lc-out-tab"        data-out="errors">Errors <span class="err-badge hidden" id="errBadge">0</span></button>
+            <button class="lc-out-tab"        data-out="complexity">Complexity</button>
+          </div>
+
+          <!-- Testcase panel -->
+          <div class="lc-out-panel" id="out-testcase">
+            <div class="tc-label">stdin input</div>
+            <textarea id="stdinInput" class="tc-input" placeholder="Enter program input here (e.g. 5&#10;1 3 5 7 9&#10;7)"></textarea>
+            <p class="tc-hint">This stdin is passed to your program when you click Run Code.</p>
+          </div>
+
+          <!-- Output panel -->
+          <div class="lc-out-panel hidden" id="out-output">
+            <div class="out-status-row" id="outStatusRow"></div>
+            <pre id="outputBox" class="lc-output-box">// Press ▶ Run Code to see output here</pre>
+          </div>
+
+          <!-- Errors panel -->
+          <div class="lc-out-panel hidden" id="out-errors">
+            <div id="errorsList" class="errors-list">
+              <p class="no-errors-msg">✓ No compile errors</p>
+            </div>
+          </div>
+
+          <!-- Complexity panel -->
+          <div class="lc-out-panel hidden" id="out-complexity">
+            <div id="complexityPanel" class="complexity-panel">
+              <p class="complexity-hint">Run your code to analyze complexity.</p>
+            </div>
+          </div>
+
+        </div><!-- /lc-output-pane -->
+      </div><!-- /lc-layout -->
     </div>
 
     <!-- ── TAB: PRACTICE ──────────────────────────────────────────────── -->

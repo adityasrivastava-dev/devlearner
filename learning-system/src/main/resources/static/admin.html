@@ -80,9 +80,11 @@
       font-size: 9px; font-weight: 700; letter-spacing: .5px;
       padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
     }
-    .cat-dsa  { background: rgba(96,165,250,.15); color: var(--blue); }
-    .cat-java { background: rgba(251,191,36,.12);  color: var(--yellow); }
-    .cat-adv  { background: rgba(167,139,250,.12); color: var(--purple); }
+    .cat-dsa   { background: rgba(96,165,250,.15);  color: var(--blue); }
+    .cat-java  { background: rgba(251,191,36,.12);  color: var(--yellow); }
+    .cat-adv   { background: rgba(167,139,250,.12); color: var(--purple); }
+    .cat-mysql { background: rgba(251,146,60,.12);  color: #fb923c; }
+    .cat-aws   { background: rgba(248,113,113,.12); color: var(--red); }
     .topic-row-del {
       opacity: 0; background: none; border: none; color: var(--red);
       cursor: pointer; font-size: 14px; padding: 2px 4px; transition: .15s;
@@ -278,36 +280,36 @@
 <div id="toast"></div>
 
 <script>
-/* ══════════════════════════════════════════════════════════════════════════════
-   ADMIN STATE
-══════════════════════════════════════════════════════════════════════════════ */
-let allTopics    = [];
-let activeTopic  = null;
-let activeSection = 'topic';
-let topicExamples = [];
-let topicProblems = [];
+  /* ══════════════════════════════════════════════════════════════════════════════
+     ADMIN STATE
+  ══════════════════════════════════════════════════════════════════════════════ */
+  let allTopics    = [];
+  let activeTopic  = null;
+  let activeSection = 'topic';
+  let topicExamples = [];
+  let topicProblems = [];
 
-/* ══ BOOT ═════════════════════════════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', loadAllTopics);
+  /* ══ BOOT ═════════════════════════════════════════════════════════════════════ */
+  document.addEventListener('DOMContentLoaded', loadAllTopics);
 
-async function loadAllTopics() {
-  try {
-    const res = await fetch('/api/topics');
-    allTopics = await res.json();
-    renderTopicsSidebar();
-  } catch(e) {
-    document.getElementById('topicsList').innerHTML =
-      '<p class="muted" style="padding:12px">⚠ Cannot reach server</p>';
+  async function loadAllTopics() {
+    try {
+      const res = await fetch('/api/topics');
+      allTopics = await res.json();
+      renderTopicsSidebar();
+    } catch(e) {
+      document.getElementById('topicsList').innerHTML =
+              '<p class="muted" style="padding:12px">⚠ Cannot reach server</p>';
+    }
   }
-}
 
-function renderTopicsSidebar() {
-  const el = document.getElementById('topicsList');
-  if (!allTopics.length) {
-    el.innerHTML = '<p class="muted" style="padding:12px">No topics yet. Create one!</p>';
-    return;
-  }
-  el.innerHTML = allTopics.map(t => `
+  function renderTopicsSidebar() {
+    const el = document.getElementById('topicsList');
+    if (!allTopics.length) {
+      el.innerHTML = '<p class="muted" style="padding:12px">No topics yet. Create one!</p>';
+      return;
+    }
+    el.innerHTML = allTopics.map(t => `
     <div class="topic-row ${activeTopic?.id === t.id ? 'active' : ''}"
          onclick="selectTopic(${t.id})">
       <span class="topic-row-name">${t.title}</span>
@@ -316,39 +318,39 @@ function renderTopicsSidebar() {
         onclick="event.stopPropagation(); confirmDeleteTopic(${t.id}, '${esc(t.title)}')">✕</button>
     </div>
   `).join('');
-}
+  }
 
-/* ══ SELECT TOPIC ══════════════════════════════════════════════════════════════ */
-async function selectTopic(id) {
-  activeTopic = allTopics.find(t => t.id === id) || null;
-  if (!activeTopic) return;
-  renderTopicsSidebar();
-  document.getElementById('sectionTabs').style.display = 'flex';
-  activeSection = 'topic';
-  document.querySelectorAll('.sec-tab').forEach(b =>
-    b.classList.toggle('active', b.dataset.sec === 'topic'));
-  await renderTopicSection();
-}
+  /* ══ SELECT TOPIC ══════════════════════════════════════════════════════════════ */
+  async function selectTopic(id) {
+    activeTopic = allTopics.find(t => t.id === id) || null;
+    if (!activeTopic) return;
+    renderTopicsSidebar();
+    document.getElementById('sectionTabs').style.display = 'flex';
+    activeSection = 'topic';
+    document.querySelectorAll('.sec-tab').forEach(b =>
+            b.classList.toggle('active', b.dataset.sec === 'topic'));
+    await renderTopicSection();
+  }
 
-/* ══ SECTIONS ═════════════════════════════════════════════════════════════════ */
-async function switchSection(sec) {
-  activeSection = sec;
-  document.querySelectorAll('.sec-tab').forEach(b =>
-    b.classList.toggle('active', b.dataset.sec === sec));
+  /* ══ SECTIONS ═════════════════════════════════════════════════════════════════ */
+  async function switchSection(sec) {
+    activeSection = sec;
+    document.querySelectorAll('.sec-tab').forEach(b =>
+            b.classList.toggle('active', b.dataset.sec === sec));
 
-  if (sec === 'topic')    await renderTopicSection();
-  if (sec === 'examples') await renderExamplesSection();
-  if (sec === 'problems') await renderProblemsSection();
-}
+    if (sec === 'topic')    await renderTopicSection();
+    if (sec === 'examples') await renderExamplesSection();
+    if (sec === 'problems') await renderProblemsSection();
+  }
 
-/* ══ TOPIC INFO SECTION ════════════════════════════════════════════════════════ */
-async function renderTopicSection() {
-  const t = activeTopic;
-  setTopBar(t.title, `
+  /* ══ TOPIC INFO SECTION ════════════════════════════════════════════════════════ */
+  async function renderTopicSection() {
+    const t = activeTopic;
+    setTopBar(t.title, `
     <button class="btn-save" onclick="saveTopic()">💾 Save Topic</button>
   `);
 
-  document.getElementById('contentArea').innerHTML = `
+    document.getElementById('contentArea').innerHTML = `
     <form id="topicForm">
       <div class="form-card">
         <h3>Basic Info</h3>
@@ -363,6 +365,8 @@ async function renderTopicSection() {
               <option value="DSA"           ${t.category==='DSA'?'selected':''}>DSA</option>
               <option value="JAVA"          ${t.category==='JAVA'?'selected':''}>Java</option>
               <option value="ADVANCED_JAVA" ${t.category==='ADVANCED_JAVA'?'selected':''}>Advanced Java</option>
+              <option value="MYSQL"         ${t.category==='MYSQL'?'selected':''}>MySQL</option>
+              <option value="AWS"           ${t.category==='AWS'?'selected':''}>AWS</option>
             </select>
           </div>
           <div class="field form-full">
@@ -417,49 +421,49 @@ async function renderTopicSection() {
       </div>
     </form>
   `;
-}
-
-async function saveTopic() {
-  if (!activeTopic) return;
-  const payload = buildTopicPayload();
-  try {
-    const res = await fetch(`/api/admin/topics/${activeTopic.id}`, {
-      method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error(await res.text());
-    activeTopic = await res.json();
-    const idx = allTopics.findIndex(t => t.id === activeTopic.id);
-    if (idx >= 0) allTopics[idx] = activeTopic;
-    renderTopicsSidebar();
-    toast('Topic saved ✓', 'success');
-  } catch(e) {
-    toast('Save failed: ' + e.message, 'error');
   }
-}
 
-function buildTopicPayload() {
-  return {
-    title:             val('f_title'),
-    category:          val('f_category'),
-    description:       val('f_description'),
-    content:           val('f_content'),
-    timeComplexity:    val('f_time'),
-    spaceComplexity:   val('f_space'),
-    bruteForce:        val('f_brute'),
-    optimizedApproach: val('f_optimized'),
-    whenToUse:         val('f_when'),
-    starterCode:       val('f_starter'),
-  };
-}
+  async function saveTopic() {
+    if (!activeTopic) return;
+    const payload = buildTopicPayload();
+    try {
+      const res = await fetch(`/api/admin/topics/${activeTopic.id}`, {
+        method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      activeTopic = await res.json();
+      const idx = allTopics.findIndex(t => t.id === activeTopic.id);
+      if (idx >= 0) allTopics[idx] = activeTopic;
+      renderTopicsSidebar();
+      toast('Topic saved ✓', 'success');
+    } catch(e) {
+      toast('Save failed: ' + e.message, 'error');
+    }
+  }
 
-/* ══ NEW TOPIC ═════════════════════════════════════════════════════════════════ */
-function openNewTopic() {
-  activeTopic = null;
-  document.querySelectorAll('.topic-row').forEach(r => r.classList.remove('active'));
-  document.getElementById('sectionTabs').style.display = 'none';
-  setTopBar('New Topic', '');
+  function buildTopicPayload() {
+    return {
+      title:             val('f_title'),
+      category:          val('f_category'),
+      description:       val('f_description'),
+      content:           val('f_content'),
+      timeComplexity:    val('f_time'),
+      spaceComplexity:   val('f_space'),
+      bruteForce:        val('f_brute'),
+      optimizedApproach: val('f_optimized'),
+      whenToUse:         val('f_when'),
+      starterCode:       val('f_starter'),
+    };
+  }
 
-  document.getElementById('contentArea').innerHTML = `
+  /* ══ NEW TOPIC ═════════════════════════════════════════════════════════════════ */
+  function openNewTopic() {
+    activeTopic = null;
+    document.querySelectorAll('.topic-row').forEach(r => r.classList.remove('active'));
+    document.getElementById('sectionTabs').style.display = 'none';
+    setTopBar('New Topic', '');
+
+    document.getElementById('contentArea').innerHTML = `
     <div class="form-card">
       <h3>Create Topic</h3>
       <div class="form-grid">
@@ -473,6 +477,8 @@ function openNewTopic() {
             <option value="DSA">DSA</option>
             <option value="JAVA">Java</option>
             <option value="ADVANCED_JAVA">Advanced Java</option>
+            <option value="MYSQL">MySQL</option>
+            <option value="AWS">AWS</option>
           </select>
         </div>
         <div class="field form-full">
@@ -514,85 +520,85 @@ function openNewTopic() {
       </div>
     </div>
   `;
-}
-
-async function createTopic() {
-  const payload = {
-    title:             val('nt_title'),
-    category:          val('nt_category'),
-    description:       val('nt_description'),
-    content:           val('nt_content'),
-    timeComplexity:    val('nt_time'),
-    spaceComplexity:   val('nt_space'),
-    bruteForce:        val('nt_brute'),
-    optimizedApproach: val('nt_optimized'),
-    whenToUse:         val('nt_when'),
-    starterCode:       val('nt_starter'),
-  };
-  if (!payload.title) { toast('Title is required', 'error'); return; }
-  try {
-    const res = await fetch('/api/admin/topics', {
-      method: 'POST', headers: jsonH(), body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error(await res.text());
-    const created = await res.json();
-    allTopics.push(created);
-    renderTopicsSidebar();
-    toast('Topic created ✓', 'success');
-    selectTopic(created.id);
-  } catch(e) {
-    toast('Error: ' + e.message, 'error');
   }
-}
 
-function cancelNew() {
-  document.getElementById('contentArea').innerHTML =
-    '<div class="empty-state"><h3>Admin Panel</h3><p>Select a topic or create a new one.</p></div>';
-  document.getElementById('sectionTabs').style.display = 'none';
-  setTopBar('', '');
-}
-
-async function confirmDeleteTopic(id, name) {
-  if (!confirm(`Delete topic "${name}" and ALL its examples/problems?\nThis cannot be undone.`)) return;
-  try {
-    const res = await fetch(`/api/admin/topics/${id}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error(await res.text());
-    allTopics = allTopics.filter(t => t.id !== id);
-    if (activeTopic?.id === id) {
-      activeTopic = null;
-      document.getElementById('sectionTabs').style.display = 'none';
-      document.getElementById('contentArea').innerHTML =
-        '<div class="empty-state"><h3>Topic deleted</h3><p>Select another topic.</p></div>';
-      setTopBar('', '');
+  async function createTopic() {
+    const payload = {
+      title:             val('nt_title'),
+      category:          val('nt_category'),
+      description:       val('nt_description'),
+      content:           val('nt_content'),
+      timeComplexity:    val('nt_time'),
+      spaceComplexity:   val('nt_space'),
+      bruteForce:        val('nt_brute'),
+      optimizedApproach: val('nt_optimized'),
+      whenToUse:         val('nt_when'),
+      starterCode:       val('nt_starter'),
+    };
+    if (!payload.title) { toast('Title is required', 'error'); return; }
+    try {
+      const res = await fetch('/api/admin/topics', {
+        method: 'POST', headers: jsonH(), body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const created = await res.json();
+      allTopics.push(created);
+      renderTopicsSidebar();
+      toast('Topic created ✓', 'success');
+      selectTopic(created.id);
+    } catch(e) {
+      toast('Error: ' + e.message, 'error');
     }
-    renderTopicsSidebar();
-    toast('Topic deleted', 'success');
-  } catch(e) {
-    toast('Delete failed: ' + e.message, 'error');
   }
-}
 
-/* ══ EXAMPLES SECTION ══════════════════════════════════════════════════════════ */
-async function renderExamplesSection() {
-  setTopBar(activeTopic.title + ' — Examples', `
+  function cancelNew() {
+    document.getElementById('contentArea').innerHTML =
+            '<div class="empty-state"><h3>Admin Panel</h3><p>Select a topic or create a new one.</p></div>';
+    document.getElementById('sectionTabs').style.display = 'none';
+    setTopBar('', '');
+  }
+
+  async function confirmDeleteTopic(id, name) {
+    if (!confirm(`Delete topic "${name}" and ALL its examples/problems?\nThis cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/admin/topics/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(await res.text());
+      allTopics = allTopics.filter(t => t.id !== id);
+      if (activeTopic?.id === id) {
+        activeTopic = null;
+        document.getElementById('sectionTabs').style.display = 'none';
+        document.getElementById('contentArea').innerHTML =
+                '<div class="empty-state"><h3>Topic deleted</h3><p>Select another topic.</p></div>';
+        setTopBar('', '');
+      }
+      renderTopicsSidebar();
+      toast('Topic deleted', 'success');
+    } catch(e) {
+      toast('Delete failed: ' + e.message, 'error');
+    }
+  }
+
+  /* ══ EXAMPLES SECTION ══════════════════════════════════════════════════════════ */
+  async function renderExamplesSection() {
+    setTopBar(activeTopic.title + ' — Examples', `
     <button class="btn-add-item" onclick="addExampleForm()">+ Add Example</button>
   `);
-  topicExamples = await fetchJson(`/api/topics/${activeTopic.id}/examples`);
-  renderExamplesList();
-}
+    topicExamples = await fetchJson(`/api/topics/${activeTopic.id}/examples`);
+    renderExamplesList();
+  }
 
-function renderExamplesList() {
-  const area = document.getElementById('contentArea');
-  if (!topicExamples.length) {
-    area.innerHTML = `
+  function renderExamplesList() {
+    const area = document.getElementById('contentArea');
+    if (!topicExamples.length) {
+      area.innerHTML = `
       <div class="empty-state">
         <h3>No examples yet</h3>
         <p>Click <strong>+ Add Example</strong> in the top bar.</p>
       </div>`;
-    return;
-  }
+      return;
+    }
 
-  area.innerHTML = topicExamples.map((ex, i) => `
+    area.innerHTML = topicExamples.map((ex, i) => `
     <div class="item-card" id="ex-card-${ex.id}">
       <div class="item-card-header" onclick="toggleCard('ex-body-${ex.id}','ex-tog-${ex.id}')">
         <span class="item-order">${ex.displayOrder ?? i+1}</span>
@@ -604,11 +610,11 @@ function renderExamplesList() {
       </div>
     </div>
   `).join('') + `<div id="new-example-slot"></div>`;
-}
+  }
 
-function exampleForm(ex) {
-  const id = ex.id || 'new';
-  return `
+  function exampleForm(ex) {
+    const id = ex.id || 'new';
+    return `
     <div class="form-grid">
       <div class="field">
         <label>Title *</label>
@@ -637,45 +643,45 @@ function exampleForm(ex) {
     </div>
     <div class="form-actions">
       ${ex.id
-        ? `<button class="btn-save"   onclick="saveExample(${ex.id})">💾 Save</button>
+            ? `<button class="btn-save"   onclick="saveExample(${ex.id})">💾 Save</button>
            <button class="btn-delete" onclick="deleteExample(${ex.id})">🗑 Delete</button>`
-        : `<button class="btn-save"   onclick="createExample()">✚ Add Example</button>
+            : `<button class="btn-save"   onclick="createExample()">✚ Add Example</button>
            <button class="btn-cancel" onclick="cancelNewExample()">Cancel</button>`
-      }
+    }
     </div>
   `;
-}
+  }
 
-async function saveExample(exId) {
-  const payload = buildExPayload(exId);
-  try {
-    const res = await fetch(`/api/admin/examples/${exId}`, {
-      method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error(await res.text());
-    const updated = await res.json();
-    const idx = topicExamples.findIndex(e => e.id === exId);
-    if (idx >= 0) topicExamples[idx] = updated;
-    toast('Example saved ✓', 'success');
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
+  async function saveExample(exId) {
+    const payload = buildExPayload(exId);
+    try {
+      const res = await fetch(`/api/admin/examples/${exId}`, {
+        method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const updated = await res.json();
+      const idx = topicExamples.findIndex(e => e.id === exId);
+      if (idx >= 0) topicExamples[idx] = updated;
+      toast('Example saved ✓', 'success');
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
+  }
 
-async function deleteExample(exId) {
-  if (!confirm('Delete this example?')) return;
-  try {
-    await fetch(`/api/admin/examples/${exId}`, { method: 'DELETE' });
-    topicExamples = topicExamples.filter(e => e.id !== exId);
-    toast('Example deleted', 'success');
-    renderExamplesList();
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
+  async function deleteExample(exId) {
+    if (!confirm('Delete this example?')) return;
+    try {
+      await fetch(`/api/admin/examples/${exId}`, { method: 'DELETE' });
+      topicExamples = topicExamples.filter(e => e.id !== exId);
+      toast('Example deleted', 'success');
+      renderExamplesList();
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
+  }
 
-function addExampleForm() {
-  // If new form already there, do nothing
-  if (document.getElementById('ef_title_new')) return;
-  const slot = document.getElementById('new-example-slot');
-  if (!slot) { renderExamplesList(); setTimeout(addExampleForm, 50); return; }
-  slot.innerHTML = `
+  function addExampleForm() {
+    // If new form already there, do nothing
+    if (document.getElementById('ef_title_new')) return;
+    const slot = document.getElementById('new-example-slot');
+    if (!slot) { renderExamplesList(); setTimeout(addExampleForm, 50); return; }
+    slot.innerHTML = `
     <div class="item-card" style="border-color:var(--accent)">
       <div class="item-card-header">
         <span class="item-order" style="border-color:var(--accent);color:var(--accent)">NEW</span>
@@ -686,60 +692,60 @@ function addExampleForm() {
       </div>
     </div>
   `;
-  slot.scrollIntoView({ behavior: 'smooth' });
-}
+    slot.scrollIntoView({ behavior: 'smooth' });
+  }
 
-async function createExample() {
-  const payload = buildExPayload('new');
-  if (!payload.title) { toast('Title is required', 'error'); return; }
-  try {
-    const res = await fetch(`/api/admin/topics/${activeTopic.id}/examples`, {
-      method: 'POST', headers: jsonH(), body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error(await res.text());
-    const created = await res.json();
-    topicExamples.push(created);
-    toast('Example added ✓', 'success');
-    renderExamplesList();
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
+  async function createExample() {
+    const payload = buildExPayload('new');
+    if (!payload.title) { toast('Title is required', 'error'); return; }
+    try {
+      const res = await fetch(`/api/admin/topics/${activeTopic.id}/examples`, {
+        method: 'POST', headers: jsonH(), body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const created = await res.json();
+      topicExamples.push(created);
+      toast('Example added ✓', 'success');
+      renderExamplesList();
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
+  }
 
-function cancelNewExample() {
-  const slot = document.getElementById('new-example-slot');
-  if (slot) slot.innerHTML = '';
-}
+  function cancelNewExample() {
+    const slot = document.getElementById('new-example-slot');
+    if (slot) slot.innerHTML = '';
+  }
 
-function buildExPayload(id) {
-  return {
-    title:        val(`ef_title_${id}`),
-    description:  val(`ef_desc_${id}`),
-    code:         val(`ef_code_${id}`),
-    explanation:  val(`ef_expl_${id}`),
-    realWorldUse: val(`ef_rw_${id}`),
-    displayOrder: parseInt(val(`ef_order_${id}`)) || 1,
-  };
-}
+  function buildExPayload(id) {
+    return {
+      title:        val(`ef_title_${id}`),
+      description:  val(`ef_desc_${id}`),
+      code:         val(`ef_code_${id}`),
+      explanation:  val(`ef_expl_${id}`),
+      realWorldUse: val(`ef_rw_${id}`),
+      displayOrder: parseInt(val(`ef_order_${id}`)) || 1,
+    };
+  }
 
-/* ══ PROBLEMS SECTION ══════════════════════════════════════════════════════════ */
-async function renderProblemsSection() {
-  setTopBar(activeTopic.title + ' — Problems', `
+  /* ══ PROBLEMS SECTION ══════════════════════════════════════════════════════════ */
+  async function renderProblemsSection() {
+    setTopBar(activeTopic.title + ' — Problems', `
     <button class="btn-add-item" onclick="addProblemForm()">+ Add Problem</button>
   `);
-  topicProblems = await fetchJson(`/api/topics/${activeTopic.id}/problems`);
-  renderProblemsList();
-}
+    topicProblems = await fetchJson(`/api/topics/${activeTopic.id}/problems`);
+    renderProblemsList();
+  }
 
-function renderProblemsList() {
-  const area = document.getElementById('contentArea');
-  if (!topicProblems.length) {
-    area.innerHTML = `
+  function renderProblemsList() {
+    const area = document.getElementById('contentArea');
+    if (!topicProblems.length) {
+      area.innerHTML = `
       <div class="empty-state">
         <h3>No problems yet</h3>
         <p>Click <strong>+ Add Problem</strong> in the top bar.</p>
       </div>`;
-    return;
-  }
-  area.innerHTML = topicProblems.map((p, i) => `
+      return;
+    }
+    area.innerHTML = topicProblems.map((p, i) => `
     <div class="item-card" id="pr-card-${p.id}">
       <div class="item-card-header" onclick="toggleCard('pr-body-${p.id}','pr-tog-${p.id}')">
         <span class="item-order">${p.displayOrder ?? i+1}</span>
@@ -752,11 +758,11 @@ function renderProblemsList() {
       </div>
     </div>
   `).join('') + `<div id="new-problem-slot"></div>`;
-}
+  }
 
-function problemForm(p) {
-  const id = p.id || 'new';
-  return `
+  function problemForm(p) {
+    const id = p.id || 'new';
+    return `
     <div class="form-grid">
       <div class="field">
         <label>Title *</label>
@@ -814,44 +820,44 @@ function problemForm(p) {
     </div>
     <div class="form-actions">
       ${p.id
-        ? `<button class="btn-save"   onclick="saveProblem(${p.id})">💾 Save</button>
+            ? `<button class="btn-save"   onclick="saveProblem(${p.id})">💾 Save</button>
            <button class="btn-delete" onclick="deleteProblem(${p.id})">🗑 Delete</button>`
-        : `<button class="btn-save"   onclick="createProblem()">✚ Add Problem</button>
+            : `<button class="btn-save"   onclick="createProblem()">✚ Add Problem</button>
            <button class="btn-cancel" onclick="cancelNewProblem()">Cancel</button>`
-      }
+    }
     </div>
   `;
-}
+  }
 
-async function saveProblem(pId) {
-  const payload = buildPrPayload(pId);
-  try {
-    const res = await fetch(`/api/admin/problems/${pId}`, {
-      method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error(await res.text());
-    const updated = await res.json();
-    const idx = topicProblems.findIndex(p => p.id === pId);
-    if (idx >= 0) topicProblems[idx] = updated;
-    toast('Problem saved ✓', 'success');
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
+  async function saveProblem(pId) {
+    const payload = buildPrPayload(pId);
+    try {
+      const res = await fetch(`/api/admin/problems/${pId}`, {
+        method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const updated = await res.json();
+      const idx = topicProblems.findIndex(p => p.id === pId);
+      if (idx >= 0) topicProblems[idx] = updated;
+      toast('Problem saved ✓', 'success');
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
+  }
 
-async function deleteProblem(pId) {
-  if (!confirm('Delete this problem?')) return;
-  try {
-    await fetch(`/api/admin/problems/${pId}`, { method: 'DELETE' });
-    topicProblems = topicProblems.filter(p => p.id !== pId);
-    toast('Problem deleted', 'success');
-    renderProblemsList();
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
+  async function deleteProblem(pId) {
+    if (!confirm('Delete this problem?')) return;
+    try {
+      await fetch(`/api/admin/problems/${pId}`, { method: 'DELETE' });
+      topicProblems = topicProblems.filter(p => p.id !== pId);
+      toast('Problem deleted', 'success');
+      renderProblemsList();
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
+  }
 
-function addProblemForm() {
-  if (document.getElementById('pf_title_new')) return;
-  const slot = document.getElementById('new-problem-slot');
-  if (!slot) { renderProblemsList(); setTimeout(addProblemForm, 50); return; }
-  slot.innerHTML = `
+  function addProblemForm() {
+    if (document.getElementById('pf_title_new')) return;
+    const slot = document.getElementById('new-problem-slot');
+    if (!slot) { renderProblemsList(); setTimeout(addProblemForm, 50); return; }
+    slot.innerHTML = `
     <div class="item-card" style="border-color:var(--accent)">
       <div class="item-card-header">
         <span class="item-order" style="border-color:var(--accent);color:var(--accent)">NEW</span>
@@ -862,90 +868,90 @@ function addProblemForm() {
       </div>
     </div>
   `;
-  slot.scrollIntoView({ behavior: 'smooth' });
-}
+    slot.scrollIntoView({ behavior: 'smooth' });
+  }
 
-async function createProblem() {
-  const payload = buildPrPayload('new');
-  if (!payload.title) { toast('Title is required', 'error'); return; }
-  try {
-    const res = await fetch(`/api/admin/topics/${activeTopic.id}/problems`, {
-      method: 'POST', headers: jsonH(), body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error(await res.text());
-    const created = await res.json();
-    topicProblems.push(created);
-    toast('Problem added ✓', 'success');
-    renderProblemsList();
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
+  async function createProblem() {
+    const payload = buildPrPayload('new');
+    if (!payload.title) { toast('Title is required', 'error'); return; }
+    try {
+      const res = await fetch(`/api/admin/topics/${activeTopic.id}/problems`, {
+        method: 'POST', headers: jsonH(), body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const created = await res.json();
+      topicProblems.push(created);
+      toast('Problem added ✓', 'success');
+      renderProblemsList();
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
+  }
 
-function cancelNewProblem() {
-  const slot = document.getElementById('new-problem-slot');
-  if (slot) slot.innerHTML = '';
-}
+  function cancelNewProblem() {
+    const slot = document.getElementById('new-problem-slot');
+    if (slot) slot.innerHTML = '';
+  }
 
-function buildPrPayload(id) {
-  return {
-    title:        val(`pf_title_${id}`),
-    difficulty:   val(`pf_diff_${id}`),
-    displayOrder: parseInt(val(`pf_order_${id}`)) || 1,
-    description:  val(`pf_desc_${id}`),
-    inputFormat:  val(`pf_infmt_${id}`),
-    outputFormat: val(`pf_outfmt_${id}`),
-    sampleInput:  val(`pf_sin_${id}`),
-    sampleOutput: val(`pf_sout_${id}`),
-    testCases:    val(`pf_tests_${id}`),
-    hint:         val(`pf_hint_${id}`),
-    starterCode:  val(`pf_starter_${id}`),
-    solutionCode: val(`pf_solution_${id}`),
-  };
-}
+  function buildPrPayload(id) {
+    return {
+      title:        val(`pf_title_${id}`),
+      difficulty:   val(`pf_diff_${id}`),
+      displayOrder: parseInt(val(`pf_order_${id}`)) || 1,
+      description:  val(`pf_desc_${id}`),
+      inputFormat:  val(`pf_infmt_${id}`),
+      outputFormat: val(`pf_outfmt_${id}`),
+      sampleInput:  val(`pf_sin_${id}`),
+      sampleOutput: val(`pf_sout_${id}`),
+      testCases:    val(`pf_tests_${id}`),
+      hint:         val(`pf_hint_${id}`),
+      starterCode:  val(`pf_starter_${id}`),
+      solutionCode: val(`pf_solution_${id}`),
+    };
+  }
 
-/* ══ UI HELPERS ════════════════════════════════════════════════════════════════ */
-function setTopBar(title, actionsHtml) {
-  document.getElementById('topBar').innerHTML = title
-    ? `<h2>${esc(title)}</h2>${actionsHtml}`
-    : `<span class="top-bar-placeholder">← Select a topic</span>`;
-}
+  /* ══ UI HELPERS ════════════════════════════════════════════════════════════════ */
+  function setTopBar(title, actionsHtml) {
+    document.getElementById('topBar').innerHTML = title
+            ? `<h2>${esc(title)}</h2>${actionsHtml}`
+            : `<span class="top-bar-placeholder">← Select a topic</span>`;
+  }
 
-function toggleCard(bodyId, togId) {
-  const body = document.getElementById(bodyId);
-  const tog  = document.getElementById(togId);
-  if (!body) return;
-  const open = body.classList.toggle('open');
-  tog?.classList.toggle('open', open);
-}
+  function toggleCard(bodyId, togId) {
+    const body = document.getElementById(bodyId);
+    const tog  = document.getElementById(togId);
+    if (!body) return;
+    const open = body.classList.toggle('open');
+    tog?.classList.toggle('open', open);
+  }
 
-function catClass(cat) {
-  return { DSA:'cat-dsa', JAVA:'cat-java', ADVANCED_JAVA:'cat-adv' }[cat] || 'cat-dsa';
-}
-function catLabel(cat) {
-  return { DSA:'DSA', JAVA:'Java', ADVANCED_JAVA:'Adv' }[cat] || cat;
-}
+  function catClass(cat) {
+    return { DSA:'cat-dsa', JAVA:'cat-java', ADVANCED_JAVA:'cat-adv', MYSQL:'cat-mysql', AWS:'cat-aws' }[cat] || 'cat-dsa';
+  }
+  function catLabel(cat) {
+    return { DSA:'DSA', JAVA:'Java', ADVANCED_JAVA:'Adv', MYSQL:'MySQL', AWS:'AWS' }[cat] || cat;
+  }
 
-function toast(msg, type = 'success') {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className   = `show ${type}`;
-  clearTimeout(el._t);
-  el._t = setTimeout(() => { el.className = type; }, 2800);
-}
+  function toast(msg, type = 'success') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className   = `show ${type}`;
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.className = type; }, 2800);
+  }
 
-function val(id) {
-  const el = document.getElementById(id);
-  return el ? el.value.trim() : '';
-}
-function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function jsonH() { return { 'Content-Type': 'application/json' }; }
-async function fetchJson(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('Fetch failed: ' + url);
-  return res.json();
-}
+  function val(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  }
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function jsonH() { return { 'Content-Type': 'application/json' }; }
+  async function fetchJson(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Fetch failed: ' + url);
+    return res.json();
+  }
 </script>
 </body>
 </html>
