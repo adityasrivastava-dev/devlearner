@@ -85,7 +85,10 @@ public class SeedBatchService {
                         p.setOutputFormat(pdto.getOutputFormat());
                         p.setSampleInput(pdto.getSampleInput());
                         p.setSampleOutput(pdto.getSampleOutput());
-                        p.setTestCases(pdto.getTestCases());
+                        if (pdto.getTestCases() != null)
+                            p.setTestCases(pdto.getTestCases().isTextual()
+                                    ? pdto.getTestCases().asText()         // was a JSON string → unwrap it
+                                    : pdto.getTestCases().toString());
                         p.setHint(pdto.getHint());
                         p.setStarterCode(pdto.getStarterCode());
                         try {

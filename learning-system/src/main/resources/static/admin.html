@@ -90,6 +90,36 @@
       cursor: pointer; font-size: 14px; padding: 2px 4px; transition: .15s;
     }
     .topic-row:hover .topic-row-del { opacity: 1; }
+    .cat-group-header {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 8px 4px;
+      font-size: 10px; font-weight: 700; letter-spacing: .8px;
+      text-transform: uppercase; color: var(--text3);
+      cursor: pointer; user-select: none;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+    }
+    .cat-group-header:first-child { border-top: none; margin-top: 0; }
+    .cat-group-header:hover { color: var(--text2); }
+    .cat-group-header .cat-chevron { margin-left: auto; font-size: 9px; transition: transform .2s; }
+    .cat-group-header .cat-count {
+      font-size: 9px; font-weight: 700; padding: 1px 5px;
+      border-radius: 8px; background: var(--bg3); color: var(--text3);
+    }
+    .cat-group-body.collapsed { display: none; }
+    .cat-group-header.collapsed .cat-chevron { transform: rotate(-90deg); }
+    .cat-filter-bar {
+      display: flex; gap: 4px; padding: 6px 8px;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap;
+    }
+    .cat-filter-btn {
+      padding: 3px 9px; border-radius: 10px; font-size: 10px; font-weight: 700;
+      background: var(--bg3); border: 1px solid var(--border2); color: var(--text3);
+      cursor: pointer; transition: .15s;
+    }
+    .cat-filter-btn:hover { color: var(--text); }
+    .cat-filter-btn.active { background: var(--adim); border-color: var(--accent); color: var(--accent); }
+
 
     /* ══ MAIN ════════════════════════════════════════════════════════════ */
     .main { display: flex; flex-direction: column; overflow: hidden; }
@@ -470,77 +500,148 @@
 <div id="toast"></div>
 
 <script>
-  /* ══════════════════════════════════════════════════════════════════════════════
-     ADMIN STATE
-  ══════════════════════════════════════════════════════════════════════════════ */
-  let allTopics    = [];
-  let activeTopic  = null;
-  let activeSection = 'topic';
-  let topicExamples = [];
-  let topicProblems = [];
+/* ══════════════════════════════════════════════════════════════════════════════
+   ADMIN STATE
+══════════════════════════════════════════════════════════════════════════════ */
+let allTopics    = [];
+let activeTopic  = null;
+let activeSection = 'topic';
+let topicExamples = [];
+let topicProblems = [];
 
-  /* ══ BOOT ═════════════════════════════════════════════════════════════════════ */
-  document.addEventListener('DOMContentLoaded', loadAllTopics);
+/* ══ BOOT ═════════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', loadAllTopics);
 
-  async function loadAllTopics() {
-    try {
-      const res = await fetch('/api/topics');
-      allTopics = await res.json();
-      renderTopicsSidebar();
-    } catch(e) {
-      document.getElementById('topicsList').innerHTML =
-              '<p class="muted" style="padding:12px">⚠ Cannot reach server</p>';
-    }
-  }
-
-  function renderTopicsSidebar() {
-    const el = document.getElementById('topicsList');
-    if (!allTopics.length) {
-      el.innerHTML = '<p class="muted" style="padding:12px">No topics yet. Create one!</p>';
-      return;
-    }
-    el.innerHTML = allTopics.map(t => `
-    <div class="topic-row ${activeTopic?.id === t.id ? 'active' : ''}"
-         onclick="selectTopic(${t.id})">
-      <span class="topic-row-name">${t.title}</span>
-      <span class="topic-row-cat ${catClass(t.category)}">${catLabel(t.category)}</span>
-      <button class="topic-row-del" title="Delete topic"
-        onclick="event.stopPropagation(); confirmDeleteTopic(${t.id}, '${esc(t.title)}')">✕</button>
-    </div>
-  `).join('');
-  }
-
-  /* ══ SELECT TOPIC ══════════════════════════════════════════════════════════════ */
-  async function selectTopic(id) {
-    activeTopic = allTopics.find(t => t.id === id) || null;
-    if (!activeTopic) return;
+async function loadAllTopics() {
+  try {
+    const res = await fetch('/api/topics');
+    allTopics = await res.json();
     renderTopicsSidebar();
-    document.getElementById('sectionTabs').style.display = 'flex';
-    activeSection = 'topic';
-    document.querySelectorAll('.sec-tab').forEach(b =>
-            b.classList.toggle('active', b.dataset.sec === 'topic'));
-    await renderTopicSection();
+  } catch(e) {
+    document.getElementById('topicsList').innerHTML =
+      '<p class="muted" style="padding:12px">⚠ Cannot reach server</p>';
+  }
+}
+
+// Track which category groups are collapsed
+const collapsedGroups = new Set();
+// Track active filter (null = show all)
+let activeFilter = null;
+
+function renderTopicsSidebar() {
+  const el = document.getElementById('topicsList');
+  if (!allTopics.length) {
+    el.innerHTML = '<p class="muted" style="padding:12px">No topics yet. Create one!</p>';
+    return;
   }
 
-  /* ══ SECTIONS ═════════════════════════════════════════════════════════════════ */
-  async function switchSection(sec) {
-    activeSection = sec;
-    document.querySelectorAll('.sec-tab').forEach(b =>
-            b.classList.toggle('active', b.dataset.sec === sec));
+  // Category display config
+  const catConfig = {
+    JAVA:          { label: 'Java',         color: 'var(--yellow)', icon: '☕' },
+    ADVANCED_JAVA: { label: 'Advanced Java', color: 'var(--purple)', icon: '🚀' },
+    DSA:           { label: 'DSA',           color: 'var(--blue)',   icon: '🔢' },
+    MYSQL:         { label: 'MySQL',         color: '#fb923c',       icon: '🗄️' },
+    AWS:           { label: 'AWS',           color: 'var(--red)',    icon: '☁️' },
+  };
+  const catOrder = ['JAVA','ADVANCED_JAVA','DSA','MYSQL','AWS'];
 
-    if (sec === 'topic')    await renderTopicSection();
-    if (sec === 'examples') await renderExamplesSection();
-    if (sec === 'problems') await renderProblemsSection();
+  // Filter topics
+  const filtered = activeFilter
+    ? allTopics.filter(t => t.category === activeFilter)
+    : allTopics;
+
+  // Group by category
+  const groups = {};
+  for (const cat of catOrder) groups[cat] = [];
+  filtered.forEach(t => {
+    if (!groups[t.category]) groups[t.category] = [];
+    groups[t.category].push(t);
+  });
+
+  // Unique categories in current data
+  const presentCats = catOrder.filter(c => allTopics.some(t => t.category === c));
+
+  // Build filter bar
+  let html = `<div class="cat-filter-bar">
+    <button class="cat-filter-btn ${!activeFilter?'active':''}" onclick="setFilter(null)">All</button>
+    ${presentCats.map(c => {
+      const cfg = catConfig[c] || {label:c,color:'var(--text3)',icon:''};
+      return `<button class="cat-filter-btn ${activeFilter===c?'active':''}"
+        style="${activeFilter===c?'border-color:'+cfg.color+';color:'+cfg.color+';background:'+cfg.color+'18':''}"
+        onclick="setFilter('${c}')">${cfg.icon} ${cfg.label}</button>`;
+    }).join('')}
+  </div>`;
+
+  // Build grouped list
+  for (const cat of catOrder) {
+    const topics = groups[cat];
+    if (!topics || topics.length === 0) continue;
+    const cfg = catConfig[cat] || { label: cat, color: 'var(--text3)', icon: '' };
+    const isCollapsed = collapsedGroups.has(cat);
+    html += `
+      <div class="cat-group-header ${isCollapsed?'collapsed':''}"
+           onclick="toggleGroup('${cat}')">
+        <span style="color:${cfg.color}">${cfg.icon}</span>
+        <span style="color:${cfg.color}">${cfg.label}</span>
+        <span class="cat-count">${topics.length}</span>
+        <span class="cat-chevron">▼</span>
+      </div>
+      <div class="cat-group-body ${isCollapsed?'collapsed':''}" id="group-${cat}">
+        ${topics.map(t => `
+          <div class="topic-row ${activeTopic?.id === t.id ? 'active' : ''}"
+               onclick="selectTopic(${t.id})">
+            <span class="topic-row-name">${t.title}</span>
+            <button class="topic-row-del" title="Delete topic"
+              onclick="event.stopPropagation(); confirmDeleteTopic(${t.id}, '${esc(t.title)}')">✕</button>
+          </div>`).join('')}
+      </div>`;
   }
 
-  /* ══ TOPIC INFO SECTION ════════════════════════════════════════════════════════ */
-  async function renderTopicSection() {
-    const t = activeTopic;
-    setTopBar(t.title, `
+  el.innerHTML = html;
+}
+
+function toggleGroup(cat) {
+  if (collapsedGroups.has(cat)) collapsedGroups.delete(cat);
+  else collapsedGroups.add(cat);
+  renderTopicsSidebar();
+}
+
+function setFilter(cat) {
+  activeFilter = cat;
+  renderTopicsSidebar();
+}
+
+/* ══ SELECT TOPIC ══════════════════════════════════════════════════════════════ */
+async function selectTopic(id) {
+  activeTopic = allTopics.find(t => t.id === id) || null;
+  if (!activeTopic) return;
+  renderTopicsSidebar();
+  document.getElementById('sectionTabs').style.display = 'flex';
+  activeSection = 'topic';
+  document.querySelectorAll('.sec-tab').forEach(b =>
+    b.classList.toggle('active', b.dataset.sec === 'topic'));
+  await renderTopicSection();
+}
+
+/* ══ SECTIONS ═════════════════════════════════════════════════════════════════ */
+async function switchSection(sec) {
+  activeSection = sec;
+  document.querySelectorAll('.sec-tab').forEach(b =>
+    b.classList.toggle('active', b.dataset.sec === sec));
+
+  if (sec === 'topic')    await renderTopicSection();
+  if (sec === 'examples') await renderExamplesSection();
+  if (sec === 'problems') await renderProblemsSection();
+}
+
+/* ══ TOPIC INFO SECTION ════════════════════════════════════════════════════════ */
+async function renderTopicSection() {
+  const t = activeTopic;
+  setTopBar(t.title, `
     <button class="btn-save" onclick="saveTopic()">💾 Save Topic</button>
   `);
 
-    document.getElementById('contentArea').innerHTML = `
+  document.getElementById('contentArea').innerHTML = `
     <form id="topicForm">
       <div class="form-card">
         <h3>Basic Info</h3>
@@ -611,49 +712,49 @@
       </div>
     </form>
   `;
+}
+
+async function saveTopic() {
+  if (!activeTopic) return;
+  const payload = buildTopicPayload();
+  try {
+    const res = await fetch(`/api/admin/topics/${activeTopic.id}`, {
+      method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    activeTopic = await res.json();
+    const idx = allTopics.findIndex(t => t.id === activeTopic.id);
+    if (idx >= 0) allTopics[idx] = activeTopic;
+    renderTopicsSidebar();
+    toast('Topic saved ✓', 'success');
+  } catch(e) {
+    toast('Save failed: ' + e.message, 'error');
   }
+}
 
-  async function saveTopic() {
-    if (!activeTopic) return;
-    const payload = buildTopicPayload();
-    try {
-      const res = await fetch(`/api/admin/topics/${activeTopic.id}`, {
-        method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error(await res.text());
-      activeTopic = await res.json();
-      const idx = allTopics.findIndex(t => t.id === activeTopic.id);
-      if (idx >= 0) allTopics[idx] = activeTopic;
-      renderTopicsSidebar();
-      toast('Topic saved ✓', 'success');
-    } catch(e) {
-      toast('Save failed: ' + e.message, 'error');
-    }
-  }
+function buildTopicPayload() {
+  return {
+    title:             val('f_title'),
+    category:          val('f_category'),
+    description:       val('f_description'),
+    content:           val('f_content'),
+    timeComplexity:    val('f_time'),
+    spaceComplexity:   val('f_space'),
+    bruteForce:        val('f_brute'),
+    optimizedApproach: val('f_optimized'),
+    whenToUse:         val('f_when'),
+    starterCode:       val('f_starter'),
+  };
+}
 
-  function buildTopicPayload() {
-    return {
-      title:             val('f_title'),
-      category:          val('f_category'),
-      description:       val('f_description'),
-      content:           val('f_content'),
-      timeComplexity:    val('f_time'),
-      spaceComplexity:   val('f_space'),
-      bruteForce:        val('f_brute'),
-      optimizedApproach: val('f_optimized'),
-      whenToUse:         val('f_when'),
-      starterCode:       val('f_starter'),
-    };
-  }
+/* ══ NEW TOPIC ═════════════════════════════════════════════════════════════════ */
+function openNewTopic() {
+  activeTopic = null;
+  document.querySelectorAll('.topic-row').forEach(r => r.classList.remove('active'));
+  document.getElementById('sectionTabs').style.display = 'none';
+  setTopBar('New Topic', '');
 
-  /* ══ NEW TOPIC ═════════════════════════════════════════════════════════════════ */
-  function openNewTopic() {
-    activeTopic = null;
-    document.querySelectorAll('.topic-row').forEach(r => r.classList.remove('active'));
-    document.getElementById('sectionTabs').style.display = 'none';
-    setTopBar('New Topic', '');
-
-    document.getElementById('contentArea').innerHTML = `
+  document.getElementById('contentArea').innerHTML = `
     <div class="form-card">
       <h3>Create Topic</h3>
       <div class="form-grid">
@@ -710,85 +811,85 @@
       </div>
     </div>
   `;
-  }
+}
 
-  async function createTopic() {
-    const payload = {
-      title:             val('nt_title'),
-      category:          val('nt_category'),
-      description:       val('nt_description'),
-      content:           val('nt_content'),
-      timeComplexity:    val('nt_time'),
-      spaceComplexity:   val('nt_space'),
-      bruteForce:        val('nt_brute'),
-      optimizedApproach: val('nt_optimized'),
-      whenToUse:         val('nt_when'),
-      starterCode:       val('nt_starter'),
-    };
-    if (!payload.title) { toast('Title is required', 'error'); return; }
-    try {
-      const res = await fetch('/api/admin/topics', {
-        method: 'POST', headers: jsonH(), body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const created = await res.json();
-      allTopics.push(created);
-      renderTopicsSidebar();
-      toast('Topic created ✓', 'success');
-      selectTopic(created.id);
-    } catch(e) {
-      toast('Error: ' + e.message, 'error');
+async function createTopic() {
+  const payload = {
+    title:             val('nt_title'),
+    category:          val('nt_category'),
+    description:       val('nt_description'),
+    content:           val('nt_content'),
+    timeComplexity:    val('nt_time'),
+    spaceComplexity:   val('nt_space'),
+    bruteForce:        val('nt_brute'),
+    optimizedApproach: val('nt_optimized'),
+    whenToUse:         val('nt_when'),
+    starterCode:       val('nt_starter'),
+  };
+  if (!payload.title) { toast('Title is required', 'error'); return; }
+  try {
+    const res = await fetch('/api/admin/topics', {
+      method: 'POST', headers: jsonH(), body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const created = await res.json();
+    allTopics.push(created);
+    renderTopicsSidebar();
+    toast('Topic created ✓', 'success');
+    selectTopic(created.id);
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
+function cancelNew() {
+  document.getElementById('contentArea').innerHTML =
+    '<div class="empty-state"><h3>Admin Panel</h3><p>Select a topic or create a new one.</p></div>';
+  document.getElementById('sectionTabs').style.display = 'none';
+  setTopBar('', '');
+}
+
+async function confirmDeleteTopic(id, name) {
+  if (!confirm(`Delete topic "${name}" and ALL its examples/problems?\nThis cannot be undone.`)) return;
+  try {
+    const res = await fetch(`/api/admin/topics/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(await res.text());
+    allTopics = allTopics.filter(t => t.id !== id);
+    if (activeTopic?.id === id) {
+      activeTopic = null;
+      document.getElementById('sectionTabs').style.display = 'none';
+      document.getElementById('contentArea').innerHTML =
+        '<div class="empty-state"><h3>Topic deleted</h3><p>Select another topic.</p></div>';
+      setTopBar('', '');
     }
+    renderTopicsSidebar();
+    toast('Topic deleted', 'success');
+  } catch(e) {
+    toast('Delete failed: ' + e.message, 'error');
   }
+}
 
-  function cancelNew() {
-    document.getElementById('contentArea').innerHTML =
-            '<div class="empty-state"><h3>Admin Panel</h3><p>Select a topic or create a new one.</p></div>';
-    document.getElementById('sectionTabs').style.display = 'none';
-    setTopBar('', '');
-  }
-
-  async function confirmDeleteTopic(id, name) {
-    if (!confirm(`Delete topic "${name}" and ALL its examples/problems?\nThis cannot be undone.`)) return;
-    try {
-      const res = await fetch(`/api/admin/topics/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(await res.text());
-      allTopics = allTopics.filter(t => t.id !== id);
-      if (activeTopic?.id === id) {
-        activeTopic = null;
-        document.getElementById('sectionTabs').style.display = 'none';
-        document.getElementById('contentArea').innerHTML =
-                '<div class="empty-state"><h3>Topic deleted</h3><p>Select another topic.</p></div>';
-        setTopBar('', '');
-      }
-      renderTopicsSidebar();
-      toast('Topic deleted', 'success');
-    } catch(e) {
-      toast('Delete failed: ' + e.message, 'error');
-    }
-  }
-
-  /* ══ EXAMPLES SECTION ══════════════════════════════════════════════════════════ */
-  async function renderExamplesSection() {
-    setTopBar(activeTopic.title + ' — Examples', `
+/* ══ EXAMPLES SECTION ══════════════════════════════════════════════════════════ */
+async function renderExamplesSection() {
+  setTopBar(activeTopic.title + ' — Examples', `
     <button class="btn-add-item" onclick="addExampleForm()">+ Add Example</button>
   `);
-    topicExamples = await fetchJson(`/api/topics/${activeTopic.id}/examples`);
-    renderExamplesList();
-  }
+  topicExamples = await fetchJson(`/api/topics/${activeTopic.id}/examples`);
+  renderExamplesList();
+}
 
-  function renderExamplesList() {
-    const area = document.getElementById('contentArea');
-    if (!topicExamples.length) {
-      area.innerHTML = `
+function renderExamplesList() {
+  const area = document.getElementById('contentArea');
+  if (!topicExamples.length) {
+    area.innerHTML = `
       <div class="empty-state">
         <h3>No examples yet</h3>
         <p>Click <strong>+ Add Example</strong> in the top bar.</p>
       </div>`;
-      return;
-    }
+    return;
+  }
 
-    area.innerHTML = topicExamples.map((ex, i) => `
+  area.innerHTML = topicExamples.map((ex, i) => `
     <div class="item-card" id="ex-card-${ex.id}">
       <div class="item-card-header" onclick="toggleCard('ex-body-${ex.id}','ex-tog-${ex.id}')">
         <span class="item-order">${ex.displayOrder ?? i+1}</span>
@@ -800,11 +901,11 @@
       </div>
     </div>
   `).join('') + `<div id="new-example-slot"></div>`;
-  }
+}
 
-  function exampleForm(ex) {
-    const id = ex.id || 'new';
-    return `
+function exampleForm(ex) {
+  const id = ex.id || 'new';
+  return `
     <div class="form-grid">
       <div class="field">
         <label>Title *</label>
@@ -833,45 +934,45 @@
     </div>
     <div class="form-actions">
       ${ex.id
-            ? `<button class="btn-save"   onclick="saveExample(${ex.id})">💾 Save</button>
+        ? `<button class="btn-save"   onclick="saveExample(${ex.id})">💾 Save</button>
            <button class="btn-delete" onclick="deleteExample(${ex.id})">🗑 Delete</button>`
-            : `<button class="btn-save"   onclick="createExample()">✚ Add Example</button>
+        : `<button class="btn-save"   onclick="createExample()">✚ Add Example</button>
            <button class="btn-cancel" onclick="cancelNewExample()">Cancel</button>`
-    }
+      }
     </div>
   `;
-  }
+}
 
-  async function saveExample(exId) {
-    const payload = buildExPayload(exId);
-    try {
-      const res = await fetch(`/api/admin/examples/${exId}`, {
-        method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const updated = await res.json();
-      const idx = topicExamples.findIndex(e => e.id === exId);
-      if (idx >= 0) topicExamples[idx] = updated;
-      toast('Example saved ✓', 'success');
-    } catch(e) { toast('Error: ' + e.message, 'error'); }
-  }
+async function saveExample(exId) {
+  const payload = buildExPayload(exId);
+  try {
+    const res = await fetch(`/api/admin/examples/${exId}`, {
+      method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const updated = await res.json();
+    const idx = topicExamples.findIndex(e => e.id === exId);
+    if (idx >= 0) topicExamples[idx] = updated;
+    toast('Example saved ✓', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
 
-  async function deleteExample(exId) {
-    if (!confirm('Delete this example?')) return;
-    try {
-      await fetch(`/api/admin/examples/${exId}`, { method: 'DELETE' });
-      topicExamples = topicExamples.filter(e => e.id !== exId);
-      toast('Example deleted', 'success');
-      renderExamplesList();
-    } catch(e) { toast('Error: ' + e.message, 'error'); }
-  }
+async function deleteExample(exId) {
+  if (!confirm('Delete this example?')) return;
+  try {
+    await fetch(`/api/admin/examples/${exId}`, { method: 'DELETE' });
+    topicExamples = topicExamples.filter(e => e.id !== exId);
+    toast('Example deleted', 'success');
+    renderExamplesList();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
 
-  function addExampleForm() {
-    // If new form already there, do nothing
-    if (document.getElementById('ef_title_new')) return;
-    const slot = document.getElementById('new-example-slot');
-    if (!slot) { renderExamplesList(); setTimeout(addExampleForm, 50); return; }
-    slot.innerHTML = `
+function addExampleForm() {
+  // If new form already there, do nothing
+  if (document.getElementById('ef_title_new')) return;
+  const slot = document.getElementById('new-example-slot');
+  if (!slot) { renderExamplesList(); setTimeout(addExampleForm, 50); return; }
+  slot.innerHTML = `
     <div class="item-card" style="border-color:var(--accent)">
       <div class="item-card-header">
         <span class="item-order" style="border-color:var(--accent);color:var(--accent)">NEW</span>
@@ -882,60 +983,60 @@
       </div>
     </div>
   `;
-    slot.scrollIntoView({ behavior: 'smooth' });
-  }
+  slot.scrollIntoView({ behavior: 'smooth' });
+}
 
-  async function createExample() {
-    const payload = buildExPayload('new');
-    if (!payload.title) { toast('Title is required', 'error'); return; }
-    try {
-      const res = await fetch(`/api/admin/topics/${activeTopic.id}/examples`, {
-        method: 'POST', headers: jsonH(), body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const created = await res.json();
-      topicExamples.push(created);
-      toast('Example added ✓', 'success');
-      renderExamplesList();
-    } catch(e) { toast('Error: ' + e.message, 'error'); }
-  }
+async function createExample() {
+  const payload = buildExPayload('new');
+  if (!payload.title) { toast('Title is required', 'error'); return; }
+  try {
+    const res = await fetch(`/api/admin/topics/${activeTopic.id}/examples`, {
+      method: 'POST', headers: jsonH(), body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const created = await res.json();
+    topicExamples.push(created);
+    toast('Example added ✓', 'success');
+    renderExamplesList();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
 
-  function cancelNewExample() {
-    const slot = document.getElementById('new-example-slot');
-    if (slot) slot.innerHTML = '';
-  }
+function cancelNewExample() {
+  const slot = document.getElementById('new-example-slot');
+  if (slot) slot.innerHTML = '';
+}
 
-  function buildExPayload(id) {
-    return {
-      title:        val(`ef_title_${id}`),
-      description:  val(`ef_desc_${id}`),
-      code:         val(`ef_code_${id}`),
-      explanation:  val(`ef_expl_${id}`),
-      realWorldUse: val(`ef_rw_${id}`),
-      displayOrder: parseInt(val(`ef_order_${id}`)) || 1,
-    };
-  }
+function buildExPayload(id) {
+  return {
+    title:        val(`ef_title_${id}`),
+    description:  val(`ef_desc_${id}`),
+    code:         val(`ef_code_${id}`),
+    explanation:  val(`ef_expl_${id}`),
+    realWorldUse: val(`ef_rw_${id}`),
+    displayOrder: parseInt(val(`ef_order_${id}`)) || 1,
+  };
+}
 
-  /* ══ PROBLEMS SECTION ══════════════════════════════════════════════════════════ */
-  async function renderProblemsSection() {
-    setTopBar(activeTopic.title + ' — Problems', `
+/* ══ PROBLEMS SECTION ══════════════════════════════════════════════════════════ */
+async function renderProblemsSection() {
+  setTopBar(activeTopic.title + ' — Problems', `
     <button class="btn-add-item" onclick="addProblemForm()">+ Add Problem</button>
   `);
-    topicProblems = await fetchJson(`/api/topics/${activeTopic.id}/problems`);
-    renderProblemsList();
-  }
+  topicProblems = await fetchJson(`/api/topics/${activeTopic.id}/problems`);
+  renderProblemsList();
+}
 
-  function renderProblemsList() {
-    const area = document.getElementById('contentArea');
-    if (!topicProblems.length) {
-      area.innerHTML = `
+function renderProblemsList() {
+  const area = document.getElementById('contentArea');
+  if (!topicProblems.length) {
+    area.innerHTML = `
       <div class="empty-state">
         <h3>No problems yet</h3>
         <p>Click <strong>+ Add Problem</strong> in the top bar.</p>
       </div>`;
-      return;
-    }
-    area.innerHTML = topicProblems.map((p, i) => `
+    return;
+  }
+  area.innerHTML = topicProblems.map((p, i) => `
     <div class="item-card" id="pr-card-${p.id}">
       <div class="item-card-header" onclick="toggleCard('pr-body-${p.id}','pr-tog-${p.id}')">
         <span class="item-order">${p.displayOrder ?? i+1}</span>
@@ -948,11 +1049,11 @@
       </div>
     </div>
   `).join('') + `<div id="new-problem-slot"></div>`;
-  }
+}
 
-  function problemForm(p) {
-    const id = p.id || 'new';
-    return `
+function problemForm(p) {
+  const id = p.id || 'new';
+  return `
     <div class="form-grid">
       <div class="field">
         <label>Title *</label>
@@ -1010,44 +1111,44 @@
     </div>
     <div class="form-actions">
       ${p.id
-            ? `<button class="btn-save"   onclick="saveProblem(${p.id})">💾 Save</button>
+        ? `<button class="btn-save"   onclick="saveProblem(${p.id})">💾 Save</button>
            <button class="btn-delete" onclick="deleteProblem(${p.id})">🗑 Delete</button>`
-            : `<button class="btn-save"   onclick="createProblem()">✚ Add Problem</button>
+        : `<button class="btn-save"   onclick="createProblem()">✚ Add Problem</button>
            <button class="btn-cancel" onclick="cancelNewProblem()">Cancel</button>`
-    }
+      }
     </div>
   `;
-  }
+}
 
-  async function saveProblem(pId) {
-    const payload = buildPrPayload(pId);
-    try {
-      const res = await fetch(`/api/admin/problems/${pId}`, {
-        method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const updated = await res.json();
-      const idx = topicProblems.findIndex(p => p.id === pId);
-      if (idx >= 0) topicProblems[idx] = updated;
-      toast('Problem saved ✓', 'success');
-    } catch(e) { toast('Error: ' + e.message, 'error'); }
-  }
+async function saveProblem(pId) {
+  const payload = buildPrPayload(pId);
+  try {
+    const res = await fetch(`/api/admin/problems/${pId}`, {
+      method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const updated = await res.json();
+    const idx = topicProblems.findIndex(p => p.id === pId);
+    if (idx >= 0) topicProblems[idx] = updated;
+    toast('Problem saved ✓', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
 
-  async function deleteProblem(pId) {
-    if (!confirm('Delete this problem?')) return;
-    try {
-      await fetch(`/api/admin/problems/${pId}`, { method: 'DELETE' });
-      topicProblems = topicProblems.filter(p => p.id !== pId);
-      toast('Problem deleted', 'success');
-      renderProblemsList();
-    } catch(e) { toast('Error: ' + e.message, 'error'); }
-  }
+async function deleteProblem(pId) {
+  if (!confirm('Delete this problem?')) return;
+  try {
+    await fetch(`/api/admin/problems/${pId}`, { method: 'DELETE' });
+    topicProblems = topicProblems.filter(p => p.id !== pId);
+    toast('Problem deleted', 'success');
+    renderProblemsList();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
 
-  function addProblemForm() {
-    if (document.getElementById('pf_title_new')) return;
-    const slot = document.getElementById('new-problem-slot');
-    if (!slot) { renderProblemsList(); setTimeout(addProblemForm, 50); return; }
-    slot.innerHTML = `
+function addProblemForm() {
+  if (document.getElementById('pf_title_new')) return;
+  const slot = document.getElementById('new-problem-slot');
+  if (!slot) { renderProblemsList(); setTimeout(addProblemForm, 50); return; }
+  slot.innerHTML = `
     <div class="item-card" style="border-color:var(--accent)">
       <div class="item-card-header">
         <span class="item-order" style="border-color:var(--accent);color:var(--accent)">NEW</span>
@@ -1058,90 +1159,90 @@
       </div>
     </div>
   `;
-    slot.scrollIntoView({ behavior: 'smooth' });
-  }
+  slot.scrollIntoView({ behavior: 'smooth' });
+}
 
-  async function createProblem() {
-    const payload = buildPrPayload('new');
-    if (!payload.title) { toast('Title is required', 'error'); return; }
-    try {
-      const res = await fetch(`/api/admin/topics/${activeTopic.id}/problems`, {
-        method: 'POST', headers: jsonH(), body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const created = await res.json();
-      topicProblems.push(created);
-      toast('Problem added ✓', 'success');
-      renderProblemsList();
-    } catch(e) { toast('Error: ' + e.message, 'error'); }
-  }
+async function createProblem() {
+  const payload = buildPrPayload('new');
+  if (!payload.title) { toast('Title is required', 'error'); return; }
+  try {
+    const res = await fetch(`/api/admin/topics/${activeTopic.id}/problems`, {
+      method: 'POST', headers: jsonH(), body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const created = await res.json();
+    topicProblems.push(created);
+    toast('Problem added ✓', 'success');
+    renderProblemsList();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
 
-  function cancelNewProblem() {
-    const slot = document.getElementById('new-problem-slot');
-    if (slot) slot.innerHTML = '';
-  }
+function cancelNewProblem() {
+  const slot = document.getElementById('new-problem-slot');
+  if (slot) slot.innerHTML = '';
+}
 
-  function buildPrPayload(id) {
-    return {
-      title:        val(`pf_title_${id}`),
-      difficulty:   val(`pf_diff_${id}`),
-      displayOrder: parseInt(val(`pf_order_${id}`)) || 1,
-      description:  val(`pf_desc_${id}`),
-      inputFormat:  val(`pf_infmt_${id}`),
-      outputFormat: val(`pf_outfmt_${id}`),
-      sampleInput:  val(`pf_sin_${id}`),
-      sampleOutput: val(`pf_sout_${id}`),
-      testCases:    val(`pf_tests_${id}`),
-      hint:         val(`pf_hint_${id}`),
-      starterCode:  val(`pf_starter_${id}`),
-      solutionCode: val(`pf_solution_${id}`),
-    };
-  }
+function buildPrPayload(id) {
+  return {
+    title:        val(`pf_title_${id}`),
+    difficulty:   val(`pf_diff_${id}`),
+    displayOrder: parseInt(val(`pf_order_${id}`)) || 1,
+    description:  val(`pf_desc_${id}`),
+    inputFormat:  val(`pf_infmt_${id}`),
+    outputFormat: val(`pf_outfmt_${id}`),
+    sampleInput:  val(`pf_sin_${id}`),
+    sampleOutput: val(`pf_sout_${id}`),
+    testCases:    val(`pf_tests_${id}`),
+    hint:         val(`pf_hint_${id}`),
+    starterCode:  val(`pf_starter_${id}`),
+    solutionCode: val(`pf_solution_${id}`),
+  };
+}
 
-  /* ══ UI HELPERS ════════════════════════════════════════════════════════════════ */
-  function setTopBar(title, actionsHtml) {
-    document.getElementById('topBar').innerHTML = title
-            ? `<h2>${esc(title)}</h2>${actionsHtml}`
-            : `<span class="top-bar-placeholder">← Select a topic</span>`;
-  }
+/* ══ UI HELPERS ════════════════════════════════════════════════════════════════ */
+function setTopBar(title, actionsHtml) {
+  document.getElementById('topBar').innerHTML = title
+    ? `<h2>${esc(title)}</h2>${actionsHtml}`
+    : `<span class="top-bar-placeholder">← Select a topic</span>`;
+}
 
-  function toggleCard(bodyId, togId) {
-    const body = document.getElementById(bodyId);
-    const tog  = document.getElementById(togId);
-    if (!body) return;
-    const open = body.classList.toggle('open');
-    tog?.classList.toggle('open', open);
-  }
+function toggleCard(bodyId, togId) {
+  const body = document.getElementById(bodyId);
+  const tog  = document.getElementById(togId);
+  if (!body) return;
+  const open = body.classList.toggle('open');
+  tog?.classList.toggle('open', open);
+}
 
-  function catClass(cat) {
-    return { DSA:'cat-dsa', JAVA:'cat-java', ADVANCED_JAVA:'cat-adv', MYSQL:'cat-mysql', AWS:'cat-aws' }[cat] || 'cat-dsa';
-  }
-  function catLabel(cat) {
-    return { DSA:'DSA', JAVA:'Java', ADVANCED_JAVA:'Adv', MYSQL:'MySQL', AWS:'AWS' }[cat] || cat;
-  }
+function catClass(cat) {
+  return { DSA:'cat-dsa', JAVA:'cat-java', ADVANCED_JAVA:'cat-adv', MYSQL:'cat-mysql', AWS:'cat-aws' }[cat] || 'cat-dsa';
+}
+function catLabel(cat) {
+  return { DSA:'DSA', JAVA:'Java', ADVANCED_JAVA:'Adv', MYSQL:'MySQL', AWS:'AWS' }[cat] || cat;
+}
 
-  function toast(msg, type = 'success') {
-    const el = document.getElementById('toast');
-    el.textContent = msg;
-    el.className   = `show ${type}`;
-    clearTimeout(el._t);
-    el._t = setTimeout(() => { el.className = type; }, 2800);
-  }
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = `show ${type}`;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = type; }, 2800);
+}
 
-  function val(id) {
-    const el = document.getElementById(id);
-    return el ? el.value.trim() : '';
-  }
-  function esc(s) {
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
-            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-  function jsonH() { return { 'Content-Type': 'application/json' }; }
-  async function fetchJson(url) {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Fetch failed: ' + url);
-    return res.json();
-  }
+function val(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function jsonH() { return { 'Content-Type': 'application/json' }; }
+async function fetchJson(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Fetch failed: ' + url);
+  return res.json();
+}
 </script>
 
 <!-- ═══ SEED / IMPORT MODAL ══════════════════════════════════════════════ -->
@@ -1222,81 +1323,81 @@
 </div>
 
 <script>
-  // ══════════════════════════════════════════════════════════════════════════
-  //  SEED PANEL LOGIC
-  // ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════
+//  SEED PANEL LOGIC
+// ══════════════════════════════════════════════════════════════════════════
 
-  let seedFileData = null; // parsed JSON from the uploaded file
+let seedFileData = null; // parsed JSON from the uploaded file
 
-  // ── Open / Close ──────────────────────────────────────────────────────────
-  function openSeedPanel() {
-    document.getElementById('seedOverlay').classList.remove('hidden');
-    resetSeedPanel();
-  }
+// ── Open / Close ──────────────────────────────────────────────────────────
+function openSeedPanel() {
+  document.getElementById('seedOverlay').classList.remove('hidden');
+  resetSeedPanel();
+}
 
-  function closeSeedPanel() {
-    document.getElementById('seedOverlay').classList.add('hidden');
-  }
+function closeSeedPanel() {
+  document.getElementById('seedOverlay').classList.add('hidden');
+}
 
-  function resetSeedPanel() {
-    seedFileData = null;
-    document.getElementById('dropZone').classList.remove('has-file');
-    document.getElementById('fileName').textContent = 'No file selected';
-    document.getElementById('seedFileInput').value = '';
-    document.getElementById('seedPreview').classList.remove('visible');
-    document.getElementById('seedProgress').classList.remove('visible');
-    document.getElementById('progressLog').innerHTML = '';
-    document.getElementById('progressFill').style.width = '0%';
-    document.getElementById('seedResult').classList.remove('visible','success','error');
-    document.getElementById('btnSeedRun').disabled = true;
-    document.getElementById('optClearFirst').checked = false;
-  }
+function resetSeedPanel() {
+  seedFileData = null;
+  document.getElementById('dropZone').classList.remove('has-file');
+  document.getElementById('fileName').textContent = 'No file selected';
+  document.getElementById('seedFileInput').value = '';
+  document.getElementById('seedPreview').classList.remove('visible');
+  document.getElementById('seedProgress').classList.remove('visible');
+  document.getElementById('progressLog').innerHTML = '';
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('seedResult').classList.remove('visible','success','error');
+  document.getElementById('btnSeedRun').disabled = true;
+  document.getElementById('optClearFirst').checked = false;
+}
 
-  // ── File Selection ────────────────────────────────────────────────────────
-  function onFileSelected(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    handleFile(file);
-  }
+// ── File Selection ────────────────────────────────────────────────────────
+function onFileSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  handleFile(file);
+}
 
-  // Drag & Drop
-  const dropZone = document.getElementById('dropZone');
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file && file.name.endsWith('.json')) handleFile(file);
-    else toast('Please drop a .json file', 'error');
-  });
+// Drag & Drop
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.json')) handleFile(file);
+  else toast('Please drop a .json file', 'error');
+});
 
-  function handleFile(file) {
-    const reader = new FileReader();
-    reader.onload = ev => {
-      try {
-        seedFileData = JSON.parse(ev.target.result);
-        showPreview(file.name, seedFileData);
-        document.getElementById('dropZone').classList.add('has-file');
-        document.getElementById('fileName').textContent = '✓ ' + file.name;
-        document.getElementById('btnSeedRun').disabled = false;
-        logLine(`Loaded: ${file.name} (${(file.size/1024).toFixed(1)} KB)`, 'info');
-      } catch(err) {
-        toast('Invalid JSON file: ' + err.message, 'error');
-      }
-    };
-    reader.readAsText(file);
-  }
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      seedFileData = JSON.parse(ev.target.result);
+      showPreview(file.name, seedFileData);
+      document.getElementById('dropZone').classList.add('has-file');
+      document.getElementById('fileName').textContent = '✓ ' + file.name;
+      document.getElementById('btnSeedRun').disabled = false;
+      logLine(`Loaded: ${file.name} (${(file.size/1024).toFixed(1)} KB)`, 'info');
+    } catch(err) {
+      toast('Invalid JSON file: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
 
-  // ── Preview ───────────────────────────────────────────────────────────────
-  function showPreview(fileName, data) {
-    const topics  = data.topics || [];
-    const examples = topics.reduce((s,t) => s + (t.examples?.length || 0), 0);
-    const problems = topics.reduce((s,t) => s + (t.problems?.length || 0), 0);
-    const cats    = [...new Set(topics.map(t => t.category))];
+// ── Preview ───────────────────────────────────────────────────────────────
+function showPreview(fileName, data) {
+  const topics  = data.topics || [];
+  const examples = topics.reduce((s,t) => s + (t.examples?.length || 0), 0);
+  const problems = topics.reduce((s,t) => s + (t.problems?.length || 0), 0);
+  const cats    = [...new Set(topics.map(t => t.category))];
 
-    // Stats row
-    document.getElementById('previewStats').innerHTML = `
+  // Stats row
+  document.getElementById('previewStats').innerHTML = `
     <div class="prev-stat"><span class="prev-num">${topics.length}</span><span class="prev-lbl">Topics</span></div>
     <div class="prev-stat"><span class="prev-num">${examples}</span><span class="prev-lbl">Examples</span></div>
     <div class="prev-stat"><span class="prev-num">${problems}</span><span class="prev-lbl">Problems</span></div>
@@ -1304,12 +1405,12 @@
     ${data.batchName ? `<div class="prev-stat" style="min-width:200px"><span class="prev-num" style="font-size:12px;color:var(--blue)">${esc(data.batchName)}</span><span class="prev-lbl">Batch</span></div>` : ''}
   `;
 
-    // Topic list
-    const catColors = {
-      DSA:'var(--blue)', JAVA:'var(--yellow)', ADVANCED_JAVA:'var(--purple)',
-      MYSQL:'#fb923c', AWS:'var(--red)'
-    };
-    document.getElementById('previewTopics').innerHTML = topics.map((t,i) => `
+  // Topic list
+  const catColors = {
+    DSA:'var(--blue)', JAVA:'var(--yellow)', ADVANCED_JAVA:'var(--purple)',
+    MYSQL:'#fb923c', AWS:'var(--red)'
+  };
+  document.getElementById('previewTopics').innerHTML = topics.map((t,i) => `
     <div class="preview-topic-row">
       <span style="font-size:10px;color:var(--text3);width:20px;text-align:right;flex-shrink:0">${i+1}</span>
       <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;
@@ -1320,141 +1421,141 @@
     </div>
   `).join('');
 
-    document.getElementById('seedPreview').classList.add('visible');
-  }
+  document.getElementById('seedPreview').classList.add('visible');
+}
 
-  // ── Run Seed ──────────────────────────────────────────────────────────────
-  async function runSeed() {
-    if (!seedFileData) { toast('No file selected', 'error'); return; }
+// ── Run Seed ──────────────────────────────────────────────────────────────
+async function runSeed() {
+  if (!seedFileData) { toast('No file selected', 'error'); return; }
 
-    const btn      = document.getElementById('btnSeedRun');
-    const clearFirst = document.getElementById('optClearFirst').checked;
-    const skipExisting = document.getElementById('optSkipExisting').checked;
+  const btn      = document.getElementById('btnSeedRun');
+  const clearFirst = document.getElementById('optClearFirst').checked;
+  const skipExisting = document.getElementById('optSkipExisting').checked;
 
-    btn.disabled = true;
-    btn.innerHTML = '⏳ Importing…';
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Importing…';
 
-    // Show progress
-    document.getElementById('seedProgress').classList.add('visible');
-    document.getElementById('seedResult').classList.remove('visible','success','error');
-    document.getElementById('progressFill').style.width = '10%';
+  // Show progress
+  document.getElementById('seedProgress').classList.add('visible');
+  document.getElementById('seedResult').classList.remove('visible','success','error');
+  document.getElementById('progressFill').style.width = '10%';
 
-    try {
-      // Step 1: optionally clear all data
-      if (clearFirst) {
-        logLine('🗑 Clearing all existing data…', 'info');
-        const clr = await fetch('/api/admin/seed-batch/clear', { method: 'DELETE' });
-        if (!clr.ok) throw new Error('Clear failed: ' + clr.status);
-        logLine('✓ All data cleared', 'ok');
-        document.getElementById('progressFill').style.width = '25%';
-      }
-
-      // Step 2: post the batch
-      logLine(`📤 Uploading ${seedFileData.topics?.length || 0} topics…`, 'info');
-      document.getElementById('progressFill').style.width = '40%';
-
-      const payload = {
-        ...seedFileData,
-        skipExisting
-      };
-
-      const res = await fetch('/api/admin/seed-batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      document.getElementById('progressFill').style.width = '85%';
-
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`Server error ${res.status}: ${txt}`);
-      }
-
-      const result = await res.json();
-      document.getElementById('progressFill').style.width = '100%';
-
-      // Log result
-      logLine(`✓ Seeded ${result.topicsSeeded} topics`, 'ok');
-      logLine(`✓ ${result.examplesSeeded} examples, ${result.problemsSeeded} problems`, 'ok');
-      if (result.topicsSkipped > 0) logLine(`⚠ Skipped ${result.topicsSkipped} existing topics`, 'info');
-      if (result.errors?.length) result.errors.forEach(e => logLine('✕ ' + e, 'err'));
-
-      // Show result card
-      showResult(result);
-      toast('Import complete! ' + result.topicsSeeded + ' topics loaded ✓', 'success');
-
-      // Reload sidebar
-      loadTopics();
-
-    } catch(err) {
-      document.getElementById('progressFill').style.width = '100%';
-      document.getElementById('progressFill').style.background = 'var(--red)';
-      logLine('✕ Error: ' + err.message, 'err');
-      showResultError(err.message);
-      toast('Import failed: ' + err.message, 'error');
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = '⬆ Import Now';
+  try {
+    // Step 1: optionally clear all data
+    if (clearFirst) {
+      logLine('🗑 Clearing all existing data…', 'info');
+      const clr = await fetch('/api/admin/seed-batch/clear', { method: 'DELETE' });
+      if (!clr.ok) throw new Error('Clear failed: ' + clr.status);
+      logLine('✓ All data cleared', 'ok');
+      document.getElementById('progressFill').style.width = '25%';
     }
-  }
 
-  function showResult(r) {
-    const el = document.getElementById('seedResult');
-    el.className = 'seed-result visible ' + (r.success ? 'success' : 'error');
-    document.getElementById('resultTitle').innerHTML =
-            r.success ? '✅ Import Successful' : '⚠ Import completed with errors';
-    document.getElementById('resultStats').innerHTML = `
+    // Step 2: post the batch
+    logLine(`📤 Uploading ${seedFileData.topics?.length || 0} topics…`, 'info');
+    document.getElementById('progressFill').style.width = '40%';
+
+    const payload = {
+      ...seedFileData,
+      skipExisting
+    };
+
+    const res = await fetch('/api/admin/seed-batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    document.getElementById('progressFill').style.width = '85%';
+
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`Server error ${res.status}: ${txt}`);
+    }
+
+    const result = await res.json();
+    document.getElementById('progressFill').style.width = '100%';
+
+    // Log result
+    logLine(`✓ Seeded ${result.topicsSeeded} topics`, 'ok');
+    logLine(`✓ ${result.examplesSeeded} examples, ${result.problemsSeeded} problems`, 'ok');
+    if (result.topicsSkipped > 0) logLine(`⚠ Skipped ${result.topicsSkipped} existing topics`, 'info');
+    if (result.errors?.length) result.errors.forEach(e => logLine('✕ ' + e, 'err'));
+
+    // Show result card
+    showResult(result);
+    toast('Import complete! ' + result.topicsSeeded + ' topics loaded ✓', 'success');
+
+    // Reload sidebar
+    loadAllTopics();
+
+  } catch(err) {
+    document.getElementById('progressFill').style.width = '100%';
+    document.getElementById('progressFill').style.background = 'var(--red)';
+    logLine('✕ Error: ' + err.message, 'err');
+    showResultError(err.message);
+    toast('Import failed: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '⬆ Import Now';
+  }
+}
+
+function showResult(r) {
+  const el = document.getElementById('seedResult');
+  el.className = 'seed-result visible ' + (r.success ? 'success' : 'error');
+  document.getElementById('resultTitle').innerHTML =
+    r.success ? '✅ Import Successful' : '⚠ Import completed with errors';
+  document.getElementById('resultStats').innerHTML = `
     <span style="color:var(--accent)">Topics seeded: ${r.topicsSeeded}</span>
     <span style="color:var(--text2)">Skipped: ${r.topicsSkipped}</span>
     <span style="color:var(--blue)">Examples: ${r.examplesSeeded}</span>
     <span style="color:var(--purple)">Problems: ${r.problemsSeeded}</span>
   `;
-    const errs = r.errors || [];
-    document.getElementById('resultErrors').innerHTML =
-            errs.length ? errs.map(e => `<div>• ${esc(e)}</div>`).join('') : '';
+  const errs = r.errors || [];
+  document.getElementById('resultErrors').innerHTML =
+    errs.length ? errs.map(e => `<div>• ${esc(e)}</div>`).join('') : '';
+}
+
+function showResultError(msg) {
+  const el = document.getElementById('seedResult');
+  el.className = 'seed-result visible error';
+  document.getElementById('resultTitle').textContent = '✕ Import Failed';
+  document.getElementById('resultStats').innerHTML = '';
+  document.getElementById('resultErrors').innerHTML = `<div>${esc(msg)}</div>`;
+}
+
+function logLine(msg, type = '') {
+  const log = document.getElementById('progressLog');
+  const div = document.createElement('div');
+  div.className = 'log-line' + (type ? ' log-' + type : '');
+  div.textContent = new Date().toLocaleTimeString() + '  ' + msg;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ── Clear All ─────────────────────────────────────────────────────────────
+async function clearAllData() {
+  if (!confirm('⚠ This will DELETE all topics, examples, and problems from the database.\n\nAre you absolutely sure?')) return;
+  if (!confirm('Second confirmation: this cannot be undone. Proceed?')) return;
+
+  try {
+    logLine('🗑 Clearing all data…', 'info');
+    document.getElementById('seedProgress').classList.add('visible');
+    document.getElementById('progressFill').style.width = '50%';
+
+    const res = await fetch('/api/admin/seed-batch/clear', { method: 'DELETE' });
+    if (!res.ok) throw new Error('Clear failed: ' + res.status);
+
+    document.getElementById('progressFill').style.width = '100%';
+    logLine('✓ All data cleared successfully', 'ok');
+    toast('All data cleared', 'success');
+    loadAllTopics();
+    resetSeedPanel();
+  } catch(err) {
+    logLine('✕ ' + err.message, 'err');
+    toast('Clear failed: ' + err.message, 'error');
   }
-
-  function showResultError(msg) {
-    const el = document.getElementById('seedResult');
-    el.className = 'seed-result visible error';
-    document.getElementById('resultTitle').textContent = '✕ Import Failed';
-    document.getElementById('resultStats').innerHTML = '';
-    document.getElementById('resultErrors').innerHTML = `<div>${esc(msg)}</div>`;
-  }
-
-  function logLine(msg, type = '') {
-    const log = document.getElementById('progressLog');
-    const div = document.createElement('div');
-    div.className = 'log-line' + (type ? ' log-' + type : '');
-    div.textContent = new Date().toLocaleTimeString() + '  ' + msg;
-    log.appendChild(div);
-    log.scrollTop = log.scrollHeight;
-  }
-
-  // ── Clear All ─────────────────────────────────────────────────────────────
-  async function clearAllData() {
-    if (!confirm('⚠ This will DELETE all topics, examples, and problems from the database.\n\nAre you absolutely sure?')) return;
-    if (!confirm('Second confirmation: this cannot be undone. Proceed?')) return;
-
-    try {
-      logLine('🗑 Clearing all data…', 'info');
-      document.getElementById('seedProgress').classList.add('visible');
-      document.getElementById('progressFill').style.width = '50%';
-
-      const res = await fetch('/api/admin/seed-batch/clear', { method: 'DELETE' });
-      if (!res.ok) throw new Error('Clear failed: ' + res.status);
-
-      document.getElementById('progressFill').style.width = '100%';
-      logLine('✓ All data cleared successfully', 'ok');
-      toast('All data cleared', 'success');
-      loadTopics();
-      resetSeedPanel();
-    } catch(err) {
-      logLine('✕ ' + err.message, 'err');
-      toast('Clear failed: ' + err.message, 'error');
-    }
-  }
+}
 </script>
 
 </body>

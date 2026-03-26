@@ -172,9 +172,9 @@ function bindOutputTabs() {
 
 function switchOutputTab(name) {
   document.querySelectorAll('.lc-out-tab').forEach(b =>
-      b.classList.toggle('active', b.dataset.out === name));
+    b.classList.toggle('active', b.dataset.out === name));
   document.querySelectorAll('.lc-out-panel').forEach(p =>
-      p.classList.toggle('hidden', p.id !== `out-${name}`));
+    p.classList.toggle('hidden', p.id !== `out-${name}`));
 }
 
 // ── Java Version Selector helper ─────────────────────────────────────────────
@@ -234,7 +234,7 @@ async function analyzeAndRenderComplexity(code) {
     const r = await API.analyzeComplexity(code);
     const confColor = { HIGH: 'var(--accent)', MEDIUM: 'var(--yellow)', LOW: 'var(--text3)' }[r.confidence] || 'var(--text3)';
     const patternTags = (r.detectedPatterns || []).map(p =>
-        `<span class="complexity-tag">${escHtml(p)}</span>`).join('');
+      `<span class="complexity-tag">${escHtml(p)}</span>`).join('');
 
     panel.innerHTML = `
       <div class="complexity-cards">
@@ -381,9 +381,9 @@ function showTopicView(topic) {
   const badge = document.getElementById('topicCategoryBadge');
   badge.textContent = tagLabel(topic.category);
   const catSuffix = topic.category === 'ADVANCED_JAVA' ? 'adv'
-      : topic.category === 'MYSQL' ? 'mysql'
-          : topic.category === 'AWS'   ? 'aws'
-              : topic.category.toLowerCase();
+                  : topic.category === 'MYSQL' ? 'mysql'
+                  : topic.category === 'AWS'   ? 'aws'
+                  : topic.category.toLowerCase();
   badge.className = `topic-category-badge badge-${catSuffix}`;
 
   const complexity = document.getElementById('topicComplexity');
@@ -539,7 +539,7 @@ function loadOptimize() {
   setOptContent('optOptimizedContent', currentTopic.optimizedApproach || 'N/A');
   setOptContent('optWhenContent',      currentTopic.whenToUse        || 'N/A');
   setOptContent('optComplexityContent',
-      `<strong style="color:var(--accent)">Time:</strong> ${currentTopic.timeComplexity || 'N/A'}<br>
+    `<strong style="color:var(--accent)">Time:</strong> ${currentTopic.timeComplexity || 'N/A'}<br>
      <strong style="color:var(--blue)">Space:</strong> ${currentTopic.spaceComplexity || 'N/A'}`);
 }
 
@@ -664,17 +664,125 @@ function showPracticeResult(result, loading) {
 // ── Utils ─────────────────────────────────────────────────────────────────────
 function escHtml(str) {
   return String(str)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Trace tab: auto-select algorithm dropdown based on topic title ─────────────
+// ── Trace tab: auto-select algorithm and show/hide no-trace message ──────────
+const TRACE_MAP = [
+  // DSA
+  [['binary search'],                        'BINARY_SEARCH'],
+  [['sliding window'],                       'SLIDING_WINDOW'],
+  [['two pointer'],                          'TWO_POINTER'],
+  [['linear search'],                        'LINEAR_SEARCH'],
+  [['bubble sort'],                          'BUBBLE_SORT'],
+  [['selection sort'],                       'SELECTION_SORT'],
+  [['insertion sort'],                       'INSERTION_SORT'],
+  [['fibonacci'],                            'FIBONACCI'],
+  [['factorial'],                            'FACTORIAL'],
+  [['prefix sum'],                           'PREFIX_SUM'],
+  [['two sum','hashing','hashmap'],          'TWO_SUM_HASH'],
+  [['stack'],                                'STACK_OPS'],
+  [['queue','deque'],                        'QUEUE_OPS'],
+  // Java Basics — map to conceptually closest trace
+  [['recursion'],                            'FIBONACCI'],
+  [['loops','for','while'],                  'FACTORIAL'],
+  [['arrays'],                               'BUBBLE_SORT'],
+  [['sorting'],                              'INSERTION_SORT'],
+  [['java basics','variables','operators',
+     'control flow','methods','strings',
+     'classes','inheritance','polymorphism',
+     'abstraction','encapsulation','solid',
+     'exception','generics','streams','lambda',
+     'multithreading','executors','completable',
+     'jvm','design pattern','collections',
+     'trees','graphs','backtrack','greedy',
+     'dynamic','union','topolog','trie',
+     'shortest','monoton','heaps'],         null],  // no trace
+];
+
+// Topics that have no matching trace algorithm
+const NO_TRACE_TOPICS = [
+  'classes','objects','oop','inheritance','polymorphism','abstraction',
+  'interface','encapsulation','solid','exception','generics','streams',
+  'lambda','functional','optional','multithreading','synchroni','executor',
+  'completable','jvm','garbage','reflection','design pattern',
+  'trees','graphs','backtrack','greedy','dynamic programming',
+  'union find','topological','trie','shortest path','monotonic',
+  'heaps','priority queue','linked list','bit manipulation','math',
+];
+
 function syncTraceAlgo(title) {
   if (!title) return;
   const key = title.toLowerCase();
   const sel = document.getElementById('traceAlgo');
+  const noTraceEl = document.getElementById('noTraceMsg');
   if (!sel) return;
-  if (key.includes('binary'))   sel.value = 'BINARY_SEARCH';
-  else if (key.includes('sliding') || key.includes('window')) sel.value = 'SLIDING_WINDOW';
-  else if (key.includes('two') || key.includes('pointer'))    sel.value = 'TWO_POINTER';
+
+  // Check if this topic has no trace support
+  const hasNoTrace = NO_TRACE_TOPICS.some(kw => key.includes(kw));
+  if (hasNoTrace) {
+    showNoTraceMessage(title);
+    return;
+  }
+
+  // Find best match
+  let matched = null;
+  for (const [keywords, algo] of TRACE_MAP) {
+    for (const kw of keywords) {
+      if (key.includes(kw)) { matched = algo; break; }
+    }
+    if (matched !== undefined) break;
+  }
+
+  if (matched === null) {
+    showNoTraceMessage(title);
+  } else if (matched) {
+    hideNoTraceMessage();
+    sel.value = matched;
+    // Auto-run the trace with default values
+    setTimeout(() => Tracer.run(), 100);
+  }
+}
+
+function showNoTraceMessage(title) {
+  const traceControls = document.querySelector('.trace-controls');
+  let msg = document.getElementById('noTraceMsg');
+  if (!msg) {
+    msg = document.createElement('div');
+    msg.id = 'noTraceMsg';
+    msg.style.cssText = [
+      'margin:24px auto;max-width:500px;padding:24px;text-align:center',
+      'border:1px solid var(--border2);border-radius:10px;background:var(--bg2)',
+    ].join(';');
+    traceControls?.parentNode?.insertBefore(msg, traceControls.nextSibling);
+  }
+  msg.innerHTML = \`
+    <div style="font-size:28px;margin-bottom:10px">🔍</div>
+    <div style="font-size:14px;font-weight:700;margin-bottom:6px">\${escHtml(title)}</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">
+      This topic does not have a step-by-step tracer yet.<br>
+      Topics with tracers: Binary Search, Sorting, Two Pointer,<br>
+      Sliding Window, Two Sum, Stack, Queue, Fibonacci, Factorial, Prefix Sum.
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button onclick="hideNoTraceMessage();document.getElementById('traceAlgo').value='BINARY_SEARCH';Tracer.run()"
+        style="padding:6px 14px;background:var(--adim);color:var(--accent);border:1px solid rgba(74,222,128,.3);border-radius:6px;font-family:var(--font-ui);font-size:12px;font-weight:700;cursor:pointer">
+        ▶ Try Binary Search Trace
+      </button>
+      <button onclick="hideNoTraceMessage();document.getElementById('traceAlgo').value='TWO_SUM_HASH';Tracer.run()"
+        style="padding:6px 14px;background:var(--bg3);color:var(--text2);border:1px solid var(--border2);border-radius:6px;font-family:var(--font-ui);font-size:12px;font-weight:600;cursor:pointer">
+        Try Two Sum Trace
+      </button>
+    </div>
+  \`;
+  msg.style.display = 'block';
+  if (traceControls) traceControls.style.display = 'none';
+}
+
+function hideNoTraceMessage() {
+  const msg = document.getElementById('noTraceMsg');
+  if (msg) msg.style.display = 'none';
+  const traceControls = document.querySelector('.trace-controls');
+  if (traceControls) traceControls.style.display = '';
 }

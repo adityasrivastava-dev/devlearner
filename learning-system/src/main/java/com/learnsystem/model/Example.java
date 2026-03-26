@@ -1,5 +1,6 @@
 package com.learnsystem.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,29 +13,30 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class Example {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@Id
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "topic_id", nullable = false)
-    private Topic topic;
+// @JsonIgnore prevents Example → Topic → Examples → ... loop
+@JsonIgnore
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "topic_id", nullable = false)
+private Topic topic;
 
-    @Column(nullable = false)
-    private String title;
+@Column(name = "display_order")
+private Integer displayOrder;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
+private String title;
 
-    @Column(columnDefinition = "TEXT")
-    private String code;
+@Column(columnDefinition = "TEXT")
+private String description;
 
-    @Column(columnDefinition = "TEXT")
-    private String explanation;
+@Column(columnDefinition = "TEXT")
+private String code;
 
-    @Column(name = "real_world_use", columnDefinition = "TEXT")
-    private String realWorldUse;
+@Column(columnDefinition = "TEXT")
+private String explanation;
 
-    @Column(name = "display_order")
-    private Integer displayOrder;
+@Column(name = "real_world_use")
+private String realWorldUse;
 }

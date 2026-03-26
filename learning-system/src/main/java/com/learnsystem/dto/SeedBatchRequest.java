@@ -2,7 +2,7 @@ package com.learnsystem.dto;
 
 import lombok.Data;
 import java.util.List;
-
+import com.fasterxml.jackson.databind.JsonNode;
 /**
  * JSON structure for batch-seeding topics via POST /api/admin/seed-batch
  * One file = one batch = many topics.
@@ -54,7 +54,7 @@ public class SeedBatchRequest {
         private String outputFormat;
         private String sampleInput;
         private String sampleOutput;
-        private String testCases;       // JSON string: [{input,expectedOutput}]
+        private JsonNode testCases;       // JSON string: [{input,expectedOutput}]
         private String difficulty;      // EASY | MEDIUM | HARD
         private String hint;
         private String starterCode;

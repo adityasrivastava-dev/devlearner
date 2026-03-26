@@ -118,9 +118,29 @@
     <div class="tab-panel hidden" id="tab-trace">
       <div class="trace-controls">
         <select id="traceAlgo" class="trace-select">
-          <option value="BINARY_SEARCH">Binary Search</option>
-          <option value="SLIDING_WINDOW">Sliding Window</option>
-          <option value="TWO_POINTER">Two Pointer</option>
+          <optgroup label="── Search ──">
+            <option value="BINARY_SEARCH">Binary Search</option>
+            <option value="LINEAR_SEARCH">Linear Search</option>
+          </optgroup>
+          <optgroup label="── Sorting ──">
+            <option value="BUBBLE_SORT">Bubble Sort</option>
+            <option value="SELECTION_SORT">Selection Sort</option>
+            <option value="INSERTION_SORT">Insertion Sort</option>
+          </optgroup>
+          <optgroup label="── Array Patterns ──">
+            <option value="TWO_POINTER">Two Pointer</option>
+            <option value="SLIDING_WINDOW">Sliding Window</option>
+            <option value="PREFIX_SUM">Prefix Sum</option>
+            <option value="TWO_SUM_HASH">Two Sum (HashMap)</option>
+          </optgroup>
+          <optgroup label="── Data Structures ──">
+            <option value="STACK_OPS">Stack Operations</option>
+            <option value="QUEUE_OPS">Queue Operations</option>
+          </optgroup>
+          <optgroup label="── Recursion / Math ──">
+            <option value="FIBONACCI">Fibonacci</option>
+            <option value="FACTORIAL">Factorial</option>
+          </optgroup>
         </select>
         <input type="text"   id="traceArray"  placeholder="Array: 1 3 5 7 9 11 13" />
         <input type="number" id="traceTarget" placeholder="Target / k" />
