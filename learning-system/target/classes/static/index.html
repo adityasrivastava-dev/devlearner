@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DevLearn — Java & DSA Learning System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <span class="logo">⟨dev<span>learn</span>⟩</span>
+    <a href="/admin.html" style="font-size:11px;color:var(--text3);text-decoration:none;padding:3px 8px;border:1px solid var(--border2);border-radius:5px;font-family:var(--font-ui);font-weight:600;transition:.15s"
+       onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">⚙ Admin</a>
+  </div>
+
+  <div class="category-tabs">
+    <button class="cat-btn active" data-cat="ALL">All</button>
+    <button class="cat-btn" data-cat="DSA">DSA</button>
+    <button class="cat-btn" data-cat="JAVA">Java</button>
+    <button class="cat-btn" data-cat="ADVANCED_JAVA">Adv Java</button>
+  </div>
+
+  <div class="search-box">
+    <input type="text" id="topicSearch" placeholder="🔍  Search topics…" />
+  </div>
+
+  <ul class="topic-list" id="topicList">
+    <li class="loading-item">Loading topics…</li>
+  </ul>
+</aside>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════════════════════════════ -->
+<main class="main-content" id="mainContent">
+
+  <!-- Welcome / empty state -->
+  <div class="welcome-screen" id="welcomeScreen">
+    <div class="welcome-inner">
+      <h1>⟨devlearn⟩</h1>
+      <p>Select a topic from the sidebar to begin.</p>
+      <div class="welcome-tags">
+        <span>Binary Search</span><span>Sliding Window</span>
+        <span>HashMap</span><span>Two Pointer</span>
+        <span>LRU Cache</span><span>Thread Pool</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Topic view (hidden until topic selected) -->
+  <div class="topic-view" id="topicView" style="display:none">
+
+    <!-- Header -->
+    <div class="topic-header">
+      <div class="topic-meta">
+        <span class="topic-category-badge" id="topicCategoryBadge">DSA</span>
+        <span class="topic-complexity" id="topicComplexity"></span>
+      </div>
+      <h2 id="topicTitle">Binary Search</h2>
+      <p id="topicDesc"></p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="visual">📊 Visual</button>
+      <button class="tab-btn" data-tab="flowchart">🗺 Flowchart</button>
+      <button class="tab-btn" data-tab="trace">🔍 Trace</button>
+      <button class="tab-btn" data-tab="examples">💡 Examples</button>
+      <button class="tab-btn" data-tab="code">⌨️ Code</button>
+      <button class="tab-btn" data-tab="practice">🎯 Practice</button>
+      <button class="tab-btn" data-tab="optimize">⚡ Optimize</button>
+    </div>
+
+    <!-- ── TAB: VISUAL ─────────────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-visual">
+      <div class="visual-controls">
+        <div class="visual-inputs">
+          <input type="text" id="vizArray" placeholder="Array: 1 3 5 7 9 11 13" />
+          <input type="number" id="vizTarget" placeholder="Target: 7" />
+        </div>
+        <div class="visual-btns">
+          <button id="vizRunBtn" class="btn btn-primary">▶ Run</button>
+          <button id="vizPrevBtn" class="btn btn-ghost" disabled>‹ Prev</button>
+          <button id="vizNextBtn" class="btn btn-ghost" disabled>Next ›</button>
+          <button id="vizAutoBtn" class="btn btn-ghost" disabled>⏵ Auto</button>
+        </div>
+        <span class="step-counter" id="stepCounter"></span>
+      </div>
+
+      <div class="canvas-container">
+        <canvas id="vizCanvas"></canvas>
+      </div>
+
+      <div class="step-description" id="stepDescription">
+        Configure the array and target above, then press Run.
+      </div>
+    </div>
+
+    <!-- ── TAB: FLOWCHART ────────────────────────────────────────────────── -->
+    <div class="tab-panel hidden" id="tab-flowchart">
+      <div class="flowchart-container" id="flowchartContainer">
+        <p class="muted" style="padding:40px;text-align:center">Select a topic to see its flowchart.</p>
+      </div>
+    </div>
+
+    <!-- ── TAB: TRACE ────────────────────────────────────────────────────── -->
+    <div class="tab-panel hidden" id="tab-trace">
+      <div class="trace-controls">
+        <select id="traceAlgo" class="trace-select">
+          <option value="BINARY_SEARCH">Binary Search</option>
+          <option value="SLIDING_WINDOW">Sliding Window</option>
+          <option value="TWO_POINTER">Two Pointer</option>
+        </select>
+        <input type="text"   id="traceArray"  placeholder="Array: 1 3 5 7 9 11 13" />
+        <input type="number" id="traceTarget" placeholder="Target / k" />
+        <button id="traceRunBtn"  class="btn btn-primary">▶ Run Trace</button>
+        <button id="tracePrevBtn" class="btn btn-ghost" disabled>‹ Prev</button>
+        <button id="traceNextBtn" class="btn btn-ghost" disabled>Next ›</button>
+        <button id="traceAutoBtn" class="btn btn-ghost" disabled>⏵ Auto</button>
+        <span   id="traceCounter" class="step-counter"></span>
+      </div>
+
+      <div class="trace-layout">
+        <!-- Left: code with highlighted line -->
+        <div class="trace-code-pane">
+          <div class="trace-pane-header">
+            <span class="trace-pane-label">📄 Code Execution</span>
+            <span class="trace-pane-sub">Active line highlighted in real-time</span>
+          </div>
+          <pre id="traceCodePanel" class="trace-code-block">Press ▶ Run Trace to begin.</pre>
+        </div>
+
+        <!-- Right: variable state table -->
+        <div class="trace-vars-pane">
+          <div class="trace-pane-header">
+            <span class="trace-pane-label">📦 Variable State</span>
+            <span class="trace-pane-sub">Changed variables glow on each step</span>
+          </div>
+          <div id="traceVarsPanel" class="trace-vars-box">
+            <p class="trace-vars-empty">Variables will appear here as code runs.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step description bar -->
+      <div id="traceDescPanel" class="trace-desc">
+        <span class="trace-desc-text">Configure above and press ▶ Run Trace.</span>
+      </div>
+    </div>
+    <div class="tab-panel hidden" id="tab-examples">
+      <div class="examples-grid" id="examplesGrid">
+        <p class="loading-text">Loading examples…</p>
+      </div>
+    </div>
+
+    <!-- ── TAB: CODE ──────────────────────────────────────────────────── -->
+    <div class="tab-panel hidden" id="tab-code">
+      <div class="editor-layout">
+        <div class="editor-pane">
+          <div class="editor-toolbar">
+            <span class="editor-label">Main.java</span>
+            <button id="runBtn" class="btn btn-primary btn-sm">▶ Run</button>
+            <button id="resetBtn" class="btn btn-ghost btn-sm">↺ Reset</button>
+          </div>
+          <div id="monacoEditor" style="height:420px; border-radius:0 0 8px 8px;"></div>
+        </div>
+        <div class="output-pane">
+          <div class="output-toolbar">
+            <span class="editor-label">Output</span>
+            <span class="exec-time" id="execTime"></span>
+          </div>
+          <pre id="outputBox" class="output-box">// Press Run to execute your code</pre>
+        </div>
+      </div>
+      <div class="stdin-row">
+        <label>stdin (optional):</label>
+        <input type="text" id="stdinInput" placeholder="Enter program input here…" />
+      </div>
+    </div>
+
+    <!-- ── TAB: PRACTICE ──────────────────────────────────────────────── -->
+    <div class="tab-panel hidden" id="tab-practice">
+      <div class="practice-layout">
+        <!-- Problem list -->
+        <div class="problem-list-panel" id="problemListPanel">
+          <h3>Problems</h3>
+          <ul id="problemList"></ul>
+        </div>
+        <!-- Problem detail + editor -->
+        <div class="problem-detail-panel" id="problemDetailPanel">
+          <div id="problemStatement">
+            <p class="muted">Select a problem from the list →</p>
+          </div>
+          <div class="editor-toolbar" style="margin-top:16px">
+            <span class="editor-label" id="practiceFileName">Solution.java</span>
+            <button id="practiceRunBtn" class="btn btn-ghost btn-sm">▶ Run</button>
+            <button id="practiceSubmitBtn" class="btn btn-primary btn-sm">⬆ Submit</button>
+          </div>
+          <div id="practiceEditor" style="height:340px; border-radius:0 0 8px 8px;"></div>
+          <div id="practiceResults" class="practice-results hidden"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB: OPTIMIZE ──────────────────────────────────────────────── -->
+    <div class="tab-panel hidden" id="tab-optimize">
+      <div class="optimize-grid">
+        <div class="opt-card" id="optBrute">
+          <h3>🐌 Brute Force</h3>
+          <div id="optBruteContent"></div>
+        </div>
+        <div class="opt-card highlight" id="optOptimized">
+          <h3>⚡ Optimized</h3>
+          <div id="optOptimizedContent"></div>
+        </div>
+        <div class="opt-card" id="optWhen">
+          <h3>🎯 When to Use</h3>
+          <div id="optWhenContent"></div>
+        </div>
+        <div class="opt-card" id="optComplexity">
+          <h3>📈 Complexity</h3>
+          <div id="optComplexityContent"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /topic-view -->
+</main>
+
+<!-- Mermaid for flowcharts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: false, theme: 'dark', darkMode: true,
+  themeVariables: { background: '#13161b', primaryColor: '#1a1e25',
+    primaryTextColor: '#e2e8f0', lineColor: '#4ade80', edgeLabelBackground: '#13161b' }
+});</script>
+<!-- Monaco Editor CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/visualizer.js"></script>
+<script src="/js/tracer.js"></script>
+<script src="/js/flowchart.js"></script>
+<script src="/js/editor.js"></script>
+</body>
+</html>

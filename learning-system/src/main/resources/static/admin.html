@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DevLearn Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ══ RESET & BASE ══════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0f12;
+      --bg2:       #13161b;
+      --bg3:       #1a1e25;
+      --border:    #252930;
+      --border2:   #2e333d;
+      --text:      #e2e8f0;
+      --text2:     #8892a4;
+      --text3:     #505a6b;
+      --accent:    #4ade80;
+      --accent2:   #22c55e;
+      --adim:      rgba(74,222,128,.1);
+      --red:       #f87171;
+      --yellow:    #fbbf24;
+      --blue:      #60a5fa;
+      --purple:    #a78bfa;
+      --r:         8px;
+      --mono:      'JetBrains Mono', monospace;
+      --sans:      'Syne', sans-serif;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.6; }
+
+    /* ══ LAYOUT ══════════════════════════════════════════════════════════ */
+    .shell { display: grid; grid-template-columns: 280px 1fr; height: 100vh; overflow: hidden; }
+
+    /* ══ SIDEBAR ═════════════════════════════════════════════════════════ */
+    .sidebar {
+      background: var(--bg2); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .sidebar-top {
+      padding: 18px 16px 14px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { font-size: 16px; font-weight: 800; letter-spacing: -.5px; }
+    .logo span { color: var(--accent); }
+    .logo small { font-size: 10px; font-weight: 600; color: var(--text3);
+      background: var(--bg3); border: 1px solid var(--border2);
+      padding: 2px 7px; border-radius: 4px; margin-left: 8px; }
+    .back-link {
+      font-size: 11px; color: var(--text2); text-decoration: none;
+      padding: 4px 8px; border: 1px solid var(--border2); border-radius: 5px;
+      transition: .15s;
+    }
+    .back-link:hover { color: var(--text); border-color: var(--text3); }
+
+    .add-topic-btn {
+      margin: 12px; padding: 9px 14px; background: var(--accent); color: #0a1208;
+      border: none; border-radius: var(--r); font-family: var(--sans); font-size: 13px;
+      font-weight: 700; cursor: pointer; width: calc(100% - 24px); transition: .15s;
+    }
+    .add-topic-btn:hover { background: var(--accent2); }
+
+    .topics-list { flex: 1; overflow-y: auto; padding: 0 8px 16px; }
+    .topics-list::-webkit-scrollbar { width: 4px; }
+    .topics-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+    .topic-row {
+      display: flex; align-items: center; gap: 6px; padding: 8px 10px;
+      border-radius: 6px; cursor: pointer; transition: .15s; margin-bottom: 2px;
+    }
+    .topic-row:hover { background: var(--bg3); }
+    .topic-row.active { background: var(--adim); border-left: 2px solid var(--accent); padding-left: 8px; }
+    .topic-row-name { flex: 1; font-size: 13px; font-weight: 600; }
+    .topic-row.active .topic-row-name { color: var(--accent); }
+    .topic-row-cat {
+      font-size: 9px; font-weight: 700; letter-spacing: .5px;
+      padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
+    }
+    .cat-dsa  { background: rgba(96,165,250,.15); color: var(--blue); }
+    .cat-java { background: rgba(251,191,36,.12);  color: var(--yellow); }
+    .cat-adv  { background: rgba(167,139,250,.12); color: var(--purple); }
+    .topic-row-del {
+      opacity: 0; background: none; border: none; color: var(--red);
+      cursor: pointer; font-size: 14px; padding: 2px 4px; transition: .15s;
+    }
+    .topic-row:hover .topic-row-del { opacity: 1; }
+
+    /* ══ MAIN ════════════════════════════════════════════════════════════ */
+    .main { display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Top bar */
+    .top-bar {
+      padding: 14px 24px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px; background: var(--bg2);
+      min-height: 56px;
+    }
+    .top-bar h2 { font-size: 18px; font-weight: 800; flex: 1; }
+    .top-bar-placeholder { color: var(--text3); font-size: 14px; flex: 1; }
+
+    /* Section tabs */
+    .section-tabs {
+      display: flex; border-bottom: 1px solid var(--border); background: var(--bg2);
+    }
+    .sec-tab {
+      padding: 9px 20px; background: none; border: none; border-bottom: 2px solid transparent;
+      color: var(--text2); font-family: var(--sans); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: .15s;
+    }
+    .sec-tab:hover { color: var(--text); }
+    .sec-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* Content area */
+    .content-area { flex: 1; overflow-y: auto; padding: 24px; }
+    .content-area::-webkit-scrollbar { width: 5px; }
+    .content-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 80px 40px; color: var(--text3); }
+    .empty-state h3 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+
+    /* ══ FORMS ════════════════════════════════════════════════════════════ */
+    .form-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 22px 24px; margin-bottom: 20px;
+    }
+    .form-card h3 {
+      font-size: 14px; font-weight: 700; margin-bottom: 18px;
+      color: var(--accent); text-transform: uppercase; letter-spacing: .6px;
+    }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .form-full { grid-column: 1 / -1; }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; }
+    .field input, .field select, .field textarea {
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 6px; padding: 8px 12px; color: var(--text);
+      font-family: var(--sans); font-size: 13px; outline: none; transition: .15s;
+      width: 100%;
+    }
+    .field textarea {
+      font-family: var(--mono); font-size: 12px; resize: vertical; min-height: 90px;
+    }
+    .field textarea.tall { min-height: 150px; }
+    .field textarea.code { min-height: 180px; background: #0d0f12; color: var(--accent); }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--accent);
+    }
+    .field select option { background: var(--bg3); }
+
+    .form-actions { display: flex; gap: 10px; margin-top: 18px; }
+    .btn-save {
+      padding: 9px 22px; background: var(--accent); color: #0a1208;
+      border: none; border-radius: 6px; font-family: var(--sans); font-size: 13px;
+      font-weight: 700; cursor: pointer; transition: .15s;
+    }
+    .btn-save:hover { background: var(--accent2); }
+    .btn-cancel {
+      padding: 9px 18px; background: var(--bg3); color: var(--text2);
+      border: 1px solid var(--border2); border-radius: 6px; font-family: var(--sans);
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: .15s;
+    }
+    .btn-cancel:hover { color: var(--text); }
+    .btn-delete {
+      padding: 9px 18px; background: rgba(248,113,113,.1); color: var(--red);
+      border: 1px solid rgba(248,113,113,.2); border-radius: 6px; font-family: var(--sans);
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: .15s; margin-left: auto;
+    }
+    .btn-delete:hover { background: rgba(248,113,113,.2); }
+
+    /* ══ ITEM CARDS ══════════════════════════════════════════════════════ */
+    .items-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+    }
+    .items-header h3 { font-size: 15px; font-weight: 700; }
+    .btn-add-item {
+      padding: 7px 16px; background: var(--adim); color: var(--accent);
+      border: 1px solid rgba(74,222,128,.3); border-radius: 6px; font-family: var(--sans);
+      font-size: 12px; font-weight: 700; cursor: pointer; transition: .15s;
+    }
+    .btn-add-item:hover { background: rgba(74,222,128,.18); }
+
+    .item-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r);
+      margin-bottom: 10px; overflow: hidden;
+    }
+    .item-card-header {
+      display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+      cursor: pointer; user-select: none;
+    }
+    .item-card-header:hover { background: var(--bg3); }
+    .item-order {
+      width: 24px; height: 24px; background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 5px; display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: var(--text3); flex-shrink: 0;
+    }
+    .item-title { flex: 1; font-size: 13px; font-weight: 600; }
+    .item-badge {
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+    }
+    .diff-easy   { background: rgba(74,222,128,.15); color: var(--accent); }
+    .diff-medium { background: rgba(251,191,36,.12);  color: var(--yellow); }
+    .diff-hard   { background: rgba(248,113,113,.12); color: var(--red); }
+    .item-toggle { color: var(--text3); font-size: 12px; transition: transform .2s; }
+    .item-toggle.open { transform: rotate(180deg); }
+    .item-card-body { display: none; border-top: 1px solid var(--border); padding: 18px 20px; }
+    .item-card-body.open { display: block; }
+
+    /* ══ TOAST ═══════════════════════════════════════════════════════════ */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; padding: 10px 18px;
+      border-radius: 8px; font-size: 13px; font-weight: 600;
+      opacity: 0; transform: translateY(8px);
+      transition: opacity .3s, transform .3s; pointer-events: none; z-index: 999;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.success { background: var(--adim); color: var(--accent); border: 1px solid rgba(74,222,128,.3); }
+    #toast.error   { background: rgba(248,113,113,.1); color: var(--red); border: 1px solid rgba(248,113,113,.3); }
+
+    /* ══ UTILITY ══════════════════════════════════════════════════════════ */
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+    .muted { color: var(--text3); font-size: 13px; }
+    .hint-text { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  </style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ═══ SIDEBAR ═══════════════════════════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="logo">⟨dev<span>learn</span>⟩ <small>ADMIN</small></div>
+      <a href="/" class="back-link">← App</a>
+    </div>
+
+    <button class="add-topic-btn" onclick="openNewTopic()">+ New Topic</button>
+
+    <div class="topics-list" id="topicsList">
+      <p class="muted" style="padding:12px">Loading topics…</p>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══════════════════════════════════════════════════════════════ -->
+  <div class="main">
+
+    <!-- Top bar -->
+    <div class="top-bar" id="topBar">
+      <span class="top-bar-placeholder">← Select a topic or create a new one</span>
+    </div>
+
+    <!-- Section tabs (hidden until topic selected) -->
+    <div class="section-tabs" id="sectionTabs" style="display:none">
+      <button class="sec-tab active" data-sec="topic"    onclick="switchSection('topic')">📋 Topic Info</button>
+      <button class="sec-tab"        data-sec="examples" onclick="switchSection('examples')">💡 Examples</button>
+      <button class="sec-tab"        data-sec="problems" onclick="switchSection('problems')">🎯 Problems</button>
+    </div>
+
+    <!-- Content -->
+    <div class="content-area" id="contentArea">
+      <div class="empty-state">
+        <h3>Admin Panel</h3>
+        <p>Select a topic from the sidebar to edit it,<br>or click <strong>+ New Topic</strong> to create one.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════════
+   ADMIN STATE
+══════════════════════════════════════════════════════════════════════════════ */
+let allTopics    = [];
+let activeTopic  = null;
+let activeSection = 'topic';
+let topicExamples = [];
+let topicProblems = [];
+
+/* ══ BOOT ═════════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', loadAllTopics);
+
+async function loadAllTopics() {
+  try {
+    const res = await fetch('/api/topics');
+    allTopics = await res.json();
+    renderTopicsSidebar();
+  } catch(e) {
+    document.getElementById('topicsList').innerHTML =
+      '<p class="muted" style="padding:12px">⚠ Cannot reach server</p>';
+  }
+}
+
+function renderTopicsSidebar() {
+  const el = document.getElementById('topicsList');
+  if (!allTopics.length) {
+    el.innerHTML = '<p class="muted" style="padding:12px">No topics yet. Create one!</p>';
+    return;
+  }
+  el.innerHTML = allTopics.map(t => `
+    <div class="topic-row ${activeTopic?.id === t.id ? 'active' : ''}"
+         onclick="selectTopic(${t.id})">
+      <span class="topic-row-name">${t.title}</span>
+      <span class="topic-row-cat ${catClass(t.category)}">${catLabel(t.category)}</span>
+      <button class="topic-row-del" title="Delete topic"
+        onclick="event.stopPropagation(); confirmDeleteTopic(${t.id}, '${esc(t.title)}')">✕</button>
+    </div>
+  `).join('');
+}
+
+/* ══ SELECT TOPIC ══════════════════════════════════════════════════════════════ */
+async function selectTopic(id) {
+  activeTopic = allTopics.find(t => t.id === id) || null;
+  if (!activeTopic) return;
+  renderTopicsSidebar();
+  document.getElementById('sectionTabs').style.display = 'flex';
+  activeSection = 'topic';
+  document.querySelectorAll('.sec-tab').forEach(b =>
+    b.classList.toggle('active', b.dataset.sec === 'topic'));
+  await renderTopicSection();
+}
+
+/* ══ SECTIONS ═════════════════════════════════════════════════════════════════ */
+async function switchSection(sec) {
+  activeSection = sec;
+  document.querySelectorAll('.sec-tab').forEach(b =>
+    b.classList.toggle('active', b.dataset.sec === sec));
+
+  if (sec === 'topic')    await renderTopicSection();
+  if (sec === 'examples') await renderExamplesSection();
+  if (sec === 'problems') await renderProblemsSection();
+}
+
+/* ══ TOPIC INFO SECTION ════════════════════════════════════════════════════════ */
+async function renderTopicSection() {
+  const t = activeTopic;
+  setTopBar(t.title, `
+    <button class="btn-save" onclick="saveTopic()">💾 Save Topic</button>
+  `);
+
+  document.getElementById('contentArea').innerHTML = `
+    <form id="topicForm">
+      <div class="form-card">
+        <h3>Basic Info</h3>
+        <div class="form-grid">
+          <div class="field">
+            <label>Title *</label>
+            <input id="f_title" value="${esc(t.title)}" placeholder="e.g. Binary Search" required/>
+          </div>
+          <div class="field">
+            <label>Category *</label>
+            <select id="f_category">
+              <option value="DSA"           ${t.category==='DSA'?'selected':''}>DSA</option>
+              <option value="JAVA"          ${t.category==='JAVA'?'selected':''}>Java</option>
+              <option value="ADVANCED_JAVA" ${t.category==='ADVANCED_JAVA'?'selected':''}>Advanced Java</option>
+            </select>
+          </div>
+          <div class="field form-full">
+            <label>Description</label>
+            <textarea id="f_description" rows="2">${esc(t.description||'')}</textarea>
+          </div>
+          <div class="field form-full">
+            <label>Content (theory / explanation)</label>
+            <textarea id="f_content" class="tall">${esc(t.content||'')}</textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <h3>Complexity</h3>
+        <div class="form-grid">
+          <div class="field">
+            <label>Time Complexity</label>
+            <input id="f_time" value="${esc(t.timeComplexity||'')}" placeholder="O(log n)"/>
+          </div>
+          <div class="field">
+            <label>Space Complexity</label>
+            <input id="f_space" value="${esc(t.spaceComplexity||'')}" placeholder="O(1)"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <h3>Optimization Guide</h3>
+        <div class="form-grid">
+          <div class="field">
+            <label>Brute Force Approach</label>
+            <textarea id="f_brute">${esc(t.bruteForce||'')}</textarea>
+          </div>
+          <div class="field">
+            <label>Optimized Approach</label>
+            <textarea id="f_optimized">${esc(t.optimizedApproach||'')}</textarea>
+          </div>
+          <div class="field form-full">
+            <label>When to Use</label>
+            <textarea id="f_when">${esc(t.whenToUse||'')}</textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <h3>Starter Code</h3>
+        <div class="field">
+          <label>Default code loaded in the editor for this topic</label>
+          <textarea id="f_starter" class="code tall">${esc(t.starterCode||'')}</textarea>
+        </div>
+      </div>
+    </form>
+  `;
+}
+
+async function saveTopic() {
+  if (!activeTopic) return;
+  const payload = buildTopicPayload();
+  try {
+    const res = await fetch(`/api/admin/topics/${activeTopic.id}`, {
+      method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    activeTopic = await res.json();
+    const idx = allTopics.findIndex(t => t.id === activeTopic.id);
+    if (idx >= 0) allTopics[idx] = activeTopic;
+    renderTopicsSidebar();
+    toast('Topic saved ✓', 'success');
+  } catch(e) {
+    toast('Save failed: ' + e.message, 'error');
+  }
+}
+
+function buildTopicPayload() {
+  return {
+    title:             val('f_title'),
+    category:          val('f_category'),
+    description:       val('f_description'),
+    content:           val('f_content'),
+    timeComplexity:    val('f_time'),
+    spaceComplexity:   val('f_space'),
+    bruteForce:        val('f_brute'),
+    optimizedApproach: val('f_optimized'),
+    whenToUse:         val('f_when'),
+    starterCode:       val('f_starter'),
+  };
+}
+
+/* ══ NEW TOPIC ═════════════════════════════════════════════════════════════════ */
+function openNewTopic() {
+  activeTopic = null;
+  document.querySelectorAll('.topic-row').forEach(r => r.classList.remove('active'));
+  document.getElementById('sectionTabs').style.display = 'none';
+  setTopBar('New Topic', '');
+
+  document.getElementById('contentArea').innerHTML = `
+    <div class="form-card">
+      <h3>Create Topic</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label>Title *</label>
+          <input id="nt_title" placeholder="e.g. Two Pointer" required/>
+        </div>
+        <div class="field">
+          <label>Category *</label>
+          <select id="nt_category">
+            <option value="DSA">DSA</option>
+            <option value="JAVA">Java</option>
+            <option value="ADVANCED_JAVA">Advanced Java</option>
+          </select>
+        </div>
+        <div class="field form-full">
+          <label>Description</label>
+          <textarea id="nt_description" rows="2" placeholder="One-line summary of what this topic covers"></textarea>
+        </div>
+        <div class="field form-full">
+          <label>Content (theory)</label>
+          <textarea id="nt_content" class="tall" placeholder="Detailed explanation, how it works, key concepts…"></textarea>
+        </div>
+        <div class="field">
+          <label>Time Complexity</label>
+          <input id="nt_time" placeholder="O(n)"/>
+        </div>
+        <div class="field">
+          <label>Space Complexity</label>
+          <input id="nt_space" placeholder="O(1)"/>
+        </div>
+        <div class="field">
+          <label>Brute Force</label>
+          <textarea id="nt_brute" placeholder="Naive approach description…"></textarea>
+        </div>
+        <div class="field">
+          <label>Optimized Approach</label>
+          <textarea id="nt_optimized" placeholder="Better solution description…"></textarea>
+        </div>
+        <div class="field form-full">
+          <label>When to Use</label>
+          <textarea id="nt_when" placeholder="Use when: array is sorted, need fast lookup…"></textarea>
+        </div>
+        <div class="field form-full">
+          <label>Starter Code (shown in editor)</label>
+          <textarea id="nt_starter" class="code tall" placeholder="public class Main {\n    public static void main(String[] args) {\n        // TODO\n    }\n}"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-save" onclick="createTopic()">✚ Create Topic</button>
+        <button class="btn-cancel" onclick="cancelNew()">Cancel</button>
+      </div>
+    </div>
+  `;
+}
+
+async function createTopic() {
+  const payload = {
+    title:             val('nt_title'),
+    category:          val('nt_category'),
+    description:       val('nt_description'),
+    content:           val('nt_content'),
+    timeComplexity:    val('nt_time'),
+    spaceComplexity:   val('nt_space'),
+    bruteForce:        val('nt_brute'),
+    optimizedApproach: val('nt_optimized'),
+    whenToUse:         val('nt_when'),
+    starterCode:       val('nt_starter'),
+  };
+  if (!payload.title) { toast('Title is required', 'error'); return; }
+  try {
+    const res = await fetch('/api/admin/topics', {
+      method: 'POST', headers: jsonH(), body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const created = await res.json();
+    allTopics.push(created);
+    renderTopicsSidebar();
+    toast('Topic created ✓', 'success');
+    selectTopic(created.id);
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
+function cancelNew() {
+  document.getElementById('contentArea').innerHTML =
+    '<div class="empty-state"><h3>Admin Panel</h3><p>Select a topic or create a new one.</p></div>';
+  document.getElementById('sectionTabs').style.display = 'none';
+  setTopBar('', '');
+}
+
+async function confirmDeleteTopic(id, name) {
+  if (!confirm(`Delete topic "${name}" and ALL its examples/problems?\nThis cannot be undone.`)) return;
+  try {
+    const res = await fetch(`/api/admin/topics/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(await res.text());
+    allTopics = allTopics.filter(t => t.id !== id);
+    if (activeTopic?.id === id) {
+      activeTopic = null;
+      document.getElementById('sectionTabs').style.display = 'none';
+      document.getElementById('contentArea').innerHTML =
+        '<div class="empty-state"><h3>Topic deleted</h3><p>Select another topic.</p></div>';
+      setTopBar('', '');
+    }
+    renderTopicsSidebar();
+    toast('Topic deleted', 'success');
+  } catch(e) {
+    toast('Delete failed: ' + e.message, 'error');
+  }
+}
+
+/* ══ EXAMPLES SECTION ══════════════════════════════════════════════════════════ */
+async function renderExamplesSection() {
+  setTopBar(activeTopic.title + ' — Examples', `
+    <button class="btn-add-item" onclick="addExampleForm()">+ Add Example</button>
+  `);
+  topicExamples = await fetchJson(`/api/topics/${activeTopic.id}/examples`);
+  renderExamplesList();
+}
+
+function renderExamplesList() {
+  const area = document.getElementById('contentArea');
+  if (!topicExamples.length) {
+    area.innerHTML = `
+      <div class="empty-state">
+        <h3>No examples yet</h3>
+        <p>Click <strong>+ Add Example</strong> in the top bar.</p>
+      </div>`;
+    return;
+  }
+
+  area.innerHTML = topicExamples.map((ex, i) => `
+    <div class="item-card" id="ex-card-${ex.id}">
+      <div class="item-card-header" onclick="toggleCard('ex-body-${ex.id}','ex-tog-${ex.id}')">
+        <span class="item-order">${ex.displayOrder ?? i+1}</span>
+        <span class="item-title">${esc(ex.title)}</span>
+        <span class="item-toggle" id="ex-tog-${ex.id}">▼</span>
+      </div>
+      <div class="item-card-body" id="ex-body-${ex.id}">
+        ${exampleForm(ex)}
+      </div>
+    </div>
+  `).join('') + `<div id="new-example-slot"></div>`;
+}
+
+function exampleForm(ex) {
+  const id = ex.id || 'new';
+  return `
+    <div class="form-grid">
+      <div class="field">
+        <label>Title *</label>
+        <input id="ef_title_${id}" value="${esc(ex.title||'')}" placeholder="e.g. Basic Search"/>
+      </div>
+      <div class="field">
+        <label>Display Order</label>
+        <input type="number" id="ef_order_${id}" value="${ex.displayOrder||1}" min="1"/>
+      </div>
+      <div class="field form-full">
+        <label>Description</label>
+        <textarea id="ef_desc_${id}" rows="2">${esc(ex.description||'')}</textarea>
+      </div>
+      <div class="field form-full">
+        <label>Code</label>
+        <textarea id="ef_code_${id}" class="code">${esc(ex.code||'')}</textarea>
+      </div>
+      <div class="field">
+        <label>Insight / Explanation</label>
+        <textarea id="ef_expl_${id}">${esc(ex.explanation||'')}</textarea>
+      </div>
+      <div class="field">
+        <label>Real World Use</label>
+        <input id="ef_rw_${id}" value="${esc(ex.realWorldUse||'')}" placeholder="e.g. Database index lookup"/>
+      </div>
+    </div>
+    <div class="form-actions">
+      ${ex.id
+        ? `<button class="btn-save"   onclick="saveExample(${ex.id})">💾 Save</button>
+           <button class="btn-delete" onclick="deleteExample(${ex.id})">🗑 Delete</button>`
+        : `<button class="btn-save"   onclick="createExample()">✚ Add Example</button>
+           <button class="btn-cancel" onclick="cancelNewExample()">Cancel</button>`
+      }
+    </div>
+  `;
+}
+
+async function saveExample(exId) {
+  const payload = buildExPayload(exId);
+  try {
+    const res = await fetch(`/api/admin/examples/${exId}`, {
+      method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const updated = await res.json();
+    const idx = topicExamples.findIndex(e => e.id === exId);
+    if (idx >= 0) topicExamples[idx] = updated;
+    toast('Example saved ✓', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+async function deleteExample(exId) {
+  if (!confirm('Delete this example?')) return;
+  try {
+    await fetch(`/api/admin/examples/${exId}`, { method: 'DELETE' });
+    topicExamples = topicExamples.filter(e => e.id !== exId);
+    toast('Example deleted', 'success');
+    renderExamplesList();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+function addExampleForm() {
+  // If new form already there, do nothing
+  if (document.getElementById('ef_title_new')) return;
+  const slot = document.getElementById('new-example-slot');
+  if (!slot) { renderExamplesList(); setTimeout(addExampleForm, 50); return; }
+  slot.innerHTML = `
+    <div class="item-card" style="border-color:var(--accent)">
+      <div class="item-card-header">
+        <span class="item-order" style="border-color:var(--accent);color:var(--accent)">NEW</span>
+        <span class="item-title" style="color:var(--accent)">New Example</span>
+      </div>
+      <div class="item-card-body open">
+        ${exampleForm({})}
+      </div>
+    </div>
+  `;
+  slot.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function createExample() {
+  const payload = buildExPayload('new');
+  if (!payload.title) { toast('Title is required', 'error'); return; }
+  try {
+    const res = await fetch(`/api/admin/topics/${activeTopic.id}/examples`, {
+      method: 'POST', headers: jsonH(), body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const created = await res.json();
+    topicExamples.push(created);
+    toast('Example added ✓', 'success');
+    renderExamplesList();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+function cancelNewExample() {
+  const slot = document.getElementById('new-example-slot');
+  if (slot) slot.innerHTML = '';
+}
+
+function buildExPayload(id) {
+  return {
+    title:        val(`ef_title_${id}`),
+    description:  val(`ef_desc_${id}`),
+    code:         val(`ef_code_${id}`),
+    explanation:  val(`ef_expl_${id}`),
+    realWorldUse: val(`ef_rw_${id}`),
+    displayOrder: parseInt(val(`ef_order_${id}`)) || 1,
+  };
+}
+
+/* ══ PROBLEMS SECTION ══════════════════════════════════════════════════════════ */
+async function renderProblemsSection() {
+  setTopBar(activeTopic.title + ' — Problems', `
+    <button class="btn-add-item" onclick="addProblemForm()">+ Add Problem</button>
+  `);
+  topicProblems = await fetchJson(`/api/topics/${activeTopic.id}/problems`);
+  renderProblemsList();
+}
+
+function renderProblemsList() {
+  const area = document.getElementById('contentArea');
+  if (!topicProblems.length) {
+    area.innerHTML = `
+      <div class="empty-state">
+        <h3>No problems yet</h3>
+        <p>Click <strong>+ Add Problem</strong> in the top bar.</p>
+      </div>`;
+    return;
+  }
+  area.innerHTML = topicProblems.map((p, i) => `
+    <div class="item-card" id="pr-card-${p.id}">
+      <div class="item-card-header" onclick="toggleCard('pr-body-${p.id}','pr-tog-${p.id}')">
+        <span class="item-order">${p.displayOrder ?? i+1}</span>
+        <span class="item-title">${esc(p.title)}</span>
+        <span class="item-badge diff-${p.difficulty?.toLowerCase()}">${p.difficulty}</span>
+        <span class="item-toggle" id="pr-tog-${p.id}">▼</span>
+      </div>
+      <div class="item-card-body" id="pr-body-${p.id}">
+        ${problemForm(p)}
+      </div>
+    </div>
+  `).join('') + `<div id="new-problem-slot"></div>`;
+}
+
+function problemForm(p) {
+  const id = p.id || 'new';
+  return `
+    <div class="form-grid">
+      <div class="field">
+        <label>Title *</label>
+        <input id="pf_title_${id}" value="${esc(p.title||'')}" placeholder="e.g. Classic Binary Search"/>
+      </div>
+      <div class="field">
+        <label>Difficulty *</label>
+        <select id="pf_diff_${id}">
+          <option value="EASY"   ${p.difficulty==='EASY'?'selected':''}>Easy</option>
+          <option value="MEDIUM" ${p.difficulty==='MEDIUM'?'selected':''}>Medium</option>
+          <option value="HARD"   ${p.difficulty==='HARD'?'selected':''}>Hard</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Display Order</label>
+        <input type="number" id="pf_order_${id}" value="${p.displayOrder||1}" min="1"/>
+      </div>
+      <div class="field form-full">
+        <label>Problem Description *</label>
+        <textarea id="pf_desc_${id}" class="tall">${esc(p.description||'')}</textarea>
+      </div>
+      <div class="field">
+        <label>Input Format</label>
+        <textarea id="pf_infmt_${id}">${esc(p.inputFormat||'')}</textarea>
+      </div>
+      <div class="field">
+        <label>Output Format</label>
+        <textarea id="pf_outfmt_${id}">${esc(p.outputFormat||'')}</textarea>
+      </div>
+      <div class="field">
+        <label>Sample Input</label>
+        <textarea id="pf_sin_${id}" class="code">${esc(p.sampleInput||'')}</textarea>
+      </div>
+      <div class="field">
+        <label>Sample Output</label>
+        <textarea id="pf_sout_${id}" class="code">${esc(p.sampleOutput||'')}</textarea>
+      </div>
+      <div class="field form-full">
+        <label>Test Cases (JSON array)</label>
+        <span class="hint-text">Format: [{"input":"5\\n1 3 5 7 9\\n7","expectedOutput":"3"}, …]</span>
+        <textarea id="pf_tests_${id}" class="code tall">${esc(p.testCases||'[]')}</textarea>
+      </div>
+      <div class="field form-full">
+        <label>Hint (shown on failure)</label>
+        <textarea id="pf_hint_${id}">${esc(p.hint||'')}</textarea>
+      </div>
+      <div class="field form-full">
+        <label>Starter Code</label>
+        <textarea id="pf_starter_${id}" class="code tall">${esc(p.starterCode||'')}</textarea>
+      </div>
+      <div class="field form-full">
+        <label>Solution Code (reference)</label>
+        <textarea id="pf_solution_${id}" class="code tall">${esc(p.solutionCode||'')}</textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      ${p.id
+        ? `<button class="btn-save"   onclick="saveProblem(${p.id})">💾 Save</button>
+           <button class="btn-delete" onclick="deleteProblem(${p.id})">🗑 Delete</button>`
+        : `<button class="btn-save"   onclick="createProblem()">✚ Add Problem</button>
+           <button class="btn-cancel" onclick="cancelNewProblem()">Cancel</button>`
+      }
+    </div>
+  `;
+}
+
+async function saveProblem(pId) {
+  const payload = buildPrPayload(pId);
+  try {
+    const res = await fetch(`/api/admin/problems/${pId}`, {
+      method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const updated = await res.json();
+    const idx = topicProblems.findIndex(p => p.id === pId);
+    if (idx >= 0) topicProblems[idx] = updated;
+    toast('Problem saved ✓', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+async function deleteProblem(pId) {
+  if (!confirm('Delete this problem?')) return;
+  try {
+    await fetch(`/api/admin/problems/${pId}`, { method: 'DELETE' });
+    topicProblems = topicProblems.filter(p => p.id !== pId);
+    toast('Problem deleted', 'success');
+    renderProblemsList();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+function addProblemForm() {
+  if (document.getElementById('pf_title_new')) return;
+  const slot = document.getElementById('new-problem-slot');
+  if (!slot) { renderProblemsList(); setTimeout(addProblemForm, 50); return; }
+  slot.innerHTML = `
+    <div class="item-card" style="border-color:var(--accent)">
+      <div class="item-card-header">
+        <span class="item-order" style="border-color:var(--accent);color:var(--accent)">NEW</span>
+        <span class="item-title" style="color:var(--accent)">New Problem</span>
+      </div>
+      <div class="item-card-body open">
+        ${problemForm({})}
+      </div>
+    </div>
+  `;
+  slot.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function createProblem() {
+  const payload = buildPrPayload('new');
+  if (!payload.title) { toast('Title is required', 'error'); return; }
+  try {
+    const res = await fetch(`/api/admin/topics/${activeTopic.id}/problems`, {
+      method: 'POST', headers: jsonH(), body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const created = await res.json();
+    topicProblems.push(created);
+    toast('Problem added ✓', 'success');
+    renderProblemsList();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+function cancelNewProblem() {
+  const slot = document.getElementById('new-problem-slot');
+  if (slot) slot.innerHTML = '';
+}
+
+function buildPrPayload(id) {
+  return {
+    title:        val(`pf_title_${id}`),
+    difficulty:   val(`pf_diff_${id}`),
+    displayOrder: parseInt(val(`pf_order_${id}`)) || 1,
+    description:  val(`pf_desc_${id}`),
+    inputFormat:  val(`pf_infmt_${id}`),
+    outputFormat: val(`pf_outfmt_${id}`),
+    sampleInput:  val(`pf_sin_${id}`),
+    sampleOutput: val(`pf_sout_${id}`),
+    testCases:    val(`pf_tests_${id}`),
+    hint:         val(`pf_hint_${id}`),
+    starterCode:  val(`pf_starter_${id}`),
+    solutionCode: val(`pf_solution_${id}`),
+  };
+}
+
+/* ══ UI HELPERS ════════════════════════════════════════════════════════════════ */
+function setTopBar(title, actionsHtml) {
+  document.getElementById('topBar').innerHTML = title
+    ? `<h2>${esc(title)}</h2>${actionsHtml}`
+    : `<span class="top-bar-placeholder">← Select a topic</span>`;
+}
+
+function toggleCard(bodyId, togId) {
+  const body = document.getElementById(bodyId);
+  const tog  = document.getElementById(togId);
+  if (!body) return;
+  const open = body.classList.toggle('open');
+  tog?.classList.toggle('open', open);
+}
+
+function catClass(cat) {
+  return { DSA:'cat-dsa', JAVA:'cat-java', ADVANCED_JAVA:'cat-adv' }[cat] || 'cat-dsa';
+}
+function catLabel(cat) {
+  return { DSA:'DSA', JAVA:'Java', ADVANCED_JAVA:'Adv' }[cat] || cat;
+}
+
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = `show ${type}`;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = type; }, 2800);
+}
+
+function val(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function jsonH() { return { 'Content-Type': 'application/json' }; }
+async function fetchJson(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Fetch failed: ' + url);
+  return res.json();
+}
+</script>
+</body>
+</html>
