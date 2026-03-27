@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+  <!-- ── Auth: redirect to login BEFORE page renders if not logged in ───────── -->
+  <script>
+    (function earlyAuthGuard() {
+      // Check if this is an OAuth2 callback (token in URL) — allow through
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('token')) return; // OAuth callback — let page handle it
+
+      var token = localStorage.getItem('devlearn_token');
+      var user  = null;
+      try { user = JSON.parse(localStorage.getItem('devlearn_user')); } catch(e){}
+
+      if (!token || !user) {
+        // Not logged in — redirect to login, preserving destination
+        var dest = window.location.pathname + window.location.search;
+        window.location.replace('/login.html?from=' + encodeURIComponent(dest));
+      }
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DevLearn — Java & DSA Learning System</title>
@@ -8,7 +27,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css" />
 </head>
-<body>
+<body style="visibility:hidden">
 
 <!-- ══════════════════════════════════════════════════════════════════
      SIDEBAR
@@ -16,10 +35,30 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <span class="logo">⟨dev<span>learn</span>⟩</span>
-    <a href="/admin.html" style="font-size:11px;color:var(--text3);text-decoration:none;padding:3px 8px;border:1px solid var(--border2);border-radius:5px;font-family:var(--font-ui);font-weight:600;transition:.15s"
-       onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">⚙ Admin</a>
-    <a href="/roadmap.html" style="font-size:11px;color:var(--text3);text-decoration:none;padding:3px 8px;border:1px solid var(--border2);border-radius:5px;font-family:var(--font-ui);font-weight:600;transition:.15s;margin-left:4px"
-       onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">🗺 Roadmaps</a>
+    <div style="display:flex;align-items:center;gap:5px;margin-left:auto">
+      <a href="/roadmap.html" id="roadmapLink" style="font-size:11px;color:var(--text3);text-decoration:none;padding:3px 8px;border:1px solid var(--border2);border-radius:5px;font-family:var(--font-ui);font-weight:600;transition:.15s"
+         onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">🗺</a>
+      <a href="/admin.html" id="adminLink" style="display:none;font-size:11px;color:var(--text3);text-decoration:none;padding:3px 8px;border:1px solid var(--border2);border-radius:5px;font-family:var(--font-ui);font-weight:600;transition:.15s"
+         onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">⚙</a>
+    </div>
+  </div>
+  <!-- User profile bar -->
+  <div id="userBar" style="display:none;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg2)">
+    <img id="userAvatar" src="" alt="" style="width:26px;height:26px;border-radius:50%;object-fit:cover;border:1px solid var(--border2);background:var(--bg3)"/>
+    <div style="flex:1;min-width:0">
+      <div id="userName" style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+      <div id="userStreak" style="font-size:10px;color:var(--text3)"></div>
+    </div>
+    <button onclick="doLogout()" title="Sign out"
+            style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:4px;transition:.15s"
+            onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'">⏏</button>
+  </div>
+  <!-- Login button (shown when logged out) -->
+  <div id="loginBar" style="padding:8px 14px;border-bottom:1px solid var(--border)">
+    <a href="/login.html" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:7px;background:var(--adim);border:1px solid rgba(74,222,128,.2);border-radius:7px;color:var(--accent);font-size:12px;font-weight:700;text-decoration:none;transition:.15s"
+       onmouseover="this.style.background='rgba(74,222,128,.18)'" onmouseout="this.style.background='var(--adim)'">
+      🔐 Sign In / Create Account
+    </a>
   </div>
 
   <div class="category-tabs">
@@ -322,5 +361,253 @@
 <script src="/js/tracer.js"></script>
 <script src="/js/flowchart.js"></script>
 <script src="/js/editor.js"></script>
+
+<script>
+// ── Auth guard + UI init ─────────────────────────────────────────────────────
+(function initAuthUI() {
+  const user  = Auth.getUser();
+  const token = Auth.getToken();
+
+  // ── Step 1: OAuth2 callback — token arrives in URL ?token=... ───────────────
+  // OAuth2SuccessHandler redirects here: /?token=JWT
+  // Save it to localStorage BEFORE the auth guard runs, then clean the URL.
+  const urlParams  = new URLSearchParams(window.location.search);
+  const urlToken   = urlParams.get('token');
+  if (urlToken) {
+    localStorage.setItem('devlearn_token', urlToken);
+    // Fetch profile from server to populate user info
+    fetch('/api/auth/check', {
+      headers: { 'Authorization': 'Bearer ' + urlToken }
+    }).then(r => r.json()).then(data => {
+      localStorage.setItem('devlearn_user', JSON.stringify({
+        id:     data.id,
+        name:   data.name,
+        email:  data.email,
+        role:   data.role,
+        avatar: data.avatar || '',
+        streak: 0,
+        solved: 0,
+      }));
+      // Remove ?token= from URL (clean history, token must not linger in browser history)
+      window.history.replaceState({}, '', '/');
+      // Reload to run initAuthUI cleanly with the stored token
+      window.location.reload();
+    }).catch(() => {
+      // Token invalid — clear and go to login
+      localStorage.removeItem('devlearn_token');
+      window.location.replace('/login.html');
+    });
+    return; // Stop here — reload will re-run initAuthUI
+  }
+
+  // ── Step 2: GUARD — must be logged in to use the app ─────────────────────
+  if (!user || !token) {
+    window.location.replace('/login.html?from=' + encodeURIComponent(window.location.pathname + window.location.search));
+    return;
+  }
+
+  // Reveal body now that auth is confirmed (was hidden to prevent flash)
+  document.body.style.visibility = 'visible';
+
+  // ── Show user bar ─────────────────────────────────────────────────────────
+  document.getElementById('userBar').style.display  = 'flex';
+  document.getElementById('loginBar').style.display = 'none';
+
+  // Avatar — use Google picture or show initial letter
+  const avatarImg = document.getElementById('userAvatar');
+  if (user.avatar) {
+    avatarImg.src = user.avatar;
+    avatarImg.onerror = () => showInitialAvatar(user);
+  } else {
+    avatarImg.style.display = 'none';
+    showInitialAvatar(user);
+  }
+
+  // Name + streak / problems solved
+  document.getElementById('userName').textContent = user.name || user.email;
+  document.getElementById('userStreak').textContent =
+    (user.streak > 0) ? ('🔥 ' + user.streak + ' day streak')
+                      : (user.solved + ' problems solved');
+
+  // Only show admin link for admins
+  if (user.role === 'ADMIN') {
+    document.getElementById('adminLink').style.display = 'inline-flex';
+  }
+
+  // Silently validate token — if expired, log out cleanly
+  fetch('/api/auth/check', { headers: Auth.headers() })
+    .then(r => { if (r.status === 401) doLogout(false); })
+    .catch(() => {});
+})();
+
+function showInitialAvatar(user) {
+  const avatarImg = document.getElementById('userAvatar');
+  const initial = (user.name || user.email || 'U')[0].toUpperCase();
+  const div = document.createElement('div');
+  div.style.cssText = [
+    'width:26px','height:26px','border-radius:50%',
+    'background:var(--adim)','border:1px solid rgba(74,222,128,.25)',
+    'display:flex','align-items:center','justify-content:center',
+    'font-size:11px','font-weight:700','color:var(--accent)','flex-shrink:0'
+  ].join(';');
+  div.textContent = initial;
+  avatarImg.parentNode.insertBefore(div, avatarImg);
+}
+
+// ── Logout ───────────────────────────────────────────────────────────────────
+function doLogout(confirm = true) {
+  if (confirm) {
+    showLogoutConfirm();
+    return;
+  }
+  // Clear all auth data
+  localStorage.removeItem('devlearn_token');
+  localStorage.removeItem('devlearn_user');
+  // Tell server (fire and forget — stateless so not critical)
+  fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+  // Redirect to login
+  window.location.replace('/login.html');
+}
+
+function showLogoutConfirm() {
+  // Remove any existing overlay
+  const existing = document.getElementById('logoutOverlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'logoutOverlay';
+  overlay.style.cssText = [
+    'position:fixed','inset:0','z-index:9999',
+    'background:rgba(0,0,0,.6)',
+    'display:flex','align-items:center','justify-content:center'
+  ].join(';');
+
+  const user = Auth.getUser();
+  overlay.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;
+                padding:28px;max-width:340px;width:90%;text-align:center">
+      <div style="font-size:32px;margin-bottom:10px">👋</div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:6px">Sign out?</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:22px">
+        Signed in as <strong>${escHtml(user?.email || '')}</strong><br>
+        Your progress is saved to your account.
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button onclick="doLogout(false)" style="padding:9px 22px;background:var(--red);color:#fff;
+          border:none;border-radius:8px;font-family:var(--font-ui);font-size:13px;
+          font-weight:700;cursor:pointer;transition:.15s"
+          onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+          Sign out
+        </button>
+        <button onclick="document.getElementById('logoutOverlay').remove()"
+          style="padding:9px 22px;background:var(--bg3);color:var(--text2);
+          border:1px solid var(--border2);border-radius:8px;font-family:var(--font-ui);
+          font-size:13px;font-weight:600;cursor:pointer;transition:.15s">
+          Cancel
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Click outside to cancel
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  document.body.appendChild(overlay);
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+
+<script>
+// ── Roadmap mode: detect ?rmId= and show focused banner ────────────────────
+(function initRoadmapMode() {
+  const params   = new URLSearchParams(window.location.search);
+  const rmId     = params.get('rmId');
+  const rmName   = params.get('rmName');
+  const rmTopics = params.get('rmTopics');
+  const topicId  = parseInt(params.get('topic'));
+
+  if (!rmId || !rmTopics) return; // not in roadmap mode
+
+  const topicIds = rmTopics.split(',').map(Number).filter(Boolean);
+  const curIdx   = topicIds.indexOf(topicId);
+  const prevId   = curIdx > 0              ? topicIds[curIdx - 1] : null;
+  const nextId   = curIdx < topicIds.length - 1 ? topicIds[curIdx + 1] : null;
+
+  // Build the roadmap URL to go back
+  const backUrl = '/roadmap.html';
+
+  // Find the sidebar and insert banner above it
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+
+  // Progress
+  const pct = topicIds.length ? Math.round((curIdx) / topicIds.length * 100) : 0;
+
+  // Create banner
+  const banner = document.createElement('div');
+  banner.id = 'rmBanner';
+  banner.innerHTML = `
+    <div class="rm-banner">
+      <a href="${backUrl}" class="rm-banner-back">← Roadmap</a>
+      <span class="rm-banner-name">${escHtml(decodeURIComponent(rmName || ''))}</span>
+      <span style="font-size:11px;color:var(--text3)">${curIdx + 1}/${topicIds.length}</span>
+      <div class="rm-banner-nav">
+        <button class="rm-nav-btn" id="rmPrev"
+          onclick="rmNavigate(${prevId},'${rmId}','${encodeURIComponent(rmName || '')}','${rmTopics}')"
+          ${!prevId ? 'disabled' : ''}>‹ Prev</button>
+        <button class="rm-nav-btn" id="rmNext"
+          onclick="rmNavigate(${nextId},'${rmId}','${encodeURIComponent(rmName || '')}','${rmTopics}')"
+          ${!nextId ? 'disabled' : ''}>Next ›</button>
+      </div>
+    </div>
+    <div class="rm-progress-wrap">
+      <div class="rm-progress-inner" style="width:${pct}%"></div>
+    </div>
+  `;
+  sidebar.parentNode.insertBefore(banner, sidebar);
+
+  // Mark only roadmap topics in sidebar — wait for topics to load
+  function markRoadmapTopics() {
+    const rows = document.querySelectorAll('.topic-row');
+    let marked = 0;
+    rows.forEach(row => {
+      const onclick = row.getAttribute('onclick') || '';
+      const match   = onclick.match(/selectTopic\((\d+)\)/);
+      if (match && topicIds.includes(parseInt(match[1]))) {
+        row.classList.add('rm-topic');
+        marked++;
+      }
+    });
+    return marked;
+  }
+
+  // Poll until sidebar topics are rendered
+  let attempts = 0;
+  const poll = setInterval(() => {
+    const marked = markRoadmapTopics();
+    if (marked > 0 || ++attempts > 20) {
+      clearInterval(poll);
+      document.getElementById('sidebar').classList.add('rm-mode');
+      // Show roadmap topics group headers
+      document.querySelectorAll('.cat-group-header').forEach(h => {
+        const group = h.nextElementSibling;
+        if (group && group.querySelector('.rm-topic')) {
+          h.style.display = '';
+        }
+      });
+    }
+  }, 200);
+})();
+
+function rmNavigate(topicId, rmId, rmName, rmTopics) {
+  if (!topicId) return;
+  window.location.href = `/?topic=${topicId}&rmId=${rmId}&rmName=${rmName}&rmTopics=${rmTopics}`;
+}
+</script>
 </body>
 </html>

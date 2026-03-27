@@ -757,9 +757,9 @@ function showNoTraceMessage(title) {
     ].join(';');
     traceControls?.parentNode?.insertBefore(msg, traceControls.nextSibling);
   }
-  msg.innerHTML = \`
+  msg.innerHTML = `
     <div style="font-size:28px;margin-bottom:10px">🔍</div>
-    <div style="font-size:14px;font-weight:700;margin-bottom:6px">\${escHtml(title)}</div>
+    <div style="font-size:14px;font-weight:700;margin-bottom:6px">${escHtml(title)}</div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:16px">
       This topic does not have a step-by-step tracer yet.<br>
       Topics with tracers: Binary Search, Sorting, Two Pointer,<br>
@@ -775,7 +775,7 @@ function showNoTraceMessage(title) {
         Try Two Sum Trace
       </button>
     </div>
-  \`;
+  `;
   msg.style.display = 'block';
   if (traceControls) traceControls.style.display = 'none';
 }

@@ -1558,5 +1558,38 @@ async function clearAllData() {
 }
 </script>
 
+
+<script>
+// ── Admin auth guard ─────────────────────────────────────────────────────────
+(function adminGuard() {
+  const token = localStorage.getItem('devlearn_token');
+  const user  = (() => { try { return JSON.parse(localStorage.getItem('devlearn_user')||'null'); } catch{return null;} })();
+
+  if (!token || !user) {
+    window.location.replace('/login.html?from=' + encodeURIComponent(window.location.pathname));
+    return;
+  }
+
+  if (user.role !== 'ADMIN') {
+    // Logged in but not admin — show message then redirect
+    document.body.innerHTML = `
+      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;
+                  background:var(--bg,#0d0f12);font-family:sans-serif;text-align:center;padding:20px">
+        <div>
+          <div style="font-size:48px;margin-bottom:16px">🔒</div>
+          <div style="font-size:18px;font-weight:700;color:#e2e8f0;margin-bottom:8px">Admin only</div>
+          <div style="font-size:14px;color:#8892a4;margin-bottom:24px">
+            Your account (<strong>${user.email}</strong>) does not have admin access.
+          </div>
+          <a href="/" style="padding:10px 24px;background:#4ade80;color:#0d0f12;
+             border-radius:8px;text-decoration:none;font-weight:700;font-size:14px">
+            ← Back to App
+          </a>
+        </div>
+      </div>`;
+    return;
+  }
+})();
+</script>
 </body>
 </html>

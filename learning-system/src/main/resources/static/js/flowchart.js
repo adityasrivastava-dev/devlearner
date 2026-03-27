@@ -1169,14 +1169,14 @@ width=i-peek()-1, area=h*w"]
     const ckey  = resolve(key);
     const chart = CHARTS[ckey] || CHARTS["default"];
     const id    = "mermaid-" + Date.now();
-    container.innerHTML = \`
+    container.innerHTML = `
       <div class="flowchart-wrap">
         <div class="flowchart-label">
-          <span class="fc-topic-name">\${esc(topicTitle || "Algorithm")}</span>
-          <span class="fc-algo-tag">\${LABELS[ckey] || "Algorithm Flowchart"}</span>
+          <span class="fc-topic-name">${esc(topicTitle || "Algorithm")}</span>
+          <span class="fc-algo-tag">${LABELS[ckey] || "Algorithm Flowchart"}</span>
         </div>
-        <div id="\${id}" class="mermaid-target"></div>
-      </div>\`;
+        <div id="${id}" class="mermaid-target"></div>
+      </div>`;
     if (typeof mermaid === "undefined") {
       document.getElementById(id).innerHTML =
         "<p style='color:var(--text3);padding:20px'>Mermaid.js not loaded.</p>";

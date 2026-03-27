@@ -20,132 +20,132 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RoadmapService {
 
-    private final RoadmapRepository      roadmapRepo;
-    private final RoadmapTopicRepository roadmapTopicRepo;
-    private final TopicRepository        topicRepo;
+private final RoadmapRepository      roadmapRepo;
+private final RoadmapTopicRepository roadmapTopicRepo;
+private final TopicRepository        topicRepo;
 
-    // ── Read ──────────────────────────────────────────────────────────────────
+// ── Read ──────────────────────────────────────────────────────────────────
 
-    public List<RoadmapDto> getAllRoadmaps() {
-        return roadmapRepo.findAllByOrderByCreatedAtDesc()
-                .stream().map(this::toDto).collect(Collectors.toList());
-    }
+public List<RoadmapDto> getAllRoadmaps() {
+    return roadmapRepo.findAllByOrderByCreatedAtDesc()
+            .stream().map(this::toDto).collect(Collectors.toList());
+}
 
-    public RoadmapDto getRoadmap(Long id) {
-        Roadmap r = roadmapRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Roadmap not found: " + id));
-        return toDto(r);
-    }
+public RoadmapDto getRoadmap(Long id) {
+    Roadmap r = roadmapRepo.findById(id)
+            .orElseThrow(() -> new RuntimeException("Roadmap not found: " + id));
+    return toDto(r);
+}
 
-    // ── Create ────────────────────────────────────────────────────────────────
+// ── Create ────────────────────────────────────────────────────────────────
 
-    @Transactional
-    public RoadmapDto createRoadmap(CreateRoadmapRequest req) {
-        Roadmap r = new Roadmap();
-        r.setName(req.getName());
-        r.setDescription(req.getDescription());
-        r.setIcon(req.getIcon() != null ? req.getIcon() : "📁");
-        r.setColor(req.getColor() != null ? req.getColor() : "#4ade80");
-        r.setLevel(req.getLevel());
-        r.setEstimatedHours(req.getEstimatedHours());
-        roadmapRepo.save(r);
+@Transactional
+public RoadmapDto createRoadmap(CreateRoadmapRequest req) {
+    Roadmap r = new Roadmap();
+    r.setName(req.getName());
+    r.setDescription(req.getDescription());
+    r.setIcon(req.getIcon() != null ? req.getIcon() : "📁");
+    r.setColor(req.getColor() != null ? req.getColor() : "#4ade80");
+    r.setLevel(req.getLevel());
+    r.setEstimatedHours(req.getEstimatedHours());
+    roadmapRepo.save(r);
 
-        if (req.getTopicIds() != null) {
-            for (int i = 0; i < req.getTopicIds().size(); i++) {
-                addTopicToRoadmap(r.getId(), req.getTopicIds().get(i), i + 1, null);
-            }
+    if (req.getTopicIds() != null) {
+        for (int i = 0; i < req.getTopicIds().size(); i++) {
+            addTopicToRoadmap(r.getId(), req.getTopicIds().get(i), i + 1, null);
         }
-        return toDto(roadmapRepo.findById(r.getId()).orElseThrow());
     }
+    return toDto(roadmapRepo.findById(r.getId()).orElseThrow());
+}
 
-    // ── Update ────────────────────────────────────────────────────────────────
+// ── Update ────────────────────────────────────────────────────────────────
 
-    @Transactional
-    public RoadmapDto updateRoadmap(Long id, CreateRoadmapRequest req) {
-        Roadmap r = roadmapRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Roadmap not found: " + id));
-        r.setName(req.getName());
-        r.setDescription(req.getDescription());
-        if (req.getIcon()  != null) r.setIcon(req.getIcon());
-        if (req.getColor() != null) r.setColor(req.getColor());
-        r.setLevel(req.getLevel());
-        r.setEstimatedHours(req.getEstimatedHours());
-        roadmapRepo.save(r);
-        return toDto(r);
+@Transactional
+public RoadmapDto updateRoadmap(Long id, CreateRoadmapRequest req) {
+    Roadmap r = roadmapRepo.findById(id)
+            .orElseThrow(() -> new RuntimeException("Roadmap not found: " + id));
+    r.setName(req.getName());
+    r.setDescription(req.getDescription());
+    if (req.getIcon()  != null) r.setIcon(req.getIcon());
+    if (req.getColor() != null) r.setColor(req.getColor());
+    r.setLevel(req.getLevel());
+    r.setEstimatedHours(req.getEstimatedHours());
+    roadmapRepo.save(r);
+    return toDto(r);
+}
+
+// ── Delete ────────────────────────────────────────────────────────────────
+
+@Transactional
+public void deleteRoadmap(Long id) {
+    roadmapRepo.deleteById(id);
+}
+
+// ── Topic management ──────────────────────────────────────────────────────
+
+@Transactional
+public RoadmapDto addTopicToRoadmap(Long roadmapId, Long topicId, int orderIndex, String note) {
+    Roadmap r = roadmapRepo.findById(roadmapId)
+            .orElseThrow(() -> new RuntimeException("Roadmap not found"));
+    Topic t = topicRepo.findById(topicId)
+            .orElseThrow(() -> new RuntimeException("Topic not found: " + topicId));
+
+    RoadmapTopic rt = new RoadmapTopic();
+    rt.setRoadmap(r);
+    rt.setTopic(t);
+    rt.setOrderIndex(orderIndex);
+    rt.setNote(note);
+    roadmapTopicRepo.save(rt);
+
+    return toDto(roadmapRepo.findById(roadmapId).orElseThrow());
+}
+
+@Transactional
+public RoadmapDto removeTopicFromRoadmap(Long roadmapId, Long topicId) {
+    roadmapTopicRepo.deleteByRoadmapIdAndTopicId(roadmapId, topicId);
+    return toDto(roadmapRepo.findById(roadmapId).orElseThrow());
+}
+
+@Transactional
+public RoadmapDto reorderTopics(Long roadmapId, List<Long> orderedTopicIds) {
+    List<RoadmapTopic> rts = roadmapTopicRepo.findByRoadmapIdOrderByOrderIndex(roadmapId);
+    for (RoadmapTopic rt : rts) {
+        int idx = orderedTopicIds.indexOf(rt.getTopic().getId());
+        if (idx >= 0) rt.setOrderIndex(idx + 1);
     }
+    roadmapTopicRepo.saveAll(rts);
+    return toDto(roadmapRepo.findById(roadmapId).orElseThrow());
+}
 
-    // ── Delete ────────────────────────────────────────────────────────────────
+// ── Mapper ────────────────────────────────────────────────────────────────
 
-    @Transactional
-    public void deleteRoadmap(Long id) {
-        roadmapRepo.deleteById(id);
-    }
+private RoadmapDto toDto(Roadmap r) {
+    List<RoadmapTopic> rts = roadmapTopicRepo.findByRoadmapIdOrderByOrderIndex(r.getId());
 
-    // ── Topic management ──────────────────────────────────────────────────────
+    List<RoadmapDto.RoadmapTopicDto> topicDtos = rts.stream().map(rt ->
+            RoadmapDto.RoadmapTopicDto.builder()
+                    .roadmapTopicId(rt.getId())
+                    .topicId(rt.getTopic().getId())
+                    .topicTitle(rt.getTopic().getTitle())
+                    .topicCategory(rt.getTopic().getCategory().name())
+                    .topicDescription(rt.getTopic().getDescription())
+                    .timeComplexity(rt.getTopic().getTimeComplexity())
+                    .orderIndex(rt.getOrderIndex())
+                    .note(rt.getNote())
+                    .build()
+    ).collect(Collectors.toList());
 
-    @Transactional
-    public RoadmapDto addTopicToRoadmap(Long roadmapId, Long topicId, int orderIndex, String note) {
-        Roadmap r = roadmapRepo.findById(roadmapId)
-                .orElseThrow(() -> new RuntimeException("Roadmap not found"));
-        Topic t = topicRepo.findById(topicId)
-                .orElseThrow(() -> new RuntimeException("Topic not found: " + topicId));
-
-        RoadmapTopic rt = new RoadmapTopic();
-        rt.setRoadmap(r);
-        rt.setTopic(t);
-        rt.setOrderIndex(orderIndex);
-        rt.setNote(note);
-        roadmapTopicRepo.save(rt);
-
-        return toDto(roadmapRepo.findById(roadmapId).orElseThrow());
-    }
-
-    @Transactional
-    public RoadmapDto removeTopicFromRoadmap(Long roadmapId, Long topicId) {
-        roadmapTopicRepo.deleteByRoadmapIdAndTopicId(roadmapId, topicId);
-        return toDto(roadmapRepo.findById(roadmapId).orElseThrow());
-    }
-
-    @Transactional
-    public RoadmapDto reorderTopics(Long roadmapId, List<Long> orderedTopicIds) {
-        List<RoadmapTopic> rts = roadmapTopicRepo.findByRoadmapIdOrderByOrderIndex(roadmapId);
-        for (RoadmapTopic rt : rts) {
-            int idx = orderedTopicIds.indexOf(rt.getTopic().getId());
-            if (idx >= 0) rt.setOrderIndex(idx + 1);
-        }
-        roadmapTopicRepo.saveAll(rts);
-        return toDto(roadmapRepo.findById(roadmapId).orElseThrow());
-    }
-
-    // ── Mapper ────────────────────────────────────────────────────────────────
-
-    private RoadmapDto toDto(Roadmap r) {
-        List<RoadmapTopic> rts = roadmapTopicRepo.findByRoadmapIdOrderByOrderIndex(r.getId());
-
-        List<RoadmapDto.RoadmapTopicDto> topicDtos = rts.stream().map(rt ->
-                RoadmapDto.RoadmapTopicDto.builder()
-                        .roadmapTopicId(rt.getId())
-                        .topicId(rt.getTopic().getId())
-                        .topicTitle(rt.getTopic().getTitle())
-                        .topicCategory(rt.getTopic().getCategory().name())
-                        .topicDescription(rt.getTopic().getDescription())
-                        .timeComplexity(rt.getTopic().getTimeComplexity())
-                        .orderIndex(rt.getOrderIndex())
-                        .note(rt.getNote())
-                        .build()
-        ).collect(Collectors.toList());
-
-        return RoadmapDto.builder()
-                .id(r.getId())
-                .name(r.getName())
-                .description(r.getDescription())
-                .icon(r.getIcon())
-                .color(r.getColor())
-                .level(r.getLevel())
-                .estimatedHours(r.getEstimatedHours())
-                .createdAt(r.getCreatedAt())
-                .totalTopics(topicDtos.size())
-                .topics(topicDtos)
-                .build();
-    }
+    return RoadmapDto.builder()
+            .id(r.getId())
+            .name(r.getName())
+            .description(r.getDescription())
+            .icon(r.getIcon())
+            .color(r.getColor())
+            .level(r.getLevel())
+            .estimatedHours(r.getEstimatedHours())
+            .createdAt(r.getCreatedAt() != null ? r.getCreatedAt().toString() : null)
+            .totalTopics(topicDtos.size())
+            .topics(topicDtos)
+            .build();
+}
 }

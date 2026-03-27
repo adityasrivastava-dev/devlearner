@@ -3,13 +3,61 @@
    Base URL is empty because frontend is served by the same server (monolithic)
 ══════════════════════════════════════════════════════════════════════════════ */
 
+// ── Auth helpers (used throughout the app) ──────────────────────────────────
+
+const Auth = {
+  getToken()  { return localStorage.getItem('devlearn_token'); },
+  getUser()   {
+    try { return JSON.parse(localStorage.getItem('devlearn_user') || 'null'); }
+    catch { return null; }
+  },
+  isLoggedIn(){ return !!this.getToken(); },
+  isAdmin()   { const u = this.getUser(); return u && u.role === 'ADMIN'; },
+
+  /** Clear token from storage and redirect to login.
+   *  Pages that want a confirm dialog should call doLogout() instead.
+   *  This method is the silent/forced logout (e.g. 401 from server).   */
+  logout(redirectUrl = '/login.html') {
+    localStorage.removeItem('devlearn_token');
+    localStorage.removeItem('devlearn_user');
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    window.location.replace(redirectUrl);
+  },
+
+  /** Attach Bearer token to headers if user is logged in */
+  headers(extra = {}) {
+    const token = this.getToken();
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+      ...extra,
+    };
+  },
+
+  /** fetch() wrapper — auto-attaches token, redirects on 401 */
+  async fetch(url, options = {}) {
+    const token = this.getToken();
+    const headers = {
+      ...(options.headers || {}),
+      ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+    };
+    const res = await fetch(url, { ...options, headers });
+    if (res.status === 401) {
+      // Token expired or invalid — send to login
+      this.logout();
+      throw new Error('Session expired — please log in again');
+    }
+    return res;
+  },
+};
+
 const API = {
 
   // ── Topics ────────────────────────────────────────────────────────────────
   async getTopics(category = null) {
     const url = category && category !== 'ALL'
-        ? `/api/topics?category=${category}`
-        : '/api/topics';
+      ? `/api/topics?category=${category}`
+      : '/api/topics';
     const res = await fetch(url);
     if (!res.ok) throw new Error('Failed to fetch topics');
     return res.json();
