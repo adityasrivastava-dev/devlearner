@@ -368,6 +368,18 @@
   const user  = Auth.getUser();
   const token = Auth.getToken();
 
+  // ── Step 0: Sync token with DB on every page load ───────────────────────────
+  // This refreshes roles silently — no re-login needed after DB role changes
+  Auth.syncToken().then(() => {
+    // Re-read user after sync (roles may have changed)
+    const freshUser = Auth.getUser();
+    if (freshUser && user && freshUser.role !== user.role) {
+      // Role changed — reload page to apply new permissions
+      window.location.reload();
+      return;
+    }
+  }).catch(() => {});
+
   // ── Step 1: OAuth2 callback — token arrives in URL ?token=... ───────────────
   // OAuth2SuccessHandler redirects here: /?token=JWT
   // Save it to localStorage BEFORE the auth guard runs, then clean the URL.

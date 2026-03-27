@@ -14,14 +14,54 @@ const Auth = {
   isLoggedIn(){ return !!this.getToken(); },
   isAdmin()   { const u = this.getUser(); return u && u.role === 'ADMIN'; },
 
-  /** Clear token from storage and redirect to login.
-   *  Pages that want a confirm dialog should call doLogout() instead.
-   *  This method is the silent/forced logout (e.g. 401 from server).   */
+  /** Clear token from storage and redirect to login. */
   logout(redirectUrl = '/login.html') {
     localStorage.removeItem('devlearn_token');
     localStorage.removeItem('devlearn_user');
     fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     window.location.replace(redirectUrl);
+  },
+
+  /**
+   * Silently refresh the JWT from DB — call on every page load.
+   * If DB roles changed (e.g. admin granted via SQL), the new token
+   * is saved automatically. No re-login needed.
+   */
+  async syncToken() {
+    const token = this.getToken();
+    if (!token) return;         // not logged in — skip
+    try {
+      const res = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: this.headers()
+      });
+      if (res.status === 401) {
+        this.logout();           // token truly expired — force re-login
+        return;
+      }
+      if (!res.ok) return;       // server error — keep current token
+
+      const data = await res.json();
+
+      // Update token in localStorage with fresh one
+      localStorage.setItem('devlearn_token', data.token);
+
+      // Update user info — role may have changed
+      const current = this.getUser() || {};
+      const updated = {
+        ...current,
+        id:     data.id,
+        name:   data.name,
+        email:  data.email,
+        role:   data.role,
+        roles:  data.roles,
+        avatar: data.avatar || current.avatar || '',
+      };
+      localStorage.setItem('devlearn_user', JSON.stringify(updated));
+
+    } catch (_e) {
+      // Network error — keep current token, don't log out
+    }
   },
 
   /** Attach Bearer token to headers if user is logged in */

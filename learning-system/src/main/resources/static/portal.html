@@ -15,6 +15,7 @@
       if (!token || !user) {
         window.location.replace('/login.html?from=/portal.html');
         return;
+        return;
       }
       if (user.role !== 'ADMIN') {
         document.addEventListener('DOMContentLoaded', function() {
@@ -167,6 +168,52 @@
     .empty-state h3{font-size:18px;font-weight:700;margin-bottom:8px}
     .loading{text-align:center;padding:40px;color:var(--text3);font-size:13px}
 
+
+    /* ── Role Manager ──────────────────────────────────────────────────────── */
+    .rm-user-card{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;
+                   padding:18px;margin-bottom:12px;transition:.15s}
+    .rm-user-card:hover{border-color:var(--border)}
+    .rm-user-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+    .rm-user-av{width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;
+                 border:2px solid var(--border2)}
+    .rm-user-av-init{width:38px;height:38px;border-radius:50%;background:var(--adim);
+                      border:2px solid rgba(74,222,128,.2);display:flex;align-items:center;
+                      justify-content:center;font-weight:800;font-size:15px;
+                      color:var(--accent);flex-shrink:0}
+    .rm-user-info{flex:1;min-width:0}
+    .rm-user-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .rm-user-email{font-size:11px;color:var(--text3)}
+    .rm-roles-section{display:flex;flex-direction:column;gap:8px}
+    .rm-roles-label{font-size:11px;font-weight:700;text-transform:uppercase;
+                     letter-spacing:.5px;color:var(--text3);margin-bottom:4px}
+    .rm-role-row{display:flex;align-items:center;justify-content:space-between;
+                  padding:10px 14px;border-radius:8px;border:1px solid var(--border)}
+    .rm-role-row.has-role{border-color:transparent}
+    .rm-role-row.has-role.r-STUDENT{background:rgba(96,165,250,.06);border-color:rgba(96,165,250,.15)}
+    .rm-role-row.has-role.r-TEACHER{background:rgba(251,191,36,.06);border-color:rgba(251,191,36,.15)}
+    .rm-role-row.has-role.r-ADMIN{background:rgba(248,113,113,.06);border-color:rgba(248,113,113,.15)}
+    .rm-role-left{display:flex;align-items:center;gap:10px}
+    .rm-role-icon{font-size:18px;width:24px;text-align:center}
+    .rm-role-name{font-size:13px;font-weight:700}
+    .rm-role-desc{font-size:11px;color:var(--text3);margin-top:1px}
+    .rm-role-actions{display:flex;gap:8px;align-items:center}
+    .rm-add-btn{padding:5px 14px;border-radius:6px;font-family:var(--font);font-size:11px;
+                 font-weight:700;cursor:pointer;transition:.15s;border:1px solid transparent}
+    .rm-add-btn-add{background:var(--adim);color:var(--accent);border-color:rgba(74,222,128,.25)}
+    .rm-add-btn-add:hover{background:rgba(74,222,128,.18)}
+    .rm-add-btn-remove{background:rgba(248,113,113,.06);color:var(--red);
+                         border-color:rgba(248,113,113,.2)}
+    .rm-add-btn-remove:hover{background:rgba(248,113,113,.14)}
+    .rm-has-tag{padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700}
+    .rm-has-STUDENT{background:rgba(96,165,250,.12);color:var(--blue)}
+    .rm-has-TEACHER{background:rgba(251,191,36,.12);color:var(--yellow)}
+    .rm-has-ADMIN{background:rgba(248,113,113,.12);color:var(--red)}
+    .rm-search{width:100%;padding:9px 14px;background:var(--bg3);border:1px solid var(--border2);
+                border-radius:8px;color:var(--text);font-family:var(--font);font-size:13px;
+                outline:none;margin-bottom:18px;transition:.15s}
+    .rm-search:focus{border-color:var(--accent)}
+    .rm-empty{text-align:center;padding:40px;color:var(--text3);font-size:13px}
+
     /* ── Role Switcher ───────────────────────────────────────────────────── */
 
     .role-teacher{background:rgba(251,191,36,.12);color:var(--yellow);border:1px solid rgba(251,191,36,.2)}
@@ -239,6 +286,9 @@
       </button>
       <button class="nav-item" onclick="showPage('roles')">
         <span class="icon">🔐</span> Roles
+      </button>
+      <button class="nav-item" onclick="showPage('rolemanager')">
+        <span class="icon">🏷️</span> Role Manager
       </button>
       <button class="nav-item" onclick="showPage('access')">
         <span class="icon">🔄</span> Role Switcher
@@ -316,6 +366,41 @@
                  oninput="filterStudents(this.value)"/>
         </div>
         <div id="studentsTable"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- ── ROLE MANAGER PAGE ── -->
+    <div class="page" id="page-rolemanager">
+      <div class="page-title">Role Manager</div>
+      <div class="page-sub">Add or remove roles for any user. Changes take effect immediately — no re-login needed.</div>
+
+      <!-- Role legend -->
+      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+        <div style="padding:10px 16px;background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.15);
+             border-radius:8px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px">🎓</span>
+          <div><div style="font-size:12px;font-weight:700;color:var(--blue)">STUDENT</div>
+            <div style="font-size:11px;color:var(--text3)">Browse, code, submit</div></div>
+        </div>
+        <div style="padding:10px 16px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.15);
+             border-radius:8px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px">📖</span>
+          <div><div style="font-size:12px;font-weight:700;color:var(--yellow)">TEACHER</div>
+            <div style="font-size:11px;color:var(--text3)">Create content, view analytics</div></div>
+        </div>
+        <div style="padding:10px 16px;background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.15);
+             border-radius:8px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px">👑</span>
+          <div><div style="font-size:12px;font-weight:700;color:var(--red)">ADMIN</div>
+            <div style="font-size:11px;color:var(--text3)">Full access + user management</div></div>
+        </div>
+      </div>
+
+      <input class="rm-search" id="rmSearch" placeholder="🔍  Search users by name or email…"
+             oninput="renderRoleManager(this.value)"/>
+
+      <div id="rmUserList">
+        <div class="rm-empty">Loading users…</div>
       </div>
     </div>
 
@@ -428,7 +513,8 @@
 // ── Init ──────────────────────────────────────────────────────────────────────
 let allUsers = [];
 
-(function init() {
+(async function init() {
+  await Auth.syncToken().catch(()=>{});
   const user = Auth.getUser();
   if (!user) return;
   document.body.style.visibility = 'visible';
@@ -446,7 +532,8 @@ function showPage(name) {
   document.getElementById('page-' + name)?.classList.add('active');
   event.currentTarget?.classList.add('active');
 
-  if (name === 'roles') renderRolesPage();
+  if (name === 'roles')       renderRolesPage();
+  if (name === 'rolemanager')  renderRoleManager(document.getElementById('rmSearch')?.value||'');
 }
 
 // ── Load stats ─────────────────────────────────────────────────────────────────
@@ -470,6 +557,7 @@ async function loadUsers() {
     document.getElementById('userCountBadge').textContent = allUsers.length;
     renderUsersTable(allUsers);
     renderRecentUsers();
+    renderRoleManager();
   } catch(e) {
     document.getElementById('usersTableWrap').innerHTML =
       '<div class="empty-state"><h3>Failed to load</h3><p>' + e.message + '</p></div>';
