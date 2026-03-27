@@ -1,12 +1,11 @@
 package com.learnsystem.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.EnumSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -26,11 +25,9 @@ private String email;
 @Column(nullable = false)
 private String name;
 
-/** BCrypt-hashed password. Null for OAuth users. */
 @Column(name = "password_hash")
 private String passwordHash;
 
-/** Profile picture URL (from Google or gravatar) */
 @Column(name = "avatar_url")
 private String avatarUrl;
 
@@ -39,20 +36,27 @@ private String avatarUrl;
 @Builder.Default
 private Provider provider = Provider.LOCAL;
 
-/** Google subject ID — used to match returning OAuth users */
 @Column(name = "provider_id")
 private String providerId;
 
+/**
+ * Multi-role: stored as comma-separated string in DB column.
+ * e.g. "STUDENT,TEACHER" or "ADMIN,STUDENT"
+ * Hibernate @ElementCollection with a join table would also work but
+ * this avoids an extra table and keeps the migration simple.
+ */
+@ElementCollection(fetch = FetchType.EAGER)
+@CollectionTable(name = "user_roles",
+		joinColumns = @JoinColumn(name = "user_id"))
+@Column(name = "role")
 @Enumerated(EnumType.STRING)
-@Column(nullable = false)
 @Builder.Default
-private Role role = Role.STUDENT;
+private Set<Role> roles = EnumSet.of(Role.STUDENT);
 
 @Column(name = "email_verified", nullable = false)
 @Builder.Default
 private boolean emailVerified = false;
 
-/** Email verification / password-reset token */
 @Column(name = "verification_token")
 private String verificationToken;
 
@@ -65,12 +69,10 @@ private LocalDateTime createdAt;
 @Column(name = "last_login")
 private LocalDateTime lastLogin;
 
-/** Consecutive days studied — incremented by progress service */
 @Column(name = "streak_days")
 @Builder.Default
 private int streakDays = 0;
 
-/** Total problems solved */
 @Column(name = "problems_solved")
 @Builder.Default
 private int problemsSolved = 0;
@@ -81,6 +83,40 @@ protected void onCreate() {
 	lastLogin = LocalDateTime.now();
 }
 
+// ── Convenience helpers ───────────────────────────────────────────────────
+
+public boolean hasRole(Role role) {
+	return roles != null && roles.contains(role);
+}
+
+public boolean isAdmin() {
+	return hasRole(Role.ADMIN);
+}
+
+public void addRole(Role role) {
+	if (roles == null) roles = EnumSet.noneOf(Role.class);
+	roles.add(role);
+}
+
+public void removeRole(Role role) {
+	if (roles != null) roles.remove(role);
+}
+
+/** Primary role for display — highest privilege wins */
+public Role getPrimaryRole() {
+	if (hasRole(Role.ADMIN))   return Role.ADMIN;
+	if (hasRole(Role.TEACHER)) return Role.TEACHER;
+	if (hasRole(Role.STUDENT)) return Role.STUDENT;
+	return Role.STUDENT;
+}
+
+// ── Enums ─────────────────────────────────────────────────────────────────
+
 public enum Provider { LOCAL, GOOGLE }
-public enum Role     { STUDENT, ADMIN }
+
+public enum Role {
+	STUDENT,   // default — browse, code, submit
+	TEACHER,   // future — create topics, view student progress
+	ADMIN      // full access — user mgmt, content mgmt, analytics
+}
 }

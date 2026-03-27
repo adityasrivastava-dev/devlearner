@@ -72,7 +72,10 @@ public ResponseEntity<Map<String, Object>> check(@AuthenticationPrincipal User u
 			"id",     user.getId(),
 			"name",   user.getName(),
 			"email",  user.getEmail(),
-			"role",   user.getRole().name(),
+			"role",   user.getPrimaryRole().name(),
+			"roles",  user.getRoles() != null
+					? user.getRoles().stream().map(r -> r.name()).sorted().collect(java.util.stream.Collectors.joining(","))
+					: "STUDENT",
 			"avatar", user.getAvatarUrl() != null ? user.getAvatarUrl() : ""
 	));
 }

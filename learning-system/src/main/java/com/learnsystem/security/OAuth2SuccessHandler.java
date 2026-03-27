@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 
 @Component
 @RequiredArgsConstructor
@@ -51,7 +52,7 @@ public void onAuthenticationSuccess(HttpServletRequest request,
 				.avatarUrl(picture)
 				.provider(User.Provider.GOOGLE)
 				.providerId(providerId)
-				.role(User.Role.STUDENT)
+				.roles(EnumSet.of(User.Role.STUDENT))
 				.emailVerified(true) // Google verifies email
 				.build();
 		log.info("New Google user registered: {}", email);
@@ -73,16 +74,8 @@ public void onAuthenticationSuccess(HttpServletRequest request,
 	// Check if there was a ?from= parameter stored before the OAuth redirect
 	// Spring saves it in the session under SPRING_SECURITY_SAVED_REQUEST
 	// We use a simpler approach: check the referer or default to "/"
-	String savedRequest = request.getSession(false) != null
-			? (String) request.getSession().getAttribute("OAUTH2_FROM")
-			: null;
-	String returnTo = (savedRequest != null && savedRequest.startsWith("/")
-			&& !savedRequest.startsWith("//"))
-			? savedRequest : "/";
-
-	// Redirect to app — ?token= is read by index.html immediately and saved to localStorage
-	// then URL is cleaned with history.replaceState
-	String redirectUrl = frontendUrl + returnTo + (returnTo.contains("?") ? "&" : "?") + "token=" + token;
+	// Always redirect to app root — index.html handles ?token= and cleans the URL
+	String redirectUrl = frontendUrl + "/?token=" + token;
 	getRedirectStrategy().sendRedirect(request, response, redirectUrl);
 }
 }

@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DevLearn — Admin Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Early auth guard — admin only -->
+  <script>
+    (function() {
+      var token = localStorage.getItem('devlearn_token');
+      var user  = null;
+      try { user = JSON.parse(localStorage.getItem('devlearn_user')); } catch(e){}
+      if (!token || !user) {
+        window.location.replace('/login.html?from=/portal.html');
+        return;
+      }
+      if (user.role !== 'ADMIN') {
+        document.addEventListener('DOMContentLoaded', function() {
+          document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0d0f12;font-family:sans-serif;text-align:center"><div><div style="font-size:48px;margin-bottom:16px">🔒</div><div style="font-size:18px;font-weight:700;color:#e2e8f0;margin-bottom:8px">Admin only</div><div style="font-size:14px;color:#8892a4;margin-bottom:24px">Your account does not have admin access.</div><a href="/" style="padding:10px 24px;background:#4ade80;color:#0d0f12;border-radius:8px;text-decoration:none;font-weight:700">← Back to App</a></div></div>';
+        });
+      }
+    })();
+  </script>
+
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0d0f12;--bg2:#13161b;--bg3:#1a1e25;
+      --border:#252930;--border2:#2e333d;
+      --text:#e2e8f0;--text2:#8892a4;--text3:#505a6b;
+      --accent:#4ade80;--accent2:#22c55e;--adim:rgba(74,222,128,.1);
+      --red:#f87171;--yellow:#fbbf24;--blue:#60a5fa;--purple:#a78bfa;
+      --font:'Syne',sans-serif;--mono:'JetBrains Mono',monospace;
+    }
+    html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px}
+    body{display:flex;flex-direction:column;visibility:hidden}
+
+    /* ── Top Nav ── */
+    .topnav{display:flex;align-items:center;gap:14px;padding:12px 24px;
+             background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+    .logo{font-size:16px;font-weight:800;letter-spacing:-.5px}
+    .logo span{color:var(--accent)}
+    .badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;
+            background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+    .nav-links{display:flex;gap:8px;margin-left:auto}
+    .nav-link{font-size:12px;color:var(--text2);text-decoration:none;padding:4px 10px;
+               border:1px solid var(--border2);border-radius:5px;transition:.15s}
+    .nav-link:hover{color:var(--text)}
+    .nav-link.active{color:var(--accent);border-color:rgba(74,222,128,.3)}
+
+    /* ── Shell ── */
+    .shell{display:flex;flex:1;overflow:hidden}
+
+    /* ── Sidebar ── */
+    .sidebar{width:210px;background:var(--bg2);border-right:1px solid var(--border);
+              display:flex;flex-direction:column;flex-shrink:0}
+    .sidebar-user{padding:16px;border-bottom:1px solid var(--border);
+                   display:flex;align-items:center;gap:10px}
+    .avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;
+             border:2px solid rgba(74,222,128,.2);flex-shrink:0}
+    .avatar-init{width:36px;height:36px;border-radius:50%;background:var(--adim);
+                  border:2px solid rgba(74,222,128,.2);display:flex;align-items:center;
+                  justify-content:center;font-weight:800;font-size:14px;color:var(--accent);flex-shrink:0}
+    .user-name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .user-role{font-size:10px;color:var(--red);font-weight:700}
+
+    .sidebar-nav{padding:10px 8px;flex:1}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:7px;
+               cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);
+               transition:.15s;margin-bottom:2px;border:none;background:none;
+               width:100%;text-align:left}
+    .nav-item:hover{background:var(--bg3);color:var(--text)}
+    .nav-item.active{background:var(--adim);color:var(--accent)}
+    .nav-item .icon{font-size:15px;width:20px;text-align:center}
+    .nav-item .badge-count{margin-left:auto;font-size:10px;background:var(--bg3);
+                            padding:1px 7px;border-radius:10px;color:var(--text3)}
+
+    .sidebar-footer{padding:12px;border-top:1px solid var(--border)}
+    .logout-btn{width:100%;padding:8px;background:none;border:1px solid var(--border2);
+                 border-radius:6px;color:var(--text3);font-family:var(--font);font-size:12px;
+                 font-weight:600;cursor:pointer;transition:.15s}
+    .logout-btn:hover{border-color:var(--red);color:var(--red)}
+
+    /* ── Main ── */
+    .main{flex:1;overflow-y:auto;background:var(--bg)}
+    .main::-webkit-scrollbar{width:5px}
+    .main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+    .page{display:none;padding:28px}
+    .page.active{display:block}
+    .page-title{font-size:22px;font-weight:800;margin-bottom:4px}
+    .page-sub{font-size:13px;color:var(--text2);margin-bottom:24px}
+
+    /* ── Stat cards ── */
+    .stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:28px}
+    .stat-card{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:18px}
+    .stat-num{font-size:32px;font-weight:800;margin-bottom:4px}
+    .stat-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)}
+    .stat-icon{font-size:24px;margin-bottom:8px}
+
+    /* ── Users table ── */
+    .table-wrap{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;overflow:hidden}
+    .table-header{padding:16px 20px;border-bottom:1px solid var(--border);
+                   display:flex;align-items:center;gap:12px}
+    .table-title{font-size:15px;font-weight:700;flex:1}
+    .search-input{padding:7px 12px;background:var(--bg3);border:1px solid var(--border2);
+                   border-radius:6px;color:var(--text);font-family:var(--font);font-size:13px;
+                   outline:none;width:200px;transition:.15s}
+    .search-input:focus{border-color:var(--accent)}
+    table{width:100%;border-collapse:collapse}
+    th{padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;
+        letter-spacing:.5px;color:var(--text3);border-bottom:1px solid var(--border);
+        text-align:left;white-space:nowrap}
+    td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:var(--bg3)}
+    .user-cell{display:flex;align-items:center;gap:10px}
+    .user-av{width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0}
+    .user-av-init{width:28px;height:28px;border-radius:50%;background:var(--adim);
+                   display:flex;align-items:center;justify-content:center;font-size:11px;
+                   font-weight:700;color:var(--accent);flex-shrink:0}
+    .user-info-name{font-weight:700;font-size:13px}
+    .user-info-email{font-size:11px;color:var(--text3)}
+
+    /* ── Badges ── */
+    .role-badge{padding:2px 9px;border-radius:10px;font-size:10px;font-weight:700}
+    .role-admin{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+    .role-student{background:rgba(96,165,250,.1);color:var(--blue);border:1px solid rgba(96,165,250,.2)}
+    .provider-badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:var(--bg3);color:var(--text3)}
+
+    /* ── Action buttons ── */
+    .action-btn{padding:4px 10px;border-radius:5px;font-family:var(--font);font-size:11px;
+                 font-weight:700;cursor:pointer;transition:.15s;border:1px solid transparent}
+    .action-promote{background:rgba(248,113,113,.08);color:var(--red);border-color:rgba(248,113,113,.2)}
+    .action-promote:hover{background:rgba(248,113,113,.18)}
+    .action-demote{background:rgba(96,165,250,.08);color:var(--blue);border-color:rgba(96,165,250,.2)}
+    .action-demote:hover{background:rgba(96,165,250,.18)}
+    .action-delete{background:rgba(248,113,113,.04);color:var(--text3);border-color:var(--border2)}
+    .action-delete:hover{color:var(--red);border-color:rgba(248,113,113,.3)}
+
+    /* ── Toast ── */
+    #toast{position:fixed;bottom:24px;right:24px;padding:10px 18px;border-radius:8px;
+            font-size:13px;font-weight:600;opacity:0;transform:translateY(8px);
+            transition:opacity .3s,transform .3s;pointer-events:none;z-index:999}
+    #toast.show{opacity:1;transform:translateY(0)}
+    #toast.success{background:var(--adim);color:var(--accent);border:1px solid rgba(74,222,128,.3)}
+    #toast.error{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.3)}
+
+    /* ── Confirm dialog ── */
+    .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);
+                      display:flex;align-items:center;justify-content:center;z-index:500;display:none}
+    .confirm-box{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;
+                  padding:28px;max-width:340px;width:90%;text-align:center}
+    .confirm-icon{font-size:36px;margin-bottom:12px}
+    .confirm-title{font-size:16px;font-weight:800;margin-bottom:8px}
+    .confirm-msg{font-size:13px;color:var(--text2);margin-bottom:22px;line-height:1.6}
+    .confirm-actions{display:flex;gap:10px;justify-content:center}
+    .confirm-yes{padding:9px 22px;background:var(--red);color:#fff;border:none;
+                  border-radius:7px;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer}
+    .confirm-no{padding:9px 18px;background:var(--bg3);color:var(--text2);
+                 border:1px solid var(--border2);border-radius:7px;font-family:var(--font);
+                 font-size:13px;font-weight:600;cursor:pointer}
+
+    .empty-state{text-align:center;padding:60px;color:var(--text3)}
+    .empty-state h3{font-size:18px;font-weight:700;margin-bottom:8px}
+    .loading{text-align:center;padding:40px;color:var(--text3);font-size:13px}
+
+    /* ── Role Switcher ───────────────────────────────────────────────────── */
+
+    .role-teacher{background:rgba(251,191,36,.12);color:var(--yellow);border:1px solid rgba(251,191,36,.2)}
+    .role-cb-wrap{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+    .role-cb-item{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;
+                   font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--border2);
+                   background:var(--bg3);color:var(--text3);transition:.15s;user-select:none}
+    .role-cb-item.checked-ADMIN{background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25)}
+    .role-cb-item.checked-TEACHER{background:rgba(251,191,36,.1);color:var(--yellow);border-color:rgba(251,191,36,.25)}
+    .role-cb-item.checked-STUDENT{background:rgba(96,165,250,.1);color:var(--blue);border-color:rgba(96,165,250,.25)}
+    .role-cb-item input{width:13px;height:13px;accent-color:currentColor;cursor:pointer;margin:0}
+
+    .role-switch-card{background:var(--bg2);border:1px solid var(--border2);
+                       border-radius:12px;padding:24px;max-width:520px;margin-bottom:20px}
+    .role-switch-title{font-size:16px;font-weight:800;margin-bottom:6px}
+    .role-switch-sub{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6}
+    .role-toggle{display:flex;gap:0;border:1px solid var(--border2);border-radius:8px;overflow:hidden;margin-bottom:16px}
+    .role-toggle-btn{flex:1;padding:12px;text-align:center;cursor:pointer;font-family:var(--font);
+                      font-size:13px;font-weight:700;border:none;background:var(--bg3);
+                      color:var(--text2);transition:.15s;border-right:1px solid var(--border2)}
+    .role-toggle-btn:last-child{border-right:none}
+    .role-toggle-btn.active-admin{background:rgba(248,113,113,.12);color:var(--red)}
+    .role-toggle-btn.active-student{background:rgba(96,165,250,.1);color:var(--blue)}
+    .role-toggle-btn:hover:not(.active-admin):not(.active-student){background:var(--bg);color:var(--text)}
+    .current-role-banner{padding:12px 16px;border-radius:8px;font-size:13px;font-weight:600;
+                          display:flex;align-items:center;gap:10px;margin-bottom:14px}
+    .banner-admin{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);color:var(--red)}
+    .banner-student{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2);color:var(--blue)}
+    .perm-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+    .perm-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px}
+    .perm-card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+                      margin-bottom:10px;color:var(--text3)}
+    .perm-item{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px}
+    .perm-yes{color:var(--accent);font-size:14px;font-weight:700;flex-shrink:0}
+    .perm-no{color:var(--text3);font-size:14px;flex-shrink:0}
+    .perm-label{color:var(--text2)}
+  </style>
+</head>
+<body>
+
+<!-- Top Nav -->
+<div class="topnav">
+  <span class="logo">⟨dev<span>learn</span>⟩</span>
+  <span class="badge">ADMIN PORTAL</span>
+  <div class="nav-links">
+    <a href="/admin.html" class="nav-link">⚙ Content Admin</a>
+    <a href="/" class="nav-link">📚 App</a>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-user">
+      <div class="avatar-init" id="sidebarAvatarInit">A</div>
+      <div style="min-width:0">
+        <div class="user-name" id="sidebarName">Admin</div>
+        <div class="user-role">● ADMIN</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showPage('dashboard')">
+        <span class="icon">📊</span> Dashboard
+      </button>
+      <button class="nav-item" onclick="showPage('users')">
+        <span class="icon">👥</span> Users
+        <span class="badge-count" id="userCountBadge">—</span>
+      </button>
+      <button class="nav-item" onclick="showPage('roles')">
+        <span class="icon">🔐</span> Roles
+      </button>
+      <button class="nav-item" onclick="showPage('access')">
+        <span class="icon">🔄</span> Role Switcher
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="doLogout()">⏏ Sign Out</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- ── DASHBOARD PAGE ── -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Overview of your DevLearn platform</div>
+
+      <div class="stat-grid" id="statGrid">
+        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-num" id="s-total">—</div><div class="stat-label">Total Users</div></div>
+        <div class="stat-card"><div class="stat-icon">🔐</div><div class="stat-num" id="s-admin">—</div><div class="stat-label">Admins</div></div>
+        <div class="stat-card"><div class="stat-icon">🎓</div><div class="stat-num" id="s-student">—</div><div class="stat-label">Students</div></div>
+        <div class="stat-card"><div class="stat-icon">🌐</div><div class="stat-num" id="s-google">—</div><div class="stat-label">Google Auth</div></div>
+        <div class="stat-card"><div class="stat-icon">📧</div><div class="stat-num" id="s-local">—</div><div class="stat-label">Email Auth</div></div>
+      </div>
+
+      <!-- Recent users -->
+      <div class="table-wrap">
+        <div class="table-header">
+          <span class="table-title">Recent Registrations</span>
+        </div>
+        <div id="recentUsers"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- ── USERS PAGE ── -->
+    <div class="page" id="page-users">
+      <div class="page-title">User Management</div>
+      <div class="page-sub">View, promote, or remove user accounts</div>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <span class="table-title">All Users</span>
+          <input class="search-input" id="userSearch" placeholder="🔍  Search by name or email…"
+                 oninput="filterUsers(this.value)"/>
+          <button onclick="loadUsers()" style="padding:7px 14px;background:var(--bg3);
+            border:1px solid var(--border2);border-radius:6px;color:var(--text2);
+            font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer">
+            ↺ Refresh
+          </button>
+        </div>
+        <div id="usersTableWrap"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- ── ROLES PAGE ── -->
+    <div class="page" id="page-roles">
+      <div class="page-title">Role Management</div>
+      <div class="page-sub">Quickly promote students to admin or demote admins</div>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <span class="table-title">Admins</span>
+        </div>
+        <div id="adminsTable"><div class="loading">Loading…</div></div>
+      </div>
+
+      <br>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <span class="table-title">Students</span>
+          <input class="search-input" id="studentSearch" placeholder="🔍  Search students…"
+                 oninput="filterStudents(this.value)"/>
+        </div>
+        <div id="studentsTable"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- ── ROLE SWITCHER PAGE ── -->
+    <div class="page" id="page-access">
+      <div class="page-title">Role Switcher</div>
+      <div class="page-sub">Test both ADMIN and STUDENT experiences without a second account.<br>
+        Your database role stays <strong>ADMIN</strong> — only the session token changes.</div>
+
+      <!-- Current role banner -->
+      <div id="currentRoleBanner" class="current-role-banner banner-admin">
+        <span style="font-size:18px">👑</span>
+        <div>
+          <div>Currently viewing as: <strong id="currentRoleLabel">ADMIN</strong></div>
+          <div style="font-size:11px;opacity:.8;margin-top:2px" id="currentRoleNote">
+            Your real DB role is ADMIN
+          </div>
+        </div>
+        <button id="restoreAdminBtn" onclick="restoreAdmin()"
+                style="margin-left:auto;display:none;padding:5px 14px;background:rgba(248,113,113,.12);
+          color:var(--red);border:1px solid rgba(248,113,113,.2);border-radius:6px;
+          font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer">
+          ↩ Restore Admin
+        </button>
+      </div>
+
+      <!-- Toggle -->
+      <div class="role-switch-card">
+        <div class="role-switch-title">Switch View</div>
+        <div class="role-switch-sub">
+          Click a role to receive a new JWT token with that role. The app will behave exactly
+          as that role sees it — menu items, access controls, redirects.
+        </div>
+
+        <div class="role-toggle">
+          <button class="role-toggle-btn active-admin" id="btnAdmin" onclick="switchToRole('ADMIN')">
+            👑 ADMIN
+            <div style="font-size:10px;font-weight:400;opacity:.7;margin-top:2px">Full access</div>
+          </button>
+          <button class="role-toggle-btn" id="btnStudent" onclick="switchToRole('STUDENT')">
+            🎓 STUDENT
+            <div style="font-size:10px;font-weight:400;opacity:.7;margin-top:2px">Learning view</div>
+          </button>
+        </div>
+
+        <div id="switchStatus" style="font-size:12px;color:var(--text3);min-height:20px"></div>
+      </div>
+
+      <!-- Permissions comparison table -->
+      <div style="max-width:680px">
+        <div style="font-size:14px;font-weight:800;margin-bottom:14px">What each role can do</div>
+        <div class="perm-grid">
+          <div class="perm-card">
+            <div class="perm-card-title" style="color:var(--red)">👑 ADMIN</div>
+            <div class="perm-item"><span class="perm-yes">✓</span><span class="perm-label">View all topics</span></div>
+            <div class="perm-item"><span class="perm-yes">✓</span><span class="perm-label">Run & submit code</span></div>
+            <div class="perm-item"><span class="perm-yes">✓</span><span class="perm-label">Access /admin.html</span></div>
+            <div class="perm-item"><span class="perm-yes">✓</span><span class="perm-label">Create / edit topics</span></div>
+            <div class="perm-item"><span class="perm-yes">✓</span><span class="perm-label">Import JSON / PDF</span></div>
+            <div class="perm-item"><span class="perm-yes">✓</span><span class="perm-label">Generate AI topics</span></div>
+            <div class="perm-item"><span class="perm-yes">✓</span><span class="perm-label">Manage users</span></div>
+            <div class="perm-item"><span class="perm-yes">✓</span><span class="perm-label">View /portal.html</span></div>
+            <div class="perm-item"><span class="perm-yes">✓</span><span class="perm-label">Delete topics</span></div>
+          </div>
+          <div class="perm-card">
+            <div class="perm-card-title" style="color:var(--blue)">🎓 STUDENT</div>
+            <div class="perm-item"><span class="perm-yes">✓</span><span class="perm-label">View all topics</span></div>
+            <div class="perm-item"><span class="perm-yes">✓</span><span class="perm-label">Run & submit code</span></div>
+            <div class="perm-item"><span class="perm-no">✗</span><span class="perm-label">Access /admin.html</span></div>
+            <div class="perm-item"><span class="perm-no">✗</span><span class="perm-label">Create / edit topics</span></div>
+            <div class="perm-item"><span class="perm-no">✗</span><span class="perm-label">Import JSON / PDF</span></div>
+            <div class="perm-item"><span class="perm-no">✗</span><span class="perm-label">Generate AI topics</span></div>
+            <div class="perm-item"><span class="perm-no">✗</span><span class="perm-label">Manage users</span></div>
+            <div class="perm-item"><span class="perm-no">✗</span><span class="perm-label">View /portal.html</span></div>
+            <div class="perm-item"><span class="perm-no">✗</span><span class="perm-label">Delete topics</span></div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;padding:12px 16px;background:var(--bg2);border:1px solid var(--border2);
+             border-radius:8px;font-size:12px;color:var(--text3);line-height:1.7">
+          💡 <strong style="color:var(--text2)">How it works:</strong>
+          The server issues a new JWT with the selected role embedded.
+          Your DB record stays <code style="background:var(--bg3);padding:1px 5px;border-radius:3px">role = ADMIN</code> permanently.
+          To get your admin token back, click <strong style="color:var(--text2)">↩ Restore Admin</strong>
+          or re-login with Google.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Confirm Dialog -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirmIcon">⚠️</div>
+    <div class="confirm-title" id="confirmTitle">Are you sure?</div>
+    <div class="confirm-msg"   id="confirmMsg"></div>
+    <div class="confirm-actions">
+      <button class="confirm-yes" id="confirmYes">Confirm</button>
+      <button class="confirm-no"  onclick="closeConfirm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="/js/api.js"></script>
+<script>
+// ── Init ──────────────────────────────────────────────────────────────────────
+let allUsers = [];
+
+(function init() {
+  const user = Auth.getUser();
+  if (!user) return;
+  document.body.style.visibility = 'visible';
+  document.getElementById('sidebarName').textContent = user.name || user.email;
+  document.getElementById('sidebarAvatarInit').textContent =
+    (user.name || user.email || 'A')[0].toUpperCase();
+  loadStats();
+  loadUsers();
+})();
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name)?.classList.add('active');
+  event.currentTarget?.classList.add('active');
+
+  if (name === 'roles') renderRolesPage();
+}
+
+// ── Load stats ─────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const res  = await fetch('/api/admin/users/stats', { headers: Auth.headers() });
+    const data = await res.json();
+    document.getElementById('s-total').textContent   = data.totalUsers   || 0;
+    document.getElementById('s-admin').textContent   = data.adminCount   || 0;
+    document.getElementById('s-student').textContent = data.studentCount || 0;
+    document.getElementById('s-google').textContent  = data.googleUsers  || 0;
+    document.getElementById('s-local').textContent   = data.localUsers   || 0;
+  } catch(e) { console.error('Stats failed', e); }
+}
+
+// ── Load users ─────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  try {
+    const res = await fetch('/api/admin/users', { headers: Auth.headers() });
+    allUsers  = await res.json();
+    document.getElementById('userCountBadge').textContent = allUsers.length;
+    renderUsersTable(allUsers);
+    renderRecentUsers();
+  } catch(e) {
+    document.getElementById('usersTableWrap').innerHTML =
+      '<div class="empty-state"><h3>Failed to load</h3><p>' + e.message + '</p></div>';
+  }
+}
+
+function filterUsers(q) {
+  const filtered = q.trim()
+    ? allUsers.filter(u =>
+        u.name.toLowerCase().includes(q.toLowerCase()) ||
+        u.email.toLowerCase().includes(q.toLowerCase()))
+    : allUsers;
+  renderUsersTable(filtered);
+}
+
+function filterStudents(q) {
+  renderRolesPage(q);
+}
+
+// ── Render helpers ────────────────────────────────────────────────────────────
+function renderUsersTable(users) {
+  const wrap = document.getElementById('usersTableWrap');
+  if (!users.length) {
+    wrap.innerHTML = '<div class="empty-state"><h3>No users found</h3></div>';
+    return;
+  }
+  wrap.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>User</th><th>Role</th><th>Auth</th>
+          <th>Joined</th><th>Last Login</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${users.map(u => `
+        <tr>
+          <td>
+            <div class="user-cell">
+              ${u.avatarUrl
+                ? `<img class="user-av" src="${esc(u.avatarUrl)}" onerror="this.style.display='none'"/>`
+                : `<div class="user-av-init">${(u.name||u.email||'?')[0].toUpperCase()}</div>`}
+              <div>
+                <div class="user-info-name">${esc(u.name)}</div>
+                <div class="user-info-email">${esc(u.email)}</div>
+              </div>
+            </div>
+          </td>
+          <td>${(u.roles||[u.role||'STUDENT']).map(r=>`<span class="role-badge ${r==='ADMIN'?'role-admin':r==='TEACHER'?'role-teacher':'role-student'}">${r}</span>`).join(' ')}</td>
+          <td><span class="provider-badge">${u.provider}</span></td>
+          <td style="color:var(--text3);font-size:12px">${fmtDate(u.createdAt)}</td>
+          <td style="color:var(--text3);font-size:12px">${fmtDate(u.lastLogin)}</td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+              ${renderRoleCheckboxes(u)}
+              <button class="action-btn action-delete" onclick="deleteUser(${u.id},'${esc(u.name)}')" style="margin-left:4px">✕</button>
+            </div>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderRecentUsers() {
+  const recent = [...allUsers]
+    .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 5);
+  document.getElementById('recentUsers').innerHTML = `
+    <table>
+      <thead><tr><th>User</th><th>Role</th><th>Auth</th><th>Joined</th></tr></thead>
+      <tbody>
+        ${recent.map(u => `
+        <tr>
+          <td>
+            <div class="user-cell">
+              ${u.avatarUrl
+                ? `<img class="user-av" src="${esc(u.avatarUrl)}" onerror="this.style.display='none'"/>`
+                : `<div class="user-av-init">${(u.name||'?')[0].toUpperCase()}</div>`}
+              <div>
+                <div class="user-info-name">${esc(u.name)}</div>
+                <div class="user-info-email">${esc(u.email)}</div>
+              </div>
+            </div>
+          </td>
+          <td>${(u.roles||[u.role||'STUDENT']).map(r=>`<span class="role-badge ${r==='ADMIN'?'role-admin':r==='TEACHER'?'role-teacher':'role-student'}">${r}</span>`).join(' ')}</td>
+          <td><span class="provider-badge">${u.provider}</span></td>
+          <td style="color:var(--text3);font-size:12px">${fmtDate(u.createdAt)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderRolesPage(studentFilter = '') {
+  const admins   = allUsers.filter(u => u.role === 'ADMIN');
+  const students = allUsers.filter(u => u.role === 'STUDENT' &&
+    (!studentFilter || u.name.toLowerCase().includes(studentFilter.toLowerCase()) ||
+     u.email.toLowerCase().includes(studentFilter.toLowerCase())));
+
+  const adminHtml = admins.length
+    ? `<table><thead><tr><th>User</th><th>Email</th><th>Auth</th><th>Action</th></tr></thead><tbody>
+        ${admins.map(u => `
+        <tr>
+          <td><div class="user-cell">
+            ${u.avatarUrl ? `<img class="user-av" src="${esc(u.avatarUrl)}"/>` : `<div class="user-av-init">${(u.name||'?')[0].toUpperCase()}</div>`}
+            <span style="font-weight:700">${esc(u.name)}</span>
+          </div></td>
+          <td style="color:var(--text3)">${esc(u.email)}</td>
+          <td><span class="provider-badge">${u.provider}</span></td>
+          <td><button class="action-btn action-demote" onclick="changeRole(${u.id},'STUDENT','${esc(u.name)}')">▼ Demote to Student</button></td>
+        </tr>`).join('')}
+       </tbody></table>`
+    : '<div class="empty-state"><h3>No admins</h3></div>';
+
+  const studentHtml = students.length
+    ? `<table><thead><tr><th>User</th><th>Email</th><th>Auth</th><th>Action</th></tr></thead><tbody>
+        ${students.map(u => `
+        <tr>
+          <td><div class="user-cell">
+            ${u.avatarUrl ? `<img class="user-av" src="${esc(u.avatarUrl)}"/>` : `<div class="user-av-init">${(u.name||'?')[0].toUpperCase()}</div>`}
+            <span>${esc(u.name)}</span>
+          </div></td>
+          <td style="color:var(--text3)">${esc(u.email)}</td>
+          <td><span class="provider-badge">${u.provider}</span></td>
+          <td><button class="action-btn action-promote" onclick="changeRole(${u.id},'ADMIN','${esc(u.name)}')">▲ Make Admin</button></td>
+        </tr>`).join('')}
+       </tbody></table>`
+    : '<div class="empty-state"><h3>No students found</h3></div>';
+
+  document.getElementById('adminsTable').innerHTML   = adminHtml;
+  document.getElementById('studentsTable').innerHTML = studentHtml;
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+function renderRoleCheckboxes(u) {
+  const allRoles = ['STUDENT', 'TEACHER', 'ADMIN'];
+  const userRoles = u.roles || [u.role || 'STUDENT'];
+  return `<div class="role-cb-wrap">` +
+    allRoles.map(r => {
+      const checked = userRoles.includes(r);
+      return `<label class="role-cb-item ${checked ? 'checked-'+r : ''}" title="${r}"
+                onclick="toggleUserRole(${u.id},'${esc(u.name||'')}','${r}',${!checked},this)">
+        <input type="checkbox" ${checked ? 'checked' : ''} onclick="event.stopPropagation()"/>
+        ${r}
+      </label>`;
+    }).join('') +
+  `</div>`;
+}
+
+async function toggleUserRole(userId, name, role, adding, labelEl) {
+  const endpoint = adding
+    ? `/api/admin/users/${userId}/roles/add`
+    : `/api/admin/users/${userId}/roles/${role}`;
+  const method  = adding ? 'POST' : 'DELETE';
+  const body    = adding ? JSON.stringify({ role }) : undefined;
+
+  try {
+    const res = await fetch(endpoint, {
+      method, headers: Auth.headers(), body
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      toast(err.error || 'Failed', 'error');
+      return;
+    }
+    const updated = await res.json();
+    toast(`${name}: roles → ${(updated.roles||[]).join(', ')}`, 'success');
+    await loadUsers();
+    await loadStats();
+  } catch(e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+function changeRole(id, newRole, name) {
+  const isPromote = newRole === 'ADMIN';
+  showConfirm(
+    isPromote ? '▲ Add Admin Role' : '▼ Remove Admin Role',
+    isPromote
+      ? `Give <strong>${esc(name)}</strong> admin access?`
+      : `Remove admin access from <strong>${esc(name)}</strong>?`,
+    isPromote ? '⬆️' : '⬇️',
+    async () => {
+      try {
+        const endpoint = isPromote
+          ? `/api/admin/users/${id}/roles/add`
+          : `/api/admin/users/${id}/roles/ADMIN`;
+        const res = await fetch(endpoint, {
+          method: isPromote ? 'POST' : 'DELETE',
+          headers: Auth.headers(),
+          body: isPromote ? JSON.stringify({ role: 'ADMIN' }) : undefined
+        });
+        if (!res.ok) throw new Error((await res.json()).error);
+        toast(`${name} updated`, 'success');
+        await loadUsers(); await loadStats(); renderRolesPage();
+      } catch(e) { toast('Failed: ' + e.message, 'error'); }
+    }
+  );
+}
+
+function deleteUser(id, name) {
+  showConfirm(
+    'Delete User',
+    `Permanently delete <strong>${esc(name)}</strong>? This cannot be undone. All their data will be lost.`,
+    '🗑️',
+    async () => {
+      try {
+        const res = await fetch(`/api/admin/users/${id}`, {
+          method: 'DELETE', headers: Auth.headers()
+        });
+        if (!res.ok) throw new Error(await res.text());
+        toast(`${name} deleted`, 'success');
+        await loadUsers();
+        await loadStats();
+      } catch(e) { toast('Failed: ' + e.message, 'error'); }
+    }
+  );
+}
+
+// ── Confirm dialog ─────────────────────────────────────────────────────────────
+let confirmCallback = null;
+
+function showConfirm(title, msg, icon, cb) {
+  document.getElementById('confirmTitle').textContent    = title;
+  document.getElementById('confirmMsg').innerHTML        = msg;
+  document.getElementById('confirmIcon').textContent     = icon;
+  document.getElementById('confirmOverlay').style.display = 'flex';
+  confirmCallback = cb;
+}
+
+document.getElementById('confirmYes').addEventListener('click', () => {
+  closeConfirm();
+  if (confirmCallback) confirmCallback();
+});
+
+function closeConfirm() {
+  document.getElementById('confirmOverlay').style.display = 'none';
+  confirmCallback = null;
+}
+
+// ── Logout ─────────────────────────────────────────────────────────────────────
+function doLogout() {
+  if (!confirm('Sign out?')) return;
+  localStorage.removeItem('devlearn_token');
+  localStorage.removeItem('devlearn_user');
+  fetch('/api/auth/logout', { method: 'POST' }).catch(()=>{});
+  window.location.replace('/login.html');
+}
+
+// ── Utils ──────────────────────────────────────────────────────────────────────
+function fmtDate(str) {
+  if (!str) return '—';
+  try {
+    const d = new Date(str);
+    return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+  } catch { return str.substring(0, 10); }
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg, type='success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = 'show ' + type;
+  setTimeout(() => el.className = '', 3000);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ROLE SWITCHER
+// ═══════════════════════════════════════════════════════════
+
+let originalToken = null; // saves admin token before switching
+
+function updateRoleBannerUI() {
+  const user = Auth.getUser();
+  if (!user) return;
+  const isAdmin = user.role === 'ADMIN';
+  const banner  = document.getElementById('currentRoleBanner');
+  const label   = document.getElementById('currentRoleLabel');
+  const note    = document.getElementById('currentRoleNote');
+  const restBtn = document.getElementById('restoreAdminBtn');
+  const btnA    = document.getElementById('btnAdmin');
+  const btnS    = document.getElementById('btnStudent');
+
+  label.textContent = user.role;
+  if (isAdmin) {
+    banner.className = 'current-role-banner banner-admin';
+    banner.querySelector('span').textContent = '👑';
+    note.textContent = originalToken ? 'Switched from ADMIN — your DB role is still ADMIN' : 'Your real DB role is ADMIN';
+    restBtn.style.display = originalToken ? 'inline-flex' : 'none';
+    btnA.className = 'role-toggle-btn active-admin';
+    btnS.className = 'role-toggle-btn';
+  } else {
+    banner.className = 'current-role-banner banner-student';
+    banner.querySelector('span').textContent = '🎓';
+    note.textContent = 'STUDENT view — your real DB role is still ADMIN';
+    restBtn.style.display = 'inline-flex';
+    btnA.className = 'role-toggle-btn';
+    btnS.className = 'role-toggle-btn active-student';
+  }
+}
+
+async function switchToRole(role) {
+  const user = Auth.getUser();
+  if (!user) return;
+  if (user.role === role) {
+    document.getElementById('switchStatus').textContent = `Already viewing as ${role}`;
+    return;
+  }
+
+  document.getElementById('switchStatus').textContent = `⏳ Switching to ${role} view…`;
+
+  // Save current admin token before first switch
+  if (!originalToken && role === 'STUDENT') {
+    originalToken = Auth.getToken();
+  }
+
+  try {
+    const res = await fetch('/api/admin/users/switch-role', {
+      method: 'POST',
+      headers: Auth.headers(),
+      body: JSON.stringify({ role })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    // Update localStorage with new token + role
+    localStorage.setItem('devlearn_token', data.token);
+    const updatedUser = { ...user, role: data.role };
+    localStorage.setItem('devlearn_user', JSON.stringify(updatedUser));
+
+    document.getElementById('switchStatus').innerHTML =
+      `<span style="color:var(--accent)">✅ Switched to ${role} view.</span> ` +
+      `<a href="/" style="color:var(--blue)" target="_blank">Open app as ${role} →</a>`;
+
+    updateRoleBannerUI();
+    toast(`Now viewing as ${role}`, 'success');
+
+  } catch(e) {
+    document.getElementById('switchStatus').innerHTML =
+      `<span style="color:var(--red)">❌ ${e.message}</span>`;
+    toast('Switch failed: ' + e.message, 'error');
+  }
+}
+
+function restoreAdmin() {
+  if (!originalToken) return;
+  localStorage.setItem('devlearn_token', originalToken);
+  const user = Auth.getUser();
+  const restored = { ...user, role: 'ADMIN' };
+  localStorage.setItem('devlearn_user', JSON.stringify(restored));
+  originalToken = null;
+  updateRoleBannerUI();
+  document.getElementById('switchStatus').innerHTML =
+    '<span style="color:var(--accent)">✅ Admin token restored.</span>';
+  toast('Admin access restored', 'success');
+}
+
+// Init switcher UI on page load
+document.addEventListener('DOMContentLoaded', () => updateRoleBannerUI());
+
+</script>
+</body>
+</html>

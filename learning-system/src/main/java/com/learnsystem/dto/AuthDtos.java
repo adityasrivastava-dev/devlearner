@@ -5,6 +5,7 @@ import lombok.Data;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 public class AuthDtos {
 
@@ -38,30 +39,32 @@ public static class LoginRequest {
 @Data
 @Builder
 public static class AuthResponse {
-	private String  token;
-	private String  type;
-	private Long    id;
-	private String  name;
-	private String  email;
-	private String  role;
-	private String  avatarUrl;
-	private boolean emailVerified;
-	private int     streakDays;
-	private int     problemsSolved;
+	private String       token;
+	private String       type;
+	private Long         id;
+	private String       name;
+	private String       email;
+	private String       role;        // primary role e.g. "ADMIN"
+	private List<String> roles;       // all roles e.g. ["STUDENT","ADMIN"]
+	private String       avatarUrl;
+	private boolean      emailVerified;
+	private int          streakDays;
+	private int          problemsSolved;
 }
 
 @Data
 @Builder
 public static class UserProfileResponse {
-	private Long    id;
-	private String  name;
-	private String  email;
-	private String  role;
-	private String  avatarUrl;
-	private String  provider;
-	private boolean emailVerified;
-	private int     streakDays;
-	private int     problemsSolved;
-	private String  createdAt;
+	private Long         id;
+	private String       name;
+	private String       email;
+	private String       role;        // primary role
+	private List<String> roles;       // all roles
+	private String       avatarUrl;
+	private String       provider;
+	private boolean      emailVerified;
+	private int          streakDays;
+	private int          problemsSolved;
+	private String       createdAt;
 }
 }
