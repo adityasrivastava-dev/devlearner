@@ -2072,19 +2072,14 @@ async function uploadPdf(endpoint, isSave) {
   const category = document.getElementById('pdfCategory').value;
   const progress = document.getElementById('pdfProgress');
   const bar      = document.getElementById('pdfProgressBar');
-  const log      = document.getElementById('pdfLog');
+  const logEl    = document.getElementById('pdfLog');
 
   progress.style.display = 'block';
-  log.style.display = 'block';
-  log.innerHTML = '<span class="inf">⏳ Uploading and parsing PDF…</span>
-';
+  logEl.style.display = 'block';
+  logEl.innerHTML = '<span class="inf">⏳ Reading PDF — detecting table of contents and chapters…</span>\n';
 
-  // Fake progress animation
   let pct = 0;
-  const ticker = setInterval(() => {
-    pct = Math.min(pct + 3, 85);
-    bar.style.width = pct + '%';
-  }, 200);
+  const ticker = setInterval(() => { pct = Math.min(pct + 2, 88); bar.style.width = pct + '%'; }, 250);
 
   try {
     const form = new FormData();
@@ -2093,64 +2088,75 @@ async function uploadPdf(endpoint, isSave) {
 
     const res = await fetch(endpoint, {
       method: 'POST',
-      // multipart — don't set Content-Type, browser sets it with boundary
-    });
-    // Note: don't set Content-Type for FormData — browser sets it with boundary
-
-    // Actually re-do with correct approach:
-    const res2 = await fetch(endpoint, {
-      method: 'POST',
       headers: { 'Authorization': 'Bearer ' + localStorage.getItem('devlearn_token') },
       body: form
     });
 
     clearInterval(ticker);
     bar.style.width = '100%';
+    setTimeout(() => { progress.style.display = 'none'; bar.style.width = '0'; }, 600);
 
-    if (!res2.ok) {
-      const err = await res2.json();
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
       throw new Error(err.error || 'Upload failed');
     }
 
-    const data = await res2.json();
+    const data = await res.json();
 
     if (isSave) {
-      log.innerHTML += `<span class="ok">✅ Saved! Created: ${data.created}, Skipped: ${data.skipped}</span>
-`;
-      toast(`PDF imported! ${data.created} topics created`, 'success');
+      logEl.innerHTML = `<span class="ok">✅ ${data.created} topics saved, ${data.skipped} skipped</span>\n`
+                      + `<span class="inf">Detection: ${esc(data.detectionMethod || 'scan')}</span>`;
+      toast(`✅ ${data.created} topics imported from PDF!`, 'success');
       loadAllTopics();
     } else {
-      log.innerHTML += `<span class="ok">✅ Parsed! ${data.sectionsFound} sections found → ${data.topicsCreated} topics</span>
-`;
+      logEl.innerHTML = `<span class="ok">✅ ${data.topicCount} topics found via ${esc(data.detectionMethod || 'scan')}</span>\n`
+                      + `<span class="inf">📖 ${data.totalPages} pages · Review below, then click Save All</span>`;
       pdfBatch = data;
       renderPdfPreview(data);
     }
 
-    setTimeout(() => { progress.style.display = 'none'; bar.style.width = '0'; }, 800);
-
   } catch(e) {
     clearInterval(ticker);
     progress.style.display = 'none';
-    log.innerHTML += `<span class="err">❌ ${e.message}</span>
-`;
-    toast('PDF import failed: ' + e.message, 'error');
+    logEl.innerHTML = `<span class="err">❌ ${esc(e.message)}</span>`;
+    toast('PDF failed: ' + e.message, 'error');
   }
 }
 
 function renderPdfPreview(data) {
-  document.getElementById('pdfPreviewTitle').textContent =
-    `${data.topicsCreated} Topics Extracted`;
+  document.getElementById('pdfPreviewTitle').textContent = data.topicCount + ' Topics Found';
 
-  const body = document.getElementById('pdfPreviewBody');
-  body.innerHTML = (data.topics || []).map(t => `
-    <div class="p2-topic-card">
-      <div class="p2-topic-title">${esc(t.title || 'Untitled')}</div>
-      <div class="p2-topic-meta">
-        <span class="p2-badge ${t.category==='DSA'?'p2-badge-dsa':t.category==='ADVANCED_JAVA'?'p2-badge-adv':'p2-badge-java'}">${t.category}</span>
-        <span>${esc((t.description||'').substring(0, 80))}${t.description?.length > 80 ? '…' : ''}</span>
+  const topics = data.topics || [];
+  const body   = document.getElementById('pdfPreviewBody');
+  const catColors = { DSA:'p2-badge-dsa', JAVA:'p2-badge-java', ADVANCED_JAVA:'p2-badge-adv' };
+
+  // Group by category
+  const groups = {};
+  topics.forEach(t => {
+    const cat = t.category || 'DSA';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(t);
+  });
+
+  body.innerHTML = Object.entries(groups).map(([cat, items]) => `
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;
+           letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+        <span class="p2-badge ${catColors[cat]||'p2-badge-dsa'}">${cat}</span>
+        <span>${items.length} topics</span>
       </div>
-    </div>
-  `).join('');
+      ${items.map((t,i) => `
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;
+             background:var(--bg2);border:1px solid var(--border);border-radius:6px;margin-bottom:5px">
+          <span style="font-size:11px;color:var(--text3);min-width:22px;flex-shrink:0">${i+1}</span>
+          <div>
+            <div style="font-size:13px;font-weight:700">${esc(t.title||'')}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">
+              ${esc((t.description||'').substring(0,100))}${(t.description||'').length>100?'…':''}
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
 
   document.getElementById('pdfPreview').style.display = 'block';
 }
