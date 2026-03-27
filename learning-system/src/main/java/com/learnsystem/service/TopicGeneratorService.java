@@ -25,7 +25,11 @@ public enum Pattern {
 	HASHING, SORTING, SEARCHING, DYNAMIC_PROG, RECURSION, GREEDY,
 	BACKTRACKING, TWO_POINTER, SLIDING_WINDOW, PREFIX_SUM, HEAPS,
 	OOP, COLLECTIONS, STREAMS, CONCURRENCY, GENERICS, EXCEPTIONS,
-	DESIGN_PATTERNS, JVM, GENERIC_DSA, GENERIC_JAVA
+	DESIGN_PATTERNS, JVM,
+	MYSQL_JOINS, MYSQL_AGGREGATION, MYSQL_SUBQUERY, MYSQL_INDEX,
+	MYSQL_TRANSACTION, MYSQL_PROCEDURE, MYSQL_GENERIC,
+	AWS_COMPUTE, AWS_STORAGE, AWS_DATABASE, AWS_SERVERLESS, AWS_GENERIC,
+	GENERIC_DSA, GENERIC_JAVA
 }
 
 // ── Public entry point ────────────────────────────────────────────────────
@@ -76,6 +80,24 @@ public Pattern detect(String t, String cat) {
 	if (t.contains("exception") || t.contains("error") || t.contains("try")) return Pattern.EXCEPTIONS;
 	if (t.contains("pattern") || t.contains("singleton") || t.contains("factory") || t.contains("builder") || t.contains("observer")) return Pattern.DESIGN_PATTERNS;
 	if (t.contains("jvm") || t.contains("garbage") || t.contains("memory model")) return Pattern.JVM;
+	// MySQL patterns
+	if (cat.equalsIgnoreCase("MYSQL")) {
+		if (t.contains("join") || t.contains("left") || t.contains("right") || t.contains("inner") || t.contains("outer") || t.contains("cross")) return Pattern.MYSQL_JOINS;
+		if (t.contains("group") || t.contains("having") || t.contains("count") || t.contains("sum") || t.contains("avg") || t.contains("max") || t.contains("min") || t.contains("aggregat")) return Pattern.MYSQL_AGGREGATION;
+		if (t.contains("subquery") || t.contains("sub query") || t.contains("nested") || t.contains("exists") || t.contains("in (")) return Pattern.MYSQL_SUBQUERY;
+		if (t.contains("index") || t.contains("explain") || t.contains("optimiz") || t.contains("performance") || t.contains("query plan")) return Pattern.MYSQL_INDEX;
+		if (t.contains("transaction") || t.contains("commit") || t.contains("rollback") || t.contains("acid") || t.contains("lock")) return Pattern.MYSQL_TRANSACTION;
+		if (t.contains("procedure") || t.contains("function") || t.contains("trigger") || t.contains("view") || t.contains("cursor")) return Pattern.MYSQL_PROCEDURE;
+		return Pattern.MYSQL_GENERIC;
+	}
+	// AWS patterns
+	if (cat.equalsIgnoreCase("AWS")) {
+		if (t.contains("ec2") || t.contains("compute") || t.contains("instance") || t.contains("auto scaling") || t.contains("load balancer") || t.contains("elb")) return Pattern.AWS_COMPUTE;
+		if (t.contains("s3") || t.contains("storage") || t.contains("bucket") || t.contains("glacier") || t.contains("efs") || t.contains("ebs")) return Pattern.AWS_STORAGE;
+		if (t.contains("rds") || t.contains("dynamodb") || t.contains("aurora") || t.contains("redshift") || t.contains("elasticache")) return Pattern.AWS_DATABASE;
+		if (t.contains("lambda") || t.contains("serverless") || t.contains("api gateway") || t.contains("step function") || t.contains("sqs") || t.contains("sns")) return Pattern.AWS_SERVERLESS;
+		return Pattern.AWS_GENERIC;
+	}
 	return cat.equalsIgnoreCase("DSA") ? Pattern.GENERIC_DSA : Pattern.GENERIC_JAVA;
 }
 
@@ -213,6 +235,59 @@ private List<ExampleSeedDto> examples(String title, Pattern p) {
 				{"PriorityQueue — Min/Max Heap","Kth largest in O(n log k)","PriorityQueue<Integer> minHeap=new PriorityQueue<>();\nPriorityQueue<Integer> maxHeap=new PriorityQueue<>(reverseOrder());\n// Kth largest: min-heap of size k\nfor(int n:nums){\n    minHeap.offer(n);\n    if(minHeap.size()>k) minHeap.poll();\n}\nreturn minHeap.peek(); // kth largest","Keep min-heap of size k — top is always the kth largest","Top-K problems"},
 				{"LinkedHashMap LRU Cache","Access order eviction","Map<Integer,Integer> cache=new LinkedHashMap<>(16,0.75f,true){\n    @Override\n    protected boolean removeEldestEntry(Map.Entry<Integer,Integer> e){\n        return size()>capacity;\n    }\n};\ncache.put(1,10); cache.get(1); cache.put(2,20);","accessOrder=true makes get() count as access — eldest = LRU","Browser cache, DB result cache"}
 		};
+		case MYSQL_JOINS -> new String[][]{
+				{"INNER JOIN","Returns only matching rows from both tables",
+						"SELECT e.name, d.department_name\nFROM employees e\nINNER JOIN departments d ON e.department_id = d.department_id;",
+						"Only employees with a matching department are returned. No NULLs.","HR reporting systems"},
+				{"LEFT JOIN","All rows from left table, NULLs for no match",
+						"SELECT e.name, d.department_name\nFROM employees e\nLEFT JOIN departments d ON e.department_id = d.department_id;",
+						"Every employee appears. Department is NULL if unassigned.","Finding orphaned records"},
+				{"Find unmatched rows","LEFT JOIN + WHERE NULL trick",
+						"SELECT e.name\nFROM employees e\nLEFT JOIN departments d ON e.department_id = d.department_id\nWHERE d.department_id IS NULL;",
+						"Classic pattern: LEFT JOIN then filter WHERE right side IS NULL = rows with no match","Data quality checks"},
+				{"Multiple JOINs","Chain three tables",
+						"SELECT e.name, d.name AS dept, m.name AS manager\nFROM employees e\nLEFT JOIN departments d ON e.dept_id = d.id\nLEFT JOIN employees m ON e.manager_id = m.id;",
+						"Each JOIN adds one more relationship. Order matters for LEFT JOINs.","Org chart queries"},
+				{"SELF JOIN","Join a table to itself",
+						"SELECT e.name AS employee, m.name AS manager\nFROM employees e\nLEFT JOIN employees m ON e.manager_id = m.id\nORDER BY m.name;",
+						"Self-join uses table aliases to treat one table as two. Common for hierarchical data.","Employee hierarchy"}
+		};
+		case MYSQL_AGGREGATION -> new String[][]{
+				{"COUNT + GROUP BY","Count rows per group",
+						"SELECT department_id, COUNT(*) AS headcount\nFROM employees\nGROUP BY department_id\nORDER BY headcount DESC;",
+						"COUNT(*) counts all rows, COUNT(col) skips NULLs. GROUP BY splits into buckets.","Department headcount report"},
+				{"SUM + AVG","Financial aggregations",
+						"SELECT\n  department_id,\n  SUM(salary) AS total_payroll,\n  ROUND(AVG(salary), 2) AS avg_salary\nFROM employees\nGROUP BY department_id;",
+						"ROUND() avoids floating point noise in financial queries.","Payroll analysis"},
+				{"HAVING vs WHERE","Filter before vs after grouping",
+						"-- WHERE filters BEFORE grouping (fast)\nSELECT dept_id, COUNT(*) FROM employees\nWHERE hire_date > '2020-01-01'\nGROUP BY dept_id\nHAVING COUNT(*) > 5; -- HAVING filters AFTER",
+						"Rule: use WHERE to filter rows, HAVING to filter groups. Never use HAVING where WHERE would work.","Performance optimization"},
+				{"Window Functions","Rank without GROUP BY",
+						"SELECT name, salary, department_id,\n  RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS rank_in_dept\nFROM employees;",
+						"Window functions compute over a partition without collapsing rows. RANK vs DENSE_RANK vs ROW_NUMBER.","Leaderboards, top-N per group"},
+				{"Conditional aggregation","CASE inside aggregate",
+						"SELECT department_id,\n  COUNT(CASE WHEN salary > 80000 THEN 1 END) AS high_earners,\n  COUNT(CASE WHEN salary <= 80000 THEN 1 END) AS others\nFROM employees\nGROUP BY department_id;",
+						"CASE inside COUNT/SUM is a powerful pattern for pivot-like results without actual PIVOT.","Cross-tab reports"}
+		};
+		case MYSQL_SUBQUERY -> new String[][]{
+				{"Scalar subquery","Returns single value",
+						"SELECT name, salary,\n  salary - (SELECT AVG(salary) FROM employees) AS diff_from_avg\nFROM employees\nORDER BY diff_from_avg DESC;",
+						"Scalar subquery in SELECT runs once. Much better than correlated subquery.","Salary comparison reports"},
+				{"IN subquery","Filter with list from subquery",
+						"SELECT name FROM employees\nWHERE department_id IN (\n  SELECT id FROM departments WHERE location = 'NYC'\n);",
+						"IN with subquery can be slower than JOIN for large sets. Use EXISTS for better performance.","Geographic filtering"},
+				{"EXISTS vs IN","Performance comparison",
+						"-- EXISTS stops at first match (faster for large sets)\nSELECT e.name FROM employees e\nWHERE EXISTS (\n  SELECT 1 FROM orders o WHERE o.employee_id = e.id\n);",
+						"EXISTS returns true/false — stops scanning when first match found. IN fetches all values first.","Existence checks"},
+				{"CTE (WITH clause)","Readable subqueries",
+						"WITH dept_avg AS (\n  SELECT department_id, AVG(salary) AS avg_sal\n  FROM employees GROUP BY department_id\n)\nSELECT e.name, e.salary, d.avg_sal\nFROM employees e\nJOIN dept_avg d ON e.department_id = d.department_id\nWHERE e.salary > d.avg_sal;",
+						"CTEs are named subqueries, evaluated once. Much more readable than nested subqueries.","Complex multi-step queries"},
+				{"NOT IN pitfall","NULL breaks NOT IN",
+						"-- DANGEROUS: returns nothing if any value is NULL!\nSELECT name FROM a WHERE id NOT IN (SELECT fk FROM b);\n\n-- SAFE: use NOT EXISTS instead\nSELECT name FROM a WHERE NOT EXISTS (\n  SELECT 1 FROM b WHERE b.fk = a.id\n);",
+						"NOT IN returns empty set if subquery contains even one NULL. NOT EXISTS is always safe.","Data quality"}
+		};
+		case MYSQL_INDEX, MYSQL_TRANSACTION, MYSQL_PROCEDURE, MYSQL_GENERIC -> generateMysqlGenericExamples(title);
+		case AWS_COMPUTE, AWS_STORAGE, AWS_DATABASE, AWS_SERVERLESS, AWS_GENERIC -> generateAwsExamples(title, p);
 		default -> generateGenericExamples(title);
 	};
 
@@ -228,6 +303,40 @@ private List<ExampleSeedDto> examples(String title, Pattern p) {
 		list.add(ex);
 	}
 	return list;
+}
+
+private String[][] generateMysqlGenericExamples(String title) {
+	return new String[][]{
+			{"Basic SELECT","Retrieve filtered data", "SELECT id, name, salary FROM employees\nWHERE salary > 50000\nORDER BY salary DESC\nLIMIT 10;", "WHERE filters rows, ORDER BY sorts, LIMIT restricts count.", "Basic data retrieval"},
+			{"INSERT","Add new records", "INSERT INTO employees (name, email, salary, dept_id)\nVALUES ('Alice', 'alice@co.com', 75000, 3),\n       ('Bob',   'bob@co.com',   65000, 2);", "Multi-row INSERT is more efficient than multiple single-row inserts.", "Data entry"},
+			{"UPDATE with JOIN","Update based on related table", "UPDATE employees e\nJOIN departments d ON e.dept_id = d.id\nSET e.salary = e.salary * 1.1\nWHERE d.name = 'Engineering';", "JOIN in UPDATE allows filtering based on related table data.", "Bulk updates"},
+			{"DELETE safely","Delete with subquery check", "-- Check first\nSELECT COUNT(*) FROM employees WHERE hire_date < '2015-01-01';\n-- Then delete\nDELETE FROM employees WHERE hire_date < '2015-01-01';", "Always SELECT before DELETE to verify affected rows.", "Data cleanup"},
+			{"CASE expression","Conditional logic in SQL", "SELECT name, salary,\n  CASE\n    WHEN salary >= 100000 THEN 'Senior'\n    WHEN salary >= 70000  THEN 'Mid'\n    ELSE 'Junior'\n  END AS level\nFROM employees;", "CASE in SELECT creates computed columns. Equivalent to if-else in application code.", "Data classification"}
+	};
+}
+
+private String[][] generateAwsExamples(String title, Pattern p) {
+	String svc = p == Pattern.AWS_COMPUTE ? "EC2/Auto Scaling" :
+			p == Pattern.AWS_STORAGE ? "S3/EBS/EFS" :
+					p == Pattern.AWS_DATABASE ? "RDS/DynamoDB" :
+							p == Pattern.AWS_SERVERLESS ? "Lambda/API Gateway" : "AWS Services";
+	return new String[][]{
+			{"Core concept: " + svc, "Fundamental usage pattern",
+					"# " + title + " — Core concept\n# Study AWS documentation and practice in AWS Console\n# https://docs.aws.amazon.com",
+					"Understand when and why to use " + title, "Production cloud architectures"},
+			{"High Availability", "Multi-AZ deployment pattern",
+					"# Deploy across multiple Availability Zones:\n# - Primary in us-east-1a\n# - Standby in us-east-1b\n# - Auto-failover in < 60 seconds",
+					"Always design for failure. Single AZ = single point of failure.", "Production workloads"},
+			{"Cost Optimization", "Right-sizing and reserved capacity",
+					"# Reserved Instances: 1-3 year commitment = up to 75% savings\n# Spot Instances: spare capacity = up to 90% savings\n# Savings Plans: flexible commitment by $/hr",
+					"Largest AWS cost driver is over-provisioned resources.", "FinOps / cost management"},
+			{"Security Best Practices", "IAM and least privilege",
+					"# Principles:\n# 1. Least privilege — grant minimum needed permissions\n# 2. Enable MFA for all users\n# 3. Rotate access keys regularly\n# 4. Use IAM roles, not access keys on EC2",
+					"Security is a shared responsibility. AWS secures infrastructure; you secure your data and access.", "Security compliance"},
+			{"Monitoring", "CloudWatch metrics and alarms",
+					"# Key metrics to monitor:\n# - CPUUtilization > 80% → scale out\n# - 5xx errors → investigate application\n# - Latency P99 > threshold → performance issue\n# Set CloudWatch alarms → SNS → PagerDuty",
+					"You can't manage what you don't measure. Set alarms before problems occur.", "Production operations"}
+	};
 }
 
 private String[][] generateGenericExamples(String title) {
@@ -317,8 +426,163 @@ private List<String[]> getProblemSpecs(String title, Pattern p) {
 				sp("Distinct Subsequences","Count distinct subsequences of t in s","two strings","count","5\n3\nrabbbit\nrab","3","dp[i][j]=ways to form t[0..j-1] from s[0..i-1]","import java.util.*;\npublic class Main{public static void main(String[] a){Scanner sc=new Scanner(System.in);int m=sc.nextInt(),n=sc.nextInt();String s=sc.next(),t=sc.next();long[][] dp=new long[m+1][n+1];for(int i=0;i<=m;i++)dp[i][0]=1;for(int i=1;i<=m;i++)for(int j=1;j<=n;j++){dp[i][j]=dp[i-1][j];if(s.charAt(i-1)==t.charAt(j-1))dp[i][j]+=dp[i-1][j-1];}System.out.println(dp[m][n]);}}"),
 				sp("Cherry Pickup II","Max cherries two robots collect top to bottom","rows cols then grid","max cherries","3\n4\n3 1 1 2\n0 0 0 1\n3 0 0 0","5","3D DP: state is (row, col1, col2) for both robots","import java.util.*;\npublic class Main{public static void main(String[] a){Scanner sc=new Scanner(System.in);int rows=sc.nextInt(),cols=sc.nextInt();int[][] g=new int[rows][cols];for(int i=0;i<rows;i++)for(int j=0;j<cols;j++)g[i][j]=sc.nextInt();int[][] dp=new int[cols][cols];for(int[] row:dp)Arrays.fill(row,Integer.MIN_VALUE);dp[0][cols-1]=g[0][0]+(0==cols-1?0:g[0][cols-1]);for(int r=1;r<rows;r++){int[][] ndp=new int[cols][cols];for(int[] row:ndp)Arrays.fill(row,Integer.MIN_VALUE);for(int c1=0;c1<cols;c1++)for(int c2=0;c2<cols;c2++){if(dp[c1][c2]==Integer.MIN_VALUE)continue;for(int d1=-1;d1<=1;d1++)for(int d2=-1;d2<=1;d2++){int nc1=c1+d1,nc2=c2+d2;if(nc1<0||nc1>=cols||nc2<0||nc2>=cols)continue;int val=dp[c1][c2]+g[r][nc1]+(nc1!=nc2?g[r][nc2]:0);ndp[nc1][nc2]=Math.max(ndp[nc1][nc2],val);}}dp=ndp;}int res=0;for(int[] row:dp)for(int v:row)res=Math.max(res,v);System.out.println(res);}}")
 		);
+		case MYSQL_JOINS -> List.of(
+				sp("Find all employees","List all employees with their department name",
+						"employees and departments tables exist","name and department_name",
+						"-- Schema given in problem","See expected output",
+						"Use LEFT JOIN so employees without a department also appear",
+						"SELECT e.name, d.department_name\nFROM employees e\nLEFT JOIN departments d ON e.department_id = d.department_id;"),
+				sp("Employees without a department","Find employees not assigned to any department",
+						"employees and departments tables","employee names only",
+						"-- employees: id, name, department_id","Names with no dept",
+						"LEFT JOIN then WHERE right side IS NULL",
+						"SELECT e.name\nFROM employees e\nLEFT JOIN departments d ON e.department_id = d.department_id\nWHERE d.id IS NULL;"),
+				sp("Department headcount","Count employees per department",
+						"employees and departments tables","department_name and count",
+						"-- employees: id, name, dept_id","Dept A: 5, Dept B: 3",
+						"JOIN then GROUP BY department",
+						"SELECT d.department_name, COUNT(e.id) AS headcount\nFROM departments d\nLEFT JOIN employees e ON d.id = e.dept_id\nGROUP BY d.id, d.department_name\nORDER BY headcount DESC;"),
+				sp("Manager and their reports","List each manager with their direct reports",
+						"employees table with manager_id self-reference","manager and report names",
+						"-- employees: id, name, manager_id","Alice manages Bob, Carol",
+						"SELF JOIN: join employees to itself using manager_id",
+						"SELECT m.name AS manager, e.name AS report\nFROM employees e\nJOIN employees m ON e.manager_id = m.id\nORDER BY m.name;"),
+				sp("Orders with customer details","Show all orders with customer name",
+						"orders and customers tables","order_id, customer_name, total",
+						"-- orders: id, customer_id, total\n-- customers: id, name","Complete order list",
+						"INNER JOIN on customer_id",
+						"SELECT o.id, c.name, o.total\nFROM orders o\nJOIN customers c ON o.customer_id = c.id\nORDER BY o.id;"),
+				sp("Customers with no orders","Find customers who never ordered",
+						"customers and orders tables","customer names only",
+						"-- customers: id, name\n-- orders: id, customer_id","Inactive customers",
+						"LEFT JOIN then WHERE orders.id IS NULL",
+						"SELECT c.name\nFROM customers c\nLEFT JOIN orders o ON c.id = o.customer_id\nWHERE o.id IS NULL;"),
+				sp("Products in each category","Count products per category",
+						"products and categories tables","category_name and product_count",
+						"-- products: id, name, category_id\n-- categories: id, name","Electronics: 15, Books: 8",
+						"JOIN + GROUP BY + COUNT",
+						"SELECT cat.name, COUNT(p.id) AS product_count\nFROM categories cat\nLEFT JOIN products p ON cat.id = p.category_id\nGROUP BY cat.id, cat.name\nORDER BY product_count DESC;"),
+				sp("Three table JOIN","Orders with customer and product info",
+						"orders, customers, products tables","customer, product, quantity",
+						"-- order_items: order_id, product_id, qty\n-- orders: id, customer_id","Full order details",
+						"Chain multiple JOINs — each one adds a table",
+						"SELECT c.name, p.name AS product, oi.quantity\nFROM orders o\nJOIN customers c ON o.customer_id = c.id\nJOIN order_items oi ON o.id = oi.order_id\nJOIN products p ON oi.product_id = p.id;")
+		);
+		case MYSQL_AGGREGATION -> List.of(
+				sp("Count rows","Count total employees","employees table","total count",
+						"-- employees table exists","Total: 150",
+						"COUNT(*) counts all rows including NULLs",
+						"SELECT COUNT(*) AS total_employees FROM employees;"),
+				sp("Average salary","Calculate average salary per department","employees table","dept_id and avg_salary",
+						"-- employees: id, name, salary, dept_id","Dept 1: 75000.00",
+						"AVG() with GROUP BY",
+						"SELECT dept_id, ROUND(AVG(salary), 2) AS avg_salary\nFROM employees\nGROUP BY dept_id\nORDER BY avg_salary DESC;"),
+				sp("Departments with > 5 employees","Find large departments","employees table","dept_id and count",
+						"-- employees: id, name, dept_id","Dept 3: 8, Dept 1: 7",
+						"GROUP BY then HAVING COUNT(*) > 5",
+						"SELECT dept_id, COUNT(*) AS headcount\nFROM employees\nGROUP BY dept_id\nHAVING COUNT(*) > 5;"),
+				sp("Highest paid per department","Max salary in each department","employees table","dept_id and max_salary",
+						"-- employees: id, name, salary, dept_id","Dept 1: 120000",
+						"MAX() with GROUP BY",
+						"SELECT dept_id, MAX(salary) AS max_salary\nFROM employees\nGROUP BY dept_id;"),
+				sp("Monthly revenue","Sum orders by month","orders table","month and total_revenue",
+						"-- orders: id, total, created_at DATE","2024-01: 450000",
+						"DATE_FORMAT for grouping by month",
+						"SELECT DATE_FORMAT(created_at, '%Y-%m') AS month,\n       SUM(total) AS revenue\nFROM orders\nGROUP BY month\nORDER BY month;"),
+				sp("Second highest salary","Find 2nd highest salary","employees table","salary value",
+						"-- employees: id, name, salary","90000",
+						"Use LIMIT with OFFSET or subquery",
+						"SELECT MAX(salary) AS second_highest\nFROM employees\nWHERE salary < (SELECT MAX(salary) FROM employees);")
+		);
+		case MYSQL_SUBQUERY -> List.of(
+				sp("Above average salary","Employees earning above company average","employees table","name and salary",
+						"-- employees: id, name, salary","Alice: 95000",
+						"Scalar subquery: WHERE salary > (SELECT AVG...)",
+						"SELECT name, salary\nFROM employees\nWHERE salary > (SELECT AVG(salary) FROM employees)\nORDER BY salary DESC;"),
+				sp("Department with most employees","Find the busiest department","employees table","department_id",
+						"-- employees: id, name, dept_id","3",
+						"Subquery in FROM: GROUP BY, then SELECT max",
+						"SELECT dept_id\nFROM employees\nGROUP BY dept_id\nORDER BY COUNT(*) DESC\nLIMIT 1;"),
+				sp("Customers who ordered Product X","Find customers who bought a specific product","orders, order_items, products","customer_id list",
+						"-- orders: id, customer_id\n-- order_items: order_id, product_id\n-- products: id, name","customer 5, 12, 23",
+						"IN with subquery joining order_items to products",
+						"SELECT DISTINCT customer_id\nFROM orders\nWHERE id IN (\n  SELECT order_id FROM order_items\n  WHERE product_id = (SELECT id FROM products WHERE name = 'ProductX')\n);"),
+				sp("NOT EXISTS pattern","Find records with no related rows","customers, orders tables","customers with no orders",
+						"-- customers: id, name\n-- orders: id, customer_id","Inactive customers",
+						"NOT EXISTS is safer than NOT IN when NULLs possible",
+						"SELECT name FROM customers c\nWHERE NOT EXISTS (\n  SELECT 1 FROM orders o WHERE o.customer_id = c.id\n);"),
+				sp("CTE for readability","Rewrite nested subquery as CTE","employees table","above-avg earners per dept",
+						"-- employees: id, name, salary, dept_id","Clean readable result",
+						"WITH clause defines named subquery used in main SELECT",
+						"WITH dept_avg AS (\n  SELECT dept_id, AVG(salary) AS avg_sal\n  FROM employees GROUP BY dept_id\n)\nSELECT e.name, e.salary\nFROM employees e\nJOIN dept_avg d ON e.dept_id = d.dept_id\nWHERE e.salary > d.avg_sal;")
+		);
+		case MYSQL_INDEX, MYSQL_TRANSACTION, MYSQL_PROCEDURE, MYSQL_GENERIC -> generateMysqlProblems(title);
+		case AWS_COMPUTE, AWS_STORAGE, AWS_DATABASE, AWS_SERVERLESS, AWS_GENERIC -> generateAwsProblems(title, p);
 		default -> List.of();
 	};
+}
+
+private List<String[]> generateMysqlProblems(String title) {
+	String[] titles  = {"Basic SELECT query","Filter with WHERE","ORDER BY + LIMIT","COUNT and GROUP BY",
+			"SUM and AVG","MAX and MIN","HAVING clause","UPDATE records",
+			"DELETE with condition","CREATE TABLE","ADD COLUMN","CREATE INDEX",
+			"EXPLAIN query plan","Transaction with ROLLBACK","Stored procedure","Trigger",
+			"View creation","Full text search","JSON column query","Window function"};
+	String[] sqls    = {
+			"SELECT * FROM " + title.toLowerCase().replace(" ","_") + " LIMIT 10;",
+			"SELECT * FROM table1 WHERE created_at >= '2024-01-01';",
+			"SELECT name, score FROM results ORDER BY score DESC LIMIT 5;",
+			"SELECT category, COUNT(*) AS cnt FROM items GROUP BY category;",
+			"SELECT dept_id, SUM(salary), AVG(salary) FROM employees GROUP BY dept_id;",
+			"SELECT MAX(price), MIN(price) FROM products;",
+			"SELECT dept_id, COUNT(*) FROM employees GROUP BY dept_id HAVING COUNT(*) > 3;",
+			"UPDATE employees SET salary = salary * 1.1 WHERE performance_rating = 'A';",
+			"DELETE FROM logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 90 DAY);",
+			"CREATE TABLE topics (id INT PRIMARY KEY AUTO_INCREMENT, title VARCHAR(200) NOT NULL);",
+			"ALTER TABLE employees ADD COLUMN phone VARCHAR(20);",
+			"CREATE INDEX idx_email ON users(email);",
+			"EXPLAIN SELECT * FROM orders WHERE customer_id = 5;",
+			"START TRANSACTION;\nUPDATE a SET val = val - 100 WHERE id=1;\nUPDATE b SET val = val + 100 WHERE id=2;\nCOMMIT;",
+			"DELIMITER //\nCREATE PROCEDURE GetTopN(IN n INT)\nBEGIN SELECT * FROM products ORDER BY sales DESC LIMIT n;\nEND //",
+			"CREATE TRIGGER before_insert_check BEFORE INSERT ON orders FOR EACH ROW\nBEGIN IF NEW.total < 0 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Negative total'; END IF;\nEND;",
+			"CREATE VIEW active_users AS SELECT * FROM users WHERE last_login > DATE_SUB(NOW(), INTERVAL 30 DAY);",
+			"SELECT * FROM articles WHERE MATCH(title, body) AGAINST('Java programming' IN NATURAL LANGUAGE MODE);",
+			"SELECT * FROM products WHERE JSON_EXTRACT(attributes, '$.color') = 'blue';",
+			"SELECT name, salary, RANK() OVER (ORDER BY salary DESC) AS salary_rank FROM employees;"
+	};
+	List<String[]> list = new ArrayList<>();
+	for (int i = 0; i < 20; i++) {
+		String diff = i < 6 ? "EASY" : i < 14 ? "MEDIUM" : "HARD";
+		list.add(sp(titles[i], "Write a SQL query: " + titles[i],
+				"Schema provided in problem", "Correct SQL result",
+				"-- tables: employees, departments, orders, customers, products", "Correct query result",
+				"Think about which SQL clause applies: " + titles[i],
+				sqls[i]));
+	}
+	return list;
+}
+
+private List<String[]> generateAwsProblems(String title, Pattern p) {
+	String[] awsTitles = {
+			"Choose the right service","Design for high availability","Implement auto scaling",
+			"S3 bucket policy","EC2 instance sizing","RDS Multi-AZ setup",
+			"Lambda function trigger","API Gateway rate limiting","CloudWatch alarm",
+			"IAM least privilege policy","VPC subnet design","Security group rules",
+			"Cost estimation","Disaster recovery","Blue/green deployment",
+			"Cache with ElastiCache","DynamoDB partition key","SQS vs SNS vs Kinesis",
+			"CloudFront distribution","Route 53 routing policy"
+	};
+	List<String[]> list = new ArrayList<>();
+	for (int i = 0; i < 20; i++) {
+		String diff = i < 6 ? "EASY" : i < 14 ? "MEDIUM" : "HARD";
+		list.add(sp(awsTitles[i],
+				"AWS Architecture: " + awsTitles[i] + " for " + title,
+				"Architecture requirements provided", "Architecture diagram and explanation",
+				"Scenario: web app with 10k users, 99.9% uptime requirement", "Recommended AWS architecture",
+				"Consider: availability, cost, scalability, security",
+				"# " + awsTitles[i] + "\n# Design an AWS architecture that:\n# 1. Meets the requirement\n# 2. Follows Well-Architected Framework\n# 3. Optimizes for cost\n# Document your choices."));
+	}
+	return list;
 }
 
 private String[] sp(String title, String desc, String inFmt, String outFmt,

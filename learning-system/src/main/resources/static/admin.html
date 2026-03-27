@@ -449,6 +449,41 @@
     .btn-seed-cancel:hover { color: var(--text); }
 
 
+
+    /* ── PDF Rich Topic Cards ─────────────────────────────────────────────── */
+    .pdf-topic-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+                     margin-bottom:7px;overflow:hidden;transition:.15s}
+    .pdf-topic-card:hover{border-color:var(--border2)}
+    .pdf-topic-header{display:flex;align-items:center;gap:10px;padding:10px 14px;
+                       cursor:pointer;user-select:none}
+    .pdf-topic-num{font-size:11px;color:var(--text3);min-width:22px;flex-shrink:0;font-weight:700}
+    .pdf-topic-main{flex:1;min-width:0}
+    .pdf-topic-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .pdf-topic-desc{font-size:11px;color:var(--text3);margin-top:2px;
+                     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .pdf-topic-badges{display:flex;gap:5px;align-items:center;flex-shrink:0}
+    .pdf-gen-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+    .pdf-ex-badge{background:rgba(96,165,250,.1);color:var(--blue);border:1px solid rgba(96,165,250,.2)}
+    .pdf-pr-badge{background:rgba(74,222,128,.1);color:var(--accent);border:1px solid rgba(74,222,128,.2)}
+    .pdf-toggle{font-size:11px;color:var(--text3);flex-shrink:0;transition:transform .2s}
+    .pdf-toggle.open{transform:rotate(180deg)}
+    .pdf-topic-body{display:none;padding:0 14px 12px;border-top:1px solid var(--border)}
+    .pdf-topic-body.open{display:block}
+    .pdf-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+    .pdf-info-item{background:var(--bg3);border-radius:6px;padding:8px 10px}
+    .pdf-info-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+                     color:var(--text3);margin-bottom:3px}
+    .pdf-info-value{font-size:12px;color:var(--text2);line-height:1.5}
+    .pdf-starter{margin-top:8px;background:var(--bg3);border:1px solid var(--border);
+                  border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:11px;
+                  color:var(--text2);max-height:80px;overflow:hidden;line-height:1.6;
+                  white-space:pre;overflow-x:auto}
+    .pdf-gen-will{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+    .pdf-will-item{display:flex;align-items:center;gap:4px;font-size:11px;
+                    color:var(--text2);background:var(--bg3);padding:3px 8px;border-radius:5px}
+    .pdf-cat-group-header{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+                           margin-bottom:10px;display:flex;align-items:center;gap:8px;color:var(--text3)}
+
     /* ── Phase 2 Panels ─────────────────────────────────────────────────── */
     .p2-panel { padding: 28px; max-width: 720px; }
     .p2-title { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
@@ -791,7 +826,12 @@ async function saveTopic() {
     const res = await fetch(`/api/admin/topics/${activeTopic.id}`, {
       method: 'PUT', headers: jsonH(), body: JSON.stringify(payload)
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) {
+      const errText = await res.text();
+      let errMsg = res.status + ' ' + res.statusText;
+      try { const j = JSON.parse(errText); errMsg = j.message || j.error || errMsg; } catch(e){}
+      throw new Error(errMsg);
+    }
     activeTopic = await res.json();
     const idx = allTopics.findIndex(t => t.id === activeTopic.id);
     if (idx >= 0) allTopics[idx] = activeTopic;
@@ -1907,7 +1947,9 @@ async function runGenerator() {
   } catch(e) {
     clearInterval(ticker);
     progress.style.display = 'none';
+    progressBar.style.width = '0';
     toast('Generation failed: ' + e.message, 'error');
+    console.error('Generator error:', e);
   } finally {
     btn.disabled = false;
     btn.textContent = '⚡ Generate Preview';
@@ -2015,7 +2057,7 @@ async function saveGenerated() {
     });
     if (!res.ok) throw new Error(await res.text());
     const result = await res.json();
-    toast(`✅ Saved! ${result.created} topics created`, 'success');
+    toast(`✅ Saved! ${result.topicsSeeded || 0} topics created`, 'success');
     closeGeneratorPanel();
     loadAllTopics(); // refresh sidebar
   } catch(e) {
@@ -2126,9 +2168,15 @@ async function uploadPdf(endpoint, isSave) {
 function renderPdfPreview(data) {
   document.getElementById('pdfPreviewTitle').textContent = data.topicCount + ' Topics Found';
 
-  const topics = data.topics || [];
-  const body   = document.getElementById('pdfPreviewBody');
-  const catColors = { DSA:'p2-badge-dsa', JAVA:'p2-badge-java', ADVANCED_JAVA:'p2-badge-adv' };
+  const topics   = data.topics || [];
+  const body     = document.getElementById('pdfPreviewBody');
+  const catMeta  = {
+    DSA:           { label:'DSA',          cls:'p2-badge-dsa',  color:'var(--blue)'   },
+    JAVA:          { label:'Java',          cls:'p2-badge-java', color:'var(--yellow)' },
+    ADVANCED_JAVA: { label:'Adv Java',      cls:'p2-badge-adv',  color:'var(--purple)' },
+    MYSQL:         { label:'MySQL',         cls:'p2-badge-mysql',color:'var(--orange)' },
+    AWS:           { label:'AWS',           cls:'p2-badge-aws',  color:'var(--red)'    },
+  };
 
   // Group by category
   const groups = {};
@@ -2138,27 +2186,98 @@ function renderPdfPreview(data) {
     groups[cat].push(t);
   });
 
-  body.innerHTML = Object.entries(groups).map(([cat, items]) => `
-    <div style="margin-bottom:14px">
-      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;
-           letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:8px">
-        <span class="p2-badge ${catColors[cat]||'p2-badge-dsa'}">${cat}</span>
-        <span>${items.length} topics</span>
-      </div>
-      ${items.map((t,i) => `
-        <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;
-             background:var(--bg2);border:1px solid var(--border);border-radius:6px;margin-bottom:5px">
-          <span style="font-size:11px;color:var(--text3);min-width:22px;flex-shrink:0">${i+1}</span>
-          <div>
-            <div style="font-size:13px;font-weight:700">${esc(t.title||'')}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px">
-              ${esc((t.description||'').substring(0,100))}${(t.description||'').length>100?'…':''}
-            </div>
-          </div>
-        </div>`).join('')}
-    </div>`).join('');
+  body.innerHTML = Object.entries(groups).map(([cat, items]) => {
+    const meta = catMeta[cat] || { label: cat, cls: 'p2-badge-dsa', color: 'var(--text2)' };
+    return `
+      <div style="margin-bottom:18px">
+        <div class="pdf-cat-group-header">
+          <span class="p2-badge ${meta.cls}" style="font-size:11px">${meta.label}</span>
+          <span>${items.length} topic${items.length !== 1 ? 's' : ''}</span>
+          <span style="margin-left:auto;font-weight:400;color:var(--text3)">
+            ▼ Click any topic to preview details
+          </span>
+        </div>
+        ${items.map((t,i) => renderPdfTopicCard(t, i, meta)).join('')}
+      </div>`;
+  }).join('');
 
   document.getElementById('pdfPreview').style.display = 'block';
+}
+
+function renderPdfTopicCard(t, i, meta) {
+  const cardId  = 'pdfCard-' + i + '-' + (t.title||'').replace(/\W/g,'');
+  const exCount = t.exampleCount || 0;
+  const prCount = t.problemCount || 0;
+  const hasCode = t.starterCode && t.starterCode.trim().length > 10;
+  const codePreview = hasCode
+    ? t.starterCode.trim().split('\\n').slice(0,4).join('\\n')
+    : '';
+
+  return `
+    <div class="pdf-topic-card" id="${cardId}">
+      <div class="pdf-topic-header" onclick="togglePdfCard('${cardId}')">
+        <span class="pdf-topic-num">${i+1}</span>
+        <div class="pdf-topic-main">
+          <div class="pdf-topic-title">${esc(t.title||'Untitled')}</div>
+          <div class="pdf-topic-desc">
+            ${esc((t.description||'').substring(0,90))}${(t.description||'').length>90?'…':''}
+          </div>
+        </div>
+        <div class="pdf-topic-badges">
+          ${exCount > 0 ? `<span class="pdf-gen-badge pdf-ex-badge">💡 ${exCount} ex</span>` : ''}
+          ${prCount > 0 ? `<span class="pdf-gen-badge pdf-pr-badge">🎯 ${prCount} prob</span>` : ''}
+          <span class="p2-badge ${meta.cls}" style="font-size:10px">${meta.label}</span>
+        </div>
+        <span class="pdf-toggle" id="tog-${cardId}">▼</span>
+      </div>
+
+      <div class="pdf-topic-body" id="body-${cardId}">
+        <div class="pdf-info-grid">
+          ${t.timeComplexity ? `
+            <div class="pdf-info-item">
+              <div class="pdf-info-label">⏱ Time Complexity</div>
+              <div class="pdf-info-value">${esc(t.timeComplexity)}</div>
+            </div>` : ''}
+          ${t.whenToUse ? `
+            <div class="pdf-info-item" style="grid-column:${t.timeComplexity ? '2' : '1 / span 2'}">
+              <div class="pdf-info-label">💡 When to Use</div>
+              <div class="pdf-info-value">${esc(t.whenToUse.substring(0,120))}${t.whenToUse.length>120?'…':''}</div>
+            </div>` : ''}
+        </div>
+
+        ${t.description && t.description.length > 90 ? `
+          <div style="margin-top:8px;font-size:12px;color:var(--text2);line-height:1.6;
+               padding:8px 10px;background:var(--bg3);border-radius:6px">
+            ${esc(t.description)}
+          </div>` : ''}
+
+        ${hasCode ? `
+          <div style="margin-top:8px">
+            <div class="pdf-info-label">📝 Starter Code Preview</div>
+            <div class="pdf-starter">${esc(codePreview)}${t.starterCode.split('\n').length > 4 ? '...' : ''}</div>
+          </div>` : ''}
+
+        <div class="pdf-gen-will">
+          <span style="font-size:11px;color:var(--text3);align-self:center">Will generate:</span>
+          ${exCount > 0 ? `<span class="pdf-will-item">💡 ${exCount} examples</span>` : '<span class="pdf-will-item">💡 examples after save</span>'}
+          ${prCount > 0
+            ? `<span class="pdf-will-item">🎯 ${prCount} problems</span>`
+            : `<span class="pdf-will-item">🎯 use AI generator to add problems</span>`}
+          <span class="pdf-will-item">📊 flowchart</span>
+          <span class="pdf-will-item">🔍 tracer</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function togglePdfCard(cardId) {
+  const body = document.getElementById('body-' + cardId);
+  const tog  = document.getElementById('tog-' + cardId);
+  const card = document.getElementById(cardId);
+  if (!body) return;
+  const isOpen = body.classList.toggle('open');
+  tog.classList.toggle('open', isOpen);
+  card.style.borderColor = isOpen ? 'var(--accent)' : '';
 }
 
 async function savePdfTopics() {

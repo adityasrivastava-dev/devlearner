@@ -52,7 +52,7 @@ private static final Set<String> JAVA_WORDS = Set.of(
 //                      "Chapter 3: Sorting Algorithms"
 //                      "2.4 Hash Maps"
 private static final Pattern TOC_LINE = Pattern.compile(
-		"^\\s*(?:chapter\\s+)?([\\dIVXivx]+[.:]?\\s+)(.{3,60?})(?:\\s*[.\\s]{3,}\\s*\\d+)?\\s*$",
+		"^\\s*(?:chapter\\s+)?([\\dIVXivx]+[.:]?\\s+)(.{3,60})(?:\\s*[.\\s]{3,}\\s*\\d+)?\\s*$",
 		Pattern.CASE_INSENSITIVE
 );
 

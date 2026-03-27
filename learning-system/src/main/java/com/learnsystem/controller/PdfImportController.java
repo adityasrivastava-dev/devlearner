@@ -41,11 +41,19 @@ public ResponseEntity<?> preview(
 				"totalPages",      result.totalPages(),
 				"detectionMethod", result.detectionMethod(),
 				"topicCount",      result.topicCount(),
-				"topics",          result.topics().stream().map(t -> Map.of(
-						"title",       t.getTitle(),
-						"category",    t.getCategory(),
-						"description", t.getDescription() != null ? t.getDescription() : ""
-				)).collect(Collectors.toList())
+				"topics", result.topics().stream().map(t -> {
+					Map<String,Object> m = new java.util.LinkedHashMap<>();
+					m.put("title",          t.getTitle() != null ? t.getTitle() : "");
+					m.put("category",       t.getCategory() != null ? t.getCategory() : "DSA");
+					m.put("description",    t.getDescription() != null ? t.getDescription() : "");
+					m.put("timeComplexity", t.getTimeComplexity() != null ? t.getTimeComplexity() : "");
+					m.put("whenToUse",      t.getWhenToUse() != null ? t.getWhenToUse() : "");
+					m.put("starterCode",    t.getStarterCode() != null ? t.getStarterCode() : "");
+					m.put("hasExamples",    t.getExamples() != null && !t.getExamples().isEmpty());
+					m.put("exampleCount",   t.getExamples() != null ? t.getExamples().size() : 0);
+					m.put("problemCount",   t.getProblems() != null ? t.getProblems().size() : 0);
+					return m;
+				}).collect(Collectors.toList())
 		));
 	} catch (IOException e) {
 		return ResponseEntity.internalServerError()
