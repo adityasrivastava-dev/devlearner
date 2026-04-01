@@ -1,77 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-  <!-- ── Auth: redirect to login BEFORE page renders if not logged in ───────── -->
+  <!-- Redirect to login if not authenticated (before any render) -->
   <script>
-    (function earlyAuthGuard() {
-      // Check if this is an OAuth2 callback (token in URL) — allow through
-      var params = new URLSearchParams(window.location.search);
-      if (params.get('token')) return; // OAuth callback — let page handle it
-
-      var token = localStorage.getItem('devlearn_token');
-      var user  = null;
-      try { user = JSON.parse(localStorage.getItem('devlearn_user')); } catch(e){}
-
-      if (!token || !user) {
-        // Not logged in — redirect to login, preserving destination
-        var dest = window.location.pathname + window.location.search;
-        window.location.replace('/login.html?from=' + encodeURIComponent(dest));
-      }
+    (function(){
+      var p=new URLSearchParams(window.location.search);
+      if(p.get('token')) return; // OAuth2 callback — handled below
+      var t=localStorage.getItem('devlearn_token');
+      var u=null; try{u=JSON.parse(localStorage.getItem('devlearn_user'));}catch(e){}
+      if(!t||!u) window.location.replace('/login.html?from='+encodeURIComponent(window.location.pathname+window.location.search));
     })();
   </script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DevLearn — Java & DSA Learning System</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>DevLearn — Java &amp; DSA Learning</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css"/>
 </head>
 <body style="visibility:hidden">
 
-<!-- ══════════════════════════════════════════════════════════════════
+<!-- ═══════════════════════════════════════════════════════
      SIDEBAR
-══════════════════════════════════════════════════════════════════ -->
+═══════════════════════════════════════════════════════ -->
 <aside class="sidebar" id="sidebar">
+
   <div class="sidebar-header">
-    <span class="logo">⟨dev<span>learn</span>⟩</span>
-    <div style="display:flex;align-items:center;gap:5px;margin-left:auto">
-      <a href="/roadmap.html" id="roadmapLink" style="font-size:11px;color:var(--text3);text-decoration:none;padding:3px 8px;border:1px solid var(--border2);border-radius:5px;font-family:var(--font-ui);font-weight:600;transition:.15s"
-         onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">🗺</a>
-      <a href="/admin.html" id="adminLink" style="display:none;font-size:11px;color:var(--text3);text-decoration:none;padding:3px 8px;border:1px solid var(--border2);border-radius:5px;font-family:var(--font-ui);font-weight:600;transition:.15s"
-         onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">⚙</a>
+    <span class="logo">(dev<span>learn</span>)</span>
+    <div style="margin-left:auto;display:flex;gap:5px">
+      <a href="/roadmap.html" title="Roadmaps" class="sidebar-icon-btn">🗺</a>
+      <a href="/admin.html" id="adminLink" style="display:none" title="Admin" class="sidebar-icon-btn">⚙</a>
     </div>
-  </div>
-  <!-- User profile bar -->
-  <div id="userBar" style="display:none;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg2)">
-    <img id="userAvatar" src="" alt="" style="width:26px;height:26px;border-radius:50%;object-fit:cover;border:1px solid var(--border2);background:var(--bg3)"/>
-    <div style="flex:1;min-width:0">
-      <div id="userName" style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-      <div id="userStreak" style="font-size:10px;color:var(--text3)"></div>
-    </div>
-    <button onclick="doLogout()" title="Sign out"
-            style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:4px;transition:.15s"
-            onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'">⏏</button>
-  </div>
-  <!-- Login button (shown when logged out) -->
-  <div id="loginBar" style="padding:8px 14px;border-bottom:1px solid var(--border)">
-    <a href="/login.html" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:7px;background:var(--adim);border:1px solid rgba(74,222,128,.2);border-radius:7px;color:var(--accent);font-size:12px;font-weight:700;text-decoration:none;transition:.15s"
-       onmouseover="this.style.background='rgba(74,222,128,.18)'" onmouseout="this.style.background='var(--adim)'">
-      🔐 Sign In / Create Account
-    </a>
   </div>
 
+  <!-- User bar (shown when logged in) -->
+  <div id="userBar" style="display:none;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border)">
+    <div id="userAvatarWrap" style="flex-shrink:0"></div>
+    <div style="flex:1;min-width:0">
+      <div id="userName" style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+      <div id="userStat" style="font-size:10px;color:var(--text3)"></div>
+    </div>
+    <button onclick="doLogout()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px" title="Sign out">⏏</button>
+  </div>
+
+  <!-- Category filter tabs -->
   <div class="category-tabs">
     <button class="cat-btn active" data-cat="ALL">All</button>
     <button class="cat-btn" data-cat="DSA">DSA</button>
     <button class="cat-btn" data-cat="JAVA">Java</button>
-    <button class="cat-btn" data-cat="ADVANCED_JAVA">Adv Java</button>
-    <button class="cat-btn" data-cat="MYSQL">MySQL</button>
+    <button class="cat-btn" data-cat="ADVANCED_JAVA">Adv</button>
+    <button class="cat-btn" data-cat="MYSQL">SQL</button>
     <button class="cat-btn" data-cat="AWS">AWS</button>
   </div>
 
   <div class="search-box">
-    <input type="text" id="topicSearch" placeholder="🔍  Search topics…" />
+    <input id="topicSearch" type="text" placeholder="🔍 Search topics…"/>
   </div>
 
   <ul class="topic-list" id="topicList">
@@ -79,54 +62,168 @@
   </ul>
 </aside>
 
-<!-- ══════════════════════════════════════════════════════════════════
-     MAIN CONTENT
-══════════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════
+     MAIN CONTENT AREA
+═══════════════════════════════════════════════════════ -->
 <main class="main-content" id="mainContent">
 
-  <!-- Welcome / empty state -->
+  <!-- Welcome screen (default) -->
   <div class="welcome-screen" id="welcomeScreen">
     <div class="welcome-inner">
-      <h1>⟨devlearn⟩</h1>
-      <p>Select a topic from the sidebar to begin.</p>
+      <h1>(devlearn)</h1>
+      <p>Select a topic to begin your learning journey.</p>
       <div class="welcome-tags">
-        <span>Binary Search</span><span>Sliding Window</span>
-        <span>HashMap</span><span>Two Pointer</span>
-        <span>LRU Cache</span><span>Thread Pool</span>
+        <span>Binary Search</span><span>Dynamic Programming</span>
+        <span>Two Pointer</span><span>HashMap</span>
+        <span>Java Streams</span><span>Multithreading</span>
       </div>
     </div>
   </div>
 
-  <!-- Topic view (hidden until topic selected) -->
+  <!-- Topic Learning View -->
   <div class="topic-view" id="topicView" style="display:none">
 
-    <!-- Header -->
     <div class="topic-header">
       <div class="topic-meta">
-        <span class="topic-category-badge" id="topicCategoryBadge">DSA</span>
-        <span class="topic-complexity" id="topicComplexity"></span>
+        <span id="topicBadge" class="topic-category-badge"></span>
+        <span id="topicComplexity" class="topic-complexity"></span>
       </div>
-      <h2 id="topicTitle">Binary Search</h2>
-      <p id="topicDesc"></p>
+      <h2 id="topicTitle"></h2>
+      <p id="topicDesc" class="topic-subtitle"></p>
     </div>
 
-    <!-- Tabs -->
-    <div class="tab-bar">
-      <button class="tab-btn active" data-tab="visual">📊 Visual</button>
+    <!-- ── TAB BAR ── -->
+    <div class="tab-bar" id="mainTabBar">
+      <button class="tab-btn active" data-tab="theory">📖 Theory</button>
       <button class="tab-btn" data-tab="flowchart">🗺 Flowchart</button>
-      <button class="tab-btn" data-tab="trace">🔍 Trace</button>
       <button class="tab-btn" data-tab="examples">💡 Examples</button>
-      <button class="tab-btn" data-tab="code">⌨️ Code</button>
+      <button class="tab-btn" data-tab="code">⌨ Code</button>
       <button class="tab-btn" data-tab="practice">🎯 Practice</button>
       <button class="tab-btn" data-tab="optimize">⚡ Optimize</button>
+      <button class="tab-btn" data-tab="visual">📊 Visual</button>
+      <button class="tab-btn" data-tab="trace">🔍 Trace</button>
     </div>
 
-    <!-- ── TAB: VISUAL ─────────────────────────────────────────────────── -->
-    <div class="tab-panel" id="tab-visual">
+    <!-- ═══ TAB: THEORY ═══════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-theory">
+      <div id="theoryAnchor" class="memory-anchor-card" style="display:none">
+        <div class="anchor-label">💡 Memory Anchor</div>
+        <div id="theoryAnchorText" class="anchor-text"></div>
+      </div>
+      <div id="theoryStory" class="theory-card" style="display:none">
+        <div class="theory-card-title">📖 The Story</div>
+        <div id="theoryStoryText" class="theory-card-body"></div>
+      </div>
+      <div id="theoryAnalogy" class="theory-card" style="display:none">
+        <div class="theory-card-title">🎨 Visual Analogy</div>
+        <div id="theoryAnalogyText" class="theory-card-body"></div>
+      </div>
+      <div id="theoryPrinciples" class="theory-card" style="display:none">
+        <div class="theory-card-title">🔬 First Principles — WHY it works</div>
+        <div id="theoryPrinciplesText" class="theory-card-body"></div>
+      </div>
+      <div id="theoryDefinition" class="theory-card" style="display:none">
+        <div class="theory-card-title">📋 Definition</div>
+        <div id="theoryDefinitionText" class="theory-card-body"></div>
+      </div>
+      <div id="theoryEmpty" style="display:none;text-align:center;padding:50px 20px;color:var(--text3)">
+        <div style="font-size:32px;margin-bottom:12px">✍️</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text2);margin-bottom:8px">Story content not yet written</div>
+        <div style="font-size:12px;line-height:1.7">
+          Go to <a href="/admin.html" style="color:var(--accent)">Admin Panel</a> → select this topic → fill in Story, Memory Anchor, Analogy, and First Principles.
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TAB: FLOWCHART ═══════════════════════════════════════ -->
+    <div class="tab-panel hidden" id="tab-flowchart">
+      <div id="flowchartContainer" class="flowchart-container">
+        <p class="muted" style="padding:40px;text-align:center">Select a topic to see its flowchart.</p>
+      </div>
+    </div>
+
+    <!-- ═══ TAB: EXAMPLES ════════════════════════════════════════ -->
+    <div class="tab-panel hidden" id="tab-examples">
+      <div id="examplesGrid" class="examples-grid">
+        <p class="loading-text">Loading examples…</p>
+      </div>
+    </div>
+
+    <!-- ═══ TAB: CODE (free editor + run) ════════════════════════ -->
+    <div class="tab-panel hidden" id="tab-code">
+      <!-- Status bar above editor -->
+      <div class="code-status-bar">
+        <span class="status-dot" id="syntaxDot"></span>
+        <span id="syntaxStatus" class="status-file">Ready</span>
+        <span class="status-spacer"></span>
+        <span id="execTimeBadge" class="exec-time-badge" style="display:none"></span>
+        <select id="javaVersionSelect" class="version-select">
+          <option value="8">Java 8</option>
+          <option value="11">Java 11</option>
+          <option value="17" selected>Java 17</option>
+          <option value="21">Java 21</option>
+        </select>
+        <button id="runBtn" class="btn btn-run">▶ Run Code</button>
+        <button id="resetBtn" class="btn btn-ghost btn-sm">↺ Reset</button>
+      </div>
+      <!-- Split: editor | output -->
+      <div class="code-split">
+        <div class="editor-pane">
+          <div id="monacoEditor" style="width:100%;height:100%"></div>
+        </div>
+        <div class="output-pane">
+          <div class="output-tabs">
+            <button class="out-tab active" data-out="testcase">Testcase</button>
+            <button class="out-tab" data-out="output">Output</button>
+            <button class="out-tab" data-out="errors">Errors <span id="errCountBadge" class="err-count" style="display:none">0</span></button>
+          </div>
+          <div id="out-testcase" class="out-panel">
+            <div class="out-label">stdin — passed to your program</div>
+            <textarea id="stdinInput" class="stdin-textarea" placeholder="Enter input here…"></textarea>
+          </div>
+          <div id="out-output" class="out-panel hidden">
+            <div id="outputStatusRow" style="margin-bottom:8px"></div>
+            <pre id="outputBox" class="output-box">// Press ▶ Run Code to execute</pre>
+          </div>
+          <div id="out-errors" class="out-panel hidden">
+            <div id="errorsPanel"><p class="no-errors-msg">✓ No compile errors</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TAB: PRACTICE (problem list — opens PS view on click) ═ -->
+    <div class="tab-panel hidden" id="tab-practice">
+      <div class="practice-header">
+        <h3 id="practiceTopicTitle">Problems</h3>
+        <div class="diff-filter-row">
+          <button class="diff-filter active" onclick="filterDiff(this,'ALL')">All</button>
+          <button class="diff-filter easy"   onclick="filterDiff(this,'EASY')">Easy</button>
+          <button class="diff-filter medium" onclick="filterDiff(this,'MEDIUM')">Medium</button>
+          <button class="diff-filter hard"   onclick="filterDiff(this,'HARD')">Hard</button>
+        </div>
+      </div>
+      <div id="problemsTable" class="problems-table">
+        <p class="loading-text">Select a topic to see its problems.</p>
+      </div>
+    </div>
+
+    <!-- ═══ TAB: OPTIMIZE ════════════════════════════════════════ -->
+    <div class="tab-panel hidden" id="tab-optimize">
+      <div class="optimize-grid">
+        <div class="opt-card"><h3>🐌 Brute Force</h3><div id="optBrute" class="opt-content"></div></div>
+        <div class="opt-card opt-highlight"><h3>⚡ Optimized Approach</h3><div id="optOpt" class="opt-content"></div></div>
+        <div class="opt-card"><h3>🎯 When to Use</h3><div id="optWhen" class="opt-content"></div></div>
+        <div class="opt-card"><h3>📈 Complexity</h3><div id="optComplex" class="opt-content"></div></div>
+      </div>
+    </div>
+
+    <!-- ═══ TAB: VISUAL ══════════════════════════════════════════ -->
+    <div class="tab-panel hidden" id="tab-visual">
       <div class="visual-controls">
         <div class="visual-inputs">
-          <input type="text" id="vizArray" placeholder="Array: 1 3 5 7 9 11 13" />
-          <input type="number" id="vizTarget" placeholder="Target: 7" />
+          <input id="vizArray" type="text" placeholder="Array: 1 3 5 7 9 11 13"/>
+          <input id="vizTarget" type="number" placeholder="Target: 7"/>
         </div>
         <div class="visual-btns">
           <button id="vizRunBtn" class="btn btn-primary">▶ Run</button>
@@ -134,227 +231,189 @@
           <button id="vizNextBtn" class="btn btn-ghost" disabled>Next ›</button>
           <button id="vizAutoBtn" class="btn btn-ghost" disabled>⏵ Auto</button>
         </div>
-        <span class="step-counter" id="stepCounter"></span>
+        <span id="stepCounter" class="step-counter"></span>
       </div>
-
-      <div class="canvas-container">
-        <canvas id="vizCanvas"></canvas>
-      </div>
-
-      <div class="step-description" id="stepDescription">
-        Configure the array and target above, then press Run.
-      </div>
+      <div class="canvas-container"><canvas id="vizCanvas"></canvas></div>
+      <div id="stepDescription" class="step-description">Configure and press ▶ Run.</div>
     </div>
 
-    <!-- ── TAB: FLOWCHART ────────────────────────────────────────────────── -->
-    <div class="tab-panel hidden" id="tab-flowchart">
-      <div class="flowchart-container" id="flowchartContainer">
-        <p class="muted" style="padding:40px;text-align:center">Select a topic to see its flowchart.</p>
-      </div>
-    </div>
-
-    <!-- ── TAB: TRACE ────────────────────────────────────────────────────── -->
+    <!-- ═══ TAB: TRACE ═══════════════════════════════════════════ -->
     <div class="tab-panel hidden" id="tab-trace">
       <div class="trace-controls">
         <select id="traceAlgo" class="trace-select">
-          <optgroup label="── Search ──">
-            <option value="BINARY_SEARCH">Binary Search</option>
-            <option value="LINEAR_SEARCH">Linear Search</option>
-          </optgroup>
-          <optgroup label="── Sorting ──">
-            <option value="BUBBLE_SORT">Bubble Sort</option>
-            <option value="SELECTION_SORT">Selection Sort</option>
-            <option value="INSERTION_SORT">Insertion Sort</option>
-          </optgroup>
-          <optgroup label="── Array Patterns ──">
-            <option value="TWO_POINTER">Two Pointer</option>
-            <option value="SLIDING_WINDOW">Sliding Window</option>
-            <option value="PREFIX_SUM">Prefix Sum</option>
-            <option value="TWO_SUM_HASH">Two Sum (HashMap)</option>
-          </optgroup>
-          <optgroup label="── Data Structures ──">
-            <option value="STACK_OPS">Stack Operations</option>
-            <option value="QUEUE_OPS">Queue Operations</option>
-          </optgroup>
-          <optgroup label="── Recursion / Math ──">
-            <option value="FIBONACCI">Fibonacci</option>
-            <option value="FACTORIAL">Factorial</option>
-          </optgroup>
+          <optgroup label="Search"><option value="BINARY_SEARCH">Binary Search</option><option value="LINEAR_SEARCH">Linear Search</option></optgroup>
+          <optgroup label="Sort"><option value="BUBBLE_SORT">Bubble Sort</option><option value="SELECTION_SORT">Selection Sort</option><option value="INSERTION_SORT">Insertion Sort</option></optgroup>
+          <optgroup label="Array Patterns"><option value="TWO_POINTER">Two Pointer</option><option value="SLIDING_WINDOW">Sliding Window</option><option value="PREFIX_SUM">Prefix Sum</option><option value="TWO_SUM_HASH">Two Sum (HashMap)</option></optgroup>
+          <optgroup label="Data Structures"><option value="STACK_OPS">Stack Ops</option><option value="QUEUE_OPS">Queue Ops</option></optgroup>
+          <optgroup label="Recursion"><option value="FIBONACCI">Fibonacci</option><option value="FACTORIAL">Factorial</option></optgroup>
         </select>
-        <input type="text"   id="traceArray"  placeholder="Array: 1 3 5 7 9 11 13" />
-        <input type="number" id="traceTarget" placeholder="Target / k" />
-        <button id="traceRunBtn"  class="btn btn-primary">▶ Run Trace</button>
+        <input id="traceArray" type="text" placeholder="Array: 1 3 5 7 9 11"/>
+        <input id="traceTarget" type="number" placeholder="Target/k"/>
+        <button id="traceRunBtn" class="btn btn-primary">▶ Run Trace</button>
         <button id="tracePrevBtn" class="btn btn-ghost" disabled>‹ Prev</button>
         <button id="traceNextBtn" class="btn btn-ghost" disabled>Next ›</button>
         <button id="traceAutoBtn" class="btn btn-ghost" disabled>⏵ Auto</button>
-        <span   id="traceCounter" class="step-counter"></span>
+        <span id="traceCounter" class="step-counter"></span>
       </div>
-
       <div class="trace-layout">
-        <!-- Left: code with highlighted line -->
         <div class="trace-code-pane">
-          <div class="trace-pane-header">
-            <span class="trace-pane-label">📄 Code Execution</span>
-            <span class="trace-pane-sub">Active line highlighted in real-time</span>
-          </div>
+          <div class="trace-pane-header"><span class="trace-pane-label">📄 Execution</span><span class="trace-pane-sub">Active line highlighted</span></div>
           <pre id="traceCodePanel" class="trace-code-block">Press ▶ Run Trace to begin.</pre>
         </div>
-
-        <!-- Right: variable state table -->
         <div class="trace-vars-pane">
-          <div class="trace-pane-header">
-            <span class="trace-pane-label">📦 Variable State</span>
-            <span class="trace-pane-sub">Changed variables glow on each step</span>
-          </div>
-          <div id="traceVarsPanel" class="trace-vars-box">
-            <p class="trace-vars-empty">Variables will appear here as code runs.</p>
-          </div>
+          <div class="trace-pane-header"><span class="trace-pane-label">📦 Variables</span><span class="trace-pane-sub">Changes glow</span></div>
+          <div id="traceVarsPanel" class="trace-vars-box"><p class="trace-vars-empty">Variables appear here.</p></div>
         </div>
       </div>
-
-      <!-- Step description bar -->
-      <div id="traceDescPanel" class="trace-desc">
-        <span class="trace-desc-text">Configure above and press ▶ Run Trace.</span>
-      </div>
-    </div>
-    <div class="tab-panel hidden" id="tab-examples">
-      <div class="examples-grid" id="examplesGrid">
-        <p class="loading-text">Loading examples…</p>
-      </div>
-    </div>
-
-    <!-- ── TAB: CODE ──────────────────────────────────────────────────── -->
-    <div class="tab-panel hidden" id="tab-code">
-
-      <!-- Status bar -->
-      <div class="code-status-bar">
-        <span class="status-file">📄 Main.java</span>
-        <span class="status-errors" id="statusErrors">✓ No errors</span>
-        <span class="status-spacer"></span>
-        <span class="status-lang">Java 17</span>
-      </div>
-
-      <!-- Editor + Output split -->
-      <div class="lc-layout">
-
-        <!-- Editor pane -->
-        <div class="lc-editor-pane">
-          <div class="lc-toolbar">
-            <div class="lc-toolbar-left">
-              <button id="runBtn"   class="lc-btn lc-run">▶ Run Code</button>
-              <button id="resetBtn" class="lc-btn lc-ghost">↺ Reset</button>
-              <select id="javaVersionSelect" class="lc-version-select" title="Java version">
-                <option value="8">Java 8</option>
-                <option value="11">Java 11</option>
-                <option value="17" selected>Java 17</option>
-                <option value="21">Java 21</option>
-              </select>
-            </div>
-            <div class="lc-toolbar-right">
-              <span class="lc-meta" id="execTime"></span>
-            </div>
-          </div>
-          <div id="monacoEditor" style="flex:1; min-height:0;"></div>
-        </div>
-
-        <!-- Output pane -->
-        <div class="lc-output-pane" id="lcOutputPane">
-
-          <!-- Output tab bar -->
-          <div class="lc-out-tabs">
-            <button class="lc-out-tab active" data-out="testcase">Testcase</button>
-            <button class="lc-out-tab"        data-out="output">Output</button>
-            <button class="lc-out-tab"        data-out="errors">Errors <span class="err-badge hidden" id="errBadge">0</span></button>
-            <button class="lc-out-tab"        data-out="complexity">Complexity</button>
-          </div>
-
-          <!-- Testcase panel -->
-          <div class="lc-out-panel" id="out-testcase">
-            <div class="tc-label">stdin input</div>
-            <textarea id="stdinInput" class="tc-input" placeholder="Enter program input here (e.g. 5&#10;1 3 5 7 9&#10;7)"></textarea>
-            <p class="tc-hint">This stdin is passed to your program when you click Run Code.</p>
-          </div>
-
-          <!-- Output panel -->
-          <div class="lc-out-panel hidden" id="out-output">
-            <div class="out-status-row" id="outStatusRow"></div>
-            <pre id="outputBox" class="lc-output-box">// Press ▶ Run Code to see output here</pre>
-          </div>
-
-          <!-- Errors panel -->
-          <div class="lc-out-panel hidden" id="out-errors">
-            <div id="errorsList" class="errors-list">
-              <p class="no-errors-msg">✓ No compile errors</p>
-            </div>
-          </div>
-
-          <!-- Complexity panel -->
-          <div class="lc-out-panel hidden" id="out-complexity">
-            <div id="complexityPanel" class="complexity-panel">
-              <p class="complexity-hint">Run your code to analyze complexity.</p>
-            </div>
-          </div>
-
-        </div><!-- /lc-output-pane -->
-      </div><!-- /lc-layout -->
-    </div>
-
-    <!-- ── TAB: PRACTICE ──────────────────────────────────────────────── -->
-    <div class="tab-panel hidden" id="tab-practice">
-      <div class="practice-layout">
-        <!-- Problem list -->
-        <div class="problem-list-panel" id="problemListPanel">
-          <h3>Problems</h3>
-          <ul id="problemList"></ul>
-        </div>
-        <!-- Problem detail + editor -->
-        <div class="problem-detail-panel" id="problemDetailPanel">
-          <div id="problemStatement">
-            <p class="muted">Select a problem from the list →</p>
-          </div>
-          <div class="editor-toolbar" style="margin-top:16px">
-            <span class="editor-label" id="practiceFileName">Solution.java</span>
-            <button id="practiceRunBtn" class="btn btn-ghost btn-sm">▶ Run</button>
-            <button id="practiceSubmitBtn" class="btn btn-primary btn-sm">⬆ Submit</button>
-          </div>
-          <div id="practiceEditor" style="height:340px; border-radius:0 0 8px 8px;"></div>
-          <div id="practiceResults" class="practice-results hidden"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── TAB: OPTIMIZE ──────────────────────────────────────────────── -->
-    <div class="tab-panel hidden" id="tab-optimize">
-      <div class="optimize-grid">
-        <div class="opt-card" id="optBrute">
-          <h3>🐌 Brute Force</h3>
-          <div id="optBruteContent"></div>
-        </div>
-        <div class="opt-card highlight" id="optOptimized">
-          <h3>⚡ Optimized</h3>
-          <div id="optOptimizedContent"></div>
-        </div>
-        <div class="opt-card" id="optWhen">
-          <h3>🎯 When to Use</h3>
-          <div id="optWhenContent"></div>
-        </div>
-        <div class="opt-card" id="optComplexity">
-          <h3>📈 Complexity</h3>
-          <div id="optComplexityContent"></div>
-        </div>
-      </div>
+      <div id="traceDescPanel" class="trace-desc"><span class="trace-desc-text">Configure above and press ▶ Run Trace.</span></div>
     </div>
 
   </div><!-- /topic-view -->
-</main>
 
-<!-- Mermaid for flowcharts -->
+  <!-- ═══════════════════════════════════════════════════════
+       PROBLEM SOLVE VIEW — Full-screen LeetCode-style IDE
+       Rendered over main content when a problem is opened
+  ═══════════════════════════════════════════════════════ -->
+  <div id="problemSolveView" class="ps-view" style="display:none">
+
+    <!-- Top navigation bar -->
+    <div class="ps-topbar">
+      <button class="ps-back-btn" onclick="exitProblemSolve()">← Problems</button>
+      <div class="ps-breadcrumb">
+        <span id="psBreadTopic" class="ps-bread-topic"></span>
+        <span class="ps-bread-sep">/</span>
+        <span id="psBreadTitle" class="ps-bread-title"></span>
+      </div>
+      <span id="psDiffBadge" class="diff-badge"></span>
+      <div style="flex:1"></div>
+      <!-- Syntax indicator -->
+      <div class="ps-syntax-row">
+        <div id="psSyntaxDot" class="ps-syntax-dot ready"></div>
+        <span id="psSyntaxLabel" class="ps-syntax-label">Ready</span>
+      </div>
+      <select id="psJavaVersion" class="version-select">
+        <option value="8">Java 8</option>
+        <option value="11">Java 11</option>
+        <option value="17" selected>Java 17</option>
+        <option value="21">Java 21</option>
+      </select>
+      <button id="psRunBtn" class="btn btn-ghost ps-run-btn">▶ Run</button>
+      <button id="psSubmitBtn" class="btn btn-run ps-submit-btn">⬆ Submit</button>
+    </div>
+
+    <!-- Split layout: LEFT = description  |  RIGHT = editor + results -->
+    <div class="ps-split" id="psSplit">
+
+      <!-- LEFT: Problem description + hints -->
+      <div class="ps-left" id="psLeft">
+        <div class="ps-desc-tabs">
+          <button class="ps-dtab active" data-dtab="desc" onclick="switchDescTab(this,'desc')">Description</button>
+          <button class="ps-dtab" data-dtab="hints" onclick="switchDescTab(this,'hints')">Hints</button>
+          <button class="ps-dtab" data-dtab="editorial" onclick="switchDescTab(this,'editorial')">Editorial</button>
+        </div>
+
+        <div class="ps-desc-body">
+
+          <!-- Description tab -->
+          <div id="dtab-desc" class="ps-dpanel active">
+            <div class="ps-prob-header">
+              <div id="psProbNum" class="ps-prob-num"></div>
+              <div id="psProbTitle" class="ps-prob-title"></div>
+              <div class="ps-prob-meta">
+                <span id="psDiffBadge2" class="diff-badge"></span>
+                <span id="psProbPattern" class="pattern-badge" style="display:none"></span>
+              </div>
+            </div>
+            <div id="psProbDesc" class="ps-prob-desc"></div>
+            <div id="psProbExample" class="ps-prob-example"></div>
+            <div id="psProbFormats" class="ps-prob-formats"></div>
+          </div>
+
+          <!-- Hints tab -->
+          <div id="dtab-hints" class="ps-dpanel" style="display:none">
+            <p class="ps-hint-intro">Hints help you think through the problem. Hint 1 is always free. Using Hint 3 marks your submission as hint-assisted.</p>
+            <div class="ps-hints-list" id="psHintsList"></div>
+            <div id="psHintAssistedBadge" class="ps-hint-assisted" style="display:none">⚑ Submitted as hint-assisted</div>
+          </div>
+
+          <!-- Editorial tab -->
+          <div id="dtab-editorial" class="ps-dpanel" style="display:none">
+            <p style="color:var(--text3);font-size:13px;padding:20px 0;text-align:center">Solve the problem first — editorial unlocks after submission.</p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Resize handle -->
+      <div id="psResizeHandle" class="ps-resize-handle"></div>
+
+      <!-- RIGHT: Monaco editor + test/result panel -->
+      <div class="ps-right" id="psRight">
+
+        <div class="ps-editor-topbar">
+          <span class="ps-file-label">📄 Solution.java</span>
+          <span id="psExecTime" class="ps-exec-time"></span>
+        </div>
+
+        <div class="ps-editor-wrap">
+          <div id="psEditor" style="width:100%;height:100%"></div>
+        </div>
+
+        <!-- Collapsible test/result panel at bottom -->
+        <div class="ps-bottom" id="psBottom">
+          <div class="ps-bottom-bar">
+            <button class="ps-btab active" onclick="switchPsTab(this,'testcase')">Testcase</button>
+            <button class="ps-btab" onclick="switchPsTab(this,'result')">Test Result</button>
+            <div style="flex:1"></div>
+            <button class="ps-collapse-btn" id="psCollapseBtn" onclick="togglePsBottom()">▼</button>
+          </div>
+          <div id="psBottomBody" class="ps-bottom-body">
+            <!-- Testcase panel -->
+            <div id="pstab-testcase" class="ps-bpanel active">
+              <div class="ps-tc-label">stdin — passed to Run Code</div>
+              <textarea id="psStdinInput" class="ps-stdin" placeholder="Enter custom test input…"></textarea>
+              <p style="font-size:10px;color:var(--text3);margin-top:5px">Submit uses all stored test cases, not this input.</p>
+            </div>
+            <!-- Result panel -->
+            <div id="pstab-result" class="ps-bpanel" style="display:none">
+              <div id="psResultContent"><p style="color:var(--text3);font-size:12px;padding:16px 0;text-align:center">Run or Submit to see results.</p></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /ps-right -->
+    </div><!-- /ps-split -->
+  </div><!-- /problemSolveView -->
+
+</main><!-- /main-content -->
+
+<!-- ═══ RECALL DRILL MODAL ════════════════════════════════════════ -->
+<div id="recallModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.72);align-items:center;justify-content:center">
+  <div class="recall-box">
+    <div style="font-size:28px;margin-bottom:10px">🧠</div>
+    <h3>30-Second Recall Drill</h3>
+    <p>Explain <strong id="recallAlgoName">this algorithm</strong> in your own words.</p>
+    <p style="font-size:11px;color:var(--text3)">No right or wrong — this is for YOUR memory.</p>
+    <textarea id="recallText" placeholder="Type your explanation here…"></textarea>
+    <div class="recall-actions">
+      <button class="btn btn-primary" onclick="saveRecall()">💾 Save &amp; Continue</button>
+      <button class="btn btn-ghost" onclick="skipRecall()">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div id="devlearnToast" class="toast"></div>
+
+<!-- ═══ SCRIPTS ════════════════════════════════════════════════════ -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
-<script>mermaid.initialize({ startOnLoad: false, theme: 'dark', darkMode: true,
-  themeVariables: { background: '#13161b', primaryColor: '#1a1e25',
-    primaryTextColor: '#e2e8f0', lineColor: '#4ade80', edgeLabelBackground: '#13161b' }
-});</script>
-<!-- Monaco Editor CDN -->
+<script>
+  mermaid.initialize({
+    startOnLoad: false, theme: 'dark', darkMode: true,
+    themeVariables: { background:'#1e1e1e', primaryColor:'#282828',
+      primaryTextColor:'#e2e8f0', lineColor:'#00b8a3', edgeLabelBackground:'#1e1e1e' }
+  });
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/visualizer.js"></script>
@@ -362,264 +421,151 @@
 <script src="/js/flowchart.js"></script>
 <script src="/js/editor.js"></script>
 
+<!-- Auth init (runs after body) -->
 <script>
-// ── Auth guard + UI init ─────────────────────────────────────────────────────
-(function initAuthUI() {
-  const user  = Auth.getUser();
-  const token = Auth.getToken();
-
-  // ── Step 0: Sync token with DB on every page load ───────────────────────────
-  // This refreshes roles silently — no re-login needed after DB role changes
-  Auth.syncToken().then(() => {
-    // Re-read user after sync (roles may have changed)
-    const freshUser = Auth.getUser();
-    if (freshUser && user && freshUser.role !== user.role) {
-      // Role changed — reload page to apply new permissions
-      window.location.reload();
-      return;
-    }
-  }).catch(() => {});
-
-  // ── Step 1: OAuth2 callback — token arrives in URL ?token=... ───────────────
-  // OAuth2SuccessHandler redirects here: /?token=JWT
-  // Save it to localStorage BEFORE the auth guard runs, then clean the URL.
-  const urlParams  = new URLSearchParams(window.location.search);
-  const urlToken   = urlParams.get('token');
+(function initAuth() {
+  // Handle OAuth2 callback token in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlToken  = urlParams.get('token');
   if (urlToken) {
     localStorage.setItem('devlearn_token', urlToken);
-    // Fetch profile from server to populate user info
-    fetch('/api/auth/check', {
-      headers: { 'Authorization': 'Bearer ' + urlToken }
-    }).then(r => r.json()).then(data => {
-      localStorage.setItem('devlearn_user', JSON.stringify({
-        id:     data.id,
-        name:   data.name,
-        email:  data.email,
-        role:   data.role,
-        avatar: data.avatar || '',
-        streak: 0,
-        solved: 0,
-      }));
-      // Remove ?token= from URL (clean history, token must not linger in browser history)
-      window.history.replaceState({}, '', '/');
-      // Reload to run initAuthUI cleanly with the stored token
-      window.location.reload();
-    }).catch(() => {
-      // Token invalid — clear and go to login
-      localStorage.removeItem('devlearn_token');
-      window.location.replace('/login.html');
-    });
-    return; // Stop here — reload will re-run initAuthUI
-  }
-
-  // ── Step 2: GUARD — must be logged in to use the app ─────────────────────
-  if (!user || !token) {
-    window.location.replace('/login.html?from=' + encodeURIComponent(window.location.pathname + window.location.search));
+    fetch('/api/auth/check', { headers: { 'Authorization': 'Bearer ' + urlToken } })
+      .then(r => r.json())
+      .then(data => {
+        localStorage.setItem('devlearn_user', JSON.stringify({
+          id: data.id, name: data.name, email: data.email,
+          role: data.role, roles: data.roles || [], avatar: data.avatar || '',
+          streak: 0, solved: 0
+        }));
+        window.history.replaceState({}, '', '/');
+        window.location.reload();
+      })
+      .catch(() => { localStorage.removeItem('devlearn_token'); window.location.replace('/login.html'); });
     return;
   }
 
-  // Reveal body now that auth is confirmed (was hidden to prevent flash)
+  const user  = Auth.getUser();
+  const token = Auth.getToken();
+  if (!user || !token) { window.location.replace('/login.html'); return; }
+
+  // Silently refresh token (picks up role changes)
+  Auth.syncToken().then(() => {
+    const fresh = Auth.getUser();
+    if (fresh && user && fresh.role !== user.role) window.location.reload();
+  }).catch(() => {});
+
+  // Populate user bar
   document.body.style.visibility = 'visible';
+  const userBar = document.getElementById('userBar');
+  if (userBar) userBar.style.display = 'flex';
 
-  // ── Show user bar ─────────────────────────────────────────────────────────
-  document.getElementById('userBar').style.display  = 'flex';
-  document.getElementById('loginBar').style.display = 'none';
-
-  // Avatar — use Google picture or show initial letter
-  const avatarImg = document.getElementById('userAvatar');
-  if (user.avatar) {
-    avatarImg.src = user.avatar;
-    avatarImg.onerror = () => showInitialAvatar(user);
-  } else {
-    avatarImg.style.display = 'none';
-    showInitialAvatar(user);
+  // Avatar
+  const wrap = document.getElementById('userAvatarWrap');
+  if (wrap) {
+    if (user.avatar) {
+      const img = document.createElement('img');
+      img.src = user.avatar; img.alt = '';
+      img.style.cssText = 'width:26px;height:26px;border-radius:50%;object-fit:cover;border:1px solid var(--border2)';
+      img.onerror = () => { img.remove(); renderInitial(wrap, user); };
+      wrap.appendChild(img);
+    } else renderInitial(wrap, user);
   }
 
-  // Name + streak / problems solved
-  document.getElementById('userName').textContent = user.name || user.email;
-  document.getElementById('userStreak').textContent =
-    (user.streak > 0) ? ('🔥 ' + user.streak + ' day streak')
-                      : (user.solved + ' problems solved');
+  const nameEl = document.getElementById('userName');
+  if (nameEl) nameEl.textContent = user.name || user.email;
 
-  // Only show admin link for admins
-  if (user.role === 'ADMIN') {
-    document.getElementById('adminLink').style.display = 'inline-flex';
+  const statEl = document.getElementById('userStat');
+  if (statEl) statEl.textContent = (user.streak > 0 ? '🔥 '+user.streak+' day streak' : (user.solved||0)+' solved');
+
+  const roles = user.roles || [];
+  if (user.role === 'ADMIN' || roles.includes('ADMIN')) {
+    const al = document.getElementById('adminLink');
+    if (al) al.style.display = 'inline-flex';
   }
 
-  // Silently validate token — if expired, log out cleanly
+  // Verify token still valid
   fetch('/api/auth/check', { headers: Auth.headers() })
     .then(r => { if (r.status === 401) doLogout(false); })
     .catch(() => {});
 })();
 
-function showInitialAvatar(user) {
-  const avatarImg = document.getElementById('userAvatar');
+function renderInitial(wrap, user) {
+  const d = document.createElement('div');
   const initial = (user.name || user.email || 'U')[0].toUpperCase();
-  const div = document.createElement('div');
-  div.style.cssText = [
-    'width:26px','height:26px','border-radius:50%',
-    'background:var(--adim)','border:1px solid rgba(74,222,128,.25)',
-    'display:flex','align-items:center','justify-content:center',
-    'font-size:11px','font-weight:700','color:var(--accent)','flex-shrink:0'
-  ].join(';');
-  div.textContent = initial;
-  avatarImg.parentNode.insertBefore(div, avatarImg);
+  d.style.cssText = 'width:26px;height:26px;border-radius:50%;background:rgba(0,184,163,.15);border:1px solid rgba(0,184,163,.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--accent)';
+  d.textContent = initial;
+  wrap.appendChild(d);
 }
 
-// ── Logout ───────────────────────────────────────────────────────────────────
 function doLogout(confirm = true) {
-  if (confirm) {
-    showLogoutConfirm();
-    return;
-  }
-  // Clear all auth data
-  localStorage.removeItem('devlearn_token');
-  localStorage.removeItem('devlearn_user');
-  // Tell server (fire and forget — stateless so not critical)
-  fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
-  // Redirect to login
-  window.location.replace('/login.html');
+  if (confirm) { showLogoutConfirm(); return; }
+  Auth.logout();
 }
 
 function showLogoutConfirm() {
-  // Remove any existing overlay
-  const existing = document.getElementById('logoutOverlay');
-  if (existing) existing.remove();
-
-  const overlay = document.createElement('div');
-  overlay.id = 'logoutOverlay';
-  overlay.style.cssText = [
-    'position:fixed','inset:0','z-index:9999',
-    'background:rgba(0,0,0,.6)',
-    'display:flex','align-items:center','justify-content:center'
-  ].join(';');
-
+  const over = document.createElement('div');
+  over.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center';
   const user = Auth.getUser();
-  overlay.innerHTML = `
-    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;
-                padding:28px;max-width:340px;width:90%;text-align:center">
-      <div style="font-size:32px;margin-bottom:10px">👋</div>
-      <div style="font-size:15px;font-weight:700;margin-bottom:6px">Sign out?</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:22px">
-        Signed in as <strong>${escHtml(user?.email || '')}</strong><br>
-        Your progress is saved to your account.
-      </div>
-      <div style="display:flex;gap:10px;justify-content:center">
-        <button onclick="doLogout(false)" style="padding:9px 22px;background:var(--red);color:#fff;
-          border:none;border-radius:8px;font-family:var(--font-ui);font-size:13px;
-          font-weight:700;cursor:pointer;transition:.15s"
-          onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-          Sign out
-        </button>
-        <button onclick="document.getElementById('logoutOverlay').remove()"
-          style="padding:9px 22px;background:var(--bg3);color:var(--text2);
-          border:1px solid var(--border2);border-radius:8px;font-family:var(--font-ui);
-          font-size:13px;font-weight:600;cursor:pointer;transition:.15s">
-          Cancel
-        </button>
-      </div>
+  over.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:24px;max-width:300px;width:90%;text-align:center">
+    <div style="font-size:24px;margin-bottom:8px">👋</div>
+    <div style="font-size:14px;font-weight:800;margin-bottom:5px">Sign out?</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:18px">${user?.email||''}</div>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button onclick="doLogout(false)" style="padding:8px 20px;background:var(--red);color:#fff;border:none;border-radius:6px;font-family:var(--font-ui);font-size:12px;font-weight:700;cursor:pointer">Sign out</button>
+      <button onclick="this.closest('div[style]').remove()" style="padding:8px 14px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);border-radius:6px;font-family:var(--font-ui);font-size:12px;cursor:pointer">Cancel</button>
     </div>
-  `;
-
-  // Click outside to cancel
-  overlay.addEventListener('click', e => {
-    if (e.target === overlay) overlay.remove();
-  });
-
-  document.body.appendChild(overlay);
-}
-
-function escHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  </div>`;
+  over.addEventListener('click', e => { if (e.target === over) over.remove(); });
+  document.body.appendChild(over);
 }
 </script>
 
+<!-- Roadmap mode nav -->
 <script>
-// ── Roadmap mode: detect ?rmId= and show focused banner ────────────────────
 (function initRoadmapMode() {
-  const params   = new URLSearchParams(window.location.search);
-  const rmId     = params.get('rmId');
-  const rmName   = params.get('rmName');
-  const rmTopics = params.get('rmTopics');
-  const topicId  = parseInt(params.get('topic'));
+  const params = new URLSearchParams(window.location.search);
+  const rmId    = params.get('rmId');
+  const rmTopics= params.get('rmTopics');
+  const topicId = parseInt(params.get('topic'));
+  if (!rmId || !rmTopics) return;
 
-  if (!rmId || !rmTopics) return; // not in roadmap mode
+  const ids  = rmTopics.split(',').map(Number).filter(Boolean);
+  const idx  = ids.indexOf(topicId);
+  const prev = idx > 0 ? ids[idx - 1] : null;
+  const next = idx < ids.length - 1 ? ids[idx + 1] : null;
+  const nm   = params.get('rmName') || 'Roadmap';
+  const pct  = ids.length ? Math.round((idx / ids.length) * 100) : 0;
 
-  const topicIds = rmTopics.split(',').map(Number).filter(Boolean);
-  const curIdx   = topicIds.indexOf(topicId);
-  const prevId   = curIdx > 0              ? topicIds[curIdx - 1] : null;
-  const nextId   = curIdx < topicIds.length - 1 ? topicIds[curIdx + 1] : null;
-
-  // Build the roadmap URL to go back
-  const backUrl = '/roadmap.html';
-
-  // Find the sidebar and insert banner above it
   const sidebar = document.getElementById('sidebar');
-  if (!sidebar) return;
-
-  // Progress
-  const pct = topicIds.length ? Math.round((curIdx) / topicIds.length * 100) : 0;
-
-  // Create banner
-  const banner = document.createElement('div');
-  banner.id = 'rmBanner';
+  const banner  = document.createElement('div');
   banner.innerHTML = `
-    <div class="rm-banner">
-      <a href="${backUrl}" class="rm-banner-back">← Roadmap</a>
-      <span class="rm-banner-name">${escHtml(decodeURIComponent(rmName || ''))}</span>
-      <span style="font-size:11px;color:var(--text3)">${curIdx + 1}/${topicIds.length}</span>
-      <div class="rm-banner-nav">
-        <button class="rm-nav-btn" id="rmPrev"
-          onclick="rmNavigate(${prevId},'${rmId}','${encodeURIComponent(rmName || '')}','${rmTopics}')"
-          ${!prevId ? 'disabled' : ''}>‹ Prev</button>
-        <button class="rm-nav-btn" id="rmNext"
-          onclick="rmNavigate(${nextId},'${rmId}','${encodeURIComponent(rmName || '')}','${rmTopics}')"
-          ${!nextId ? 'disabled' : ''}>Next ›</button>
-      </div>
+    <div style="background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:11px">
+      <a href="/roadmap.html" style="color:var(--text3);text-decoration:none;font-weight:700">← Roadmap</a>
+      <span style="color:var(--text);font-weight:800;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${decodeURIComponent(nm)}</span>
+      <span style="color:var(--text3)">${idx+1}/${ids.length}</span>
     </div>
-    <div class="rm-progress-wrap">
-      <div class="rm-progress-inner" style="width:${pct}%"></div>
+    <div style="display:flex;gap:6px;padding:6px 10px;background:var(--bg2);border-bottom:1px solid var(--border)">
+      <button onclick="rmNav(${prev},'${rmId}','${encodeURIComponent(nm)}','${rmTopics}')" ${!prev?'disabled':''} style="flex:1;padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;${!prev?'opacity:.4':''}">‹ Prev</button>
+      <button onclick="rmNav(${next},'${rmId}','${encodeURIComponent(nm)}','${rmTopics}')" ${!next?'disabled':''} style="flex:1;padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;${!next?'opacity:.4':''}">Next ›</button>
     </div>
-  `;
+    <div style="height:3px;background:var(--bg3)"><div style="height:100%;width:${pct}%;background:var(--accent);transition:width .3s"></div></div>`;
   sidebar.parentNode.insertBefore(banner, sidebar);
 
-  // Mark only roadmap topics in sidebar — wait for topics to load
-  function markRoadmapTopics() {
-    const rows = document.querySelectorAll('.topic-row');
-    let marked = 0;
-    rows.forEach(row => {
-      const onclick = row.getAttribute('onclick') || '';
-      const match   = onclick.match(/selectTopic\((\d+)\)/);
-      if (match && topicIds.includes(parseInt(match[1]))) {
-        row.classList.add('rm-topic');
-        marked++;
-      }
-    });
-    return marked;
-  }
-
-  // Poll until sidebar topics are rendered
+  // Auto-select topic
   let attempts = 0;
   const poll = setInterval(() => {
-    const marked = markRoadmapTopics();
-    if (marked > 0 || ++attempts > 20) {
-      clearInterval(poll);
-      document.getElementById('sidebar').classList.add('rm-mode');
-      // Show roadmap topics group headers
-      document.querySelectorAll('.cat-group-header').forEach(h => {
-        const group = h.nextElementSibling;
-        if (group && group.querySelector('.rm-topic')) {
-          h.style.display = '';
-        }
-      });
-    }
+    const items = document.querySelectorAll('.topic-item');
+    let marked = 0;
+    items.forEach(el => { if (ids.includes(+el.dataset.id)) { el.classList.add('rm-topic'); marked++; } });
+    if (marked > 0 || ++attempts > 20) clearInterval(poll);
   }, 200);
 })();
 
-function rmNavigate(topicId, rmId, rmName, rmTopics) {
-  if (!topicId) return;
-  window.location.href = `/?topic=${topicId}&rmId=${rmId}&rmName=${rmName}&rmTopics=${rmTopics}`;
+function rmNav(id, rmId, rmName, rmTopics) {
+  if (!id) return;
+  window.location.href = `/?topic=${id}&rmId=${rmId}&rmName=${rmName}&rmTopics=${rmTopics}`;
 }
 </script>
+
 </body>
 </html>

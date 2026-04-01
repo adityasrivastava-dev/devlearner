@@ -1,323 +1,276 @@
-/* ══════════════════════════════════════════════════════════════════════════════
-   editor.js — App Controller
-   Handles: sidebar, tabs, Monaco + real-time syntax check, LeetCode-style output
-══════════════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   editor.js — DevLearn App Controller
+   Phase 1: Theory tab · LeetCode split-panel PS view · 3-tier hints
+            · Live syntax check · Recall drill · Compile error cards
+   Bugs fixed: no duplicate bindings, correct roadmap selector,
+               testCases always array, auth on all admin calls
+═══════════════════════════════════════════════════════════════════════════ */
 
-let monacoEditor        = null;
-let practiceEditor      = null;
-let currentTopic        = null;
-let currentProblems     = [];
-let currentProblem      = null;
-let activeCategory      = 'ALL';
-let syntaxDebounceTimer = null;
+// ── Global State ─────────────────────────────────────────────────────────────
+let monacoEditor   = null;   // Code tab editor
+let psEditor       = null;   // Problem-solve view editor
+let currentTopic   = null;
+let currentProblems= [];
+let currentProblem = null;
+let activeCategory = 'ALL';
+let syntaxTimer    = null;
+let psSyntaxTimer  = null;
+let psHintsShown   = 0;
+let psBottomOpen   = true;
+let psResizing     = false;
 
-// ── Bootstrap ─────────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   initMonaco();
-  loadTopics().then(() => {
-    // Deep-link: /?topic=123
-    const params  = new URLSearchParams(window.location.search);
-    const topicId = params.get('topic');
-    if (topicId) {
-      const waitForMonaco = setInterval(() => {
-        if (monacoEditor) {
-          clearInterval(waitForMonaco);
-          selectTopic(parseInt(topicId));
-        }
-      }, 150);
-    }
-  });
   bindCategoryTabs();
   bindTabBar();
   bindSearch();
-  bindRunButton();
-  bindOutputTabs();
-  bindPracticeButtons();
+  bindOutTabs();
+  // Run button bound once inside initMonaco callback
+  // PS buttons bound after monaco loaded
+
+  loadTopics(activeCategory).then(() => {
+    // Roadmap mode — auto-select topic from URL param
+    const urlTopic = new URLSearchParams(window.location.search).get('topic');
+    if (urlTopic) {
+      const poll = setInterval(() => {
+        if (monacoEditor) { clearInterval(poll); selectTopic(parseInt(urlTopic)); }
+      }, 100);
+    }
+  });
 });
 
-// ── Monaco Setup ──────────────────────────────────────────────────────────────
+// ── Monaco ────────────────────────────────────────────────────────────────────
 function initMonaco() {
-  require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+  require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
   require(['vs/editor/editor.main'], () => {
 
-    const commonOptions = {
-      language: 'java',
-      theme: 'vs-dark',
-      fontSize: 13,
+    const COMMON = {
+      language: 'java', theme: 'vs-dark', fontSize: 13,
       fontFamily: "'JetBrains Mono', monospace",
-      minimap: { enabled: false },
-      scrollBeyondLastLine: false,
-      lineNumbers: 'on',
-      renderLineHighlight: 'line',
-      automaticLayout: true,
-      padding: { top: 10 },
-      glyphMargin: true,
-      folding: true,
+      minimap: { enabled: false }, scrollBeyondLastLine: false,
+      lineNumbers: 'on', renderLineHighlight: 'line',
+      automaticLayout: true, padding: { top: 10 }, glyphMargin: true,
     };
 
+    // Code tab editor
     monacoEditor = monaco.editor.create(document.getElementById('monacoEditor'), {
-      ...commonOptions,
-      value: '// Select a topic to load starter code\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}'
+      ...COMMON,
+      value: '// Select a topic from the sidebar\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}'
     });
-
-    practiceEditor = monaco.editor.create(document.getElementById('practiceEditor'), {
-      ...commonOptions,
-      value: '// Select a problem to load starter code'
-    });
-
-    // Real-time syntax check — fires 800ms after user stops typing
     monacoEditor.onDidChangeModelContent(() => {
-      clearTimeout(syntaxDebounceTimer);
-      setStatusBar('checking');
-      syntaxDebounceTimer = setTimeout(() => runSyntaxCheck(monacoEditor, 'main'), 800);
+      setSyntaxDot('checking');
+      clearTimeout(syntaxTimer);
+      syntaxTimer = setTimeout(() => doSyntaxCheck(monacoEditor, 'main'), 600);
     });
 
-    practiceEditor.onDidChangeModelContent(() => {
-      clearTimeout(syntaxDebounceTimer);
-      syntaxDebounceTimer = setTimeout(() => runSyntaxCheck(practiceEditor, 'practice'), 800);
-    });
+    // Problem-solve editor (create lazy when first problem opened)
+    window._monacoReady = true;
+
+    // Bind run button ONCE here (after monaco ready)
+    document.getElementById('runBtn')?.addEventListener('click', runCode);
+    document.getElementById('resetBtn')?.addEventListener('click', resetEditor);
+
+    // PS buttons
+    document.getElementById('psRunBtn')?.addEventListener('click', psRunCode);
+    document.getElementById('psSubmitBtn')?.addEventListener('click', psSubmit);
   });
 }
 
-// ── Real-time Syntax Check ────────────────────────────────────────────────────
-async function runSyntaxCheck(editor, context) {
-  if (!editor) return;
-  const code = editor.getValue();
-  if (!code.trim()) { clearMarkers(editor); setStatusBar('ok', 0, 0); return; }
-  try {
-    const result = await API.syntaxCheck(code, getJavaVersion());
-    applyMarkers(editor, result.errors || []);
-    if (context === 'main') {
-      setStatusBar(result.valid ? 'ok' : 'errors', result.errorCount, result.warningCount);
-      renderErrorPanel(result.errors || []);
-    }
-  } catch (e) { /* silent — server may not be running during dev */ }
-}
-
-function applyMarkers(editor, errors) {
-  if (!window.monaco || !editor?.getModel()) return;
-  const model = editor.getModel();
-  const markers = errors.map(err => ({
-    severity:        err.severity === 'error' ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
-    startLineNumber: err.line,
-    startColumn:     err.column || 1,
-    endLineNumber:   err.line,
-    endColumn:       err.column ? err.column + 15 : model.getLineMaxColumn(err.line),
-    message:         err.message,
-    source:          'javac',
-  }));
-  monaco.editor.setModelMarkers(model, 'javac', markers);
-}
-
-function clearMarkers(editor) {
-  if (!window.monaco || !editor?.getModel()) return;
-  monaco.editor.setModelMarkers(editor.getModel(), 'javac', []);
-}
-
-// ── Status Bar ────────────────────────────────────────────────────────────────
-function setStatusBar(state, errors = 0, warnings = 0) {
-  const el = document.getElementById('statusErrors');
-  if (!el) return;
-  if (state === 'checking') {
-    el.innerHTML = '<span style="color:var(--text3)">⟳ Checking syntax…</span>';
-  } else if (state === 'ok') {
-    el.innerHTML = '<span style="color:var(--accent)">✓ No errors</span>';
-  } else {
-    const parts = [];
-    if (errors)   parts.push(`<span style="color:var(--red)">✕ ${errors} error${errors>1?'s':''}</span>`);
-    if (warnings) parts.push(`<span style="color:var(--yellow)">⚠ ${warnings} warning${warnings>1?'s':''}</span>`);
-    el.innerHTML = parts.join('&nbsp;&nbsp;');
-  }
-  const badge = document.getElementById('errBadge');
-  if (badge) {
-    badge.textContent = errors;
-    badge.classList.toggle('hidden', errors === 0);
-  }
-}
-
-// ── Error Panel ───────────────────────────────────────────────────────────────
-function renderErrorPanel(errors) {
-  const el = document.getElementById('errorsList');
-  if (!el) return;
-  if (!errors.length) {
-    el.innerHTML = '<p class="no-errors-msg">✓ No compile errors</p>';
+function ensurePsEditor(starterCode) {
+  if (psEditor) {
+    psEditor.setValue(starterCode || '// Write your solution here\n');
     return;
   }
-  el.innerHTML = errors.map(err => `
-    <div class="error-card ${err.severity}" onclick="jumpToLine(${err.line})">
-      <div class="error-card-top">
-        <span class="error-icon">${err.severity === 'error' ? '✕' : '⚠'}</span>
-        <span class="error-msg">${escHtml(err.message)}</span>
-        <span class="error-line-badge">Line ${err.line}${err.column > 1 ? ':' + err.column : ''}</span>
-      </div>
-      ${err.code ? `<pre class="error-source-line">${escHtml(err.code)}<br>${' '.repeat(Math.max(0,(err.column||1)-1))}<span class="error-caret">^</span></pre>` : ''}
-    </div>
-  `).join('');
+  if (!window._monacoReady) { setTimeout(() => ensurePsEditor(starterCode), 100); return; }
+  psEditor = monaco.editor.create(document.getElementById('psEditor'), {
+    language: 'java', theme: 'vs-dark', fontSize: 13,
+    fontFamily: "'JetBrains Mono', monospace",
+    minimap: { enabled: false }, scrollBeyondLastLine: false,
+    lineNumbers: 'on', renderLineHighlight: 'line',
+    automaticLayout: true, padding: { top: 10 }, glyphMargin: true,
+    value: starterCode || '// Write your solution here\n',
+  });
+  psEditor.onDidChangeModelContent(() => {
+    setPsSyntaxDot('checking');
+    clearTimeout(psSyntaxTimer);
+    psSyntaxTimer = setTimeout(() => doSyntaxCheck(psEditor, 'ps'), 600);
+  });
 }
 
+// ── Syntax Check ──────────────────────────────────────────────────────────────
+async function doSyntaxCheck(editor, ctx) {
+  if (!editor) return;
+  const code = editor.getValue();
+  const ver  = ctx === 'ps'
+    ? (document.getElementById('psJavaVersion')?.value || '17')
+    : (document.getElementById('javaVersionSelect')?.value || '17');
+
+  if (!code.trim() || code.trim().length < 10) {
+    clearMarkers(editor);
+    if (ctx === 'main') { setSyntaxDot('ok'); updateErrBadge(0); }
+    if (ctx === 'ps')   { setPsSyntaxDot('ok'); }
+    return;
+  }
+  try {
+    const r = await API.syntaxCheck(code, ver);
+    setMarkers(editor, r.errors || []);
+    if (ctx === 'main') {
+      setSyntaxDot(r.valid ? 'ok' : 'errors');
+      updateErrBadge(r.errorCount || 0);
+      renderErrCards(r.errors || []);
+    }
+    if (ctx === 'ps') {
+      setPsSyntaxDot(r.valid ? 'ok' : 'errors', r.errorCount);
+    }
+  } catch { /* network — stay silent */ }
+}
+
+function setMarkers(editor, errors) {
+  if (!window.monaco || !editor?.getModel()) return;
+  monaco.editor.setModelMarkers(editor.getModel(), 'javac', errors.map(e => ({
+    severity: e.severity === 'error' ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
+    startLineNumber: e.line, startColumn: e.column || 1,
+    endLineNumber: e.line,
+    endColumn: e.column ? e.column + 15 : (editor.getModel().getLineMaxColumn(e.line) || 100),
+    message: e.message, source: 'javac',
+  })));
+}
+function clearMarkers(editor) {
+  if (window.monaco && editor?.getModel())
+    monaco.editor.setModelMarkers(editor.getModel(), 'javac', []);
+}
+
+function setSyntaxDot(state) {
+  const dot = document.getElementById('syntaxDot');
+  const lbl = document.getElementById('syntaxStatus');
+  if (!dot) return;
+  dot.className = `status-dot ${state}`;
+  if (lbl) {
+    if (state === 'checking') lbl.textContent = 'Checking…';
+    else if (state === 'ok')  lbl.textContent = '✓ No errors';
+    else                      lbl.textContent = 'Compile errors';
+  }
+}
+function setPsSyntaxDot(state, count) {
+  const dot = document.getElementById('psSyntaxDot');
+  const lbl = document.getElementById('psSyntaxLabel');
+  if (!dot) return;
+  dot.className = `ps-syntax-dot ${state}`;
+  if (lbl) {
+    if (state === 'checking') lbl.textContent = 'Checking…';
+    else if (state === 'ok')  lbl.textContent = 'No errors';
+    else lbl.textContent = `${count || ''} error${count !== 1 ? 's' : ''}`;
+  }
+}
+function updateErrBadge(n) {
+  const b = document.getElementById('errCountBadge');
+  if (b) { b.textContent = n; b.style.display = n > 0 ? 'inline' : 'none'; }
+}
+function renderErrCards(errors) {
+  const panel = document.getElementById('errorsPanel');
+  if (!panel) return;
+  if (!errors.length) { panel.innerHTML = '<p class="no-errors-msg">✓ No compile errors</p>'; return; }
+  panel.innerHTML = errors.map(e => `
+    <div class="compile-err-card" onclick="jumpToLine(${e.line})">
+      <div style="display:flex;align-items:flex-start;gap:6px">
+        <span class="err-badge ${e.severity}">${e.severity === 'error' ? '✕ Error' : '⚠ Warning'}</span>
+        <span class="err-line-badge">Line ${e.line}${e.column > 1 ? ':' + e.column : ''}</span>
+        <span class="err-msg">${esc(e.message)}</span>
+      </div>
+      ${e.code ? `<div class="err-src-line">${esc(e.code)}\n${' '.repeat(Math.max(0,(e.column||1)-1))}^</div>` : ''}
+    </div>`).join('');
+}
 function jumpToLine(line) {
   if (!monacoEditor) return;
   monacoEditor.revealLineInCenter(line);
   monacoEditor.setPosition({ lineNumber: line, column: 1 });
   monacoEditor.focus();
-  switchOutputTab('errors');
+  switchOutTab('errors');
 }
 
-// ── Output Tab Switcher ───────────────────────────────────────────────────────
-function bindOutputTabs() {
-  document.querySelectorAll('.lc-out-tab').forEach(btn => {
-    btn.addEventListener('click', () => switchOutputTab(btn.dataset.out));
+// ── Output Tabs (Code tab) ────────────────────────────────────────────────────
+function bindOutTabs() {
+  document.querySelectorAll('.out-tab').forEach(btn =>
+    btn.addEventListener('click', () => switchOutTab(btn.dataset.out)));
+}
+function switchOutTab(name) {
+  document.querySelectorAll('.out-tab').forEach(b => b.classList.toggle('active', b.dataset.out === name));
+  ['testcase','output','errors'].forEach(n => {
+    const p = document.getElementById(`out-${n}`);
+    if (p) p.classList.toggle('hidden', n !== name);
   });
 }
 
-function switchOutputTab(name) {
-  document.querySelectorAll('.lc-out-tab').forEach(b =>
-    b.classList.toggle('active', b.dataset.out === name));
-  document.querySelectorAll('.lc-out-panel').forEach(p =>
-    p.classList.toggle('hidden', p.id !== `out-${name}`));
-}
+// ── Run / Reset (Code tab) ───────────────────────────────────────────────────
+async function runCode() {
+  if (!monacoEditor) return;
+  const code  = monacoEditor.getValue();
+  const stdin = document.getElementById('stdinInput')?.value || '';
+  const ver   = document.getElementById('javaVersionSelect')?.value || '17';
 
-// ── Java Version Selector helper ─────────────────────────────────────────────
-function getJavaVersion() {
-  return document.getElementById('javaVersionSelect')?.value || '17';
-}
-
-// ── Run Button ────────────────────────────────────────────────────────────────
-function bindRunButton() {
-  document.getElementById('runBtn')?.addEventListener('click', async () => {
-    if (!monacoEditor) return;
-    const code    = monacoEditor.getValue();
-    const stdin   = document.getElementById('stdinInput')?.value || '';
-    const version = getJavaVersion();
-
-    switchOutputTab('output');
-    const box       = document.getElementById('outputBox');
-    const statusRow = document.getElementById('outStatusRow');
-    if (box)       { box.textContent = '⏳ Compiling with Java ' + version + '…'; box.className = 'lc-output-box'; }
-    if (statusRow) statusRow.innerHTML = '';
-    document.getElementById('execTime').textContent = '';
-
-    try {
-      const result = await API.execute(code, stdin, version);
-      renderRunResult(result);
-      // Auto-analyze complexity after every run (success or runtime error)
-      if (result.status !== 'COMPILE_ERROR') {
-        analyzeAndRenderComplexity(code);
-      }
-    } catch (e) {
-      if (box) { box.textContent = '⚠ Server unreachable — is the backend running?'; box.className = 'lc-output-box error'; }
-    }
-  });
-
-  document.getElementById('resetBtn')?.addEventListener('click', () => {
-    if (monacoEditor && currentTopic?.starterCode) {
-      monacoEditor.setValue(currentTopic.starterCode.trim());
-    }
-    const box = document.getElementById('outputBox');
-    if (box) { box.textContent = '// Press ▶ Run Code to see output here'; box.className = 'lc-output-box'; }
-    const sr = document.getElementById('outStatusRow');
-    if (sr) sr.innerHTML = '';
-    document.getElementById('execTime').textContent = '';
-    // Clear complexity panel on reset
-    const cp = document.getElementById('complexityPanel');
-    if (cp) cp.innerHTML = '<p class="complexity-hint">Run your code to analyze complexity.</p>';
-  });
-}
-
-// ── Complexity Analysis ───────────────────────────────────────────────────────
-async function analyzeAndRenderComplexity(code) {
-  const panel = document.getElementById('complexityPanel');
-  if (!panel) return;
-  panel.innerHTML = '<p class="complexity-hint">⏳ Analyzing complexity…</p>';
+  switchOutTab('output');
+  setOutputStatus(null, '⏳ Compiling…');
+  const box = document.getElementById('outputBox');
+  if (box) { box.textContent = ''; box.className = 'output-box'; }
+  const tb = document.getElementById('execTimeBadge');
+  if (tb) tb.style.display = 'none';
 
   try {
-    const r = await API.analyzeComplexity(code);
-    const confColor = { HIGH: 'var(--accent)', MEDIUM: 'var(--yellow)', LOW: 'var(--text3)' }[r.confidence] || 'var(--text3)';
-    const patternTags = (r.detectedPatterns || []).map(p =>
-      `<span class="complexity-tag">${escHtml(p)}</span>`).join('');
-
-    panel.innerHTML = `
-      <div class="complexity-cards">
-
-        <div class="cx-card cx-time">
-          <div class="cx-label">⏱ Time Complexity</div>
-          <div class="cx-notation">${escHtml(r.timeComplexity || 'O(?)')}</div>
-          <div class="cx-explanation">${escHtml(r.timeExplanation || '')}</div>
-        </div>
-
-        <div class="cx-card cx-space">
-          <div class="cx-label">💾 Space Complexity</div>
-          <div class="cx-notation cx-space-val">${escHtml(r.spaceComplexity || 'O(?)')}</div>
-          <div class="cx-explanation">${escHtml(r.spaceExplanation || '')}</div>
-        </div>
-
-      </div>
-
-      ${patternTags ? `
-      <div class="cx-patterns">
-        <span class="cx-patterns-label">Detected patterns:</span>
-        ${patternTags}
-      </div>` : ''}
-
-      <div class="cx-confidence" style="color:${confColor}">
-        Confidence: ${r.confidence || 'LOW'}
-        <span class="cx-note"> — based on static code structure</span>
-      </div>
-    `;
-  } catch(e) {
-    panel.innerHTML = '<p class="complexity-hint">⚠ Could not analyze complexity.</p>';
+    const r = await API.execute(code, stdin, ver);
+    renderRunResult(r);
+  } catch {
+    setOutputStatus('error', '⚠ Server unreachable');
+    if (box) { box.textContent = 'Make sure the Spring Boot server is running on port 8080.'; box.className = 'output-box error'; }
   }
 }
 
-function renderRunResult(result) {
-  const box       = document.getElementById('outputBox');
-  const statusRow = document.getElementById('outStatusRow');
-  const timeEl    = document.getElementById('execTime');
+function renderRunResult(r) {
+  const box = document.getElementById('outputBox');
+  const tb  = document.getElementById('execTimeBadge');
   if (!box) return;
 
-  if (result.status === 'COMPILE_ERROR') {
-    applyMarkers(monacoEditor, result.compileErrors || []);
-    renderErrorPanel(result.compileErrors || []);
-    const ec = (result.compileErrors||[]).filter(e=>e.severity==='error').length;
-    const wc = (result.compileErrors||[]).filter(e=>e.severity==='warning').length;
-    setStatusBar('errors', ec, wc);
-    box.textContent = result.error || 'Compilation failed';
-    box.className   = 'lc-output-box error';
-    if (statusRow) statusRow.innerHTML = statusBadge('COMPILE_ERROR');
-    switchOutputTab('errors');
-    return;
-  }
-
-  if (result.status === 'TIMEOUT') {
-    box.textContent = result.error;
-    box.className   = 'lc-output-box error';
-    if (statusRow) statusRow.innerHTML = statusBadge('TIMEOUT');
-  } else if (result.status === 'RUNTIME_ERROR') {
-    box.textContent = result.error || 'Runtime error';
-    box.className   = 'lc-output-box error';
-    if (statusRow) statusRow.innerHTML = statusBadge('RUNTIME_ERROR');
+  if (r.status === 'COMPILE_ERROR') {
+    setMarkers(monacoEditor, r.compileErrors || []);
+    renderErrCards(r.compileErrors || []);
+    updateErrBadge((r.compileErrors || []).filter(e => e.severity === 'error').length);
+    setOutputStatus('compile-error', '✕ Compile Error');
+    box.textContent = r.error || 'Compilation failed'; box.className = 'output-box error';
+    switchOutTab('errors');
+  } else if (r.status === 'TIMEOUT') {
+    setOutputStatus('error', '⏱ Time Limit');
+    box.textContent = r.error || 'Time limit exceeded'; box.className = 'output-box error';
+  } else if (r.status === 'RUNTIME_ERROR') {
+    setOutputStatus('error', '✕ Runtime Error');
+    box.textContent = r.error || 'Runtime error'; box.className = 'output-box error';
   } else {
-    box.textContent = result.output || '(no output)';
-    box.className   = 'lc-output-box success';
-    if (statusRow) statusRow.innerHTML = statusBadge('SUCCESS');
+    setOutputStatus('success', '✓ Accepted');
+    box.textContent = r.output || '(no output)'; box.className = 'output-box success';
   }
-  if (timeEl && result.executionTimeMs) {
-    timeEl.textContent = `⏱ ${result.executionTimeMs}ms`;
-  }
+  if (r.executionTimeMs && tb) { tb.textContent = `⏱ ${r.executionTimeMs}ms`; tb.style.display = 'inline'; }
 }
 
-function statusBadge(status) {
-  const map = {
-    SUCCESS:       ['var(--accent)',  '✓ Accepted'],
-    COMPILE_ERROR: ['var(--red)',     '✕ Compile Error'],
-    RUNTIME_ERROR: ['var(--red)',     '✕ Runtime Error'],
-    TIMEOUT:       ['var(--yellow)',  '⏱ Time Limit Exceeded'],
-  };
-  const [color, label] = map[status] || ['var(--text2)', status];
-  return `<span class="out-status-badge" style="color:${color};border-color:${color}20;background:${color}12">${label}</span>`;
+function setOutputStatus(type, text) {
+  const row = document.getElementById('outputStatusRow');
+  if (!row) return;
+  if (!text) { row.innerHTML = ''; return; }
+  const colors = { success: 'var(--accent)', error: 'var(--red)', 'compile-error': 'var(--red)', warning: 'var(--yellow)' };
+  const c = colors[type] || 'var(--text2)';
+  row.innerHTML = `<span class="out-status-badge" style="color:${c};border-color:${c}20;background:${c}12">${esc(text)}</span>`;
 }
 
-// ── Load Topics into Sidebar ──────────────────────────────────────────────────
+function resetEditor() {
+  if (monacoEditor && currentTopic?.starterCode)
+    monacoEditor.setValue(currentTopic.starterCode.trim());
+  const box = document.getElementById('outputBox');
+  if (box) { box.textContent = '// Press ▶ Run Code to execute'; box.className = 'output-box'; }
+  const row = document.getElementById('outputStatusRow');
+  if (row) row.innerHTML = '';
+  const tb = document.getElementById('execTimeBadge');
+  if (tb) tb.style.display = 'none';
+}
+
+// ── Sidebar & Topic Loading ───────────────────────────────────────────────────
 async function loadTopics(category = 'ALL') {
   const list = document.getElementById('topicList');
   list.innerHTML = '<li class="loading-item">Loading…</li>';
@@ -325,7 +278,7 @@ async function loadTopics(category = 'ALL') {
     const topics = await API.getTopics(category === 'ALL' ? null : category);
     renderTopicList(topics);
     return topics;
-  } catch (e) {
+  } catch {
     list.innerHTML = '<li class="loading-item">⚠ Could not load topics</li>';
     return [];
   }
@@ -333,103 +286,68 @@ async function loadTopics(category = 'ALL') {
 
 function renderTopicList(topics) {
   const list = document.getElementById('topicList');
-  if (!topics.length) {
-    list.innerHTML = '<li class="loading-item">No topics found.</li>';
-    return;
-  }
+  if (!topics.length) { list.innerHTML = '<li class="loading-item">No topics found.</li>'; return; }
   list.innerHTML = topics.map(t => `
     <li class="topic-item" data-id="${t.id}" onclick="selectTopic(${t.id})">
-      <span class="item-name">${t.title}</span>
-      <span class="item-tag ${tagClass(t.category)}">${tagLabel(t.category)}</span>
-    </li>
-  `).join('');
+      <span class="item-name">${esc(t.title)}</span>
+      <span class="item-tag ${tagCls(t.category)}">${tagLbl(t.category)}</span>
+    </li>`).join('');
 }
 
-function tagClass(cat) {
+function tagCls(cat) {
   const m = { DSA:'tag-dsa', JAVA:'tag-java', ADVANCED_JAVA:'tag-adv', MYSQL:'tag-mysql', AWS:'tag-aws' };
   return m[cat] || 'tag-dsa';
 }
-function tagLabel(cat) {
-  const m = { DSA:'DSA', JAVA:'Java', ADVANCED_JAVA:'Adv', MYSQL:'MySQL', AWS:'AWS' };
+function tagLbl(cat) {
+  const m = { DSA:'DSA', JAVA:'Java', ADVANCED_JAVA:'Adv', MYSQL:'SQL', AWS:'AWS' };
   return m[cat] || cat;
 }
 
-// ── Select Topic ──────────────────────────────────────────────────────────────
 async function selectTopic(id) {
-  // Highlight sidebar item
-  document.querySelectorAll('.topic-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.id == id);
-  });
-
+  document.querySelectorAll('.topic-item').forEach(el => el.classList.toggle('active', +el.dataset.id === id));
+  // Exit PS view if open
+  if (document.getElementById('problemSolveView')?.style.display !== 'none') exitProblemSolve();
   try {
     currentTopic = await API.getTopic(id);
-    showTopicView(currentTopic);
-    // Activate visual tab by default
-    switchTab('visual');
-  } catch (e) {
-    console.error('Failed to load topic', e);
-  }
+    renderTopicView(currentTopic);
+    switchTab('theory');
+  } catch (e) { console.error('selectTopic failed', e); }
 }
 
-function showTopicView(topic) {
+function renderTopicView(t) {
   document.getElementById('welcomeScreen').style.display = 'none';
-  document.getElementById('topicView').style.display     = 'block';
+  document.getElementById('topicView').style.display    = 'flex';
 
-  document.getElementById('topicTitle').textContent = topic.title;
-  document.getElementById('topicDesc').textContent  = topic.description || '';
+  document.getElementById('topicTitle').textContent = t.title;
+  document.getElementById('topicDesc').textContent  = t.description || '';
 
-  const badge = document.getElementById('topicCategoryBadge');
-  badge.textContent = tagLabel(topic.category);
-  const catSuffix = topic.category === 'ADVANCED_JAVA' ? 'adv'
-                  : topic.category === 'MYSQL' ? 'mysql'
-                  : topic.category === 'AWS'   ? 'aws'
-                  : topic.category.toLowerCase();
-  badge.className = `topic-category-badge badge-${catSuffix}`;
-
-  const complexity = document.getElementById('topicComplexity');
-  complexity.textContent = topic.timeComplexity ? `⏱ ${topic.timeComplexity}  |  💾 ${topic.spaceComplexity}` : '';
-
-  // Load starter code into editor
-  if (monacoEditor && topic.starterCode) {
-    monacoEditor.setValue(topic.starterCode.trim());
+  const badge = document.getElementById('topicBadge');
+  if (badge) {
+    badge.textContent = tagLbl(t.category);
+    badge.className   = `topic-category-badge badge-${(t.category||'dsa').toLowerCase()}`;
   }
-}
+  const cx = document.getElementById('topicComplexity');
+  if (cx) cx.textContent = t.timeComplexity
+    ? `⏱ ${t.timeComplexity}  |  💾 ${t.spaceComplexity || ''}` : '';
 
-// ── Tab Switching ─────────────────────────────────────────────────────────────
-function bindTabBar() {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-  });
-}
-
-function switchTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  document.querySelectorAll('.tab-panel').forEach(p => {
-    p.classList.toggle('hidden', p.id !== `tab-${tab}`);
-  });
-
-  if (tab === 'examples')  loadExamples();
-  if (tab === 'practice')  loadProblems();
-  if (tab === 'optimize')  loadOptimize();
-  if (tab === 'flowchart') Flowchart.render(currentTopic?.title);
-  if (tab === 'trace')     syncTraceAlgo(currentTopic?.title);
+  if (monacoEditor && t.starterCode)
+    monacoEditor.setValue(t.starterCode.trim());
 }
 
 // ── Category Tabs ─────────────────────────────────────────────────────────────
 function bindCategoryTabs() {
-  document.querySelectorAll('.cat-btn').forEach(btn => {
+  document.querySelectorAll('.cat-btn').forEach(btn =>
     btn.addEventListener('click', () => {
       document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       activeCategory = btn.dataset.cat;
       loadTopics(activeCategory);
-    });
-  });
+    }));
 }
 
 // ── Search ────────────────────────────────────────────────────────────────────
 function bindSearch() {
-  document.getElementById('topicSearch')?.addEventListener('input', async (e) => {
+  document.getElementById('topicSearch')?.addEventListener('input', async e => {
     const q = e.target.value.trim().toLowerCase();
     if (!q) { loadTopics(activeCategory); return; }
     try {
@@ -439,350 +357,549 @@ function bindSearch() {
   });
 }
 
-// ── Load Examples ─────────────────────────────────────────────────────────────
+// ── Tab Switching ─────────────────────────────────────────────────────────────
+function bindTabBar() {
+  document.querySelectorAll('.tab-btn').forEach(btn =>
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('hidden', p.id !== `tab-${tab}`));
+  if (tab === 'theory')    loadTheory();
+  if (tab === 'examples')  loadExamples();
+  if (tab === 'practice')  loadProblems();
+  if (tab === 'optimize')  loadOptimize();
+  if (tab === 'flowchart') Flowchart.render(currentTopic?.title);
+  if (tab === 'trace')     syncTraceAlgo(currentTopic?.title);
+}
+
+// ── Theory Tab ────────────────────────────────────────────────────────────────
+function loadTheory() {
+  const t = currentTopic;
+  if (!t) return;
+  showHideCard('theoryAnchor',     'theoryAnchorText',     t.memoryAnchor);
+  showHideCard('theoryStory',      'theoryStoryText',      t.story);
+  showHideCard('theoryAnalogy',    'theoryAnalogyText',    t.analogy);
+  showHideCard('theoryPrinciples', 'theoryPrinciplesText', t.firstPrinciples);
+  showHideCard('theoryDefinition', 'theoryDefinitionText', t.story ? '' : t.description);
+  const empty = !t.memoryAnchor && !t.story && !t.analogy && !t.firstPrinciples;
+  const e = document.getElementById('theoryEmpty');
+  if (e) e.style.display = empty ? 'block' : 'none';
+}
+function showHideCard(cardId, textId, content) {
+  const card = document.getElementById(cardId);
+  const text = document.getElementById(textId);
+  if (!card) return;
+  if (content && content.trim()) { text.textContent = content; card.style.display = 'block'; }
+  else card.style.display = 'none';
+}
+
+// ── Examples Tab ──────────────────────────────────────────────────────────────
 async function loadExamples() {
   if (!currentTopic) return;
   const grid = document.getElementById('examplesGrid');
-  grid.innerHTML = '<p class="loading-text">Loading…</p>';
+  grid.innerHTML = '<p class="loading-text">Loading examples…</p>';
   try {
     const examples = await API.getExamples(currentTopic.id);
+    if (!examples.length) { grid.innerHTML = '<p class="loading-text">No examples yet for this topic.</p>'; return; }
     grid.innerHTML = examples.map((ex, i) => `
       <div class="example-card">
-        <div class="example-card-header" onclick="toggleExample(${i})">
+        <div class="example-card-header" onclick="toggleEx(${i})">
           <div>
             <span class="example-num">EXAMPLE ${ex.displayOrder || i + 1}</span>
-            <div class="example-title">${ex.title}</div>
+            <div class="example-title">${esc(ex.title || '')}</div>
           </div>
-          <span class="example-toggle" id="toggle-${i}">▼</span>
+          <span class="example-toggle" id="exTog-${i}">▼</span>
         </div>
-        <div class="example-body" id="example-body-${i}">
-          <p class="example-desc">${ex.description || ''}</p>
-          <pre class="example-code-block">${escHtml(ex.code || '')}</pre>
+        <div class="example-body" id="exBody-${i}">
+          <p class="example-desc">${esc(ex.description || '')}</p>
+          ${ex.pseudocode ? `
+            <div class="pseudo-section">
+              <div class="pseudo-label">📝 Pseudocode</div>
+              <pre class="pseudo-block">${esc(ex.pseudocode)}</pre>
+            </div>` : ''}
+          <pre class="example-code-block">${esc(ex.code || '')}</pre>
           <div class="example-meta">
-            <span><strong>💡 Insight:</strong> ${ex.explanation || ''}</span>
-            <span class="real-world-tag">🌍 ${ex.realWorldUse || ''}</span>
+            <span><strong>💡 Key Insight:</strong> ${esc(ex.explanation || '')}</span>
+            <span class="rw-tag">🌍 ${esc(ex.realWorldUse || '')}</span>
           </div>
         </div>
-      </div>
-    `).join('');
-    // Open first example by default
-    if (examples.length) toggleExample(0);
-  } catch (e) {
-    grid.innerHTML = '<p class="loading-text">⚠ Could not load examples</p>';
-  }
+      </div>`).join('');
+    toggleEx(0);
+  } catch { grid.innerHTML = '<p class="loading-text">⚠ Could not load examples.</p>'; }
 }
-
-function toggleExample(i) {
-  const body   = document.getElementById(`example-body-${i}`);
-  const toggle = document.getElementById(`toggle-${i}`);
+function toggleEx(i) {
+  const body = document.getElementById(`exBody-${i}`);
+  const tog  = document.getElementById(`exTog-${i}`);
   if (!body) return;
   const open = body.classList.toggle('open');
-  if (toggle) toggle.classList.toggle('open', open);
+  if (tog) tog.classList.toggle('open', open);
 }
 
-// ── Load Problems ─────────────────────────────────────────────────────────────
+// ── Practice Tab (problem list) ───────────────────────────────────────────────
 async function loadProblems() {
   if (!currentTopic) return;
-  const list = document.getElementById('problemList');
-  list.innerHTML = '';
+  const table = document.getElementById('problemsTable');
+  table.innerHTML = '<p class="loading-text">Loading…</p>';
+  const titleEl = document.getElementById('practiceTopicTitle');
+  if (titleEl) titleEl.textContent = currentTopic.title + ' — Problems';
   try {
     currentProblems = await API.getProblems(currentTopic.id);
-    list.innerHTML = currentProblems.map(p => `
-      <li class="problem-item" data-pid="${p.id}" onclick="selectProblem(${p.id})">
-        <div class="problem-item-title">${p.title}</div>
-        <span class="diff-badge diff-${p.difficulty?.toLowerCase()}">${p.difficulty}</span>
-      </li>
-    `).join('');
-  } catch {}
+    if (!currentProblems.length) { table.innerHTML = '<p class="loading-text">No problems for this topic yet.</p>'; return; }
+    renderProblemsTable(currentProblems);
+  } catch { table.innerHTML = '<p class="loading-text">⚠ Could not load problems.</p>'; }
 }
-
-async function selectProblem(pid) {
-  document.querySelectorAll('.problem-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.pid == pid);
-  });
-  try {
-    currentProblem = await API.getProblem(pid);
-    renderProblemStatement(currentProblem);
-    if (practiceEditor && currentProblem.starterCode) {
-      practiceEditor.setValue(currentProblem.starterCode.trim());
-    }
-    document.getElementById('practiceResults').classList.add('hidden');
-  } catch {}
-}
-
-function renderProblemStatement(p) {
-  const el = document.getElementById('problemStatement');
-  el.innerHTML = `
-    <div class="problem-statement">
-      <h3>${p.title} <span class="diff-badge diff-${p.difficulty?.toLowerCase()}">${p.difficulty}</span></h3>
-      <p>${p.description || ''}</p>
-      <div class="problem-io">
-        <div class="io-box">
-          <h4>Sample Input</h4>
-          <pre>${escHtml(p.sampleInput || '')}</pre>
-        </div>
-        <div class="io-box">
-          <h4>Sample Output</h4>
-          <pre>${escHtml(p.sampleOutput || '')}</pre>
-        </div>
+function renderProblemsTable(list) {
+  const table = document.getElementById('problemsTable');
+  table.innerHTML = list.map((p, i) => `
+    <div class="prob-row" onclick="openProblemSolve(${p.id})">
+      <span class="prob-num">${p.displayOrder || i + 1}</span>
+      <span class="prob-title">${esc(p.title)}</span>
+      <div class="prob-meta">
+        ${p.pattern ? `<span class="pattern-chip">${esc(p.pattern)}</span>` : ''}
+        <span class="diff-badge diff-${(p.difficulty || 'MEDIUM').toLowerCase()}">${p.difficulty}</span>
       </div>
-      ${p.inputFormat ? `<p style="font-size:12px;color:var(--text2);margin-top:8px">📥 <strong>Input:</strong> ${p.inputFormat}</p>` : ''}
-      ${p.outputFormat ? `<p style="font-size:12px;color:var(--text2)">📤 <strong>Output:</strong> ${p.outputFormat}</p>` : ''}
-    </div>
-  `;
+    </div>`).join('');
+}
+function filterDiff(btn, diff) {
+  document.querySelectorAll('.diff-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (!currentProblems.length) return;
+  renderProblemsTable(diff === 'ALL' ? currentProblems : currentProblems.filter(p => p.difficulty === diff));
 }
 
-// ── Load Optimize Tab ─────────────────────────────────────────────────────────
+// ── Optimize Tab ──────────────────────────────────────────────────────────────
 function loadOptimize() {
   if (!currentTopic) return;
-  setOptContent('optBruteContent',     currentTopic.bruteForce      || 'N/A');
-  setOptContent('optOptimizedContent', currentTopic.optimizedApproach || 'N/A');
-  setOptContent('optWhenContent',      currentTopic.whenToUse        || 'N/A');
-  setOptContent('optComplexityContent',
-    `<strong style="color:var(--accent)">Time:</strong> ${currentTopic.timeComplexity || 'N/A'}<br>
-     <strong style="color:var(--blue)">Space:</strong> ${currentTopic.spaceComplexity || 'N/A'}`);
+  setContent('optBrute',   currentTopic.bruteForce        || 'N/A');
+  setContent('optOpt',     currentTopic.optimizedApproach || 'N/A');
+  setContent('optWhen',    currentTopic.whenToUse         || 'N/A');
+  setContent('optComplex', `<strong style="color:var(--accent)">Time:</strong> ${currentTopic.timeComplexity||'N/A'}<br><strong style="color:var(--blue)">Space:</strong> ${currentTopic.spaceComplexity||'N/A'}`);
 }
-
-function setOptContent(id, html) {
+function setContent(id, html) {
   const el = document.getElementById(id);
   if (el) el.innerHTML = `<div class="opt-content">${html}</div>`;
 }
 
-// ── Run Button (Code Tab) ─────────────────────────────────────────────────────
-function bindRunButton() {
-  document.getElementById('runBtn')?.addEventListener('click', async () => {
-    if (!monacoEditor) return;
-    const code  = monacoEditor.getValue();
-    const stdin = document.getElementById('stdinInput')?.value || '';
-    const box   = document.getElementById('outputBox');
-    const time  = document.getElementById('execTime');
+// ═══════════════════════════════════════════════════════════════════════════════
+//  PROBLEM SOLVE VIEW
+// ═══════════════════════════════════════════════════════════════════════════════
 
-    box.textContent = '⏳ Running…';
-    box.className   = 'output-box';
+async function openProblemSolve(pid) {
+  try {
+    currentProblem = await API.getProblem(pid);
+    const p = currentProblem;
 
-    try {
-      const result = await API.execute(code, stdin);
-      if (result.success) {
-        box.textContent = result.output || '(no output)';
-        box.className   = 'output-box success';
-      } else {
-        box.textContent = result.error || 'Unknown error';
-        box.className   = 'output-box error';
-      }
-      if (time) time.textContent = result.executionTimeMs ? `${result.executionTimeMs}ms` : '';
-    } catch (e) {
-      box.textContent = '⚠ Server unreachable. Is the backend running?';
-      box.className   = 'output-box error';
-    }
-  });
+    // Breadcrumb & badges
+    document.getElementById('psBreadTopic').textContent = currentTopic?.title || '';
+    document.getElementById('psBreadTitle').textContent = p.title;
+    const dc = `diff-${(p.difficulty||'MEDIUM').toLowerCase()}`;
+    document.getElementById('psDiffBadge').textContent  = p.difficulty;
+    document.getElementById('psDiffBadge').className    = `diff-badge ${dc}`;
 
-  document.getElementById('resetBtn')?.addEventListener('click', () => {
-    if (monacoEditor && currentTopic?.starterCode) {
-      monacoEditor.setValue(currentTopic.starterCode.trim());
-    }
-    const box = document.getElementById('outputBox');
-    if (box) { box.textContent = '// Press Run to execute your code'; box.className = 'output-box'; }
-  });
-}
+    // Problem header
+    document.getElementById('psProbNum').textContent    = `#${p.displayOrder || pid}`;
+    document.getElementById('psProbTitle').textContent  = p.title;
+    document.getElementById('psDiffBadge2').textContent = p.difficulty;
+    document.getElementById('psDiffBadge2').className   = `diff-badge ${dc}`;
+    const patEl = document.getElementById('psProbPattern');
+    if (p.pattern) { patEl.textContent = p.pattern; patEl.style.display = ''; }
+    else patEl.style.display = 'none';
 
-// ── Practice Buttons ──────────────────────────────────────────────────────────
-function bindPracticeButtons() {
-  // Run (just execute)
-  document.getElementById('practiceRunBtn')?.addEventListener('click', async () => {
-    if (!practiceEditor || !currentProblem) return;
-    const code  = practiceEditor.getValue();
-    const stdin = currentProblem.sampleInput || '';
-    showPracticeResult(null, true); // loading
+    // Description
+    document.getElementById('psProbDesc').textContent = p.description || '';
 
-    try {
-      const result = await API.execute(code, stdin);
-      showRunResult(result);
-    } catch {}
-  });
+    // Example block
+    document.getElementById('psProbExample').innerHTML = `
+      <div class="ps-prob-example">
+        <div class="ps-ex-label">Example</div>
+        <div class="ps-ex-row"><span class="ps-ex-key">Input:</span><pre class="ps-ex-val">${esc(p.sampleInput || 'N/A')}</pre></div>
+        <div class="ps-ex-row"><span class="ps-ex-key">Output:</span><pre class="ps-ex-val">${esc(p.sampleOutput || 'N/A')}</pre></div>
+      </div>`;
 
-  // Submit (evaluate all test cases)
-  document.getElementById('practiceSubmitBtn')?.addEventListener('click', async () => {
-    if (!practiceEditor || !currentProblem) return;
-    const code = practiceEditor.getValue();
-    showPracticeResult(null, true);
+    // Input/output format
+    document.getElementById('psProbFormats').innerHTML =
+      (p.inputFormat  ? `<p style="font-size:12px;color:var(--text2);margin-bottom:5px"><strong>Input:</strong> ${esc(p.inputFormat)}</p>` : '') +
+      (p.outputFormat ? `<p style="font-size:12px;color:var(--text2)"><strong>Output:</strong> ${esc(p.outputFormat)}</p>` : '');
 
-    try {
-      const result = await API.submit(currentProblem.id, code);
-      showPracticeResult(result, false);
-    } catch {}
-  });
-}
+    // Hints
+    buildHints(p);
+    psHintsShown = 0;
 
-function showRunResult(execResult) {
-  const panel = document.getElementById('practiceResults');
-  panel.classList.remove('hidden');
-  if (execResult.success) {
-    panel.innerHTML = `
-      <div class="results-header pass">
-        <span class="results-summary">▶ Output</span>
-      </div>
-      <pre style="padding:12px 16px;font-family:var(--font-code);font-size:12px;color:var(--accent)">${escHtml(execResult.output || '(no output)')}</pre>
-    `;
-  } else {
-    panel.innerHTML = `
-      <div class="results-header fail">
-        <span class="results-summary">⚠ ${execResult.status}</span>
-      </div>
-      <pre style="padding:12px 16px;font-family:var(--font-code);font-size:12px;color:var(--red)">${escHtml(execResult.error || '')}</pre>
-    `;
+    // Set testcase input
+    const si = document.getElementById('psStdinInput');
+    if (si) si.value = p.sampleInput || '';
+
+    // Clear result
+    const rc = document.getElementById('psResultContent');
+    if (rc) rc.innerHTML = '<p style="color:var(--text3);font-size:12px;text-align:center;padding:16px 0">Run or Submit to see results.</p>';
+    const pe = document.getElementById('psExecTime');
+    if (pe) pe.textContent = '';
+
+    // Reset tabs
+    switchDescTab(document.querySelector('.ps-dtab[data-dtab="desc"]'), 'desc');
+    switchPsTab(document.querySelector('.ps-btab'), 'testcase');
+    setPsSyntaxDot('ready');
+
+    // Init/reset PS editor
+    const starter = p.starterCode || 'public class Main {\n    public static void main(String[] args) {\n        // TODO: implement solution\n        Scanner sc = new Scanner(System.in);\n        \n    }\n}';
+    ensurePsEditor(starter);
+
+    // Restore panel open
+    psBottomOpen = true;
+    const body = document.getElementById('psBottomBody');
+    const btn  = document.getElementById('psCollapseBtn');
+    if (body) body.style.display = '';
+    if (btn)  btn.textContent = '▼';
+    const bottom = document.getElementById('psBottom');
+    if (bottom) bottom.classList.remove('collapsed');
+
+    // Init resize
+    initPsResize();
+
+    // Show PS view
+    document.getElementById('topicView').style.display         = 'none';
+    document.getElementById('welcomeScreen').style.display     = 'none';
+    document.getElementById('problemSolveView').style.display  = 'flex';
+    document.getElementById('mainContent').style.overflow      = 'hidden';
+
+  } catch (e) {
+    console.error('openProblemSolve failed', e);
+    showToast('⚠ Failed to load problem');
   }
 }
 
-function showPracticeResult(result, loading) {
-  const panel = document.getElementById('practiceResults');
-  panel.classList.remove('hidden');
-  if (loading) {
-    panel.innerHTML = `<div class="results-header"><span class="results-summary">⏳ Evaluating…</span></div>`;
+function exitProblemSolve() {
+  document.getElementById('problemSolveView').style.display = 'none';
+  document.getElementById('mainContent').style.overflow     = '';
+  if (currentTopic) {
+    document.getElementById('topicView').style.display = 'flex';
+    switchTab('practice');
+  } else {
+    document.getElementById('welcomeScreen').style.display = 'flex';
+  }
+}
+
+// ── Hints ─────────────────────────────────────────────────────────────────────
+function buildHints(p) {
+  const container = document.getElementById('psHintsList');
+  if (!container) return;
+  const tiers = [
+    { num: 1, title: 'Hint 1 — Direction',   sub: 'Always free',                text: p.hint1 },
+    { num: 2, title: 'Hint 2 — Approach',    sub: 'Reveals the pattern',        text: p.hint2 },
+    { num: 3, title: 'Hint 3 — Pseudocode',  sub: 'Marks as hint-assisted',     text: p.hint3 },
+  ];
+  container.innerHTML = '';
+  tiers.forEach(tier => {
+    if (!tier.text && !p.hint) return; // skip if no content
+    const actualText = tier.text || (tier.num === 1 ? p.hint : '');
+    if (!actualText) return;
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <button class="ps-hint-btn" id="psHintBtn-${tier.num}" onclick="showPsHint(${tier.num})">
+        <span class="ps-hint-btn-icon">💡</span>
+        <div style="flex:1">
+          <div class="ps-hint-btn-title">${esc(tier.title)}</div>
+          <div class="ps-hint-btn-sub">${esc(tier.sub)}</div>
+        </div>
+        <span style="color:var(--text3)">›</span>
+      </button>
+      <div class="ps-hint-content" id="psHintContent-${tier.num}">${esc(actualText)}</div>`;
+    container.appendChild(div);
+  });
+}
+
+function showPsHint(tier) {
+  const content = document.getElementById(`psHintContent-${tier}`);
+  const btn     = document.getElementById(`psHintBtn-${tier}`);
+  if (content) content.classList.add('visible');
+  if (btn)     btn.classList.add('used');
+  psHintsShown = Math.max(psHintsShown, tier);
+  if (tier === 3) {
+    const badge = document.getElementById('psHintAssistedBadge');
+    if (badge) badge.classList.add('visible');
+  }
+  // Switch to hints tab
+  const hintsTab = document.querySelector('.ps-dtab[data-dtab="hints"]');
+  if (hintsTab) switchDescTab(hintsTab, 'hints');
+}
+
+// ── PS Run ────────────────────────────────────────────────────────────────────
+async function psRunCode() {
+  if (!psEditor || !currentProblem) return;
+  const code  = psEditor.getValue();
+  const stdin = document.getElementById('psStdinInput')?.value || currentProblem.sampleInput || '';
+  const ver   = document.getElementById('psJavaVersion')?.value || '17';
+
+  switchPsTab(document.querySelector('.ps-btab:last-child'), 'result');
+  renderPsLoading('▶ Running…');
+  const pe = document.getElementById('psExecTime');
+  if (pe) pe.textContent = '';
+
+  try {
+    const r = await API.execute(code, stdin, ver);
+    renderPsRunResult(r);
+  } catch {
+    renderPsLoading('⚠ Server error');
+  }
+}
+
+function renderPsRunResult(r) {
+  const el = document.getElementById('psResultContent');
+  if (!el) return;
+  const pe = document.getElementById('psExecTime');
+
+  if (r.status === 'COMPILE_ERROR') {
+    setMarkers(psEditor, r.compileErrors || []);
+    const errs = r.compileErrors || [];
+    el.innerHTML = `
+      <div class="ps-result-row">
+        <span class="ps-result-icon">✕</span>
+        <div><div class="ps-result-title error">Compile Error</div><div class="ps-result-sub">${errs.length} error${errs.length !== 1 ? 's' : ''}</div></div>
+      </div>
+      <div class="ps-compile-errs">${errs.map(e => `
+        <div class="ps-ce">
+          <div class="ps-ce-top">
+            <span class="ps-ce-line" onclick="psJumpToLine(${e.line})">Line ${e.line}</span>
+            <span class="ps-ce-msg">${esc(e.message)}</span>
+          </div>
+          ${e.code ? `<div class="ps-ce-code">${esc(e.code)}\n${' '.repeat(Math.max(0,(e.column||1)-1))}^</div>` : ''}
+        </div>`).join('')}
+      </div>`;
     return;
   }
-
-  const pass = result.allPassed;
-  panel.innerHTML = `
-    <div class="results-header ${pass ? 'pass' : 'fail'}">
-      <span class="results-summary">${pass ? '✅ All Tests Passed!' : '❌ Some Tests Failed'}</span>
-      <span class="results-count">${result.passedTests} / ${result.totalTests} passed</span>
+  if (r.status === 'TIMEOUT') {
+    el.innerHTML = `<div class="ps-result-row"><span class="ps-result-icon">⏱</span><div><div class="ps-result-title fail">Time Limit Exceeded</div></div></div>`;
+    return;
+  }
+  if (r.status === 'RUNTIME_ERROR') {
+    el.innerHTML = `<div class="ps-result-row"><span class="ps-result-icon">✕</span><div><div class="ps-result-title error">Runtime Error</div></div></div>
+      <pre style="font-family:var(--font-code);font-size:12px;color:var(--red);white-space:pre-wrap;margin-top:8px">${esc(r.error || '')}</pre>`;
+    return;
+  }
+  if (pe && r.executionTimeMs) pe.textContent = `⏱ ${r.executionTimeMs}ms`;
+  el.innerHTML = `
+    <div class="ps-result-row">
+      <span class="ps-result-icon">▶</span>
+      <div><div class="ps-result-title pass">Output</div>${r.executionTimeMs ? `<div class="ps-result-sub">${r.executionTimeMs}ms</div>` : ''}</div>
     </div>
-    ${result.hint ? `<div class="hint-box"><strong>💡 Hint</strong>${escHtml(result.hint)}</div>` : ''}
-    ${(result.results || []).map(tc => `
-      <div class="test-case-row">
-        <span class="tc-status ${tc.passed ? 'tc-pass' : 'tc-fail'}">${tc.passed ? 'PASS' : 'FAIL'}</span>
-        <span class="tc-details">
-          Test ${tc.testNumber}
-          ${tc.passed ? '' : ` | Expected: <span style="color:var(--accent)">${escHtml(tc.expected)}</span> Got: <span style="color:var(--red)">${escHtml(tc.actual || '')}</span>`}
-        </span>
-        <span style="color:var(--text3);font-size:11px">${tc.executionTimeMs}ms</span>
+    <div class="ps-output-label">Your output</div>
+    <pre class="ps-output-val pass">${esc(r.output || '(no output)')}</pre>`;
+}
+
+// ── PS Submit ─────────────────────────────────────────────────────────────────
+async function psSubmit() {
+  if (!psEditor || !currentProblem) return;
+  const code = psEditor.getValue();
+  switchPsTab(document.querySelector('.ps-btab:last-child'), 'result');
+  renderPsLoading('⏳ Evaluating all test cases…');
+
+  try {
+    const r = await API.submit(currentProblem.id, code);
+    renderPsSubmitResult(r);
+    if (r.allPassed) setTimeout(showRecallDrill, 700);
+  } catch {
+    renderPsLoading('⚠ Submit failed — server error');
+  }
+}
+
+function renderPsSubmitResult(r) {
+  const el = document.getElementById('psResultContent');
+  if (!el) return;
+  const pass   = r.allPassed;
+  const dots   = (r.results || []).map(tc =>
+    `<span class="ps-dot ${tc.passed ? 'pass' : 'fail'}" title="Test ${tc.testNumber}: ${tc.passed ? 'PASS' : 'FAIL'}"></span>`).join('');
+  const failed = (r.results || []).filter(tc => !tc.passed);
+  const hintedBadge = psHintsShown >= 3 ? '<div style="font-size:11px;color:var(--text3);margin-bottom:8px">⚑ Hint-assisted submission</div>' : '';
+
+  el.innerHTML = `
+    <div class="ps-result-row">
+      <span class="ps-result-icon">${pass ? '✅' : '❌'}</span>
+      <div>
+        <div class="ps-result-title ${pass ? 'pass' : 'fail'}">${pass ? 'Accepted' : 'Wrong Answer'}</div>
+        <div class="ps-result-sub">${r.passedTests} / ${r.totalTests} test cases passed</div>
       </div>
-    `).join('')}
-  `;
+    </div>
+    ${dots ? `<div class="ps-tc-dots">${dots}</div>` : ''}
+    ${hintedBadge}
+    ${r.hint ? `<div style="padding:8px 10px;background:rgba(255,184,0,.06);border:1px solid rgba(255,184,0,.15);border-radius:5px;font-size:12px;color:var(--yellow);margin-bottom:10px"><strong>💡 Hint: </strong>${esc(r.hint)}</div>` : ''}
+    ${failed.slice(0, 3).map(tc => `
+      <div class="ps-fail-case">
+        <div class="ps-fail-header">Test ${tc.testNumber} — FAILED</div>
+        <div class="ps-fail-detail">
+          <span class="ps-fail-key">Input</span>    <span class="ps-fail-val">${esc(String(tc.input || ''))}</span>
+          <span class="ps-fail-key">Expected</span> <span class="ps-fail-val expected">${esc(String(tc.expected || ''))}</span>
+          <span class="ps-fail-key">Got</span>      <span class="ps-fail-val got">${esc(String(tc.actual || ''))}</span>
+        </div>
+      </div>`).join('')}`;
 }
 
-// ── Utils ─────────────────────────────────────────────────────────────────────
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function renderPsLoading(msg) {
+  const el = document.getElementById('psResultContent');
+  if (el) el.innerHTML = `<p style="color:var(--text3);font-size:12px;padding:16px 0">${esc(msg)}</p>`;
+}
+function psJumpToLine(line) {
+  if (!psEditor) return;
+  psEditor.revealLineInCenter(line);
+  psEditor.setPosition({ lineNumber: line, column: 1 });
+  psEditor.focus();
 }
 
-// ── Trace tab: auto-select algorithm and show/hide no-trace message ──────────
+// ── PS Panel UI ───────────────────────────────────────────────────────────────
+function switchDescTab(btn, name) {
+  document.querySelectorAll('.ps-dtab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.ps-dpanel').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+  if (btn) btn.classList.add('active');
+  const panel = document.getElementById(`dtab-${name}`);
+  if (panel) { panel.classList.add('active'); panel.style.display = 'block'; }
+}
+function switchPsTab(btn, name) {
+  document.querySelectorAll('.ps-btab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.ps-bpanel').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+  if (btn) btn.classList.add('active');
+  const panel = document.getElementById(`pstab-${name}`);
+  if (panel) { panel.classList.add('active'); panel.style.display = 'block'; }
+  if (!psBottomOpen) togglePsBottom();
+}
+function togglePsBottom() {
+  psBottomOpen = !psBottomOpen;
+  const body   = document.getElementById('psBottomBody');
+  const btn    = document.getElementById('psCollapseBtn');
+  const bottom = document.getElementById('psBottom');
+  if (psBottomOpen) {
+    if (body)   body.style.display = '';
+    if (btn)    btn.textContent = '▼';
+    if (bottom) bottom.classList.remove('collapsed');
+  } else {
+    if (body)   body.style.display = 'none';
+    if (btn)    btn.textContent = '▲';
+    if (bottom) bottom.classList.add('collapsed');
+  }
+}
+
+// ── Resize Handle ─────────────────────────────────────────────────────────────
+let _resizeInit = false;
+function initPsResize() {
+  if (_resizeInit) return;
+  _resizeInit = true;
+  const handle = document.getElementById('psResizeHandle');
+  const left   = document.getElementById('psLeft');
+  const split  = document.getElementById('psSplit');
+  if (!handle || !left || !split) return;
+
+  handle.addEventListener('mousedown', e => {
+    psResizing = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!psResizing) return;
+    const rect = split.getBoundingClientRect();
+    let w = e.clientX - rect.left;
+    w = Math.max(260, Math.min(w, rect.width - 320));
+    left.style.width = w + 'px';
+    left.style.maxWidth = 'none';
+  });
+  document.addEventListener('mouseup', () => {
+    if (psResizing) { psResizing = false; document.body.style.cursor = ''; document.body.style.userSelect = ''; }
+  });
+}
+
+// ── Recall Drill ──────────────────────────────────────────────────────────────
+function showRecallDrill() {
+  const modal = document.getElementById('recallModal');
+  if (!modal) return;
+  const nm = document.getElementById('recallAlgoName');
+  if (nm) nm.textContent = currentTopic?.title || 'this algorithm';
+  const txt = document.getElementById('recallText');
+  if (txt) txt.value = '';
+  modal.style.display = 'flex';
+}
+function saveRecall() {
+  const modal = document.getElementById('recallModal');
+  if (modal) modal.style.display = 'none';
+  showToast('🧠 Recall saved — great practice!');
+}
+function skipRecall() {
+  const modal = document.getElementById('recallModal');
+  if (modal) modal.style.display = 'none';
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg, ms = 3000) {
+  const t = document.getElementById('devlearnToast');
+  if (!t) return;
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+}
+
+// ── Trace tab auto-sync ───────────────────────────────────────────────────────
 const TRACE_MAP = [
-  // DSA
-  [['binary search'],                        'BINARY_SEARCH'],
-  [['sliding window'],                       'SLIDING_WINDOW'],
-  [['two pointer'],                          'TWO_POINTER'],
-  [['linear search'],                        'LINEAR_SEARCH'],
-  [['bubble sort'],                          'BUBBLE_SORT'],
-  [['selection sort'],                       'SELECTION_SORT'],
-  [['insertion sort'],                       'INSERTION_SORT'],
-  [['fibonacci'],                            'FIBONACCI'],
-  [['factorial'],                            'FACTORIAL'],
-  [['prefix sum'],                           'PREFIX_SUM'],
-  [['two sum','hashing','hashmap'],          'TWO_SUM_HASH'],
-  [['stack'],                                'STACK_OPS'],
-  [['queue','deque'],                        'QUEUE_OPS'],
-  // Java Basics — map to conceptually closest trace
-  [['recursion'],                            'FIBONACCI'],
-  [['loops','for','while'],                  'FACTORIAL'],
-  [['arrays'],                               'BUBBLE_SORT'],
-  [['sorting'],                              'INSERTION_SORT'],
-  [['java basics','variables','operators',
-     'control flow','methods','strings',
-     'classes','inheritance','polymorphism',
-     'abstraction','encapsulation','solid',
-     'exception','generics','streams','lambda',
-     'multithreading','executors','completable',
-     'jvm','design pattern','collections',
-     'trees','graphs','backtrack','greedy',
-     'dynamic','union','topolog','trie',
-     'shortest','monoton','heaps'],         null],  // no trace
+  [['binary search'], 'BINARY_SEARCH'],
+  [['sliding window'], 'SLIDING_WINDOW'],
+  [['two pointer'], 'TWO_POINTER'],
+  [['linear search'], 'LINEAR_SEARCH'],
+  [['bubble sort'], 'BUBBLE_SORT'],
+  [['selection sort'], 'SELECTION_SORT'],
+  [['insertion sort'], 'INSERTION_SORT'],
+  [['fibonacci'], 'FIBONACCI'],
+  [['factorial'], 'FACTORIAL'],
+  [['prefix sum'], 'PREFIX_SUM'],
+  [['two sum', 'hashmap'], 'TWO_SUM_HASH'],
+  [['stack'], 'STACK_OPS'],
+  [['queue'], 'QUEUE_OPS'],
+  [['recursion'], 'FIBONACCI'],
+  [['arrays'], 'BUBBLE_SORT'],
+  [['sorting'], 'INSERTION_SORT'],
 ];
-
-// Topics that have no matching trace algorithm
-const NO_TRACE_TOPICS = [
-  'classes','objects','oop','inheritance','polymorphism','abstraction',
-  'interface','encapsulation','solid','exception','generics','streams',
-  'lambda','functional','optional','multithreading','synchroni','executor',
-  'completable','jvm','garbage','reflection','design pattern',
-  'trees','graphs','backtrack','greedy','dynamic programming',
-  'union find','topological','trie','shortest path','monotonic',
-  'heaps','priority queue','linked list','bit manipulation','math',
+const NO_TRACE = [
+  'classes','objects','inheritance','polymorphism','abstraction','interface','encapsulation',
+  'exception','generics','streams','lambda','multithreading','executor','completable',
+  'jvm','design pattern','trees','graphs','dynamic programming','greedy','trie',
+  'knapsack','lcs','edit distance','mysql','sql','aws',
 ];
 
 function syncTraceAlgo(title) {
   if (!title) return;
   const key = title.toLowerCase();
   const sel = document.getElementById('traceAlgo');
-  const noTraceEl = document.getElementById('noTraceMsg');
   if (!sel) return;
-
-  // Check if this topic has no trace support
-  const hasNoTrace = NO_TRACE_TOPICS.some(kw => key.includes(kw));
-  if (hasNoTrace) {
-    showNoTraceMessage(title);
-    return;
+  if (NO_TRACE.some(kw => key.includes(kw))) { showNoTrace(title); return; }
+  let matched;
+  for (const [kws, algo] of TRACE_MAP) {
+    if (kws.some(kw => key.includes(kw))) { matched = algo; break; }
   }
-
-  // Find best match
-  let matched = null;
-  for (const [keywords, algo] of TRACE_MAP) {
-    for (const kw of keywords) {
-      if (key.includes(kw)) { matched = algo; break; }
-    }
-    if (matched !== undefined) break;
-  }
-
-  if (matched === null) {
-    showNoTraceMessage(title);
-  } else if (matched) {
-    hideNoTraceMessage();
-    sel.value = matched;
-    // Auto-run the trace with default values
-    setTimeout(() => Tracer.run(), 100);
-  }
+  if (!matched) showNoTrace(title);
+  else { hideNoTrace(); sel.value = matched; setTimeout(() => { if (window.Tracer) Tracer.run(); }, 100); }
 }
-
-function showNoTraceMessage(title) {
-  const traceControls = document.querySelector('.trace-controls');
+function showNoTrace(title) {
+  const tc = document.querySelector('.trace-controls');
   let msg = document.getElementById('noTraceMsg');
   if (!msg) {
     msg = document.createElement('div');
     msg.id = 'noTraceMsg';
-    msg.style.cssText = [
-      'margin:24px auto;max-width:500px;padding:24px;text-align:center',
-      'border:1px solid var(--border2);border-radius:10px;background:var(--bg2)',
-    ].join(';');
-    traceControls?.parentNode?.insertBefore(msg, traceControls.nextSibling);
+    msg.style.cssText = 'margin:20px auto;max-width:460px;padding:22px;text-align:center;border:1px solid var(--border2);border-radius:8px;background:var(--bg2)';
+    tc?.parentNode?.insertBefore(msg, tc.nextSibling);
   }
-  msg.innerHTML = `
-    <div style="font-size:28px;margin-bottom:10px">🔍</div>
-    <div style="font-size:14px;font-weight:700;margin-bottom:6px">${escHtml(title)}</div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">
-      This topic does not have a step-by-step tracer yet.<br>
-      Topics with tracers: Binary Search, Sorting, Two Pointer,<br>
-      Sliding Window, Two Sum, Stack, Queue, Fibonacci, Factorial, Prefix Sum.
-    </div>
-    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-      <button onclick="hideNoTraceMessage();document.getElementById('traceAlgo').value='BINARY_SEARCH';Tracer.run()"
-        style="padding:6px 14px;background:var(--adim);color:var(--accent);border:1px solid rgba(74,222,128,.3);border-radius:6px;font-family:var(--font-ui);font-size:12px;font-weight:700;cursor:pointer">
-        ▶ Try Binary Search Trace
-      </button>
-      <button onclick="hideNoTraceMessage();document.getElementById('traceAlgo').value='TWO_SUM_HASH';Tracer.run()"
-        style="padding:6px 14px;background:var(--bg3);color:var(--text2);border:1px solid var(--border2);border-radius:6px;font-family:var(--font-ui);font-size:12px;font-weight:600;cursor:pointer">
-        Try Two Sum Trace
-      </button>
-    </div>
-  `;
+  msg.innerHTML = `<div style="font-size:24px;margin-bottom:8px">🔍</div>
+    <div style="font-size:13px;font-weight:800;margin-bottom:5px">${esc(title)}</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:14px;line-height:1.6">No step tracer for this topic yet.</div>
+    <button onclick="hideNoTrace();document.getElementById('traceAlgo').value='BINARY_SEARCH';Tracer.run()" style="padding:6px 14px;background:var(--adim);color:var(--accent);border:1px solid rgba(0,184,163,.3);border-radius:5px;font-family:var(--font-ui);font-size:11px;font-weight:700;cursor:pointer">▶ Try Binary Search Trace</button>`;
   msg.style.display = 'block';
-  if (traceControls) traceControls.style.display = 'none';
+  if (tc) tc.style.display = 'none';
 }
-
-function hideNoTraceMessage() {
+function hideNoTrace() {
   const msg = document.getElementById('noTraceMsg');
   if (msg) msg.style.display = 'none';
-  const traceControls = document.querySelector('.trace-controls');
-  if (traceControls) traceControls.style.display = '';
+  const tc = document.querySelector('.trace-controls');
+  if (tc) tc.style.display = '';
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }

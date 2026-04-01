@@ -1,79 +1,224 @@
 package com.learnsystem.controller;
 
-import com.learnsystem.model.Example;
-import com.learnsystem.model.Problem;
 import com.learnsystem.model.Topic;
-import com.learnsystem.service.TopicService;
+import com.learnsystem.repository.ExampleRepository;
+import com.learnsystem.repository.ProblemRepository;
+import com.learnsystem.repository.TopicRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Admin-only data management API.
+ *
+ * All endpoints under /api/admin/** are secured by SecurityConfig
+ * to require ROLE_ADMIN (JWT). These endpoints handle bulk data
+ * deletion — never expose to non-admin users.
+ *
+ * Endpoints:
+ *   DELETE /api/admin/data/all              — delete everything
+ *   DELETE /api/admin/data/topics           — delete all topics (cascades examples + problems)
+ *   DELETE /api/admin/data/examples         — delete all examples only
+ *   DELETE /api/admin/data/problems         — delete all problems only
+ *   DELETE /api/admin/data/category/{cat}   — delete all topics in one category
+ *   DELETE /api/admin/data/topic/{id}       — delete one specific topic
+ *   GET    /api/admin/data/stats            — count of rows in each table
+ */
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/admin/data")
 @RequiredArgsConstructor
+@Slf4j
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
-    private final TopicService topicService;
+private final TopicRepository   topicRepo;
+private final ExampleRepository exampleRepo;
+private final ProblemRepository problemRepo;
 
-    // ── Topics ────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────
+// GET /api/admin/data/stats
+// Returns current row counts so admin can confirm before / after deletes.
+// ─────────────────────────────────────────────────────────────────────────
+@GetMapping("/stats")
+public ResponseEntity<Map<String, Object>> stats() {
+    long topics   = topicRepo.count();
+    long examples = exampleRepo.count();
+    long problems = problemRepo.count();
 
-    @PostMapping("/topics")
-    public ResponseEntity<Topic> createTopic(@RequestBody Topic topic) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(topicService.createTopic(topic));
+    // Count per category
+    Map<String, Long> byCategory = new LinkedHashMap<>();
+    for (Topic.Category cat : Topic.Category.values()) {
+        byCategory.put(cat.name(), (long) topicRepo.findByCategory(cat).size());
     }
 
-    @PutMapping("/topics/{id}")
-    public ResponseEntity<Topic> updateTopic(@PathVariable Long id, @RequestBody Topic topic) {
-        return ResponseEntity.ok(topicService.updateTopic(id, topic));
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("topics",     topics);
+    body.put("examples",   examples);
+    body.put("problems",   problems);
+    body.put("total",      topics + examples + problems);
+    body.put("byCategory", byCategory);
+
+    log.info("[Admin] Stats requested — topics:{} examples:{} problems:{}", topics, examples, problems);
+    return ResponseEntity.ok(body);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// DELETE /api/admin/data/all
+// Nuclear option: wipe everything (topics, examples, problems).
+// ─────────────────────────────────────────────────────────────────────────
+@DeleteMapping("/all")
+public ResponseEntity<Map<String, Object>> deleteAll() {
+    long pCount = problemRepo.count();
+    long eCount = exampleRepo.count();
+    long tCount = topicRepo.count();
+
+    problemRepo.deleteAll();
+    exampleRepo.deleteAll();
+    topicRepo.deleteAll();
+
+    log.warn("[Admin] DELETE ALL — removed {} topics, {} examples, {} problems",
+            tCount, eCount, pCount);
+
+    return ResponseEntity.ok(Map.of(
+            "deleted",  Map.of("topics", tCount, "examples", eCount, "problems", pCount),
+            "message",  "All data deleted successfully.",
+            "remaining", Map.of("topics", 0L, "examples", 0L, "problems", 0L)
+    ));
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// DELETE /api/admin/data/topics
+// Delete all topics — CASCADE deletes their examples and problems too.
+// ─────────────────────────────────────────────────────────────────────────
+@DeleteMapping("/topics")
+public ResponseEntity<Map<String, Object>> deleteAllTopics() {
+    long tCount = topicRepo.count();
+    long eCount = exampleRepo.count();
+    long pCount = problemRepo.count();
+
+    // Must delete children first (no cascade-delete in DB if FK constraints)
+    problemRepo.deleteAll();
+    exampleRepo.deleteAll();
+    topicRepo.deleteAll();
+
+    log.warn("[Admin] DELETE ALL TOPICS — {} topics, {} examples, {} problems removed",
+            tCount, eCount, pCount);
+
+    return ResponseEntity.ok(Map.of(
+            "deleted", Map.of("topics", tCount, "examples", eCount, "problems", pCount),
+            "message", "All topics (and their examples/problems) deleted."
+    ));
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// DELETE /api/admin/data/examples
+// Delete ONLY examples — keeps topics and problems intact.
+// ─────────────────────────────────────────────────────────────────────────
+@DeleteMapping("/examples")
+public ResponseEntity<Map<String, Object>> deleteAllExamples() {
+    long count = exampleRepo.count();
+    exampleRepo.deleteAll();
+
+    log.warn("[Admin] DELETE ALL EXAMPLES — {} rows removed", count);
+
+    return ResponseEntity.ok(Map.of(
+            "deleted", count,
+            "message", count + " examples deleted. Topics and problems untouched."
+    ));
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// DELETE /api/admin/data/problems
+// Delete ONLY problems — keeps topics and examples intact.
+// ─────────────────────────────────────────────────────────────────────────
+@DeleteMapping("/problems")
+public ResponseEntity<Map<String, Object>> deleteAllProblems() {
+    long count = problemRepo.count();
+    problemRepo.deleteAll();
+
+    log.warn("[Admin] DELETE ALL PROBLEMS — {} rows removed", count);
+
+    return ResponseEntity.ok(Map.of(
+            "deleted", count,
+            "message", count + " problems deleted. Topics and examples untouched."
+    ));
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// DELETE /api/admin/data/category/{category}
+// Delete all topics (+ their examples + problems) for one category.
+// category values: DSA, JAVA, ADVANCED_JAVA, MYSQL, AWS
+// ─────────────────────────────────────────────────────────────────────────
+@DeleteMapping("/category/{category}")
+public ResponseEntity<Map<String, Object>> deleteByCategory(@PathVariable String category) {
+    Topic.Category cat;
+    try {
+        cat = Topic.Category.valueOf(category.toUpperCase().replace("-", "_"));
+    } catch (IllegalArgumentException e) {
+        return ResponseEntity.badRequest().body(Map.of(
+                "error",   "Unknown category: " + category,
+                "valid",   List.of("DSA", "JAVA", "ADVANCED_JAVA", "MYSQL", "AWS")
+        ));
     }
 
-    @DeleteMapping("/topics/{id}")
-    public ResponseEntity<Void> deleteTopic(@PathVariable Long id) {
-        topicService.deleteTopic(id);
-        return ResponseEntity.noContent().build();
+    List<Topic> topics = topicRepo.findByCategory(cat);
+    if (topics.isEmpty()) {
+        return ResponseEntity.ok(Map.of(
+                "deleted", 0,
+                "message", "No topics found for category: " + category
+        ));
     }
 
-    // ── Examples ──────────────────────────────────────────────────────────────
-
-    @PostMapping("/topics/{topicId}/examples")
-    public ResponseEntity<Example> createExample(@PathVariable Long topicId,
-                                                  @RequestBody Example example) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(topicService.createExample(topicId, example));
+    long eCount = 0, pCount = 0;
+    for (Topic t : topics) {
+        pCount += problemRepo.findByTopicIdOrderByDisplayOrder(t.getId()).size();
+        eCount += exampleRepo.findByTopicIdOrderByDisplayOrder(t.getId()).size();
+        // Delete children first
+        problemRepo.deleteAll(problemRepo.findByTopicIdOrderByDisplayOrder(t.getId()));
+        exampleRepo.deleteAll(exampleRepo.findByTopicIdOrderByDisplayOrder(t.getId()));
     }
+    topicRepo.deleteAll(topics);
 
-    @PutMapping("/examples/{id}")
-    public ResponseEntity<Example> updateExample(@PathVariable Long id,
-                                                  @RequestBody Example example) {
-        return ResponseEntity.ok(topicService.updateExample(id, example));
-    }
+    log.warn("[Admin] DELETE CATEGORY:{} — {} topics, {} examples, {} problems removed",
+            cat, topics.size(), eCount, pCount);
 
-    @DeleteMapping("/examples/{id}")
-    public ResponseEntity<Void> deleteExample(@PathVariable Long id) {
-        topicService.deleteExample(id);
-        return ResponseEntity.noContent().build();
-    }
+    return ResponseEntity.ok(Map.of(
+            "category", cat.name(),
+            "deleted",  Map.of("topics", topics.size(), "examples", eCount, "problems", pCount),
+            "message",  "Category " + cat.name() + " deleted successfully."
+    ));
+}
 
-    // ── Problems ──────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────
+// DELETE /api/admin/data/topic/{id}
+// Delete one specific topic by ID (+ its examples + problems).
+// ─────────────────────────────────────────────────────────────────────────
+@DeleteMapping("/topic/{id}")
+public ResponseEntity<Map<String, Object>> deleteTopic(@PathVariable Long id) {
+    return topicRepo.findById(id)
+            .map(topic -> {
+                long eCount = exampleRepo.findByTopicIdOrderByDisplayOrder(id).size();
+                long pCount = problemRepo.findByTopicIdOrderByDisplayOrder(id).size();
 
-    @PostMapping("/topics/{topicId}/problems")
-    public ResponseEntity<Problem> createProblem(@PathVariable Long topicId,
-                                                  @RequestBody Problem problem) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(topicService.createProblem(topicId, problem));
-    }
+                problemRepo.deleteAll(problemRepo.findByTopicIdOrderByDisplayOrder(id));
+                exampleRepo.deleteAll(exampleRepo.findByTopicIdOrderByDisplayOrder(id));
+                topicRepo.delete(topic);
 
-    @PutMapping("/problems/{id}")
-    public ResponseEntity<Problem> updateProblem(@PathVariable Long id,
-                                                  @RequestBody Problem problem) {
-        return ResponseEntity.ok(topicService.updateProblem(id, problem));
-    }
+                log.warn("[Admin] DELETE TOPIC id:{} title:{} — {} examples, {} problems removed",
+                        id, topic.getTitle(), eCount, pCount);
 
-    @DeleteMapping("/problems/{id}")
-    public ResponseEntity<Void> deleteProblem(@PathVariable Long id) {
-        topicService.deleteProblem(id);
-        return ResponseEntity.noContent().build();
-    }
+                return ResponseEntity.ok(Map.of(
+                        "deletedTopic", Map.of("id", id, "title", topic.getTitle()),
+                        "deleted", Map.of("examples", eCount, "problems", pCount),
+                        "message", "Topic '" + topic.getTitle() + "' deleted."
+                ));
+            })
+            .orElse(ResponseEntity.notFound().<Map<String, Object>>build());
+}
 }

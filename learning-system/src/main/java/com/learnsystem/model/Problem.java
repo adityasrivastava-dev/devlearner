@@ -17,7 +17,6 @@ public class Problem {
 @GeneratedValue(strategy = GenerationType.IDENTITY)
 private Long id;
 
-// @JsonIgnore prevents Problem → Topic → Problems → ... loop
 @JsonIgnore
 @ManyToOne(fetch = FetchType.LAZY)
 @JoinColumn(name = "topic_id", nullable = false)
@@ -42,7 +41,7 @@ private String sampleInput;
 private String sampleOutput;
 
 @Column(name = "test_cases", columnDefinition = "TEXT")
-private String testCases; // JSON array of {input, expectedOutput}
+private String testCases; // JSON array: [{input, expectedOutput}]
 
 @Enumerated(EnumType.STRING)
 private Difficulty difficulty;
@@ -58,6 +57,20 @@ private String solutionCode;
 
 @Column(name = "display_order")
 private Integer displayOrder;
+
+// ── Phase 1 Fields ────────────────────────────────────────────────────────
+
+@Column(name = "hint_1", columnDefinition = "TEXT")
+private String hint1;
+
+@Column(name = "hint_2", columnDefinition = "TEXT")
+private String hint2;
+
+@Column(name = "hint_3", columnDefinition = "TEXT")
+private String hint3;
+
+@Column(length = 100)
+private String pattern;
 
 public enum Difficulty {
     EASY, MEDIUM, HARD

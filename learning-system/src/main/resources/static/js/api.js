@@ -131,7 +131,7 @@ const API = {
   async execute(code, stdin = '', javaVersion = '17') {
     const res = await fetch('/api/execute', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: Auth.headers(),
       body: JSON.stringify({ code, stdin, javaVersion })
     });
     return res.json();
@@ -141,7 +141,7 @@ const API = {
   async submit(problemId, code) {
     const res = await fetch('/api/submit', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: Auth.headers(),
       body: JSON.stringify({ problemId, code })
     });
     return res.json();
@@ -151,7 +151,7 @@ const API = {
   async syntaxCheck(code, javaVersion = '17') {
     const res = await fetch('/api/syntax-check', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: Auth.headers(),
       body: JSON.stringify({ code, javaVersion })
     });
     if (!res.ok) throw new Error('Syntax check failed');
@@ -162,7 +162,7 @@ const API = {
   async analyzeComplexity(code) {
     const res = await fetch('/api/analyze-complexity', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: Auth.headers(),
       body: JSON.stringify({ code })
     });
     if (!res.ok) throw new Error('Complexity analysis failed');
@@ -176,7 +176,7 @@ const API = {
     if (target !== undefined)   body.target = target;
     const res = await fetch('/api/visualize', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: Auth.headers(),
       body: JSON.stringify(body)
     });
     if (!res.ok) throw new Error('Visualization failed');
@@ -190,7 +190,7 @@ const API = {
     if (target !== undefined)  body.target = target;
     const res = await fetch('/api/trace', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: Auth.headers(),
       body: JSON.stringify(body)
     });
     if (!res.ok) throw new Error('Trace failed');

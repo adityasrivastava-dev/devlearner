@@ -11,20 +11,20 @@ const Visualizer = (() => {
 
   // ── Colours (match CSS variables) ─────────────────────────────────────────
   const C = {
-    bg:       '#13161b',
-    bgElem:   '#1a1e25',
-    border:   '#252930',
-    text:     '#e2e8f0',
-    text2:    '#8892a4',
-    accent:   '#4ade80',
-    yellow:   '#fbbf24',
-    blue:     '#60a5fa',
-    red:      '#f87171',
+    bg:       '#1a1a1a',
+    bgElem:   '#282828',
+    border:   '#3e3e3e',
+    text:     '#eff1f6',
+    text2:    '#a8afbf',
+    accent:   '#00b8a3',
+    yellow:   '#ffb800',
+    blue:     '#5b8af5',
+    red:      '#ef4743',
     purple:   '#a78bfa',
-    low:      '#60a5fa',
-    high:     '#f87171',
-    mid:      '#fbbf24',
-    found:    '#4ade80',
+    low:      '#5b8af5',
+    high:     '#ef4743',
+    mid:      '#ffb800',
+    found:    '#00b8a3',
   };
 
   // ── Init ───────────────────────────────────────────────────────────────────

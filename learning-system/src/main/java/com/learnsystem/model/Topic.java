@@ -50,9 +50,22 @@ private String whenToUse;
 @Column(name = "starter_code", columnDefinition = "TEXT")
 private String starterCode;
 
-// @JsonIgnore prevents Jackson infinite recursion:
-// Topic → serialize examples → Example.topic → serialize Topic → loop
-// Examples and Problems are loaded via separate endpoints /api/topics/{id}/examples
+// ── Phase 1 Story-Based Learning Fields ──────────────────────────────────
+
+@Column(columnDefinition = "TEXT")
+private String story;
+
+@Column(columnDefinition = "TEXT")
+private String analogy;
+
+@Column(name = "memory_anchor", length = 500)
+private String memoryAnchor;
+
+@Column(name = "first_principles", columnDefinition = "TEXT")
+private String firstPrinciples;
+
+// ── Relationships ─────────────────────────────────────────────────────────
+
 @JsonIgnore
 @OneToMany(mappedBy = "topic", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 private List<Example> examples;

@@ -17,7 +17,6 @@ public class Example {
 @GeneratedValue(strategy = GenerationType.IDENTITY)
 private Long id;
 
-// @JsonIgnore prevents Example → Topic → Examples → ... loop
 @JsonIgnore
 @ManyToOne(fetch = FetchType.LAZY)
 @JoinColumn(name = "topic_id", nullable = false)
@@ -39,4 +38,12 @@ private String explanation;
 
 @Column(name = "real_world_use")
 private String realWorldUse;
+
+// ── Phase 1 Fields ────────────────────────────────────────────────────────
+
+@Column(columnDefinition = "TEXT")
+private String pseudocode;
+
+@Column(name = "flowchart_mermaid", columnDefinition = "TEXT")
+private String flowchartMermaid;
 }
