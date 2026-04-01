@@ -30,11 +30,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // PS buttons bound after monaco loaded
 
   loadTopics(activeCategory).then(() => {
-    // Roadmap mode — auto-select topic from URL param
-    const urlTopic = new URLSearchParams(window.location.search).get('topic');
+    // Roadmap / problems.html deep-link: ?topic=N&openProblem=M
+    const params     = new URLSearchParams(window.location.search);
+    const urlTopic   = params.get('topic');
+    const urlProblem = params.get('openProblem');
     if (urlTopic) {
       const poll = setInterval(() => {
-        if (monacoEditor) { clearInterval(poll); selectTopic(parseInt(urlTopic)); }
+        if (monacoEditor) {
+          clearInterval(poll);
+          const p = selectTopic(parseInt(urlTopic));
+          if (urlProblem) {
+            const prob = parseInt(urlProblem);
+            setTimeout(() => openProblemSolve(prob), 500);
+          }
+        }
       }, 100);
     }
   });
@@ -718,7 +727,19 @@ async function psSubmit() {
   try {
     const r = await API.submit(currentProblem.id, code);
     renderPsSubmitResult(r);
-    if (r.allPassed) setTimeout(showRecallDrill, 700);
+    if (r.allPassed) {
+      setTimeout(showRecallDrill, 700);
+      // Track solved problems locally (used by problems.html)
+      try {
+        const solved = new Set(JSON.parse(localStorage.getItem('devlearn_solved') || '[]'));
+        if (currentProblem?.id) {
+          solved.add(currentProblem.id);
+          localStorage.setItem('devlearn_solved', JSON.stringify([...solved]));
+        }
+        // Notify parent window if opened from problems.html
+        window.parent?.postMessage({ type: 'devlearn_solved', problemId: currentProblem?.id }, '*');
+      } catch {}
+    }
   } catch {
     renderPsLoading('⚠ Submit failed — server error');
   }

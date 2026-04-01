@@ -57,7 +57,8 @@ public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 
 					// Public read
 					.requestMatchers(HttpMethod.GET,
-							"/api/topics", "/api/topics/**").permitAll()
+							"/api/topics", "/api/topics/**",
+							"/api/problems", "/api/problems/**").permitAll()
 					.requestMatchers(HttpMethod.GET,
 							"/api/roadmaps", "/api/roadmaps/**").permitAll()
 
@@ -103,7 +104,7 @@ public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
 			.authorizeHttpRequests(auth -> auth
 					.requestMatchers(
 							"/", "/index.html", "/login.html",
-							"/admin.html", "/roadmap.html", "/portal.html", "/error",
+							"/admin.html", "/roadmap.html", "/portal.html", "/problems.html", "/error",
 							"/css/**", "/js/**", "/favicon.ico"
 					).permitAll()
 					.anyRequest().authenticated()

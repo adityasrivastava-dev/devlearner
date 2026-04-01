@@ -121,6 +121,19 @@ const API = {
     return res.json();
   },
 
+  // GET /api/problems — flat list of all problems with topicId/title embedded
+  async getAllProblems(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.difficulty) params.set('difficulty', filters.difficulty);
+    if (filters.category)   params.set('category',   filters.category);
+    if (filters.pattern)    params.set('pattern',     filters.pattern);
+    if (filters.search)     params.set('search',      filters.search);
+    const url = '/api/problems' + (params.toString() ? '?' + params.toString() : '');
+    const res = await fetch(url, { headers: Auth.headers() });
+    if (!res.ok) throw new Error('Failed to fetch problems');
+    return res.json();
+  },
+
   async getProblem(problemId) {
     const res = await fetch(`/api/topics/problems/${problemId}`);
     if (!res.ok) throw new Error('Problem not found');
