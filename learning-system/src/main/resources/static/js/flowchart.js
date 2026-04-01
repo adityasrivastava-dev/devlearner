@@ -2,13 +2,13 @@
    flowchart.js  -  Topic-specific Mermaid.js flowcharts (Java + DSA complete)
 ══════════════════════════════════════════════════════════════════════════════ */
 const Flowchart = (() => {
-  const G = "fill:#1a2e1a,stroke:#4ade80,color:#4ade80";
-  const R = "fill:#2e1a1a,stroke:#f87171,color:#f87171";
-  const B = "fill:#1a1e2e,stroke:#60a5fa,color:#60a5fa";
-  const P = "fill:#1e1e2e,stroke:#a78bfa,color:#a78bfa";
-  const Y = "fill:#1e1a0a,stroke:#fbbf24,color:#fbbf24";
-  const T = "fill:#1a2825,stroke:#34d399,color:#34d399";
-  const K = "fill:#2e1a26,stroke:#f472b6,color:#f472b6";
+  const G = "fill:#0d2320,stroke:#00b8a3,color:#00b8a3";
+  const R = "fill:#2a1515,stroke:#ef4743,color:#ef4743";
+  const B = "fill:#131828,stroke:#5b8af5,color:#5b8af5";
+  const P = "fill:#1a1728,stroke:#a78bfa,color:#a78bfa";
+  const Y = "fill:#1e1a08,stroke:#ffb800,color:#ffb800";
+  const T = "fill:#0d201e,stroke:#00b8a3,color:#00b8a3";
+  const K = "fill:#261525,stroke:#e879a0,color:#e879a0";
 
   const CHARTS = {
 
@@ -354,7 +354,7 @@ list.sort(comparator)"]
     A([Unique values]) --> B{Ordered?}
     B -- No, fastest --> C["HashSet  O(1)"]
     B -- Sorted      --> D["TreeSet  O(logn)"]
-    B -- Insert order -> E["LinkedHashSet  O(1)"]
+    B -- Insert order --> E["LinkedHashSet  O(1)"]
     C --> F{Set operation?}
     D --> G["first/last/floor/ceiling"]
     F -- Union     --> H["setA.addAll(setB)"]
@@ -374,7 +374,7 @@ list.sort(comparator)"]
     A([Key-Value store]) --> B{Sorted keys?}
     B -- No, fastest --> C["HashMap  O(1) avg"]
     B -- Sorted      --> D["TreeMap  O(logn)"]
-    B -- Insert order -> E["LinkedHashMap"]
+    B -- Insert order --> E["LinkedHashMap"]
     C --> F["put/get/getOrDefault
 merge(k,1,Integer::sum)"]
     D --> G["firstKey/floorKey/subMap"]
@@ -421,8 +421,8 @@ Min-heap default"]
     D --> F{Method reference?}
     F -- Static   --> G["Class::staticMethod"]
     F -- Instance --> H["obj::instanceMethod"]
-    F -- Constructor -> I["Class::new"]
-    F -- Keep lambda -> J["(x) -> x * 2"]
+    F -- Constructor --> I["Class::new"]
+    F -- Keep lambda --> J["(x) -> x * 2"]
     G --> K([Lambda used])
     H --> K
     I --> K
@@ -553,7 +553,7 @@ Minor GC frequent"]
     C -- Complex build  --> G["Builder"]
     C -- Family         --> H["Factory"]
     D -- Add behaviour  --> I["Decorator"]
-    D -- Hide complexity -> J["Facade"]
+    D -- Hide complexity --> J["Facade"]
     E -- Notify many    --> K["Observer"]
     E -- Swap algo      --> L["Strategy"]
     E -- Undo/redo      --> M["Command"]
@@ -658,7 +658,7 @@ mid=lo+(hi-lo)/2"]
     B -- Answer --> D["lo=min hi=max
 canAchieve(mid)?"]
     C --> E["while lo<=hi"]
-    E --> F{arr[mid] vs target?}
+    E --> F{"arr-mid vs target?"}
     F -- Equal   --> G([return mid])
     F -- Less    --> H["lo=mid+1"]
     F -- Greater --> I["hi=mid-1"]

@@ -372,6 +372,26 @@ function switchTab(tab) {
   if (tab === 'optimize')  loadOptimize();
   if (tab === 'flowchart') Flowchart.render(currentTopic?.title);
   if (tab === 'trace')     syncTraceAlgo(currentTopic?.title);
+  if (tab === 'visual')    loadDSAVisual();
+}
+
+// ── DSA Visual Tab ───────────────────────────────────────────────────────────
+function loadDSAVisual() {
+  if (!currentTopic) return;
+  const vizTab = document.getElementById('tab-visual');
+  if (!vizTab) return;
+  let vContainer = document.getElementById('dsaVisualContainer');
+  if (!vContainer) {
+    vContainer = document.createElement('div');
+    vContainer.id = 'dsaVisualContainer';
+    vContainer.style.cssText = 'padding:4px 0';
+    const existing = vizTab.querySelector('.visual-controls');
+    if (existing) vizTab.insertBefore(vContainer, existing);
+    else vizTab.appendChild(vContainer);
+  }
+  if (typeof DSAVisuals !== 'undefined') {
+    DSAVisuals.render(vContainer, currentTopic.title);
+  }
 }
 
 // ── Theory Tab ────────────────────────────────────────────────────────────────
