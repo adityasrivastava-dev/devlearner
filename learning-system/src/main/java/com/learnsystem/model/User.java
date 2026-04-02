@@ -138,25 +138,6 @@ public void removeRole(Role role) {
 	if (roles != null) roles.remove(role);
 }
 
-/** Request ADMIN role — sets pending flag and records timestamp */
-public void requestAdminRole() {
-	this.adminRequestPending = true;
-	this.adminRequestedAt = java.time.LocalDateTime.now();
-}
-
-/** Approve ADMIN role — clears pending flag, adds ADMIN role */
-public void approveAdminRole() {
-	this.adminRequestPending = false;
-	this.adminRequestedAt = null;
-	addRole(Role.ADMIN);
-}
-
-/** Reject ADMIN request — clears the pending flag */
-public void rejectAdminRequest() {
-	this.adminRequestPending = false;
-	this.adminRequestedAt = null;
-}
-
 /** Primary role for display — highest privilege wins */
 public Role getPrimaryRole() {
 	if (hasRole(Role.ADMIN))   return Role.ADMIN;
@@ -173,8 +154,5 @@ public enum Role {
 	STUDENT,   // default — browse, code, submit
 	TEACHER,   // future — create topics, view student progress
 	ADMIN      // full access — user mgmt, content mgmt, analytics
-}
-public boolean isAdminRequestPending() {
-	return Boolean.TRUE.equals(this.adminRequestPending);
 }
 }

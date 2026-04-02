@@ -560,25 +560,23 @@
       <button class="seed-btn" onclick="openProblemImportPanel()" style="background:rgba(74,222,128,.08);color:var(--accent);border-color:rgba(74,222,128,.25)">🎯 Import Problems JSON</button>
     </div>
 
-    <!-- Admin Approval Section -->
+    <!-- SuperAdmin: Import Approvals + User Management -->
     <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px">
-      <div style="font-size:9px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">🔑 Admin Approvals</div>
-      <button class="seed-btn"
-              style="background:rgba(255,184,0,.1);color:var(--yellow);border-color:rgba(255,184,0,.3);display:flex;align-items:center;gap:6px"
-              onclick="openPendingAdminsPanel()">
-        👤 Pending Admin Requests
-        <span id="pendingAdminsBadge" style="display:none;background:var(--red);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:auto">0</span>
+      <div style="font-size:9px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">🔐 SuperAdmin</div>
+      <button class="seed-btn" onclick="openPendingImportsPanel()"
+              style="background:rgba(255,184,0,.1);color:var(--yellow);border-color:rgba(255,184,0,.3);display:flex;align-items:center;gap:6px">
+        📥 Pending Imports
+        <span id="pendingImportsBadge" style="display:none;background:var(--red);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:auto">0</span>
       </button>
-      <button class="seed-btn"
-              style="background:rgba(91,138,245,.1);color:var(--blue);border-color:rgba(91,138,245,.3)"
-              onclick="openAllUsersPanel()">
+      <button class="seed-btn" onclick="openAllUsersPanel()"
+              style="background:rgba(91,138,245,.08);color:var(--blue);border-color:rgba(91,138,245,.25)">
         👥 All Users
       </button>
     </div>
 
     <!-- Phase 2: Content Engine -->
     <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px">
-      <div style="font-size:9px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">⚡ Phase 2 — Content Engine</div>
+      <div style="font-size:9px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">⚡ Content Engine</div>
       <button class="seed-btn" style="background:rgba(96,165,250,.12);color:var(--blue);border-color:rgba(96,165,250,.25)"
               onclick="openGeneratorPanel()">🤖 Generate Topic with AI</button>
       <button class="seed-btn" style="background:rgba(167,139,250,.1);color:var(--purple);border-color:rgba(167,139,250,.25)"
@@ -633,19 +631,16 @@ let topicProblems = [];
 /* ══ BOOT ═════════════════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   loadAllTopics();
-  checkPendingAdminsBadge();
+  loadPendingImportsBadge();
 });
 
-// ── Admin Approval System ─────────────────────────────────────────────────────
-
-let allUsersData = [];
-
-async function checkPendingAdminsBadge() {
+// ══ PENDING IMPORTS BADGE ═════════════════════════════════════════════════════
+async function loadPendingImportsBadge() {
   try {
-    const res = await fetch('/api/admin/pending-admins', { headers: jsonH() });
+    const res = await fetch('/api/admin/pending-imports?status=PENDING', { headers: jsonH() });
     if (!res.ok) return;
     const data = await res.json();
-    const badge = document.getElementById('pendingAdminsBadge');
+    const badge = document.getElementById('pendingImportsBadge');
     if (badge && data.pendingCount > 0) {
       badge.textContent = data.pendingCount;
       badge.style.display = 'inline-block';
@@ -653,201 +648,276 @@ async function checkPendingAdminsBadge() {
   } catch (_) {}
 }
 
-async function openPendingAdminsPanel() {
-  document.getElementById('pendingAdminsOverlay').classList.remove('hidden');
-  const container = document.getElementById('pendingAdminsContent');
-  container.innerHTML = '<p style="color:var(--text3);text-align:center;padding:40px 0">Loading…</p>';
+// ══ PENDING IMPORTS PANEL ═════════════════════════════════════════════════════
+let currentImportId = null;
+
+async function openPendingImportsPanel() {
+  document.getElementById('pendingImportsOverlay').classList.remove('hidden');
+  await loadPendingImports();
+}
+function closePendingImportsPanel() {
+  document.getElementById('pendingImportsOverlay').classList.add('hidden');
+  loadPendingImportsBadge();
+}
+
+async function loadPendingImports() {
+  const container = document.getElementById('pendingImportsContent');
+  const status = document.getElementById('importStatusFilter').value;
+  container.innerHTML = '<p style="color:var(--text3);text-align:center;padding:32px">Loading…</p>';
   try {
-    const res = await fetch('/api/admin/pending-admins', { headers: jsonH() });
+    const res = await fetch('/api/admin/pending-imports' + (status ? '?status='+status : ''), { headers: jsonH() });
     const data = await res.json();
-    if (!res.ok) {
-      container.innerHTML = `<p style="color:var(--red);padding:20px">${esc(data.error || 'Error loading requests')}</p>`;
+    if (!res.ok) { container.innerHTML = `<p style="color:var(--red);padding:20px">${esc(data.error||'Error')}</p>`; return; }
+    if (!data.total) {
+      container.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text3)">
+        <div style="font-size:36px;margin-bottom:10px">📭</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text2)">No imports found</div>
+        <div style="font-size:12px;margin-top:4px">No imports with status: ${esc(status||'ALL')}</div>
+      </div>`;
       return;
     }
-    if (data.pendingCount === 0) {
-      container.innerHTML = `
-        <div style="text-align:center;padding:48px 0;color:var(--text3)">
-          <div style="font-size:40px;margin-bottom:12px">✅</div>
-          <div style="font-size:16px;font-weight:600;color:var(--text2);margin-bottom:6px">No Pending Requests</div>
-          <div style="font-size:13px">All admin requests have been reviewed.</div>
-        </div>`;
-      return;
-    }
+    const SC = { PENDING:'var(--yellow)', APPROVED:'var(--accent)', REJECTED:'var(--red)' };
+    const SI = { PENDING:'⏳', APPROVED:'✅', REJECTED:'❌' };
     container.innerHTML = `
-      <div style="margin-bottom:16px;font-size:13px;color:var(--text2)">
-        <strong style="color:var(--yellow)">${data.pendingCount}</strong> pending admin request${data.pendingCount !== 1 ? 's' : ''}
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px">
+        ${data.total} import${data.total!==1?'s':''} · <strong style="color:var(--yellow)">${data.pendingCount} pending</strong>
       </div>
-      ${data.requests.map(u => `
-        <div id="pending-card-${u.id}" style="border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px;background:var(--bg2)">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
-            <div>
-              <div style="font-weight:700;font-size:14px;color:var(--text)">${esc(u.name)}</div>
-              <div style="font-size:12px;color:var(--text2);margin-top:2px">${esc(u.email)}</div>
-              <div style="font-size:11px;color:var(--text3);margin-top:4px">
-                Provider: ${esc(u.provider)} ·
-                Requested: ${u.requestedAt ? new Date(u.requestedAt).toLocaleString() : 'Unknown'} ·
-                Joined: ${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Unknown'}
+      ${data.imports.map(imp=>`
+        <div style="border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:10px;background:var(--bg2);
+          border-left:3px solid ${SC[imp.status]||'var(--border)'}">
+          <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+                <span style="font-weight:700;font-size:14px">${esc(imp.batchName||'Unnamed')}</span>
+                <span style="font-size:11px;padding:2px 8px;border-radius:4px;font-weight:700;background:rgba(255,255,255,.05);color:${SC[imp.status]||'var(--text3)'}">
+                  ${SI[imp.status]||''} ${esc(imp.status)}
+                </span>
+                <span style="font-size:11px;color:var(--text3)">#${imp.id}</span>
               </div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:5px">
+                By <strong>${esc(imp.submittedByName||imp.submittedBy||'?')}</strong>
+                (${esc(imp.submittedBy||'')}) · ${imp.submittedAt?new Date(imp.submittedAt).toLocaleString():''}
+              </div>
+              <div style="display:flex;gap:14px;font-size:11px;color:var(--text3);flex-wrap:wrap">
+                <span>📦 ${imp.totalTopics} topics</span>
+                <span style="color:var(--accent)">🆕 ${imp.newTopicsCount} new</span>
+                ${imp.existingTopicsCount?`<span>⏭ ${imp.existingTopicsCount} existing</span>`:''}
+                ${imp.seededCount?`<span style="color:var(--accent)">✅ ${imp.seededCount} seeded</span>`:''}
+              </div>
+              ${imp.newTopicTitles?`<div style="margin-top:6px;font-size:11px;color:var(--text3)">
+                New: <span style="color:var(--text2)">${esc(imp.newTopicTitles.split(',').slice(0,6).join(', '))}${imp.newTopicsCount>6?' …':''}</span>
+              </div>`:''}
+              ${imp.reviewNote?`<div style="margin-top:4px;font-size:11px;color:var(--text3)">Note: ${esc(imp.reviewNote)}</div>`:''}
             </div>
-            <div style="display:flex;gap:8px;flex-shrink:0">
-              <button onclick="approveAdmin(${u.id}, '${esc(u.name)}')"
-                style="padding:8px 16px;background:rgba(0,184,163,.15);color:var(--accent);border:1px solid var(--accent);border-radius:5px;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--font-ui)">
-                ✅ Approve
+            <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+              <button onclick="openImportDetail(${imp.id})"
+                style="padding:7px 14px;background:var(--bg3);color:var(--text2);border:1px solid var(--border2);border-radius:5px;cursor:pointer;font-size:12px;font-family:var(--font-ui)">
+                🔍 Review
               </button>
-              <button onclick="rejectAdmin(${u.id}, '${esc(u.name)}')"
-                style="padding:8px 16px;background:rgba(239,71,67,.1);color:var(--red);border:1px solid var(--red);border-radius:5px;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--font-ui)">
-                ❌ Reject
-              </button>
+              ${imp.status==='PENDING'?`
+                <button onclick="quickApprove(${imp.id},'${esc(imp.batchName||'')}')"
+                  style="padding:7px 14px;background:rgba(0,184,163,.15);color:var(--accent);border:1px solid var(--accent);border-radius:5px;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--font-ui)">✅ Approve</button>
+                <button onclick="quickReject(${imp.id},'${esc(imp.batchName||'')}')"
+                  style="padding:7px 14px;background:rgba(239,71,67,.1);color:var(--red);border:1px solid var(--red);border-radius:5px;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--font-ui)">❌ Reject</button>
+              `:imp.status==='APPROVED'?`<span style="font-size:11px;color:var(--accent);text-align:center">✅ ${imp.seededCount} topics</span>`
+              :`<span style="font-size:11px;color:var(--text3)">❌ Rejected</span>`}
             </div>
           </div>
+        </div>`).join('')}`;
+  } catch(e) { container.innerHTML=`<p style="color:var(--red);padding:20px">Error: ${esc(e.message)}</p>`; }
+}
+
+async function openImportDetail(importId) {
+  currentImportId = importId;
+  document.getElementById('importDetailOverlay').classList.remove('hidden');
+  const content = document.getElementById('importDetailContent');
+  content.innerHTML = '<p style="color:var(--text3);text-align:center;padding:40px">Loading…</p>';
+  try {
+    const res  = await fetch('/api/admin/pending-imports/'+importId, { headers: jsonH() });
+    const imp  = await res.json();
+    if (!res.ok) { content.innerHTML=`<p style="color:var(--red)">${esc(imp.error||'Error')}</p>`; return; }
+
+    document.getElementById('importDetailTitle').textContent = `📥 Import #${imp.id} — ${imp.batchName||'Unnamed'}`;
+    const isPending = imp.status === 'PENDING';
+    document.getElementById('approveImportBtn').style.display = isPending ? '' : 'none';
+    document.getElementById('rejectImportBtn').style.display  = isPending ? '' : 'none';
+    document.getElementById('importReviewNote').style.display = isPending ? '' : 'none';
+
+    const newT = imp.newTopicTitles   ? imp.newTopicTitles.split(',').map(t=>t.trim()).filter(Boolean)  : [];
+    const exT  = imp.existingTopicTitles ? imp.existingTopicTitles.split(',').map(t=>t.trim()).filter(Boolean) : [];
+    const SC   = { PENDING:'var(--yellow)', APPROVED:'var(--accent)', REJECTED:'var(--red)' };
+
+    content.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:18px">
+        ${[['Batch',imp.batchName||'—','var(--text)'],['Submitted By',(imp.submittedByName||imp.submittedBy||'?'),'var(--text)'],
+           ['Status',imp.status,SC[imp.status]||'var(--text3)'],['New Topics',imp.newTopicsCount,'var(--accent)'],
+           ['Already Exist',imp.existingTopicsCount,'var(--text3)'],['Date',imp.submittedAt?new Date(imp.submittedAt).toLocaleDateString():'—','var(--text2)']
+          ].map(([l,v,c])=>`<div style="background:var(--bg3);border-radius:6px;padding:10px 12px">
+            <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;margin-bottom:3px">${l}</div>
+            <div style="font-size:13px;font-weight:700;color:${c}">${v}</div>
+          </div>`).join('')}
+      </div>
+      ${imp.reviewNote?`<div style="background:rgba(255,184,0,.06);border:1px solid rgba(255,184,0,.2);border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--yellow)">
+        <strong>Note:</strong> ${esc(imp.reviewNote)}</div>`:''}
+      ${newT.length?`<div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">
+          🆕 ${newT.length} New Topic${newT.length!==1?'s':''} — seeded on approval
         </div>
-      `).join('')}`;
-  } catch (e) {
-    container.innerHTML = `<p style="color:var(--red);padding:20px">Error: ${esc(e.message)}</p>`;
-  }
+        <div style="display:flex;flex-wrap:wrap;gap:5px">
+          ${newT.map(t=>`<span style="background:rgba(0,184,163,.1);color:var(--accent);border:1px solid rgba(0,184,163,.25);border-radius:4px;padding:3px 9px;font-size:12px">${esc(t)}</span>`).join('')}
+        </div></div>`:''}
+      ${exT.length?`<div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">
+          ⏭ ${exT.length} Already Exist — will be skipped
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px">
+          ${exT.map(t=>`<span style="background:var(--bg3);color:var(--text3);border:1px solid var(--border);border-radius:4px;padding:3px 9px;font-size:12px">${esc(t)}</span>`).join('')}
+        </div></div>`:''}
+      ${imp.payloadPreview?`<div>
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">📄 JSON Payload</div>
+        <pre style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:11px;overflow:auto;max-height:260px;color:var(--text2);white-space:pre-wrap;word-break:break-all">${esc(imp.payloadPreview.substring(0,8000))}${imp.payloadPreview.length>8000?'\n…[truncated]':''}</pre></div>`:''}`;
+  } catch(e) { content.innerHTML=`<p style="color:var(--red)">Error: ${esc(e.message)}</p>`; }
 }
 
-function closePendingAdminsPanel() {
-  document.getElementById('pendingAdminsOverlay').classList.add('hidden');
-  checkPendingAdminsBadge();
+function closeImportDetailPanel() {
+  document.getElementById('importDetailOverlay').classList.add('hidden');
+  currentImportId = null;
 }
 
-async function approveAdmin(userId, name) {
-  if (!confirm(`Grant ADMIN role to "${name}"?\n\nThis gives full admin access to the platform.`)) return;
+async function approveImport() {
+  if (!currentImportId) return;
+  const note = document.getElementById('importReviewNote').value.trim();
+  if (!confirm(`Approve Import #${currentImportId}?\nThis will seed all new topics into the database.`)) return;
+  const btn = document.getElementById('approveImportBtn');
+  btn.disabled=true; btn.textContent='Approving…';
   try {
-    const res = await fetch(`/api/admin/users/${userId}/approve-admin`, {
-      method: 'POST', headers: jsonH()
-    });
+    const res  = await fetch(`/api/admin/pending-imports/${currentImportId}/approve`, { method:'POST', headers:jsonH(), body:JSON.stringify({note}) });
     const data = await res.json();
-    if (!res.ok) { toast('Error: ' + (data.error || 'Failed'), 'error'); return; }
-    const card = document.getElementById(`pending-card-${userId}`);
-    if (card) {
-      card.style.border = '1px solid var(--accent)';
-      card.innerHTML = `<div style="color:var(--accent);font-weight:700;padding:8px">✅ ${esc(name)} is now an ADMIN</div>`;
-      setTimeout(() => card.remove(), 3000);
-    }
-    toast(`✅ ADMIN role granted to ${name}`, 'success');
-    checkPendingAdminsBadge();
-  } catch (e) { toast('Error: ' + e.message, 'error'); }
+    if (!res.ok) { toast('Error: '+(data.message||'Failed'),'error'); btn.disabled=false; btn.textContent='✅ Approve & Seed'; return; }
+    toast(`✅ Approved! ${data.topicsSeeded} topic(s) seeded.`,'success');
+    closeImportDetailPanel(); await loadPendingImports(); loadPendingImportsBadge(); loadAllTopics();
+  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='✅ Approve & Seed'; }
 }
 
-async function rejectAdmin(userId, name) {
-  if (!confirm(`Reject admin request from "${name}"?\n\nThey will remain a regular user.`)) return;
+async function rejectImport() {
+  if (!currentImportId) return;
+  const note = document.getElementById('importReviewNote').value.trim();
+  if (!confirm(`Reject Import #${currentImportId}?\nNo topics will be added.`)) return;
+  const btn = document.getElementById('rejectImportBtn');
+  btn.disabled=true; btn.textContent='Rejecting…';
   try {
-    const res = await fetch(`/api/admin/users/${userId}/reject-admin`, {
-      method: 'POST', headers: jsonH()
-    });
+    const res  = await fetch(`/api/admin/pending-imports/${currentImportId}/reject`, { method:'POST', headers:jsonH(), body:JSON.stringify({note}) });
     const data = await res.json();
-    if (!res.ok) { toast('Error: ' + (data.error || 'Failed'), 'error'); return; }
-    const card = document.getElementById(`pending-card-${userId}`);
-    if (card) {
-      card.style.border = '1px solid var(--red)';
-      card.innerHTML = `<div style="color:var(--text3);padding:8px">❌ Request from ${esc(name)} rejected</div>`;
-      setTimeout(() => card.remove(), 2000);
-    }
-    toast(`Request from ${name} rejected`, 'success');
-    checkPendingAdminsBadge();
-  } catch (e) { toast('Error: ' + e.message, 'error'); }
+    if (!res.ok) { toast('Error: '+(data.message||'Failed'),'error'); btn.disabled=false; btn.textContent='❌ Reject'; return; }
+    toast('Import rejected.','success');
+    closeImportDetailPanel(); await loadPendingImports(); loadPendingImportsBadge();
+  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='❌ Reject'; }
 }
 
-// ── All Users Panel ───────────────────────────────────────────────────────────
+async function quickApprove(id, name) {
+  if (!confirm(`Approve "${name}" (#${id}) immediately?`)) return;
+  try {
+    const res  = await fetch(`/api/admin/pending-imports/${id}/approve`, { method:'POST', headers:jsonH(), body:JSON.stringify({note:'Quick approved'}) });
+    const data = await res.json();
+    if (!res.ok) { toast('Error: '+(data.message||'Failed'),'error'); return; }
+    toast(`✅ ${data.topicsSeeded} topics seeded.`,'success');
+    await loadPendingImports(); loadPendingImportsBadge(); loadAllTopics();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function quickReject(id, name) {
+  const note = prompt(`Reason for rejecting "${name}"?`);
+  if (note === null) return;
+  try {
+    const res = await fetch(`/api/admin/pending-imports/${id}/reject`, { method:'POST', headers:jsonH(), body:JSON.stringify({note:note||'Rejected'}) });
+    if (!res.ok) { toast('Rejection failed','error'); return; }
+    toast('Import rejected.','success');
+    await loadPendingImports(); loadPendingImportsBadge();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+// ══ ALL USERS PANEL ══════════════════════════════════════════════════════════
+let _allUsers = [];
 
 async function openAllUsersPanel() {
   document.getElementById('allUsersOverlay').classList.remove('hidden');
   document.getElementById('userSearchInput').value = '';
-  const container = document.getElementById('allUsersContent');
-  container.innerHTML = '<p style="color:var(--text3);text-align:center;padding:40px 0">Loading…</p>';
+  const c = document.getElementById('allUsersContent');
+  c.innerHTML='<p style="color:var(--text3);text-align:center;padding:40px">Loading…</p>';
   try {
-    const res = await fetch('/api/admin/users', { headers: jsonH() });
+    const res  = await fetch('/api/admin/users', { headers: jsonH() });
     const data = await res.json();
-    if (!res.ok) {
-      container.innerHTML = `<p style="color:var(--red);padding:20px">${esc(data.error || 'Error')}</p>`;
-      return;
-    }
-    allUsersData = data.users || [];
-    renderUsersTable(allUsersData, container);
-  } catch (e) {
-    container.innerHTML = `<p style="color:var(--red);padding:20px">Error: ${esc(e.message)}</p>`;
-  }
+    if (!res.ok) { c.innerHTML=`<p style="color:var(--red);padding:20px">${esc(data.error||'Error')}</p>`; return; }
+    _allUsers = data.users || [];
+    renderUsersTable(_allUsers);
+  } catch(e) { c.innerHTML=`<p style="color:var(--red);padding:20px">Error: ${esc(e.message)}</p>`; }
+}
+function closeAllUsersPanel() { document.getElementById('allUsersOverlay').classList.add('hidden'); _allUsers=[]; }
+function filterUsers() {
+  const q = document.getElementById('userSearchInput').value.toLowerCase();
+  renderUsersTable(q?_allUsers.filter(u=>u.name.toLowerCase().includes(q)||u.email.toLowerCase().includes(q)):_allUsers);
 }
 
-function renderUsersTable(users, container) {
-  if (users.length === 0) {
-    container.innerHTML = '<p style="color:var(--text3);text-align:center;padding:40px">No users found</p>';
-    return;
-  }
-  container.innerHTML = `
-    <div style="font-size:12px;color:var(--text3);margin-bottom:12px">
-      ${users.length} user${users.length !== 1 ? 's' : ''}
-      ${users.filter(u=>u.adminPending).length > 0 ? ` · <span style="color:var(--yellow)">${users.filter(u=>u.adminPending).length} pending admin</span>` : ''}
+function renderUsersTable(users) {
+  const c = document.getElementById('allUsersContent');
+  if (!users.length) { c.innerHTML='<p style="color:var(--text3);text-align:center;padding:32px">No users found</p>'; return; }
+  c.innerHTML=`
+    <div style="font-size:12px;color:var(--text3);margin-bottom:10px">
+      ${users.length} user${users.length!==1?'s':''} · ${users.filter(u=>u.role==='ADMIN').length} admin${users.filter(u=>u.role==='ADMIN').length!==1?'s':''}
     </div>
     <table style="width:100%;border-collapse:collapse;font-size:12px">
-      <thead>
-        <tr style="border-bottom:1px solid var(--border);color:var(--text3)">
-          <th style="text-align:left;padding:8px 6px;font-weight:600">Name</th>
-          <th style="text-align:left;padding:8px 6px;font-weight:600">Email</th>
-          <th style="text-align:left;padding:8px 6px;font-weight:600">Role</th>
-          <th style="text-align:left;padding:8px 6px;font-weight:600">Provider</th>
-          <th style="text-align:left;padding:8px 6px;font-weight:600">Streak / Solved</th>
-          <th style="text-align:left;padding:8px 6px;font-weight:600">Actions</th>
-        </tr>
-      </thead>
+      <thead><tr style="border-bottom:1px solid var(--border);color:var(--text3)">
+        <th style="text-align:left;padding:8px 6px;font-weight:600">Name</th>
+        <th style="text-align:left;padding:8px 6px;font-weight:600">Email</th>
+        <th style="text-align:left;padding:8px 6px;font-weight:600">Role</th>
+        <th style="text-align:left;padding:8px 6px;font-weight:600">Provider</th>
+        <th style="text-align:left;padding:8px 6px;font-weight:600">🔥 Streak / ✅ Solved</th>
+        <th style="text-align:left;padding:8px 6px;font-weight:600">Action</th>
+      </tr></thead>
       <tbody>
-        ${users.map(u => `
-          <tr style="border-bottom:1px solid var(--border);${u.adminPending ? 'background:rgba(255,184,0,.04)' : ''}">
-            <td style="padding:8px 6px;color:var(--text)">${esc(u.name)}
-              ${u.adminPending ? '<span style="font-size:10px;background:rgba(255,184,0,.15);color:var(--yellow);padding:1px 6px;border-radius:4px;margin-left:4px">PENDING</span>' : ''}
-            </td>
-            <td style="padding:8px 6px;color:var(--text2)">${esc(u.email)}</td>
-            <td style="padding:8px 6px">
-              <span style="font-size:11px;padding:2px 8px;border-radius:4px;font-weight:700;
-                ${u.role==='ADMIN' ? 'background:rgba(0,184,163,.15);color:var(--accent)' : 'background:var(--bg3);color:var(--text2)'}">
-                ${esc(u.role)}
-              </span>
-            </td>
-            <td style="padding:8px 6px;color:var(--text3)">${esc(u.provider)}</td>
-            <td style="padding:8px 6px;color:var(--text3)">🔥${u.streakDays} · ✅${u.problemsSolved}</td>
-            <td style="padding:8px 6px">
-              ${u.adminPending ? `
-                <button onclick="approveAdmin(${u.id},'${esc(u.name)}')" title="Approve admin"
-                  style="background:none;border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:3px 8px;cursor:pointer;font-size:11px">✅ Approve</button>
-                <button onclick="rejectAdmin(${u.id},'${esc(u.name)}')" title="Reject admin"
-                  style="background:none;border:1px solid var(--red);color:var(--red);border-radius:4px;padding:3px 8px;cursor:pointer;font-size:11px;margin-left:4px">❌ Reject</button>
-              ` : u.role === 'ADMIN' && u.email !== 'asaditya1826@gmail.com' ? `
-                <button onclick="revokeAdmin(${u.id},'${esc(u.name)}')" title="Revoke admin"
-                  style="background:none;border:1px solid var(--text3);color:var(--text3);border-radius:4px;padding:3px 8px;cursor:pointer;font-size:11px">Revoke Admin</button>
-              ` : '—'}
-            </td>
-          </tr>
-        `).join('')}
+        ${users.map(u=>`<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:8px 6px;color:var(--text)">${esc(u.name)}</td>
+          <td style="padding:8px 6px;color:var(--text2)">${esc(u.email)}</td>
+          <td style="padding:8px 6px">
+            <span style="font-size:11px;padding:2px 7px;border-radius:3px;font-weight:700;${u.role==='ADMIN'?'background:rgba(0,184,163,.15);color:var(--accent)':'background:var(--bg3);color:var(--text2)'}">
+              ${esc(u.role)}</span>
+          </td>
+          <td style="padding:8px 6px;color:var(--text3)">${esc(u.provider)}</td>
+          <td style="padding:8px 6px;color:var(--text3)">${u.streakDays} / ${u.problemsSolved}</td>
+          <td style="padding:8px 6px">
+            ${u.role==='ADMIN'&&u.email!=='asaditya1826@gmail.com'?`
+              <button onclick="revokeAdmin(${u.id},'${esc(u.name)}')"
+                style="background:none;border:1px solid var(--text3);color:var(--text3);border-radius:4px;padding:3px 9px;cursor:pointer;font-size:11px;font-family:var(--font-ui)">Revoke Admin</button>
+            `:u.role!=='ADMIN'?`
+              <button onclick="grantAdmin(${u.id},'${esc(u.name)}')"
+                style="background:none;border:1px solid rgba(0,184,163,.4);color:var(--accent);border-radius:4px;padding:3px 9px;cursor:pointer;font-size:11px;font-family:var(--font-ui)">Grant Admin</button>
+            `:'<span style="color:var(--text3);font-size:11px">SuperAdmin</span>'}
+          </td>
+        </tr>`).join('')}
       </tbody>
     </table>`;
 }
 
-function filterUsersTable() {
-  const q = document.getElementById('userSearchInput').value.toLowerCase().trim();
-  const filtered = q ? allUsersData.filter(u =>
-    u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
-  ) : allUsersData;
-  renderUsersTable(filtered, document.getElementById('allUsersContent'));
-}
-
-function closeAllUsersPanel() {
-  document.getElementById('allUsersOverlay').classList.add('hidden');
-  allUsersData = [];
-}
-
 async function revokeAdmin(userId, name) {
-  if (!confirm(`Revoke ADMIN role from "${name}"?\nThey will become a regular STUDENT.`)) return;
+  if (!confirm(`Revoke ADMIN from "${name}"? They will become a regular STUDENT.`)) return;
   try {
-    const res = await fetch(`/api/admin/users/${userId}/revoke-admin`, {
-      method: 'POST', headers: jsonH()
-    });
+    const res  = await fetch(`/api/admin/users/${userId}/revoke-admin`, { method:'POST', headers:jsonH() });
     const data = await res.json();
-    if (!res.ok) { toast('Error: ' + (data.error || 'Failed'), 'error'); return; }
-    toast(`Admin role revoked from ${name}`, 'success');
-    openAllUsersPanel(); // refresh
-  } catch (e) { toast('Error: ' + e.message, 'error'); }
+    if (!res.ok) { toast('Error: '+(data.error||'Failed'),'error'); return; }
+    toast('Admin revoked from '+name,'success');
+    await openAllUsersPanel();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function grantAdmin(userId, name) {
+  if (!confirm(`Grant ADMIN role to "${name}"?`)) return;
+  try {
+    const res  = await fetch(`/api/admin/users/${userId}/grant-admin`, { method:'POST', headers:jsonH() });
+    const data = await res.json();
+    if (!res.ok) { toast('Error: '+(data.error||'Failed'),'error'); return; }
+    toast('✅ Admin granted to '+name,'success');
+    await openAllUsersPanel();
+  } catch(e) { toast('Error: '+e.message,'error'); }
 }
 
 async function loadAllTopics() {
@@ -1594,33 +1664,65 @@ async function fetchJson(url) {
 </script>
 
 <!-- ═══ SEED / IMPORT MODAL ══════════════════════════════════════════════ -->
-<!-- ═══ PENDING ADMIN REQUESTS PANEL ═══════════════════════════════════════ -->
-<div class="seed-overlay hidden" id="pendingAdminsOverlay">
-  <div class="seed-modal" style="max-width:760px;max-height:85vh">
+<!-- ══ PENDING IMPORTS ═══════════════════════════════════════════════════════ -->
+<div class="seed-overlay hidden" id="pendingImportsOverlay">
+  <div class="seed-modal" style="max-width:820px;max-height:88vh;display:flex;flex-direction:column">
     <div class="seed-header">
-      <span style="color:var(--yellow)">🔑 Pending Admin Requests</span>
-      <button class="seed-close" onclick="closePendingAdminsPanel()">✕</button>
+      <span style="color:var(--yellow)">📥 Pending Import Requests</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+        <select id="importStatusFilter" onchange="loadPendingImports()"
+                style="padding:5px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-family:var(--font-ui);font-size:12px">
+          <option value="PENDING" selected>Pending</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
+          <option value="">All</option>
+        </select>
+        <button class="seed-close" onclick="closePendingImportsPanel()">✕</button>
+      </div>
     </div>
-    <div id="pendingAdminsContent" style="padding:20px;overflow-y:auto;max-height:65vh">
-      <p style="color:var(--text3);text-align:center;padding:40px 0">Loading…</p>
+    <div id="pendingImportsContent" style="padding:16px 20px;overflow-y:auto;flex:1">
+      <p style="color:var(--text3);text-align:center;padding:40px">Loading…</p>
     </div>
   </div>
 </div>
 
-<!-- ═══ ALL USERS PANEL ════════════════════════════════════════════════════ -->
+<!-- ══ IMPORT DETAIL / REVIEW ════════════════════════════════════════════════ -->
+<div class="seed-overlay hidden" id="importDetailOverlay">
+  <div class="seed-modal" style="max-width:860px;max-height:92vh;display:flex;flex-direction:column">
+    <div class="seed-header">
+      <span id="importDetailTitle" style="color:var(--yellow)">Import Detail</span>
+      <button class="seed-close" onclick="closeImportDetailPanel()">✕</button>
+    </div>
+    <div id="importDetailContent" style="padding:16px 20px;overflow-y:auto;flex:1"></div>
+    <div id="importDetailActions" style="padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:center">
+      <input id="importReviewNote" type="text" placeholder="Optional review note…"
+             style="flex:1;padding:8px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-family:var(--font-ui);font-size:13px"/>
+      <button id="approveImportBtn" onclick="approveImport()"
+              style="padding:9px 20px;background:rgba(0,184,163,.2);color:var(--accent);border:1px solid var(--accent);border-radius:5px;cursor:pointer;font-size:13px;font-weight:700;font-family:var(--font-ui)">
+        ✅ Approve & Seed
+      </button>
+      <button id="rejectImportBtn" onclick="rejectImport()"
+              style="padding:9px 20px;background:rgba(239,71,67,.12);color:var(--red);border:1px solid var(--red);border-radius:5px;cursor:pointer;font-size:13px;font-weight:700;font-family:var(--font-ui)">
+        ❌ Reject
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALL USERS ═════════════════════════════════════════════════════════════ -->
 <div class="seed-overlay hidden" id="allUsersOverlay">
-  <div class="seed-modal" style="max-width:900px;max-height:85vh">
+  <div class="seed-modal" style="max-width:960px;max-height:88vh;display:flex;flex-direction:column">
     <div class="seed-header">
       <span style="color:var(--blue)">👥 All Users</span>
       <button class="seed-close" onclick="closeAllUsersPanel()">✕</button>
     </div>
-    <div style="padding:10px 20px;border-bottom:1px solid var(--border)">
+    <div style="padding:8px 20px;border-bottom:1px solid var(--border)">
       <input id="userSearchInput" type="text" placeholder="🔍 Search by name or email…"
-             oninput="filterUsersTable()"
+             oninput="filterUsers()"
              style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-family:var(--font-ui);font-size:13px"/>
     </div>
-    <div id="allUsersContent" style="padding:16px 20px;overflow-y:auto;max-height:60vh">
-      <p style="color:var(--text3);text-align:center;padding:40px 0">Loading…</p>
+    <div id="allUsersContent" style="padding:12px 20px;overflow-y:auto;flex:1">
+      <p style="color:var(--text3);text-align:center;padding:40px">Loading…</p>
     </div>
   </div>
 </div>

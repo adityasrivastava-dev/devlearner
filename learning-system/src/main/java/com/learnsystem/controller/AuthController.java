@@ -114,8 +114,7 @@ public ResponseEntity<?> refresh(@AuthenticationPrincipal User user) {
 			"roles",              roles,
 			"avatar",             fresh.getAvatarUrl() != null ? fresh.getAvatarUrl() : "",
 			"streakDays",         fresh.getStreakDays(),
-			"problemsSolved",     fresh.getProblemsSolved(),
-			"adminPending",       Boolean.TRUE.equals(fresh.getAdminRequestPending())
+			"problemsSolved",     fresh.getProblemsSolved()
 	));
 }
 }

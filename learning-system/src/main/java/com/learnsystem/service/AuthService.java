@@ -39,16 +39,8 @@ public AuthResponse register(RegisterRequest req) {
 			.roles(EnumSet.of(User.Role.STUDENT))
 			.emailVerified(true)
 			.build();
-
-	// Handle admin role request — does NOT grant ADMIN immediately
-	// Sets pending flag; asaditya1826@gmail.com must approve
-	if (req.isRequestAdminRole()) {
-		user.requestAdminRole();
-		log.info("Admin role requested by: {}", user.getEmail());
-	}
-
 	userRepository.save(user);
-	log.info("New user registered: {} (adminPending={})", user.getEmail(), Boolean.TRUE.equals(user.getAdminRequestPending()));
+	log.info("New user registered: {}", user.getEmail());
 	return buildAuthResponse(user);
 }
 

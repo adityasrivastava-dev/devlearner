@@ -46,14 +46,12 @@ public void onAuthenticationSuccess(HttpServletRequest request,
 	if (user == null) {
 		log.error("User not found for email: {} and providerId: {}", email, providerId);
 	} else {
-		log.error("User found: id={}, email={}, provider={}, providerId={}, adminPending={}",
+		log.info("User found: id={}, email={}, provider={}, providerId={}",
 				user.getId(),
 				user.getEmail(),
 				user.getProvider(),
-				user.getProviderId(),
-				user.getAdminRequestPending());
+				user.getProviderId());
 	}
-log.error("User object using google",user);
 	if (user == null) {
 		// First time Google login — create account
 		user = User.builder()
