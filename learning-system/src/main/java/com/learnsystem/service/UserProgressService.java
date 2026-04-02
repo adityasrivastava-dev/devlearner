@@ -1,28 +1,22 @@
 package com.learnsystem.service;
 
-import com.learnsystem.model.User;
 import com.learnsystem.repository.SubmissionRepository;
 import com.learnsystem.repository.UserRepository;
+import com.learnsystem.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
 /**
- * Handles streak_days and problems_solved updates after an accepted submission.
+ * Handles problems_solved count ONLY.
  *
- * Streak rules:
- *  - If the user's last login date is TODAY  → streak unchanged (already counted today)
- *  - If the user's last login date is YESTERDAY → streak += 1
- *  - Anything older                           → streak resets to 1
+ * Streak logic is fully owned by StreakService.
+ * This service exists to recount distinct accepted problems from the
+ * submissions table so problems_solved is always accurate.
  *
- * problems_solved:
- *  - Counts DISTINCT problems the user has ever passed (status = ACCEPTED).
- *  - Re-computed from the submissions table so it's always accurate even if
- *    submissions are deleted or the user submits the same problem multiple times.
+ * Called from SubmissionController AFTER StreakService so the problems_solved
+ * update does not race with the streak/XP update.
  */
 @Slf4j
 @Service
@@ -33,41 +27,21 @@ private final UserRepository       userRepo;
 private final SubmissionRepository submissionRepo;
 
 /**
- * Call this immediately after a successful (ACCEPTED) submission.
- * Safe to call on every accepted submit — idempotent for the same day.
+ * Recount and persist problems_solved for the user.
+ * Safe to call on every submit (ACCEPTED or not) — idempotent.
  */
 @Transactional
 public void onAccepted(Long userId) {
-	if (userId == null) return;   // anonymous submit — skip
+	if (userId == null) return;
 
 	User user = userRepo.findById(userId).orElse(null);
 	if (user == null) return;
 
-	// ── 1. Update streak ──────────────────────────────────────────────
-	LocalDate today    = LocalDate.now();
-	LocalDate lastDate = user.getLastLogin() != null
-			? user.getLastLogin().toLocalDate()
-			: null;
-
-	if (lastDate == null || lastDate.isBefore(today.minusDays(1))) {
-		// First ever submit, or streak broken
-		user.setStreakDays(1);
-	} else if (lastDate.equals(today.minusDays(1))) {
-		// Submitted on consecutive day
-		user.setStreakDays(user.getStreakDays() + 1);
-	}
-	// If lastDate == today: streak already counted, don't change
-
-	// ── 2. Update last_login to now ────────────────────────────────────
-	user.setLastLogin(LocalDateTime.now());
-
-	// ── 3. Recount distinct problems solved ───────────────────────────
-	long distinctSolved = submissionRepo
-			.countDistinctAcceptedProblemsByUserId(userId);
+	// Recount DISTINCT problems ever solved — always accurate
+	long distinctSolved = submissionRepo.countDistinctAcceptedProblemsByUserId(userId);
 	user.setProblemsSolved((int) distinctSolved);
-
 	userRepo.save(user);
-	log.debug("Progress updated: userId={} streak={} solved={}",
-			userId, user.getStreakDays(), user.getProblemsSolved());
+
+	log.debug("problems_solved updated: userId={} solved={}", userId, distinctSolved);
 }
 }

@@ -96,15 +96,16 @@ public ResponseEntity<Map<String, Object>> submitAndPersist(
 	log.info("Submission saved: user={} problem={} status={} ms={}",
 			userId, req.getProblemId(), status, maxMs);
 
-	// ── Phase 1: update streak + problems_solved ──────────────────────────
-	if ("ACCEPTED".equals(status)) {
-		userProgressService.onAccepted(userId);
-	}
-
-	// ── Phase 2: streak engine + performance analytics ────────────────────
+	// ── Phase 1 + Phase 2: streak engine, XP, problems_solved ───────────────
+	// StreakService.onDailyActivity handles streak, XP, lastActiveDate.
+	// UserProgressService.onAccepted also updates streak via lastLogin — REMOVED
+	// to prevent double-counting. StreakService is the single source of truth.
 	try {
 		int xpEarned = "ACCEPTED".equals(status) ? 10 : 1;
 		streakService.onDailyActivity(userId, xpEarned);
+
+		// Also recount problems_solved from DB (streak service doesn't do this)
+		userProgressService.onAccepted(userId);
 
 		// Resolve topicId for analytics
 		Long topicId = null;

@@ -99,19 +99,9 @@ private int xp = 0;
 @Column(name = "level", length = 50)
 @Builder.Default
 private String level = "Beginner";
-/**
- * Admin Approval System:
- * When a user registers requesting ADMIN role, this is set to true.
- * Only asaditya1826@gmail.com can approve via POST /api/admin/users/{id}/approve-admin.
- * On approval: this flag is cleared and ADMIN role is added.
- */
-@Column(name = "admin_request_pending", nullable = false)
-@Builder.Default
-private Boolean adminRequestPending = false;
-
-/** Timestamp of admin role request — used to show how long request has been pending */
-@Column(name = "admin_requested_at")
-private LocalDateTime adminRequestedAt;
+// Admin roles managed directly via SQL:
+// INSERT IGNORE INTO user_roles (user_id, role)
+// SELECT id, 'ADMIN' FROM users WHERE email = 'asaditya1826@gmail.com';
 
 @PrePersist
 protected void onCreate() {

@@ -370,9 +370,11 @@ function checkStrength(password) {
         name:   data.name,
         email:  data.email,
         role:   data.role,
+        roles:  data.roles || [],
         avatar: data.avatar || '',
-        streak: 0,
-        solved: 0,
+        // /api/auth/check now returns these correctly (Bug #5 fix)
+        streak: data.streakDays     || 0,
+        solved: data.problemsSolved || 0,
       }));
       const params2   = new URLSearchParams(window.location.search);
       const returnTo2 = params2.get('from');
@@ -380,6 +382,7 @@ function checkStrength(password) {
         ? returnTo2 : '/';
       window.location.replace(safe2);
     }).catch(() => {
+      // /api/auth/check failed — store token only, streak/solved will load on next syncToken()
       localStorage.setItem('devlearn_token', token);
       const params3   = new URLSearchParams(window.location.search);
       const returnTo3 = params3.get('from');

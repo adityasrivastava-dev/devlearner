@@ -75,6 +75,24 @@ private List<Example> examples;
 private List<Problem> problems;
 
 public enum Category {
-    DSA, JAVA, ADVANCED_JAVA, MYSQL, AWS
+    // Core & Advanced Java
+    JAVA,
+    ADVANCED_JAVA,
+    // Spring Ecosystem
+    SPRING,
+    SPRING_BOOT,
+    SPRING_MVC,
+    SPRING_SECURITY,
+    HIBERNATE,
+    SPRING_DATA,
+    MICROSERVICES,
+    // Data Structures & Algorithms
+    DSA,
+    // Databases
+    MYSQL,
+    // Cloud
+    AWS,
+    // Web
+    JAVASCRIPT
 }
 }

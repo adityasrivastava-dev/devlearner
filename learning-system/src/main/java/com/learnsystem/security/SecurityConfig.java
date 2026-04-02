@@ -54,8 +54,6 @@ public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 			.authorizeHttpRequests(auth -> auth
 					// Auth — always public
 					.requestMatchers("/api/auth/**").permitAll()
-					// Bootstrap: owner calls this once to become admin — only needs authentication
-					.requestMatchers("/api/admin/bootstrap").authenticated()
 
 					// Public read
 					.requestMatchers(HttpMethod.GET,

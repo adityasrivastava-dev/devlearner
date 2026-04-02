@@ -78,13 +78,15 @@ public ResponseEntity<Map<String, Object>> check(@AuthenticationPrincipal User u
 			? fresh.getRoles().stream().map(r -> r.name()).sorted().collect(java.util.stream.Collectors.toList())
 			: List.of("STUDENT");
 	return ResponseEntity.ok(Map.of(
-			"valid",  true,
-			"id",     fresh.getId(),
-			"name",   fresh.getName(),
-			"email",  fresh.getEmail(),
-			"role",   fresh.getPrimaryRole().name(),
-			"roles",  roles,
-			"avatar", fresh.getAvatarUrl() != null ? fresh.getAvatarUrl() : ""
+			"valid",          true,
+			"id",             fresh.getId(),
+			"name",           fresh.getName(),
+			"email",          fresh.getEmail(),
+			"role",           fresh.getPrimaryRole().name(),
+			"roles",          roles,
+			"avatar",         fresh.getAvatarUrl() != null ? fresh.getAvatarUrl() : "",
+			"streakDays",     fresh.getStreakDays(),
+			"problemsSolved", fresh.getProblemsSolved()
 	));
 }
 
