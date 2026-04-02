@@ -50,14 +50,14 @@ const Auth = {
       const current = this.getUser() || {};
       const updated = {
         ...current,
-        id:             data.id,
-        name:           data.name,
-        email:          data.email,
-        role:           data.role,
-        roles:          data.roles,
-        avatar:         data.avatar         || current.avatar         || '',
-        streak:         data.streakDays     ?? current.streak         ?? 0,
-        solved:         data.problemsSolved ?? current.solved         ?? 0,
+        id:     data.id,
+        name:   data.name,
+        email:  data.email,
+        role:   data.role,
+        roles:  data.roles,
+        avatar: data.avatar         || current.avatar  || '',
+        streak: data.streakDays     ?? current.streak  ?? 0,
+        solved: data.problemsSolved ?? current.solved  ?? 0,
       };
       localStorage.setItem('devlearn_user', JSON.stringify(updated));
 
@@ -191,13 +191,12 @@ const API = {
     return res.json();
   },
 
-  // ── Solved problem IDs (server-side, survives device change) ─────────────
-  // Returns an array of problem IDs the current user has ever solved (ACCEPTED).
+  // Returns array of problem IDs the current user has ever solved (ACCEPTED)
   async getSolvedIds() {
     try {
       const res = await fetch('/api/submissions/solved', { headers: Auth.headers() });
       if (!res.ok) return [];
-      return res.json();   // number[]
+      return res.json();
     } catch { return []; }
   },
 

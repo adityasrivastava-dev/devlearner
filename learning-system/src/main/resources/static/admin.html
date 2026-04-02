@@ -817,25 +817,25 @@ async function renderTopicSection() {
         </div>
       </div>
 
-      <!-- Phase 1 Story-Based Learning Fields -->
+      <!-- Phase 1: Story & Memory fields -->
       <div class="form-card">
         <h3>📖 Story & Memory (Phase 1)</h3>
-        <p style="font-size:12px;color:var(--text3);margin:0 0 12px">These fields power the Theory tab cards. Leave blank if not yet written — the UI will show a placeholder instead.</p>
+        <p style="font-size:12px;color:var(--text3);margin:0 0 12px">These power the Theory tab cards. Leave blank if not yet written.</p>
         <div class="field">
-          <label>Memory Anchor <span style="color:var(--text3);font-weight:400">— one unforgettable sentence</span></label>
-          <input id="f_memory_anchor" type="text" value="${esc(t.memoryAnchor||'')}" placeholder="e.g. Sliding Window: subtract what leaves, add what arrives, never recompute what you know." style="width:100%">
+          <label>Memory Anchor — <span style="font-weight:400;color:var(--text3)">one unforgettable sentence</span></label>
+          <input id="f_memory_anchor" type="text" value="${esc(t.memoryAnchor||'')}" placeholder="e.g. Sliding Window: subtract what leaves, add what arrives." style="width:100%">
         </div>
         <div class="field">
-          <label>Story <span style="color:var(--text3);font-weight:400">— narrative explanation with a real character and problem</span></label>
+          <label>Story — <span style="font-weight:400;color:var(--text3)">narrative with a real character and problem</span></label>
           <textarea id="f_story" style="min-height:120px">${esc(t.story||'')}</textarea>
         </div>
         <div class="field">
-          <label>Visual Analogy <span style="color:var(--text3);font-weight:400">— one strong real-world comparison</span></label>
-          <textarea id="f_analogy" style="min-height:80px">${esc(t.analogy||'')}</textarea>
+          <label>Visual Analogy — <span style="font-weight:400;color:var(--text3)">one strong real-world comparison</span></label>
+          <textarea id="f_analogy" style="min-height:70px">${esc(t.analogy||'')}</textarea>
         </div>
         <div class="field">
-          <label>First Principles <span style="color:var(--text3);font-weight:400">— WHY it works, not just HOW</span></label>
-          <textarea id="f_first_principles" style="min-height:100px">${esc(t.firstPrinciples||'')}</textarea>
+          <label>First Principles — <span style="font-weight:400;color:var(--text3)">WHY it works, not just HOW</span></label>
+          <textarea id="f_first_principles" style="min-height:90px">${esc(t.firstPrinciples||'')}</textarea>
         </div>
       </div>
     </form>
@@ -877,11 +877,10 @@ function buildTopicPayload() {
     optimizedApproach: val('f_optimized'),
     whenToUse:         val('f_when'),
     starterCode:       val('f_starter'),
-    // Phase 1 story fields
-    memoryAnchor:    val('f_memory_anchor')   || null,
-    story:           val('f_story')           || null,
-    analogy:         val('f_analogy')         || null,
-    firstPrinciples: val('f_first_principles')|| null,
+    memoryAnchor:    val('f_memory_anchor')    || null,
+    story:           val('f_story')            || null,
+    analogy:         val('f_analogy')          || null,
+    firstPrinciples: val('f_first_principles') || null,
   };
 }
 
@@ -943,25 +942,13 @@ function openNewTopic() {
           <textarea id="nt_starter" class="code tall" placeholder="public class Main {\n    public static void main(String[] args) {\n        // TODO\n    }\n}"></textarea>
         </div>
       </div>
-      <!-- Phase 1 Story Fields -->
+      <!-- Phase 1: Story & Memory -->
       <div class="form-card">
         <h3>📖 Story & Memory (Phase 1)</h3>
-        <div class="field">
-          <label>Memory Anchor</label>
-          <input id="nt_memory_anchor" type="text" placeholder="One unforgettable sentence…" style="width:100%">
-        </div>
-        <div class="field">
-          <label>Story</label>
-          <textarea id="nt_story" style="min-height:100px" placeholder="Narrative explanation with a real character…"></textarea>
-        </div>
-        <div class="field">
-          <label>Visual Analogy</label>
-          <textarea id="nt_analogy" style="min-height:70px" placeholder="One strong real-world comparison…"></textarea>
-        </div>
-        <div class="field">
-          <label>First Principles</label>
-          <textarea id="nt_first_principles" style="min-height:80px" placeholder="WHY it works, not just HOW…"></textarea>
-        </div>
+        <div class="field"><label>Memory Anchor</label><input id="nt_memory_anchor" type="text" placeholder="One unforgettable sentence…" style="width:100%"></div>
+        <div class="field"><label>Story</label><textarea id="nt_story" style="min-height:90px" placeholder="Narrative with a real character…"></textarea></div>
+        <div class="field"><label>Visual Analogy</label><textarea id="nt_analogy" style="min-height:60px" placeholder="One strong real-world comparison…"></textarea></div>
+        <div class="field"><label>First Principles</label><textarea id="nt_first_principles" style="min-height:70px" placeholder="WHY it works…"></textarea></div>
       </div>
       <div class="form-actions">
         <button class="btn-save" onclick="createTopic()">✚ Create Topic</button>
@@ -983,7 +970,6 @@ async function createTopic() {
     optimizedApproach: val('nt_optimized'),
     whenToUse:         val('nt_when'),
     starterCode:       val('nt_starter'),
-    // Phase 1 story fields
     memoryAnchor:    val('nt_memory_anchor')    || null,
     story:           val('nt_story')            || null,
     analogy:         val('nt_analogy')          || null,
@@ -1094,6 +1080,14 @@ function exampleForm(ex) {
         <label>Real World Use</label>
         <input id="ef_rw_${id}" value="${esc(ex.realWorldUse||'')}" placeholder="e.g. Database index lookup"/>
       </div>
+      <div class="field form-full">
+        <label>Pseudocode <span style="font-weight:400;color:var(--text3)">— plain-English steps shown below the code</span></label>
+        <textarea id="ef_pseudo_${id}" style="min-height:70px;font-family:var(--font-code);font-size:12px">${esc(ex.pseudocode||'')}</textarea>
+      </div>
+      <div class="field form-full">
+        <label>Flowchart (Mermaid) <span style="font-weight:400;color:var(--text3)">— per-example diagram</span></label>
+        <textarea id="ef_flow_${id}" class="code" style="min-height:70px" placeholder="flowchart TD&#10;  A[Start] --> B{Check}">${esc(ex.flowchartMermaid||'')}</textarea>
+      </div>
     </div>
     <div class="form-actions">
       ${ex.id
@@ -1171,12 +1165,14 @@ function cancelNewExample() {
 
 function buildExPayload(id) {
   return {
-    title:        val(`ef_title_${id}`),
-    description:  val(`ef_desc_${id}`),
-    code:         val(`ef_code_${id}`),
-    explanation:  val(`ef_expl_${id}`),
-    realWorldUse: val(`ef_rw_${id}`),
-    displayOrder: parseInt(val(`ef_order_${id}`)) || 1,
+    title:           val(`ef_title_${id}`),
+    description:     val(`ef_desc_${id}`),
+    code:            val(`ef_code_${id}`),
+    explanation:     val(`ef_expl_${id}`),
+    realWorldUse:    val(`ef_rw_${id}`),
+    displayOrder:    parseInt(val(`ef_order_${id}`)) || 1,
+    pseudocode:       val(`ef_pseudo_${id}`) || null,
+    flowchartMermaid: val(`ef_flow_${id}`)   || null,
   };
 }
 
@@ -1260,8 +1256,24 @@ function problemForm(p) {
         <textarea id="pf_tests_${id}" class="code tall">${esc(p.testCases||'[]')}</textarea>
       </div>
       <div class="field form-full">
-        <label>Hint (shown on failure)</label>
+        <label>Hint (shown on failure — fallback if hint1/2/3 not set)</label>
         <textarea id="pf_hint_${id}">${esc(p.hint||'')}</textarea>
+      </div>
+      <div class="field">
+        <label>Pattern Tag <span style="font-weight:400;color:var(--text3)">e.g. TWO_POINTER, SLIDING_WINDOW, HASH_MAP</span></label>
+        <input id="pf_pattern_${id}" value="${esc(p.pattern||'')}" placeholder="TWO_POINTER" style="width:100%"/>
+      </div>
+      <div class="field form-full">
+        <label>Hint 1 — Direction <span style="font-weight:400;color:var(--text3)">(always free, no algorithm revealed)</span></label>
+        <textarea id="pf_hint1_${id}" style="min-height:55px">${esc(p.hint1||'')}</textarea>
+      </div>
+      <div class="field form-full">
+        <label>Hint 2 — Approach <span style="font-weight:400;color:var(--text3)">(reveals the pattern name)</span></label>
+        <textarea id="pf_hint2_${id}" style="min-height:55px">${esc(p.hint2||'')}</textarea>
+      </div>
+      <div class="field form-full">
+        <label>Hint 3 — Pseudocode <span style="font-weight:400;color:var(--text3)">(marks submission hint-assisted)</span></label>
+        <textarea id="pf_hint3_${id}" style="min-height:75px">${esc(p.hint3||'')}</textarea>
       </div>
       <div class="field form-full">
         <label>Starter Code</label>
@@ -1359,6 +1371,10 @@ function buildPrPayload(id) {
     hint:         val(`pf_hint_${id}`),
     starterCode:  val(`pf_starter_${id}`),
     solutionCode: val(`pf_solution_${id}`),
+    pattern: val(`pf_pattern_${id}`) || null,
+    hint1:   val(`pf_hint1_${id}`)   || null,
+    hint2:   val(`pf_hint2_${id}`)   || null,
+    hint3:   val(`pf_hint3_${id}`)   || null,
   };
 }
 

@@ -27,10 +27,18 @@
 
   <div class="sidebar-header">
     <span class="logo">(dev<span>learn</span>)</span>
-    <div style="margin-left:auto;display:flex;gap:5px">
+    <div style="margin-left:auto;display:flex;gap:5px;align-items:center">
       <a href="/roadmap.html" title="Roadmaps" class="sidebar-icon-btn">🗺</a>
       <a href="/problems.html" title="Problem Set" class="sidebar-icon-btn">📋</a>
       <a href="/admin.html" id="adminLink" style="display:none" title="Admin" class="sidebar-icon-btn">⚙</a>
+      <button id="themeToggleBtn" onclick="toggleTheme()" title="Toggle light/dark mode"
+              style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 3px;line-height:1;color:var(--text3)">🌙</button>
+      <div style="display:flex;align-items:center">
+        <button onclick="adjustFontSize(-1)" title="Decrease font size"
+                style="background:none;border:none;cursor:pointer;font-size:10px;font-weight:700;color:var(--text3);padding:2px 3px;line-height:1;font-family:var(--font-ui)">A−</button>
+        <button onclick="adjustFontSize(1)" title="Increase font size"
+                style="background:none;border:none;cursor:pointer;font-size:12px;font-weight:700;color:var(--text3);padding:2px 3px;line-height:1;font-family:var(--font-ui)">A+</button>
+      </div>
     </div>
   </div>
 
@@ -61,6 +69,22 @@
   <ul class="topic-list" id="topicList">
     <li class="loading-item">Loading topics…</li>
   </ul>
+
+  <!-- Phase 1: Activity Heatmap -->
+  <div id="activityHeatmap" style="padding:10px 12px 12px;border-top:1px solid var(--border);display:none">
+    <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:7px">Activity</div>
+    <div id="heatmapGrid" style="display:grid;grid-template-columns:repeat(53,1fr);gap:2px;width:100%"></div>
+    <div id="heatmapMonths" style="display:flex;justify-content:space-between;margin-top:4px"></div>
+    <div style="display:flex;align-items:center;gap:4px;margin-top:5px;font-size:9px;color:var(--text3)">
+      <span>Less</span>
+      <div style="width:8px;height:8px;border-radius:2px;background:var(--bg4)"></div>
+      <div style="width:8px;height:8px;border-radius:2px;background:#1a6640"></div>
+      <div style="width:8px;height:8px;border-radius:2px;background:#26a65b"></div>
+      <div style="width:8px;height:8px;border-radius:2px;background:#2ecc71"></div>
+      <div style="width:8px;height:8px;border-radius:2px;background:#52d98a"></div>
+      <span>More</span>
+    </div>
+  </div>
 </aside>
 
 <!-- ═══════════════════════════════════════════════════════
@@ -190,7 +214,6 @@
           <div id="out-output" class="out-panel hidden">
             <div id="outputStatusRow" style="margin-bottom:8px"></div>
             <pre id="outputBox" class="output-box">// Press ▶ Run Code to execute</pre>
-            <!-- Phase 1: inline complexity shown automatically after every run -->
             <div id="inlineComplexity" style="display:none;margin-top:8px;padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;font-size:11px;color:var(--text2);gap:4px;flex-wrap:wrap;align-items:center"></div>
           </div>
           <div id="out-errors" class="out-panel hidden">
@@ -317,6 +340,7 @@
       <div class="ps-left" id="psLeft">
         <div class="ps-desc-tabs">
           <button class="ps-dtab active" data-dtab="desc" onclick="switchDescTab(this,'desc')">Description</button>
+          <button class="ps-dtab" data-dtab="approach" onclick="switchDescTab(this,'approach')">My Approach</button>
           <button class="ps-dtab" data-dtab="hints" onclick="switchDescTab(this,'hints')">Hints</button>
           <button class="ps-dtab" data-dtab="editorial" onclick="switchDescTab(this,'editorial')">Editorial</button>
         </div>
@@ -338,6 +362,24 @@
             <div id="psProbFormats" class="ps-prob-formats"></div>
             <!-- Similar problems section -->
             <div id="psSimilarProblems" class="ps-similar-section" style="display:none"></div>
+          </div>
+
+          <!-- My Approach tab — write algorithm in English before coding (Phase 1) -->
+          <div id="dtab-approach" class="ps-dpanel" style="display:none">
+            <div style="padding:14px 0 8px">
+              <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">✍️ Write your approach first</div>
+              <div style="font-size:11px;color:var(--text3);line-height:1.6;margin-bottom:12px">Before writing code, describe your algorithm in plain English. What data structure? What is the key insight? This is the most powerful habit you can build for interviews.</div>
+              <textarea id="approachText"
+                        placeholder="Example: I'll use a HashMap to store each number. For each element I check if the complement (target - current) already exists in the map. If yes, return both indices. O(n) time, O(n) space..."
+                        style="width:100%;min-height:160px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--font-ui);font-size:12px;line-height:1.6;padding:10px;resize:vertical;box-sizing:border-box;outline:none"></textarea>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+                <button onclick="saveApproach()" style="padding:6px 14px;background:var(--accent);color:#fff;border:none;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-ui)">💾 Save Approach</button>
+                <span id="approachSaveStatus" style="font-size:11px;color:var(--text3)"></span>
+              </div>
+              <div style="margin-top:14px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text3);line-height:1.6">
+                <strong style="color:var(--text2)">Why this matters:</strong> Engineers who blank in interviews know the algorithm — they just never practised explaining it first.
+              </div>
+            </div>
           </div>
 
           <!-- Hints tab -->

@@ -22,6 +22,7 @@ let psResizing     = false;
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   initMonaco();
+  initTheme();
   bindCategoryTabs();
   bindTabBar();
   bindSearch();
@@ -29,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Run button bound once inside initMonaco callback
   // PS buttons bound after monaco loaded
 
+  loadHeatmap();
   loadTopics(activeCategory).then(() => {
     // BUG FIX: read BOTH ?topic= and ?openProblem= from the URL.
     // Previously only ?topic= was handled — clicking a problem in problems.html
@@ -65,21 +67,28 @@ function initMonaco() {
   require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
   require(['vs/editor/editor.main'], () => {
 
+    // Phase 1: restore saved theme + font size
+    const savedTheme    = localStorage.getItem('devlearn_theme');
+    const monacoTheme   = savedTheme === 'light' ? 'vs' : 'vs-dark';
+    const savedFontSize = parseInt(localStorage.getItem('devlearn_fontsize') || '14');
+
     const COMMON = {
-      language: 'java', theme: 'vs-dark', fontSize: 13,
+      language: 'java', theme: monacoTheme, fontSize: savedFontSize,
       fontFamily: "'JetBrains Mono', monospace",
       minimap: { enabled: false }, scrollBeyondLastLine: false,
       lineNumbers: 'on', renderLineHighlight: 'line',
       automaticLayout: true, padding: { top: 10 }, glyphMargin: true,
-      // ── IDE-quality settings ──────────────────────────────────────────────
-      quickSuggestions: { other: false, comments: false, strings: false },
-      wordBasedSuggestions: 'off',
-      suggestOnTriggerCharacters: true,   // keep '.' and '@' triggers
-      acceptSuggestionOnCommitCharacter: false,
-      parameterHints: { enabled: true },
-      hover: { enabled: true },           // show type-on-hover
+      // ── Full IDE-quality settings ─────────────────────────────────────────
+      quickSuggestions: { other: true, comments: false, strings: true },
+      wordBasedSuggestions: 'allDocuments',
+      suggestOnTriggerCharacters: true,
+      acceptSuggestionOnCommitCharacter: true,
+      acceptSuggestionOnEnter: 'on',
+      tabCompletion: 'on',
+      parameterHints: { enabled: true, cycle: true },
+      hover: { enabled: true },
       formatOnPaste: true,
-      formatOnType:  false,               // don't auto-format mid-type (annoying)
+      formatOnType:  false,
       autoIndent: 'full',
       tabSize: 4,
       insertSpaces: true,
@@ -90,6 +99,15 @@ function initMonaco() {
       cursorSmoothCaretAnimation: 'on',
       scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 },
       'semanticHighlighting.enabled': true,
+      suggest: {
+        showKeywords: true,
+        showSnippets: true,
+        showClasses:  true,
+        showMethods:  true,
+        showVariables:true,
+        filterGraceful: true,
+        insertMode: 'replace',
+      },
     };
 
     // Code tab editor
@@ -107,6 +125,9 @@ function initMonaco() {
     window._monacoReady  = true;
     window._monacoCommon = COMMON;
 
+    // ── Java IntelliSense completions ─────────────────────────────────────
+    registerJavaCompletions();
+
     // Bind run button ONCE here (after monaco ready)
     document.getElementById('runBtn')?.addEventListener('click', runCode);
     document.getElementById('resetBtn')?.addEventListener('click', resetEditor);
@@ -114,6 +135,157 @@ function initMonaco() {
     // PS buttons
     document.getElementById('psRunBtn')?.addEventListener('click', psRunCode);
     document.getElementById('psSubmitBtn')?.addEventListener('click', psSubmit);
+  });
+}
+
+// ── Java IntelliSense: snippets + stdlib completions ──────────────────────────
+function registerJavaCompletions() {
+  if (typeof monaco === 'undefined') return;
+
+  // Snippet helper
+  const snip = (label, detail, insert, doc) => ({
+    label, detail, kind: monaco.languages.CompletionItemKind.Snippet,
+    insertText: insert, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+    documentation: doc || label, sortText: '0' + label,
+  });
+  // Method helper
+  const meth = (label, detail, insert, doc) => ({
+    label, detail, kind: monaco.languages.CompletionItemKind.Method,
+    insertText: insert, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+    documentation: doc || label,
+  });
+  // Class helper
+  const cls = (label, detail, insert) => ({
+    label, detail, kind: monaco.languages.CompletionItemKind.Class,
+    insertText: insert, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+  });
+  // Keyword helper
+  const kw = (label, insert) => ({
+    label, kind: monaco.languages.CompletionItemKind.Keyword,
+    insertText: insert || label,
+    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+  });
+
+  monaco.languages.registerCompletionItemProvider('java', {
+    triggerCharacters: ['.', ' ', '(', '<', '@'],
+
+    provideCompletionItems(model, position) {
+      const word    = model.getWordUntilPosition(position);
+      const range   = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber,
+                        startColumn: word.startColumn, endColumn: word.endColumn };
+      const lineText = model.getLineContent(position.lineNumber).substring(0, position.column - 1);
+
+      const items = [];
+
+      // ── Structure snippets ──────────────────────────────────────────────
+      items.push(snip('main', 'public static void main', 'public static void main(String[] args) {\n\t$0\n}', 'Main method'));
+      items.push(snip('psvm', 'public static void main', 'public static void main(String[] args) {\n\t$0\n}', 'Main method shortcut'));
+      items.push(snip('sout', 'System.out.println', 'System.out.println($0);', 'Print to console'));
+      items.push(snip('souf', 'System.out.printf', 'System.out.printf("$1%n"$2);', 'Printf'));
+      items.push(snip('fori', 'for int loop', 'for (int ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n\t$0\n}', 'Indexed for loop'));
+      items.push(snip('fore', 'for-each loop', 'for (${1:var} ${2:item} : ${3:collection}) {\n\t$0\n}', 'Enhanced for loop'));
+      items.push(snip('while', 'while loop', 'while (${1:condition}) {\n\t$0\n}', 'While loop'));
+      items.push(snip('iff', 'if statement', 'if (${1:condition}) {\n\t$0\n}', 'If statement'));
+      items.push(snip('ifelse', 'if-else', 'if (${1:condition}) {\n\t$2\n} else {\n\t$0\n}', 'If-else'));
+      items.push(snip('try', 'try-catch', 'try {\n\t$1\n} catch (${2:Exception} ${3:e}) {\n\t${4:e.printStackTrace();}\n}', 'Try-catch'));
+      items.push(snip('trycatch', 'try-catch-finally', 'try {\n\t$1\n} catch (${2:Exception} ${3:e}) {\n\t$4\n} finally {\n\t$0\n}', 'Try-catch-finally'));
+      items.push(snip('class', 'class declaration', 'public class ${1:ClassName} {\n\t$0\n}', 'Class'));
+      items.push(snip('iface', 'interface', 'public interface ${1:InterfaceName} {\n\t$0\n}', 'Interface'));
+      items.push(snip('lambda', 'lambda expression', '(${1:param}) -> $0', 'Lambda'));
+      items.push(snip('switch', 'switch statement', 'switch (${1:var}) {\n\tcase ${2:val}:\n\t\t$0\n\t\tbreak;\n\tdefault:\n\t\tbreak;\n}', 'Switch'));
+
+      // ── Common DSA patterns ─────────────────────────────────────────────
+      items.push(snip('scanner', 'Scanner setup', 'Scanner sc = new Scanner(System.in);\nint ${1:n} = sc.nextInt();', 'Scanner input'));
+      items.push(snip('hashmap', 'HashMap<K,V>', 'Map<${1:String}, ${2:Integer}> ${3:map} = new HashMap<>();', 'HashMap'));
+      items.push(snip('hashset', 'HashSet<T>', 'Set<${1:Integer}> ${2:set} = new HashSet<>();', 'HashSet'));
+      items.push(snip('arraylist', 'ArrayList<T>', 'List<${1:Integer}> ${2:list} = new ArrayList<>();', 'ArrayList'));
+      items.push(snip('linkedlist', 'LinkedList<T>', 'LinkedList<${1:Integer}> ${2:list} = new LinkedList<>();', 'LinkedList'));
+      items.push(snip('pq', 'PriorityQueue (min-heap)', 'PriorityQueue<${1:Integer}> ${2:pq} = new PriorityQueue<>();', 'Min-heap'));
+      items.push(snip('pqmax', 'PriorityQueue (max-heap)', 'PriorityQueue<${1:Integer}> ${2:pq} = new PriorityQueue<>(Collections.reverseOrder());', 'Max-heap'));
+      items.push(snip('deque', 'ArrayDeque (stack/queue)', 'Deque<${1:Integer}> ${2:dq} = new ArrayDeque<>();', 'Deque'));
+      items.push(snip('treemap', 'TreeMap<K,V>', 'TreeMap<${1:Integer}, ${2:Integer}> ${3:tm} = new TreeMap<>();', 'TreeMap (sorted)'));
+      items.push(snip('sb', 'StringBuilder', 'StringBuilder ${1:sb} = new StringBuilder();\n${1:sb}.append($0);', 'StringBuilder'));
+      items.push(snip('intarr', 'int array', 'int[] ${1:arr} = new int[${2:n}];', 'int array'));
+      items.push(snip('twopt', 'two pointer', 'int ${1:left} = 0, ${2:right} = ${3:arr}.length - 1;\nwhile (${1:left} < ${2:right}) {\n\t$0\n\t${1:left}++;\n\t${2:right}--;\n}', 'Two pointer pattern'));
+      items.push(snip('binary', 'binary search', 'int ${1:lo} = 0, ${2:hi} = ${3:arr}.length - 1;\nwhile (${1:lo} <= ${2:hi}) {\n\tint ${4:mid} = ${1:lo} + (${2:hi} - ${1:lo}) / 2;\n\tif (${3:arr}[${4:mid}] == ${5:target}) return ${4:mid};\n\telse if (${3:arr}[${4:mid}] < ${5:target}) ${1:lo} = ${4:mid} + 1;\n\telse ${2:hi} = ${4:mid} - 1;\n}\nreturn -1;', 'Binary search'));
+      items.push(snip('dp', 'DP array init', 'int[] ${1:dp} = new int[${2:n} + 1];\n${1:dp}[0] = ${3:0}; // base case\nfor (int i = 1; i <= ${2:n}; i++) {\n\t${1:dp}[i] = $0;\n}', 'DP tabulation'));
+      items.push(snip('bfs', 'BFS template', 'Queue<${1:Integer}> ${2:queue} = new LinkedList<>();\n${2:queue}.offer(${3:start});\nSet<${1:Integer}> visited = new HashSet<>();\nvisited.add(${3:start});\nwhile (!${2:queue}.isEmpty()) {\n\t${1:Integer} ${4:node} = ${2:queue}.poll();\n\t$0\n}', 'BFS pattern'));
+      items.push(snip('dfs', 'DFS template', 'private void ${1:dfs}(${2:int node}, ${3:boolean[] visited}) {\n\tif (${3:visited}[${2:node}]) return;\n\t${3:visited}[${2:node}] = true;\n\t$0\n}', 'DFS pattern'));
+
+      // ── Keywords ────────────────────────────────────────────────────────
+      ['public','private','protected','static','final','void','int','long','double',
+       'boolean','String','return','new','null','true','false','this','super',
+       'instanceof','extends','implements','abstract','interface','class','enum',
+       'throws','throw','import','package'].forEach(k => items.push(kw(k)));
+
+      // ── Collections methods (triggered after '.') ───────────────────────
+      if (lineText.endsWith('.')) {
+        items.push(meth('add', 'add(element)', 'add($1)', 'Add element'));
+        items.push(meth('get', 'get(index/key)', 'get($1)', 'Get by index or key'));
+        items.push(meth('put', 'put(key, value)', 'put($1, $2)', 'Put key-value'));
+        items.push(meth('remove', 'remove(index/key)', 'remove($1)', 'Remove element'));
+        items.push(meth('size', 'size()', 'size()', 'Get size'));
+        items.push(meth('isEmpty', 'isEmpty()', 'isEmpty()', 'Check if empty'));
+        items.push(meth('contains', 'contains(element)', 'contains($1)', 'Contains check'));
+        items.push(meth('containsKey', 'containsKey(key)', 'containsKey($1)', 'Map key check'));
+        items.push(meth('getOrDefault', 'getOrDefault(key, def)', 'getOrDefault($1, $2)', 'Map get with default'));
+        items.push(meth('merge', 'merge(key, val, fn)', 'merge($1, 1, Integer::sum)', 'Map merge'));
+        items.push(meth('keySet', 'keySet()', 'keySet()', 'Get key set'));
+        items.push(meth('values', 'values()', 'values()', 'Get values'));
+        items.push(meth('entrySet', 'entrySet()', 'entrySet()', 'Get entry set'));
+        items.push(meth('sort', 'sort(comparator)', 'sort($1)', 'Sort'));
+        items.push(meth('forEach', 'forEach(action)', 'forEach(${1:item} -> $2)', 'For each'));
+        items.push(meth('stream', 'stream()', 'stream()', 'Get stream'));
+        items.push(meth('substring', 'substring(start, end)', 'substring($1, $2)', 'Substring'));
+        items.push(meth('split', 'split(regex)', 'split("$1")', 'Split string'));
+        items.push(meth('trim', 'trim()', 'trim()', 'Trim whitespace'));
+        items.push(meth('toLowerCase', 'toLowerCase()', 'toLowerCase()', 'To lower'));
+        items.push(meth('toUpperCase', 'toUpperCase()', 'toUpperCase()', 'To upper'));
+        items.push(meth('charAt', 'charAt(index)', 'charAt($1)', 'Get char'));
+        items.push(meth('length', 'length()', 'length()', 'String/array length'));
+        items.push(meth('indexOf', 'indexOf(str)', 'indexOf($1)', 'Find index'));
+        items.push(meth('toCharArray', 'toCharArray()', 'toCharArray()', 'To char array'));
+        items.push(meth('append', 'append(str)', 'append($1)', 'StringBuilder append'));
+        items.push(meth('toString', 'toString()', 'toString()', 'To string'));
+        items.push(meth('offer', 'offer(element)', 'offer($1)', 'Queue offer'));
+        items.push(meth('poll', 'poll()', 'poll()', 'Queue poll'));
+        items.push(meth('peek', 'peek()', 'peek()', 'Queue/Stack peek'));
+        items.push(meth('push', 'push(element)', 'push($1)', 'Stack push'));
+        items.push(meth('pop', 'pop()', 'pop()', 'Stack pop'));
+        items.push(meth('parseInt', 'parseInt(str)', 'parseInt($1)', 'Parse int'));
+      }
+
+      // ── Static method completions ───────────────────────────────────────
+      items.push(cls('Arrays', 'java.util.Arrays', 'Arrays'));
+      items.push(cls('Collections', 'java.util.Collections', 'Collections'));
+      items.push(cls('Math', 'java.lang.Math', 'Math'));
+      items.push(cls('Integer', 'java.lang.Integer', 'Integer'));
+      items.push(cls('String', 'java.lang.String', 'String'));
+
+      items.push(meth('Arrays.sort', 'Arrays.sort(array)', 'Arrays.sort($1)', 'Sort array'));
+      items.push(meth('Arrays.fill', 'Arrays.fill(array, val)', 'Arrays.fill($1, $2)', 'Fill array'));
+      items.push(meth('Arrays.copyOf', 'Arrays.copyOf(array, len)', 'Arrays.copyOf($1, $2)', 'Copy array'));
+      items.push(meth('Arrays.asList', 'Arrays.asList(...)', 'Arrays.asList($1)', 'Array to list'));
+      items.push(meth('Arrays.binarySearch', 'Arrays.binarySearch(arr, key)', 'Arrays.binarySearch($1, $2)', 'Binary search'));
+      items.push(meth('Collections.sort', 'Collections.sort(list)', 'Collections.sort($1)', 'Sort list'));
+      items.push(meth('Collections.reverse', 'Collections.reverse(list)', 'Collections.reverse($1)', 'Reverse list'));
+      items.push(meth('Collections.max', 'Collections.max(coll)', 'Collections.max($1)', 'Max element'));
+      items.push(meth('Collections.min', 'Collections.min(coll)', 'Collections.min($1)', 'Min element'));
+      items.push(meth('Collections.frequency', 'Collections.frequency(coll, o)', 'Collections.frequency($1, $2)', 'Count occurrences'));
+      items.push(meth('Math.max', 'Math.max(a, b)', 'Math.max($1, $2)', 'Maximum'));
+      items.push(meth('Math.min', 'Math.min(a, b)', 'Math.min($1, $2)', 'Minimum'));
+      items.push(meth('Math.abs', 'Math.abs(n)', 'Math.abs($1)', 'Absolute value'));
+      items.push(meth('Math.pow', 'Math.pow(base, exp)', 'Math.pow($1, $2)', 'Power'));
+      items.push(meth('Math.sqrt', 'Math.sqrt(n)', 'Math.sqrt($1)', 'Square root'));
+      items.push(meth('Math.floor', 'Math.floor(n)', 'Math.floor($1)', 'Floor'));
+      items.push(meth('Math.ceil', 'Math.ceil(n)', 'Math.ceil($1)', 'Ceiling'));
+      items.push(meth('Integer.MAX_VALUE', 'Integer.MAX_VALUE', 'Integer.MAX_VALUE', '2147483647'));
+      items.push(meth('Integer.MIN_VALUE', 'Integer.MIN_VALUE', 'Integer.MIN_VALUE', '-2147483648'));
+      items.push(meth('Integer.parseInt', 'Integer.parseInt(str)', 'Integer.parseInt($1)', 'String to int'));
+      items.push(meth('String.valueOf', 'String.valueOf(n)', 'String.valueOf($1)', 'Number to string'));
+
+      return { suggestions: items.map(s => ({ ...s, range })) };
+    }
   });
 }
 
@@ -302,7 +474,6 @@ async function runCode() {
   try {
     const r = await API.execute(code, stdin, ver);
     renderRunResult(r);
-    // Phase 1: show complexity inline after every successful run
     if (r.status !== 'COMPILE_ERROR' && r.status !== 'RUNTIME_ERROR') {
       showInlineComplexity(code);
     }
@@ -337,7 +508,6 @@ function renderRunResult(r) {
   if (r.executionTimeMs && tb) { tb.textContent = `⏱ ${r.executionTimeMs}ms`; tb.style.display = 'inline'; }
 }
 
-// Phase 1: runs complexity analysis silently after every run and shows result inline
 async function showInlineComplexity(code) {
   const el = document.getElementById('inlineComplexity');
   if (!el) return;
@@ -672,6 +842,13 @@ async function openProblemSolve(pid) {
     switchPsTab(document.querySelector('.ps-btab'), 'testcase');
     setPsSyntaxDot('ready');
 
+    // Phase 1: restore saved approach from localStorage
+    const approachEl  = document.getElementById('approachText');
+    const approachKey = `devlearn_approach_${pid}`;
+    if (approachEl) approachEl.value = localStorage.getItem(approachKey) || '';
+    const statusEl = document.getElementById('approachSaveStatus');
+    if (statusEl) statusEl.textContent = localStorage.getItem(approachKey) ? '✓ Previously saved' : '';
+
     // Init/reset PS editor
     const starter = p.starterCode || 'public class Main {\n    public static void main(String[] args) {\n        // TODO: implement solution\n        Scanner sc = new Scanner(System.in);\n        \n    }\n}';
     ensurePsEditor(starter);
@@ -850,7 +1027,14 @@ async function psSubmit() {
     const ver = document.getElementById('psJavaVersion')?.value || '17';
     const r = await API.submit(currentProblem.id, code, null, psHintsShown >= 3, ver);
     renderPsSubmitResult(r);
-    if (r.allPassed) setTimeout(showRecallDrill, 700);
+    if (r.allPassed) {
+      try {
+        const solved = new Set(JSON.parse(localStorage.getItem('devlearn_solved') || '[]'));
+        solved.add(currentProblem.id);
+        localStorage.setItem('devlearn_solved', JSON.stringify([...solved]));
+      } catch (_) {}
+      setTimeout(showRecallDrill, 700);
+    }
   } catch {
     renderPsLoading('⚠ Submit failed — server error');
   }
@@ -1021,14 +1205,33 @@ function showRecallDrill() {
   if (txt) txt.value = '';
   modal.style.display = 'flex';
 }
+// ── Phase 1: Approach Write Box ───────────────────────────────────────────────
+function saveApproach() {
+  const approachEl = document.getElementById('approachText');
+  const statusEl   = document.getElementById('approachSaveStatus');
+  const text = approachEl?.value?.trim();
+  if (!text) { if (statusEl) statusEl.textContent = '⚠ Nothing to save'; return; }
+  localStorage.setItem(`devlearn_approach_${currentProblem?.id}`, text);
+  if (statusEl) { statusEl.textContent = '✓ Saved'; setTimeout(() => { statusEl.textContent = ''; }, 2000); }
+  showToast('✍️ Approach saved!');
+}
+
+// ── Recall Drill ──────────────────────────────────────────────────────────────
+function showRecallDrill() {
+  const modal = document.getElementById('recallModal');
+  if (!modal) return;
+  const nm = document.getElementById('recallAlgoName');
+  if (nm) nm.textContent = currentTopic?.title || 'this algorithm';
+  const txt = document.getElementById('recallText');
+  if (txt) txt.value = '';
+  modal.style.display = 'flex';
+}
 
 async function saveRecall() {
   const modal = document.getElementById('recallModal');
   const txt   = document.getElementById('recallText');
   const text  = txt?.value?.trim();
-
   if (modal) modal.style.display = 'none';
-
   if (text && text.length > 3) {
     try {
       await fetch('/api/recall', {
@@ -1040,7 +1243,7 @@ async function saveRecall() {
           text
         })
       });
-    } catch (_) { /* silent — recall save failure should never block the user */ }
+    } catch (_) {}
     showToast('🧠 Recall saved — great practice!');
   }
 }
@@ -1048,6 +1251,104 @@ async function saveRecall() {
 function skipRecall() {
   const modal = document.getElementById('recallModal');
   if (modal) modal.style.display = 'none';
+}
+
+// ── Phase 1: Activity Heatmap ─────────────────────────────────────────────────
+async function loadHeatmap() {
+  try {
+    const res = await fetch('/api/submissions/heatmap', { headers: Auth.headers() });
+    if (!res.ok) return;
+    renderHeatmap(await res.json());
+  } catch (_) {}
+}
+
+function renderHeatmap(data) {
+  const grid     = document.getElementById('heatmapGrid');
+  const wrap     = document.getElementById('activityHeatmap');
+  const monthBar = document.getElementById('heatmapMonths');
+  if (!grid || !wrap) return;
+
+  const today  = new Date();
+  const MS_DAY = 86400000;
+  const start  = new Date(today - 364 * MS_DAY);
+  start.setDate(start.getDate() - start.getDay()); // align to Sunday
+
+  const cells = [], months = [];
+  let lastMon = -1, col = 0;
+  const d = new Date(start);
+
+  while (d <= today) {
+    const key = d.toISOString().slice(0, 10);
+    const cnt = data[key] || 0;
+    if (d.getMonth() !== lastMon) {
+      months.push({ col, label: d.toLocaleString('default', { month: 'short' }) });
+      lastMon = d.getMonth();
+    }
+    cells.push({ key, cnt, col, row: d.getDay() });
+    d.setDate(d.getDate() + 1);
+    if (d.getDay() === 0) col++;
+  }
+
+  const color = c => c === 0 ? 'var(--bg4)' : c === 1 ? '#1a6640' : c <= 3 ? '#26a65b' : c <= 6 ? '#2ecc71' : '#52d98a';
+  grid.innerHTML = cells.map(c =>
+    `<div title="${c.key}: ${c.cnt} submission${c.cnt !== 1 ? 's' : ''}"
+      style="width:100%;padding-bottom:100%;border-radius:2px;background:${color(c.cnt)};grid-column:${c.col+1};grid-row:${c.row+1}"></div>`
+  ).join('');
+  if (monthBar) {
+    monthBar.innerHTML = months.filter((_, i) => i % 2 === 0)
+      .map(m => `<span style="font-size:9px;color:var(--text3)">${m.label}</span>`).join('');
+  }
+  wrap.style.display = 'block';
+}
+
+// ── Phase 1: Theme Toggle + Font Size ─────────────────────────────────────────
+const THEME_KEY    = 'devlearn_theme';
+const FONTSIZE_KEY = 'devlearn_fontsize';
+const FONT_SIZES   = [12, 13, 14, 15, 16, 18];
+let   currentFontIdx = 2;
+
+function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  updateThemeBtn();
+  const savedSize = localStorage.getItem(FONTSIZE_KEY);
+  if (savedSize) {
+    const idx = FONT_SIZES.indexOf(parseInt(savedSize));
+    if (idx >= 0) { currentFontIdx = idx; applyFontSize(false); }
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const isDark  = current === 'dark' ||
+    (!current && !window.matchMedia('(prefers-color-scheme: light)').matches);
+  const next = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem(THEME_KEY, next);
+  updateThemeBtn();
+  if (typeof monaco !== 'undefined') monaco.editor.setTheme(next === 'light' ? 'vs' : 'vs-dark');
+}
+
+function updateThemeBtn() {
+  const btn   = document.getElementById('themeToggleBtn');
+  if (!btn) return;
+  const theme  = document.documentElement.getAttribute('data-theme');
+  const isDark = theme === 'dark' || (!theme && !window.matchMedia('(prefers-color-scheme: light)').matches);
+  btn.textContent = isDark ? '☀️' : '🌙';
+  btn.title       = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+}
+
+function adjustFontSize(delta) {
+  currentFontIdx = Math.max(0, Math.min(FONT_SIZES.length - 1, currentFontIdx + delta));
+  applyFontSize(true);
+}
+
+function applyFontSize(save) {
+  const size = FONT_SIZES[currentFontIdx];
+  document.documentElement.style.setProperty('--font-size-base', size + 'px');
+  if (save) localStorage.setItem(FONTSIZE_KEY, String(size));
+  if (typeof monacoEditor !== 'undefined' && monacoEditor) monacoEditor.updateOptions({ fontSize: size });
+  if (typeof psEditor     !== 'undefined' && psEditor)     psEditor.updateOptions({ fontSize: size });
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
