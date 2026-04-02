@@ -58,7 +58,8 @@ public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 					// Public read
 					.requestMatchers(HttpMethod.GET,
 							"/api/topics", "/api/topics/**",
-							"/api/problems", "/api/problems/**").permitAll()
+							"/api/problems", "/api/problems/**",
+							"/api/submissions/percentile").permitAll()
 					.requestMatchers(HttpMethod.GET,
 							"/api/roadmaps", "/api/roadmaps/**").permitAll()
 

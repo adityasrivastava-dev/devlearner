@@ -557,6 +557,7 @@
       <div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">Topics</div>
       <button class="add-topic-btn" onclick="openNewTopic()">+ New Topic</button>
       <button class="seed-btn" onclick="openSeedPanel()">📦 Import JSON Batch</button>
+      <button class="seed-btn" onclick="openProblemImportPanel()" style="background:rgba(74,222,128,.08);color:var(--accent);border-color:rgba(74,222,128,.25)">🎯 Import Problems JSON</button>
     </div>
     <!-- Phase 2: Content Engine -->
     <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px">
@@ -2295,5 +2296,348 @@ document.getElementById('pdfModal')?.addEventListener('click', e => {
   if (e.target.id === 'pdfModal') closePdfPanel();
 });
 </script>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PROBLEM IMPORT MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="seed-overlay hidden" id="problemImportOverlay">
+  <div class="seed-modal" style="max-width:760px">
+
+    <div class="seed-header">
+      <div>
+        <h2>🎯 Import Problems JSON</h2>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">
+          Upload a JSON array of problems — each must have a <code>topicTitle</code> field matching an existing topic.
+        </div>
+      </div>
+      <button class="seed-close" onclick="closeProblemImportPanel()">✕</button>
+    </div>
+
+    <div class="seed-body">
+
+      <!-- Format guide -->
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:12px;color:var(--text2);line-height:1.8">
+        <strong style="color:var(--accent)">Required fields:</strong>
+        <code style="color:var(--blue)">topicTitle</code> (must match existing topic),
+        <code>title</code>, <code>difficulty</code> (EASY/MEDIUM/HARD),
+        <code>description</code>, <code>sampleInput</code>, <code>sampleOutput</code>,
+        <code>testCases</code> (array of <code>{input, expectedOutput}</code>)<br>
+        <strong style="color:var(--text3)">Optional:</strong>
+        <code>hint1</code>, <code>hint2</code>, <code>hint3</code>, <code>pattern</code>,
+        <code>starterCode</code>, <code>solutionCode</code>, <code>inputFormat</code>,
+        <code>outputFormat</code>, <code>displayOrder</code>
+      </div>
+
+      <!-- Drop zone -->
+      <div class="drop-zone" id="piDropZone">
+        <input type="file" id="piFileInput" accept=".json" onchange="piOnFileSelected(event)"/>
+        <div class="drop-icon">📂</div>
+        <div class="drop-title">Drop problems JSON here or click to browse</div>
+        <div class="drop-sub">JSON array format — see <code>problems_dsa_200.json</code> for reference</div>
+        <div class="file-name" id="piFileName">No file selected</div>
+      </div>
+
+      <!-- Or paste JSON directly -->
+      <div style="margin-top:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">
+          — OR paste JSON directly —
+        </div>
+        <textarea id="piPasteArea" rows="8"
+                  style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:10px 12px;color:var(--accent);font-family:var(--mono);font-size:11px;line-height:1.6;resize:vertical;outline:none"
+                  placeholder='[{"topicTitle":"Arrays","title":"Two Sum","difficulty":"EASY","description":"...","sampleInput":"...","sampleOutput":"...","testCases":[{"input":"...","expectedOutput":"..."}],"hint1":"..."}]'
+                  oninput="piOnPaste()"></textarea>
+      </div>
+
+      <!-- Preview (shown after file/paste loaded) -->
+      <div class="seed-preview" id="piPreview">
+        <div class="preview-title">Preview</div>
+        <div class="preview-stats" id="piPreviewStats"></div>
+        <div class="preview-topics" id="piPreviewList"></div>
+      </div>
+
+      <!-- Options -->
+      <div class="seed-options" style="margin-top:14px">
+        <label class="option-toggle">
+          <input type="checkbox" id="piSkipExisting" checked/>
+          Skip problems with same title+topic (safe re-run)
+        </label>
+        <label class="option-toggle">
+          <input type="checkbox" id="piClearFirst"/>
+          <span style="color:var(--red)">⚠ Delete ALL problems first</span>
+        </label>
+      </div>
+
+      <!-- Progress -->
+      <div class="seed-progress" id="piProgress">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="piProgressFill"></div>
+        </div>
+        <div class="progress-log" id="piLog"></div>
+      </div>
+
+      <!-- Result -->
+      <div class="seed-result" id="piResult">
+        <div class="result-title" id="piResultTitle"></div>
+        <div class="result-stats" id="piResultStats"></div>
+        <div class="result-errors" id="piResultErrors"></div>
+      </div>
+
+    </div><!-- /seed-body -->
+
+    <div class="seed-footer">
+      <button class="btn-seed-run" id="piBtnRun" onclick="runProblemImport()" disabled>
+        ⬆ Import Problems
+      </button>
+      <button class="btn-seed-clear" onclick="piClearAll()">
+        🗑 Delete All Problems
+      </button>
+      <button class="btn-seed-cancel" onclick="closeProblemImportPanel()">Close</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  PROBLEM IMPORT PANEL
+// ═══════════════════════════════════════════════════════════
+
+let piData = null; // parsed JSON array
+
+function openProblemImportPanel() {
+  document.getElementById('problemImportOverlay').classList.remove('hidden');
+  piResetPanel();
+}
+
+function closeProblemImportPanel() {
+  document.getElementById('problemImportOverlay').classList.add('hidden');
+}
+
+function piResetPanel() {
+  piData = null;
+  document.getElementById('piDropZone').classList.remove('has-file');
+  document.getElementById('piFileName').textContent = 'No file selected';
+  document.getElementById('piFileInput').value = '';
+  document.getElementById('piPasteArea').value = '';
+  document.getElementById('piPreview').classList.remove('visible');
+  document.getElementById('piProgress').classList.remove('visible');
+  document.getElementById('piLog').innerHTML = '';
+  document.getElementById('piProgressFill').style.width = '0%';
+  document.getElementById('piResult').classList.remove('visible','success','error');
+  document.getElementById('piBtnRun').disabled = true;
+  document.getElementById('piClearFirst').checked = false;
+}
+
+// File selected
+function piOnFileSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      piData = JSON.parse(ev.target.result);
+      if (!Array.isArray(piData)) throw new Error('Must be a JSON array');
+      document.getElementById('piDropZone').classList.add('has-file');
+      document.getElementById('piFileName').textContent = '✓ ' + file.name + ' (' + piData.length + ' problems)';
+      document.getElementById('piBtnRun').disabled = false;
+      piShowPreview(piData);
+      piLog('Loaded: ' + file.name + ' — ' + piData.length + ' problems', 'info');
+    } catch(err) {
+      toast('Invalid JSON: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Drag & drop on problem import
+const piDrop = document.getElementById('piDropZone');
+piDrop.addEventListener('dragover', e => { e.preventDefault(); piDrop.classList.add('dragover'); });
+piDrop.addEventListener('dragleave', () => piDrop.classList.remove('dragover'));
+piDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  piDrop.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.json')) {
+    document.getElementById('piFileInput').files = e.dataTransfer.files;
+    piOnFileSelected({ target: { files: e.dataTransfer.files } });
+  } else {
+    toast('Please drop a .json file', 'error');
+  }
+});
+
+// Paste JSON directly
+let piPasteTimer;
+function piOnPaste() {
+  clearTimeout(piPasteTimer);
+  piPasteTimer = setTimeout(() => {
+    const text = document.getElementById('piPasteArea').value.trim();
+    if (!text) return;
+    try {
+      const parsed = JSON.parse(text);
+      if (!Array.isArray(parsed)) throw new Error('Must be a JSON array');
+      piData = parsed;
+      document.getElementById('piBtnRun').disabled = false;
+      piShowPreview(piData);
+      piLog('Parsed ' + piData.length + ' problems from pasted JSON', 'info');
+    } catch(err) {
+      // Only show error if they've typed something substantial
+      if (text.length > 20) piLog('JSON parse error: ' + err.message, 'err');
+    }
+  }, 800);
+}
+
+function piShowPreview(data) {
+  // Stats
+  const easy   = data.filter(p => p.difficulty === 'EASY').length;
+  const medium = data.filter(p => p.difficulty === 'MEDIUM').length;
+  const hard   = data.filter(p => p.difficulty === 'HARD').length;
+  const topics = [...new Set(data.map(p => p.topicTitle).filter(Boolean))];
+  const missing = data.filter(p => !p.topicTitle).length;
+
+  document.getElementById('piPreviewStats').innerHTML = `
+    <div class="prev-stat"><span class="prev-num">${data.length}</span><span class="prev-lbl">Total</span></div>
+    <div class="prev-stat"><span class="prev-num" style="color:var(--accent)">${easy}</span><span class="prev-lbl">Easy</span></div>
+    <div class="prev-stat"><span class="prev-num" style="color:var(--yellow)">${medium}</span><span class="prev-lbl">Medium</span></div>
+    <div class="prev-stat"><span class="prev-num" style="color:var(--red)">${hard}</span><span class="prev-lbl">Hard</span></div>
+    <div class="prev-stat"><span class="prev-num" style="color:var(--blue)">${topics.length}</span><span class="prev-lbl">Topics</span></div>
+    ${missing > 0 ? `<div class="prev-stat"><span class="prev-num" style="color:var(--red)">${missing}</span><span class="prev-lbl">Missing topic</span></div>` : ''}
+  `;
+
+  // Problem list (first 20)
+  const topicGroups = {};
+  data.forEach(p => {
+    const t = p.topicTitle || '⚠ NO TOPIC';
+    if (!topicGroups[t]) topicGroups[t] = [];
+    topicGroups[t].push(p);
+  });
+
+  document.getElementById('piPreviewList').innerHTML =
+    Object.entries(topicGroups).slice(0, 15).map(([topic, probs]) => `
+      <div class="preview-topic-row" style="flex-direction:column;align-items:flex-start;padding:6px 0">
+        <div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:3px">
+          ${esc(topic)} (${probs.length})
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          ${probs.slice(0,8).map(p => `
+            <span style="font-size:10px;padding:1px 7px;border-radius:10px;background:var(--bg2);border:1px solid var(--border2);color:var(--text2)">
+              <span class="diff-badge diff-${(p.difficulty||'EASY').toLowerCase()}" style="font-size:9px;padding:1px 5px">${(p.difficulty||'?')[0]}</span>
+              ${esc(p.title||'Untitled')}
+            </span>`).join('')}
+          ${probs.length > 8 ? `<span style="font-size:10px;color:var(--text3)">+${probs.length-8} more</span>` : ''}
+        </div>
+      </div>`).join('') +
+    (Object.keys(topicGroups).length > 15 ? `<div style="font-size:11px;color:var(--text3);padding:6px 0">… and ${Object.keys(topicGroups).length - 15} more topics</div>` : '');
+
+  document.getElementById('piPreview').classList.add('visible');
+}
+
+async function runProblemImport() {
+  if (!piData || !piData.length) { toast('No problems to import', 'error'); return; }
+
+  const btn        = document.getElementById('piBtnRun');
+  const clearFirst = document.getElementById('piClearFirst').checked;
+
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Importing…';
+  document.getElementById('piProgress').classList.add('visible');
+  document.getElementById('piResult').classList.remove('visible','success','error');
+  document.getElementById('piProgressFill').style.width = '10%';
+
+  try {
+    if (clearFirst) {
+      piLog('🗑 Deleting all existing problems…', 'info');
+      const clr = await fetch('/api/admin/problems/import-json?clearFirst=true', {
+        method: 'POST', headers: jsonH(), body: JSON.stringify([])
+      });
+      // just trigger the clear via empty array
+      piLog('✓ Cleared', 'ok');
+    }
+
+    document.getElementById('piProgressFill').style.width = '35%';
+    piLog('📤 Sending ' + piData.length + ' problems to server…', 'info');
+
+    const url = '/api/admin/problems/import-json' + (clearFirst ? '?clearFirst=true' : '');
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: jsonH(),
+      body: JSON.stringify(piData),
+    });
+
+    document.getElementById('piProgressFill').style.width = '90%';
+
+    if (!res.ok) throw new Error('Server error ' + res.status + ': ' + await res.text());
+
+    const result = await res.json();
+    document.getElementById('piProgressFill').style.width = '100%';
+
+    piLog('✓ Imported: ' + result.imported + ' problems', 'ok');
+    piLog('✓ Skipped: ' + result.skipped + ' (already exist or error)', result.skipped > 0 ? 'info' : 'ok');
+    if (result.errors && result.errors.length) {
+      result.errors.slice(0,10).forEach(e => piLog('✕ ' + e, 'err'));
+    }
+
+    // Show result card
+    const el = document.getElementById('piResult');
+    el.className = 'seed-result visible success';
+    document.getElementById('piResultTitle').textContent = '✅ Import Complete';
+    document.getElementById('piResultStats').innerHTML = `
+      <span style="color:var(--accent)">Imported: ${result.imported}</span>
+      <span style="color:var(--text2)">Skipped: ${result.skipped}</span>
+      <span style="color:var(--blue)">Total in file: ${result.total}</span>`;
+    document.getElementById('piResultErrors').innerHTML =
+      (result.errors||[]).length
+        ? result.errors.slice(0,5).map(e => `<div>• ${esc(e)}</div>`).join('')
+        : '';
+
+    toast('✅ ' + result.imported + ' problems imported!', 'success');
+
+    // Refresh sidebar
+    loadAllTopics();
+
+  } catch(err) {
+    document.getElementById('piProgressFill').style.background = 'var(--red)';
+    piLog('✕ Error: ' + err.message, 'err');
+    const el = document.getElementById('piResult');
+    el.className = 'seed-result visible error';
+    document.getElementById('piResultTitle').textContent = '✕ Import Failed';
+    document.getElementById('piResultStats').innerHTML = '';
+    document.getElementById('piResultErrors').innerHTML = esc(err.message);
+    toast('Import failed: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '⬆ Import Problems';
+  }
+}
+
+async function piClearAll() {
+  if (!confirm('Delete ALL problems from the database?\nThis cannot be undone.')) return;
+  try {
+    piLog('🗑 Deleting all problems…', 'info');
+    document.getElementById('piProgress').classList.add('visible');
+    document.getElementById('piProgressFill').style.width = '50%';
+    const res = await fetch('/api/admin/problems/import-json?clearFirst=true', {
+      method: 'POST', headers: jsonH(), body: JSON.stringify([])
+    });
+    if (!res.ok) throw new Error(await res.text());
+    document.getElementById('piProgressFill').style.width = '100%';
+    piLog('✓ All problems deleted', 'ok');
+    toast('All problems deleted', 'success');
+  } catch(err) {
+    piLog('✕ ' + err.message, 'err');
+    toast('Failed: ' + err.message, 'error');
+  }
+}
+
+function piLog(msg, type = '') {
+  const log = document.getElementById('piLog');
+  const div = document.createElement('div');
+  div.className = 'log-line' + (type ? ' log-' + type : '');
+  div.textContent = new Date().toLocaleTimeString() + '  ' + msg;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+</script>
+
 </body>
 </html>

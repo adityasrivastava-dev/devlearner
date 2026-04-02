@@ -151,12 +151,41 @@ const API = {
   },
 
   // ── Submit (evaluate against test cases) ─────────────────────────────────
-  async submit(problemId, code) {
+  // Persistent submit (saves to DB with solve time, returns result + percentile)
+  async submit(problemId, code, solveTimeSecs, hintAssisted, javaVersion) {
+    try {
+      const res = await fetch('/api/submissions/submit', {
+        method: 'POST',
+        headers: Auth.headers(),
+        body: JSON.stringify({
+          problemId,
+          code,
+          solveTimeSecs: solveTimeSecs || null,
+          hintAssisted:  !!hintAssisted,
+          javaVersion:   javaVersion || '17',
+        }),
+      });
+      if (res.ok) return res.json();
+    } catch {}
+    // Fallback to legacy endpoint if new one not deployed yet
     const res = await fetch('/api/submit', {
       method: 'POST',
       headers: Auth.headers(),
-      body: JSON.stringify({ problemId, code })
+      body: JSON.stringify({ problemId, code }),
     });
+    return res.json();
+  },
+
+  async getSubmissions(problemId) {
+    const url = problemId ? `/api/submissions?problemId=${problemId}` : '/api/submissions';
+    const res = await fetch(url, { headers: Auth.headers() });
+    if (!res.ok) return [];
+    return res.json();
+  },
+
+  async getPercentile(problemId, ms) {
+    const res = await fetch(`/api/submissions/percentile?problemId=${problemId}&ms=${ms}`);
+    if (!res.ok) return null;
     return res.json();
   },
 

@@ -30,19 +30,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // PS buttons bound after monaco loaded
 
   loadTopics(activeCategory).then(() => {
-    // Roadmap / problems.html deep-link: ?topic=N&openProblem=M
-    const params     = new URLSearchParams(window.location.search);
-    const urlTopic   = params.get('topic');
-    const urlProblem = params.get('openProblem');
+    const params      = new URLSearchParams(window.location.search);
+    const urlTopic    = params.get('topic');
+    const urlProblem  = params.get('openProblem');
     if (urlTopic) {
       const poll = setInterval(() => {
         if (monacoEditor) {
           clearInterval(poll);
-          const p = selectTopic(parseInt(urlTopic));
-          if (urlProblem) {
-            const prob = parseInt(urlProblem);
-            setTimeout(() => openProblemSolve(prob), 500);
-          }
+          selectTopic(parseInt(urlTopic)).then(() => {
+            if (urlProblem) {
+              setTimeout(() => openProblemSolve(parseInt(urlProblem)), 300);
+            }
+          });
         }
       }, 100);
     }
@@ -521,7 +520,13 @@ async function openProblemSolve(pid) {
     const p = currentProblem;
 
     // Breadcrumb & badges
-    document.getElementById('psBreadTopic').textContent = currentTopic?.title || '';
+    const breadTopic = document.getElementById('psBreadTopic');
+    if (breadTopic) {
+      breadTopic.textContent = currentTopic?.title || '';
+      breadTopic.style.cursor = currentTopic ? 'pointer' : 'default';
+      breadTopic.style.textDecoration = currentTopic ? 'underline' : 'none';
+      breadTopic.onclick = currentTopic ? () => goStudyTopic() : null;
+    }
     document.getElementById('psBreadTitle').textContent = p.title;
     const dc = `diff-${(p.difficulty||'MEDIUM').toLowerCase()}`;
     document.getElementById('psDiffBadge').textContent  = p.difficulty;
@@ -551,6 +556,9 @@ async function openProblemSolve(pid) {
     document.getElementById('psProbFormats').innerHTML =
       (p.inputFormat  ? `<p style="font-size:12px;color:var(--text2);margin-bottom:5px"><strong>Input:</strong> ${esc(p.inputFormat)}</p>` : '') +
       (p.outputFormat ? `<p style="font-size:12px;color:var(--text2)"><strong>Output:</strong> ${esc(p.outputFormat)}</p>` : '');
+
+    // Similar problems (other problems from same topic with same pattern)
+    renderSimilarProblems(p);
 
     // Hints
     buildHints(p);
@@ -597,6 +605,21 @@ async function openProblemSolve(pid) {
     console.error('openProblemSolve failed', e);
     showToast('⚠ Failed to load problem');
   }
+}
+
+// ── Study Topic from PS view ─────────────────────────────────────────────────
+// Goes back to the topic learning view (Theory tab) without losing context
+function goStudyTopic() {
+  if (!currentTopic) { exitProblemSolve(); return; }
+  // Hide PS view
+  document.getElementById('problemSolveView').style.display = 'none';
+  document.getElementById('mainContent').style.overflow     = '';
+  // Show topic view on Theory tab
+  document.getElementById('welcomeScreen').style.display = 'none';
+  document.getElementById('topicView').style.display     = 'flex';
+  switchTab('theory');
+  // Show a toast so user knows how to come back
+  showToast('📖 Studying ' + currentTopic.title + ' — click Practice to return');
 }
 
 function exitProblemSolve() {
@@ -727,19 +750,7 @@ async function psSubmit() {
   try {
     const r = await API.submit(currentProblem.id, code);
     renderPsSubmitResult(r);
-    if (r.allPassed) {
-      setTimeout(showRecallDrill, 700);
-      // Track solved problems locally (used by problems.html)
-      try {
-        const solved = new Set(JSON.parse(localStorage.getItem('devlearn_solved') || '[]'));
-        if (currentProblem?.id) {
-          solved.add(currentProblem.id);
-          localStorage.setItem('devlearn_solved', JSON.stringify([...solved]));
-        }
-        // Notify parent window if opened from problems.html
-        window.parent?.postMessage({ type: 'devlearn_solved', problemId: currentProblem?.id }, '*');
-      } catch {}
-    }
+    if (r.allPassed) setTimeout(showRecallDrill, 700);
   } catch {
     renderPsLoading('⚠ Submit failed — server error');
   }
@@ -774,6 +785,36 @@ function renderPsSubmitResult(r) {
           <span class="ps-fail-key">Got</span>      <span class="ps-fail-val got">${esc(String(tc.actual || ''))}</span>
         </div>
       </div>`).join('')}`;
+}
+
+function renderSimilarProblems(p) {
+  const el = document.getElementById('psSimilarProblems');
+  if (!el) return;
+  if (!currentProblems || currentProblems.length <= 1) { el.style.display = 'none'; return; }
+
+  // Other problems from same topic, different from current
+  const similar = currentProblems
+    .filter(q => q.id !== p.id)
+    .sort((a, b) => {
+      // Same pattern first
+      const aMatch = a.pattern && a.pattern === p.pattern ? 0 : 1;
+      const bMatch = b.pattern && b.pattern === p.pattern ? 0 : 1;
+      return aMatch - bMatch;
+    })
+    .slice(0, 5);
+
+  if (!similar.length) { el.style.display = 'none'; return; }
+
+  el.style.display = '';
+  el.innerHTML = `
+    <div class="ps-similar-header">Related problems in ${esc(currentTopic?.title || 'this topic')}</div>
+    <div class="ps-similar-list">
+      ${similar.map(q => `
+        <div class="ps-similar-item" onclick="openProblemSolve(${q.id})">
+          <span class="ps-similar-title">${esc(q.title)}</span>
+          <span class="diff-badge diff-${(q.difficulty||'MEDIUM').toLowerCase()}">${q.difficulty||'MEDIUM'}</span>
+        </div>`).join('')}
+    </div>`;
 }
 
 function renderPsLoading(msg) {

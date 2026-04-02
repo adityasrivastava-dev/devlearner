@@ -418,3 +418,149 @@ canvas { display: block; max-width: 100%; }
 @media (max-width: 640px) {
   :root { --sidebar-w: 200px; }
 }
+
+/* ── Topic Action Row (Study / Practice / Visual buttons) ── */
+.topic-action-row { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.topic-action-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px; border-radius: 6px; font-family: var(--font-ui);
+  font-size: 12px; font-weight: 700; cursor: pointer; transition: var(--t);
+  background: var(--adim); border: 1px solid rgba(0,184,163,.3); color: var(--accent);
+}
+.topic-action-btn:hover { background: rgba(0,184,163,.18); }
+.topic-action-btn.btn-ghost-sm {
+  background: var(--bg3); border-color: var(--border2); color: var(--text2);
+}
+.topic-action-btn.btn-ghost-sm:hover { color: var(--text); border-color: var(--text3); }
+
+/* ── PS View "Study Topic" button ── */
+.ps-study-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; background: var(--bg3);
+  border: 1px solid var(--border2); border-radius: 5px;
+  color: var(--text2); font-family: var(--font-ui); font-size: 12px;
+  font-weight: 700; cursor: pointer; transition: var(--t); white-space: nowrap;
+  flex-shrink: 0;
+}
+.ps-study-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--adim); }
+
+/* ── Similar problems section ── */
+.ps-similar-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.ps-similar-header { font-size: 11px; font-weight: 700; color: var(--text3);
+                      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+.ps-similar-list { display: flex; flex-direction: column; gap: 4px; }
+.ps-similar-item { display: flex; align-items: center; justify-content: space-between;
+                    gap: 8px; padding: 7px 10px; background: var(--bg3);
+                    border: 1px solid var(--border); border-radius: 5px;
+                    cursor: pointer; transition: var(--t); }
+.ps-similar-item:hover { border-color: var(--accent); background: var(--adim); }
+.ps-similar-title { font-size: 12px; font-weight: 600; color: var(--text2);
+                     flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ps-similar-item:hover .ps-similar-title { color: var(--accent); }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PHASE 2 ADDITIONS: Timer · Tabbed test cases · Editorial · Submissions
+══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Solve Timer ── */
+.ps-timer {
+  font-family: var(--font-code); font-size: 11px; font-weight: 700;
+  color: var(--text3); padding: 4px 8px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 5px; min-width: 60px; text-align: center;
+  flex-shrink: 0; transition: .2s;
+}
+.ps-timer.running { color: var(--accent); border-color: rgba(0,184,163,.35); background: rgba(0,184,163,.07); }
+.ps-timer.done    { color: var(--yellow); border-color: rgba(255,184,0,.35);  background: rgba(255,184,0,.06); }
+.ps-timer.stopped { color: var(--text2); }
+
+/* ── Format button (compact) ── */
+.ps-fmt-btn {
+  padding: 4px 9px !important; font-size: 13px !important;
+  font-weight: 700; flex-shrink: 0;
+}
+
+/* ── Submit summary bar ── */
+.ps-submit-summary {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 7px; margin-bottom: 12px;
+}
+.ps-submit-summary.pass { background:rgba(0,184,163,.08); border:1px solid rgba(0,184,163,.25); }
+.ps-submit-summary.fail { background:rgba(239,71,67,.06); border:1px solid rgba(239,71,67,.2); }
+.ps-submit-icon   { font-size: 20px; flex-shrink: 0; }
+.ps-submit-verdict{ font-size: 15px; font-weight: 800; line-height: 1.2; }
+.ps-submit-sub    { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.ps-submit-time   { text-align: right; margin-left: auto; flex-shrink: 0; }
+.ps-submit-time strong { display: block; font-size: 14px; font-weight: 800;
+                          color: var(--accent); font-family: var(--font-code); }
+.ps-submit-time   { font-size: 10px; color: var(--text3); }
+
+/* ── LeetCode tabbed test cases ── */
+.ps-tc-tabs {
+  display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.ps-tc-tab {
+  padding: 4px 12px; border: 1px solid var(--border2); border-radius: 5px;
+  font-size: 11px; font-weight: 700; color: var(--text3); cursor: pointer;
+  background: var(--bg2); transition: .12s; font-family: var(--font-ui);
+}
+.ps-tc-tab:hover { color: var(--text); }
+.ps-tc-tab.pass  { border-color: rgba(0,184,163,.4); color: var(--accent); background: rgba(0,184,163,.05); }
+.ps-tc-tab.fail  { border-color: rgba(239,71,67,.4);  color: var(--red);    background: rgba(239,71,67,.05); }
+.ps-tc-tab.active.pass { background: rgba(0,184,163,.12); }
+.ps-tc-tab.active.fail { background: rgba(239,71,67,.09); }
+.ps-tc-content   { display: none; }
+.ps-tc-content.active { display: block; }
+
+/* Test case diff rows */
+.ps-tc-diff-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start; }
+.ps-tc-diff-label {
+  font-size: 11px; font-weight: 700; color: var(--text3); min-width: 72px;
+  padding-top: 6px; flex-shrink: 0;
+}
+.ps-tc-diff-val {
+  flex: 1; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 5px; padding: 6px 10px; font-family: var(--font-code);
+  font-size: 11px; white-space: pre-wrap; word-break: break-all; margin: 0;
+}
+.ps-tc-diff-val.expected { border-color: rgba(0,184,163,.3);  }
+.ps-tc-diff-val.pass-out { border-color: rgba(0,184,163,.3); color: var(--accent); }
+.ps-tc-diff-val.fail-out { border-color: rgba(239,71,67,.3);  color: var(--red); }
+
+/* ── Editorial section styles ── */
+.ps-editorial-section { margin-bottom: 16px; }
+.ps-editorial-label   {
+  font-size: 11px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
+}
+.ps-editorial-text {
+  font-size: 12px; color: var(--text2); line-height: 1.7;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 12px; white-space: pre-wrap;
+}
+.ps-editorial-code {
+  background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 6px; padding: 12px; font-family: var(--font-code);
+  font-size: 11px; line-height: 1.6; color: var(--text2);
+  overflow-x: auto; white-space: pre; display: block; margin: 6px 0 8px;
+}
+.ps-editorial-copy {
+  padding: 5px 12px; background: var(--adim); color: var(--accent);
+  border: 1px solid rgba(0,184,163,.3); border-radius: 5px;
+  font-family: var(--font-ui); font-size: 11px; font-weight: 700; cursor: pointer;
+  transition: .15s;
+}
+.ps-editorial-copy:hover { background: rgba(0,184,163,.18); }
+
+/* ── Submissions row ── */
+.ps-submission-row {
+  padding: 10px 12px; background: var(--bg3);
+  border: 1px solid var(--border); border-radius: 7px; margin-bottom: 6px;
+}
+.ps-submission-row.pass { border-color: rgba(0,184,163,.3); }
+
+/* ── Study Topic confirmation modal ── */
+#studyTopicModal * { box-sizing: border-box; }
+
+/* ── Submissions tab label ── */
+.ps-dtab { white-space: nowrap; }
