@@ -16,36 +16,40 @@ import java.util.List;
 @AllArgsConstructor
 public class Roadmap {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@Id
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+private Long id;
 
-    @Column(nullable = false)
-    private String name;
+/** Owner — every roadmap belongs to exactly one user */
+@Column(name = "user_id")
+private Long userId;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
+@Column(nullable = false)
+private String name;
 
-    /** Emoji or short icon string shown on the card */
-    private String icon;
+@Column(columnDefinition = "TEXT")
+private String description;
 
-    /** Hex colour for the roadmap card border/accent, e.g. #4ade80 */
-    private String color;
+/** Emoji or short icon string shown on the card */
+private String icon;
 
-    /** Target audience / level, e.g. "Beginner", "Intermediate", "Interview Prep" */
-    private String level;
+/** Hex colour for the roadmap card border/accent, e.g. #4ade80 */
+private String color;
 
-    /** Estimated total hours to complete */
-    private Integer estimatedHours;
+/** Target audience / level, e.g. "Beginner", "Intermediate", "Interview Prep" */
+private String level;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+/** Estimated total hours to complete */
+private Integer estimatedHours;
 
-    @PrePersist
-    protected void onCreate() { this.createdAt = LocalDateTime.now(); }
+@Column(name = "created_at")
+private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "roadmap", cascade = CascadeType.ALL,
-            fetch = FetchType.LAZY, orphanRemoval = true)
-    @OrderBy("orderIndex ASC")
-    private List<RoadmapTopic> roadmapTopics = new ArrayList<>();
+@PrePersist
+protected void onCreate() { this.createdAt = LocalDateTime.now(); }
+
+@OneToMany(mappedBy = "roadmap", cascade = CascadeType.ALL,
+        fetch = FetchType.LAZY, orphanRemoval = true)
+@OrderBy("orderIndex ASC")
+private List<RoadmapTopic> roadmapTopics = new ArrayList<>();
 }

@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,24 +23,24 @@ private final RoadmapRepository      roadmapRepo;
 private final RoadmapTopicRepository roadmapTopicRepo;
 private final TopicRepository        topicRepo;
 
-// ── Read ──────────────────────────────────────────────────────────────────
+// ── Read (scoped to userId) ───────────────────────────────────────────────
 
-public List<RoadmapDto> getAllRoadmaps() {
-    return roadmapRepo.findAllByOrderByCreatedAtDesc()
+public List<RoadmapDto> getAllRoadmaps(Long userId) {
+    return roadmapRepo.findByUserIdOrderByCreatedAtDesc(userId)
             .stream().map(this::toDto).collect(Collectors.toList());
 }
 
-public RoadmapDto getRoadmap(Long id) {
-    Roadmap r = roadmapRepo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Roadmap not found: " + id));
+public RoadmapDto getRoadmap(Long id, Long userId) {
+    Roadmap r = findOwned(id, userId);
     return toDto(r);
 }
 
 // ── Create ────────────────────────────────────────────────────────────────
 
 @Transactional
-public RoadmapDto createRoadmap(CreateRoadmapRequest req) {
+public RoadmapDto createRoadmap(CreateRoadmapRequest req, Long userId) {
     Roadmap r = new Roadmap();
+    r.setUserId(userId);
     r.setName(req.getName());
     r.setDescription(req.getDescription());
     r.setIcon(req.getIcon() != null ? req.getIcon() : "📁");
@@ -52,7 +51,7 @@ public RoadmapDto createRoadmap(CreateRoadmapRequest req) {
 
     if (req.getTopicIds() != null) {
         for (int i = 0; i < req.getTopicIds().size(); i++) {
-            addTopicToRoadmap(r.getId(), req.getTopicIds().get(i), i + 1, null);
+            addTopicToRoadmap(r.getId(), req.getTopicIds().get(i), i + 1, null, userId);
         }
     }
     return toDto(roadmapRepo.findById(r.getId()).orElseThrow());
@@ -61,9 +60,8 @@ public RoadmapDto createRoadmap(CreateRoadmapRequest req) {
 // ── Update ────────────────────────────────────────────────────────────────
 
 @Transactional
-public RoadmapDto updateRoadmap(Long id, CreateRoadmapRequest req) {
-    Roadmap r = roadmapRepo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Roadmap not found: " + id));
+public RoadmapDto updateRoadmap(Long id, CreateRoadmapRequest req, Long userId) {
+    Roadmap r = findOwned(id, userId);
     r.setName(req.getName());
     r.setDescription(req.getDescription());
     if (req.getIcon()  != null) r.setIcon(req.getIcon());
@@ -77,16 +75,17 @@ public RoadmapDto updateRoadmap(Long id, CreateRoadmapRequest req) {
 // ── Delete ────────────────────────────────────────────────────────────────
 
 @Transactional
-public void deleteRoadmap(Long id) {
+public void deleteRoadmap(Long id, Long userId) {
+    findOwned(id, userId);
     roadmapRepo.deleteById(id);
 }
 
 // ── Topic management ──────────────────────────────────────────────────────
 
 @Transactional
-public RoadmapDto addTopicToRoadmap(Long roadmapId, Long topicId, int orderIndex, String note) {
-    Roadmap r = roadmapRepo.findById(roadmapId)
-            .orElseThrow(() -> new RuntimeException("Roadmap not found"));
+public RoadmapDto addTopicToRoadmap(Long roadmapId, Long topicId,
+                                    int orderIndex, String note, Long userId) {
+    Roadmap r = findOwned(roadmapId, userId);
     Topic t = topicRepo.findById(topicId)
             .orElseThrow(() -> new RuntimeException("Topic not found: " + topicId));
 
@@ -101,13 +100,15 @@ public RoadmapDto addTopicToRoadmap(Long roadmapId, Long topicId, int orderIndex
 }
 
 @Transactional
-public RoadmapDto removeTopicFromRoadmap(Long roadmapId, Long topicId) {
+public RoadmapDto removeTopicFromRoadmap(Long roadmapId, Long topicId, Long userId) {
+    findOwned(roadmapId, userId);
     roadmapTopicRepo.deleteByRoadmapIdAndTopicId(roadmapId, topicId);
     return toDto(roadmapRepo.findById(roadmapId).orElseThrow());
 }
 
 @Transactional
-public RoadmapDto reorderTopics(Long roadmapId, List<Long> orderedTopicIds) {
+public RoadmapDto reorderTopics(Long roadmapId, List<Long> orderedTopicIds, Long userId) {
+    findOwned(roadmapId, userId);
     List<RoadmapTopic> rts = roadmapTopicRepo.findByRoadmapIdOrderByOrderIndex(roadmapId);
     for (RoadmapTopic rt : rts) {
         int idx = orderedTopicIds.indexOf(rt.getTopic().getId());
@@ -115,6 +116,29 @@ public RoadmapDto reorderTopics(Long roadmapId, List<Long> orderedTopicIds) {
     }
     roadmapTopicRepo.saveAll(rts);
     return toDto(roadmapRepo.findById(roadmapId).orElseThrow());
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+
+/**
+ * Load a roadmap and assert ownership.
+ * Throws IllegalArgumentException (400) if not found.
+ * Throws AccessDeniedException (403) if owned by someone else.
+ * Migrates legacy ownerless roadmaps to the first accessor.
+ */
+private Roadmap findOwned(Long id, Long userId) {
+    Roadmap r = roadmapRepo.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Roadmap not found: " + id));
+    if (r.getUserId() == null) {
+        r.setUserId(userId);
+        roadmapRepo.save(r);
+        return r;
+    }
+    if (!r.getUserId().equals(userId)) {
+        throw new org.springframework.security.access.AccessDeniedException(
+                "You do not own this roadmap");
+    }
+    return r;
 }
 
 // ── Mapper ────────────────────────────────────────────────────────────────

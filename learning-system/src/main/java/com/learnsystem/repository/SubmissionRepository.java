@@ -28,4 +28,19 @@ long countAcceptedByProblemId(@Param("pid") Long problemId);
 /** Count accepted submissions faster than a given time for percentile calc */
 @Query("SELECT COUNT(s) FROM Submission s WHERE s.problemId = :pid AND s.status = 'ACCEPTED' AND s.executionTimeMs > :ms")
 long countAcceptedSlowerThan(@Param("pid") Long problemId, @Param("ms") Long ms);
+
+/**
+ * Count DISTINCT problems a user has ever solved (ACCEPTED).
+ * Used to keep users.problems_solved accurate.
+ */
+@Query("SELECT COUNT(DISTINCT s.problemId) FROM Submission s WHERE s.userId = :uid AND s.status = 'ACCEPTED'")
+long countDistinctAcceptedProblemsByUserId(@Param("uid") Long userId);
+
+/**
+ * Return the set of DISTINCT problem IDs a user has ever solved.
+ * Used by GET /api/submissions/solved so the problems page can mark
+ * checkmarks server-side instead of relying on localStorage.
+ */
+@Query("SELECT DISTINCT s.problemId FROM Submission s WHERE s.userId = :uid AND s.status = 'ACCEPTED'")
+List<Long> findSolvedProblemIdsByUserId(@Param("uid") Long userId);
 }

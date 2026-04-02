@@ -832,7 +832,16 @@ async function psSubmit() {
     const ver = document.getElementById('psJavaVersion')?.value || '17';
     const r = await API.submit(currentProblem.id, code, null, psHintsShown >= 3, ver);
     renderPsSubmitResult(r);
-    if (r.allPassed) setTimeout(showRecallDrill, 700);
+    if (r.allPassed) {
+      // Mark this problem as solved in localStorage so problems.html
+      // shows the checkmark immediately (server is already updated via SubmissionController)
+      try {
+        const solved = new Set(JSON.parse(localStorage.getItem('devlearn_solved') || '[]'));
+        solved.add(currentProblem.id);
+        localStorage.setItem('devlearn_solved', JSON.stringify([...solved]));
+      } catch (_) {}
+      setTimeout(showRecallDrill, 700);
+    }
   } catch {
     renderPsLoading('⚠ Submit failed — server error');
   }

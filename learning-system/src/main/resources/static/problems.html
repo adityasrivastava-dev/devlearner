@@ -314,6 +314,8 @@ const TOP_50_SET = [...new Set(TOP_50_TITLES)];
 let allProblems = [];
 let filteredProblems = [];
 let diffFilter    = '';
+// Seed from localStorage immediately so the UI isn't blank on first render.
+// Will be replaced with server data (which survives device / cache changes).
 let solvedSet     = new Set(JSON.parse(localStorage.getItem('devlearn_solved') || '[]'));
 let sortCol       = 'difficulty';
 let sortDir       = 'asc';
@@ -330,13 +332,23 @@ let sortDir       = 'asc';
 
 async function loadProblems() {
   try {
-    // Use the new /api/problems endpoint
-    const res  = await fetch('/api/problems', { headers: Auth.headers() });
-    allProblems = res.ok ? await res.json() : [];
+    // Load problems and solved IDs in parallel
+    const [problemsRes, serverSolved] = await Promise.all([
+      fetch('/api/problems', { headers: Auth.headers() }),
+      API.getSolvedIds()
+    ]);
+    allProblems = problemsRes.ok ? await problemsRes.json() : [];
 
     // Fallback: if new endpoint not deployed yet, gather from topics
     if (!allProblems.length) {
       allProblems = await fallbackLoadFromTopics();
+    }
+
+    // Merge server solved IDs with localStorage — server is source of truth
+    if (serverSolved && serverSolved.length > 0) {
+      serverSolved.forEach(id => solvedSet.add(id));
+      // Write the merged result back to localStorage for offline use
+      localStorage.setItem('devlearn_solved', JSON.stringify([...solvedSet]));
     }
 
     buildStats();

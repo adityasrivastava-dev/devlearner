@@ -55,13 +55,16 @@ public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 					// Auth — always public
 					.requestMatchers("/api/auth/**").permitAll()
 
-					// Public read
+					// Public read (topics and problems)
 					.requestMatchers(HttpMethod.GET,
 							"/api/topics", "/api/topics/**",
 							"/api/problems", "/api/problems/**",
 							"/api/submissions/percentile").permitAll()
+
+					// Roadmaps: GET is authenticated (returns only user's own),
+					// all write operations (POST/PUT/DELETE) require auth too
 					.requestMatchers(HttpMethod.GET,
-							"/api/roadmaps", "/api/roadmaps/**").permitAll()
+							"/api/roadmaps", "/api/roadmaps/**").authenticated()
 
 					// Admin
 					.requestMatchers("/api/admin/**").hasRole("ADMIN")

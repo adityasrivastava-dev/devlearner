@@ -46,16 +46,18 @@ const Auth = {
       // Update token in localStorage with fresh one
       localStorage.setItem('devlearn_token', data.token);
 
-      // Update user info — role may have changed
+      // Update user info — role, streak, and solved count may have changed
       const current = this.getUser() || {};
       const updated = {
         ...current,
-        id:     data.id,
-        name:   data.name,
-        email:  data.email,
-        role:   data.role,
-        roles:  data.roles,
-        avatar: data.avatar || current.avatar || '',
+        id:             data.id,
+        name:           data.name,
+        email:          data.email,
+        role:           data.role,
+        roles:          data.roles,
+        avatar:         data.avatar         || current.avatar         || '',
+        streak:         data.streakDays     ?? current.streak         ?? 0,
+        solved:         data.problemsSolved ?? current.solved         ?? 0,
       };
       localStorage.setItem('devlearn_user', JSON.stringify(updated));
 
@@ -187,6 +189,16 @@ const API = {
     const res = await fetch(`/api/submissions/percentile?problemId=${problemId}&ms=${ms}`);
     if (!res.ok) return null;
     return res.json();
+  },
+
+  // ── Solved problem IDs (server-side, survives device change) ─────────────
+  // Returns an array of problem IDs the current user has ever solved (ACCEPTED).
+  async getSolvedIds() {
+    try {
+      const res = await fetch('/api/submissions/solved', { headers: Auth.headers() });
+      if (!res.ok) return [];
+      return res.json();   // number[]
+    } catch { return []; }
   },
 
   // ── Syntax Check — now carries javaVersion ───────────────────────────────

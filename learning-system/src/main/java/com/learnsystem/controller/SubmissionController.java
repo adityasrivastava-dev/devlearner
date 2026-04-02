@@ -8,6 +8,7 @@ import com.learnsystem.repository.SubmissionRepository;
 import com.learnsystem.repository.UserRepository;
 import com.learnsystem.security.JwtService;
 import com.learnsystem.service.EvaluationService;
+import com.learnsystem.service.UserProgressService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +39,7 @@ private final EvaluationService     evaluationService;
 private final SubmissionRepository  submissionRepo;
 private final UserRepository        userRepo;
 private final JwtService            jwtService;
+private final UserProgressService   userProgressService;
 
 // ── POST /api/submissions/submit ─────────────────────────────────────────
 // Same as /api/submit but persists the result
@@ -87,6 +89,11 @@ public ResponseEntity<Map<String, Object>> submitAndPersist(
 	submissionRepo.save(sub);
 	log.info("Submission saved: user={} problem={} status={} ms={}",
 			userId, req.getProblemId(), status, maxMs);
+
+	// ── Update streak + problems_solved when accepted ─────────────────────
+	if ("ACCEPTED".equals(status)) {
+		userProgressService.onAccepted(userId);
+	}
 
 	// 6. Compute percentile if accepted
 	Map<String, Object> extra = new LinkedHashMap<>();
@@ -148,6 +155,16 @@ public ResponseEntity<List<Map<String, Object>>> getHistory(
 	}).collect(Collectors.toList());
 
 	return ResponseEntity.ok(out);
+}
+
+// ── GET /api/submissions/solved ───────────────────────────────────────────
+// Returns the list of problem IDs this user has ever solved (ACCEPTED).
+// Used by problems.html to show checkmarks without relying on localStorage.
+@GetMapping("/solved")
+public ResponseEntity<List<Long>> getSolvedIds(HttpServletRequest httpReq) {
+	Long userId = resolveUserId(httpReq);
+	if (userId == null) return ResponseEntity.ok(List.of());
+	return ResponseEntity.ok(submissionRepo.findSolvedProblemIdsByUserId(userId));
 }
 
 // ── GET /api/submissions/percentile?problemId=X&ms=Y ─────────────────────
