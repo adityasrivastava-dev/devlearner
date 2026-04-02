@@ -304,8 +304,6 @@
         <option value="17" selected>Java 17</option>
         <option value="21">Java 21</option>
       </select>
-      <span id="psSolveTimer" class="ps-timer">⏱ 00:00</span>
-      <button id="psFormatBtn" class="btn btn-ghost btn-sm ps-fmt-btn" title="Auto-format code (Shift+Alt+F)">⟳</button>
       <button id="psRunBtn" class="btn btn-ghost ps-run-btn">▶ Run</button>
       <button id="psSubmitBtn" class="btn btn-run ps-submit-btn">⬆ Submit</button>
     </div>
@@ -319,7 +317,6 @@
           <button class="ps-dtab active" data-dtab="desc" onclick="switchDescTab(this,'desc')">Description</button>
           <button class="ps-dtab" data-dtab="hints" onclick="switchDescTab(this,'hints')">Hints</button>
           <button class="ps-dtab" data-dtab="editorial" onclick="switchDescTab(this,'editorial')">Editorial</button>
-          <button class="ps-dtab" data-dtab="submissions" onclick="switchDescTab(this,'submissions')">Submissions</button>
         </div>
 
         <div class="ps-desc-body">
@@ -348,22 +345,9 @@
             <div id="psHintAssistedBadge" class="ps-hint-assisted" style="display:none">⚑ Submitted as hint-assisted</div>
           </div>
 
-          <!-- Editorial tab — rendered by renderEditorial() in editor.js -->
+          <!-- Editorial tab -->
           <div id="dtab-editorial" class="ps-dpanel" style="display:none">
-            <div style="text-align:center;padding:32px 16px">
-              <div style="font-size:28px;margin-bottom:10px">🔒</div>
-              <div style="font-size:14px;font-weight:700;color:var(--text2);margin-bottom:6px">Editorial locked</div>
-              <div style="font-size:12px;color:var(--text3)">Submit a correct solution to unlock.</div>
-            </div>
-          </div>
-
-          <!-- Submissions tab -->
-          <div id="dtab-submissions" class="ps-dpanel" style="display:none">
-            <div id="psSubmissionsList">
-              <div style="text-align:center;padding:32px 16px;color:var(--text3);font-size:13px">
-                No submissions yet for this problem.
-              </div>
-            </div>
+            <p style="color:var(--text3);font-size:13px;padding:20px 0;text-align:center">Solve the problem first — editorial unlocks after submission.</p>
           </div>
 
         </div>
@@ -383,6 +367,9 @@
         <div class="ps-editor-wrap">
           <div id="psEditor" style="width:100%;height:100%"></div>
         </div>
+
+        <!-- Live Error Panel — shown when syntax errors detected -->
+        <div id="psErrorPanel" class="ps-error-panel" style="display:none"></div>
 
         <!-- Collapsible test/result panel at bottom -->
         <div class="ps-bottom" id="psBottom">

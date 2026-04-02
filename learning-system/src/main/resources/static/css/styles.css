@@ -459,108 +459,88 @@ canvas { display: block; max-width: 100%; }
 .ps-similar-item:hover .ps-similar-title { color: var(--accent); }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   PHASE 2 ADDITIONS: Timer · Tabbed test cases · Editorial · Submissions
+   IDE Error Panel — live compile errors shown below editor in PS view
 ══════════════════════════════════════════════════════════════════════════════ */
 
-/* ── Solve Timer ── */
-.ps-timer {
-  font-family: var(--font-code); font-size: 11px; font-weight: 700;
-  color: var(--text3); padding: 4px 8px;
-  background: var(--bg3); border: 1px solid var(--border2);
-  border-radius: 5px; min-width: 60px; text-align: center;
-  flex-shrink: 0; transition: .2s;
+.ps-error-panel {
+  background: #1a0f0f;
+  border-top: 2px solid rgba(239,71,67,.4);
+  max-height: 200px;
+  overflow-y: auto;
+  flex-shrink: 0;
+  font-family: var(--font-code);
 }
-.ps-timer.running { color: var(--accent); border-color: rgba(0,184,163,.35); background: rgba(0,184,163,.07); }
-.ps-timer.done    { color: var(--yellow); border-color: rgba(255,184,0,.35);  background: rgba(255,184,0,.06); }
-.ps-timer.stopped { color: var(--text2); }
+.ps-error-panel::-webkit-scrollbar { width: 4px; }
+.ps-error-panel::-webkit-scrollbar-thumb { background: rgba(239,71,67,.3); border-radius: 3px; }
 
-/* ── Format button (compact) ── */
-.ps-fmt-btn {
-  padding: 4px 9px !important; font-size: 13px !important;
-  font-weight: 700; flex-shrink: 0;
+.ps-err-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 10px; background: rgba(239,71,67,.08);
+  border-bottom: 1px solid rgba(239,71,67,.15); position: sticky; top: 0;
+}
+.ps-err-title  { display: flex; gap: 6px; align-items: center; }
+.ps-err-count  { font-size: 10px; font-weight: 800; padding: 1px 7px;
+                  border-radius: 10px; font-family: var(--font-ui); }
+.ps-err-count.err  { background: rgba(239,71,67,.18); color: var(--red); }
+.ps-err-count.warn { background: rgba(255,184,0,.15); color: var(--yellow); }
+.ps-err-close  { background: transparent; border: none; color: var(--text3);
+                  cursor: pointer; font-size: 11px; padding: 2px 4px;
+                  border-radius: 3px; transition: .1s; }
+.ps-err-close:hover { color: var(--text); background: var(--bg3); }
+
+.ps-err-list { padding: 4px 0; }
+.ps-err-row  {
+  display: grid;
+  grid-template-columns: 16px 80px 1fr;
+  gap: 4px 8px;
+  align-items: start;
+  padding: 5px 10px; cursor: pointer; transition: background .1s;
+  border-bottom: 1px solid rgba(239,71,67,.06);
+}
+.ps-err-row:hover { background: rgba(239,71,67,.07); }
+.ps-err-row.warning { border-bottom-color: rgba(255,184,0,.06); }
+.ps-err-row.warning:hover { background: rgba(255,184,0,.05); }
+
+.ps-err-icon { font-size: 10px; font-weight: 800; padding-top: 1px; }
+.ps-err-row.error   .ps-err-icon { color: var(--red); }
+.ps-err-row.warning .ps-err-icon { color: var(--yellow); }
+
+.ps-err-loc { font-size: 10px; color: var(--text3); font-weight: 700;
+               white-space: nowrap; cursor: pointer; text-decoration: underline;
+               text-underline-offset: 2px; }
+.ps-err-loc:hover { color: var(--accent); }
+
+.ps-err-msg { font-size: 11px; color: var(--text2); line-height: 1.4;
+               word-break: break-word; }
+.ps-err-row.error   .ps-err-msg { color: #f9a8a8; }
+.ps-err-row.warning .ps-err-msg { color: #fde68a; }
+
+.ps-err-code {
+  grid-column: 1 / -1;
+  font-size: 10.5px; color: var(--text3);
+  background: rgba(0,0,0,.2); border-radius: 3px;
+  padding: 3px 6px; margin-top: 2px; white-space: pre;
+  overflow-x: auto; line-height: 1.5;
 }
 
-/* ── Submit summary bar ── */
-.ps-submit-summary {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; border-radius: 7px; margin-bottom: 12px;
+/* Monaco editor — make error squiggles more visible */
+.monaco-editor .squiggly-error {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 3'%3E%3Cpath d='M0 2 L1 1 L2 2 L3 1 L4 2 L5 1 L6 2' stroke='%23ef4743' stroke-width='1' fill='none'/%3E%3C/svg%3E") repeat-x bottom !important;
 }
-.ps-submit-summary.pass { background:rgba(0,184,163,.08); border:1px solid rgba(0,184,163,.25); }
-.ps-submit-summary.fail { background:rgba(239,71,67,.06); border:1px solid rgba(239,71,67,.2); }
-.ps-submit-icon   { font-size: 20px; flex-shrink: 0; }
-.ps-submit-verdict{ font-size: 15px; font-weight: 800; line-height: 1.2; }
-.ps-submit-sub    { font-size: 11px; color: var(--text3); margin-top: 2px; }
-.ps-submit-time   { text-align: right; margin-left: auto; flex-shrink: 0; }
-.ps-submit-time strong { display: block; font-size: 14px; font-weight: 800;
-                          color: var(--accent); font-family: var(--font-code); }
-.ps-submit-time   { font-size: 10px; color: var(--text3); }
+.monaco-editor .squiggly-warning {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 3'%3E%3Cpath d='M0 2 L1 1 L2 2 L3 1 L4 2 L5 1 L6 2' stroke='%23ffb800' stroke-width='1' fill='none'/%3E%3C/svg%3E") repeat-x bottom !important;
+}
 
-/* ── LeetCode tabbed test cases ── */
-.ps-tc-tabs {
-  display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px;
-}
-.ps-tc-tab {
-  padding: 4px 12px; border: 1px solid var(--border2); border-radius: 5px;
-  font-size: 11px; font-weight: 700; color: var(--text3); cursor: pointer;
-  background: var(--bg2); transition: .12s; font-family: var(--font-ui);
-}
-.ps-tc-tab:hover { color: var(--text); }
-.ps-tc-tab.pass  { border-color: rgba(0,184,163,.4); color: var(--accent); background: rgba(0,184,163,.05); }
-.ps-tc-tab.fail  { border-color: rgba(239,71,67,.4);  color: var(--red);    background: rgba(239,71,67,.05); }
-.ps-tc-tab.active.pass { background: rgba(0,184,163,.12); }
-.ps-tc-tab.active.fail { background: rgba(239,71,67,.09); }
-.ps-tc-content   { display: none; }
-.ps-tc-content.active { display: block; }
+/* Gutter error icons in Monaco */
+.codicon-error   { color: var(--red) !important; }
+.codicon-warning { color: var(--yellow) !important; }
 
-/* Test case diff rows */
-.ps-tc-diff-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start; }
-.ps-tc-diff-label {
-  font-size: 11px; font-weight: 700; color: var(--text3); min-width: 72px;
-  padding-top: 6px; flex-shrink: 0;
+/* PS syntax label — pulse animation when errors */
+.ps-syntax-dot.errors {
+  background: var(--red);
+  animation: errPulse 1.5s ease-in-out infinite;
 }
-.ps-tc-diff-val {
-  flex: 1; background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 5px; padding: 6px 10px; font-family: var(--font-code);
-  font-size: 11px; white-space: pre-wrap; word-break: break-all; margin: 0;
+@keyframes errPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(239,71,67,.5); }
+  50%      { box-shadow: 0 0 0 4px rgba(239,71,67,.0); }
 }
-.ps-tc-diff-val.expected { border-color: rgba(0,184,163,.3);  }
-.ps-tc-diff-val.pass-out { border-color: rgba(0,184,163,.3); color: var(--accent); }
-.ps-tc-diff-val.fail-out { border-color: rgba(239,71,67,.3);  color: var(--red); }
-
-/* ── Editorial section styles ── */
-.ps-editorial-section { margin-bottom: 16px; }
-.ps-editorial-label   {
-  font-size: 11px; font-weight: 700; color: var(--text3);
-  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
-}
-.ps-editorial-text {
-  font-size: 12px; color: var(--text2); line-height: 1.7;
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 6px; padding: 10px 12px; white-space: pre-wrap;
-}
-.ps-editorial-code {
-  background: var(--bg); border: 1px solid var(--border2);
-  border-radius: 6px; padding: 12px; font-family: var(--font-code);
-  font-size: 11px; line-height: 1.6; color: var(--text2);
-  overflow-x: auto; white-space: pre; display: block; margin: 6px 0 8px;
-}
-.ps-editorial-copy {
-  padding: 5px 12px; background: var(--adim); color: var(--accent);
-  border: 1px solid rgba(0,184,163,.3); border-radius: 5px;
-  font-family: var(--font-ui); font-size: 11px; font-weight: 700; cursor: pointer;
-  transition: .15s;
-}
-.ps-editorial-copy:hover { background: rgba(0,184,163,.18); }
-
-/* ── Submissions row ── */
-.ps-submission-row {
-  padding: 10px 12px; background: var(--bg3);
-  border: 1px solid var(--border); border-radius: 7px; margin-bottom: 6px;
-}
-.ps-submission-row.pass { border-color: rgba(0,184,163,.3); }
-
-/* ── Study Topic confirmation modal ── */
-#studyTopicModal * { box-sizing: border-box; }
-
-/* ── Submissions tab label ── */
-.ps-dtab { white-space: nowrap; }

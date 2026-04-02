@@ -30,19 +30,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // PS buttons bound after monaco loaded
 
   loadTopics(activeCategory).then(() => {
-    const params      = new URLSearchParams(window.location.search);
-    const urlTopic    = params.get('topic');
-    const urlProblem  = params.get('openProblem');
+    // Roadmap mode — auto-select topic from URL param
+    const urlTopic = new URLSearchParams(window.location.search).get('topic');
     if (urlTopic) {
       const poll = setInterval(() => {
-        if (monacoEditor) {
-          clearInterval(poll);
-          selectTopic(parseInt(urlTopic)).then(() => {
-            if (urlProblem) {
-              setTimeout(() => openProblemSolve(parseInt(urlProblem)), 300);
-            }
-          });
-        }
+        if (monacoEditor) { clearInterval(poll); selectTopic(parseInt(urlTopic)); }
       }, 100);
     }
   });
@@ -59,6 +51,25 @@ function initMonaco() {
       minimap: { enabled: false }, scrollBeyondLastLine: false,
       lineNumbers: 'on', renderLineHighlight: 'line',
       automaticLayout: true, padding: { top: 10 }, glyphMargin: true,
+      // ── IDE-quality settings ──────────────────────────────────────────────
+      quickSuggestions: { other: false, comments: false, strings: false },
+      wordBasedSuggestions: 'off',
+      suggestOnTriggerCharacters: true,   // keep '.' and '@' triggers
+      acceptSuggestionOnCommitCharacter: false,
+      parameterHints: { enabled: true },
+      hover: { enabled: true },           // show type-on-hover
+      formatOnPaste: true,
+      formatOnType:  false,               // don't auto-format mid-type (annoying)
+      autoIndent: 'full',
+      tabSize: 4,
+      insertSpaces: true,
+      bracketPairColorization: { enabled: true },
+      renderWhitespace: 'none',
+      smoothScrolling: true,
+      cursorBlinking: 'smooth',
+      cursorSmoothCaretAnimation: 'on',
+      scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 },
+      'semanticHighlighting.enabled': true,
     };
 
     // Code tab editor
@@ -73,7 +84,8 @@ function initMonaco() {
     });
 
     // Problem-solve editor (create lazy when first problem opened)
-    window._monacoReady = true;
+    window._monacoReady  = true;
+    window._monacoCommon = COMMON;
 
     // Bind run button ONCE here (after monaco ready)
     document.getElementById('runBtn')?.addEventListener('click', runCode);
@@ -92,11 +104,7 @@ function ensurePsEditor(starterCode) {
   }
   if (!window._monacoReady) { setTimeout(() => ensurePsEditor(starterCode), 100); return; }
   psEditor = monaco.editor.create(document.getElementById('psEditor'), {
-    language: 'java', theme: 'vs-dark', fontSize: 13,
-    fontFamily: "'JetBrains Mono', monospace",
-    minimap: { enabled: false }, scrollBeyondLastLine: false,
-    lineNumbers: 'on', renderLineHighlight: 'line',
-    automaticLayout: true, padding: { top: 10 }, glyphMargin: true,
+    ...window._monacoCommon,
     value: starterCode || '// Write your solution here\n',
   });
   psEditor.onDidChangeModelContent(() => {
@@ -116,8 +124,8 @@ async function doSyntaxCheck(editor, ctx) {
 
   if (!code.trim() || code.trim().length < 10) {
     clearMarkers(editor);
-    if (ctx === 'main') { setSyntaxDot('ok'); updateErrBadge(0); }
-    if (ctx === 'ps')   { setPsSyntaxDot('ok'); }
+    if (ctx === 'main') { setSyntaxDot('ok'); updateErrBadge(0); renderErrCards([]); }
+    if (ctx === 'ps')   { setPsSyntaxDot('ok'); renderPsErrors([]); }
     return;
   }
   try {
@@ -130,19 +138,31 @@ async function doSyntaxCheck(editor, ctx) {
     }
     if (ctx === 'ps') {
       setPsSyntaxDot(r.valid ? 'ok' : 'errors', r.errorCount);
+      renderPsErrors(r.errors || []);
     }
   } catch { /* network — stay silent */ }
 }
 
 function setMarkers(editor, errors) {
   if (!window.monaco || !editor?.getModel()) return;
-  monaco.editor.setModelMarkers(editor.getModel(), 'javac', errors.map(e => ({
-    severity: e.severity === 'error' ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
-    startLineNumber: e.line, startColumn: e.column || 1,
-    endLineNumber: e.line,
-    endColumn: e.column ? e.column + 15 : (editor.getModel().getLineMaxColumn(e.line) || 100),
-    message: e.message, source: 'javac',
-  })));
+  const model = editor.getModel();
+  monaco.editor.setModelMarkers(model, 'javac', errors.map(e => {
+    const lineLen = model.getLineMaxColumn(e.line || 1) || 200;
+    const startCol = e.column || 1;
+    // Squiggle from error column to end of line (or +30 chars for readability)
+    const endCol = lineLen;
+    return {
+      severity: e.severity === 'error'
+        ? monaco.MarkerSeverity.Error
+        : monaco.MarkerSeverity.Warning,
+      startLineNumber: e.line || 1,
+      startColumn:     startCol,
+      endLineNumber:   e.line || 1,
+      endColumn:       endCol,
+      message:         e.message || 'Compile error',
+      source:          'javac',
+    };
+  }));
 }
 function clearMarkers(editor) {
   if (window.monaco && editor?.getModel())
@@ -170,6 +190,41 @@ function setPsSyntaxDot(state, count) {
     else if (state === 'ok')  lbl.textContent = 'No errors';
     else lbl.textContent = `${count || ''} error${count !== 1 ? 's' : ''}`;
   }
+}
+
+// ── PS Error Panel ────────────────────────────────────────────────────────────
+// Shows live compile errors below the editor (like an IDE Problems panel)
+function renderPsErrors(errors) {
+  const panel = document.getElementById('psErrorPanel');
+  if (!panel) return;
+
+  if (!errors || errors.length === 0) {
+    panel.style.display = 'none';
+    panel.innerHTML = '';
+    return;
+  }
+
+  panel.style.display = 'block';
+  const errOnly  = errors.filter(e => e.severity === 'error');
+  const warnOnly = errors.filter(e => e.severity === 'warning');
+
+  panel.innerHTML = `
+    <div class="ps-err-header">
+      <span class="ps-err-title">
+        ${errOnly.length  ? `<span class="ps-err-count err">${errOnly.length} error${errOnly.length!==1?'s':''}</span>` : ''}
+        ${warnOnly.length ? `<span class="ps-err-count warn">${warnOnly.length} warning${warnOnly.length!==1?'s':''}</span>` : ''}
+      </span>
+      <button class="ps-err-close" onclick="document.getElementById('psErrorPanel').style.display='none'" title="Close">✕</button>
+    </div>
+    <div class="ps-err-list">
+      ${errors.map(e => `
+        <div class="ps-err-row ${e.severity}" onclick="psJumpToLine(${e.line})">
+          <span class="ps-err-icon">${e.severity==='error' ? '✕' : '⚠'}</span>
+          <span class="ps-err-loc">Line ${e.line}${e.column > 1 ? ':' + e.column : ''}</span>
+          <span class="ps-err-msg">${esc(e.message)}</span>
+          ${e.code ? `<div class="ps-err-code">${esc(e.code)}${e.column>1 ? '<br>' + ' '.repeat(e.column-1) + '^' : ''}</div>` : ''}
+        </div>`).join('')}
+    </div>`;
 }
 function updateErrBadge(n) {
   const b = document.getElementById('errCountBadge');
@@ -820,6 +875,12 @@ function renderSimilarProblems(p) {
 function renderPsLoading(msg) {
   const el = document.getElementById('psResultContent');
   if (el) el.innerHTML = `<p style="color:var(--text3);font-size:12px;padding:16px 0">${esc(msg)}</p>`;
+}
+
+// Clear PS error panel when errors are resolved
+function clearPsErrors() {
+  const panel = document.getElementById('psErrorPanel');
+  if (panel) { panel.style.display = 'none'; panel.innerHTML = ''; }
 }
 function psJumpToLine(line) {
   if (!psEditor) return;
