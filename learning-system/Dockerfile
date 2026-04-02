@@ -25,4 +25,4 @@ COPY --from=builder /app/target/devlearner.jar app.jar
 EXPOSE 8080
 
 # JVM optimizations (important for containers)
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
