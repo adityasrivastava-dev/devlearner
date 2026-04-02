@@ -75,7 +75,7 @@ public void onAuthenticationSuccess(HttpServletRequest request,
 	// Spring saves it in the session under SPRING_SECURITY_SAVED_REQUEST
 	// We use a simpler approach: check the referer or default to "/"
 	// Always redirect to app root — index.html handles ?token= and cleans the URL
-	String redirectUrl = frontendUrl + "/?token=" + token;
+	String redirectUrl = frontendUrl + "?token=" + token;
 	getRedirectStrategy().sendRedirect(request, response, redirectUrl);
 }
 }
