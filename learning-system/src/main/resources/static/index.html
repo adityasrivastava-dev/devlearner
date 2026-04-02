@@ -190,6 +190,8 @@
           <div id="out-output" class="out-panel hidden">
             <div id="outputStatusRow" style="margin-bottom:8px"></div>
             <pre id="outputBox" class="output-box">// Press ▶ Run Code to execute</pre>
+            <!-- Phase 1: inline complexity shown automatically after every run -->
+            <div id="inlineComplexity" style="display:none;margin-top:8px;padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;font-size:11px;color:var(--text2);gap:4px;flex-wrap:wrap;align-items:center"></div>
           </div>
           <div id="out-errors" class="out-panel hidden">
             <div id="errorsPanel"><p class="no-errors-msg">✓ No compile errors</p></div>
@@ -449,7 +451,7 @@
         localStorage.setItem('devlearn_user', JSON.stringify({
           id: data.id, name: data.name, email: data.email,
           role: data.role, roles: data.roles || [], avatar: data.avatar || '',
-          streak: 0, solved: 0
+          streak: data.streakDays || 0, solved: data.problemsSolved || 0
         }));
         window.history.replaceState({}, '', '/');
         window.location.reload();

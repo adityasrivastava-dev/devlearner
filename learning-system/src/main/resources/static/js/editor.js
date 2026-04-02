@@ -302,6 +302,10 @@ async function runCode() {
   try {
     const r = await API.execute(code, stdin, ver);
     renderRunResult(r);
+    // Phase 1: show complexity inline after every successful run
+    if (r.status !== 'COMPILE_ERROR' && r.status !== 'RUNTIME_ERROR') {
+      showInlineComplexity(code);
+    }
   } catch {
     setOutputStatus('error', '⚠ Server unreachable');
     if (box) { box.textContent = 'Make sure the Spring Boot server is running on port 8080.'; box.className = 'output-box error'; }
@@ -331,6 +335,20 @@ function renderRunResult(r) {
     box.textContent = r.output || '(no output)'; box.className = 'output-box success';
   }
   if (r.executionTimeMs && tb) { tb.textContent = `⏱ ${r.executionTimeMs}ms`; tb.style.display = 'inline'; }
+}
+
+// Phase 1: runs complexity analysis silently after every run and shows result inline
+async function showInlineComplexity(code) {
+  const el = document.getElementById('inlineComplexity');
+  if (!el) return;
+  try {
+    const r = await API.analyzeComplexity(code);
+    if (!r || !r.timeComplexity) { el.style.display = 'none'; return; }
+    el.innerHTML =
+      `<span title="Time complexity">⏱ ${esc(r.timeComplexity)}</span>` +
+      (r.spaceComplexity ? `<span title="Space complexity" style="margin-left:10px">💾 ${esc(r.spaceComplexity)}</span>` : '');
+    el.style.display = 'flex';
+  } catch { el.style.display = 'none'; }
 }
 
 function setOutputStatus(type, text) {
@@ -832,16 +850,7 @@ async function psSubmit() {
     const ver = document.getElementById('psJavaVersion')?.value || '17';
     const r = await API.submit(currentProblem.id, code, null, psHintsShown >= 3, ver);
     renderPsSubmitResult(r);
-    if (r.allPassed) {
-      // Mark this problem as solved in localStorage so problems.html
-      // shows the checkmark immediately (server is already updated via SubmissionController)
-      try {
-        const solved = new Set(JSON.parse(localStorage.getItem('devlearn_solved') || '[]'));
-        solved.add(currentProblem.id);
-        localStorage.setItem('devlearn_solved', JSON.stringify([...solved]));
-      } catch (_) {}
-      setTimeout(showRecallDrill, 700);
-    }
+    if (r.allPassed) setTimeout(showRecallDrill, 700);
   } catch {
     renderPsLoading('⚠ Submit failed — server error');
   }
@@ -856,6 +865,21 @@ function renderPsSubmitResult(r) {
   const failed = (r.results || []).filter(tc => !tc.passed);
   const hintedBadge = psHintsShown >= 3 ? '<div style="font-size:11px;color:var(--text3);margin-bottom:8px">⚑ Hint-assisted submission</div>' : '';
 
+  // Phase 1: smart feedback — detected algorithm pattern
+  const patternLabels = {
+    TWO_POINTER:'Two Pointer', SLIDING_WINDOW:'Sliding Window', BINARY_SEARCH:'Binary Search',
+    HASH_MAP:'HashMap / Hashing', RECURSION:'Recursion', DYNAMIC_PROGRAMMING:'Dynamic Programming',
+    BFS:'BFS', DFS:'DFS', GREEDY:'Greedy', PREFIX_SUM:'Prefix Sum',
+    BRUTE_FORCE:'Brute Force', UNKNOWN:'Custom Approach'
+  };
+  const patternLabel = r.detectedPattern ? (patternLabels[r.detectedPattern] || r.detectedPattern) : null;
+  const smartFeedbackHtml = patternLabel ? `
+    <div style="margin:10px 0;padding:10px 12px;background:rgba(0,184,163,.06);border:1px solid rgba(0,184,163,.18);border-radius:6px;font-size:12px">
+      <div style="font-weight:700;color:var(--accent);margin-bottom:4px">🔍 Detected: ${esc(patternLabel)}</div>
+      ${r.methodologyExplanation ? `<div style="color:var(--text2);line-height:1.5">${esc(r.methodologyExplanation)}</div>` : ''}
+      ${r.optimizationNote ? `<div style="margin-top:6px;color:var(--yellow);line-height:1.5">💡 ${esc(r.optimizationNote)}</div>` : ''}
+    </div>` : '';
+
   el.innerHTML = `
     <div class="ps-result-row">
       <span class="ps-result-icon">${pass ? '✅' : '❌'}</span>
@@ -866,6 +890,7 @@ function renderPsSubmitResult(r) {
     </div>
     ${dots ? `<div class="ps-tc-dots">${dots}</div>` : ''}
     ${hintedBadge}
+    ${smartFeedbackHtml}
     ${r.hint ? `<div style="padding:8px 10px;background:rgba(255,184,0,.06);border:1px solid rgba(255,184,0,.15);border-radius:5px;font-size:12px;color:var(--yellow);margin-bottom:10px"><strong>💡 Hint: </strong>${esc(r.hint)}</div>` : ''}
     ${failed.slice(0, 3).map(tc => `
       <div class="ps-fail-case">
@@ -996,11 +1021,30 @@ function showRecallDrill() {
   if (txt) txt.value = '';
   modal.style.display = 'flex';
 }
-function saveRecall() {
+
+async function saveRecall() {
   const modal = document.getElementById('recallModal');
+  const txt   = document.getElementById('recallText');
+  const text  = txt?.value?.trim();
+
   if (modal) modal.style.display = 'none';
-  showToast('🧠 Recall saved — great practice!');
+
+  if (text && text.length > 3) {
+    try {
+      await fetch('/api/recall', {
+        method: 'POST',
+        headers: Auth.headers(),
+        body: JSON.stringify({
+          topicId:    currentTopic?.id    || null,
+          topicTitle: currentTopic?.title || '',
+          text
+        })
+      });
+    } catch (_) { /* silent — recall save failure should never block the user */ }
+    showToast('🧠 Recall saved — great practice!');
+  }
 }
+
 function skipRecall() {
   const modal = document.getElementById('recallModal');
   if (modal) modal.style.display = 'none';

@@ -112,6 +112,10 @@ private void applyMeta(TopicSeedDto d, String title, Pattern p) {
 			d.setBruteForce("Nested loops O(n²) for most pair/subarray problems");
 			d.setOptimizedApproach("HashMap for O(1) lookup, prefix sum for range queries, two pointers for pair problems");
 			d.setWhenToUse("Random access by index, cache-friendly iteration, when size is fixed");
+			d.setMemoryAnchor("Array: a shelf of numbered boxes — grab any box in O(1), search the whole shelf in O(n).");
+			d.setStory("Arjun is a warehouse manager. Every evening he gets a list of daily sales figures and needs to answer questions like 'What was the highest revenue in any 7-day window this year?' He starts by looking at every possible window — 365 checks, each looking at 7 days: 2,555 operations. His laptop groans. Then he realises: if he knows the sum of days 1-7, the sum of days 2-8 is just that minus day 1, plus day 8. One subtraction, one addition. He never rechecks what he already knows. The array is his shelf of daily numbers — fixed size, O(1) to read any slot.");
+			d.setAnalogy("An array is a numbered shelf in a post office. Every slot has an index printed on it. You walk directly to slot 42 — no searching. But the shelf has a fixed size; you cannot add a new slot without getting a bigger shelf.");
+			d.setFirstPrinciples("Why O(1) random access? Because an array is a contiguous block of memory. arr[i] = base_address + i × element_size. One multiplication, one addition — the CPU does this in a single instruction regardless of array size. That is why access is constant time: the math is always the same equation.");
 		}
 		case STRINGS -> {
 			d.setDescription("Immutable char sequences. Master sliding window for substrings, frequency arrays for anagrams, StringBuilder for construction.");
@@ -120,6 +124,10 @@ private void applyMeta(TopicSeedDto d, String title, Pattern p) {
 			d.setBruteForce("Generate all substrings O(n²) and check each");
 			d.setOptimizedApproach("Sliding window with HashMap for frequency tracking — single pass O(n)");
 			d.setWhenToUse("Pattern matching, palindromes, anagram detection, substring problems");
+			d.setMemoryAnchor("String problems: think frequency first. A char[26] array replaces a HashMap and costs O(1) space for lowercase English.");
+			d.setStory("Neha is a plagiarism detection engineer at a publishing house. She needs to find if any sentence in a 10,000-word document is an anagram of a given phrase. Her first instinct: sort every possible substring and compare. For a 10,000-character document, that is 50 million substring comparisons. Her manager gives her 30 seconds. Then she realises: two strings are anagrams if and only if they have the same character frequencies. Build one frequency map for the pattern. Slide a window of the same length across the document, updating the frequency count one character at a time. One pass. O(n).");
+			d.setAnalogy("A string is a train of carriages, each carrying one character. You cannot move carriages around — strings are immutable. If you want to rearrange, you build a new train (StringBuilder). The sliding window is like moving a camera of fixed width along the train — you see exactly k carriages at a time, sliding one step at a time.");
+			d.setFirstPrinciples("Why are Java strings immutable? Because string pooling requires it: 'hello' in memory can be shared by 1,000 references safely only if nobody can change it. Immutability enables caching the hashCode (computed once, reused for HashMap lookups). The cost: every modification creates a new object. That is why StringBuilder exists — it is a mutable char array under the hood that only creates a String when you call toString().");
 		}
 		case SORTING -> {
 			d.setDescription("Ordering elements is prerequisite for binary search, two-pointer, and greedy. Know merge, quick, heap, counting sort and when to use each.");
@@ -128,22 +136,178 @@ private void applyMeta(TopicSeedDto d, String title, Pattern p) {
 			d.setBruteForce("Bubble sort — swap adjacent elements until sorted");
 			d.setOptimizedApproach("Merge sort (stable, guaranteed) or quick sort (in-place, cache-friendly)");
 			d.setWhenToUse("Before binary search, two-pointer problems, when order matters");
+			d.setMemoryAnchor("Sorting: O(n log n) is the floor for comparison-based sorts. You cannot do better unless you exploit the value range (counting sort).");
+			d.setStory("Mrs. Sharma is returning exam papers to 40 students. She holds 40 loose papers. Option 1: scan the whole pile for the lowest roll number, pull it out, repeat — 40+39+38... = 780 comparisons. Option 2: split the pile in two, sort each half separately (recursion), then merge — two sorted piles merge in one linear pass. Log₂(40) ≈ 5 levels of splitting, 40 comparisons each level: 200 total. She chose merge sort before she ever heard the name.");
+			d.setAnalogy("Merge sort is like organising a library after a flood scattered all the books. You split the pile into two, ask two helpers to sort their halves, then you interleave the two sorted stacks — always taking the smaller front book. Quick sort is like a teacher sorting students by height: pick one student as the pivot, everyone shorter goes left, everyone taller goes right, then sort each group.");
+			d.setFirstPrinciples("Why is O(n log n) the lower bound for comparison sorts? Proof by decision trees: sorting n elements requires distinguishing n! possible orderings. A binary decision tree with n! leaves must have height ≥ log₂(n!) ≈ n log n by Stirling's approximation. Every comparison-based sort must make at least n log n comparisons in the worst case. Counting sort breaks this by using element values as indices — it does not compare.");
 		}
-		case TREES -> {
-			d.setDescription("Hierarchical structure. DFS (recursion) solves most tree problems. BFS (queue) for level-order. Master both traversals.");
-			d.setTimeComplexity("O(n) traversal | O(h) DFS recursion stack | O(w) BFS queue");
-			d.setSpaceComplexity("O(h) stack | O(w) queue where h=height, w=max width");
-			d.setBruteForce("Brute: traverse every path from root O(n²)");
-			d.setOptimizedApproach("DFS return values carry computed info up the tree O(n)");
-			d.setWhenToUse("Hierarchical data, expression trees, interval problems, file systems");
+		case LINKED_LIST -> {
+			d.setDescription("Chain of nodes where each node points to the next. O(1) insert/delete at known position, O(n) search. No random access.");
+			d.setTimeComplexity("O(1) insert/delete at head | O(n) search | O(n) access by index");
+			d.setSpaceComplexity("O(n) — one pointer overhead per node");
+			d.setBruteForce("Traverse from head for every operation — O(n) each");
+			d.setOptimizedApproach("Two-pointer technique: slow/fast pointers for cycle detection, finding middle, kth from end");
+			d.setWhenToUse("Frequent insert/delete at front, implementing stacks/queues, when random access is not needed");
+			d.setMemoryAnchor("Linked List: each node knows only the next. To find node 42 you must walk from node 1. No shortcuts.");
+			d.setStory("Ravi is on a treasure hunt. Each clue is a sealed envelope. Envelope 1 says 'Go to the old banyan tree.' At the tree, envelope 2 says 'Go to the school library.' You cannot skip to clue 7 without reading clues 1 through 6 — there is no index, no map. But inserting a new clue between clue 3 and 4 is instant: change what clue 3 points to. That is a linked list.");
+			d.setAnalogy("A linked list is a paper chain. Each link holds a value and a hook that attaches to the next link. Adding a link anywhere in the middle is easy — unhook one connection, insert the new link, rehook. But to find the 50th link you must count from the first.");
+			d.setFirstPrinciples("Why no random access? Array elements are contiguous: element i is at base + i×size. Linked list nodes are scattered in heap memory — each node stores its value and the memory address of the next node. There is no formula to jump to node i; you must follow the chain of pointers one by one.");
+		}
+		case STACK -> {
+			d.setDescription("LIFO structure. Push to top, pop from top. O(1) both operations. Used for DFS, expression parsing, undo systems.");
+			d.setTimeComplexity("O(1) push | O(1) pop | O(1) peek");
+			d.setSpaceComplexity("O(n) — n elements on the stack");
+			d.setBruteForce("Simulate stack with an array and manual index tracking");
+			d.setOptimizedApproach("Java Deque (ArrayDeque) — faster than Stack class, avoids synchronization overhead");
+			d.setWhenToUse("Balanced brackets, DFS iteratively, expression evaluation, undo/redo, backtracking");
+			d.setMemoryAnchor("Stack: last in, first out — like a pile of plates. You can only touch the top.");
+			d.setStory("Priya is building a browser. When you click a link, the current page goes onto the back-button stack. Click another link — current page pushed again. Press back: pop the top page. The browser never looks at old pages until you pop down to them. The stack perfectly models 'undo the most recent action first' — the fundamental structure of any history system.");
+			d.setAnalogy("A stack of plates in a cafeteria. You always take the top plate. You always place the new plate on top. The plate you put down last is the first one picked up. The plate at the bottom has been waiting the longest.");
+			d.setFirstPrinciples("Why does DFS use a stack? Depth-first search explores as far as possible before backtracking. 'As far as possible' means following one path completely before trying another. A stack stores the path you took: when you hit a dead end, you pop back to the last decision point and try the next branch. Recursive DFS uses the call stack implicitly — explicit DFS uses an explicit Deque.");
+		}
+		case QUEUE -> {
+			d.setDescription("FIFO structure. Enqueue at rear, dequeue from front. O(1) both. Used for BFS, scheduling, level-order processing.");
+			d.setTimeComplexity("O(1) offer/poll | O(n) search");
+			d.setSpaceComplexity("O(n) — n elements in queue");
+			d.setBruteForce("Simulate with ArrayList (O(n) remove from front)");
+			d.setOptimizedApproach("ArrayDeque — circular buffer, O(1) both ends, no synchronization overhead");
+			d.setWhenToUse("BFS, level-order tree traversal, task scheduling, sliding window minimum (monotonic deque)");
+			d.setMemoryAnchor("Queue: first in, first out — like a bank line. The person who waited longest gets served first.");
+			d.setStory("Vivek is managing a hospital emergency queue. Patients arrive and are added to the back. The doctor always calls the patient who has been waiting longest — the front. It would be chaos to serve the newest arrival first. The queue enforces fairness: first come, first served. BFS uses this same fairness: process the shallowest nodes before the deeper ones.");
+			d.setAnalogy("A cinema ticket queue. You join at the back. You leave from the front. The person who arrived first buys their ticket first. No cutting in line.");
+			d.setFirstPrinciples("Why does BFS use a queue? BFS must explore all nodes at depth d before any node at depth d+1. A queue enforces this ordering: nodes enqueued at depth d are all dequeued before nodes enqueued at depth d+1 (because they were enqueued first). A stack would give DFS instead — it would follow one path deep before backtracking.");
+		}
+		case HASHING -> {
+			d.setDescription("O(1) average lookup, insert, delete using a hash function. HashMap for key-value pairs, HashSet for uniqueness checks.");
+			d.setTimeComplexity("O(1) average all operations | O(n) worst case with collisions");
+			d.setSpaceComplexity("O(n) — n entries in the table");
+			d.setBruteForce("Linear scan O(n) for lookup/insert/delete");
+			d.setOptimizedApproach("HashMap: store complement/seen values for O(n) solutions to O(n²) nested-loop problems");
+			d.setWhenToUse("Two Sum, frequency counting, anagram detection, duplicate detection, grouping");
+			d.setMemoryAnchor("HashMap: give the key, get the value in O(1). Like a real dictionary — you don't read every word to find 'elephant'.");
+			d.setStory("Ananya is a librarian in a 10-million-book library. A patron asks for 'The God of Small Things'. Option 1: scan every shelf in order — 10 million checks. Option 2: years ago Ananya built an index: for every title, she wrote down the exact shelf and slot. Now she opens the index, finds the title in O(1), walks directly to the shelf. The HashMap is that index. The hash function turns the key into the index page number in one computation.");
+			d.setAnalogy("A HashMap is a real dictionary with alphabetical tabs. The key is the word. The hash function is like the first letter — it tells you which section to open. Within the section you find the exact page (the bucket). Collision is two words starting with the same letter sharing the same section — handled by a small list within the bucket.");
+			d.setFirstPrinciples("Why O(1)? A hash function converts a key to an integer in O(key_length) time, then modulo the table size gives a bucket index. Accessing an array at an index is O(1). So the whole operation is O(1) amortised, assuming collisions are rare. Java's HashMap uses chaining (linked list per bucket) for collisions and rehashes when load factor exceeds 0.75 to keep chains short.");
+		}
+		case SEARCHING -> {
+			d.setDescription("Binary search halves the search space each step. O(log n). Requires sorted input. Recognise it when the answer is monotonic.");
+			d.setTimeComplexity("O(log n) binary search | O(n) linear search");
+			d.setSpaceComplexity("O(1) iterative | O(log n) recursive call stack");
+			d.setBruteForce("Linear scan — check every element O(n)");
+			d.setOptimizedApproach("Binary search on sorted array or on the answer space (search for minimum/maximum valid value)");
+			d.setWhenToUse("Sorted array lookup, finding boundary in monotonic function, minimise/maximise problems with feasibility check");
+			d.setMemoryAnchor("Binary search: throw out half the problem every step. Never check what you already know is impossible.");
+			d.setStory("Karan is playing a number-guessing game. The host picks a number between 1 and 1,000,000. Karan guesses 500,000. 'Too high.' Now Karan knows the answer is in 1–499,999. He guesses 250,000. 'Too low.' Now it is 250,001–499,999. Each guess eliminates exactly half the remaining possibilities. After 20 guesses, only one number remains. 2²⁰ = 1,048,576. Twenty questions to find one number in a million.");
+			d.setAnalogy("Opening a dictionary to find 'rhinoceros'. You open to the middle — 'M'. Too early. You open to the midpoint of M-Z — 'S'. Too late. You keep halving the remaining pages. You never go backwards. You never re-examine pages you have already passed.");
+			d.setFirstPrinciples("Why log n? Each iteration halves the search space. Starting with n elements: after 1 step, n/2 remain. After 2 steps, n/4. After k steps, n/2^k. We stop when n/2^k = 1, so k = log₂(n). For n = 1,000,000: log₂(1,000,000) ≈ 20. Twenty comparisons maximum. This is why binary search on a sorted array beats linear search on any non-trivial input.");
+		}
+		case TWO_POINTER -> {
+			d.setDescription("Two indices moving through data simultaneously. Eliminates a nested loop when array is sorted or has a predictable structure.");
+			d.setTimeComplexity("O(n) — each pointer moves at most n steps total");
+			d.setSpaceComplexity("O(1) — just two integer variables");
+			d.setBruteForce("Nested loops checking every pair: O(n²)");
+			d.setOptimizedApproach("One pointer at each end, move inward based on the condition — reduces O(n²) to O(n)");
+			d.setWhenToUse("Sorted array pair sum, palindrome check, merging sorted arrays, removing duplicates in-place");
+			d.setMemoryAnchor("Two Pointer: squeeze from both ends like folding a paper to find the middle. Each pointer moves at most n steps — O(n) total.");
+			d.setStory("Detective Meera is searching a sorted list of 10,000 suspect IDs for any two that sum to a target value. Her partner starts at ID 1 (the smallest), Meera starts at ID 10,000 (the largest). Sum too high? Meera moves one step left. Sum too low? Her partner moves one step right. They walk toward each other. At most 10,000 total steps between them. No nested loops. No wasted checks.");
+			d.setAnalogy("Two people walking toward each other on a straight road. They start at opposite ends and approach the middle. Together they cover the entire road in the time it takes one person to walk half of it. The key insight: they never need to go backwards, because the array is sorted.");
+			d.setFirstPrinciples("Why O(n)? Each pointer starts at one end and moves toward the other. Left pointer can only move right (n-1 steps max). Right pointer can only move left (n-1 steps max). Total pointer moves: at most 2n. Each step we make a decision and one pointer moves. So the algorithm terminates in at most 2n steps — O(n). The sorting is what makes it safe to throw away half the problem at each step.");
+		}
+		case SLIDING_WINDOW -> {
+			d.setDescription("Maintain a window that expands/shrinks over a sequence. O(n) for problems that would otherwise be O(n²). Used for subarrays and substrings.");
+			d.setTimeComplexity("O(n) — each element enters and leaves the window exactly once");
+			d.setSpaceComplexity("O(k) for fixed window | O(n) for variable window with HashMap");
+			d.setBruteForce("Check every subarray/substring: O(n²) or O(n²k)");
+			d.setOptimizedApproach("Expand right pointer, shrink left pointer when condition violated — each element processed at most twice");
+			d.setWhenToUse("Maximum/minimum subarray of size k, longest substring with constraint, minimum window containing all characters");
+			d.setMemoryAnchor("Sliding Window: subtract what leaves, add what arrives — never recompute what you already know.");
+			d.setStory("Priya is a finance analyst. Her manager asks: 'Find the best-performing 7-day window in the past year of daily revenue data.' Her first approach: check all 359 windows of 7 days, summing 7 numbers each: 2,513 additions. Then Priya realises: she already has the sum of days 1-7. The sum of days 2-8 is that sum, minus day 1, plus day 8. One subtraction, one addition. She slides the window forward one step at a time. 358 additions total instead of 2,513.");
+			d.setAnalogy("A camera with a fixed-width lens panning across a scene. You see exactly k frames at a time. As the camera slides right, one frame leaves the left edge and one new frame enters the right edge. You do not re-examine frames already passed. The window slides, never jumps back.");
+			d.setFirstPrinciples("Why O(n)? Each element is added to the window exactly once (when the right pointer passes it) and removed exactly once (when the left pointer passes it). Two passes over the array total — O(2n) = O(n). The power of sliding window comes from maintaining running state (sum, frequency map, max) as the window moves, rather than recomputing from scratch for each position.");
+		}
+		case RECURSION -> {
+			d.setDescription("A function that calls itself with a smaller input. Every recursive solution needs: base case (stop condition) and recursive case (reduce toward base).");
+			d.setTimeComplexity("O(n) simple recursion | O(2ⁿ) naive tree recursion | O(n log n) divide and conquer");
+			d.setSpaceComplexity("O(n) call stack depth for linear recursion | O(log n) for balanced divide and conquer");
+			d.setBruteForce("Iterative loops with explicit stack management");
+			d.setOptimizedApproach("Memoization: cache results of expensive recursive calls to avoid recomputation (top-down DP)");
+			d.setWhenToUse("Tree/graph traversal, divide and conquer, backtracking, problems with self-similar structure");
+			d.setMemoryAnchor("Recursion: trust the function to solve the smaller version. Write the base case, write the reduction, done.");
+			d.setStory("Sensei Rajan teaches a recipe to his apprentice. The apprentice teaches it to their apprentice. Each teacher only knows they need to teach one person. The recipe for 5 students: teach 1 student, who teaches the recipe to 4 students (same problem, smaller input). Base case: 0 students — nothing to teach. This is recursion. Each call trusts the next call to handle its portion correctly.");
+			d.setAnalogy("Russian dolls (Matryoshka). Open the outer doll to find a smaller doll inside. Open that one to find an even smaller one. Each doll is the same problem at a smaller scale. The smallest doll (base case) is solid — it does not open. You trust that each inner doll is complete before you worry about the outer one.");
+			d.setFirstPrinciples("Why does recursion work? Mathematical induction. Prove: (1) the function handles the base case correctly. (2) if the function handles input of size n-1 correctly, it handles input of size n correctly. The recursive call is a leap of faith — you assume it works for the smaller input and build your solution on top of that assumption. The base case is the foundation that makes the induction valid.");
 		}
 		case DYNAMIC_PROG -> {
-			d.setDescription("Avoid recomputing overlapping subproblems. Two approaches: top-down memoization (easy) or bottom-up tabulation (efficient).");
-			d.setTimeComplexity("O(n) to O(n²) — one cell per unique state");
+			d.setDescription("Avoid recomputing overlapping subproblems. Two approaches: top-down memoization (easy to write) or bottom-up tabulation (space-efficient).");
+			d.setTimeComplexity("O(n) to O(n²) — one computation per unique subproblem");
 			d.setSpaceComplexity("O(n²) table → O(n) rolling array → O(1) with two variables");
-			d.setBruteForce("Recursion without memo — exponential O(2ⁿ) for most problems");
-			d.setOptimizedApproach("Tabulation: fill dp[] from base case. Space-optimize: only keep previous row/vars");
-			d.setWhenToUse("Optimal substructure + overlapping subproblems: counting ways, min/max over sequence");
+			d.setBruteForce("Recursion without memo — exponential O(2ⁿ) for most DP problems");
+			d.setOptimizedApproach("Tabulation: fill dp[] from base case upward. Space-optimize: keep only the previous row or two variables");
+			d.setWhenToUse("Optimal substructure + overlapping subproblems: counting ways, min/max cost over a sequence, knapsack problems");
+			d.setMemoryAnchor("Dynamic Programming: if you have solved this exact subproblem before, look it up — don't solve it again.");
+			d.setStory("Rohan is climbing stairs. He can take 1 or 2 steps at a time. How many ways to reach step 10? Naive recursion: ways(10) = ways(9) + ways(8). Ways(9) = ways(8) + ways(7). Ways(8) is computed three times before Rohan reaches step 5. By step 10, ways(1) has been computed 89 times. Memoization: write the answer for ways(1) on a sticky note on the wall. Next time you need it, read the note. 10 sticky notes. 10 computations instead of 177.");
+			d.setAnalogy("DP is like a student who writes down every answer in a notebook. In an exam, when a question repeats something from a previous problem, they flip to their notes instead of rederiving from scratch. Tabulation is writing answers from the simplest questions up. Memoization is writing answers whenever you first discover them.");
+			d.setFirstPrinciples("Two conditions for DP to apply: (1) Optimal substructure — the optimal solution to the whole problem can be built from optimal solutions to subproblems. (2) Overlapping subproblems — the same subproblems are solved repeatedly. Without (1), greedy might work. Without (2), divide and conquer is enough. DP = recursion + memory.");
+		}
+		case GREEDY -> {
+			d.setDescription("Make the locally optimal choice at each step. Works when local optimum leads to global optimum. Always prove correctness — greedy is not always right.");
+			d.setTimeComplexity("O(n log n) if sorting needed | O(n) after sorting");
+			d.setSpaceComplexity("O(1) extra space beyond the input");
+			d.setBruteForce("Try all possible combinations: O(2ⁿ) for subset problems");
+			d.setOptimizedApproach("Sort by the greedy criterion, make the best local choice, never reconsider");
+			d.setWhenToUse("Activity selection, interval scheduling, Huffman coding, minimum spanning tree, coin change (certain denominations)");
+			d.setMemoryAnchor("Greedy: always grab the best option available right now. Works when 'best now' never hurts 'best later'.");
+			d.setStory("Monika manages a conference room. Seven teams want to book it for different time slots. She wants to fit in the maximum number of teams. Strategy 1: prefer teams with earliest start times — fails when a team books the whole day. Strategy 2: prefer shortest meetings — fails when short meetings block all morning. Strategy 3: prefer teams with earliest END times — always leaves maximum room for what follows. This exchange argument proves greedy works: no swap of a later-ending meeting for an earlier-ending one can give a better result.");
+			d.setAnalogy("Packing a bag greedily for a hike: always put in the most valuable-per-kilogram item first. This works for the fractional knapsack (you can cut items). It fails for the 0-1 knapsack (items are indivisible) — a classic example of where greedy breaks and DP is needed instead.");
+			d.setFirstPrinciples("Greedy correctness proof uses the exchange argument: assume the greedy choice is wrong and an optimal solution makes a different choice. Show that swapping to the greedy choice does not make the solution worse (and possibly makes it better). If you can prove no swap hurts, the greedy choice is safe at every step. Without this proof, always test greedy against small counterexamples.");
+		}
+		case BACKTRACKING -> {
+			d.setDescription("Explore all possibilities by building solutions incrementally and abandoning (pruning) paths that cannot lead to a valid solution.");
+			d.setTimeComplexity("O(n!) or O(2ⁿ) worst case | pruning reduces practical runtime significantly");
+			d.setSpaceComplexity("O(n) recursion depth");
+			d.setBruteForce("Generate all combinations/permutations without pruning — same complexity but slower in practice");
+			d.setOptimizedApproach("Prune early: check validity before recursing deeper, not after. Use a visited/used boolean array.");
+			d.setWhenToUse("Permutations, combinations, N-Queens, Sudoku solver, word search, subset sum");
+			d.setMemoryAnchor("Backtracking: explore, then undo. Place, recurse, remove. The undo step is what makes it backtracking.");
+			d.setStory("Aryan is solving a Sudoku. He tries placing 3 in cell (1,1). Recurse into cell (1,2). Try 1 — conflict in row. Try 2 — conflict in box. Try 3 — already used. Try 4 — works, recurse. Eventually: dead end — no valid digit for cell (5,7). Backtrack: undo the last placement, try the next digit. Keep unwinding until you find a placement that leads to a full solution. Backtracking is controlled exhaustive search.");
+			d.setAnalogy("A maze with multiple forks. At each fork you mark the path you took with chalk. If you hit a dead end, you follow your chalk marks back to the last fork and try the next path. The chalk marks are the recursion stack. Backtracking is guaranteed to find the exit if one exists.");
+			d.setFirstPrinciples("Why is it not just brute force? Pruning. Before recursing into a branch, check if this branch can possibly lead to a solution. If not, skip it entirely. Example: in N-Queens, if placing a queen creates an immediate attack, skip the entire subtree rooted at that placement. Good pruning can reduce exponential runtime to near-polynomial for practical inputs.");
+		}
+		case PREFIX_SUM -> {
+			d.setDescription("Precompute cumulative sums so any range sum query is answered in O(1). Build: O(n). Query: O(1). Essential for range problems.");
+			d.setTimeComplexity("O(n) build | O(1) query | O(n²) naive per query");
+			d.setSpaceComplexity("O(n) prefix array");
+			d.setBruteForce("Sum elements from l to r on every query: O(n) per query, O(n²) total");
+			d.setOptimizedApproach("prefix[i] = prefix[i-1] + arr[i]. Range sum(l,r) = prefix[r] - prefix[l-1]. One subtraction.");
+			d.setWhenToUse("Multiple range sum queries, subarray sum equals K, equilibrium index, 2D matrix range sum");
+			d.setMemoryAnchor("Prefix Sum: do the work once, answer forever. prefix[r] - prefix[l-1] is every range sum you will ever need.");
+			d.setStory("Kavya works at a toll booth company. Every day they receive 365 daily revenue figures. Managers ask 50 different range questions: 'Total revenue from day 47 to day 198?' Naive: sum 152 numbers for each question. 50 questions × 152 numbers = 7,600 additions. Kavya precomputes: prefix[1]=day1, prefix[2]=day1+day2, ..., prefix[365]=total. Now each question is one subtraction: prefix[198] - prefix[46]. 50 subtractions instead of 7,600 additions.");
+			d.setAnalogy("A mileage odometer on a car. You record the odometer at the start of each day. Distance travelled between day 47 and day 198 = odometer(day198) - odometer(day46). One subtraction, regardless of how many days are in the range. The prefix sum array is the odometer: it accumulates totals so you can subtract to get any interval.");
+			d.setFirstPrinciples("Why prefix[r] - prefix[l-1] works: prefix[r] = sum of elements 0 through r. prefix[l-1] = sum of elements 0 through l-1. Their difference = sum of elements l through r. The common prefix (0 to l-1) cancels out. This is the fundamental insight: precomputing cumulative sums converts range queries from O(n) to O(1) at the cost of O(n) preprocessing and O(n) space.");
+		}
+		case HEAPS -> {
+			d.setDescription("Binary heap for O(log n) insert and O(log n) extract-min/max. PriorityQueue in Java. Used for top-K problems and Dijkstra's algorithm.");
+			d.setTimeComplexity("O(log n) insert/delete | O(1) peek min/max | O(n log k) for top-K");
+			d.setSpaceComplexity("O(n) — n elements stored");
+			d.setBruteForce("Sort the entire array for top-K: O(n log n)");
+			d.setOptimizedApproach("Maintain a min-heap of size k for top-K largest: O(n log k). Better than sorting when k << n.");
+			d.setWhenToUse("K largest/smallest elements, median in stream, merge K sorted lists, shortest path (Dijkstra)");
+			d.setMemoryAnchor("Heap: the smallest (or largest) element is always at the top, ready in O(1). Adding or removing costs O(log n).");
+			d.setStory("Riya is a hospital triage nurse. Patients arrive with different severity scores (1-10). She always treats the most critical patient first. New patients can arrive while she is treating others. A sorted list fails: inserting mid-list is O(n). A heap works: insert in O(log n), always pop the maximum severity in O(log n). The heap keeps the most urgent patient at the top at all times.");
+			d.setAnalogy("A heap is like a tournament bracket where the winner (min or max) is always at the top. When the winner is removed, the bracket reorganises itself in O(log n) time to find the new winner. The full sorted order is not maintained — only the guarantee that the top is the best.");
+			d.setFirstPrinciples("A binary heap is a complete binary tree stored as an array. Parent of node i is at i/2. Children of node i are at 2i and 2i+1. The heap property: parent ≤ both children (min-heap). Insert: add at the end, bubble up (swap with parent while parent > child). Delete-min: swap root with last element, remove last, bubble down. Each operation touches at most log₂(n) nodes — the height of the tree.");
+		}
+		case GRAPHS -> {
+			d.setDescription("Vertices connected by edges. BFS for shortest path (unweighted), DFS for connectivity and cycle detection, Dijkstra for weighted shortest path.");
+			d.setTimeComplexity("O(V+E) BFS/DFS | O((V+E) log V) Dijkstra | O(V²) Floyd-Warshall");
+			d.setSpaceComplexity("O(V+E) adjacency list | O(V²) adjacency matrix");
+			d.setBruteForce("Try all paths — O(V!) for all possible paths");
+			d.setOptimizedApproach("BFS for unweighted shortest path, Dijkstra for weighted, Union-Find for connectivity");
+			d.setWhenToUse("Network routing, social connections, dependency resolution, map navigation, course prerequisites");
+			d.setMemoryAnchor("Graph: BFS finds shortest path (unweighted). DFS finds if a path exists. Dijkstra finds shortest path (weighted).");
+			d.setStory("Nandini is a city planner. She has a map of 500 intersections connected by roads. She needs to find the fastest route from the airport to the city centre. BFS (unweighted): explores all intersections 1 hop away, then 2 hops, then 3 — guarantees fewest traffic lights. Dijkstra (weighted): always processes the intersection with the lowest total travel time so far — guarantees fastest by time. The graph is the map; each intersection is a vertex; each road is an edge.");
+			d.setAnalogy("A graph is a map of cities and roads. BFS is like a ripple in water: it expands outward one level at a time, reaching all nearby cities before distant ones. DFS is like a determined hiker who follows one path to its end before backtracking. Dijkstra is like a GPS navigator: always picks the lowest-cost next step.");
+			d.setFirstPrinciples("Why O(V+E) for BFS/DFS? Every vertex is enqueued/pushed exactly once: O(V). Every edge is examined exactly once (when its source vertex is processed): O(E). Total: O(V+E). For Dijkstra with a priority queue: each vertex is extracted once O(V log V) and each edge relaxation is O(log V), giving O((V+E) log V) total.");
 		}
 		case OOP -> {
 			d.setDescription("Model programs as objects with state and behaviour. Four pillars: Encapsulation, Inheritance, Polymorphism, Abstraction.");
@@ -151,23 +315,95 @@ private void applyMeta(TopicSeedDto d, String title, Pattern p) {
 			d.setSpaceComplexity("N/A");
 			d.setBruteForce("Procedural code: global state, no encapsulation");
 			d.setOptimizedApproach("Private fields + public methods, favour composition over inheritance, program to interfaces");
-			d.setWhenToUse("Modelling real-world entities, enforcing invariants, extensible design");
+			d.setWhenToUse("Modelling real-world entities, enforcing invariants, building extensible systems");
+			d.setMemoryAnchor("OOP: objects have state (fields) and behaviour (methods). Encapsulate the state, expose only what is needed.");
+			d.setStory("Siddharth is designing a banking system. Option 1: 10,000 lines of procedural code with global variables for every account. Balance can be changed from anywhere. No audit trail. Option 2: a BankAccount class. balance is private. Only deposit() and withdraw() can change it. Both methods validate before changing state. 10,000 accounts, each an independent object with guaranteed valid state. OOP is the difference between a box of loose wires and a circuit board.");
+			d.setAnalogy("A car is an OOP object. The engine is private — you cannot reach in and adjust the pistons. You interact through the public interface: accelerator, brake, steering wheel. The car encapsulates its complexity. Inheritance: a SportsCar IS-A Car, inheriting all car behaviour and adding its own. Polymorphism: start(vehicle) works whether vehicle is a Car, Truck, or Motorcycle.");
+			d.setFirstPrinciples("Encapsulation prevents invalid state by controlling access to data. A balance field set directly could become -∞; a withdraw() method enforces 'balance ≥ amount'. Polymorphism (runtime dispatch) works through virtual method tables: each object carries a pointer to its class's method table; method calls follow the pointer at runtime, enabling one interface to work with many implementations without the caller knowing the concrete type.");
 		}
 		case COLLECTIONS -> {
 			d.setDescription("Java Collections Framework. ArrayList (O(1) access), LinkedList (O(1) add/remove ends), HashMap (O(1) avg), TreeMap (O(log n) sorted).");
 			d.setTimeComplexity("ArrayList O(1) get | LinkedList O(1) add ends | HashMap O(1) avg | TreeMap O(log n)");
 			d.setSpaceComplexity("O(n) all");
-			d.setBruteForce("Arrays and manual resizing before Collections");
-			d.setOptimizedApproach("Pick the right collection for the access pattern — HashMap for lookup, PriorityQueue for ordered stream");
-			d.setWhenToUse("Any time you need dynamic data storage with specific access patterns");
+			d.setBruteForce("Raw arrays with manual resizing");
+			d.setOptimizedApproach("Pick the right collection for the access pattern — HashMap for lookup, PriorityQueue for priority access, TreeMap for sorted iteration");
+			d.setWhenToUse("Any time you need dynamic data storage — choosing the right collection determines your algorithm's complexity");
+			d.setMemoryAnchor("Collections: ArrayList for indexed access, HashMap for keyed access, PriorityQueue for priority access, TreeMap for sorted access.");
+			d.setStory("Aditya is building a ride-sharing app. For storing ride requests: ArrayList — fast index access but slow middle insert. For driver lookup by ID: HashMap — O(1) get by driverId. For fare leaderboard: TreeMap — always sorted by fare. For next-available driver: PriorityQueue — always O(1) peek at minimum wait time. One wrong collection choice and an O(1) operation silently becomes O(n).");
+			d.setAnalogy("Collections are tools in a toolbox. A HashMap is a wrench — perfect for tightening bolts (keyed access), useless for hammering nails. An ArrayList is a tape measure — great for ordered sequences. Picking the right tool is not just style: it determines whether your algorithm runs in O(1) or O(n).");
+			d.setFirstPrinciples("ArrayList is backed by a primitive array. get(i) is O(1) because it's arr[i]. add(i, val) in the middle is O(n) because elements must shift. HashMap uses an array of buckets: hash(key) % capacity gives the bucket; the bucket holds a linked list (Java 8: tree for buckets > 8). TreeMap is a Red-Black tree: guaranteed O(log n) insert, delete, and ceiling/floor operations.");
+		}
+		case STREAMS -> {
+			d.setDescription("Java 8 Streams: functional pipeline for processing collections. filter, map, sorted, collect. Lazy evaluation means intermediate operations execute only when a terminal operation is called.");
+			d.setTimeComplexity("O(n) single pass | O(n log n) if sorted | Parallel streams: O(n/k) with k cores theoretically");
+			d.setSpaceComplexity("O(1) for most pipelines (lazy) | O(n) for sorted or collect");
+			d.setBruteForce("Nested for-loops with manual condition checks");
+			d.setOptimizedApproach("Chain filter+map+collect in one pass rather than three separate loops over the data");
+			d.setWhenToUse("Transforming, filtering, aggregating collections; replacing boilerplate loops; parallel processing large datasets");
+			d.setMemoryAnchor("Streams: describe WHAT you want (filter → map → collect), not HOW to loop. Lazy evaluation means nothing runs until the terminal operation.");
+			d.setStory("Pooja is processing 1 million user records. Old way: loop 1 to filter active users (1M checks), loop 2 to extract emails (subset), loop 3 to sort. Three passes over the data. Stream way: one pipeline — filter → map → sorted → collect. The JVM fuses these into a single pass. With parallelStream(), it splits work across CPU cores. Same logic, potentially 4× faster on a quad-core machine.");
+			d.setAnalogy("A Stream pipeline is an assembly line in a factory. Raw materials enter at one end. Each station (filter, map, sorted) does one operation. The finished product (collect) exits at the end. The factory only runs when someone orders the product (terminal operation) — that is lazy evaluation.");
+			d.setFirstPrinciples("Streams are lazy: intermediate operations (filter, map) build a pipeline description but do nothing. Only when a terminal operation (collect, forEach, reduce) is called does execution begin. This enables short-circuiting: findFirst() stops after the first match; it does not process the rest of the stream. The source can be an infinite stream because of this laziness.");
 		}
 		case CONCURRENCY -> {
 			d.setDescription("Multiple threads sharing CPU. Master ExecutorService, synchronized, AtomicInteger, and CompletableFuture for async work.");
-			d.setTimeComplexity("O(n/k) theoretical with k threads for parallelizable work");
-			d.setSpaceComplexity("O(k) per thread stack");
-			d.setBruteForce("Single-threaded sequential — safe but slow");
-			d.setOptimizedApproach("Thread pool via ExecutorService, Future/CompletableFuture for async, AtomicInteger for lock-free counters");
-			d.setWhenToUse("I/O-bound async tasks, CPU-bound parallel computation, background processing");
+			d.setTimeComplexity("O(n/k) theoretical with k threads for parallelisable work");
+			d.setSpaceComplexity("O(k) per thread stack (default 512KB-1MB)");
+			d.setBruteForce("Single-threaded sequential — safe but slow for I/O-bound or CPU-bound work");
+			d.setOptimizedApproach("Thread pool via ExecutorService: reuse threads, avoid thread creation overhead. CompletableFuture for async chains.");
+			d.setWhenToUse("I/O-bound tasks (HTTP calls, DB queries), CPU-bound parallel computation, background jobs");
+			d.setMemoryAnchor("Concurrency: shared mutable state is the enemy. Protect it with synchronized, use Atomic classes, or eliminate sharing.");
+			d.setStory("Three chefs in a kitchen with one shared cutting board. Chef 1 is chopping onions. Chef 2 reaches for the board simultaneously. Both grab it. Board breaks — race condition. Fix: a lock on the cutting board. One chef at a time. But now chefs queue up and throughput drops. Better fix: give each chef their own board (thread-local state) — no contention, maximum throughput. Concurrency bugs are kitchen chaos; the solution is either locks or no sharing.");
+			d.setAnalogy("A highway with multiple lanes. Each car (thread) is independent and fast on open road. When lanes merge (shared resource), cars slow down and queue. A semaphore is a traffic light controlling how many cars can enter the merge zone simultaneously. A synchronized block is a single-lane bridge — one car at a time.");
+			d.setFirstPrinciples("The Java Memory Model (JMM) defines visibility rules: changes made by thread A to a variable are not guaranteed visible to thread B unless a happens-before relationship exists. volatile establishes happens-before for reads/writes. synchronized establishes happens-before on monitor enter/exit. Without these, thread B may read a stale cached value from a CPU register. This is why synchronized cannot be omitted even when the logic 'should' be correct.");
+		}
+		case GENERICS -> {
+			d.setDescription("Type-safe generic classes and methods. Write once, use with any type. Erasure removes type info at runtime — generics are a compile-time feature.");
+			d.setTimeComplexity("N/A — compile-time feature, no runtime overhead");
+			d.setSpaceComplexity("N/A");
+			d.setBruteForce("Raw types and manual casts — ClassCastException at runtime instead of compile-time errors");
+			d.setOptimizedApproach("Bounded wildcards: <? extends T> for reading (producer), <? super T> for writing (consumer) — the PECS rule");
+			d.setWhenToUse("Collections, utility methods that work on multiple types, building reusable data structures");
+			d.setMemoryAnchor("Generics: catch type errors at compile time, not at runtime. List<String> won't accept an Integer — the compiler tells you before it crashes.");
+			d.setStory("Rahul writes a sort method for integers. His manager asks for the same for strings. He copies and changes the type — two identical methods. Then for dates. Three copies. A bug in the comparison logic must be fixed in three places. Generics: write Comparable<T> sort once. Works for Integer, String, Date, anything that implements Comparable. One bug fix fixes all three uses.");
+			d.setAnalogy("Generics are like a universal socket adapter. The socket (generic class) accepts any plug shape (type parameter) that meets the specification. Without generics, you need a separate socket for each plug shape — identical functionality, multiplied by the number of types.");
+			d.setFirstPrinciples("Java generics use type erasure: at runtime, List<String> and List<Integer> are both just List. The type parameter is removed by the compiler after type checking. This is why you cannot do new T[] or instanceof List<String>. The upside: no runtime overhead, backward compatibility with pre-generics code. The downside: cannot distinguish List<String> from List<Integer> at runtime.");
+		}
+		case EXCEPTIONS -> {
+			d.setDescription("Handle errors gracefully without crashing. Checked exceptions must be declared or caught; unchecked (RuntimeException) are optional. Use specific exceptions, not Exception.");
+			d.setTimeComplexity("N/A — control flow mechanism");
+			d.setSpaceComplexity("O(stack depth) — stack trace is captured at throw time");
+			d.setBruteForce("Return null or -1 error codes — caller may forget to check, silent bugs");
+			d.setOptimizedApproach("Throw specific exceptions with clear messages. Catch at the layer that can meaningfully handle. Use finally or try-with-resources for cleanup.");
+			d.setWhenToUse("File I/O, network calls, database operations, any operation that can fail for external reasons");
+			d.setMemoryAnchor("Exceptions: throw specific, catch specific, clean up in finally. Never catch Exception and ignore it.");
+			d.setStory("Yash's payment service calls an external bank API. Three things can go wrong: network timeout, invalid account number, insufficient funds. Option 1: return -1, -2, -3. The caller checks the integer — or forgets to. Silent failures reach the user as a blank screen. Option 2: throw NetworkTimeoutException, InvalidAccountException, InsufficientFundsException. The compiler forces callers to handle or declare them. The right error surfaces immediately with a clear message.");
+			d.setAnalogy("Exception handling is like error lights on a car dashboard. Instead of the engine silently failing (returning -1), the engine management system throws a specific warning: 'Oil pressure low' (specific exception). You catch the warning at the driver's seat (the layer that can act on it) and respond appropriately. Catching all errors with a single 'Check Engine' light (catch Exception) loses the detail needed to respond correctly.");
+			d.setFirstPrinciples("Checked vs unchecked: checked exceptions (IOException, SQLException) represent recoverable external failures — the compiler forces you to handle them because they are expected. Unchecked exceptions (NullPointerException, IllegalArgumentException) represent programming errors — callers cannot meaningfully recover from a null dereference at runtime; the fix is to not pass null. This distinction is the design intent of the two-category exception hierarchy.");
+		}
+		case DESIGN_PATTERNS -> {
+			d.setDescription("23 GoF patterns categorised as Creational (how objects are made), Structural (how objects are composed), Behavioural (how objects communicate).");
+			d.setTimeComplexity("N/A — architectural patterns");
+			d.setSpaceComplexity("N/A");
+			d.setBruteForce("Ad-hoc code: new dependencies everywhere, no abstraction, hard to test and extend");
+			d.setOptimizedApproach("Program to interfaces, not implementations. Favour composition over inheritance. Inject dependencies.");
+			d.setWhenToUse("When code needs to be extensible, testable, and maintainable at scale — recognise the pattern before reaching for inheritance");
+			d.setMemoryAnchor("Singleton: one instance. Factory: hide construction. Observer: notify subscribers. Strategy: swap algorithms. Decorator: add behaviour at runtime.");
+			d.setStory("Zara is building a notification system. Her first version: NotificationService directly instantiates EmailSender, SMSSender, PushSender. Testing is impossible — you cannot mock the real email server. A month later: add SlackSender. She modifies NotificationService — breaks existing code. With Observer pattern: NotificationService knows only about NotificationListener interface. EmailSender, SMSSender, SlackSender all implement it. New sender = new class, zero changes to existing code. Open/Closed principle.");
+			d.setAnalogy("Singleton is Netflix's global config manager — one configuration object shared by all microservices. Observer is Amazon's warehouse alert system — when inventory changes, all subscribed systems are notified automatically. Decorator is a Starbucks order: base coffee, add milk (+cost), add syrup (+cost), each decorator wraps the previous one without changing it.");
+			d.setFirstPrinciples("Design patterns are solutions to recurring design problems in the context of object-oriented design. They are not code to copy-paste — they are shapes of relationships between classes. The power of patterns comes from the SOLID principles they embody: Single Responsibility (each class does one thing), Open-Closed (open for extension, closed for modification), Liskov Substitution (subclasses can replace their parent), Interface Segregation (specific interfaces), Dependency Inversion (depend on abstractions).");
+		}
+		case JVM -> {
+			d.setDescription("JVM architecture: ClassLoader, Runtime Data Areas (Heap, Stack, Method Area), Execution Engine (JIT), Garbage Collector. Understanding JVM optimises performance.");
+			d.setTimeComplexity("GC pause: milliseconds (G1) to seconds (full GC) | JIT: warmup cost amortised over program lifetime");
+			d.setSpaceComplexity("Heap: configurable (-Xmx). Stack: one per thread. Method Area: class metadata.");
+			d.setBruteForce("Ignoring memory — creating excessive objects, no pool, no reuse");
+			d.setOptimizedApproach("Reduce object allocation (object pooling, value types), tune GC with -XX flags, avoid premature optimisation — profile first");
+			d.setWhenToUse("Performance tuning, memory leak debugging, understanding why System.gc() does nothing useful, OutOfMemoryError investigation");
+			d.setMemoryAnchor("JVM Heap: where objects live. Stack: where method calls live. GC: cleans up heap objects with no references. JIT: hot code paths get compiled to native machine code.");
+			d.setStory("Simran's Spring Boot service runs fine under light load. Under 10,000 requests/second it freezes for 3 seconds every few minutes. The culprit: full GC pause. Every request creates 50 short-lived objects. At 10k RPS that is 500,000 objects/second. The young generation heap fills up faster than minor GC can clean it. Objects promote to old generation. Old generation fills. Full GC — stop the world. Fix: object pooling for the hot path. GC pauses disappear. Understanding JVM turned a production incident into a 10-line fix.");
+			d.setAnalogy("JVM Heap is RAM for objects. Stack is a notepad: method frame written on entry, erased on exit. Method Area is the office library: class definitions stored permanently. GC is the office cleaner: visits at night, removes papers nobody is looking at. JIT is the shortcut typist: the first time a report is written, it takes 10 minutes; JIT notices and creates a one-click macro for the next 10,000 copies.");
+			d.setFirstPrinciples("JIT (Just-In-Time) compilation: bytecode is interpreted (slow) until a method is 'hot' (called > 10,000 times by default). HotSpot then compiles it to native machine code and replaces the interpreter call with the compiled version. This is why Java startup is slow (interpreting) but throughput is fast (native code). Garbage collection correctness relies on the GC root set: live objects are those reachable from GC roots (stack variables, static fields, JNI references). Unreachable objects are dead and eligible for collection.");
 		}
 		default -> {
 			d.setDescription("Master " + title + " with targeted examples and graduated practice problems.");
@@ -176,6 +412,10 @@ private void applyMeta(TopicSeedDto d, String title, Pattern p) {
 			d.setBruteForce("Brute force: try all possibilities");
 			d.setOptimizedApproach("Apply the core " + title + " pattern to reduce complexity");
 			d.setWhenToUse("When the problem structure matches " + title + " characteristics");
+			d.setMemoryAnchor("Master the core insight of " + title + " — know when to apply it and why it works.");
+			d.setStory("Every great engineer who masters " + title + " starts by understanding WHY it works, not just HOW to code it. Trace through a small example by hand first. Then code it. Then ask: what is the invariant this algorithm maintains at every step?");
+			d.setAnalogy(title + " can be understood through a real-world analogy: identify the core operation it performs and find a physical system that does the same thing. The analogy is the memory hook.");
+			d.setFirstPrinciples("Ask three questions: (1) What problem does " + title + " solve? (2) What property of the input makes it applicable? (3) What is the invariant maintained at each step? Answers to these three questions mean you truly understand it — not just that you have memorised it.");
 		}
 	}
 }
@@ -357,6 +597,19 @@ private String[][] generateGenericExamples(String title) {
 private List<ProblemSeedDto> problems(String title, Pattern p) {
 	var specs = getProblemSpecs(title, p);
 	List<ProblemSeedDto> list = new ArrayList<>();
+	// Map pattern enum to the canonical string used by AlgorithmDetectorService
+	String patternTag = switch (p) {
+		case TWO_POINTER    -> "TWO_POINTER";
+		case SLIDING_WINDOW -> "SLIDING_WINDOW";
+		case SEARCHING      -> "BINARY_SEARCH";
+		case HASHING        -> "HASH_MAP";
+		case RECURSION      -> "RECURSION";
+		case DYNAMIC_PROG   -> "DYNAMIC_PROGRAMMING";
+		case GREEDY         -> "GREEDY";
+		case PREFIX_SUM     -> "PREFIX_SUM";
+		case GRAPHS         -> "BFS";
+		default             -> p.name();
+	};
 	for (int i = 0; i < 20; i++) {
 		String diff = i < 6 ? "EASY" : i < 14 ? "MEDIUM" : "HARD";
 		String[] spec = i < specs.size() ? specs.get(i) : makeGenericSpec(title, i);
@@ -375,9 +628,42 @@ private List<ProblemSeedDto> problems(String title, Pattern p) {
 		prob.setDifficulty(diff);
 		prob.setHint(spec[6]);
 		prob.setStarterCode(spec[7]);
+		prob.setPattern(patternTag);
+		// Phase 1: 3-tier hint ladder
+		prob.setHint1(buildHint1(spec[6], diff));
+		prob.setHint2(buildHint2(spec[0], p, diff));
+		prob.setHint3("Pseudocode approach:\n1. " + spec[6] + "\n2. Iterate through the input applying the " + title + " pattern.\n3. Return the computed result.\n\n// Starter structure:\n" + spec[7].lines().limit(6).reduce("", (a, b) -> a + b + "\n"));
 		list.add(prob);
 	}
 	return list;
+}
+
+/** Phase 1: Hint 1 — direction only, no algorithm revealed */
+private String buildHint1(String hint, String diff) {
+	if (diff.equals("EASY")) {
+		return "Think about what single value or condition you need to track as you iterate through the input once.";
+	} else if (diff.equals("MEDIUM")) {
+		return "Consider what information from earlier in the input would help you avoid recomputing at each step.";
+	} else {
+		return "Think about breaking the problem into two simpler subproblems. Can you solve each independently and combine?";
+	}
+}
+
+/** Phase 1: Hint 2 — reveals the pattern name and approach */
+private String buildHint2(String title, Pattern p, String diff) {
+	return switch (p) {
+		case TWO_POINTER    -> "Use Two Pointer: place one index at the start and one at the end of the sorted input. Move them toward each other based on whether the current result is too large or too small.";
+		case SLIDING_WINDOW -> "Use Sliding Window: maintain a running window of size k (or variable size). When you move the window right, add the new element and subtract the element that left. Avoid recomputing the whole window sum.";
+		case SEARCHING      -> "Use Binary Search: if the array is sorted (or the answer space is monotonic), you can eliminate half the possibilities at each step. Find mid, compare, decide which half to keep.";
+		case HASHING        -> "Use a HashMap: before inserting each element, check whether its complement (or pair) already exists in the map. This converts an O(n²) nested loop into a single O(n) pass.";
+		case RECURSION      -> "Use Recursion: define the base case first (smallest input that you can answer directly). Then define how the answer to input n depends on the answer to input n-1 (or a smaller sub-input). Trust the recursive call.";
+		case DYNAMIC_PROG   -> "Use Dynamic Programming: define dp[i] as the answer to the subproblem of size i. Write the recurrence: dp[i] depends on dp[i-1] (or dp[i-j] for some j). Fill from the base case upward.";
+		case GREEDY         -> "Use Greedy: sort by the relevant criterion first. Then iterate once, always making the locally optimal choice. Never go back.";
+		case PREFIX_SUM     -> "Use Prefix Sum: build prefix[i] = sum of elements 0..i in one pass. Then any range sum(l, r) = prefix[r] - prefix[l-1] in O(1).";
+		case GRAPHS         -> "Use BFS: add the starting node to a queue and a visited set. While the queue is not empty, dequeue a node, process it, and enqueue its unvisited neighbours.";
+		case BACKTRACKING   -> "Use Backtracking: at each step, try placing/choosing an option. Recurse. If you hit an invalid state, undo the last choice and try the next option.";
+		default             -> "Think about the core data structure that gives you O(1) access to the information you need most. Apply " + title + " to avoid recomputation.";
+	};
 }
 
 private List<String[]> getProblemSpecs(String title, Pattern p) {

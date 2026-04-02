@@ -13,23 +13,31 @@ import java.util.List;
 @AllArgsConstructor
 public class SubmitResponse {
 
-    private boolean allPassed;
-    private int totalTests;
-    private int passedTests;
-    private String hint;               // shown when tests fail
-    private List<TestCaseResult> results;
+private boolean allPassed;
+private int totalTests;
+private int passedTests;
+private String hint;               // shown when tests fail
+private List<TestCaseResult> results;
 
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class TestCaseResult {
-        private int testNumber;
-        private boolean passed;
-        private String input;
-        private String expected;
-        private String actual;
-        private String status;         // "PASS", "FAIL", "COMPILE_ERROR", "RUNTIME_ERROR", "TIMEOUT"
-        private long executionTimeMs;
-    }
+// ── Phase 1 Smart Feedback ────────────────────────────────────────────────
+/** e.g. "TWO_POINTER", "SLIDING_WINDOW", "BRUTE_FORCE" */
+private String detectedPattern;
+/** Human-readable explanation of why we detected that pattern */
+private String methodologyExplanation;
+/** Shown when a more optimal approach exists, e.g. "O(n²) → O(n) with HashMap" */
+private String optimizationNote;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public static class TestCaseResult {
+    private int testNumber;
+    private boolean passed;
+    private String input;
+    private String expected;
+    private String actual;
+    private String status;         // "PASS", "FAIL", "COMPILE_ERROR", "RUNTIME_ERROR", "TIMEOUT"
+    private long executionTimeMs;
+}
 }

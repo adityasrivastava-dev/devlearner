@@ -816,6 +816,28 @@ async function renderTopicSection() {
           <textarea id="f_starter" class="code tall">${esc(t.starterCode||'')}</textarea>
         </div>
       </div>
+
+      <!-- Phase 1 Story-Based Learning Fields -->
+      <div class="form-card">
+        <h3>📖 Story & Memory (Phase 1)</h3>
+        <p style="font-size:12px;color:var(--text3);margin:0 0 12px">These fields power the Theory tab cards. Leave blank if not yet written — the UI will show a placeholder instead.</p>
+        <div class="field">
+          <label>Memory Anchor <span style="color:var(--text3);font-weight:400">— one unforgettable sentence</span></label>
+          <input id="f_memory_anchor" type="text" value="${esc(t.memoryAnchor||'')}" placeholder="e.g. Sliding Window: subtract what leaves, add what arrives, never recompute what you know." style="width:100%">
+        </div>
+        <div class="field">
+          <label>Story <span style="color:var(--text3);font-weight:400">— narrative explanation with a real character and problem</span></label>
+          <textarea id="f_story" style="min-height:120px">${esc(t.story||'')}</textarea>
+        </div>
+        <div class="field">
+          <label>Visual Analogy <span style="color:var(--text3);font-weight:400">— one strong real-world comparison</span></label>
+          <textarea id="f_analogy" style="min-height:80px">${esc(t.analogy||'')}</textarea>
+        </div>
+        <div class="field">
+          <label>First Principles <span style="color:var(--text3);font-weight:400">— WHY it works, not just HOW</span></label>
+          <textarea id="f_first_principles" style="min-height:100px">${esc(t.firstPrinciples||'')}</textarea>
+        </div>
+      </div>
     </form>
   `;
 }
@@ -855,6 +877,11 @@ function buildTopicPayload() {
     optimizedApproach: val('f_optimized'),
     whenToUse:         val('f_when'),
     starterCode:       val('f_starter'),
+    // Phase 1 story fields
+    memoryAnchor:    val('f_memory_anchor')   || null,
+    story:           val('f_story')           || null,
+    analogy:         val('f_analogy')         || null,
+    firstPrinciples: val('f_first_principles')|| null,
   };
 }
 
@@ -916,6 +943,26 @@ function openNewTopic() {
           <textarea id="nt_starter" class="code tall" placeholder="public class Main {\n    public static void main(String[] args) {\n        // TODO\n    }\n}"></textarea>
         </div>
       </div>
+      <!-- Phase 1 Story Fields -->
+      <div class="form-card">
+        <h3>📖 Story & Memory (Phase 1)</h3>
+        <div class="field">
+          <label>Memory Anchor</label>
+          <input id="nt_memory_anchor" type="text" placeholder="One unforgettable sentence…" style="width:100%">
+        </div>
+        <div class="field">
+          <label>Story</label>
+          <textarea id="nt_story" style="min-height:100px" placeholder="Narrative explanation with a real character…"></textarea>
+        </div>
+        <div class="field">
+          <label>Visual Analogy</label>
+          <textarea id="nt_analogy" style="min-height:70px" placeholder="One strong real-world comparison…"></textarea>
+        </div>
+        <div class="field">
+          <label>First Principles</label>
+          <textarea id="nt_first_principles" style="min-height:80px" placeholder="WHY it works, not just HOW…"></textarea>
+        </div>
+      </div>
       <div class="form-actions">
         <button class="btn-save" onclick="createTopic()">✚ Create Topic</button>
         <button class="btn-cancel" onclick="cancelNew()">Cancel</button>
@@ -936,6 +983,11 @@ async function createTopic() {
     optimizedApproach: val('nt_optimized'),
     whenToUse:         val('nt_when'),
     starterCode:       val('nt_starter'),
+    // Phase 1 story fields
+    memoryAnchor:    val('nt_memory_anchor')    || null,
+    story:           val('nt_story')            || null,
+    analogy:         val('nt_analogy')          || null,
+    firstPrinciples: val('nt_first_principles') || null,
   };
   if (!payload.title) { toast('Title is required', 'error'); return; }
   try {

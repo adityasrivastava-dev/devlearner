@@ -25,6 +25,7 @@ private final ProblemRepository problemRepository;
 private final ExecutionService executionService;
 private final HintService hintService;
 private final ObjectMapper objectMapper;
+private final AlgorithmDetectorService algorithmDetector;
 
 public SubmitResponse evaluate(SubmitRequest request) {
     Problem problem = problemRepository.findById(request.getProblemId())
@@ -78,12 +79,19 @@ public SubmitResponse evaluate(SubmitRequest request) {
     boolean allPassed = passed == testCases.size();
     String hint = allPassed ? null : hintService.generateHint(results);
 
+    // ── Phase 1: Algorithm detection ─────────────────────────────────────────
+    AlgorithmDetectorService.DetectionResult detection =
+            algorithmDetector.detect(request.getCode());
+
     return SubmitResponse.builder()
             .allPassed(allPassed)
             .totalTests(testCases.size())
             .passedTests(passed)
             .hint(hint)
             .results(results)
+            .detectedPattern(detection.pattern())
+            .methodologyExplanation(detection.explanation())
+            .optimizationNote(detection.optimizationNote())
             .build();
 }
 
