@@ -30,11 +30,31 @@ document.addEventListener('DOMContentLoaded', () => {
   // PS buttons bound after monaco loaded
 
   loadTopics(activeCategory).then(() => {
-    // Roadmap mode — auto-select topic from URL param
-    const urlTopic = new URLSearchParams(window.location.search).get('topic');
+    // BUG FIX: read BOTH ?topic= and ?openProblem= from the URL.
+    // Previously only ?topic= was handled — clicking a problem in problems.html
+    // (which navigates to /?topic=X&openProblem=Y) loaded the topic but silently
+    // dropped the openProblem param, leaving the user on the Theory tab.
+    const params     = new URLSearchParams(window.location.search);
+    const urlTopic   = params.get('topic');
+    const urlProblem = params.get('openProblem');
+
     if (urlTopic) {
       const poll = setInterval(() => {
-        if (monacoEditor) { clearInterval(poll); selectTopic(parseInt(urlTopic)); }
+        if (monacoEditor) {
+          clearInterval(poll);
+          // selectTopic is async — await it so openProblemSolve runs after the topic is ready
+          selectTopic(parseInt(urlTopic)).then(async () => {
+            if (urlProblem) {
+              // BUG FIX: pre-populate currentProblems so "Related problems" works inside
+              // the PS view.  Without this, currentProblems is empty when the page loads
+              // via URL (loadProblems() normally only runs when the Practice tab is clicked).
+              if (!currentProblems.length && currentTopic) {
+                try { currentProblems = await API.getProblems(currentTopic.id); } catch {}
+              }
+              openProblemSolve(parseInt(urlProblem));
+            }
+          });
+        }
       }, 100);
     }
   });
@@ -739,7 +759,10 @@ async function psRunCode() {
   const stdin = document.getElementById('psStdinInput')?.value || currentProblem.sampleInput || '';
   const ver   = document.getElementById('psJavaVersion')?.value || '17';
 
-  switchPsTab(document.querySelector('.ps-btab:last-child'), 'result');
+  // BUG FIX: querySelector('.ps-btab:last-child') returns null because the .ps-btab buttons
+  // are NOT the last children of .ps-bottom-bar (a spacer div and collapse button follow them).
+  // null passed to switchPsTab meant the result panel showed but no button got the active class.
+  switchPsTab(document.querySelectorAll('.ps-btab')[1], 'result');
   renderPsLoading('▶ Running…');
   const pe = document.getElementById('psExecTime');
   if (pe) pe.textContent = '';
@@ -799,11 +822,15 @@ function renderPsRunResult(r) {
 async function psSubmit() {
   if (!psEditor || !currentProblem) return;
   const code = psEditor.getValue();
-  switchPsTab(document.querySelector('.ps-btab:last-child'), 'result');
+  switchPsTab(document.querySelectorAll('.ps-btab')[1], 'result');
   renderPsLoading('⏳ Evaluating all test cases…');
 
   try {
-    const r = await API.submit(currentProblem.id, code);
+    // BUG FIX: previously called as submit(problemId, code) — missing javaVersion and
+    // hintAssisted.  The Java version dropdown in the PS toolbar was silently ignored and
+    // hint-assisted tracking was never sent.
+    const ver = document.getElementById('psJavaVersion')?.value || '17';
+    const r = await API.submit(currentProblem.id, code, null, psHintsShown >= 3, ver);
     renderPsSubmitResult(r);
     if (r.allPassed) setTimeout(showRecallDrill, 700);
   } catch {

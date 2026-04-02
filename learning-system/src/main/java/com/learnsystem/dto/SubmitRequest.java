@@ -12,4 +12,6 @@ public class SubmitRequest {
 
     @NotBlank(message = "Code cannot be empty")
     private String code;
+
+private String javaVersion = "17";
 }
