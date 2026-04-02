@@ -6,9 +6,12 @@ import com.learnsystem.model.Submission;
 import com.learnsystem.model.User;
 import com.learnsystem.repository.SubmissionRepository;
 import com.learnsystem.repository.UserRepository;
+import com.learnsystem.repository.ProblemRepository;
 import com.learnsystem.security.JwtService;
 import com.learnsystem.service.EvaluationService;
 import com.learnsystem.service.UserProgressService;
+import com.learnsystem.service.StreakService;
+import com.learnsystem.service.PerformanceAnalyticsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -35,11 +38,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SubmissionController {
 
-private final EvaluationService     evaluationService;
-private final SubmissionRepository  submissionRepo;
-private final UserRepository        userRepo;
-private final JwtService            jwtService;
-private final UserProgressService   userProgressService;
+private final EvaluationService          evaluationService;
+private final SubmissionRepository       submissionRepo;
+private final UserRepository             userRepo;
+private final ProblemRepository          problemRepo;
+private final JwtService                 jwtService;
+private final UserProgressService        userProgressService;
+private final StreakService              streakService;
+private final PerformanceAnalyticsService analyticsService;
 
 // ── POST /api/submissions/submit ─────────────────────────────────────────
 // Same as /api/submit but persists the result
@@ -90,9 +96,37 @@ public ResponseEntity<Map<String, Object>> submitAndPersist(
 	log.info("Submission saved: user={} problem={} status={} ms={}",
 			userId, req.getProblemId(), status, maxMs);
 
-	// ── Update streak + problems_solved when accepted ─────────────────────
+	// ── Phase 1: update streak + problems_solved ──────────────────────────
 	if ("ACCEPTED".equals(status)) {
 		userProgressService.onAccepted(userId);
+	}
+
+	// ── Phase 2: streak engine + performance analytics ────────────────────
+	try {
+		int xpEarned = "ACCEPTED".equals(status) ? 10 : 1;
+		streakService.onDailyActivity(userId, xpEarned);
+
+		// Resolve topicId for analytics
+		Long topicId = null;
+		String problemTitle = null;
+		String correctPattern = null;
+		try {
+			var prob = problemRepo.findById(req.getProblemId()).orElse(null);
+			if (prob != null) {
+				topicId      = prob.getTopic() != null ? prob.getTopic().getId() : null;
+				problemTitle = prob.getTitle();
+				correctPattern = prob.getPattern();
+			}
+		} catch (Exception ignored) {}
+
+		analyticsService.onSubmission(
+				userId, req.getProblemId(), topicId, problemTitle,
+				status, req.getSolveTimeSecs(), req.isHintAssisted(),
+				result.getDetectedPattern(), correctPattern,
+				req.getCode()
+		);
+	} catch (Exception e) {
+		log.warn("Phase 2 analytics error (non-critical): {}", e.getMessage());
 	}
 
 	// 6. Compute percentile if accepted
@@ -158,13 +192,24 @@ public ResponseEntity<List<Map<String, Object>>> getHistory(
 }
 
 // ── GET /api/submissions/solved ───────────────────────────────────────────
-// Returns the list of problem IDs this user has ever solved (ACCEPTED).
-// Used by problems.html to show checkmarks without relying on localStorage.
 @GetMapping("/solved")
 public ResponseEntity<List<Long>> getSolvedIds(HttpServletRequest httpReq) {
 	Long userId = resolveUserId(httpReq);
 	if (userId == null) return ResponseEntity.ok(List.of());
 	return ResponseEntity.ok(submissionRepo.findSolvedProblemIdsByUserId(userId));
+}
+
+// ── GET /api/submissions/heatmap ──────────────────────────────────────────
+@GetMapping("/heatmap")
+public ResponseEntity<Map<String, Long>> getHeatmap(HttpServletRequest httpReq) {
+	Long userId = resolveUserId(httpReq);
+	if (userId == null) return ResponseEntity.ok(Map.of());
+	List<Object[]> rows = submissionRepo.findDailyActivityForUser(userId);
+	Map<String, Long> result = new LinkedHashMap<>();
+	for (Object[] row : rows) {
+		result.put((String) row[0], ((Number) row[1]).longValue());
+	}
+	return ResponseEntity.ok(result);
 }
 
 // ── GET /api/submissions/percentile?problemId=X&ms=Y ─────────────────────
@@ -208,14 +253,14 @@ private Long resolveUserId(HttpServletRequest req) {
 	}
 }
 
-// ── Inner DTO for the new submit endpoint ─────────────────────────────────
+// ── Inner DTO ─────────────────────────────────────────────────────────────
 @lombok.Data
 public static class SubmitPersistRequest {
 	@jakarta.validation.constraints.NotNull
 	private Long    problemId;
 	@jakarta.validation.constraints.NotBlank
 	private String  code;
-	private Long    solveTimeSecs;  // seconds from problem open → submit (sent by frontend)
+	private Long    solveTimeSecs;
 	private boolean hintAssisted;
 	private String  javaVersion = "17";
 }

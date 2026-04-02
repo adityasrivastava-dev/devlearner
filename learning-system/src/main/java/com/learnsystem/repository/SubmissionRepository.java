@@ -43,4 +43,19 @@ long countDistinctAcceptedProblemsByUserId(@Param("uid") Long userId);
  */
 @Query("SELECT DISTINCT s.problemId FROM Submission s WHERE s.userId = :uid AND s.status = 'ACCEPTED'")
 List<Long> findSolvedProblemIdsByUserId(@Param("uid") Long userId);
+
+/**
+ * Returns submission counts grouped by date for the past 365 days.
+ * Used by the calendar heatmap on the sidebar.
+ * Returns Object[] rows: [date_string (yyyy-MM-dd), count]
+ */
+@Query(value = """
+    SELECT DATE_FORMAT(s.created_at, '%Y-%m-%d') AS day, COUNT(*) AS cnt
+    FROM submissions s
+    WHERE s.user_id = :uid
+      AND s.created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY)
+    GROUP BY day
+    ORDER BY day ASC
+    """, nativeQuery = true)
+List<Object[]> findDailyActivityForUser(@Param("uid") Long userId);
 }

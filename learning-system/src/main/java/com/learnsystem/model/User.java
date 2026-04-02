@@ -77,6 +77,31 @@ private int streakDays = 0;
 @Builder.Default
 private int problemsSolved = 0;
 
+// ── Phase 2 fields ────────────────────────────────────────────────────────
+
+/** Pause days banked (1 per 7-day streak, max 3). Protects streak for 1 day. */
+@Column(name = "pause_days_banked")
+@Builder.Default
+private int pauseDaysBanked = 0;
+
+/** Date of last submitted solution — used for streak calculation (date only, no time). */
+@Column(name = "last_active_date")
+private java.time.LocalDate lastActiveDate;
+
+/** Last time a streak recovery was used (1 allowed per 30 days). */
+@Column(name = "last_recovery_used")
+private java.time.LocalDate lastRecoveryUsed;
+
+/** XP points accumulated from problems solved, recall drills, topics read. */
+@Column(name = "xp")
+@Builder.Default
+private int xp = 0;
+
+/** Level label: Beginner → Learner → Practitioner → Engineer → Senior → Architect */
+@Column(name = "level", length = 50)
+@Builder.Default
+private String level = "Beginner";
+
 @PrePersist
 protected void onCreate() {
 	createdAt = LocalDateTime.now();
