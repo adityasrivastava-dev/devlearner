@@ -43,7 +43,17 @@ public void onAuthenticationSuccess(HttpServletRequest request,
 	User user = userRepository.findByEmail(email)
 			.orElseGet(() -> userRepository.findByProviderAndProviderId(User.Provider.GOOGLE, providerId)
 					.orElse(null));
-
+	if (user == null) {
+		log.error("User not found for email: {} and providerId: {}", email, providerId);
+	} else {
+		log.error("User found: id={}, email={}, provider={}, providerId={}, adminPending={}",
+				user.getId(),
+				user.getEmail(),
+				user.getProvider(),
+				user.getProviderId(),
+				user.getAdminRequestPending());
+	}
+log.error("User object using google",user);
 	if (user == null) {
 		// First time Google login — create account
 		user = User.builder()

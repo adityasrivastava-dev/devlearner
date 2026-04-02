@@ -106,15 +106,16 @@ public ResponseEntity<?> refresh(@AuthenticationPrincipal User user) {
 			: List.of("STUDENT");
 
 	return ResponseEntity.ok(Map.of(
-			"token",          newToken,
-			"id",             fresh.getId(),
-			"name",           fresh.getName(),
-			"email",          fresh.getEmail(),
-			"role",           fresh.getPrimaryRole().name(),
-			"roles",          roles,
-			"avatar",         fresh.getAvatarUrl() != null ? fresh.getAvatarUrl() : "",
-			"streakDays",     fresh.getStreakDays(),
-			"problemsSolved", fresh.getProblemsSolved()
+			"token",              newToken,
+			"id",                 fresh.getId(),
+			"name",               fresh.getName(),
+			"email",              fresh.getEmail(),
+			"role",               fresh.getPrimaryRole().name(),
+			"roles",              roles,
+			"avatar",             fresh.getAvatarUrl() != null ? fresh.getAvatarUrl() : "",
+			"streakDays",         fresh.getStreakDays(),
+			"problemsSolved",     fresh.getProblemsSolved(),
+			"adminPending",       Boolean.TRUE.equals(fresh.getAdminRequestPending())
 	));
 }
 }

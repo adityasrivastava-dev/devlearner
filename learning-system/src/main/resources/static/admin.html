@@ -559,6 +559,23 @@
       <button class="seed-btn" onclick="openSeedPanel()">📦 Import JSON Batch</button>
       <button class="seed-btn" onclick="openProblemImportPanel()" style="background:rgba(74,222,128,.08);color:var(--accent);border-color:rgba(74,222,128,.25)">🎯 Import Problems JSON</button>
     </div>
+
+    <!-- Admin Approval Section -->
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:9px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">🔑 Admin Approvals</div>
+      <button class="seed-btn"
+              style="background:rgba(255,184,0,.1);color:var(--yellow);border-color:rgba(255,184,0,.3);display:flex;align-items:center;gap:6px"
+              onclick="openPendingAdminsPanel()">
+        👤 Pending Admin Requests
+        <span id="pendingAdminsBadge" style="display:none;background:var(--red);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:auto">0</span>
+      </button>
+      <button class="seed-btn"
+              style="background:rgba(91,138,245,.1);color:var(--blue);border-color:rgba(91,138,245,.3)"
+              onclick="openAllUsersPanel()">
+        👥 All Users
+      </button>
+    </div>
+
     <!-- Phase 2: Content Engine -->
     <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px">
       <div style="font-size:9px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">⚡ Phase 2 — Content Engine</div>
@@ -567,8 +584,6 @@
       <button class="seed-btn" style="background:rgba(167,139,250,.1);color:var(--purple);border-color:rgba(167,139,250,.25)"
               onclick="openPdfPanel()">📄 Import from PDF</button>
     </div>
-
-
 
     <div class="topics-list" id="topicsList">
       <p class="muted" style="padding:12px">Loading topics…</p>
@@ -616,7 +631,224 @@ let topicExamples = [];
 let topicProblems = [];
 
 /* ══ BOOT ═════════════════════════════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', loadAllTopics);
+document.addEventListener('DOMContentLoaded', () => {
+  loadAllTopics();
+  checkPendingAdminsBadge();
+});
+
+// ── Admin Approval System ─────────────────────────────────────────────────────
+
+let allUsersData = [];
+
+async function checkPendingAdminsBadge() {
+  try {
+    const res = await fetch('/api/admin/pending-admins', { headers: jsonH() });
+    if (!res.ok) return;
+    const data = await res.json();
+    const badge = document.getElementById('pendingAdminsBadge');
+    if (badge && data.pendingCount > 0) {
+      badge.textContent = data.pendingCount;
+      badge.style.display = 'inline-block';
+    }
+  } catch (_) {}
+}
+
+async function openPendingAdminsPanel() {
+  document.getElementById('pendingAdminsOverlay').classList.remove('hidden');
+  const container = document.getElementById('pendingAdminsContent');
+  container.innerHTML = '<p style="color:var(--text3);text-align:center;padding:40px 0">Loading…</p>';
+  try {
+    const res = await fetch('/api/admin/pending-admins', { headers: jsonH() });
+    const data = await res.json();
+    if (!res.ok) {
+      container.innerHTML = `<p style="color:var(--red);padding:20px">${esc(data.error || 'Error loading requests')}</p>`;
+      return;
+    }
+    if (data.pendingCount === 0) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:48px 0;color:var(--text3)">
+          <div style="font-size:40px;margin-bottom:12px">✅</div>
+          <div style="font-size:16px;font-weight:600;color:var(--text2);margin-bottom:6px">No Pending Requests</div>
+          <div style="font-size:13px">All admin requests have been reviewed.</div>
+        </div>`;
+      return;
+    }
+    container.innerHTML = `
+      <div style="margin-bottom:16px;font-size:13px;color:var(--text2)">
+        <strong style="color:var(--yellow)">${data.pendingCount}</strong> pending admin request${data.pendingCount !== 1 ? 's' : ''}
+      </div>
+      ${data.requests.map(u => `
+        <div id="pending-card-${u.id}" style="border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px;background:var(--bg2)">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div>
+              <div style="font-weight:700;font-size:14px;color:var(--text)">${esc(u.name)}</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:2px">${esc(u.email)}</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:4px">
+                Provider: ${esc(u.provider)} ·
+                Requested: ${u.requestedAt ? new Date(u.requestedAt).toLocaleString() : 'Unknown'} ·
+                Joined: ${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Unknown'}
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0">
+              <button onclick="approveAdmin(${u.id}, '${esc(u.name)}')"
+                style="padding:8px 16px;background:rgba(0,184,163,.15);color:var(--accent);border:1px solid var(--accent);border-radius:5px;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--font-ui)">
+                ✅ Approve
+              </button>
+              <button onclick="rejectAdmin(${u.id}, '${esc(u.name)}')"
+                style="padding:8px 16px;background:rgba(239,71,67,.1);color:var(--red);border:1px solid var(--red);border-radius:5px;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--font-ui)">
+                ❌ Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('')}`;
+  } catch (e) {
+    container.innerHTML = `<p style="color:var(--red);padding:20px">Error: ${esc(e.message)}</p>`;
+  }
+}
+
+function closePendingAdminsPanel() {
+  document.getElementById('pendingAdminsOverlay').classList.add('hidden');
+  checkPendingAdminsBadge();
+}
+
+async function approveAdmin(userId, name) {
+  if (!confirm(`Grant ADMIN role to "${name}"?\n\nThis gives full admin access to the platform.`)) return;
+  try {
+    const res = await fetch(`/api/admin/users/${userId}/approve-admin`, {
+      method: 'POST', headers: jsonH()
+    });
+    const data = await res.json();
+    if (!res.ok) { toast('Error: ' + (data.error || 'Failed'), 'error'); return; }
+    const card = document.getElementById(`pending-card-${userId}`);
+    if (card) {
+      card.style.border = '1px solid var(--accent)';
+      card.innerHTML = `<div style="color:var(--accent);font-weight:700;padding:8px">✅ ${esc(name)} is now an ADMIN</div>`;
+      setTimeout(() => card.remove(), 3000);
+    }
+    toast(`✅ ADMIN role granted to ${name}`, 'success');
+    checkPendingAdminsBadge();
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+}
+
+async function rejectAdmin(userId, name) {
+  if (!confirm(`Reject admin request from "${name}"?\n\nThey will remain a regular user.`)) return;
+  try {
+    const res = await fetch(`/api/admin/users/${userId}/reject-admin`, {
+      method: 'POST', headers: jsonH()
+    });
+    const data = await res.json();
+    if (!res.ok) { toast('Error: ' + (data.error || 'Failed'), 'error'); return; }
+    const card = document.getElementById(`pending-card-${userId}`);
+    if (card) {
+      card.style.border = '1px solid var(--red)';
+      card.innerHTML = `<div style="color:var(--text3);padding:8px">❌ Request from ${esc(name)} rejected</div>`;
+      setTimeout(() => card.remove(), 2000);
+    }
+    toast(`Request from ${name} rejected`, 'success');
+    checkPendingAdminsBadge();
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ── All Users Panel ───────────────────────────────────────────────────────────
+
+async function openAllUsersPanel() {
+  document.getElementById('allUsersOverlay').classList.remove('hidden');
+  document.getElementById('userSearchInput').value = '';
+  const container = document.getElementById('allUsersContent');
+  container.innerHTML = '<p style="color:var(--text3);text-align:center;padding:40px 0">Loading…</p>';
+  try {
+    const res = await fetch('/api/admin/users', { headers: jsonH() });
+    const data = await res.json();
+    if (!res.ok) {
+      container.innerHTML = `<p style="color:var(--red);padding:20px">${esc(data.error || 'Error')}</p>`;
+      return;
+    }
+    allUsersData = data.users || [];
+    renderUsersTable(allUsersData, container);
+  } catch (e) {
+    container.innerHTML = `<p style="color:var(--red);padding:20px">Error: ${esc(e.message)}</p>`;
+  }
+}
+
+function renderUsersTable(users, container) {
+  if (users.length === 0) {
+    container.innerHTML = '<p style="color:var(--text3);text-align:center;padding:40px">No users found</p>';
+    return;
+  }
+  container.innerHTML = `
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px">
+      ${users.length} user${users.length !== 1 ? 's' : ''}
+      ${users.filter(u=>u.adminPending).length > 0 ? ` · <span style="color:var(--yellow)">${users.filter(u=>u.adminPending).length} pending admin</span>` : ''}
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border);color:var(--text3)">
+          <th style="text-align:left;padding:8px 6px;font-weight:600">Name</th>
+          <th style="text-align:left;padding:8px 6px;font-weight:600">Email</th>
+          <th style="text-align:left;padding:8px 6px;font-weight:600">Role</th>
+          <th style="text-align:left;padding:8px 6px;font-weight:600">Provider</th>
+          <th style="text-align:left;padding:8px 6px;font-weight:600">Streak / Solved</th>
+          <th style="text-align:left;padding:8px 6px;font-weight:600">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${users.map(u => `
+          <tr style="border-bottom:1px solid var(--border);${u.adminPending ? 'background:rgba(255,184,0,.04)' : ''}">
+            <td style="padding:8px 6px;color:var(--text)">${esc(u.name)}
+              ${u.adminPending ? '<span style="font-size:10px;background:rgba(255,184,0,.15);color:var(--yellow);padding:1px 6px;border-radius:4px;margin-left:4px">PENDING</span>' : ''}
+            </td>
+            <td style="padding:8px 6px;color:var(--text2)">${esc(u.email)}</td>
+            <td style="padding:8px 6px">
+              <span style="font-size:11px;padding:2px 8px;border-radius:4px;font-weight:700;
+                ${u.role==='ADMIN' ? 'background:rgba(0,184,163,.15);color:var(--accent)' : 'background:var(--bg3);color:var(--text2)'}">
+                ${esc(u.role)}
+              </span>
+            </td>
+            <td style="padding:8px 6px;color:var(--text3)">${esc(u.provider)}</td>
+            <td style="padding:8px 6px;color:var(--text3)">🔥${u.streakDays} · ✅${u.problemsSolved}</td>
+            <td style="padding:8px 6px">
+              ${u.adminPending ? `
+                <button onclick="approveAdmin(${u.id},'${esc(u.name)}')" title="Approve admin"
+                  style="background:none;border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:3px 8px;cursor:pointer;font-size:11px">✅ Approve</button>
+                <button onclick="rejectAdmin(${u.id},'${esc(u.name)}')" title="Reject admin"
+                  style="background:none;border:1px solid var(--red);color:var(--red);border-radius:4px;padding:3px 8px;cursor:pointer;font-size:11px;margin-left:4px">❌ Reject</button>
+              ` : u.role === 'ADMIN' && u.email !== 'asaditya1826@gmail.com' ? `
+                <button onclick="revokeAdmin(${u.id},'${esc(u.name)}')" title="Revoke admin"
+                  style="background:none;border:1px solid var(--text3);color:var(--text3);border-radius:4px;padding:3px 8px;cursor:pointer;font-size:11px">Revoke Admin</button>
+              ` : '—'}
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+}
+
+function filterUsersTable() {
+  const q = document.getElementById('userSearchInput').value.toLowerCase().trim();
+  const filtered = q ? allUsersData.filter(u =>
+    u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+  ) : allUsersData;
+  renderUsersTable(filtered, document.getElementById('allUsersContent'));
+}
+
+function closeAllUsersPanel() {
+  document.getElementById('allUsersOverlay').classList.add('hidden');
+  allUsersData = [];
+}
+
+async function revokeAdmin(userId, name) {
+  if (!confirm(`Revoke ADMIN role from "${name}"?\nThey will become a regular STUDENT.`)) return;
+  try {
+    const res = await fetch(`/api/admin/users/${userId}/revoke-admin`, {
+      method: 'POST', headers: jsonH()
+    });
+    const data = await res.json();
+    if (!res.ok) { toast('Error: ' + (data.error || 'Failed'), 'error'); return; }
+    toast(`Admin role revoked from ${name}`, 'success');
+    openAllUsersPanel(); // refresh
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+}
 
 async function loadAllTopics() {
   try {
@@ -816,28 +1048,6 @@ async function renderTopicSection() {
           <textarea id="f_starter" class="code tall">${esc(t.starterCode||'')}</textarea>
         </div>
       </div>
-
-      <!-- Phase 1: Story & Memory fields -->
-      <div class="form-card">
-        <h3>📖 Story & Memory (Phase 1)</h3>
-        <p style="font-size:12px;color:var(--text3);margin:0 0 12px">These power the Theory tab cards. Leave blank if not yet written.</p>
-        <div class="field">
-          <label>Memory Anchor — <span style="font-weight:400;color:var(--text3)">one unforgettable sentence</span></label>
-          <input id="f_memory_anchor" type="text" value="${esc(t.memoryAnchor||'')}" placeholder="e.g. Sliding Window: subtract what leaves, add what arrives." style="width:100%">
-        </div>
-        <div class="field">
-          <label>Story — <span style="font-weight:400;color:var(--text3)">narrative with a real character and problem</span></label>
-          <textarea id="f_story" style="min-height:120px">${esc(t.story||'')}</textarea>
-        </div>
-        <div class="field">
-          <label>Visual Analogy — <span style="font-weight:400;color:var(--text3)">one strong real-world comparison</span></label>
-          <textarea id="f_analogy" style="min-height:70px">${esc(t.analogy||'')}</textarea>
-        </div>
-        <div class="field">
-          <label>First Principles — <span style="font-weight:400;color:var(--text3)">WHY it works, not just HOW</span></label>
-          <textarea id="f_first_principles" style="min-height:90px">${esc(t.firstPrinciples||'')}</textarea>
-        </div>
-      </div>
     </form>
   `;
 }
@@ -877,10 +1087,6 @@ function buildTopicPayload() {
     optimizedApproach: val('f_optimized'),
     whenToUse:         val('f_when'),
     starterCode:       val('f_starter'),
-    memoryAnchor:    val('f_memory_anchor')    || null,
-    story:           val('f_story')            || null,
-    analogy:         val('f_analogy')          || null,
-    firstPrinciples: val('f_first_principles') || null,
   };
 }
 
@@ -942,14 +1148,6 @@ function openNewTopic() {
           <textarea id="nt_starter" class="code tall" placeholder="public class Main {\n    public static void main(String[] args) {\n        // TODO\n    }\n}"></textarea>
         </div>
       </div>
-      <!-- Phase 1: Story & Memory -->
-      <div class="form-card">
-        <h3>📖 Story & Memory (Phase 1)</h3>
-        <div class="field"><label>Memory Anchor</label><input id="nt_memory_anchor" type="text" placeholder="One unforgettable sentence…" style="width:100%"></div>
-        <div class="field"><label>Story</label><textarea id="nt_story" style="min-height:90px" placeholder="Narrative with a real character…"></textarea></div>
-        <div class="field"><label>Visual Analogy</label><textarea id="nt_analogy" style="min-height:60px" placeholder="One strong real-world comparison…"></textarea></div>
-        <div class="field"><label>First Principles</label><textarea id="nt_first_principles" style="min-height:70px" placeholder="WHY it works…"></textarea></div>
-      </div>
       <div class="form-actions">
         <button class="btn-save" onclick="createTopic()">✚ Create Topic</button>
         <button class="btn-cancel" onclick="cancelNew()">Cancel</button>
@@ -970,10 +1168,6 @@ async function createTopic() {
     optimizedApproach: val('nt_optimized'),
     whenToUse:         val('nt_when'),
     starterCode:       val('nt_starter'),
-    memoryAnchor:    val('nt_memory_anchor')    || null,
-    story:           val('nt_story')            || null,
-    analogy:         val('nt_analogy')          || null,
-    firstPrinciples: val('nt_first_principles') || null,
   };
   if (!payload.title) { toast('Title is required', 'error'); return; }
   try {
@@ -1080,14 +1274,6 @@ function exampleForm(ex) {
         <label>Real World Use</label>
         <input id="ef_rw_${id}" value="${esc(ex.realWorldUse||'')}" placeholder="e.g. Database index lookup"/>
       </div>
-      <div class="field form-full">
-        <label>Pseudocode <span style="font-weight:400;color:var(--text3)">— plain-English steps shown below the code</span></label>
-        <textarea id="ef_pseudo_${id}" style="min-height:70px;font-family:var(--font-code);font-size:12px">${esc(ex.pseudocode||'')}</textarea>
-      </div>
-      <div class="field form-full">
-        <label>Flowchart (Mermaid) <span style="font-weight:400;color:var(--text3)">— per-example diagram</span></label>
-        <textarea id="ef_flow_${id}" class="code" style="min-height:70px" placeholder="flowchart TD&#10;  A[Start] --> B{Check}">${esc(ex.flowchartMermaid||'')}</textarea>
-      </div>
     </div>
     <div class="form-actions">
       ${ex.id
@@ -1165,14 +1351,12 @@ function cancelNewExample() {
 
 function buildExPayload(id) {
   return {
-    title:           val(`ef_title_${id}`),
-    description:     val(`ef_desc_${id}`),
-    code:            val(`ef_code_${id}`),
-    explanation:     val(`ef_expl_${id}`),
-    realWorldUse:    val(`ef_rw_${id}`),
-    displayOrder:    parseInt(val(`ef_order_${id}`)) || 1,
-    pseudocode:       val(`ef_pseudo_${id}`) || null,
-    flowchartMermaid: val(`ef_flow_${id}`)   || null,
+    title:        val(`ef_title_${id}`),
+    description:  val(`ef_desc_${id}`),
+    code:         val(`ef_code_${id}`),
+    explanation:  val(`ef_expl_${id}`),
+    realWorldUse: val(`ef_rw_${id}`),
+    displayOrder: parseInt(val(`ef_order_${id}`)) || 1,
   };
 }
 
@@ -1256,24 +1440,8 @@ function problemForm(p) {
         <textarea id="pf_tests_${id}" class="code tall">${esc(p.testCases||'[]')}</textarea>
       </div>
       <div class="field form-full">
-        <label>Hint (shown on failure — fallback if hint1/2/3 not set)</label>
+        <label>Hint (shown on failure)</label>
         <textarea id="pf_hint_${id}">${esc(p.hint||'')}</textarea>
-      </div>
-      <div class="field">
-        <label>Pattern Tag <span style="font-weight:400;color:var(--text3)">e.g. TWO_POINTER, SLIDING_WINDOW, HASH_MAP</span></label>
-        <input id="pf_pattern_${id}" value="${esc(p.pattern||'')}" placeholder="TWO_POINTER" style="width:100%"/>
-      </div>
-      <div class="field form-full">
-        <label>Hint 1 — Direction <span style="font-weight:400;color:var(--text3)">(always free, no algorithm revealed)</span></label>
-        <textarea id="pf_hint1_${id}" style="min-height:55px">${esc(p.hint1||'')}</textarea>
-      </div>
-      <div class="field form-full">
-        <label>Hint 2 — Approach <span style="font-weight:400;color:var(--text3)">(reveals the pattern name)</span></label>
-        <textarea id="pf_hint2_${id}" style="min-height:55px">${esc(p.hint2||'')}</textarea>
-      </div>
-      <div class="field form-full">
-        <label>Hint 3 — Pseudocode <span style="font-weight:400;color:var(--text3)">(marks submission hint-assisted)</span></label>
-        <textarea id="pf_hint3_${id}" style="min-height:75px">${esc(p.hint3||'')}</textarea>
       </div>
       <div class="field form-full">
         <label>Starter Code</label>
@@ -1371,10 +1539,6 @@ function buildPrPayload(id) {
     hint:         val(`pf_hint_${id}`),
     starterCode:  val(`pf_starter_${id}`),
     solutionCode: val(`pf_solution_${id}`),
-    pattern: val(`pf_pattern_${id}`) || null,
-    hint1:   val(`pf_hint1_${id}`)   || null,
-    hint2:   val(`pf_hint2_${id}`)   || null,
-    hint3:   val(`pf_hint3_${id}`)   || null,
   };
 }
 
@@ -1430,6 +1594,37 @@ async function fetchJson(url) {
 </script>
 
 <!-- ═══ SEED / IMPORT MODAL ══════════════════════════════════════════════ -->
+<!-- ═══ PENDING ADMIN REQUESTS PANEL ═══════════════════════════════════════ -->
+<div class="seed-overlay hidden" id="pendingAdminsOverlay">
+  <div class="seed-modal" style="max-width:760px;max-height:85vh">
+    <div class="seed-header">
+      <span style="color:var(--yellow)">🔑 Pending Admin Requests</span>
+      <button class="seed-close" onclick="closePendingAdminsPanel()">✕</button>
+    </div>
+    <div id="pendingAdminsContent" style="padding:20px;overflow-y:auto;max-height:65vh">
+      <p style="color:var(--text3);text-align:center;padding:40px 0">Loading…</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ALL USERS PANEL ════════════════════════════════════════════════════ -->
+<div class="seed-overlay hidden" id="allUsersOverlay">
+  <div class="seed-modal" style="max-width:900px;max-height:85vh">
+    <div class="seed-header">
+      <span style="color:var(--blue)">👥 All Users</span>
+      <button class="seed-close" onclick="closeAllUsersPanel()">✕</button>
+    </div>
+    <div style="padding:10px 20px;border-bottom:1px solid var(--border)">
+      <input id="userSearchInput" type="text" placeholder="🔍 Search by name or email…"
+             oninput="filterUsersTable()"
+             style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-family:var(--font-ui);font-size:13px"/>
+    </div>
+    <div id="allUsersContent" style="padding:16px 20px;overflow-y:auto;max-height:60vh">
+      <p style="color:var(--text3);text-align:center;padding:40px 0">Loading…</p>
+    </div>
+  </div>
+</div>
+
 <div class="seed-overlay hidden" id="seedOverlay">
   <div class="seed-modal">
 

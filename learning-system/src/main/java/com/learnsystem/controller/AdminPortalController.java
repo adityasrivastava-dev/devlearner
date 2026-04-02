@@ -22,12 +22,12 @@ private final UserRepository userRepository;
 private final JwtService     jwtService;
 
 /** GET all users */
-@GetMapping
+/*@GetMapping
 public ResponseEntity<List<Map<String,Object>>> listUsers() {
 	return ResponseEntity.ok(
 			userRepository.findAll().stream().map(this::toMap).collect(Collectors.toList())
 	);
-}
+}*/
 
 /** GET stats */
 @GetMapping("/stats")

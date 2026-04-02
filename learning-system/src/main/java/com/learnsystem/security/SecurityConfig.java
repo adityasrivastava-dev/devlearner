@@ -54,17 +54,16 @@ public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 			.authorizeHttpRequests(auth -> auth
 					// Auth — always public
 					.requestMatchers("/api/auth/**").permitAll()
+					// Bootstrap: owner calls this once to become admin — only needs authentication
+					.requestMatchers("/api/admin/bootstrap").authenticated()
 
-					// Public read (topics and problems)
+					// Public read
 					.requestMatchers(HttpMethod.GET,
 							"/api/topics", "/api/topics/**",
 							"/api/problems", "/api/problems/**",
 							"/api/submissions/percentile").permitAll()
-
-					// Roadmaps: GET is authenticated (returns only user's own),
-					// all write operations (POST/PUT/DELETE) require auth too
 					.requestMatchers(HttpMethod.GET,
-							"/api/roadmaps", "/api/roadmaps/**").authenticated()
+							"/api/roadmaps", "/api/roadmaps/**").permitAll()
 
 					// Admin
 					.requestMatchers("/api/admin/**").hasRole("ADMIN")

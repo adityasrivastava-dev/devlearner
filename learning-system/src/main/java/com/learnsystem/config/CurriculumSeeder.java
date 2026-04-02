@@ -123,7 +123,7 @@ public class CurriculumSeeder implements CommandLineRunner {
                     }
                 }
                 """);
-
+      t=  topicRepo.save(t);
         ex(t, 1, "Two Sum with HashMap", "Find two numbers that add up to target in O(n)",
                 """
                 Map<Integer,Integer> map = new HashMap<>();
@@ -194,7 +194,7 @@ public class CurriculumSeeder implements CommandLineRunner {
         prob(t,19,"Longest Consecutive Sequence","Find length of longest consecutive integers sequence","n then array","length","10\n100 4 200 1 3 2 101 102 103 104","5","[{\"input\":\"10\\n100 4 200 1 3 2 101 102 103 104\",\"expectedOutput\":\"5\"},{\"input\":\"4\\n0 3 7 2\",\"expectedOutput\":\"1\"}]",Problem.Difficulty.MEDIUM,"Put all in HashSet. Only start counting when num-1 not in set (sequence start)","import java.util.*;\npublic class Main{\npublic static void main(String[] a){\nScanner sc=new Scanner(System.in);int n=sc.nextInt();\nSet<Integer> set=new HashSet<>();\nfor(int i=0;i<n;i++)set.add(sc.nextInt());\nint best=0;\nfor(int num:set){if(!set.contains(num-1)){int cur=num,len=1;\nwhile(set.contains(cur+1)){cur++;len++;}\nbest=Math.max(best,len);}}\nSystem.out.println(best);}}");
         prob(t,20,"Maximum Product Subarray","Find contiguous subarray with largest product","n then array","max product","6\n2 3 -2 4 -1 8","96","[{\"input\":\"6\\n2 3 -2 4 -1 8\",\"expectedOutput\":\"96\"},{\"input\":\"4\\n-2 0 -1 3\",\"expectedOutput\":\"3\"}]",Problem.Difficulty.HARD,"Track both max and min product (negative*negative=positive). Update at each step","import java.util.*;\npublic class Main{\npublic static void main(String[] a){\nScanner sc=new Scanner(System.in);int n=sc.nextInt();\nint[] arr=new int[n];for(int i=0;i<n;i++)arr[i]=sc.nextInt();\nint maxP=arr[0],minP=arr[0],res=arr[0];\nfor(int i=1;i<n;i++){int t=maxP;\nmaxP=Math.max(arr[i],Math.max(maxP*arr[i],minP*arr[i]));\nminP=Math.min(arr[i],Math.min(t*arr[i],minP*arr[i]));\nres=Math.max(res,maxP);}\nSystem.out.println(res);}}");
 
-        return topicRepo.save(t);
+        return t;
     }
 
     private Topic seedLinkedList() {

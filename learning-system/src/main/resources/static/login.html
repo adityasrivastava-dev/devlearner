@@ -209,6 +209,23 @@
                 <div class="strength-bar" id="strengthBar"></div>
                 <div class="strength-label" id="strengthLabel"></div>
             </div>
+
+            <!-- Admin Role Request — pending approval by asaditya1826@gmail.com -->
+            <div class="field" style="margin-bottom:16px">
+                <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;line-height:1.5">
+                    <input type="checkbox" id="requestAdminRole"
+                           style="width:16px;height:16px;margin-top:2px;accent-color:var(--accent);flex-shrink:0"/>
+                    <span>
+                  <strong style="color:var(--text);font-size:12px">Register as Admin</strong><br>
+                  <span style="color:var(--text3);font-size:11px">
+                    Your account will be created as a regular user. The platform owner
+                    (<strong>asaditya1826@gmail.com</strong>) will review and approve your
+                    admin request. You will receive full admin access after approval.
+                  </span>
+                </span>
+                </label>
+            </div>
+
             <button class="btn-primary" id="regBtn" onclick="doRegister()">Create Account</button>
         </div>
 
@@ -263,14 +280,15 @@ async function doLogin() {
 
 // ── Register ────────────────────────────────────────────────────────────────
 async function doRegister() {
-  const name     = document.getElementById('regName').value.trim();
-  const email    = document.getElementById('regEmail').value.trim();
-  const password = document.getElementById('regPassword').value;
-  const btn      = document.getElementById('regBtn');
+  const name            = document.getElementById('regName').value.trim();
+  const email           = document.getElementById('regEmail').value.trim();
+  const password        = document.getElementById('regPassword').value;
+  const requestAdminRole = document.getElementById('requestAdminRole')?.checked || false;
+  const btn             = document.getElementById('regBtn');
 
-  if (!name)                { showError('regError', 'Name is required'); return; }
-  if (!email)               { showError('regError', 'Email is required'); return; }
-  if (password.length < 6)  { showError('regError', 'Password must be at least 6 characters'); return; }
+  if (!name)               { showError('regError', 'Name is required'); return; }
+  if (!email)              { showError('regError', 'Email is required'); return; }
+  if (password.length < 6) { showError('regError', 'Password must be at least 6 characters'); return; }
 
   setLoading(btn, true);
   clearAlerts();
@@ -278,11 +296,33 @@ async function doRegister() {
     const res  = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password })
+      body: JSON.stringify({ name, email, password, requestAdminRole })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || data.error || 'Registration failed');
-    saveAndRedirect(data);
+
+    // If admin was requested, show pending message instead of redirecting
+    if (requestAdminRole && data.adminPending) {
+      setLoading(btn, false);
+      // Show success with pending notice
+      const regError = document.getElementById('regError');
+      if (regError) {
+        regError.style.background = 'rgba(0,184,163,0.1)';
+        regError.style.borderColor = 'var(--accent)';
+        regError.style.color = 'var(--accent)';
+        regError.style.display = 'block';
+        regError.innerHTML = `
+          <strong>✅ Account Created!</strong><br>
+          Your admin request is <strong>pending approval</strong> by the platform owner
+          (asaditya1826@gmail.com).<br><br>
+          You can log in now as a regular user. You will have admin access once approved.
+        `;
+      }
+      // Still save token — they're logged in as STUDENT
+      saveAndRedirect(data);
+    } else {
+      saveAndRedirect(data);
+    }
   } catch (e) {
     showError('regError', e.message);
     setLoading(btn, false);

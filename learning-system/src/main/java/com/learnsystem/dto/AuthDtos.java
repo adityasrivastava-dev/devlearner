@@ -23,6 +23,13 @@ public static class RegisterRequest {
 	@NotBlank
 	@Size(min = 6, message = "Password must be at least 6 characters")
 	private String password;
+
+	/**
+	 * If true: user is requesting ADMIN role.
+	 * Account is created as STUDENT but adminRequestPending=true is set.
+	 * asaditya1826@gmail.com must approve via /api/admin/users/{id}/approve-admin.
+	 */
+	private boolean requestAdminRole = false;
 }
 
 @Data

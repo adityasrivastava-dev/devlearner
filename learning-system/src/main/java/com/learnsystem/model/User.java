@@ -76,7 +76,6 @@ private int streakDays = 0;
 @Column(name = "problems_solved")
 @Builder.Default
 private int problemsSolved = 0;
-
 // ── Phase 2 fields ────────────────────────────────────────────────────────
 
 /** Pause days banked (1 per 7-day streak, max 3). Protects streak for 1 day. */
@@ -96,11 +95,23 @@ private java.time.LocalDate lastRecoveryUsed;
 @Column(name = "xp")
 @Builder.Default
 private int xp = 0;
-
 /** Level label: Beginner → Learner → Practitioner → Engineer → Senior → Architect */
 @Column(name = "level", length = 50)
 @Builder.Default
 private String level = "Beginner";
+/**
+ * Admin Approval System:
+ * When a user registers requesting ADMIN role, this is set to true.
+ * Only asaditya1826@gmail.com can approve via POST /api/admin/users/{id}/approve-admin.
+ * On approval: this flag is cleared and ADMIN role is added.
+ */
+@Column(name = "admin_request_pending", nullable = false)
+@Builder.Default
+private Boolean adminRequestPending = false;
+
+/** Timestamp of admin role request — used to show how long request has been pending */
+@Column(name = "admin_requested_at")
+private LocalDateTime adminRequestedAt;
 
 @PrePersist
 protected void onCreate() {
@@ -127,6 +138,25 @@ public void removeRole(Role role) {
 	if (roles != null) roles.remove(role);
 }
 
+/** Request ADMIN role — sets pending flag and records timestamp */
+public void requestAdminRole() {
+	this.adminRequestPending = true;
+	this.adminRequestedAt = java.time.LocalDateTime.now();
+}
+
+/** Approve ADMIN role — clears pending flag, adds ADMIN role */
+public void approveAdminRole() {
+	this.adminRequestPending = false;
+	this.adminRequestedAt = null;
+	addRole(Role.ADMIN);
+}
+
+/** Reject ADMIN request — clears the pending flag */
+public void rejectAdminRequest() {
+	this.adminRequestPending = false;
+	this.adminRequestedAt = null;
+}
+
 /** Primary role for display — highest privilege wins */
 public Role getPrimaryRole() {
 	if (hasRole(Role.ADMIN))   return Role.ADMIN;
@@ -143,5 +173,8 @@ public enum Role {
 	STUDENT,   // default — browse, code, submit
 	TEACHER,   // future — create topics, view student progress
 	ADMIN      // full access — user mgmt, content mgmt, analytics
+}
+public boolean isAdminRequestPending() {
+	return Boolean.TRUE.equals(this.adminRequestPending);
 }
 }
