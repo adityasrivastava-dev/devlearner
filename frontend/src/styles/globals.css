@@ -238,3 +238,107 @@ html, body, #root {
 /* Transitions */
 .fade-in { animation: fadeIn .2s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+/* ── Monaco editor widget overrides ─────────────────────────────────────────
+   Monaco renders suggestion/hover widgets outside the editor's shadow root.
+   Theme color tokens set the initial palette, but some widgets need CSS
+   overrides to fully apply the dark theme (especially the suggest dropdown).  */
+
+/* Autocomplete suggestion dropdown */
+.monaco-editor .suggest-widget {
+  background: #1a1e26 !important;
+  border: 1px solid #2e3540 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5) !important;
+}
+.monaco-editor .suggest-widget .monaco-list {
+  background: #1a1e26 !important;
+}
+.monaco-editor .suggest-widget .monaco-list-row {
+  color: #c9d1d9 !important;
+}
+.monaco-editor .suggest-widget .monaco-list-row.focused,
+.monaco-editor .suggest-widget .monaco-list-row:hover {
+  background: #1f3a5f !important;
+  color: #ffffff !important;
+}
+.monaco-editor .suggest-widget .monaco-list-row .monaco-highlighted-label .highlight {
+  color: #4ade80 !important;
+  font-weight: 700;
+}
+.monaco-editor .suggest-widget .details,
+.monaco-editor .suggest-widget .details-label {
+  background: #161b22 !important;
+  border-left: 1px solid #2e3540 !important;
+  color: #8b949e !important;
+}
+.monaco-editor .suggest-widget .type-label {
+  color: #8b949e !important;
+}
+.monaco-editor .suggest-widget .suggest-status-bar {
+  background: #161b22 !important;
+  border-top: 1px solid #2e3540 !important;
+  color: #4d5767 !important;
+}
+
+/* Hover documentation widget */
+.monaco-editor .monaco-hover {
+  background: #1a1e26 !important;
+  border: 1px solid #2e3540 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5) !important;
+  color: #e2e8f0 !important;
+}
+.monaco-editor .monaco-hover hr {
+  border-color: #2e3540 !important;
+}
+.monaco-editor .monaco-hover .hover-row p {
+  color: #c9d1d9 !important;
+}
+
+/* Signature help / parameter hints */
+.monaco-editor .parameter-hints-widget {
+  background: #1a1e26 !important;
+  border: 1px solid #2e3540 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5) !important;
+  color: #c9d1d9 !important;
+}
+.monaco-editor .parameter-hints-widget .phOver {
+  background: #1f3a5f !important;
+}
+.monaco-editor .parameter-hints-widget .parameter.active {
+  color: #4ade80 !important;
+  font-weight: 700;
+}
+.monaco-editor .parameter-hints-widget em {
+  color: #fbbf24 !important;
+}
+
+/* Find widget (Ctrl+F) */
+.monaco-editor .find-widget {
+  background: #1a1e26 !important;
+  border: 1px solid #2e3540 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5) !important;
+  color: #e2e8f0 !important;
+}
+.monaco-editor .find-widget input {
+  background: #0d1117 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #2e3540 !important;
+}
+
+/* Context menu (right-click) */
+.monaco-menu .monaco-action-bar.vertical .action-item .action-label {
+  color: #e2e8f0 !important;
+}
+.monaco-menu {
+  background: #1a1e26 !important;
+  border: 1px solid #2e3540 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5) !important;
+}
+.monaco-menu .monaco-action-bar.vertical .action-item:hover {
+  background: #1f3a5f !important;
+}

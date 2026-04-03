@@ -328,17 +328,28 @@ export default function CodeEditor({
         padding:       { top: 12, bottom: 12 },
         readOnly,
         // IntelliSense
-        quickSuggestions:  { other: true, comments: false, strings: true },
-        quickSuggestionsDelay: 80,
+        quickSuggestions: {
+          other:    true,   // trigger in code
+          comments: false,  // no suggestions inside /* */ or //
+          strings:  false,  // no suggestions inside "string literals"
+        },
+        quickSuggestionsDelay: 100,
         suggestOnTriggerCharacters: true,
         tabCompletion: 'on',
         acceptSuggestionOnEnter: 'on',
-        parameterHints:{ enabled: true, cycle: true },
+        parameterHints: { enabled: true, cycle: true },
         snippetSuggestions: 'top',
         suggest: {
-          showSnippets: true, showKeywords: true, showMethods: true,
-          showClasses: true, showConstants: true, localityBonus: true,
-          insertMode: 'replace', preview: true,
+          showSnippets:  true,
+          showKeywords:  true,
+          showMethods:   true,
+          showClasses:   true,
+          showConstants: true,
+          localityBonus: true,
+          insertMode:    'replace',
+          preview:       false, // disable ghost text preview — it overlays mid-string
+          filterGraceful: true,
+          showIcons:     true,
         },
         // Editing
         formatOnPaste:   true,

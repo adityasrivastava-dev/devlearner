@@ -520,23 +520,124 @@ export function getJavaCompletions(monaco, range) {
     method('strval', 'String.valueOf(${1:x})', 'String.valueOf(x)', HOVER_DOCS['String.valueOf']),
 
     // ════════════════════════════════════════════════════════════════════════
-    // SECTION 8 — JAVA KEYWORDS
+    // SECTION 8 — PRIMITIVE TYPES
     // ════════════════════════════════════════════════════════════════════════
-    kw('public',    'public '),
-    kw('private',   'private '),
-    kw('protected', 'protected '),
-    kw('static',    'static '),
-    kw('final',     'final '),
-    kw('void',      'void '),
-    kw('return',    'return ${1};', 'return value'),
-    kw('new',       'new ${1}(${2})', 'new instance'),
-    kw('null',      'null'),
-    kw('true',      'true'),
-    kw('false',     'false'),
-    kw('this',      'this'),
-    kw('super',     'super'),
-    kw('instanceof','instanceof ${1:ClassName}'),
-    kw('try',       'try {\n\t${1}\n} catch (${2:Exception} e) {\n\t${3:e.printStackTrace();}\n}', 'try-catch block'),
-    kw('throw',     'throw new ${1:RuntimeException}("${2:message}");', 'throw exception'),
+    {label:'int',     insertText:'int ',     detail:'primitive int (32-bit)',                  kind:Kind.Keyword,  documentation:{value:'32-bit signed integer. Range: -2,147,483,648 to 2,147,483,647'},  range, insertTextRules:Snippet},
+    {label:'long',    insertText:'long ',    detail:'primitive long (64-bit)',                 kind:Kind.Keyword,  documentation:{value:'64-bit signed integer. Range: -9.2×10¹⁸ to 9.2×10¹⁸. Add `L` suffix: `123L`'}, range, insertTextRules:Snippet},
+    {label:'double',  insertText:'double ',  detail:'primitive double (64-bit float)',         kind:Kind.Keyword,  documentation:{value:'64-bit floating point. Use for decimal numbers. e.g. `3.14`'}, range, insertTextRules:Snippet},
+    {label:'float',   insertText:'float ',   detail:'primitive float (32-bit)',                kind:Kind.Keyword,  documentation:{value:'32-bit float. Add `f` suffix: `3.14f`. Prefer double for precision.'}, range, insertTextRules:Snippet},
+    {label:'boolean', insertText:'boolean ', detail:'primitive boolean (true/false)',          kind:Kind.Keyword,  documentation:{value:'Boolean value: `true` or `false`. Used in conditions.'}, range, insertTextRules:Snippet},
+    {label:'char',    insertText:'char ',    detail:"primitive char (16-bit Unicode)",         kind:Kind.Keyword,  documentation:{value:"Single Unicode character. e.g. `char c = 'A'`. Supports arithmetic: `'a' + 1 = 'b'`"}, range, insertTextRules:Snippet},
+    {label:'byte',    insertText:'byte ',    detail:'primitive byte (8-bit, -128 to 127)',     kind:Kind.Keyword,  documentation:{value:'8-bit signed integer. Range: -128 to 127.'}, range, insertTextRules:Snippet},
+    {label:'short',   insertText:'short ',   detail:'primitive short (16-bit)',                kind:Kind.Keyword,  documentation:{value:'16-bit signed integer. Range: -32768 to 32767. Rarely used.'}, range, insertTextRules:Snippet},
+    {label:'void',    insertText:'void ',    detail:'no return value',                         kind:Kind.Keyword,  documentation:{value:'Indicates a method returns nothing.'}, range, insertTextRules:Snippet},
+
+    // ════════════════════════════════════════════════════════════════════════
+    // SECTION 9 — WRAPPER & COMMON CLASSES
+    // ════════════════════════════════════════════════════════════════════════
+    {label:'String',       insertText:'String ',       detail:'java.lang.String — immutable text',    kind:Kind.Class, documentation:{value:'Immutable sequence of characters. Use `StringBuilder` for concatenation in loops.\n\nCommon: `length()` `charAt(i)` `substring(a,b)` `contains()` `split()` `trim()` `toCharArray()`'}, range, insertTextRules:Snippet},
+    {label:'Integer',      insertText:'Integer ',      detail:'java.lang.Integer — int wrapper',      kind:Kind.Class, documentation:{value:'Wrapper for `int`. Useful for:\n- `Integer.MAX_VALUE` / `MIN_VALUE`\n- `Integer.parseInt(str)`\n- `Integer.bitCount(n)`\n- `Integer.toBinaryString(n)`'}, range, insertTextRules:Snippet},
+    {label:'Long',         insertText:'Long ',         detail:'java.lang.Long — long wrapper',        kind:Kind.Class, documentation:{value:'Wrapper for `long`. `Long.MAX_VALUE` = 9.2×10¹⁸\n- `Long.parseLong(str)`\n- `Long.compare(a, b)`'}, range, insertTextRules:Snippet},
+    {label:'Double',       insertText:'Double ',       detail:'java.lang.Double — double wrapper',    kind:Kind.Class, documentation:{value:'Wrapper for `double`. `Double.parseDouble(str)` `Double.isNaN(d)`'}, range, insertTextRules:Snippet},
+    {label:'Boolean',      insertText:'Boolean ',      detail:'java.lang.Boolean — boolean wrapper',  kind:Kind.Class, documentation:{value:'Wrapper for `boolean`. `Boolean.parseBoolean("true")` → true'}, range, insertTextRules:Snippet},
+    {label:'Character',    insertText:'Character ',    detail:'java.lang.Character — char wrapper',   kind:Kind.Class, documentation:{value:'Wrapper for `char`.\n- `Character.isDigit(c)` `isLetter(c)` `isUpperCase(c)`\n- `Character.toLowerCase(c)` `toUpperCase(c)`\n- `c - \'a\'` gives 0-25 index for lowercase letters'}, range, insertTextRules:Snippet},
+    {label:'Object',       insertText:'Object ',       detail:'java.lang.Object — root class',        kind:Kind.Class, documentation:{value:'Root of all Java classes. Methods: `equals()` `hashCode()` `toString()` `getClass()`'}, range, insertTextRules:Snippet},
+    {label:'Math',         insertText:'Math.',         detail:'java.lang.Math — math functions',      kind:Kind.Class, documentation:{value:'Static math methods:\n- `Math.max/min(a,b)` `Math.abs(x)`\n- `Math.sqrt(x)` `Math.pow(a,b)`\n- `Math.floor/ceil/round(x)`\n- `Math.log(x)` `Math.PI`'}, range, insertTextRules:Snippet},
+    {label:'System',       insertText:'System.',       detail:'java.lang.System — I/O and system',    kind:Kind.Class, documentation:{value:'System utilities:\n- `System.out.println(x)` — print with newline\n- `System.out.print(x)` — print without newline\n- `System.out.printf(fmt, args)` — formatted\n- `System.in` — standard input (pass to Scanner)\n- `System.exit(0)` — terminate program'}, range, insertTextRules:Snippet},
+    {label:'Scanner',      insertText:'Scanner ',      detail:'java.util.Scanner — input reading',    kind:Kind.Class, documentation:{value:'Reads input tokens:\n```java\nScanner sc = new Scanner(System.in);\nint n = sc.nextInt();\nString s = sc.next();\nString line = sc.nextLine();\n```\nAfter `nextInt()`, call `nextLine()` once to consume the newline.'}, range, insertTextRules:Snippet},
+    {label:'Arrays',       insertText:'Arrays.',       detail:'java.util.Arrays — array utilities',   kind:Kind.Class, documentation:{value:'Static array utilities:\n- `Arrays.sort(arr)` — O(n log n) sort\n- `Arrays.fill(arr, val)` — fill all\n- `Arrays.copyOf(arr, len)` — copy with new length\n- `Arrays.toString(arr)` — `[1, 2, 3]` format\n- `Arrays.binarySearch(arr, key)` — needs sorted'}, range, insertTextRules:Snippet},
+    {label:'Collections',  insertText:'Collections.',  detail:'java.util.Collections — collection utils', kind:Kind.Class, documentation:{value:'Static collection utilities:\n- `Collections.sort(list)` `reverse(list)` `shuffle(list)`\n- `Collections.min(c)` `max(c)`\n- `Collections.frequency(c, obj)`\n- `Collections.reverseOrder()` — for max-heap'}, range, insertTextRules:Snippet},
+    {label:'StringBuilder',insertText:'StringBuilder ',detail:'java.lang.StringBuilder — mutable string', kind:Kind.Class, documentation:{value:'Mutable string buffer. Faster than `+` concatenation in loops.\n```java\nStringBuilder sb = new StringBuilder();\nsb.append(val).append("\\n");\nSystem.out.print(sb);\n```\nMethods: `append()` `insert()` `delete()` `reverse()` `toString()`'}, range, insertTextRules:Snippet},
+    {label:'ArrayList',    insertText:'ArrayList<${1:Integer}>()',    detail:'java.util.ArrayList<T>',          kind:Kind.Class, documentation:{value:'Resizable array. O(1) get/set, O(1) amortized add.\n```java\nList<Integer> list = new ArrayList<>();\nlist.add(x); list.get(i); list.size(); list.remove(i);\n```'}, range, insertTextRules:Snippet},
+    {label:'LinkedList',   insertText:'LinkedList<${1:Integer}>()',   detail:'java.util.LinkedList<T>',         kind:Kind.Class, documentation:{value:'Doubly-linked list. O(1) add/remove at ends. O(n) random access.\nPrefer `ArrayDeque` for queue/stack operations.'}, range, insertTextRules:Snippet},
+    {label:'HashMap',      insertText:'HashMap<${1:String}, ${2:Integer}>()',    detail:'java.util.HashMap<K,V>',  kind:Kind.Class, documentation:{value:'Hash table. O(1) average get/put/containsKey.\n```java\nMap<String, Integer> map = new HashMap<>();\nmap.put(key, val);\nmap.getOrDefault(key, 0);\nmap.merge(key, 1, Integer::sum); // freq count\n```'}, range, insertTextRules:Snippet},
+    {label:'TreeMap',      insertText:'TreeMap<${1:Integer}, ${2:Integer}>()',   detail:'java.util.TreeMap<K,V> — sorted', kind:Kind.Class, documentation:{value:'Red-black tree. O(log n) all ops. Keys sorted.\n```java\nTreeMap<Integer, Integer> tm = new TreeMap<>();\ntm.floorKey(x);   // largest key ≤ x\ntm.ceilingKey(x); // smallest key ≥ x\ntm.firstKey(); tm.lastKey();\n```'}, range, insertTextRules:Snippet},
+    {label:'LinkedHashMap',insertText:'LinkedHashMap<${1:String}, ${2:Integer}>()', detail:'java.util.LinkedHashMap — insertion ordered', kind:Kind.Class, documentation:{value:'HashMap that maintains insertion order. O(1) ops.\nUsed for LRU cache: `new LinkedHashMap<>(cap, 0.75f, true)` with `removeEldestEntry`.'}, range, insertTextRules:Snippet},
+    {label:'HashSet',      insertText:'HashSet<${1:Integer}>()',   detail:'java.util.HashSet<T>',       kind:Kind.Class, documentation:{value:'Hash-based set. O(1) add/contains/remove.\n```java\nSet<Integer> set = new HashSet<>();\nset.add(x); set.contains(x); set.remove(x);\n```'}, range, insertTextRules:Snippet},
+    {label:'TreeSet',      insertText:'TreeSet<${1:Integer}>()',   detail:'java.util.TreeSet<T> — sorted', kind:Kind.Class, documentation:{value:'Sorted unique elements. O(log n) ops.\n```java\nTreeSet<Integer> ts = new TreeSet<>();\nts.floor(x);   // largest ≤ x\nts.ceiling(x); // smallest ≥ x\nts.first(); ts.last();\n```'}, range, insertTextRules:Snippet},
+    {label:'PriorityQueue',insertText:'PriorityQueue<${1:Integer}>()', detail:'java.util.PriorityQueue — min-heap', kind:Kind.Class, documentation:{value:'Binary heap. O(log n) offer/poll, O(1) peek.\nDefault = **min-heap** (smallest element first).\n```java\nPriorityQueue<Integer> pq = new PriorityQueue<>();\npq.offer(x); pq.poll(); pq.peek();\n// Max-heap:\nnew PriorityQueue<>(Collections.reverseOrder());\n```'}, range, insertTextRules:Snippet},
+    {label:'ArrayDeque',   insertText:'ArrayDeque<${1:Integer}>()',   detail:'java.util.ArrayDeque — fast deque', kind:Kind.Class, documentation:{value:'Double-ended queue. Preferred over `Stack` and `LinkedList`.\n```java\nDeque<Integer> dq = new ArrayDeque<>();\n// Stack: dq.push(x) / dq.pop() / dq.peek()\n// Queue: dq.offer(x) / dq.poll() / dq.peek()\n// Both ends: offerFirst/offerLast/pollFirst/pollLast\n```'}, range, insertTextRules:Snippet},
+    {label:'Comparator',   insertText:'Comparator.',  detail:'java.util.Comparator — sorting strategy', kind:Kind.Class, documentation:{value:'```java\nComparator.comparingInt(a -> a[0])  // by first element\n  .thenComparingInt(a -> a[1])       // tiebreak\n  .reversed()                         // descending\n(a, b) -> Integer.compare(a, b)      // explicit\n```'}, range, insertTextRules:Snippet},
+    {label:'Optional',     insertText:'Optional<${1:String}>',  detail:'java.util.Optional<T>',   kind:Kind.Class, documentation:{value:'Container that may or may not hold a value.\n```java\nOptional.of(val)\nOptional.ofNullable(mayBeNull)\n.map(fn).filter(pred).orElse(default)\n```'}, range, insertTextRules:Snippet},
+    {label:'List',         insertText:'List<${1:Integer}>',      detail:'java.util.List<T> interface',   kind:Kind.Interface, documentation:{value:'Ordered collection interface. Implementations: `ArrayList` (prefer), `LinkedList`.\n```java\nList<Integer> list = new ArrayList<>();\nList<Integer> immutable = List.of(1, 2, 3);\n```'}, range, insertTextRules:Snippet},
+    {label:'Map',          insertText:'Map<${1:String}, ${2:Integer}>',  detail:'java.util.Map<K,V> interface',  kind:Kind.Interface, documentation:{value:'Key-value map interface. Implementations: `HashMap` `TreeMap` `LinkedHashMap`\n```java\nMap<String, Integer> map = new HashMap<>();\n```'}, range, insertTextRules:Snippet},
+    {label:'Set',          insertText:'Set<${1:Integer}>',       detail:'java.util.Set<T> interface',    kind:Kind.Interface, documentation:{value:'Unique elements interface. Implementations: `HashSet` `TreeSet` `LinkedHashSet`\n```java\nSet<Integer> set = new HashSet<>();\n```'}, range, insertTextRules:Snippet},
+    {label:'Queue',        insertText:'Queue<${1:Integer}>',     detail:'java.util.Queue<T> interface',  kind:Kind.Interface, documentation:{value:'FIFO queue interface.\n```java\nQueue<Integer> q = new LinkedList<>();\nq.offer(x); q.poll(); q.peek();\n```\nPrefer `ArrayDeque` over `LinkedList`.'}, range, insertTextRules:Snippet},
+    {label:'Deque',        insertText:'Deque<${1:Integer}>',     detail:'java.util.Deque<T> interface',  kind:Kind.Interface, documentation:{value:'Double-ended queue.\n```java\nDeque<Integer> dq = new ArrayDeque<>();\n// use as stack: push/pop/peek\n// use as queue: offer/poll/peek\n```'}, range, insertTextRules:Snippet},
+    {label:'Iterable',     insertText:'Iterable<${1:T}>',        detail:'java.lang.Iterable<T> interface', kind:Kind.Interface, documentation:{value:'Can be used in for-each loops.'}, range, insertTextRules:Snippet},
+    {label:'Comparable',   insertText:'Comparable<${1:T}>',      detail:'java.lang.Comparable<T>',       kind:Kind.Interface, documentation:{value:'Implement to define natural ordering.\n```java\nclass MyClass implements Comparable<MyClass> {\n  public int compareTo(MyClass other) { ... }\n}\n```'}, range, insertTextRules:Snippet},
+
+    // ════════════════════════════════════════════════════════════════════════
+    // SECTION 10 — CONTROL FLOW KEYWORDS (with smart insert text)
+    // ════════════════════════════════════════════════════════════════════════
+    {label:'if',         insertText:'if (${1:condition}) {\n\t${0}\n}',                              detail:'if statement',       kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'if-else',    insertText:'if (${1:condition}) {\n\t${2}\n} else {\n\t${0}\n}',            detail:'if-else',            kind:Kind.Keyword, insertTextRules:Snippet, range, sortText:'if-else'},
+    {label:'else',       insertText:'else {\n\t${0}\n}',                                             detail:'else block',         kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'else if',    insertText:'else if (${1:condition}) {\n\t${0}\n}',                         detail:'else if',            kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'for',        insertText:'for (int ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n\t${0}\n}', detail:'for loop',           kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'for-each',   insertText:'for (${1:int} ${2:item} : ${3:collection}) {\n\t${0}\n}',       detail:'for-each loop',      kind:Kind.Keyword, insertTextRules:Snippet, range, sortText:'for-each'},
+    {label:'while',      insertText:'while (${1:condition}) {\n\t${0}\n}',                           detail:'while loop',         kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'do-while',   insertText:'do {\n\t${0}\n} while (${1:condition});',                       detail:'do-while loop',      kind:Kind.Keyword, insertTextRules:Snippet, range, sortText:'do-while'},
+    {label:'switch',     insertText:'switch (${1:var}) {\n\tcase ${2:val}:\n\t\t${0}\n\t\tbreak;\n\tdefault:\n\t\tbreak;\n}', detail:'switch statement', kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'switch-expr',insertText:'int ${1:result} = switch (${2:var}) {\n\tcase ${3:val} -> ${4:0};\n\tdefault -> ${5:0};\n};', detail:'switch expression (Java 14+)', kind:Kind.Keyword, insertTextRules:Snippet, range, sortText:'switch-expr'},
+    {label:'break',      insertText:'break;',                                                        detail:'break out of loop',  kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'continue',   insertText:'continue;',                                                     detail:'skip to next iteration', kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'return',     insertText:'return ${1};',                                                  detail:'return value',       kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'return void',insertText:'return;',                                                       detail:'return (void)',      kind:Kind.Keyword, insertTextRules:Snippet, range, sortText:'returnv'},
+    {label:'try',        insertText:'try {\n\t${1}\n} catch (${2:Exception} e) {\n\t${3:e.printStackTrace();}\n}', detail:'try-catch block', kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'try-finally',insertText:'try {\n\t${1}\n} catch (${2:Exception} e) {\n\t${3}\n} finally {\n\t${0}\n}', detail:'try-catch-finally', kind:Kind.Keyword, insertTextRules:Snippet, range, sortText:'try-f'},
+    {label:'try-resources',insertText:'try (${1:Resource} ${2:res} = new ${1:Resource}()) {\n\t${0}\n} catch (${3:Exception} e) {\n\t${4:e.printStackTrace();}\n}', detail:'try-with-resources (auto-close)', kind:Kind.Keyword, insertTextRules:Snippet, range, sortText:'try-r'},
+    {label:'catch',      insertText:'catch (${1:Exception} e) {\n\t${0}\n}',                        detail:'catch block',        kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'finally',    insertText:'finally {\n\t${0}\n}',                                         detail:'finally block',      kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'throw',      insertText:'throw new ${1:RuntimeException}("${2:message}");',              detail:'throw exception',    kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'throws',     insertText:'throws ${1:Exception}',                                        detail:'throws declaration', kind:Kind.Keyword, insertTextRules:Snippet, range},
+
+    // ════════════════════════════════════════════════════════════════════════
+    // SECTION 11 — OOP KEYWORDS
+    // ════════════════════════════════════════════════════════════════════════
+    {label:'class',      insertText:'class ${1:ClassName} {\n\t${0}\n}',                            detail:'class declaration',      kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'interface',  insertText:'interface ${1:InterfaceName} {\n\t${0}\n}',                    detail:'interface declaration',  kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'enum',       insertText:'enum ${1:EnumName} {\n\t${2:VALUE1}, ${3:VALUE2};\n}',          detail:'enum declaration',       kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'extends',    insertText:'extends ${1:ParentClass}',                                     detail:'inherit from class',     kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'implements', insertText:'implements ${1:Interface}',                                    detail:'implement interface',    kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'abstract',   insertText:'abstract ',                                                    detail:'abstract modifier',      kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'interface-method', insertText:'${1:void} ${2:method}(${3});\n',                         detail:'interface method (no body)', kind:Kind.Keyword, insertTextRules:Snippet, range, sortText:'interface-m'},
+    {label:'override',   insertText:'@Override\n${0}',                                              detail:'@Override annotation',   kind:Kind.Keyword, insertTextRules:Snippet, range, sortText:'00override'},
+    {label:'new',        insertText:'new ${1:ClassName}(${2})',                                     detail:'create object',          kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'instanceof', insertText:'instanceof ${1:ClassName}',                                    detail:'type check',             kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'this',       insertText:'this',                                                         detail:'current instance',       kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'super',      insertText:'super',                                                        detail:'parent class reference', kind:Kind.Keyword, insertTextRules:Snippet, range},
+
+    // ════════════════════════════════════════════════════════════════════════
+    // SECTION 12 — MODIFIERS & MISC KEYWORDS
+    // ════════════════════════════════════════════════════════════════════════
+    {label:'public',      insertText:'public ',                  detail:'public access',           kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'private',     insertText:'private ',                 detail:'private access',          kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'protected',   insertText:'protected ',               detail:'protected access',        kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'static',      insertText:'static ',                  detail:'static member',           kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'final',       insertText:'final ',                   detail:'cannot be overridden/changed', kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'null',        insertText:'null',                     detail:'null reference',          kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'true',        insertText:'true',                     detail:'boolean true',            kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'false',       insertText:'false',                    detail:'boolean false',           kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'synchronized',insertText:'synchronized ',            detail:'thread-safe block',       kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'volatile',    insertText:'volatile ',                detail:'always read from main memory', kind:Kind.Keyword, documentation:{value:'Prevents CPU from caching this variable. Ensures all threads see the latest value. NOT atomic — use `AtomicInteger` for counters.'}, insertTextRules:Snippet, range},
+    {label:'transient',   insertText:'transient ',               detail:'skip during serialization', kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'import',      insertText:'import ${1:java.util.*};', detail:'import statement',        kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'package',     insertText:'package ${1:com.example};',detail:'package declaration',     kind:Kind.Keyword, insertTextRules:Snippet, range},
+    {label:'var',         insertText:'var ',                     detail:'local type inference (Java 10+)', kind:Kind.Keyword, documentation:{value:'Java 10+ local variable type inference.\n```java\nvar list = new ArrayList<String>(); // inferred as ArrayList<String>\nvar map  = new HashMap<String, Integer>();\n```'}, insertTextRules:Snippet, range},
+
+    // ════════════════════════════════════════════════════════════════════════
+    // SECTION 13 — COMMON EXCEPTION CLASSES
+    // ════════════════════════════════════════════════════════════════════════
+    {label:'Exception',                insertText:'Exception',                detail:'java.lang.Exception — checked',          kind:Kind.Class, insertTextRules:Snippet, range},
+    {label:'RuntimeException',         insertText:'RuntimeException',         detail:'java.lang.RuntimeException — unchecked', kind:Kind.Class, insertTextRules:Snippet, range},
+    {label:'IllegalArgumentException', insertText:'IllegalArgumentException("${1:message}")', detail:'invalid argument exception', kind:Kind.Class, insertTextRules:Snippet, range},
+    {label:'IllegalStateException',    insertText:'IllegalStateException("${1:message}")',    detail:'invalid state exception',    kind:Kind.Class, insertTextRules:Snippet, range},
+    {label:'NullPointerException',     insertText:'NullPointerException',     detail:'null dereference',     kind:Kind.Class, insertTextRules:Snippet, range},
+    {label:'ArrayIndexOutOfBoundsException', insertText:'ArrayIndexOutOfBoundsException', detail:'array index out of bounds', kind:Kind.Class, insertTextRules:Snippet, range},
+    {label:'NumberFormatException',    insertText:'NumberFormatException',    detail:'invalid number format', kind:Kind.Class, insertTextRules:Snippet, range},
+    {label:'StackOverflowError',       insertText:'StackOverflowError',       detail:'stack overflow (infinite recursion)', kind:Kind.Class, documentation:{value:'Usually caused by infinite recursion. Check your base case!'}, insertTextRules:Snippet, range},
+    {label:'ArithmeticException',      insertText:'ArithmeticException',      detail:'arithmetic error (e.g. divide by zero)', kind:Kind.Class, insertTextRules:Snippet, range},
+    {label:'IOException',              insertText:'IOException',              detail:'java.io.IOException — I/O error', kind:Kind.Class, insertTextRules:Snippet, range},
   ];
 }
