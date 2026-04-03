@@ -1,0 +1,2310 @@
+{
+  "version": "11",
+  "count": 256,
+  "items": [
+    {
+      "label": "main",
+      "insertText": "public static void main(String[] args) {\n\t${0}\n}",
+      "detail": "main method",
+      "documentation": "Entry point of a Java program",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "sol",
+      "insertText": "import java.util.*;\n\npublic class Main {\n\tpublic static void main(String[] args) {\n\t\tScanner sc = new Scanner(System.in);\n\t\t${0}\n\t}\n}",
+      "detail": "Competitive prog template (Scanner)",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "solbr",
+      "insertText": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n\tpublic static void main(String[] args) throws IOException {\n\t\tBufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n\t\tStringTokenizer st;\n\t\t${0}\n\t}\n}",
+      "detail": "Competitive prog template (BufferedReader \u2014 fast input)",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "method",
+      "insertText": "public ${1:void} ${2:name}(${3}) {\n\t${0}\n}",
+      "detail": "method declaration",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "smethod",
+      "insertText": "public static ${1:int} ${2:solve}(${3}) {\n\t${0}\n}",
+      "detail": "static method",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "class",
+      "insertText": "public class ${1:ClassName} {\n\t${0}\n}",
+      "detail": "class declaration",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "interface",
+      "insertText": "interface ${1:Name} {\n\t${0}\n}",
+      "detail": "interface declaration",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "enum",
+      "insertText": "enum ${1:Name} {\n\t${2:A}, ${3:B};\n}",
+      "detail": "enum declaration",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "override",
+      "insertText": "@Override\npublic ${1:void} ${2:method}(${3}) {\n\t${0}\n}",
+      "detail": "@Override method",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "sc",
+      "insertText": "Scanner sc = new Scanner(System.in);",
+      "detail": "Scanner declaration",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "scint",
+      "insertText": "int ${1:n} = sc.nextInt();",
+      "detail": "read int from Scanner",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "sclong",
+      "insertText": "long ${1:n} = sc.nextLong();",
+      "detail": "read long from Scanner",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "scdbl",
+      "insertText": "double ${1:d} = sc.nextDouble();",
+      "detail": "read double from Scanner",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "scstr",
+      "insertText": "String ${1:s} = sc.next();",
+      "detail": "read String token from Scanner",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "scline",
+      "insertText": "String ${1:line} = sc.nextLine();",
+      "detail": "read full line from Scanner",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "sc2",
+      "insertText": "int ${1:a} = sc.nextInt(), ${2:b} = sc.nextInt();",
+      "detail": "read 2 ints",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "sc3",
+      "insertText": "int ${1:a} = sc.nextInt(), ${2:b} = sc.nextInt(), ${3:c} = sc.nextInt();",
+      "detail": "read 3 ints",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "scn",
+      "insertText": "int n = sc.nextInt();\nint[] arr = new int[n];\nfor (int i = 0; i < n; i++) arr[i] = sc.nextInt();",
+      "detail": "read n then array",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "br",
+      "insertText": "BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\nStringTokenizer st;",
+      "detail": "BufferedReader fast input",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "brread",
+      "insertText": "st = new StringTokenizer(br.readLine());\nint ${1:n} = Integer.parseInt(st.nextToken());",
+      "detail": "read line with StringTokenizer",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "sout",
+      "insertText": "System.out.println(${1});",
+      "detail": "System.out.println",
+      "documentation": "Print value + newline",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "sop",
+      "insertText": "System.out.print(${1});",
+      "detail": "System.out.print",
+      "documentation": "Print without newline",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "spf",
+      "insertText": "System.out.printf(\"${1:%d%n}\", ${2});",
+      "detail": "System.out.printf",
+      "documentation": "%d=int %s=str %f=float %.2f=2 decimal %n=newline",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "sb",
+      "insertText": "StringBuilder sb = new StringBuilder();\n${0}\nSystem.out.println(sb);",
+      "detail": "StringBuilder output",
+      "documentation": "Build result string then print once \u2014 faster than many println",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "sbw",
+      "insertText": "PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.out)));\n${0}\npw.flush();",
+      "detail": "PrintWriter fast output",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "fori",
+      "insertText": "for (int ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n\t${0}\n}",
+      "detail": "for loop",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "forr",
+      "insertText": "for (int ${1:i} = ${2:n} - 1; ${1:i} >= 0; ${1:i}--) {\n\t${0}\n}",
+      "detail": "for loop reversed",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "fore",
+      "insertText": "for (${1:int} ${2:item} : ${3:collection}) {\n\t${0}\n}",
+      "detail": "for-each loop",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "while",
+      "insertText": "while (${1:condition}) {\n\t${0}\n}",
+      "detail": "while loop",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "dowhile",
+      "insertText": "do {\n\t${0}\n} while (${1:condition});",
+      "detail": "do-while loop",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "tern",
+      "insertText": "${1:condition} ? ${2:a} : ${3:b}",
+      "detail": "ternary operator",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "ifel",
+      "insertText": "if (${1:condition}) {\n\t${2}\n} else {\n\t${3}\n}",
+      "detail": "if-else",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "try",
+      "insertText": "try {\n\t${1}\n} catch (${2:Exception} e) {\n\t${3:e.printStackTrace();}\n}",
+      "detail": "try-catch",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "trycatch",
+      "insertText": "try {\n\t${1}\n} catch (${2:Exception} e) {\n\t${3}\n} finally {\n\t${0}\n}",
+      "detail": "try-catch-finally",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "tryr",
+      "insertText": "try (${1:Resource} ${2:res} = new ${1:Resource}()) {\n\t${0}\n}",
+      "detail": "try-with-resources (auto-close)",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "throw",
+      "insertText": "throw new ${1:RuntimeException}(\"${2:message}\");",
+      "detail": "throw exception",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "sw",
+      "insertText": "switch (${1:var}) {\n\tcase ${2:val}:\n\t\t${0}\n\t\tbreak;\n\tdefault:\n\t\tbreak;\n}",
+      "detail": "switch statement",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "arrint",
+      "insertText": "int[] ${1:arr} = new int[${2:n}];",
+      "detail": "int array",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "arrlong",
+      "insertText": "long[] ${1:arr} = new long[${2:n}];",
+      "detail": "long array",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "arr2d",
+      "insertText": "int[][] ${1:grid} = new int[${2:m}][${3:n}];",
+      "detail": "2D int array",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "arrsort",
+      "insertText": "Arrays.sort(${1:arr});",
+      "detail": "Arrays.sort(arr)",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "arrfill",
+      "insertText": "Arrays.fill(${1:arr}, ${2:0});",
+      "detail": "Arrays.fill(arr, val)",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "arrstr",
+      "insertText": "System.out.println(Arrays.toString(${1:arr}));",
+      "detail": "print array",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "al",
+      "insertText": "List<${1:Integer}> ${2:list} = new ArrayList<>();",
+      "detail": "ArrayList<T>",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "alstr",
+      "insertText": "List<String> ${1:list} = new ArrayList<>();",
+      "detail": "ArrayList<String>",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "ll",
+      "insertText": "LinkedList<${1:Integer}> ${2:list} = new LinkedList<>();",
+      "detail": "LinkedList<T>",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "hm",
+      "insertText": "Map<${1:String}, ${2:Integer}> ${3:map} = new HashMap<>();",
+      "detail": "HashMap<K,V>",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "hmget",
+      "insertText": "${1:map}.getOrDefault(${2:key}, ${3:0})",
+      "detail": "map.getOrDefault(key, default)",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "hmmerge",
+      "insertText": "${1:map}.merge(${2:key}, 1, Integer::sum);",
+      "detail": "frequency counter with merge()",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "hmcomp",
+      "insertText": "${1:map}.computeIfAbsent(${2:key}, k -> new ArrayList<>())",
+      "detail": "computeIfAbsent",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "hmiter",
+      "insertText": "for (Map.Entry<${1:String}, ${2:Integer}> e : ${3:map}.entrySet()) {\n\t${1:String} k = e.getKey();\n\t${2:Integer} v = e.getValue();\n\t${0}\n}",
+      "detail": "iterate map entries",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "tm",
+      "insertText": "TreeMap<${1:Integer}, ${2:Integer}> ${3:map} = new TreeMap<>();",
+      "detail": "TreeMap (sorted keys)",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "hs",
+      "insertText": "Set<${1:Integer}> ${2:set} = new HashSet<>();",
+      "detail": "HashSet<T>",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "ts",
+      "insertText": "TreeSet<${1:Integer}> ${2:set} = new TreeSet<>();",
+      "detail": "TreeSet (sorted)",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "pq",
+      "insertText": "PriorityQueue<${1:Integer}> ${2:pq} = new PriorityQueue<>();",
+      "detail": "PriorityQueue min-heap",
+      "documentation": "poll() returns minimum. O(log n) offer/poll.",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "pqmax",
+      "insertText": "PriorityQueue<${1:Integer}> ${2:pq} = new PriorityQueue<>(Collections.reverseOrder());",
+      "detail": "PriorityQueue max-heap",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "pqcmp",
+      "insertText": "PriorityQueue<${1:int[]}> ${2:pq} = new PriorityQueue<>((a, b) -> ${3:a[0] - b[0]});",
+      "detail": "PriorityQueue with custom comparator",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "deque",
+      "insertText": "Deque<${1:Integer}> ${2:dq} = new ArrayDeque<>();",
+      "detail": "ArrayDeque (fast deque/stack/queue)",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "stack",
+      "insertText": "Deque<${1:Integer}> ${2:stk} = new ArrayDeque<>();\n// push: stk.push(x)   pop: stk.pop()   peek: stk.peek()",
+      "detail": "Stack via ArrayDeque",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "mono",
+      "insertText": "Deque<Integer> ${1:mono} = new ArrayDeque<>();\nfor (int i = 0; i < n; i++) {\n\twhile (!${1:mono}.isEmpty() && arr[${1:mono}.peekLast()] >= arr[i])\n\t\t${1:mono}.pollLast();\n\t${1:mono}.offerLast(i);\n}",
+      "detail": "Monotonic deque (sliding window max/min)",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "uf",
+      "insertText": "int[] parent = new int[${1:n}], rank = new int[${1:n}];\nfor (int i = 0; i < ${1:n}; i++) parent[i] = i;\n\nstatic int find(int[] p, int x) { return p[x]==x ? x : (p[x]=find(p,p[x])); }\nstatic boolean union(int[] p, int[] r, int a, int b) {\n\ta=find(p,a); b=find(p,b); if(a==b) return false;\n\tif(r[a]<r[b]){int t=a;a=b;b=t;} p[b]=a; if(r[a]==r[b])r[a]++; return true;\n}",
+      "detail": "Union-Find (DSU) with path compression",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "bs",
+      "insertText": "int ${1:lo} = 0, ${2:hi} = ${3:arr}.length - 1;\nwhile (${1:lo} <= ${2:hi}) {\n\tint ${4:mid} = ${1:lo} + (${2:hi} - ${1:lo}) / 2;\n\tif (${3:arr}[${4:mid}] == ${5:target}) return ${4:mid};\n\telse if (${3:arr}[${4:mid}] < ${5:target}) ${1:lo} = ${4:mid} + 1;\n\telse ${2:hi} = ${4:mid} - 1;\n}\nreturn -1;",
+      "detail": "Binary search (exact)",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "bslb",
+      "insertText": "int ${1:lo} = 0, ${2:hi} = ${3:n};\nwhile (${1:lo} < ${2:hi}) {\n\tint ${4:mid} = ${1:lo} + (${2:hi} - ${1:lo}) / 2;\n\tif (${3:arr}[${4:mid}] < ${5:target}) ${1:lo} = ${4:mid} + 1;\n\telse ${2:hi} = ${4:mid};\n}\nreturn ${1:lo};",
+      "detail": "Binary search (lower bound)",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "bsans",
+      "insertText": "long ${1:lo} = 0, ${2:hi} = ${3:1_000_000_000L};\nwhile (${1:lo} < ${2:hi}) {\n\tlong ${4:mid} = ${1:lo} + (${2:hi} - ${1:lo}) / 2;\n\tif (canDo(${4:mid})) ${2:hi} = ${4:mid};\n\telse ${1:lo} = ${4:mid} + 1;\n}\nreturn ${1:lo};",
+      "detail": "Binary search on answer",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "twopt",
+      "insertText": "int ${1:l} = 0, ${2:r} = ${3:arr}.length - 1;\nwhile (${1:l} < ${2:r}) {\n\tint sum = ${3:arr}[${1:l}] + ${3:arr}[${2:r}];\n\tif (sum == ${4:target}) { ${0} ${1:l}++; ${2:r}--; }\n\telse if (sum < ${4:target}) ${1:l}++;\n\telse ${2:r}--;\n}",
+      "detail": "Two pointer",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "sliding",
+      "insertText": "int ${1:l} = 0, ${2:best} = 0;\nfor (int ${3:r} = 0; ${3:r} < ${4:n}; ${3:r}++) {\n\t// expand window: include arr[r]\n\t${0}\n\twhile (/* invalid */) { /* shrink */ ${1:l}++; }\n\t${2:best} = Math.max(${2:best}, ${3:r} - ${1:l} + 1);\n}",
+      "detail": "Sliding window",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "bfs",
+      "insertText": "Queue<${1:Integer}> q = new LinkedList<>();\nboolean[] vis = new boolean[${2:n}];\nq.offer(${3:src}); vis[${3:src}] = true;\nwhile (!q.isEmpty()) {\n\t${1:Integer} node = q.poll();\n\t${0}\n\tfor (int nb : graph.get(node))\n\t\tif (!vis[nb]) { vis[nb] = true; q.offer(nb); }\n}",
+      "detail": "BFS",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "bfsgrid",
+      "insertText": "int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0}};\nQueue<int[]> q = new LinkedList<>();\nq.offer(new int[]{${1:sr},${2:sc}}); vis[${1:sr}][${2:sc}] = true;\nwhile (!q.isEmpty()) {\n\tint[] cur = q.poll(); int r=cur[0], c=cur[1];\n\t${0}\n\tfor (int[] d : dirs) {\n\t\tint nr=r+d[0], nc=c+d[1];\n\t\tif (nr>=0&&nr<${3:R}&&nc>=0&&nc<${4:C}&&!vis[nr][nc]) { vis[nr][nc]=true; q.offer(new int[]{nr,nc}); }\n\t}\n}",
+      "detail": "BFS on 2D grid",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "dfs",
+      "insertText": "void dfs(int node, boolean[] vis, List<List<Integer>> g) {\n\tvis[node] = true;\n\t${0}\n\tfor (int nb : g.get(node)) if (!vis[nb]) dfs(nb, vis, g);\n}",
+      "detail": "DFS",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "dp1d",
+      "insertText": "int[] dp = new int[${1:n} + 1];\ndp[0] = ${2:0};\nfor (int i = 1; i <= ${1:n}; i++) {\n\tdp[i] = ${0};\n}",
+      "detail": "1D DP array",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "dp2d",
+      "insertText": "int[][] dp = new int[${1:m}+1][${2:n}+1];\nfor (int i=1;i<=${1:m};i++) for (int j=1;j<=${2:n};j++) {\n\t${0}\n}",
+      "detail": "2D DP array",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "prefix",
+      "insertText": "int[] pre = new int[${1:n}+1];\nfor (int i=0;i<${1:n};i++) pre[i+1]=pre[i]+${2:arr}[i];\n// sum [l,r]: pre[r+1]-pre[l]",
+      "detail": "Prefix sum",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "dijkstra",
+      "insertText": "int[] dist = new int[${1:n}];\nArrays.fill(dist, Integer.MAX_VALUE); dist[${2:src}]=0;\nPriorityQueue<int[]> pq = new PriorityQueue<>((a,b)->a[0]-b[0]);\npq.offer(new int[]{0,${2:src}});\nwhile (!pq.isEmpty()) {\n\tint[] cur=pq.poll(); int d=cur[0],u=cur[1];\n\tif(d>dist[u]) continue;\n\tfor (int[] e : adj.get(u)) { int v=e[0],w=e[1];\n\t\tif(dist[u]+w<dist[v]) { dist[v]=dist[u]+w; pq.offer(new int[]{dist[v],v}); }\n\t}\n}",
+      "detail": "Dijkstra SSSP",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "topo",
+      "insertText": "int[] indeg = new int[${1:n}];\n// build adj & fill indeg\nQueue<Integer> q = new LinkedList<>();\nfor(int i=0;i<${1:n};i++) if(indeg[i]==0) q.offer(i);\nList<Integer> order = new ArrayList<>();\nwhile(!q.isEmpty()) { int u=q.poll(); order.add(u);\n\tfor(int v:adj.get(u)) if(--indeg[v]==0) q.offer(v);\n}\n// order.size()<n means cycle",
+      "detail": "Topological sort (Kahn's BFS)",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "gcd",
+      "insertText": "static long gcd(long a, long b) { return b==0 ? a : gcd(b,a%b); }\nstatic long lcm(long a, long b) { return a/gcd(a,b)*b; }",
+      "detail": "GCD + LCM",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "modpow",
+      "insertText": "static long modpow(long b, long e, long m) {\n\tlong r=1; b%=m;\n\twhile(e>0){ if((e&1)==1) r=r*b%m; b=b*b%m; e>>=1; } return r;\n}",
+      "detail": "Fast modular exponentiation",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "bitmask",
+      "insertText": "for (int mask=0; mask<(1<<${1:n}); mask++) {\n\tfor(int i=0;i<${1:n};i++) if((mask>>i&1)==1) { ${0} }\n}",
+      "detail": "Bitmask subset enumeration",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "bits",
+      "insertText": "// Check bit i:  (n>>i)&1\n// Set bit i:    n|(1<<i)\n// Clear bit i:  n&~(1<<i)\n// Toggle bit i: n^(1<<i)\n// Count set:    Integer.bitCount(n)\n// Lowest set:   n&(-n)\n// Remove low:   n&(n-1)",
+      "detail": "Bit manipulation cheatsheet",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "mod",
+      "insertText": "final long MOD = 1_000_000_007L;",
+      "detail": "MOD = 10^9+7",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Arrays.sort",
+      "insertText": "Arrays.sort(${1:arr})",
+      "detail": "Arrays.sort(arr)",
+      "documentation": "O(n log n) dual-pivot quicksort. For Object[] uses TimSort.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Arrays.sort_range",
+      "insertText": "Arrays.sort(${1:arr}, ${2:from}, ${3:to})",
+      "detail": "Arrays.sort(arr, from, to)",
+      "documentation": "Sort range [from, to)",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Arrays.sort_comp",
+      "insertText": "Arrays.sort(${1:arr}, (a,b) -> ${2:a-b})",
+      "detail": "Arrays.sort(arr, comparator)",
+      "documentation": "Comparator sort (Object[] only, not primitives)",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Arrays.fill",
+      "insertText": "Arrays.fill(${1:arr}, ${2:val})",
+      "detail": "Arrays.fill(arr, val)",
+      "documentation": "Fill entire array with value. O(n).",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Arrays.fill_range",
+      "insertText": "Arrays.fill(${1:arr}, ${2:from}, ${3:to}, ${4:val})",
+      "detail": "Arrays.fill(arr, from, to, val)",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Arrays.copyOf",
+      "insertText": "Arrays.copyOf(${1:arr}, ${2:len})",
+      "detail": "Arrays.copyOf(arr, newLen)",
+      "documentation": "Returns new array. Truncates or pads with 0.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Arrays.copyOfRange",
+      "insertText": "Arrays.copyOfRange(${1:arr}, ${2:from}, ${3:to})",
+      "detail": "Arrays.copyOfRange(arr, from, to)",
+      "documentation": "Copy range [from, to).",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Arrays.toString",
+      "insertText": "Arrays.toString(${1:arr})",
+      "detail": "Arrays.toString(arr)",
+      "documentation": "Returns [1, 2, 3] format.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Arrays.deepToString",
+      "insertText": "Arrays.deepToString(${1:arr})",
+      "detail": "Arrays.deepToString(arr)",
+      "documentation": "For 2D/nested arrays.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Arrays.binarySearch",
+      "insertText": "Arrays.binarySearch(${1:arr}, ${2:key})",
+      "detail": "Arrays.binarySearch(arr, key)",
+      "documentation": "Must be sorted first. Returns index or -(insertion point)-1.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Arrays.equals",
+      "insertText": "Arrays.equals(${1:a}, ${2:b})",
+      "detail": "Arrays.equals(a, b)",
+      "documentation": "Element-wise equality. DO NOT use == on arrays.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Arrays.asList",
+      "insertText": "Arrays.asList(${1:items})",
+      "detail": "Arrays.asList(...)",
+      "documentation": "Fixed-size List. Cannot add/remove.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Collections.sort",
+      "insertText": "Collections.sort(${1:list})",
+      "detail": "Collections.sort(list)",
+      "documentation": "Sort List in natural order. O(n log n).",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Collections.reverse",
+      "insertText": "Collections.reverse(${1:list})",
+      "detail": "Collections.reverse(list)",
+      "documentation": "Reverse List in-place.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Collections.min",
+      "insertText": "Collections.min(${1:coll})",
+      "detail": "Collections.min(coll)",
+      "documentation": "Minimum element.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Collections.max",
+      "insertText": "Collections.max(${1:coll})",
+      "detail": "Collections.max(coll)",
+      "documentation": "Maximum element.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Collections.frequency",
+      "insertText": "Collections.frequency(${1:coll}, ${2:obj})",
+      "detail": "Collections.frequency(coll, obj)",
+      "documentation": "Count occurrences.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Collections.reverseOrder",
+      "insertText": "Collections.reverseOrder()",
+      "detail": "Collections.reverseOrder()",
+      "documentation": "Comparator for descending. Use in PriorityQueue for max-heap.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Collections.swap",
+      "insertText": "Collections.swap(${1:list}, ${2:i}, ${3:j})",
+      "detail": "Collections.swap(list, i, j)",
+      "documentation": "Swap elements at i and j.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Collections.nCopies",
+      "insertText": "Collections.nCopies(${1:n}, ${2:val})",
+      "detail": "Collections.nCopies(n, val)",
+      "documentation": "List of n copies of val.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Math.max",
+      "insertText": "Math.max(${1:a}, ${2:b})",
+      "detail": "Math.max(a, b)",
+      "documentation": "Larger of two values.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Math.min",
+      "insertText": "Math.min(${1:a}, ${2:b})",
+      "detail": "Math.min(a, b)",
+      "documentation": "Smaller of two values.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Math.abs",
+      "insertText": "Math.abs(${1:x})",
+      "detail": "Math.abs(x)",
+      "documentation": "Absolute value. Note: Math.abs(Integer.MIN_VALUE) = MIN_VALUE (overflow).",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Math.pow",
+      "insertText": "Math.pow(${1:a}, ${2:b})",
+      "detail": "Math.pow(a, b)",
+      "documentation": "a^b as double. Use modpow for (a^b)%mod.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Math.sqrt",
+      "insertText": "Math.sqrt(${1:x})",
+      "detail": "Math.sqrt(x)",
+      "documentation": "Square root. (int)Math.sqrt(n) for integer root.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Math.log",
+      "insertText": "Math.log(${1:x})",
+      "detail": "Math.log(x)",
+      "documentation": "Natural log. log2(n) = Math.log(n)/Math.log(2)",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Math.floor",
+      "insertText": "Math.floor(${1:x})",
+      "detail": "Math.floor(x)",
+      "documentation": "Largest integer \u2264 x.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Math.ceil",
+      "insertText": "Math.ceil(${1:x})",
+      "detail": "Math.ceil(x)",
+      "documentation": "Smallest integer \u2265 x.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Math.round",
+      "insertText": "Math.round(${1:x})",
+      "detail": "Math.round(x)",
+      "documentation": "Round to nearest integer.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Integer.parseInt",
+      "insertText": "Integer.parseInt(${1:s})",
+      "detail": "Integer.parseInt(String)",
+      "documentation": "Parse String to int. Throws NumberFormatException if invalid.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Integer.compare",
+      "insertText": "Integer.compare(${1:a}, ${2:b})",
+      "detail": "Integer.compare(a, b)",
+      "documentation": "Safe int comparison. Use instead of a-b in comparators (avoids overflow).",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Integer.bitCount",
+      "insertText": "Integer.bitCount(${1:n})",
+      "detail": "Integer.bitCount(int)",
+      "documentation": "Count set bits (1s) in binary.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Integer.toBinaryString",
+      "insertText": "Integer.toBinaryString(${1:n})",
+      "detail": "Integer.toBinaryString(int)",
+      "documentation": "Binary string e.g. 7 \u2192 '111'.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Long.compare",
+      "insertText": "Long.compare(${1:a}, ${2:b})",
+      "detail": "Long.compare(a, b)",
+      "documentation": "Safe long comparison.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Long.parseLong",
+      "insertText": "Long.parseLong(${1:s})",
+      "detail": "Long.parseLong(String)",
+      "documentation": "Parse String to long.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "String.valueOf",
+      "insertText": "String.valueOf(${1:x})",
+      "detail": "String.valueOf(x)",
+      "documentation": "Convert any value to String. Null-safe.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "String.format",
+      "insertText": "String.format(\"${1:%d}\", ${2:x})",
+      "detail": "String.format(fmt, args)",
+      "documentation": "Formatted string. %d=int %s=str %f=float %.2f=2 decimal",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "String.join",
+      "insertText": "String.join(\"${1:,}\", ${2:list})",
+      "detail": "String.join(delim, list)",
+      "documentation": "Join elements with delimiter.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Character.isDigit",
+      "insertText": "Character.isDigit(${1:c})",
+      "detail": "Character.isDigit(char)",
+      "documentation": "True if c is 0-9.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Character.isLetter",
+      "insertText": "Character.isLetter(${1:c})",
+      "detail": "Character.isLetter(char)",
+      "documentation": "True if c is a-z or A-Z.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Character.toLowerCase",
+      "insertText": "Character.toLowerCase(${1:c})",
+      "detail": "Character.toLowerCase(char)",
+      "documentation": "Convert to lowercase.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Character.toUpperCase",
+      "insertText": "Character.toUpperCase(${1:c})",
+      "detail": "Character.toUpperCase(char)",
+      "documentation": "Convert to uppercase.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Integer.MAX_VALUE",
+      "insertText": "Integer.MAX_VALUE",
+      "detail": "2147483647 (2^31-1)",
+      "documentation": "Maximum int value. Use as initial minimum in problems.",
+      "kind": "constant",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "Integer.MIN_VALUE",
+      "insertText": "Integer.MIN_VALUE",
+      "detail": "-2147483648 (-2^31)",
+      "documentation": "Minimum int value.",
+      "kind": "constant",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "Long.MAX_VALUE",
+      "insertText": "Long.MAX_VALUE",
+      "detail": "9223372036854775807 (2^63-1)",
+      "documentation": "Maximum long value.",
+      "kind": "constant",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "Long.MIN_VALUE",
+      "insertText": "Long.MIN_VALUE",
+      "detail": "-9223372036854775808",
+      "documentation": "Minimum long value.",
+      "kind": "constant",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "Math.PI",
+      "insertText": "Math.PI",
+      "detail": "3.141592653589793",
+      "documentation": "Pi constant.",
+      "kind": "constant",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "Math.E",
+      "insertText": "Math.E",
+      "detail": "2.718281828459045",
+      "documentation": "Euler's number.",
+      "kind": "constant",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "INF",
+      "insertText": "(int) 1e9",
+      "detail": "10^9 \u2014 safe infinity for int",
+      "documentation": "Use as initial 'infinity' for shortest path, etc.",
+      "kind": "constant",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "LINF",
+      "insertText": "(long) 1e18",
+      "detail": "10^18 \u2014 safe infinity for long",
+      "documentation": "",
+      "kind": "constant",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "MOD",
+      "insertText": "1_000_000_007",
+      "detail": "10^9+7 \u2014 standard modulus",
+      "documentation": "",
+      "kind": "constant",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "String",
+      "insertText": "String ",
+      "detail": "java.lang.String \u2014 immutable text",
+      "documentation": "Immutable sequence of chars.\nMethods: length() charAt(i) substring(a,b) contains() split() trim() toCharArray() equals() compareTo()",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "Integer",
+      "insertText": "Integer ",
+      "detail": "java.lang.Integer \u2014 int wrapper",
+      "documentation": "Wrapper for int.\nMAX_VALUE MIN_VALUE parseInt() bitCount() toBinaryString() compare()",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "Long",
+      "insertText": "Long ",
+      "detail": "java.lang.Long \u2014 long wrapper",
+      "documentation": "Wrapper for long.\nMAX_VALUE MIN_VALUE parseLong() compare()",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "Math",
+      "insertText": "Math.",
+      "detail": "java.lang.Math \u2014 math functions",
+      "documentation": "max() min() abs() sqrt() pow() floor() ceil() round() log() PI",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "System",
+      "insertText": "System.",
+      "detail": "java.lang.System \u2014 I/O and system",
+      "documentation": "out.println() out.print() out.printf() in exit()",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "Scanner",
+      "insertText": "Scanner ",
+      "detail": "java.util.Scanner \u2014 input reading",
+      "documentation": "nextInt() nextLong() nextDouble() next() nextLine() hasNext()",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "Arrays",
+      "insertText": "Arrays.",
+      "detail": "java.util.Arrays \u2014 array utilities",
+      "documentation": "sort() fill() copyOf() toString() binarySearch() equals() asList()",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "Collections",
+      "insertText": "Collections.",
+      "detail": "java.util.Collections \u2014 collection utils",
+      "documentation": "sort() reverse() shuffle() min() max() frequency() reverseOrder() swap()",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "StringBuilder",
+      "insertText": "StringBuilder ",
+      "detail": "java.lang.StringBuilder \u2014 mutable string",
+      "documentation": "append() insert() delete() reverse() toString() length() charAt() setCharAt()",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "ArrayList",
+      "insertText": "ArrayList<${1:Integer}>()",
+      "detail": "java.util.ArrayList<T>",
+      "documentation": "Resizable array. O(1) get/add amortized.",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "LinkedList",
+      "insertText": "LinkedList<${1:Integer}>()",
+      "detail": "java.util.LinkedList<T>",
+      "documentation": "Doubly-linked list. O(1) at ends.",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "HashMap",
+      "insertText": "HashMap<${1:String}, ${2:Integer}>()",
+      "detail": "java.util.HashMap<K,V>",
+      "documentation": "O(1) avg get/put. getOrDefault() merge() computeIfAbsent()",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "TreeMap",
+      "insertText": "TreeMap<${1:Integer}, ${2:Integer}>()",
+      "detail": "java.util.TreeMap<K,V>",
+      "documentation": "Sorted keys. floorKey() ceilingKey() firstKey() lastKey()",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "LinkedHashMap",
+      "insertText": "LinkedHashMap<${1:String}, ${2:Integer}>()",
+      "detail": "java.util.LinkedHashMap \u2014 insertion ordered",
+      "documentation": "HashMap preserving insertion order. Used for LRU cache.",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "HashSet",
+      "insertText": "HashSet<${1:Integer}>()",
+      "detail": "java.util.HashSet<T>",
+      "documentation": "O(1) add/contains/remove.",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "TreeSet",
+      "insertText": "TreeSet<${1:Integer}>()",
+      "detail": "java.util.TreeSet<T>",
+      "documentation": "Sorted unique. floor() ceiling() first() last()",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "PriorityQueue",
+      "insertText": "PriorityQueue<${1:Integer}>()",
+      "detail": "java.util.PriorityQueue \u2014 min-heap",
+      "documentation": "Default min-heap. poll()=min. Use Collections.reverseOrder() for max-heap.",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "ArrayDeque",
+      "insertText": "ArrayDeque<${1:Integer}>()",
+      "detail": "java.util.ArrayDeque \u2014 fast deque",
+      "documentation": "Preferred over Stack and LinkedList for queue/stack.",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "Comparator",
+      "insertText": "Comparator.",
+      "detail": "java.util.Comparator",
+      "documentation": "comparingInt() thenComparing() reversed() naturalOrder()",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "Optional",
+      "insertText": "Optional<${1:String}>",
+      "detail": "java.util.Optional<T>",
+      "documentation": "of() ofNullable() map() orElse() ifPresent()",
+      "kind": "class",
+      "isSnippet": false,
+      "tags": []
+    },
+    {
+      "label": "List",
+      "insertText": "List<${1:Integer}>",
+      "detail": "java.util.List<T> interface",
+      "documentation": "Ordered collection. Impl: ArrayList LinkedList",
+      "kind": "interface",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Map",
+      "insertText": "Map<${1:String}, ${2:Integer}>",
+      "detail": "java.util.Map<K,V> interface",
+      "documentation": "Key-value. Impl: HashMap TreeMap LinkedHashMap",
+      "kind": "interface",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Set",
+      "insertText": "Set<${1:Integer}>",
+      "detail": "java.util.Set<T> interface",
+      "documentation": "Unique elements. Impl: HashSet TreeSet LinkedHashSet",
+      "kind": "interface",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Queue",
+      "insertText": "Queue<${1:Integer}>",
+      "detail": "java.util.Queue<T> interface",
+      "documentation": "FIFO. offer() poll() peek()",
+      "kind": "interface",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Deque",
+      "insertText": "Deque<${1:Integer}>",
+      "detail": "java.util.Deque<T> interface",
+      "documentation": "Double-ended. offerFirst/Last pollFirst/Last",
+      "kind": "interface",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Comparable",
+      "insertText": "Comparable<${1:T}>",
+      "detail": "java.lang.Comparable<T>",
+      "documentation": "Implement compareTo() for natural ordering.",
+      "kind": "interface",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "int",
+      "insertText": "int ",
+      "detail": "32-bit integer",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "long",
+      "insertText": "long ",
+      "detail": "64-bit integer. Add L suffix: 123L",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "double",
+      "insertText": "double ",
+      "detail": "64-bit float",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "float",
+      "insertText": "float ",
+      "detail": "32-bit float. Add f suffix: 3.14f",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "boolean",
+      "insertText": "boolean ",
+      "detail": "true or false",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "char",
+      "insertText": "char ",
+      "detail": "Single Unicode char. Supports arithmetic.",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "byte",
+      "insertText": "byte ",
+      "detail": "8-bit integer (-128 to 127)",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "short",
+      "insertText": "short ",
+      "detail": "16-bit integer",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "void",
+      "insertText": "void ",
+      "detail": "No return value",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "null",
+      "insertText": "null",
+      "detail": "Null reference",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "true",
+      "insertText": "true",
+      "detail": "Boolean true",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "false",
+      "insertText": "false",
+      "detail": "Boolean false",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "this",
+      "insertText": "this",
+      "detail": "Current instance reference",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "super",
+      "insertText": "super",
+      "detail": "Parent class reference",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "new",
+      "insertText": "new ${1:ClassName}(${2})",
+      "detail": "Create object instance",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "instanceof",
+      "insertText": "instanceof ${1:ClassName}",
+      "detail": "Type check at runtime",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "public",
+      "insertText": "public ",
+      "detail": "Public access",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "private",
+      "insertText": "private ",
+      "detail": "Private access",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "protected",
+      "insertText": "protected ",
+      "detail": "Protected access",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "static",
+      "insertText": "static ",
+      "detail": "Static member",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "final",
+      "insertText": "final ",
+      "detail": "Cannot be overridden/reassigned",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "abstract",
+      "insertText": "abstract ",
+      "detail": "Abstract class/method",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "synchronized",
+      "insertText": "synchronized ",
+      "detail": "Thread-safe block",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "volatile",
+      "insertText": "volatile ",
+      "detail": "Always read from main memory",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "var",
+      "insertText": "var ",
+      "detail": "Local type inference (Java 10+)",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "return",
+      "insertText": "return ${1};",
+      "detail": "Return a value",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "break",
+      "insertText": "break;",
+      "detail": "Break out of loop/switch",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "continue",
+      "insertText": "continue;",
+      "detail": "Skip to next iteration",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "import",
+      "insertText": "import ${1:java.util.*};",
+      "detail": "Import statement",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "package",
+      "insertText": "package ${1:com.example};",
+      "detail": "Package declaration",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "extends",
+      "insertText": "extends ${1:Parent}",
+      "detail": "Inherit from class",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "implements",
+      "insertText": "implements ${1:Interface}",
+      "detail": "Implement interface",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "if",
+      "insertText": "if (${1:condition}) {\n\t${0}\n}",
+      "detail": "If statement",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "else",
+      "insertText": "else {\n\t${0}\n}",
+      "detail": "Else block",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "for",
+      "insertText": "for (int ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n\t${0}\n}",
+      "detail": "For loop",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "while",
+      "insertText": "while (${1:condition}) {\n\t${0}\n}",
+      "detail": "While loop",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "catch",
+      "insertText": "catch (${1:Exception} e) {\n\t${0}\n}",
+      "detail": "Catch block",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "finally",
+      "insertText": "finally {\n\t${0}\n}",
+      "detail": "Finally block",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "throws",
+      "insertText": "throws ${1:Exception}",
+      "detail": "Throws declaration",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "throw",
+      "insertText": "throw new ${1:RuntimeException}(\"${2:msg}\");",
+      "detail": "Throw exception",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "stream",
+      "insertText": "${1:list}.stream()\n\t.filter(${2:x -> x > 0})\n\t.map(${3:x -> x * 2})\n\t.collect(Collectors.toList());",
+      "detail": "Stream pipeline",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "mapstream",
+      "insertText": "${1:list}.stream()\n\t.collect(Collectors.groupingBy(${2:x -> x}, Collectors.counting()));",
+      "detail": "Stream groupingBy",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "lambda",
+      "insertText": "${1:x} -> ${2:x * 2}",
+      "detail": "Lambda expression",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "methref",
+      "insertText": "${1:String}::${2:length}",
+      "detail": "Method reference",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "optional",
+      "insertText": "Optional.ofNullable(${1:val})\n\t.map(${2:x -> x})\n\t.orElse(${3:default});",
+      "detail": "Optional chain",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "foreach",
+      "insertText": "${1:list}.forEach(${2:item} -> {\n\t${0}\n});",
+      "detail": "forEach with lambda",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "stream()",
+      "insertText": "${1:list}.stream()",
+      "detail": "Stream from collection",
+      "documentation": "Start a stream pipeline. Chain filter/map/collect.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Collectors.toList",
+      "insertText": "Collectors.toList()",
+      "detail": "collect to List",
+      "documentation": "Use in .collect(Collectors.toList())",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Collectors.toSet",
+      "insertText": "Collectors.toSet()",
+      "detail": "collect to Set",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Collectors.joining",
+      "insertText": "Collectors.joining(\"${1:,}\")",
+      "detail": "join to String",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Collectors.groupingBy",
+      "insertText": "Collectors.groupingBy(${1:fn})",
+      "detail": "group by key",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Collectors.counting",
+      "insertText": "Collectors.counting()",
+      "detail": "count per group",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Collectors.summingInt",
+      "insertText": "Collectors.summingInt(${1:fn})",
+      "detail": "sum ints per group",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "mapToInt",
+      "insertText": ".mapToInt(${1:fn})",
+      "detail": "mapToInt \u2192 IntStream",
+      "documentation": "Use for sum/average on int values.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "mapToLong",
+      "insertText": ".mapToLong(${1:fn})",
+      "detail": "mapToLong \u2192 LongStream",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "sorted",
+      "insertText": ".sorted()",
+      "detail": "sorted() \u2014 natural order",
+      "documentation": "Requires Comparable. O(n log n).",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "distinct",
+      "insertText": ".distinct()",
+      "detail": "distinct() \u2014 remove duplicates",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "anyMatch",
+      "insertText": ".anyMatch(${1:x -> x > 0})",
+      "detail": "anyMatch(pred) \u2192 boolean",
+      "documentation": "True if any element matches predicate. Short-circuits.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "allMatch",
+      "insertText": ".allMatch(${1:x -> x > 0})",
+      "detail": "allMatch(pred) \u2192 boolean",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "noneMatch",
+      "insertText": ".noneMatch(${1:x -> x > 0})",
+      "detail": "noneMatch(pred) \u2192 boolean",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "count",
+      "insertText": ".count()",
+      "detail": "count() \u2192 long",
+      "documentation": "Count elements.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "findFirst",
+      "insertText": ".findFirst()",
+      "detail": "findFirst() \u2192 Optional<T>",
+      "documentation": "First element. Short-circuits.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "reduce",
+      "insertText": ".reduce(${1:0}, ${2:(a,b) -> a+b})",
+      "detail": "reduce(identity, accumulator)",
+      "documentation": "Fold all elements into one value.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "flatMap",
+      "insertText": ".flatMap(${1:x -> x.stream()})",
+      "detail": "flatMap \u2014 flatten nested",
+      "documentation": "Flatten stream of streams.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "limit",
+      "insertText": ".limit(${1:n})",
+      "detail": "limit(n) \u2014 take first n",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "skip",
+      "insertText": ".skip(${1:n})",
+      "detail": "skip(n) \u2014 skip first n",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "IntStream.range",
+      "insertText": "IntStream.range(${1:0}, ${2:n})",
+      "detail": "IntStream.range(start, end)",
+      "documentation": "Generates [start, end). Use .forEach or .toArray.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "IntStream.rangeClosed",
+      "insertText": "IntStream.rangeClosed(${1:1}, ${2:n})",
+      "detail": "IntStream.rangeClosed(start, end)",
+      "documentation": "Generates [start, end] inclusive.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "default",
+      "insertText": "default ",
+      "detail": "Default method in interface (Java 8+)",
+      "documentation": "",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Function",
+      "insertText": "Function<${1:String}, ${2:Integer}>",
+      "detail": "java.util.function.Function<T,R>",
+      "documentation": "apply() \u2014 transform T to R. Compose with andThen()/compose()",
+      "kind": "interface",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Predicate",
+      "insertText": "Predicate<${1:Integer}>",
+      "detail": "java.util.function.Predicate<T>",
+      "documentation": "test() \u2192 boolean. Compose with and()/or()/negate()",
+      "kind": "interface",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Consumer",
+      "insertText": "Consumer<${1:Integer}>",
+      "detail": "java.util.function.Consumer<T>",
+      "documentation": "accept() \u2014 consume T, no return",
+      "kind": "interface",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Supplier",
+      "insertText": "Supplier<${1:Integer}>",
+      "detail": "java.util.function.Supplier<T>",
+      "documentation": "get() \u2014 produce T with no input",
+      "kind": "interface",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "BiFunction",
+      "insertText": "BiFunction<${1:String}, ${2:Integer}, ${3:Boolean}>",
+      "detail": "java.util.function.BiFunction<T,U,R>",
+      "documentation": "apply(T, U) \u2192 R",
+      "kind": "interface",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "UnaryOperator",
+      "insertText": "UnaryOperator<${1:Integer}>",
+      "detail": "java.util.function.UnaryOperator<T>",
+      "documentation": "Function<T,T> \u2014 same type in and out",
+      "kind": "interface",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "BinaryOperator",
+      "insertText": "BinaryOperator<${1:Integer}>",
+      "detail": "java.util.function.BinaryOperator<T>",
+      "documentation": "BiFunction<T,T,T> \u2014 e.g. Integer::sum",
+      "kind": "interface",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "comparechain",
+      "insertText": "Comparator.comparing(${1:Obj::field})\n\t.thenComparing(${2:Obj::field2})\n\t.reversed()",
+      "detail": "Comparator chain (Java 8+)",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "List.of",
+      "insertText": "List.of(${1:items})",
+      "detail": "List.of(...) \u2014 immutable list (Java 9+)",
+      "documentation": "Creates immutable List. Cannot add/remove. NullPointerException on null elements.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Map.of",
+      "insertText": "Map.of(${1:k1}, ${2:v1})",
+      "detail": "Map.of(k,v,...) \u2014 immutable map (Java 9+)",
+      "documentation": "Up to 10 key-value pairs. Use Map.ofEntries() for more.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Set.of",
+      "insertText": "Set.of(${1:items})",
+      "detail": "Set.of(...) \u2014 immutable set (Java 9+)",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Map.entry",
+      "insertText": "Map.entry(${1:key}, ${2:val})",
+      "detail": "Map.entry(k, v) \u2014 immutable entry (Java 9+)",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Map.ofEntries",
+      "insertText": "Map.ofEntries(Map.entry(${1:k},${2:v}))",
+      "detail": "Map.ofEntries(...) \u2014 immutable large map",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "private-iface",
+      "insertText": "private ${1:void} ${2:helper}() {\n\t${0}\n}",
+      "detail": "Private interface method (Java 9+)",
+      "documentation": "",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "var",
+      "insertText": "var ",
+      "detail": "Local type inference (Java 10+)",
+      "documentation": "Compiler infers type from right-hand side. Only for local variables.",
+      "kind": "keyword",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "varex",
+      "insertText": "var ${1:list} = new ArrayList<String>();",
+      "detail": "var \u2014 local type inference",
+      "documentation": "Type inferred: var list = new ArrayList<String>() \u2192 ArrayList<String>",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "copyOf_list",
+      "insertText": "List.copyOf(${1:coll})",
+      "detail": "List.copyOf(coll) \u2014 unmodifiable copy (Java 10+)",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "copyOf_set",
+      "insertText": "Set.copyOf(${1:coll})",
+      "detail": "Set.copyOf(coll) (Java 10+)",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "copyOf_map",
+      "insertText": "Map.copyOf(${1:map})",
+      "detail": "Map.copyOf(map) (Java 10+)",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Collectors.toUnmodifiableList",
+      "insertText": "Collectors.toUnmodifiableList()",
+      "detail": "toUnmodifiableList() (Java 10+)",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "str.isBlank",
+      "insertText": "${1:s}.isBlank()",
+      "detail": "String.isBlank() \u2014 Java 11+",
+      "documentation": "True if empty or only whitespace. Like isEmpty() but includes whitespace.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "str.strip",
+      "insertText": "${1:s}.strip()",
+      "detail": "String.strip() \u2014 Java 11+",
+      "documentation": "Like trim() but Unicode-aware.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "str.repeat",
+      "insertText": "${1:s}.repeat(${2:n})",
+      "detail": "String.repeat(n) \u2014 Java 11+",
+      "documentation": "Repeat string n times. e.g. '=-'.repeat(10) \u2192 '=-=-=-=-='",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "str.lines",
+      "insertText": "${1:s}.lines()",
+      "detail": "String.lines() \u2014 Java 11+",
+      "documentation": "Returns Stream<String> of lines.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "str.stripLeading",
+      "insertText": "${1:s}.stripLeading()",
+      "detail": "stripLeading() \u2014 Java 11+",
+      "documentation": "Remove leading whitespace.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "str.stripTrailing",
+      "insertText": "${1:s}.stripTrailing()",
+      "detail": "stripTrailing() \u2014 Java 11+",
+      "documentation": "Remove trailing whitespace.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Files.readString",
+      "insertText": "Files.readString(${1:path})",
+      "detail": "Files.readString(Path) \u2014 Java 11+",
+      "documentation": "Read entire file to String in one call.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Files.writeString",
+      "insertText": "Files.writeString(${1:path}, ${2:content})",
+      "detail": "Files.writeString(Path, String) \u2014 Java 11+",
+      "documentation": "Write String to file.",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "isBlank",
+      "insertText": "${1:str}.isBlank()",
+      "detail": "isBlank() \u2014 Java 11+",
+      "documentation": "",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "Predicate.not",
+      "insertText": "Predicate.not(${1:String::isEmpty})",
+      "detail": "Predicate.not(pred) \u2014 Java 11+",
+      "documentation": "Negation of a predicate. e.g. Predicate.not(String::isEmpty)",
+      "kind": "method",
+      "isSnippet": true,
+      "tags": []
+    },
+    {
+      "label": "var-lambda",
+      "insertText": "(var ${1:x}) -> ${2:x.length()}",
+      "detail": "var in lambda params (Java 11+)",
+      "documentation": "Allows @NonNull annotation: (@NonNull var x) -> ...",
+      "kind": "snippet",
+      "isSnippet": true,
+      "tags": []
+    }
+  ]
+}
