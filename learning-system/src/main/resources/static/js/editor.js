@@ -566,11 +566,23 @@ function renderTopicList(topics) {
 }
 
 function tagCls(cat) {
-  const m = { DSA:'tag-dsa', JAVA:'tag-java', ADVANCED_JAVA:'tag-adv', MYSQL:'tag-mysql', AWS:'tag-aws' };
+  const m = {
+    DSA:'tag-dsa', JAVA:'tag-java', ADVANCED_JAVA:'tag-adv',
+    MYSQL:'tag-mysql', AWS:'tag-aws',
+    // New categories — map to closest visual style
+    SPRING:'tag-java', SPRING_BOOT:'tag-java', SPRING_MVC:'tag-java',
+    SPRING_SECURITY:'tag-java', HIBERNATE:'tag-mysql', SPRING_DATA:'tag-mysql',
+    MICROSERVICES:'tag-aws', JAVASCRIPT:'tag-dsa'
+  };
   return m[cat] || 'tag-dsa';
 }
 function tagLbl(cat) {
-  const m = { DSA:'DSA', JAVA:'Java', ADVANCED_JAVA:'Adv', MYSQL:'SQL', AWS:'AWS' };
+  const m = {
+    DSA:'DSA', JAVA:'Java', ADVANCED_JAVA:'Adv', MYSQL:'SQL', AWS:'AWS',
+    SPRING:'Spring', SPRING_BOOT:'Boot', SPRING_MVC:'MVC',
+    SPRING_SECURITY:'Sec', HIBERNATE:'JPA', SPRING_DATA:'Data',
+    MICROSERVICES:'μSvc', JAVASCRIPT:'JS'
+  };
   return m[cat] || cat;
 }
 
@@ -1214,17 +1226,6 @@ function saveApproach() {
   localStorage.setItem(`devlearn_approach_${currentProblem?.id}`, text);
   if (statusEl) { statusEl.textContent = '✓ Saved'; setTimeout(() => { statusEl.textContent = ''; }, 2000); }
   showToast('✍️ Approach saved!');
-}
-
-// ── Recall Drill ──────────────────────────────────────────────────────────────
-function showRecallDrill() {
-  const modal = document.getElementById('recallModal');
-  if (!modal) return;
-  const nm = document.getElementById('recallAlgoName');
-  if (nm) nm.textContent = currentTopic?.title || 'this algorithm';
-  const txt = document.getElementById('recallText');
-  if (txt) txt.value = '';
-  modal.style.display = 'flex';
 }
 
 async function saveRecall() {
