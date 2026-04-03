@@ -37,23 +37,16 @@ public void onAuthenticationSuccess(HttpServletRequest request,
 	String email      = oAuth2User.getAttribute("email");
 	String name       = oAuth2User.getAttribute("name");
 	String picture    = oAuth2User.getAttribute("picture");
-	String providerId = oAuth2User.getAttribute("sub"); // Google subject ID
+	String providerId = oAuth2User.getAttribute("sub");
 
 	// Find or create user
 	User user = userRepository.findByEmail(email)
-			.orElseGet(() -> userRepository.findByProviderAndProviderId(User.Provider.GOOGLE, providerId)
+			.orElseGet(() -> userRepository
+					.findByProviderAndProviderId(User.Provider.GOOGLE, providerId)
 					.orElse(null));
+
 	if (user == null) {
-		log.error("User not found for email: {} and providerId: {}", email, providerId);
-	} else {
-		log.info("User found: id={}, email={}, provider={}, providerId={}",
-				user.getId(),
-				user.getEmail(),
-				user.getProvider(),
-				user.getProviderId());
-	}
-	if (user == null) {
-		// First time Google login — create account
+		// First Google login — create account
 		user = User.builder()
 				.email(email)
 				.name(name != null ? name : email.split("@")[0])
@@ -61,16 +54,17 @@ public void onAuthenticationSuccess(HttpServletRequest request,
 				.provider(User.Provider.GOOGLE)
 				.providerId(providerId)
 				.roles(EnumSet.of(User.Role.STUDENT))
-				.emailVerified(true) // Google verifies email
+				.emailVerified(true)
 				.build();
 		log.info("New Google user registered: {}", email);
 	} else {
-		// Returning user — update profile
+		// Returning user — refresh profile info
 		user.setName(name != null ? name : user.getName());
 		user.setAvatarUrl(picture);
 		user.setProvider(User.Provider.GOOGLE);
 		user.setProviderId(providerId);
 		user.setEmailVerified(true);
+		log.info("Google login: id={} email={}", user.getId(), user.getEmail());
 	}
 
 	user.setLastLogin(LocalDateTime.now());
@@ -79,11 +73,21 @@ public void onAuthenticationSuccess(HttpServletRequest request,
 	// Issue JWT
 	String token = jwtService.generateToken(user);
 
-	// Check if there was a ?from= parameter stored before the OAuth redirect
-	// Spring saves it in the session under SPRING_SECURITY_SAVED_REQUEST
-	// We use a simpler approach: check the referer or default to "/"
-	// Always redirect to app root — index.html handles ?token= and cleans the URL
-	String redirectUrl = frontendUrl + "?token=" + token;
+	// ── FIX: redirect to /login?token=JWT not /?token=JWT ────────────────
+	//
+	// OLD (broken with React):
+	//   frontendUrl + "?token=" + token
+	//   → lands on http://localhost:3000?token=JWT
+	//   → ProtectedRoute sees no token in localStorage → kicks back to /login
+	//   → token in URL is lost, user stays on login page forever
+	//
+	// NEW (correct):
+	//   frontendUrl + "/login?token=" + token
+	//   → lands on http://localhost:3000/login?token=JWT
+	//   → LoginPage reads ?token=, saves to localStorage, redirects to /
+	//   → ProtectedRoute now sees token → user reaches the app
+	//
+	String redirectUrl = frontendUrl + "/login?token=" + token;
 	getRedirectStrategy().sendRedirect(request, response, redirectUrl);
 }
 }

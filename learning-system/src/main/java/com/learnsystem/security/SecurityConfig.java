@@ -2,6 +2,7 @@ package com.learnsystem.security;
 
 import com.learnsystem.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -33,13 +34,18 @@ private final JwtService           jwtService;
 private final UserRepository       userRepository;
 private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
-// ── Build filter manually (not a @Component) so it's only registered once ──
+@Value("${app.frontend-url}")
+private String frontendUrl;
+
+// Build filter manually — registered once only
 private JwtAuthFilter jwtAuthFilter() {
 	return new JwtAuthFilter(jwtService, userRepository);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// CHAIN 1 — /api/** (stateless JWT, no session, no OAuth2)
+// CHAIN 1 — /api/** (stateless JWT, no session)
+// React frontend calls these endpoints directly with Bearer token.
+// Always returns JSON — never redirects to a login page.
 // ══════════════════════════════════════════════════════════════════════════
 @Bean
 @Order(1)
@@ -52,10 +58,10 @@ public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 					.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
 			.authorizeHttpRequests(auth -> auth
-					// Auth — always public
+					// Auth endpoints — always public
 					.requestMatchers("/api/auth/**").permitAll()
 
-					// Public read
+					// Public read-only data
 					.requestMatchers(HttpMethod.GET,
 							"/api/topics", "/api/topics/**",
 							"/api/problems", "/api/problems/**",
@@ -63,14 +69,14 @@ public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 					.requestMatchers(HttpMethod.GET,
 							"/api/roadmaps", "/api/roadmaps/**").permitAll()
 
-					// Admin
+					// Admin endpoints
 					.requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-					// All other API calls need auth
+					// Everything else requires authentication
 					.anyRequest().authenticated()
 			)
 
-			// Always JSON — never redirects
+			// Return JSON errors — React handles display, not the server
 			.exceptionHandling(ex -> ex
 					.authenticationEntryPoint((req, res, e) -> {
 						res.setStatus(401);
@@ -91,11 +97,20 @@ public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// CHAIN 2 — web pages + OAuth2 (session-based for Google redirect)
+// CHAIN 2 — OAuth2 only
+// React no longer lives in Spring Boot — there are no .html pages to serve.
+// This chain exists ONLY to handle the Google OAuth2 redirect flow:
+//   1. User clicks "Continue with Google" on React frontend
+//   2. React navigates to GET /oauth2/authorization/google
+//   3. Spring handles Google redirect, issues JWT
+//   4. OAuthSuccessHandler redirects back to React frontend with ?token=JWT
+//
+// All HTML pages are removed from resources/static — React serves them.
+// The only permitted paths here are the OAuth2 handshake endpoints.
 // ══════════════════════════════════════════════════════════════════════════
 @Bean
 @Order(2)
-public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
+public SecurityFilterChain oauth2FilterChain(HttpSecurity http) throws Exception {
 	http
 			.csrf(AbstractHttpConfigurer::disable)
 			.cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -103,27 +118,33 @@ public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
 					.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
 			.authorizeHttpRequests(auth -> auth
+					// Only the OAuth2 handshake endpoints need to be accessible
 					.requestMatchers(
-							"/", "/index.html", "/login.html",
-							"/admin.html", "/roadmap.html", "/portal.html", "/problems.html", "/error",
-							"/css/**", "/js/**", "/favicon.ico"
+							"/oauth2/**",
+							"/login/oauth2/**",
+							"/error",
+							"/favicon.ico"
 					).permitAll()
-					.anyRequest().authenticated()
+					// Everything else: let the React app handle it (404 from Spring = React route)
+					.anyRequest().permitAll()
 			)
 
 			.oauth2Login(oauth2 -> oauth2
-					.loginPage("/login.html")
+					// loginPage points to React's /login route, not a .html file
+					.loginPage(frontendUrl + "/login")
 					.authorizationEndpoint(ae -> ae
 							.baseUri("/oauth2/authorization"))
 					.redirectionEndpoint(re -> re
 							.baseUri("/login/oauth2/code/*"))
 					.successHandler(oAuth2SuccessHandler)
-					.failureUrl("/login.html?error=oauth")
+					// On failure redirect to React's login with error param
+					.failureUrl(frontendUrl + "/login?error=oauth")
 			)
 
 			.exceptionHandling(ex -> ex
+					// On auth failure: redirect to React login, not a .html page
 					.authenticationEntryPoint((req, res, e) ->
-							res.sendRedirect("/login.html"))
+							res.sendRedirect(frontendUrl + "/login"))
 			);
 
 	return http.build();
@@ -140,13 +161,28 @@ public AuthenticationManager authenticationManager(
 	return cfg.getAuthenticationManager();
 }
 
+// ── CORS ──────────────────────────────────────────────────────────────────
+// Allows requests from:
+//   DEV:  http://localhost:3000  (Vite dev server)
+//   PROD: your actual domain     (Nginx serving React build)
+// Both are set via app.frontend-url in application.properties
 @Bean
 public CorsConfigurationSource corsConfigurationSource() {
 	CorsConfiguration config = new CorsConfiguration();
-	config.setAllowedOriginPatterns(List.of("*"));
-	config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+	// Allow the React frontend origin explicitly
+	// Plus localhost:3000 for local dev even if frontend-url is production
+	config.setAllowedOrigins(List.of(
+			frontendUrl,            // e.g. https://devlearner.onrender.com
+			"http://localhost:3000" // Vite dev server
+	));
+
+	config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 	config.setAllowedHeaders(List.of("*"));
+	config.setExposedHeaders(List.of("Authorization"));
 	config.setAllowCredentials(true);
+	config.setMaxAge(3600L); // Cache preflight for 1 hour
+
 	UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 	source.registerCorsConfiguration("/**", config);
 	return source;
