@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { codeApi, topicsApi, problemsApi, QUERY_KEYS } from '../../api';
 import { getDiffMeta, PROBLEM_STARTER_CODE } from '../../utils/helpers';
-import CodeEditor from './CodeEditor';
+import CodeEditor, { applyMarkers } from './CodeEditor';
 import toast from 'react-hot-toast';
 import styles from './ProblemSolveView.module.css';
 
@@ -32,8 +32,11 @@ export default function ProblemSolveView({
   const [cursorPos,       setCursorPos]       = useState({ line: 1, col: 1 });
   const [lineCount,       setLineCount]       = useState(0);
   const [savedAt,         setSavedAt]         = useState(null); // timestamp of last save
-  const splitRef   = useRef(null);
-  const isResizing = useRef(false);
+  const splitRef    = useRef(null);
+  const isResizing  = useRef(false);
+  // Hold Monaco editor/monaco instance refs so we can apply markers from run result
+  const editorRef   = useRef(null);
+  const monacoRef   = useRef(null);
 
   // ── Problem data ──────────────────────────────────────────────────────────
   const { data: problem, isLoading } = useQuery({
@@ -82,7 +85,12 @@ export default function ProblemSolveView({
     setActiveResultTab('result');
     setRunResult({ loading: true });
     try {
-      setRunResult(await codeApi.execute(code, testInput, javaVersion));
+      const res = await codeApi.execute(code, testInput, javaVersion);
+      setRunResult(res);
+      // Apply any compile errors as Monaco markers so they show inline in editor
+      if (res.compileErrors?.length) {
+        applyMarkers(editorRef, monacoRef, res.compileErrors);
+      }
     } catch {
       setRunResult({ status: 'ERROR', error: 'Server unreachable — is Spring Boot running?' });
     } finally { setIsRunning(false); }
@@ -97,6 +105,10 @@ export default function ProblemSolveView({
     try {
       const res = await codeApi.submit(problemId, code, 0, hintsShown >= 3, javaVersion);
       setSubmitResult(res);
+      // Apply compile errors from submit as Monaco markers too
+      if (res.compileErrors?.length) {
+        applyMarkers(editorRef, monacoRef, res.compileErrors);
+      }
       if (res.allPassed) {
         toast.success('✅ Accepted! Editorial unlocked.');
         const solved = JSON.parse(localStorage.getItem('devlearn_solved') || '[]');
@@ -299,6 +311,8 @@ export default function ProblemSolveView({
               javaVersion={javaVersion}
               onSyntaxChange={(state, errors) => { setSyntaxState(state); setSyntaxErrors(errors); }}
               onCursorChange={(line, col) => setCursorPos({ line, col })}
+              editorRefOut={editorRef}
+              monacoRefOut={monacoRef}
             />
           </div>
 

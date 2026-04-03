@@ -6,12 +6,23 @@ import com.learnsystem.dto.SyntaxCheckResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import javax.tools.*;
 import java.io.*;
+import java.net.URI;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.*;
 
+/**
+ * ExecutionService — compiles and runs Java code.
+ *
+ * Compile strategy (in order):
+ *  1. ToolProvider.getSystemJavaCompiler() — uses the JDK's built-in compiler API.
+ *     Works in any JDK without needing javac on PATH. Gives exact line/column numbers.
+ *  2. javac subprocess fallback — used only if running inside a plain JRE (no JDK).
+ *     Parses javac's text output with a regex to extract line/column.
+ */
 @Slf4j
 @Service
 public class ExecutionService {
@@ -21,9 +32,6 @@ private static final long MAX_OUTPUT_BYTES = 10_000;
 
 private static final Set<String> VALID_VERSIONS = Set.of("8","11","17","21");
 private static final String      DEFAULT_VERSION = "17";
-
-private static final Pattern JAVAC_ERROR_PATTERN =
-        Pattern.compile("^Main\\.java:(\\d+):\\s*(error|warning):\\s*(.+)$");
 
 // ── Public API ────────────────────────────────────────────────────────────
 
@@ -38,7 +46,8 @@ public ExecuteResponse execute(String code, String stdin, String javaVersion) {
         if (!cr.success()) {
             return ExecuteResponse.builder()
                     .success(false).status("COMPILE_ERROR")
-                    .error(cr.rawOutput()).compileErrors(cr.errors()).build();
+                    .error(formatCompileErrors(cr.errors()))
+                    .compileErrors(cr.errors()).build();
         }
         return run(tempDir, stdin);
     } catch (Exception e) {
@@ -48,21 +57,10 @@ public ExecuteResponse execute(String code, String stdin, String javaVersion) {
     } finally { cleanup(tempDir); }
 }
 
-// Backwards-compat overload (used by legacy callers)
 public ExecuteResponse execute(String code, String stdin) {
     return execute(code, stdin, DEFAULT_VERSION);
 }
 
-/**
- * BUG FIX (performance): Compile once, run once per input.
- *
- * Previously EvaluationService called execute() in a loop — which creates a temp dir,
- * writes the source file, and compiles for every single test case.  A problem with 5 test
- * cases triggered 5 compile steps; only 1 is needed.
- *
- * This method compiles exactly once and then runs the compiled class against every input
- * in sequence, returning one ExecuteResponse per input in the same order.
- */
 public List<ExecuteResponse> executeAll(String code, List<String> inputs, String javaVersion) {
     Path tempDir = null;
     try {
@@ -72,17 +70,15 @@ public List<ExecuteResponse> executeAll(String code, List<String> inputs, String
 
         CompileResult cr = compile(tempDir, sourceFile, code, javaVersion);
         if (!cr.success()) {
-            // All test cases fail with the same compile error
             ExecuteResponse compileErr = ExecuteResponse.builder()
                     .success(false).status("COMPILE_ERROR")
-                    .error(cr.rawOutput()).compileErrors(cr.errors()).build();
+                    .error(formatCompileErrors(cr.errors()))
+                    .compileErrors(cr.errors()).build();
             return Collections.nCopies(inputs.size(), compileErr);
         }
 
         List<ExecuteResponse> results = new ArrayList<>(inputs.size());
-        for (String input : inputs) {
-            results.add(run(tempDir, input));
-        }
+        for (String input : inputs) results.add(run(tempDir, input));
         return results;
 
     } catch (Exception e) {
@@ -104,8 +100,12 @@ public SyntaxCheckResponse syntaxCheck(String code, String javaVersion) {
         long errors   = cr.errors().stream().filter(e -> "error"  .equals(e.getSeverity())).count();
         long warnings = cr.errors().stream().filter(e -> "warning".equals(e.getSeverity())).count();
 
-        return SyntaxCheckResponse.builder().valid(cr.success()).errors(cr.errors())
-                .errorCount((int)errors).warningCount((int)warnings).build();
+        return SyntaxCheckResponse.builder()
+                .valid(cr.success())
+                .errors(cr.errors())
+                .errorCount((int) errors)
+                .warningCount((int) warnings)
+                .build();
     } catch (Exception e) {
         log.error("Syntax check failed", e);
         return SyntaxCheckResponse.builder().valid(false)
@@ -119,53 +119,126 @@ public SyntaxCheckResponse syntaxCheck(String code) {
     return syntaxCheck(code, DEFAULT_VERSION);
 }
 
-// ── Private helpers ───────────────────────────────────────────────────────
+// ── Compile ───────────────────────────────────────────────────────────────
 
-private CompileResult compile(Path tempDir, Path sourceFile, String code, String version) throws Exception {
+private CompileResult compile(Path tempDir, Path sourceFile, String code, String version)
+        throws Exception {
     String safeVersion = VALID_VERSIONS.contains(version) ? version : DEFAULT_VERSION;
 
+    // ── Strategy 1: Java Compiler API (preferred) ─────────────────────────
+    // ToolProvider.getSystemJavaCompiler() works inside any JDK without needing
+    // javac on PATH. Returns null when running in a plain JRE (no tools.jar).
+    JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    if (compiler != null) {
+        return compileWithApi(compiler, sourceFile, code, safeVersion);
+    }
+
+    // ── Strategy 2: javac subprocess fallback ─────────────────────────────
+    // Only reached when running inside a plain JRE. Parses javac text output.
+    log.warn("ToolProvider.getSystemJavaCompiler() returned null — falling back to javac subprocess. " +
+            "Run with a JDK (not JRE) for reliable syntax checking.");
+    return compileWithProcess(tempDir, sourceFile, code, safeVersion);
+}
+
+/**
+ * Compile using the Java Compiler API.
+ * Gives exact Diagnostic objects — no regex parsing needed.
+ */
+private CompileResult compileWithApi(JavaCompiler compiler, Path sourceFile,
+                                     String code, String version) {
+    DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+    List<CompileError> errors = new ArrayList<>();
+
+    try (StandardJavaFileManager fm =
+                 compiler.getStandardFileManager(diagnostics, null, null)) {
+
+        // Build compile options
+        List<String> options = new ArrayList<>();
+        // --release requires JDK 9+. For 8, use -source/-target
+        if (!version.equals("8")) {
+            options.addAll(List.of("--release", version));
+        } else {
+            options.addAll(List.of("-source", "8", "-target", "8"));
+        }
+        options.addAll(List.of(
+                "-Xlint:all",          // enable all lint warnings
+                "-Xlint:-serial",      // suppress serialVersionUID warnings (noise for students)
+                "-proc:none"           // skip annotation processing (faster)
+        ));
+
+        Iterable<? extends JavaFileObject> compilationUnits =
+                fm.getJavaFileObjectsFromPaths(List.of(sourceFile));
+
+        JavaCompiler.CompilationTask task = compiler.getTask(
+                null, fm, diagnostics, options, null, compilationUnits);
+        boolean success = task.call();
+
+        // Convert Diagnostics → CompileError
+        String[] sourceLines = code.split("\n", -1);
+        for (Diagnostic<? extends JavaFileObject> d : diagnostics.getDiagnostics()) {
+            if (d.getKind() == Diagnostic.Kind.NOTE) continue; // skip info notes
+
+            String severity = d.getKind() == Diagnostic.Kind.ERROR ? "error" : "warning";
+            int    line     = (int) Math.max(d.getLineNumber(), 1);
+            int    col      = (int) Math.max(d.getColumnNumber(), 1);
+            String msg      = cleanMessage(d.getMessage(Locale.ENGLISH));
+            String codeLine = (line <= sourceLines.length) ? sourceLines[line - 1].trim() : "";
+
+            errors.add(CompileError.builder()
+                    .line(line).column(col)
+                    .severity(severity)
+                    .message(msg)
+                    .code(codeLine)
+                    .build());
+        }
+
+        return new CompileResult(success && errors.stream()
+                .noneMatch(e -> "error".equals(e.getSeverity())),
+                "", errors);
+
+    } catch (Exception e) {
+        log.error("Java Compiler API failed", e);
+        return new CompileResult(false, e.getMessage(), List.of(
+                CompileError.builder().line(1).column(1).severity("error")
+                        .message("Compiler error: " + e.getMessage()).build()));
+    }
+}
+
+/**
+ * Compile using javac subprocess (fallback when not in JDK).
+ * Parses javac's text output with regex.
+ */
+private CompileResult compileWithProcess(Path tempDir, Path sourceFile,
+                                         String code, String version) throws Exception {
     List<String> cmd = new ArrayList<>(List.of(
-            "javac",
-            "--release", safeVersion,
-            "-Xlint:all",
-            sourceFile.toString()
-    ));
+            "javac", "--release", version, "-Xlint:all", sourceFile.toString()));
 
     ProcessBuilder pb = new ProcessBuilder(cmd)
             .directory(tempDir.toFile()).redirectErrorStream(true);
-
     Process process = pb.start();
     String rawOutput = readStream(process.getInputStream(), MAX_OUTPUT_BYTES);
     boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     if (!finished) { process.destroyForcibly(); return new CompileResult(false, "Compilation timed out", List.of()); }
 
-    // If --release fails (e.g. requesting Java 8 on a JDK that doesn't support it), retry without
     if (process.exitValue() != 0 && rawOutput.contains("invalid flag")) {
-        return compileWithoutRelease(tempDir, sourceFile, code);
-    }
-    if (process.exitValue() != 0) return new CompileResult(false, rawOutput, parseJavacOutput(rawOutput, code));
-    return new CompileResult(true, rawOutput, parseJavacOutput(rawOutput, code));
-}
-
-private CompileResult compileWithoutRelease(Path tempDir, Path sourceFile, String code) throws Exception {
-    ProcessBuilder pb = new ProcessBuilder("javac", "-Xlint:all", sourceFile.toString())
-            .directory(tempDir.toFile()).redirectErrorStream(true);
-    Process process = pb.start();
-    String rawOutput = readStream(process.getInputStream(), MAX_OUTPUT_BYTES);
-
-    // BUG FIX: the original code did not check the return value of waitFor().
-    // If compilation timed out, process.exitValue() would throw IllegalThreadStateException
-    // because the process was still running.
-    boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-    if (!finished) {
-        process.destroyForcibly();
-        return new CompileResult(false, "Compilation timed out", List.of());
+        // retry without --release (very old JDK)
+        ProcessBuilder pb2 = new ProcessBuilder("javac", "-Xlint:all", sourceFile.toString())
+                .directory(tempDir.toFile()).redirectErrorStream(true);
+        Process p2 = pb2.start();
+        String out2 = readStream(p2.getInputStream(), MAX_OUTPUT_BYTES);
+        boolean fin2 = p2.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        if (!fin2) { p2.destroyForcibly(); return new CompileResult(false, "Timed out", List.of()); }
+        if (p2.exitValue() != 0) return new CompileResult(false, out2, parseJavacOutput(out2, code));
+        return new CompileResult(true, out2, parseJavacOutput(out2, code));
     }
 
     if (process.exitValue() != 0) return new CompileResult(false, rawOutput, parseJavacOutput(rawOutput, code));
     return new CompileResult(true, rawOutput, parseJavacOutput(rawOutput, code));
 }
+
+private static final Pattern JAVAC_ERROR_PATTERN =
+        Pattern.compile("^Main\\.java:(\\d+):\\s*(error|warning):\\s*(.+)$");
 
 private List<CompileError> parseJavacOutput(String raw, String sourceCode) {
     if (raw == null || raw.isBlank()) return List.of();
@@ -202,15 +275,46 @@ private List<CompileError> parseJavacOutput(String raw, String sourceCode) {
     return errors;
 }
 
+/** Strip the class/method path prefix javac adds: "int x = ...; ..." → "int x = ..." */
+private String cleanMessage(String msg) {
+    if (msg == null) return "Unknown error";
+    // Remove path like "/tmp/xxx/Main.java:5: " prefix that some JDKs include in message
+    return msg.replaceAll("^.*Main\\.java:\\d+:\\s*", "")
+            .replaceAll("\\s+", " ").trim();
+}
+
+/** Format compile errors as readable text for the error panel */
+private String formatCompileErrors(List<CompileError> errors) {
+    if (errors == null || errors.isEmpty()) return "Compilation failed";
+    StringBuilder sb = new StringBuilder();
+    for (CompileError e : errors) {
+        sb.append(e.getSeverity().toUpperCase())
+                .append(" at Line ").append(e.getLine())
+                .append(", Col ").append(e.getColumn())
+                .append(": ").append(e.getMessage());
+        if (e.getCode() != null && !e.getCode().isBlank()) {
+            sb.append("\n  → ").append(e.getCode());
+        }
+        sb.append("\n");
+    }
+    return sb.toString().trim();
+}
+
+// ── Run ───────────────────────────────────────────────────────────────────
+
 private ExecuteResponse run(Path tempDir, String stdin) throws Exception {
-    ProcessBuilder pb = new ProcessBuilder("java", "-cp", tempDir.toString(), "-Xmx128m", "Main")
+    ProcessBuilder pb = new ProcessBuilder(
+            "java", "-cp", tempDir.toString(), "-Xmx128m", "-Xss8m", "Main")
             .directory(tempDir.toFile());
 
     long startTime = System.currentTimeMillis();
     Process process = pb.start();
 
     if (stdin != null && !stdin.isBlank()) {
-        try (OutputStream os = process.getOutputStream()) { os.write(stdin.getBytes()); os.flush(); }
+        try (OutputStream os = process.getOutputStream()) {
+            os.write(stdin.getBytes());
+            os.flush();
+        }
     }
 
     ExecutorService pool = Executors.newFixedThreadPool(2);
@@ -218,14 +322,9 @@ private ExecuteResponse run(Path tempDir, String stdin) throws Exception {
     Future<String> stderrFuture = pool.submit(() -> readStream(process.getErrorStream(), MAX_OUTPUT_BYTES));
 
     boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-    long elapsed     = System.currentTimeMillis() - startTime;
+    long elapsed = System.currentTimeMillis() - startTime;
 
     if (!finished) {
-        // BUG FIX: pool.shutdown() was called unconditionally BEFORE this check.
-        // On timeout the futures were never cancelled — the reader threads kept blocking on
-        // the process streams, causing a thread leak until the OS eventually cleaned up.
-        // Now: destroyForcibly() first (closes the streams), then shutdownNow() interrupts
-        // and discards the pending futures immediately.
         process.destroyForcibly();
         pool.shutdownNow();
         return ExecuteResponse.builder().success(false).status("TIMEOUT")
@@ -234,7 +333,6 @@ private ExecuteResponse run(Path tempDir, String stdin) throws Exception {
     }
 
     pool.shutdown();
-
     String stdout = stdoutFuture.get(2, TimeUnit.SECONDS);
     String stderr = stderrFuture.get(2, TimeUnit.SECONDS);
 
@@ -247,14 +345,18 @@ private ExecuteResponse run(Path tempDir, String stdin) throws Exception {
             .output(stdout).executionTimeMs(elapsed).build();
 }
 
+// ── Utils ─────────────────────────────────────────────────────────────────
+
 private String readStream(InputStream is, long maxBytes) {
-    try { return new String(is.readNBytes((int) maxBytes)).trim(); } catch (IOException e) { return ""; }
+    try { return new String(is.readNBytes((int) maxBytes)).trim(); }
+    catch (IOException e) { return ""; }
 }
 
 private void cleanup(Path dir) {
     if (dir == null) return;
     try {
-        Files.walk(dir).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+        Files.walk(dir).sorted(Comparator.reverseOrder())
+                .map(Path::toFile).forEach(File::delete);
     } catch (IOException e) { log.warn("Could not clean temp dir: {}", dir); }
 }
 
