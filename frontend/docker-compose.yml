@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+
+  # ── Spring Boot Backend ────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ../learning-system          # path to your Spring Boot project
+      dockerfile: Dockerfile
+    container_name: devlearn-backend
+    restart: unless-stopped
+    environment:
+      # DB — override with real values in .env file or Railway env vars
+      SPRING_DATASOURCE_URL:      ${DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASS}
+      # JWT
+      APP_JWT_SECRET:             ${JWT_SECRET}
+      APP_JWT_EXPIRATION_MS:      86400000
+      # Google OAuth
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID:     ${GOOGLE_CLIENT_ID}
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      # Frontend URL (for OAuth redirect)
+      APP_FRONTEND_URL:           ${FRONTEND_URL:-http://localhost}
+      # Profile
+      SPRING_PROFILES_ACTIVE:     prod
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/topics?category=DSA"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ── React Frontend (Nginx) ─────────────────────────────────────────────────
+  frontend:
+    build:
+      context: .                           # this directory (React project)
+      dockerfile: Dockerfile
+    container_name: devlearn-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # ── Optional: Local MySQL for dev ─────────────────────────────────────────
+  # Comment this out if using Railway / PlanetScale / external DB
+  # db:
+  #   image: mysql:8.0
+  #   container_name: devlearn-db
+  #   restart: unless-stopped
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: ${DB_PASS}
+  #     MYSQL_DATABASE: devlearn
+  #   ports:
+  #     - "3306:3306"
+  #   volumes:
+  #     - db_data:/var/lib/mysql
+  #   healthcheck:
+  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+# volumes:
+#   db_data:
