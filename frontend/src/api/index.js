@@ -1,0 +1,217 @@
+import axios from 'axios';
+
+// ─── Axios instance ──────────────────────────────────────────────────────────
+const http = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || '',
+  timeout: 30000,
+});
+
+// Attach JWT on every request
+http.interceptors.request.use((config) => {
+  const token = localStorage.getItem('devlearn_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+// Auto-logout on 401
+http.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('devlearn_token');
+      localStorage.removeItem('devlearn_user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(err);
+  }
+);
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+export const authApi = {
+  login: (email, password) =>
+    http.post('/api/auth/login', { email, password }).then((r) => r.data),
+
+  register: (name, email, password) =>
+    http.post('/api/auth/register', { name, email, password }).then((r) => r.data),
+
+  check: () =>
+    http.get('/api/auth/check').then((r) => r.data),
+
+  refresh: () =>
+    http.post('/api/auth/refresh').then((r) => r.data),
+
+  logout: () =>
+    http.post('/api/auth/logout').catch(() => {}),
+};
+
+// ─── Topics ───────────────────────────────────────────────────────────────────
+export const topicsApi = {
+  getAll: (category) =>
+    http.get('/api/topics', { params: category && category !== 'ALL' ? { category } : {} })
+        .then((r) => r.data),
+
+  getById: (id) =>
+    http.get(`/api/topics/${id}`).then((r) => r.data),
+
+  getExamples: (topicId) =>
+    http.get(`/api/topics/${topicId}/examples`).then((r) => r.data),
+
+  getProblems: (topicId) =>
+    http.get(`/api/topics/${topicId}/problems`).then((r) => r.data),
+
+  getProblem: (problemId) =>
+    http.get(`/api/topics/problems/${problemId}`).then((r) => r.data),
+};
+
+// ─── Problems ─────────────────────────────────────────────────────────────────
+export const problemsApi = {
+  getAll: (filters = {}) =>
+    http.get('/api/problems', { params: filters }).then((r) => r.data),
+};
+
+// ─── Code Execution ───────────────────────────────────────────────────────────
+export const codeApi = {
+  execute: (code, stdin = '', javaVersion = '17') =>
+    http.post('/api/execute', { code, stdin, javaVersion }).then((r) => r.data),
+
+  submit: (problemId, code, solveTimeSecs, hintAssisted, javaVersion = '17') =>
+    http.post('/api/submissions/submit', {
+      problemId, code,
+      solveTimeSecs: solveTimeSecs || null,
+      hintAssisted: !!hintAssisted,
+      javaVersion,
+    }).then((r) => r.data),
+
+  syntaxCheck: (code, javaVersion = '17') =>
+    http.post('/api/syntax-check', { code, javaVersion }).then((r) => r.data),
+
+  analyzeComplexity: (code) =>
+    http.post('/api/analyze-complexity', { code }).then((r) => r.data),
+};
+
+// ─── Submissions ──────────────────────────────────────────────────────────────
+export const submissionsApi = {
+  getHistory: (problemId) =>
+    http.get('/api/submissions', { params: problemId ? { problemId } : {} }).then((r) => r.data),
+
+  getSolvedIds: () =>
+    http.get('/api/submissions/solved').then((r) => r.data).catch(() => []),
+
+  getHeatmap: () =>
+    http.get('/api/submissions/heatmap').then((r) => r.data).catch(() => ({})),
+
+  getPercentile: (problemId, ms) =>
+    http.get('/api/submissions/percentile', { params: { problemId, ms } }).then((r) => r.data),
+};
+
+// ─── Streak / Phase 2 ─────────────────────────────────────────────────────────
+export const streakApi = {
+  getStatus: () =>
+    http.get('/api/streak/status').then((r) => r.data),
+
+  usePauseDay: () =>
+    http.post('/api/streak/pause-day').then((r) => r.data),
+
+  recover: () =>
+    http.post('/api/streak/recover').then((r) => r.data),
+};
+
+// ─── Bookmarks ────────────────────────────────────────────────────────────────
+export const bookmarksApi = {
+  getAll: () =>
+    http.get('/api/bookmarks').then((r) => r.data),
+
+  toggle: (itemType, itemId, itemTitle = '') =>
+    http.post('/api/bookmarks/toggle', { itemType, itemId, itemTitle }).then((r) => r.data),
+
+  check: (itemType, itemId) =>
+    http.get('/api/bookmarks/check', { params: { itemType, itemId } }).then((r) => r.data),
+};
+
+// ─── Notes ────────────────────────────────────────────────────────────────────
+export const notesApi = {
+  getByTopic: (topicId) =>
+    http.get('/api/notes', { params: { topicId } }).then((r) => r.data),
+
+  create: (topicId, content) =>
+    http.post('/api/notes', { topicId, content }).then((r) => r.data),
+
+  update: (id, content) =>
+    http.put(`/api/notes/${id}`, { content }).then((r) => r.data),
+
+  delete: (id) =>
+    http.delete(`/api/notes/${id}`).then((r) => r.data),
+};
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
+export const adminApi = {
+  getUsers: () =>
+    http.get('/api/admin/users').then((r) => r.data),
+
+  grantAdmin: (userId) =>
+    http.post(`/api/admin/users/${userId}/grant-admin`).then((r) => r.data),
+
+  revokeAdmin: (userId) =>
+    http.post(`/api/admin/users/${userId}/revoke-admin`).then((r) => r.data),
+
+  getStats: () =>
+    http.get('/api/admin/data/stats').then((r) => r.data),
+
+  seedBatch: (payload) =>
+    http.post('/api/admin/seed-batch', payload).then((r) => r.data),
+
+  // Topic CRUD
+  createTopic: (data) =>
+    http.post('/api/admin/topics', data).then((r) => r.data),
+
+  updateTopic: (id, data) =>
+    http.put(`/api/admin/topics/${id}`, data).then((r) => r.data),
+
+  deleteTopic: (id) =>
+    http.delete(`/api/admin/topics/${id}`).then((r) => r.data),
+
+  // Problem CRUD
+  createProblem: (topicId, data) =>
+    http.post(`/api/admin/topics/${topicId}/problems`, data).then((r) => r.data),
+
+  updateProblem: (id, data) =>
+    http.put(`/api/admin/problems/${id}`, data).then((r) => r.data),
+
+  deleteProblem: (id) =>
+    http.delete(`/api/admin/problems/${id}`).then((r) => r.data),
+};
+
+// ─── Roadmaps ─────────────────────────────────────────────────────────────────
+export const roadmapsApi = {
+  getAll: () =>
+    http.get('/api/roadmaps').then((r) => r.data),
+
+  getById: (id) =>
+    http.get(`/api/roadmaps/${id}`).then((r) => r.data),
+
+  create: (data) =>
+    http.post('/api/roadmaps', data).then((r) => r.data),
+
+  update: (id, data) =>
+    http.put(`/api/roadmaps/${id}`, data).then((r) => r.data),
+
+  delete: (id) =>
+    http.delete(`/api/roadmaps/${id}`).then((r) => r.data),
+};
+
+// ─── React Query Keys ─────────────────────────────────────────────────────────
+export const QUERY_KEYS = {
+  topics:      (cat)  => ['topics', cat],
+  topic:       (id)   => ['topic', id],
+  examples:    (tid)  => ['examples', tid],
+  problems:    (tid)  => ['problems', tid],
+  problem:     (pid)  => ['problem', pid],
+  allProblems: (f)    => ['allProblems', f],
+  heatmap:            ['heatmap'],
+  solvedIds:          ['solvedIds'],
+  streak:             ['streak'],
+  bookmarks:          ['bookmarks'],
+  adminUsers:         ['adminUsers'],
+  adminStats:         ['adminStats'],
+  roadmaps:           ['roadmaps'],
+};

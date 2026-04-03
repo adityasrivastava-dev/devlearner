@@ -1,0 +1,204 @@
+.shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: .3;
+  pointer-events: none;
+}
+
+.shell::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(74,222,128,.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,.5);
+  position: relative;
+  z-index: 1;
+}
+
+.logoWrap {
+  padding: 28px 28px 0;
+  text-align: center;
+}
+
+.logoIcon {
+  font-size: 28px;
+  font-family: var(--font-code);
+  color: var(--accent);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.logoText {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.5px;
+  color: var(--text);
+}
+
+.logoText span { color: var(--accent); }
+
+.logoSub {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  padding: 14px 24px 0;
+}
+
+.pill {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text3);
+  letter-spacing: .2px;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin: 18px 24px 0;
+}
+
+.tabBtn {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text3);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: .15s;
+  margin-bottom: -1px;
+  font-family: var(--font-ui);
+}
+.tabBtn:hover { color: var(--text2); }
+.tabBtn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.form {
+  padding: 20px 28px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.googleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: .15s;
+  font-family: var(--font-ui);
+}
+.googleBtn:hover { border-color: var(--text3); background: var(--bg4); }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text3);
+  font-size: 11px;
+  margin: 2px 0;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.field label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text3);
+}
+
+.strength { margin-top: 4px; }
+.strengthBar {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  transition: .3s;
+}
+.strengthBar[data-level="weak"]   { background: var(--red);    width: 33%; }
+.strengthBar[data-level="medium"] { background: var(--yellow); width: 66%; }
+.strengthBar[data-level="strong"] { background: var(--accent); width: 100%; }
+
+.submitBtn {
+  width: 100%;
+  justify-content: center;
+  padding: 11px;
+  font-size: 14px;
+  margin-bottom: 0;
+}
+
+.footer {
+  padding: 14px 28px 18px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text3);
+  border-top: 1px solid var(--border);
+  margin-top: 18px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+.footer a { color: var(--accent); text-decoration: none; }
+.footer a:hover { color: var(--accent2); }
