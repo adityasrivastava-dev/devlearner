@@ -1,40 +1,41 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { codeApi, topicsApi, QUERY_KEYS } from '../../api';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { codeApi, topicsApi, problemsApi, QUERY_KEYS } from '../../api';
 import { getDiffMeta, PROBLEM_STARTER_CODE } from '../../utils/helpers';
 import CodeEditor from './CodeEditor';
 import toast from 'react-hot-toast';
 import styles from './ProblemSolveView.module.css';
 
 export default function ProblemSolveView({
-  problemId,
-  topicTitle,
-  onBack,
-  onStudyTopic,
-  theme,
-  fontSize,
-  onFontChange,
-  onThemeToggle,
-  currentTheme,
+  problemId, topicTitle, onBack, onStudyTopic,
+  theme, fontSize, onFontChange, onThemeToggle, currentTheme,
 }) {
-  const qc = useQueryClient();
-  const [javaVersion,    setJavaVersion]    = useState('17');
-  const [code,           setCode]           = useState('');
-  const [syntaxState,    setSyntaxState]    = useState('ready');
-  const [syntaxErrors,   setSyntaxErrors]   = useState([]);
-  const [activeDescTab,  setActiveDescTab]  = useState('desc');
-  const [activeResultTab,setActiveResultTab]= useState('testcase');
-  const [testInput,      setTestInput]      = useState('');
-  const [runResult,      setRunResult]      = useState(null);
-  const [submitResult,   setSubmitResult]   = useState(null);
-  const [isRunning,      setIsRunning]      = useState(false);
-  const [isSubmitting,   setIsSubmitting]   = useState(false);
-  const [hintsShown,     setHintsShown]     = useState(0);
-  const [approach,       setApproach]       = useState('');
-  const [splitPos,       setSplitPos]       = useState(40);
+  const qc       = useQueryClient();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [javaVersion,     setJavaVersion]     = useState('17');
+  const [code,            setCode]            = useState('');
+  const [syntaxState,     setSyntaxState]     = useState('ready');
+  const [syntaxErrors,    setSyntaxErrors]    = useState([]);
+  const [activeDescTab,   setActiveDescTab]   = useState('desc');
+  const [activeResultTab, setActiveResultTab] = useState('testcase');
+  const [testInput,       setTestInput]       = useState('');
+  const [runResult,       setRunResult]       = useState(null);
+  const [submitResult,    setSubmitResult]    = useState(null);
+  const [isRunning,       setIsRunning]       = useState(false);
+  const [isSubmitting,    setIsSubmitting]    = useState(false);
+  const [hintsShown,      setHintsShown]      = useState(0);
+  const [approach,        setApproach]        = useState('');
+  const [splitPos,        setSplitPos]        = useState(40);
+  const [cursorPos,       setCursorPos]       = useState({ line: 1, col: 1 });
+  const [lineCount,       setLineCount]       = useState(0);
+  const [savedAt,         setSavedAt]         = useState(null); // timestamp of last save
   const splitRef   = useRef(null);
   const isResizing = useRef(false);
 
+  // ── Problem data ──────────────────────────────────────────────────────────
   const { data: problem, isLoading } = useQuery({
     queryKey: QUERY_KEYS.problem(problemId),
     queryFn:  () => topicsApi.getProblem(problemId),
@@ -42,10 +43,21 @@ export default function ProblemSolveView({
     staleTime: 10 * 60 * 1000,
   });
 
+  // Editorial — fetched only after solved
+  const { data: editorial, refetch: refetchEditorial } = useQuery({
+    queryKey: ['editorial', problemId],
+    queryFn:  () => problemsApi.getEditorial(problemId),
+    enabled:  false,
+    retry:    false,
+  });
+
+  // ── Initialize on problem change ──────────────────────────────────────────
   useEffect(() => {
     if (!problem) return;
     const saved = sessionStorage.getItem(`devlearn_code_${problemId}`);
-    setCode(saved || problem.starterCode || PROBLEM_STARTER_CODE);
+    const initial = saved || problem.starterCode || PROBLEM_STARTER_CODE;
+    setCode(initial);
+    setLineCount(initial.split('\n').length);
     setTestInput(problem.sampleInput || '');
     setApproach(localStorage.getItem(`devlearn_approach_${problemId}`) || '');
     setHintsShown(0);
@@ -55,10 +67,15 @@ export default function ProblemSolveView({
     setSyntaxErrors([]);
   }, [problem, problemId]);
 
+  // ── Auto-save code to sessionStorage ─────────────────────────────────────
   useEffect(() => {
-    if (code && problemId) sessionStorage.setItem(`devlearn_code_${problemId}`, code);
+    if (!code || !problemId) return;
+    sessionStorage.setItem(`devlearn_code_${problemId}`, code);
+    setLineCount(code.split('\n').length);
+    setSavedAt(Date.now());
   }, [code, problemId]);
 
+  // ── Run ───────────────────────────────────────────────────────────────────
   async function handleRun() {
     if (!code.trim()) return;
     setIsRunning(true);
@@ -67,10 +84,11 @@ export default function ProblemSolveView({
     try {
       setRunResult(await codeApi.execute(code, testInput, javaVersion));
     } catch {
-      setRunResult({ status: 'ERROR', error: 'Server unreachable' });
+      setRunResult({ status: 'ERROR', error: 'Server unreachable — is Spring Boot running?' });
     } finally { setIsRunning(false); }
   }
 
+  // ── Submit ────────────────────────────────────────────────────────────────
   async function handleSubmit() {
     if (!code.trim()) return;
     setIsSubmitting(true);
@@ -80,25 +98,44 @@ export default function ProblemSolveView({
       const res = await codeApi.submit(problemId, code, 0, hintsShown >= 3, javaVersion);
       setSubmitResult(res);
       if (res.allPassed) {
-        toast.success('✅ Accepted!');
-        // Mark as solved in local cache
+        toast.success('✅ Accepted! Editorial unlocked.');
         const solved = JSON.parse(localStorage.getItem('devlearn_solved') || '[]');
-        if (!solved.includes(problemId)) {
+        if (!solved.includes(problemId))
           localStorage.setItem('devlearn_solved', JSON.stringify([...solved, problemId]));
-        }
-        // Refresh solved count
         qc.invalidateQueries({ queryKey: QUERY_KEYS.solvedIds });
+        refetchEditorial();
       }
     } catch {
-      setSubmitResult({ error: 'Submit failed' });
+      setSubmitResult({ error: 'Submission failed — server error' });
     } finally { setIsSubmitting(false); }
   }
 
-  // Drag-to-resize split panel
+  // ── Keyboard shortcuts: Ctrl+Enter = Run, Ctrl+Shift+Enter = Submit ───────
+  useEffect(() => {
+    function onKey(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (e.shiftKey) handleSubmit();
+        else            handleRun();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, testInput, javaVersion]);
+
+  // ── Smart back button (Bug 5) ────────────────────────────────────────────
+  function handleBack() {
+    const from = location.state?.from || window.history.state?.from;
+    if (from === '/problems') navigate('/problems');
+    else onBack();
+  }
+
+  // ── Resizable split ───────────────────────────────────────────────────────
   const startResize = useCallback((e) => {
     isResizing.current = true;
-    document.body.style.cursor      = 'col-resize';
-    document.body.style.userSelect  = 'none';
+    document.body.style.cursor     = 'col-resize';
+    document.body.style.userSelect = 'none';
     e.preventDefault();
   }, []);
 
@@ -106,11 +143,11 @@ export default function ProblemSolveView({
     function onMove(e) {
       if (!isResizing.current || !splitRef.current) return;
       const rect = splitRef.current.getBoundingClientRect();
-      setSplitPos(Math.max(25, Math.min(((e.clientX - rect.left) / rect.width) * 100, 65)));
+      setSplitPos(Math.max(25, Math.min(((e.clientX - rect.left) / rect.width) * 100, 68)));
     }
     function onUp() {
       isResizing.current = false;
-      document.body.style.cursor     = '';
+      document.body.style.cursor = '';
       document.body.style.userSelect = '';
     }
     document.addEventListener('mousemove', onMove);
@@ -118,25 +155,31 @@ export default function ProblemSolveView({
     return () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
   }, []);
 
+  // ── Click on error → jump to line ────────────────────────────────────────
+  function jumpToError(error) {
+    // Signal to CodeEditor — we don't have a direct ref, but tab focus is enough
+    // The Monaco markers already show inline. This opens the Problems view.
+    setActiveDescTab('desc'); // keep desc tab, errors are in the IDE gutter
+  }
+
   if (isLoading) return (
     <div className={styles.loading}><span className="spinner" /><span>Loading problem…</span></div>
   );
   if (!problem) return null;
 
-  const diff = getDiffMeta(problem.difficulty);
+  const diff      = getDiffMeta(problem.difficulty);
+  const errCount  = syntaxErrors.length;
+  const warnCount = syntaxErrors.filter(e => e.severity === 'warning').length;
+  const realErrs  = errCount - warnCount;
 
   return (
     <div className={styles.psView}>
 
-      {/* ── Topbar ──────────────────────────────────────────────────────────── */}
+      {/* ══ TOPBAR ══════════════════════════════════════════════════════════ */}
       <div className={styles.topbar}>
-
-        {/* Left: navigation */}
         <div className={styles.topLeft}>
-          <button className={styles.backBtn} onClick={onBack}>← Problems</button>
-          {topicTitle && (
-            <button className={styles.studyBtn} onClick={onStudyTopic}>📖 Study</button>
-          )}
+          <button className={styles.backBtn} onClick={handleBack}>← Back</button>
+          {topicTitle && <button className={styles.studyBtn} onClick={onStudyTopic}>📖 Study</button>}
           <div className={styles.breadcrumb}>
             {topicTitle && <span className={styles.breadTopic} onClick={onStudyTopic}>{topicTitle}</span>}
             {topicTitle && <span className={styles.breadSep}>/</span>}
@@ -145,36 +188,34 @@ export default function ProblemSolveView({
           <span className={`badge ${diff.cls}`}>{diff.label}</span>
         </div>
 
-        {/* Right: controls — properly separated */}
         <div className={styles.topRight}>
-          {/* Syntax indicator */}
-          <div className={styles.syntaxRow}>
-            <div className={`${styles.syntaxDot} ${styles[syntaxState]}`} />
-            <span className={styles.syntaxLabel}>
+          {/* Syntax status pill */}
+          <div className={`${styles.syntaxPill} ${styles[syntaxState]}`}>
+            <div className={styles.syntaxDot} />
+            <span>
               {syntaxState === 'checking' ? 'Checking…'
-               : syntaxState === 'error'  ? `${syntaxErrors.length} err`
-               : syntaxState === 'ok'     ? 'OK'
+               : realErrs > 0  ? `${realErrs} error${realErrs !== 1 ? 's' : ''}`
+               : warnCount > 0 ? `${warnCount} warning${warnCount !== 1 ? 's' : ''}`
+               : syntaxState === 'ok' ? 'No errors'
                : ''}
             </span>
           </div>
 
           {/* Font size */}
           {onFontChange && (
-            <div className={styles.fontBtns}>
-              <button className={styles.fontBtn} onClick={() => onFontChange(-1)} title="Smaller font">A−</button>
-              <span className={styles.fontSize}>{fontSize}</span>
-              <button className={styles.fontBtn} onClick={() => onFontChange(1)} title="Larger font">A+</button>
+            <div className={styles.fontGroup}>
+              <button className={styles.fontBtn} onClick={() => onFontChange(-1)}>A−</button>
+              <span className={styles.fontVal}>{fontSize}</span>
+              <button className={styles.fontBtn} onClick={() => onFontChange(1)}>A+</button>
             </div>
           )}
 
-          {/* Theme toggle */}
           {onThemeToggle && (
-            <button className={styles.themeBtn} onClick={onThemeToggle} title="Toggle theme">
+            <button className={styles.iconBtn} onClick={onThemeToggle} title="Toggle theme">
               {currentTheme === 'dark' ? '☀️' : '🌙'}
             </button>
           )}
 
-          {/* Java version */}
           <select value={javaVersion} onChange={(e) => setJavaVersion(e.target.value)} className={styles.versionSelect}>
             <option value="8">Java 8</option>
             <option value="11">Java 11</option>
@@ -182,20 +223,21 @@ export default function ProblemSolveView({
             <option value="21">Java 21</option>
           </select>
 
-          {/* Run & Submit */}
-          <button className={`btn btn-ghost btn-sm`} onClick={handleRun} disabled={isRunning}>
+          <button className={`btn btn-ghost btn-sm`} onClick={handleRun} disabled={isRunning}
+            title="Run (Ctrl+Enter)">
             {isRunning ? <><span className="spinner" />Running…</> : '▶ Run'}
           </button>
-          <button className={`btn btn-primary btn-sm`} onClick={handleSubmit} disabled={isSubmitting}>
+          <button className={`btn btn-primary btn-sm`} onClick={handleSubmit} disabled={isSubmitting}
+            title="Submit (Ctrl+Shift+Enter)">
             {isSubmitting ? <><span className="spinner" />…</> : '⬆ Submit'}
           </button>
         </div>
       </div>
 
-      {/* ── Split layout ────────────────────────────────────────────────────── */}
+      {/* ══ SPLIT LAYOUT ════════════════════════════════════════════════════ */}
       <div className={styles.split} ref={splitRef}>
 
-        {/* LEFT: Problem description */}
+        {/* ── LEFT: Problem panel ─────────────────────────────────────────── */}
         <div className={styles.leftPanel} style={{ width: `${splitPos}%` }}>
           <div className="tab-bar">
             {[
@@ -208,16 +250,22 @@ export default function ProblemSolveView({
                 onClick={() => setActiveDescTab(t)}>{l}</button>
             ))}
           </div>
-
           <div className={styles.descBody}>
             {activeDescTab === 'desc'      && <DescriptionTab problem={problem} diff={diff} />}
             {activeDescTab === 'approach'  && <ApproachTab problemId={problemId} value={approach} onChange={setApproach} />}
             {activeDescTab === 'hints'     && <HintsTab problem={problem} hintsShown={hintsShown} onShowHint={(n) => setHintsShown(Math.max(hintsShown, n))} />}
             {activeDescTab === 'editorial' && (
-              <div className={styles.editorialLocked}>
-                <span>🔒</span>
-                <p>Solve the problem first to unlock the editorial.</p>
-              </div>
+              submitResult?.allPassed ? (
+                <EditorialTab problem={problem} editorial={editorial} />
+              ) : (
+                <div className={styles.editorialLocked}>
+                  <span>🔒</span>
+                  <p>Solve the problem to unlock the editorial.</p>
+                  <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
+                    Submit a correct solution to see the approach and solution code.
+                  </p>
+                </div>
+              )
             )}
           </div>
         </div>
@@ -225,15 +273,23 @@ export default function ProblemSolveView({
         {/* Resize handle */}
         <div className={styles.resizeHandle} onMouseDown={startResize} />
 
-        {/* RIGHT: Editor */}
+        {/* ── RIGHT: IDE panel ────────────────────────────────────────────── */}
         <div className={styles.rightPanel}>
-          <div className={styles.editorTopbar}>
-            <span className={styles.fileLabel}>📄 Solution.java</span>
-            {submitResult?.allPassed && (
-              <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700 }}>✅ Accepted</span>
-            )}
+          {/* File tab bar */}
+          <div className={styles.fileTabBar}>
+            <div className={styles.fileTab}>
+              <span className={styles.fileTabIcon}>☕</span>
+              <span>Solution.java</span>
+              {savedAt && <span className={styles.savedDot} title="Saved" />}
+            </div>
+            <div className={styles.fileTabActions}>
+              <span className={styles.shortcutHint} title="Run: Ctrl+Enter  Submit: Ctrl+Shift+Enter">
+                ⌨ Ctrl+↵ Run · Ctrl+⇧+↵ Submit
+              </span>
+            </div>
           </div>
 
+          {/* Monaco editor */}
           <div className={styles.editorWrap}>
             <CodeEditor
               value={code}
@@ -242,43 +298,90 @@ export default function ProblemSolveView({
               fontSize={fontSize}
               javaVersion={javaVersion}
               onSyntaxChange={(state, errors) => { setSyntaxState(state); setSyntaxErrors(errors); }}
+              onCursorChange={(line, col) => setCursorPos({ line, col })}
             />
           </div>
 
-          {/* Inline error panel */}
+          {/* ── Error list (clickable) ────────────────────────────────────── */}
           {syntaxErrors.length > 0 && (
-            <div className={styles.errorPanel}>
-              <div className={styles.errorPanelHeader}>
-                <span style={{ color: 'var(--red)', fontWeight: 700 }}>
-                  {syntaxErrors.length} error{syntaxErrors.length !== 1 ? 's' : ''}
+            <div className={styles.errorList}>
+              <div className={styles.errorListHeader}>
+                <span>⚠ Problems</span>
+                <span style={{ color: 'var(--text3)', fontWeight: 400 }}>
+                  {realErrs > 0 && <span style={{ color: 'var(--red)', marginRight: 8 }}>● {realErrs} error{realErrs !== 1 ? 's' : ''}</span>}
+                  {warnCount > 0 && <span style={{ color: 'var(--yellow)' }}>● {warnCount} warning{warnCount !== 1 ? 's' : ''}</span>}
                 </span>
-                <button onClick={() => setSyntaxErrors([])}>✕</button>
+                <button className={styles.errorClose} onClick={() => setSyntaxErrors([])}>✕</button>
               </div>
-              {syntaxErrors.slice(0, 3).map((e, i) => (
-                <div key={i} className={styles.errorRow}>
-                  <span className={styles.errorLine}>L{e.line}</span>
+              {syntaxErrors.slice(0, 5).map((e, i) => (
+                <div key={i} className={`${styles.errorRow} ${e.severity === 'warning' ? styles.warnRow : ''}`}
+                  onClick={() => jumpToError(e)} title="Click to focus line in editor">
+                  <span className={styles.errorSev}>{e.severity === 'warning' ? '⚠' : '✕'}</span>
+                  <span className={styles.errorLoc}>Ln {e.line}{e.column ? `, Col ${e.column}` : ''}</span>
                   <span className={styles.errorMsg}>{e.message}</span>
                 </div>
               ))}
+              {syntaxErrors.length > 5 && (
+                <div className={styles.errorMore}>+{syntaxErrors.length - 5} more errors</div>
+              )}
             </div>
           )}
 
-          {/* Bottom panel: testcase / result */}
+          {/* ── IDE Status bar ───────────────────────────────────────────── */}
+          <div className={styles.statusBar}>
+            <div className={styles.statusLeft}>
+              <span className={`${styles.statusItem} ${styles.statusSyntax} ${styles[syntaxState]}`}>
+                {syntaxState === 'checking' ? '⟳' : errCount > 0 ? `✕ ${errCount}` : '✓'}
+              </span>
+              <span className={styles.statusItem}>
+                {errCount === 0 ? '✓ No problems' : `${errCount} problem${errCount !== 1 ? 's' : ''}`}
+              </span>
+            </div>
+            <div className={styles.statusRight}>
+              <span className={styles.statusItem} title="Lines of code">
+                {lineCount} line{lineCount !== 1 ? 's' : ''}
+              </span>
+              <span className={styles.statusDivider}>│</span>
+              <span className={styles.statusItem} title="Cursor position">
+                Ln {cursorPos.line}, Col {cursorPos.col}
+              </span>
+              <span className={styles.statusDivider}>│</span>
+              <span className={styles.statusItem} title="Language">☕ Java {javaVersion}</span>
+              <span className={styles.statusDivider}>│</span>
+              <span className={styles.statusItem} title="Encoding">UTF-8</span>
+              {submitResult?.allPassed && (
+                <>
+                  <span className={styles.statusDivider}>│</span>
+                  <span className={styles.statusItem} style={{ color: 'var(--accent)' }}>✅ Accepted</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* ── Bottom: test / result ────────────────────────────────────── */}
           <div className={styles.bottomPanel}>
             <div className={styles.bottomBar}>
               <button className={`${styles.bottomTab} ${activeResultTab === 'testcase' ? styles.activeTab : ''}`}
-                onClick={() => setActiveResultTab('testcase')}>Testcase</button>
-              <button className={`${styles.bottomTab} ${activeResultTab === 'result'   ? styles.activeTab : ''}`}
-                onClick={() => setActiveResultTab('result')}>Result</button>
+                onClick={() => setActiveResultTab('testcase')}>
+                📋 Testcase
+              </button>
+              <button className={`${styles.bottomTab} ${activeResultTab === 'result' ? styles.activeTab : ''}`}
+                onClick={() => setActiveResultTab('result')}>
+                {(isRunning || isSubmitting) && <span className="spinner" style={{ width: 10, height: 10 }} />}
+                {' '}Output
+              </button>
+              <div style={{ flex: 1 }} />
+              {isRunning   && <span className={styles.runningBadge}>▶ Running…</span>}
+              {isSubmitting && <span className={styles.runningBadge} style={{ background: 'rgba(74,222,128,.1)', color: 'var(--accent)' }}>⬆ Evaluating…</span>}
             </div>
             <div className={styles.bottomBody}>
               {activeResultTab === 'testcase' && (
-                <div className={styles.testcasePanel}>
-                  <div className={styles.tcLabel}>stdin — passed to Run</div>
-                  <textarea className={styles.stdinInput} value={testInput}
-                    onChange={(e) => setTestInput(e.target.value)}
-                    placeholder="Enter test input…" rows={4} />
-                </div>
+                <TestcasePanel
+                  testInput={testInput}
+                  setTestInput={setTestInput}
+                  sampleInput={problem.sampleInput}
+                  sampleOutput={problem.sampleOutput}
+                />
               )}
               {activeResultTab === 'result' && (
                 <ResultPanel runResult={runResult} submitResult={submitResult} />
@@ -291,50 +394,59 @@ export default function ProblemSolveView({
   );
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+// ── Description tab ───────────────────────────────────────────────────────────
 function DescriptionTab({ problem, diff }) {
   return (
-    <div style={{ padding: 16 }}>
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--font-code)' }}>#{problem.displayOrder}</div>
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', margin: '4px 0 8px', lineHeight: 1.3 }}>{problem.title}</h2>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+    <div className={styles.descContent}>
+      <div className={styles.probMeta}>
+        <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--font-code)' }}>#{problem.displayOrder}</span>
+        <h2 className={styles.probTitle}>{problem.title}</h2>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
           <span className={`badge ${diff.cls}`}>{diff.label}</span>
           {problem.pattern && (
-            <span className="badge" style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border2)' }}>
-              {problem.pattern}
+            <span className="badge" style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border2)', fontSize: 10 }}>
+              🏷 {problem.pattern}
             </span>
           )}
         </div>
       </div>
-      <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.7, marginBottom: 16 }}>{problem.description}</p>
-      <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', fontSize: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)' }}>Example</div>
-        <div><strong>Input: </strong><code style={{ background: 'var(--bg4)', padding: '1px 6px', borderRadius: 3, fontFamily: 'var(--font-code)', fontSize: 11 }}>{problem.sampleInput}</code></div>
-        <div><strong>Output: </strong><code style={{ background: 'var(--bg4)', padding: '1px 6px', borderRadius: 3, fontFamily: 'var(--font-code)', fontSize: 11 }}>{problem.sampleOutput}</code></div>
-      </div>
+      <p className={styles.probDesc}>{problem.description}</p>
       {(problem.inputFormat || problem.outputFormat) && (
-        <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
-          {problem.inputFormat  && <p><strong>Input Format:</strong> {problem.inputFormat}</p>}
-          {problem.outputFormat && <p><strong>Output Format:</strong> {problem.outputFormat}</p>}
+        <div className={styles.formatBlock}>
+          {problem.inputFormat  && <p><strong>Input:</strong> {problem.inputFormat}</p>}
+          {problem.outputFormat && <p><strong>Output:</strong> {problem.outputFormat}</p>}
         </div>
       )}
+      <div className={styles.exampleBlock}>
+        <div className={styles.exLabel}>Example</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 3 }}>Input</div>
+            <pre className={styles.exPre}>{problem.sampleInput || 'N/A'}</pre>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 3 }}>Output</div>
+            <pre className={styles.exPre}>{problem.sampleOutput || 'N/A'}</pre>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
+// ── Approach tab ──────────────────────────────────────────────────────────────
 function ApproachTab({ problemId, value, onChange }) {
   return (
     <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>✍️ Write your approach first</div>
+      <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>✍️ Write your approach first</div>
       <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.6 }}>
-        Describe your algorithm before coding. This is the most powerful interview habit.
+        Describe your algorithm before coding — the single most impactful interview habit.
       </div>
-      <textarea value={value} onChange={(e) => onChange(e.target.value)}
-        placeholder="Example: I'll use a HashMap to store each number and check if complement exists…"
-        style={{ width: '100%', minHeight: 150, background: 'var(--bg3)', border: '1px solid var(--border2)',
+      <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={8}
+        placeholder="Example: I'll use a HashMap to store each number as I scan. For each element, check if the complement (target - x) exists in the map…"
+        style={{ width: '100%', background: 'var(--bg3)', border: '1px solid var(--border2)',
           borderRadius: 6, color: 'var(--text)', fontFamily: 'var(--font-ui)', fontSize: 12,
-          lineHeight: 1.6, padding: 10, resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
+          lineHeight: 1.6, padding: '10px 12px', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
       <button className="btn btn-primary btn-sm" style={{ alignSelf: 'flex-start' }}
         onClick={() => { localStorage.setItem(`devlearn_approach_${problemId}`, value); toast.success('Approach saved!'); }}>
         💾 Save
@@ -343,124 +455,242 @@ function ApproachTab({ problemId, value, onChange }) {
   );
 }
 
+// ── Hints tab ─────────────────────────────────────────────────────────────────
 function HintsTab({ problem, hintsShown, onShowHint }) {
   const hints = [
-    { num: 1, title: 'Hint 1 — Direction',  sub: 'Always free',            text: problem.hint1 || problem.hint },
-    { num: 2, title: 'Hint 2 — Approach',   sub: 'Reveals the pattern',    text: problem.hint2 },
-    { num: 3, title: 'Hint 3 — Pseudocode', sub: 'Marks as hint-assisted', text: problem.hint3 },
+    { num: 1, title: 'Hint 1 — Direction',  sub: 'Always free',             text: problem.hint1 || problem.hint },
+    { num: 2, title: 'Hint 2 — Approach',   sub: 'Reveals the pattern',     text: problem.hint2 },
+    { num: 3, title: 'Hint 3 — Pseudocode', sub: '⚑ Marks hint-assisted',   text: problem.hint3 },
   ].filter((h) => h.text);
 
   return (
     <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <p style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.6 }}>
-        Using Hint 3 marks your submission as hint-assisted.
-      </p>
+      {hints.length === 0 && <div style={{ color: 'var(--text3)', fontSize: 12 }}>No hints for this problem.</div>}
       {hints.map((hint) => (
         <div key={hint.num}>
-          <button onClick={() => onShowHint(hint.num)}
-            style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 10px',
-              background: 'var(--bg3)', border: '1px solid var(--border2)', borderRadius: 6,
-              cursor: 'pointer', fontFamily: 'var(--font-ui)', textAlign: 'left',
-              opacity: hintsShown >= hint.num ? .6 : 1 }}>
-            <span>💡</span>
+          <button onClick={() => onShowHint(hint.num)} style={{
+            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+            padding: '8px 12px', background: 'var(--bg3)', border: '1px solid var(--border2)',
+            borderRadius: 6, cursor: 'pointer', fontFamily: 'var(--font-ui)', textAlign: 'left',
+            transition: '.15s', opacity: hintsShown >= hint.num ? .6 : 1,
+          }}>
+            <span style={{ fontSize: 16 }}>💡</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--text)' }}>{hint.title}</div>
               <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 1 }}>{hint.sub}</div>
             </div>
-            <span style={{ color: 'var(--text3)' }}>›</span>
+            <span style={{ color: 'var(--text3)', fontWeight: 700 }}>{hintsShown >= hint.num ? '▼' : '›'}</span>
           </button>
           {hintsShown >= hint.num && (
-            <div style={{ marginTop: 4, padding: '8px 12px', background: 'var(--bg3)',
+            <div style={{ margin: '4px 0 0 4px', padding: '10px 14px', background: 'var(--bg3)',
               borderLeft: '3px solid var(--accent)', borderRadius: '0 6px 6px 0',
-              fontSize: 12, color: 'var(--text2)', lineHeight: 1.6 }}>
+              fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
               {hint.text}
             </div>
           )}
         </div>
       ))}
-      {hints.length === 0 && <div style={{ color: 'var(--text3)', fontSize: 12 }}>No hints available for this problem.</div>}
+      {hintsShown >= 3 && (
+        <div style={{ padding: '6px 10px', background: 'rgba(248,113,113,.08)',
+          border: '1px solid rgba(248,113,113,.2)', borderRadius: 5,
+          fontSize: 11, color: 'var(--red)', marginTop: 4 }}>
+          ⚑ This submission will be marked as hint-assisted
+        </div>
+      )}
     </div>
   );
 }
 
+// ── Editorial tab ─────────────────────────────────────────────────────────────
+function EditorialTab({ problem, editorial }) {
+  return (
+    <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 20 }}>✅</span>
+        <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--accent)' }}>Editorial Unlocked</div>
+      </div>
+      {problem.bruteForce && (
+        <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }}>🐌 Brute Force</div>
+          <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>{problem.bruteForce}</p>
+        </div>
+      )}
+      {problem.optimizedApproach && (
+        <div style={{ background: 'rgba(74,222,128,.04)', border: '1px solid rgba(74,222,128,.15)', borderLeft: '3px solid var(--accent)', borderRadius: 8, padding: '12px 14px' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--accent)', marginBottom: 6 }}>⚡ Optimal Approach</div>
+          <p style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.7 }}>{problem.optimizedApproach}</p>
+        </div>
+      )}
+      {editorial?.solutionCode && (
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>💻 Solution Code</div>
+          <pre className="code-block" style={{ fontSize: 12 }}>{editorial.solutionCode}</pre>
+        </div>
+      )}
+      {(editorial?.hint3 || problem.hint3) && (
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>📝 Key Steps</div>
+          <pre className="code-block" style={{ fontSize: 12 }}>{editorial?.hint3 || problem.hint3}</pre>
+        </div>
+      )}
+      {!editorial?.solutionCode && !problem.bruteForce && !problem.hint3 && (
+        <div style={{ color: 'var(--text3)', fontSize: 12 }}>Editorial content not yet added for this problem.</div>
+      )}
+    </div>
+  );
+}
+
+// ── Testcase panel ────────────────────────────────────────────────────────────
+function TestcasePanel({ testInput, setTestInput, sampleInput, sampleOutput }) {
+  return (
+    <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)' }}>
+          stdin — passed to ▶ Run
+        </div>
+        {sampleInput && (
+          <button onClick={() => setTestInput(sampleInput)} style={{
+            background: 'none', border: '1px solid var(--border2)', borderRadius: 4,
+            color: 'var(--text3)', fontSize: 10, padding: '2px 8px', cursor: 'pointer',
+            fontFamily: 'var(--font-ui)', fontWeight: 600,
+          }}>↺ Reset to sample</button>
+        )}
+      </div>
+      <textarea value={testInput} onChange={(e) => setTestInput(e.target.value)} rows={4}
+        style={{ width: '100%', background: 'var(--bg3)', border: '1px solid var(--border2)',
+          borderRadius: 5, color: 'var(--text)', fontFamily: 'var(--font-code)',
+          fontSize: 12, padding: 8, outline: 'none', resize: 'none', boxSizing: 'border-box' }} />
+      {sampleOutput && (
+        <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+          Expected: <code style={{ background: 'var(--bg4)', padding: '1px 6px', borderRadius: 3, fontFamily: 'var(--font-code)', color: 'var(--accent)' }}>{sampleOutput}</code>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Result panel ──────────────────────────────────────────────────────────────
 function ResultPanel({ runResult, submitResult }) {
   if (!runResult && !submitResult) return (
     <div style={{ padding: 16, textAlign: 'center', color: 'var(--text3)', fontSize: 12 }}>
-      Click Run to test, or Submit to evaluate all test cases.
+      Press ▶ Run (Ctrl+Enter) to test with your input,<br />
+      or ⬆ Submit (Ctrl+⇧+Enter) to evaluate all test cases.
     </div>
   );
 
-  // Show latest result — submit takes priority over run
-  const result = submitResult || runResult;
-  if (result.loading) return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: 16, color: 'var(--text3)', fontSize: 12 }}>
-      <span className="spinner" />{submitResult?.loading ? 'Evaluating all test cases…' : 'Running…'}
-    </div>
-  );
+  const active = submitResult || runResult;
+  if (active.loading) {
+    const msg = submitResult?.loading ? 'Evaluating all test cases…' : 'Running code…';
+    return (
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: 16, color: 'var(--text3)', fontSize: 12 }}>
+        <span className="spinner" />{msg}
+      </div>
+    );
+  }
 
   // Run result
-  if (!submitResult) return (
-    <div style={{ padding: '12px 16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 16 }}>{runResult.status === 'SUCCESS' ? '✅' : '❌'}</span>
-        <span style={{ fontWeight: 700, color: runResult.status === 'SUCCESS' ? 'var(--accent)' : 'var(--red)', fontSize: 13 }}>
-          {runResult.status === 'SUCCESS' ? 'Success' : runResult.status || 'Error'}
-        </span>
-        {runResult.executionTimeMs && <span style={{ fontSize: 11, color: 'var(--text3)' }}>⏱ {runResult.executionTimeMs}ms</span>}
-      </div>
-      {runResult.output && <pre className="code-block" style={{ fontSize: 12 }}>{runResult.output}</pre>}
-      {runResult.error  && <pre className="code-block" style={{ fontSize: 12, color: 'var(--red)' }}>{runResult.error}</pre>}
-    </div>
-  );
-
-  // Submit result
-  const pass   = submitResult.allPassed;
-  const dots   = submitResult.results || [];
-  const failed = dots.filter((r) => !r.passed);
-  return (
-    <div style={{ padding: '12px 16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <span style={{ fontSize: 22 }}>{pass ? '✅' : '❌'}</span>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: 15, color: pass ? 'var(--accent)' : 'var(--red)' }}>
-            {pass ? 'Accepted' : 'Wrong Answer'}
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-            {submitResult.passedTests}/{submitResult.totalTests} test cases passed
-          </div>
+  if (!submitResult) {
+    const ok = runResult.status === 'SUCCESS';
+    return (
+      <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 18 }}>{ok ? '✅' : '❌'}</span>
+          <span style={{ fontWeight: 700, color: ok ? 'var(--accent)' : 'var(--red)', fontSize: 14 }}>
+            {ok ? 'Compiled & Ran Successfully' : runResult.status || 'Runtime Error'}
+          </span>
+          {runResult.executionTimeMs != null && (
+            <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 'auto' }}>
+              ⏱ {runResult.executionTimeMs}ms
+            </span>
+          )}
         </div>
-        {submitResult.percentile > 0 && (
-          <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text3)' }}>
-            Faster than {submitResult.percentile}%
+        {runResult.output && (
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 4 }}>Output</div>
+            <pre className="code-block" style={{ fontSize: 12 }}>{runResult.output}</pre>
+          </div>
+        )}
+        {runResult.error && (
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--red)', marginBottom: 4 }}>Error</div>
+            <pre className="code-block" style={{ fontSize: 12, color: 'var(--red)', borderColor: 'rgba(248,113,113,.2)' }}>{runResult.error}</pre>
           </div>
         )}
       </div>
+    );
+  }
+
+  // Submit result
+  const pass    = submitResult.allPassed;
+  const dots    = submitResult.results || [];
+  const failed  = dots.filter((r) => !r.passed);
+  const passedN = submitResult.passedTests ?? dots.filter(r => r.passed).length;
+  const totalN  = submitResult.totalTests  ?? dots.length;
+  return (
+    <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 24 }}>{pass ? '✅' : '❌'}</span>
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 16, color: pass ? 'var(--accent)' : 'var(--red)' }}>
+            {pass ? 'Accepted' : submitResult.status || 'Wrong Answer'}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+            {passedN}/{totalN} test cases passed
+            {submitResult.executionTimeMs && ` · ⏱ ${submitResult.executionTimeMs}ms`}
+          </div>
+        </div>
+        {submitResult.percentile > 0 && (
+          <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--blue)' }}>Top {100 - submitResult.percentile}%</div>
+            <div style={{ fontSize: 10, color: 'var(--text3)' }}>Faster than {submitResult.percentile}% of submissions</div>
+          </div>
+        )}
+      </div>
+
       {/* Test case dots */}
       {dots.length > 0 && (
-        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginBottom: 10 }}>
-          {dots.map((tc, i) => (
-            <div key={i} title={`Test ${i + 1}: ${tc.passed ? 'PASS' : 'FAIL'}`}
-              style={{ width: 10, height: 10, borderRadius: 2, background: tc.passed ? 'var(--accent)' : 'var(--red)' }} />
-          ))}
+        <div>
+          <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 5 }}>Test Cases</div>
+          <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+            {dots.map((tc, i) => (
+              <div key={i} title={`Test ${i + 1}: ${tc.passed ? 'PASS' : 'FAIL'}`}
+                style={{ width: 12, height: 12, borderRadius: 3, cursor: 'default',
+                  background: tc.passed ? 'var(--accent)' : 'var(--red)' }} />
+            ))}
+          </div>
         </div>
       )}
-      {/* Failed cases */}
+
+      {/* Failed case detail */}
       {failed.slice(0, 2).map((tc, i) => (
-        <div key={i} style={{ marginBottom: 8, padding: '8px 10px', background: 'rgba(248,113,113,.06)',
-          border: '1px solid rgba(248,113,113,.15)', borderRadius: 6 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--red)', marginBottom: 4 }}>Test {tc.testNumber} — FAILED</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', gap: '2px 8px', fontSize: 11 }}>
-            <span style={{ color: 'var(--text3)' }}>Input</span>    <code>{String(tc.input    || '')}</code>
-            <span style={{ color: 'var(--text3)' }}>Expected</span> <code style={{ color: 'var(--accent)' }}>{String(tc.expected || '')}</code>
-            <span style={{ color: 'var(--text3)' }}>Got</span>      <code style={{ color: 'var(--red)'    }}>{String(tc.actual   || '')}</code>
+        <div key={i} style={{ padding: '10px 12px', background: 'rgba(248,113,113,.05)',
+          border: '1px solid rgba(248,113,113,.15)', borderRadius: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--red)', marginBottom: 6 }}>
+            Test Case {tc.testNumber || i + 1} — Wrong Answer
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', gap: '3px 10px', fontSize: 11 }}>
+            <span style={{ color: 'var(--text3)' }}>Input</span>
+            <code style={{ fontFamily: 'var(--font-code)', color: 'var(--text)' }}>{String(tc.input || '')}</code>
+            <span style={{ color: 'var(--text3)' }}>Expected</span>
+            <code style={{ fontFamily: 'var(--font-code)', color: 'var(--accent)' }}>{String(tc.expected || '')}</code>
+            <span style={{ color: 'var(--text3)' }}>Got</span>
+            <code style={{ fontFamily: 'var(--font-code)', color: 'var(--red)' }}>{String(tc.actual || '')}</code>
           </div>
         </div>
       ))}
-      {submitResult.hint && (
-        <div style={{ padding: '6px 10px', background: 'rgba(251,191,36,.06)',
-          border: '1px solid rgba(251,191,36,.15)', borderRadius: 6, fontSize: 11, color: 'var(--yellow)' }}>
+
+      {/* Hint on wrong answer */}
+      {!pass && submitResult.hint && (
+        <div style={{ padding: '8px 12px', background: 'rgba(251,191,36,.06)',
+          border: '1px solid rgba(251,191,36,.15)', borderRadius: 6, fontSize: 12, color: 'var(--yellow)' }}>
           💡 {submitResult.hint}
         </div>
+      )}
+
+      {/* Error output */}
+      {submitResult.error && (
+        <pre className="code-block" style={{ fontSize: 12, color: 'var(--red)' }}>{submitResult.error}</pre>
       )}
     </div>
   );

@@ -15,14 +15,20 @@ export default function HomePage() {
   const [fontSize, setFontSize] = useState(() => parseInt(localStorage.getItem('devlearn_fontsize') || '14'));
   const queryClient = useQueryClient();
 
-  // Read URL params on first load (?topic=X&openProblem=Y)
+  // ── BUG 3 FIX: Sync state on every URL change, not just mount ───────────
+  // OLD: useEffect(fn, []) ran once on mount only.
+  //      Browser back/forward changed the URL but React state stayed stale —
+  //      old problem view stayed open, wrong topic was shown.
+  // NEW: depend on searchParams so the effect re-runs whenever the URL changes,
+  //      including back/forward navigation. Also guard parseInt against 'null'.
   useEffect(() => {
     const t = searchParams.get('topic');
     const p = searchParams.get('openProblem');
-    if (t) setSelectedTopicId(parseInt(t));
-    if (p) setOpenProblemId(parseInt(p));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const topicId   = t ? parseInt(t, 10) : null;
+    const problemId = p ? parseInt(p, 10) : null;
+    setSelectedTopicId(!topicId   || isNaN(topicId)   ? null : topicId);
+    setOpenProblemId( !problemId  || isNaN(problemId)  ? null : problemId);
+  }, [searchParams]); // ← run on every URL change, including browser back/forward
 
   // ── KEY FIX: use topic from list cache as initialData ─────────────────────
   // The topics list already contains ALL topic fields (story, analogy, etc.)
@@ -65,8 +71,11 @@ export default function HomePage() {
   }
 
   function openProblem(id) {
+    // Opening from topic view — no special back-navigation needed
     setOpenProblemId(id);
     if (selectedTopicId) setSearchParams({ topic: selectedTopicId, openProblem: id });
+    // Clear 'from' state since we opened from topic view, not /problems
+    window.history.replaceState({ from: 'topic' }, '');
   }
 
   function closeProblem() {

@@ -67,6 +67,11 @@ export const topicsApi = {
 export const problemsApi = {
   getAll: (filters = {}) =>
     http.get('/api/problems', { params: filters }).then((r) => r.data),
+
+  // Bug 7 fix: editorial served only after user has an ACCEPTED submission
+  // Backend returns 403 if not solved yet — frontend handles gracefully
+  getEditorial: (problemId) =>
+    http.get(`/api/problems/${problemId}/editorial`).then((r) => r.data),
 };
 
 // ─── Code Execution ───────────────────────────────────────────────────────────

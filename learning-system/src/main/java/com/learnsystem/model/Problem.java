@@ -53,6 +53,7 @@ private String hint;
 private String starterCode;
 
 @Column(name = "solution_code", columnDefinition = "TEXT")
+@JsonIgnore  // BUG 7 FIX: never expose solution in API responses — users could read it via DevTools
 private String solutionCode;
 
 @Column(name = "display_order")

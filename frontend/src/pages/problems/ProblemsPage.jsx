@@ -62,7 +62,17 @@ export default function ProblemsPage() {
   }), [filtered, solvedSet]);
 
   function openProblem(p) {
-    navigate(`/?topic=${p.topicId}&openProblem=${p.id}`);
+    // BUG 2 FIX: Guard against null topicId (downstream of Bug 1 LazyInit).
+    // OLD: navigate(`/?topic=${p.topicId}&openProblem=${p.id}`)
+    //      When topicId is null → URL becomes /?topic=null&openProblem=5
+    //      → parseInt('null') = NaN → topic query disabled → breadcrumb missing.
+    // NEW: Only include topic param when topicId is a valid number.
+    //      Also pass { state: { from: '/problems' } } so ProblemSolveView
+    //      can send the back button to /problems instead of the topic view.
+    const url = p.topicId
+      ? `/?topic=${p.topicId}&openProblem=${p.id}`
+      : `/?openProblem=${p.id}`;
+    navigate(url, { state: { from: '/problems' } });
   }
 
   return (

@@ -36,11 +36,18 @@ public ResponseEntity<List<Map<String, Object>>> getAllProblems(
 		@RequestParam(required = false) String pattern,
 		@RequestParam(required = false) String search) {
 
-	// Load all topics once and build id→topic map (avoids N+1 lazy loads)
+	// ── BUG 1 FIX: Use JOIN FETCH to eagerly load topic in one query ──────
+	// OLD: problemRepo.findAll() — Problem.topic is LAZY, calling p.getTopic()
+	//      outside a transaction caused LazyInitializationException.
+	//      Even wrapped in try/catch, it silently returned null for all topicIds,
+	//      so every problem showed topicId=null in the response.
+	// NEW: findAllWithTopicFetched() uses JPQL JOIN FETCH — topic is loaded
+	//      in the same SQL query, no separate lazy load needed.
+	List<Problem> problems = problemRepo.findAllWithTopicFetched();
+
+	// Load all topics once and build id→topic map for filtering by category
 	Map<Long, Topic> topicMap = topicRepo.findAll()
 			.stream().collect(Collectors.toMap(Topic::getId, t -> t));
-
-	List<Problem> problems = problemRepo.findAll();
 
 	// Apply filters
 	if (difficulty != null && !difficulty.isBlank()) {
@@ -57,8 +64,12 @@ public ResponseEntity<List<Map<String, Object>>> getAllProblems(
 			Topic.Category cat = Topic.Category.valueOf(category.toUpperCase().replace("-", "_"));
 			problems = problems.stream()
 					.filter(p -> {
-						Topic t = topicMap.get(p.getTopic() != null
-								? getTopicId(p) : null);
+						// ── BUG 6 FIX: Remove redundant null check ─────────────────────
+						// OLD: topicMap.get(p.getTopic() != null ? getTopicId(p) : null)
+						//      The outer null check was redundant — getTopicId() already
+						//      returns null safely if topic is null.
+						// NEW: getTopicId(p) handles null internally — one clean call.
+						Topic t = topicMap.get(getTopicId(p));
 						return t != null && cat.equals(t.getCategory());
 					})
 					.collect(Collectors.toList());
@@ -92,12 +103,12 @@ public ResponseEntity<List<Map<String, Object>>> getAllProblems(
 				m.put("difficulty",  p.getDifficulty());
 				m.put("pattern",     p.getPattern());
 				m.put("displayOrder",p.getDisplayOrder());
-				// Embed topic info
-				Long tid = getTopicId(p);
+				// Embed topic info — now reliably populated because JOIN FETCH loaded topic
+				Long tid   = getTopicId(p);
 				Topic topic = tid != null ? topicMap.get(tid) : null;
 				m.put("topicId",       tid);
-				m.put("topicTitle",    topic != null ? topic.getTitle()       : null);
-				m.put("topicCategory", topic != null ? topic.getCategory()    : null);
+				m.put("topicTitle",    topic != null ? topic.getTitle()    : null);
+				m.put("topicCategory", topic != null ? topic.getCategory() : null);
 				return m;
 			})
 			.collect(Collectors.toList());
@@ -105,7 +116,7 @@ public ResponseEntity<List<Map<String, Object>>> getAllProblems(
 	return ResponseEntity.ok(result);
 }
 
-// Helper: get topic id without triggering lazy load
+// Helper: safely get topic id — topic is guaranteed loaded by JOIN FETCH
 private Long getTopicId(Problem p) {
 	try {
 		return p.getTopic() != null ? p.getTopic().getId() : null;
