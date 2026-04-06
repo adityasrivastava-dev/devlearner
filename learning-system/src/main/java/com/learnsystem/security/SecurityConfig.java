@@ -124,6 +124,7 @@ public SecurityFilterChain oauth2FilterChain(HttpSecurity http) throws Exception
 							"/login/oauth2/**",
 							"/error",
 							"/favicon.ico"
+							,"/java-completions/**"
 					).permitAll()
 					// Everything else: let the React app handle it (404 from Spring = React route)
 					.anyRequest().permitAll()
