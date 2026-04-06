@@ -33,11 +33,15 @@ export default function LoginPage() {
 
     if (!oauthToken) return;
 
-    // Save token first so the axios interceptor can attach it
+    // Temporarily attach token to header for the check() call only.
+    // Do NOT persist to localStorage until check() confirms it is valid —
+    // otherwise an invalid token survives a page refresh and causes auto-logout.
+    const prevToken = localStorage.getItem('devlearn_token');
     localStorage.setItem('devlearn_token', oauthToken);
 
     authApi.check()
       .then((data) => {
+        // Token verified — saveAuth will persist it properly
         saveAuth(oauthToken, {
           id:     data.id,
           name:   data.name,
@@ -52,7 +56,9 @@ export default function LoginPage() {
         navigate('/', { replace: true });
       })
       .catch(() => {
-        localStorage.removeItem('devlearn_token');
+        // Restore previous token (or clear if none) — the oauth token was invalid
+        if (prevToken) localStorage.setItem('devlearn_token', prevToken);
+        else localStorage.removeItem('devlearn_token');
         toast.error('Google login failed — please try again.');
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps

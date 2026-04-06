@@ -51,7 +51,7 @@ export default function ProblemSolveView({
 
   // Editorial — fetched lazily; re-fetched after accepted submit
   const { data: editorial, refetch: refetchEditorial } = useQuery({
-    queryKey: ['editorial', problemId],
+    queryKey: QUERY_KEYS.editorial(problemId),
     queryFn:  () => problemsApi.getEditorial(problemId),
     enabled:  false,
     retry:    false,
@@ -101,10 +101,13 @@ export default function ProblemSolveView({
   }, []);
 
   // ── Derived: is this problem already solved? ──────────────────────────────
-  // BUG FIX: Previously only checked submitResult?.allPassed, so refreshing the
-  // page after solving would re-lock the editorial. Now also checks localStorage.
+  // BUG FIX: problemId prop may arrive as string (URL param) or number (API).
+  // localStorage stores numbers via JSON.stringify. Normalise both sides to
+  // Number so .includes() never silently misses and locks the editorial.
+  const _pid = Number(problemId);
   const isSolved = submitResult?.allPassed ||
-    JSON.parse(localStorage.getItem('devlearn_solved') || '[]').includes(problemId);
+    JSON.parse(localStorage.getItem('devlearn_solved') || '[]')
+      .map(Number).includes(_pid);
 
   // ── Run ───────────────────────────────────────────────────────────────────
   async function handleRun() {
@@ -142,9 +145,9 @@ export default function ProblemSolveView({
       }
       if (res.allPassed) {
         toast.success('✅ Accepted! Editorial unlocked.');
-        const solved = JSON.parse(localStorage.getItem('devlearn_solved') || '[]');
-        if (!solved.includes(problemId))
-          localStorage.setItem('devlearn_solved', JSON.stringify([...solved, problemId]));
+        const solved = JSON.parse(localStorage.getItem('devlearn_solved') || '[]').map(Number);
+        if (!solved.includes(_pid))
+          localStorage.setItem('devlearn_solved', JSON.stringify([...solved, _pid]));
         qc.invalidateQueries({ queryKey: QUERY_KEYS.solvedIds });
         refetchEditorial();
       }
@@ -208,10 +211,14 @@ export default function ProblemSolveView({
     }
   }
 
-  // ── Submissions tab open → fetch history ─────────────────────────────────
+  // ── Submissions tab open → fetch history; Editorial tab → fetch if solved ──
   function handleDescTabChange(tab) {
     setActiveDescTab(tab);
     if (tab === 'submissions') refetchHistory();
+    // BUG FIX: editorial query has enabled:false so it never runs automatically.
+    // When user clicks the editorial tab (on a previously-solved problem, or after
+    // solving this session), manually trigger the fetch.
+    if (tab === 'editorial' && isSolved) refetchEditorial();
   }
 
   if (isLoading) return (

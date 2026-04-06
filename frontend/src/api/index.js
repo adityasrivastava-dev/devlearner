@@ -247,6 +247,7 @@ export const QUERY_KEYS = {
   examples:          (tid)  => ['examples', tid],
   problems:          (tid)  => ['problems', tid],
   problem:           (pid)  => ['problem', pid],
+  editorial:         (pid)  => ['editorial', pid],
   allProblems:       (f)    => ['allProblems', f],
   problemFilters:           ['problemFilters'],
   submissionHistory: (pid)  => ['submissionHistory', pid],
