@@ -45,6 +45,8 @@ public static class ExampleSeedDto {
     // Phase 1 fields
     private String pseudocode;
     private String flowchartMermaid;
+    // Phase 2 tracer
+    private String tracerSteps;
 }
 
 @Data
@@ -66,5 +68,9 @@ public static class ProblemSeedDto {
     private String hint2;
     private String hint3;
     private String pattern;
+    // Per-problem editorial — overrides topic-level fields in editorial tab
+    private String constraints;
+    private String bruteForce;
+    private String optimizedApproach;
 }
 }

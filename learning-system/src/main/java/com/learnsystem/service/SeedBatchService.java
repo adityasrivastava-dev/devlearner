@@ -71,6 +71,7 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
                     ex.setRealWorldUse(edto.getRealWorldUse());
                     ex.setPseudocode(edto.getPseudocode());
                     ex.setFlowchartMermaid(edto.getFlowchartMermaid());
+                    ex.setTracerSteps(edto.getTracerSteps());
                     exampleRepo.save(ex);
                     seededExamples++;
                 }
@@ -99,6 +100,9 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
                     p.setHint2(pdto.getHint2());
                     p.setHint3(pdto.getHint3());
                     p.setPattern(pdto.getPattern());
+                    p.setConstraints(pdto.getConstraints());
+                    p.setBruteForce(pdto.getBruteForce());
+                    p.setOptimizedApproach(pdto.getOptimizedApproach());
                     try {
                         p.setDifficulty(Problem.Difficulty.valueOf(pdto.getDifficulty().toUpperCase()));
                     } catch (Exception e) {

@@ -8,6 +8,7 @@ import com.learnsystem.repository.SubmissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
@@ -32,9 +33,14 @@ private final ProblemRepository    problemRepo;
 private final SubmissionRepository submissionRepo;
 
 @GetMapping("/{id}/editorial")
+@Transactional(readOnly = true)
 public ResponseEntity<?> getEditorial(
 		@PathVariable Long id,
 		@AuthenticationPrincipal User user) {
+
+	if (user == null) {
+		return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+	}
 
 	Problem problem = problemRepo.findById(id).orElse(null);
 	if (problem == null) {
@@ -55,14 +61,27 @@ public ResponseEntity<?> getEditorial(
 		));
 	}
 
-	// User has solved it — return editorial content
+	// Resolve brute force and optimized approach:
+	// 1. Use per-problem fields if set (most specific)
+	// 2. Fall back to topic-level fields (general approach for the topic)
+	String bruteForce = problem.getBruteForce();
+	String optimizedApproach = problem.getOptimizedApproach();
+	try {
+		if ((bruteForce == null || optimizedApproach == null) && problem.getTopic() != null) {
+			if (bruteForce        == null) bruteForce        = problem.getTopic().getBruteForce();
+			if (optimizedApproach == null) optimizedApproach = problem.getTopic().getOptimizedApproach();
+		}
+	} catch (Exception ignored) {
+		// Lazy load failed — topic fields stay null, not critical
+	}
+
 	Map<String, Object> editorial = new LinkedHashMap<>();
 	editorial.put("problemId",        problem.getId());
 	editorial.put("title",            problem.getTitle());
 	editorial.put("solutionCode",     problem.getSolutionCode());
-	editorial.put("bruteForce",       null); // problems don't carry these — topic does
-	editorial.put("optimizedApproach",null);
-	editorial.put("hint3",            problem.getHint3()); // pseudocode recap
+	editorial.put("bruteForce",       bruteForce);
+	editorial.put("optimizedApproach",optimizedApproach);
+	editorial.put("hint3",            problem.getHint3());
 
 	return ResponseEntity.ok(editorial);
 }

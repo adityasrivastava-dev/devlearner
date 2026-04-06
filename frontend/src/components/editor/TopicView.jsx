@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { topicsApi, QUERY_KEYS } from '../../api';
+import { topicsApi, submissionsApi, QUERY_KEYS } from '../../api';
 import { getCategoryMeta, getDiffMeta } from '../../utils/helpers';
+import TracerPlayer from './TracerPlayer';
+import FlowchartViewer from './FlowchartViewer';
 import styles from './TopicView.module.css';
 
 export default function TopicView({ topic, onProblemOpen }) {
@@ -22,6 +24,19 @@ export default function TopicView({ topic, onProblemOpen }) {
     enabled: tab === 'practice',
     staleTime: 5 * 60 * 1000,
   });
+
+  // BUG FIX: previously read localStorage inside map() — N reads per render cycle
+  // and stale after solving without navigating away. Now use React Query solvedIds
+  // (reactive — updates immediately after a submission) merged with localStorage
+  // (offline fallback when not logged in or cache is cold).
+  const { data: solvedIdsFromServer = [] } = useQuery({
+    queryKey: QUERY_KEYS.solvedIds,
+    queryFn: submissionsApi.getSolvedIds,
+    staleTime: 60 * 1000,
+    enabled: tab === 'practice',
+  });
+  const localSolved = JSON.parse(localStorage.getItem('devlearn_solved') || '[]');
+  const solvedSet = new Set([...solvedIdsFromServer, ...localSolved]);
 
   const catMeta = getCategoryMeta(topic.category);
   const filteredProblems = diffFilter === 'ALL' ? problems
@@ -135,6 +150,20 @@ export default function TopicView({ topic, onProblemOpen }) {
                         </div>
                       )}
                       <pre className="code-block">{ex.code}</pre>
+
+                      {/* Tracer player — shown when pre-recorded steps exist */}
+                      {ex.tracerSteps && (
+                        <TracerPlayer code={ex.code} tracerSteps={ex.tracerSteps} />
+                      )}
+
+                      {/* Mermaid flowchart — shown when diagram definition exists */}
+                      {ex.flowchartMermaid && (
+                        <FlowchartViewer
+                          definition={ex.flowchartMermaid}
+                          title="Flow Diagram"
+                        />
+                      )}
+
                       <div className={styles.exMeta}>
                         <div><strong>💡 Key Insight:</strong> {ex.explanation}</div>
                         {ex.realWorldUse && (
@@ -178,8 +207,7 @@ export default function TopicView({ topic, onProblemOpen }) {
               <div className={styles.problemsList}>
                 {filteredProblems.map((p, i) => {
                   const diff = getDiffMeta(p.difficulty);
-                  const solved = JSON.parse(localStorage.getItem('devlearn_solved') || '[]');
-                  const isSolved = solved.includes(p.id);
+                  const isSolved = solvedSet.has(p.id);
                   return (
                     <div
                       key={p.id}

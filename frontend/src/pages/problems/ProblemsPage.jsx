@@ -1,82 +1,97 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { problemsApi, submissionsApi, QUERY_KEYS } from '../../api';
-import { getDiffMeta, getCategoryMeta, CATEGORIES } from '../../utils/helpers';
+import { getDiffMeta, getCategoryMeta } from '../../utils/helpers';
 import styles from './ProblemsPage.module.css';
+
+const PAGE_SIZE = 20;
 
 export default function ProblemsPage() {
   const navigate = useNavigate();
-  const [diffFilter,  setDiffFilter]  = useState('');
-  const [catFilter,   setCatFilter]   = useState('');
-  const [patFilter,   setPatFilter]   = useState('');
-  const [search,      setSearch]      = useState('');
-  const [sort,        setSort]        = useState('default');
 
-  const { data: problems = [], isLoading } = useQuery({
-    queryKey: QUERY_KEYS.allProblems({ diffFilter, catFilter }),
-    queryFn:  () => problemsApi.getAll({
-      difficulty: diffFilter || undefined,
-      category:   catFilter  || undefined,
-    }),
-    staleTime: 5 * 60 * 1000,
+  const [filters, setFilters] = useState({
+    category:   '',
+    difficulty: '',
+    pattern:    '',
+    search:     '',
+    page:       0,
+  });
+  const [searchInput, setSearchInput] = useState('');
+
+  // ── Filter metadata ─────────────────────────────────────────────────────────
+  const { data: meta = { categories: [], patterns: [] } } = useQuery({
+    queryKey: QUERY_KEYS.problemFilters,
+    queryFn:  problemsApi.getFilters,
+    staleTime: 60 * 60 * 1000,
   });
 
+  // ── Paginated problem list ───────────────────────────────────────────────────
+  const { data, isLoading, isError, isFetching } = useQuery({
+    queryKey: QUERY_KEYS.allProblems(filters),
+    queryFn:  () => problemsApi.getAll({
+      category:   filters.category   || undefined,
+      difficulty: filters.difficulty || undefined,
+      pattern:    filters.pattern    || undefined,
+      search:     filters.search     || undefined,
+      page:       filters.page,
+      size:       PAGE_SIZE,
+    }),
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev, // keeps last page visible while fetching next
+  });
+
+  // ── Solved IDs ───────────────────────────────────────────────────────────────
   const { data: solvedIds = [] } = useQuery({
     queryKey: QUERY_KEYS.solvedIds,
     queryFn:  submissionsApi.getSolvedIds,
     staleTime: 60 * 1000,
   });
+  const solvedSet = useMemo(() => new Set([
+    ...solvedIds,
+    ...JSON.parse(localStorage.getItem('devlearn_solved') || '[]'),
+  ]), [solvedIds]);
 
-  const solvedSet = useMemo(() => new Set(solvedIds), [solvedIds]);
+  // ── Derived ─────────────────────────────────────────────────────────────────
+  const problems      = data?.content      ?? [];
+  const totalElements = data?.totalElements ?? 0;
+  const totalPages    = data?.totalPages    ?? 0;
+  const currentPage   = data?.page         ?? 0;
 
-  const filtered = useMemo(() => {
-    let list = [...problems];
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter((p) => p.title?.toLowerCase().includes(q));
-    }
-    if (patFilter) {
-      list = list.filter((p) => p.pattern === patFilter);
-    }
-    if (sort === 'difficulty') {
-      const order = { EASY: 0, MEDIUM: 1, HARD: 2 };
-      list.sort((a, b) => (order[a.difficulty] ?? 1) - (order[b.difficulty] ?? 1));
-    } else if (sort === 'title') {
-      list.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-    }
-    return list;
-  }, [problems, search, patFilter, sort]);
+  const hasActiveFilter = !!(filters.category || filters.difficulty
+    || filters.pattern || filters.search);
 
-  const patterns = useMemo(() => {
-    const s = new Set(problems.map((p) => p.pattern).filter(Boolean));
-    return Array.from(s).sort();
-  }, [problems]);
+  // For the progress bar — only when we know the full count
+  const solvedCount = useMemo(
+    () => problems.filter((p) => solvedSet.has(p.id)).length,
+    [problems, solvedSet]
+  );
 
-  const stats = useMemo(() => ({
-    total:  filtered.length,
-    easy:   filtered.filter((p) => p.difficulty === 'EASY').length,
-    medium: filtered.filter((p) => p.difficulty === 'MEDIUM').length,
-    hard:   filtered.filter((p) => p.difficulty === 'HARD').length,
-    solved: filtered.filter((p) => solvedSet.has(p.id)).length,
-  }), [filtered, solvedSet]);
+  // ── Handlers ────────────────────────────────────────────────────────────────
+  const setFilter = useCallback((key, value) =>
+    setFilters((f) => ({ ...f, [key]: value, page: 0 })), []);
+
+  const handleSearch = useCallback((e) => {
+    e.preventDefault();
+    setFilters((f) => ({ ...f, search: searchInput.trim(), page: 0 }));
+  }, [searchInput]);
+
+  const clearAll = useCallback(() => {
+    setFilters({ category: '', difficulty: '', pattern: '', search: '', page: 0 });
+    setSearchInput('');
+  }, []);
 
   function openProblem(p) {
-    // BUG 2 FIX: Guard against null topicId (downstream of Bug 1 LazyInit).
-    // OLD: navigate(`/?topic=${p.topicId}&openProblem=${p.id}`)
-    //      When topicId is null → URL becomes /?topic=null&openProblem=5
-    //      → parseInt('null') = NaN → topic query disabled → breadcrumb missing.
-    // NEW: Only include topic param when topicId is a valid number.
-    //      Also pass { state: { from: '/problems' } } so ProblemSolveView
-    //      can send the back button to /problems instead of the topic view.
     const url = p.topicId
       ? `/?topic=${p.topicId}&openProblem=${p.id}`
       : `/?openProblem=${p.id}`;
     navigate(url, { state: { from: '/problems' } });
   }
 
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
+
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
@@ -84,26 +99,25 @@ export default function ProblemsPage() {
           <div>
             <h1 className={styles.heading}>Problem Set</h1>
             <div className={styles.statsRow}>
-              <span className={styles.statPill}>{stats.total} total</span>
-              <span className={`${styles.statPill} ${styles.easy}`}>{stats.easy} Easy</span>
-              <span className={`${styles.statPill} ${styles.medium}`}>{stats.medium} Medium</span>
-              <span className={`${styles.statPill} ${styles.hard}`}>{stats.hard} Hard</span>
-              {stats.solved > 0 && <span className={`${styles.statPill} ${styles.solved}`}>✓ {stats.solved} Solved</span>}
+              <span className={styles.statPill}>{totalElements.toLocaleString()} total</span>
+              <span className={`${styles.statPill} ${styles.easy}`}>Easy</span>
+              <span className={`${styles.statPill} ${styles.medium}`}>Medium</span>
+              <span className={`${styles.statPill} ${styles.hard}`}>Hard</span>
             </div>
           </div>
         </div>
 
-        {/* Progress bar */}
-        {stats.total > 0 && (
+        {/* Progress bar (page scope) */}
+        {problems.length > 0 && (
           <div className={styles.progressWrap}>
             <div className={styles.progressBar}>
               <div
                 className={styles.progressFill}
-                style={{ width: `${(stats.solved / stats.total) * 100}%` }}
+                style={{ width: `${(solvedCount / problems.length) * 100}%` }}
               />
             </div>
             <div className={styles.progressLabel}>
-              {Math.round((stats.solved / stats.total) * 100)}% complete
+              {solvedCount} / {problems.length} solved this page
             </div>
           </div>
         )}
@@ -111,100 +125,103 @@ export default function ProblemsPage() {
 
       {/* Filters */}
       <div className={styles.filters}>
-        {/* Search */}
-        <input
-          className={`input ${styles.searchInput}`}
-          placeholder="🔍 Search problems…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <form onSubmit={handleSearch} className={styles.searchForm}>
+          <input
+            className={`input ${styles.searchInput}`}
+            placeholder="🔍 Search problems…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+          <button type="submit" className="btn btn-primary btn-sm">Search</button>
+        </form>
 
-        {/* Difficulty */}
-        <select className={styles.select} value={diffFilter} onChange={(e) => setDiffFilter(e.target.value)}>
+        <select className={styles.select} value={filters.difficulty}
+          onChange={(e) => setFilter('difficulty', e.target.value)}>
           <option value="">All Difficulty</option>
           <option value="EASY">Easy</option>
           <option value="MEDIUM">Medium</option>
           <option value="HARD">Hard</option>
         </select>
 
-        {/* Category */}
-        <select className={styles.select} value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
+        <select className={styles.select} value={filters.category}
+          onChange={(e) => setFilter('category', e.target.value)}>
           <option value="">All Categories</option>
-          {CATEGORIES.filter((c) => c.key !== 'ALL').map((c) => (
-            <option key={c.key} value={c.key}>{c.label}</option>
+          {meta.categories.map((c) => (
+            <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>
           ))}
         </select>
 
-        {/* Pattern */}
-        {patterns.length > 0 && (
-          <select className={styles.select} value={patFilter} onChange={(e) => setPatFilter(e.target.value)}>
+        {meta.patterns.length > 0 && (
+          <select className={styles.select} value={filters.pattern}
+            onChange={(e) => setFilter('pattern', e.target.value)}>
             <option value="">All Patterns</option>
-            {patterns.map((p) => <option key={p} value={p}>{p}</option>)}
+            {meta.patterns.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
         )}
 
-        {/* Sort */}
-        <select className={styles.select} value={sort} onChange={(e) => setSort(e.target.value)}>
-          <option value="default">Default Sort</option>
-          <option value="difficulty">By Difficulty</option>
-          <option value="title">By Title</option>
-        </select>
-
-        {(diffFilter || catFilter || patFilter || search) && (
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => { setDiffFilter(''); setCatFilter(''); setPatFilter(''); setSearch(''); }}
-          >
-            ✕ Clear
-          </button>
+        {hasActiveFilter && (
+          <button className="btn btn-ghost btn-sm" onClick={clearAll}>✕ Clear</button>
         )}
       </div>
 
+      {/* Active filter chips */}
+      {hasActiveFilter && (
+        <div className={styles.chips}>
+          {filters.search     && <Chip label={`"${filters.search}"`} onRemove={() => { setFilter('search',''); setSearchInput(''); }} />}
+          {filters.category   && <Chip label={filters.category.replace(/_/g,' ')}  onRemove={() => setFilter('category','')}   />}
+          {filters.difficulty && <Chip label={filters.difficulty}                   onRemove={() => setFilter('difficulty','')} />}
+          {filters.pattern    && <Chip label={filters.pattern}                      onRemove={() => setFilter('pattern','')}    />}
+        </div>
+      )}
+
       {/* Table */}
-      <div className={styles.tableWrap}>
+      <div className={`${styles.tableWrap} ${isFetching ? styles.fetching : ''}`}>
         {isLoading ? (
           <div className={styles.loading}><span className="spinner" />Loading problems…</div>
-        ) : filtered.length === 0 ? (
+        ) : isError ? (
+          <div className={styles.empty} style={{ color: 'var(--red,#e74c3c)' }}>
+            <span>⚠</span><p>Failed to load problems. Try again.</p>
+          </div>
+        ) : problems.length === 0 ? (
           <div className={styles.empty}>
             <span>🔍</span>
-            <p>No problems found. Try adjusting filters.</p>
+            <p>No problems match your filters. Try adjusting them.</p>
           </div>
         ) : (
           <table className={styles.table}>
             <thead>
               <tr>
-                <th style={{ width: 40 }}>#</th>
                 <th style={{ width: 28 }}></th>
+                <th style={{ width: 40 }}>#</th>
                 <th>Title</th>
-                <th style={{ width: 100 }}>Category</th>
-                <th style={{ width: 90 }}>Pattern</th>
-                <th style={{ width: 80 }}>Difficulty</th>
+                <th style={{ width: 100 }}>Difficulty</th>
+                <th style={{ width: 130 }}>Pattern</th>
+                <th style={{ width: 130 }}>Topic</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p, i) => {
-                const diff    = getDiffMeta(p.difficulty);
-                const cat     = p.topicCategory ? getCategoryMeta(p.topicCategory) : null;
+              {problems.map((p, i) => {
+                const diff     = getDiffMeta(p.difficulty);
                 const isSolved = solvedSet.has(p.id);
+                const rowNum   = currentPage * PAGE_SIZE + i + 1;
                 return (
-                  <tr key={p.id} onClick={() => openProblem(p)} className={styles.row}>
-                    <td className={styles.numCell}>{i + 1}</td>
+                  <tr
+                    key={p.id}
+                    onClick={() => openProblem(p)}
+                    className={`${styles.row} ${isSolved ? styles.solvedRow : ''}`}
+                  >
                     <td>
                       <div className={`${styles.checkDot} ${isSolved ? styles.checked : ''}`}>
                         {isSolved && '✓'}
                       </div>
                     </td>
+                    <td className={styles.numCell}>{rowNum}</td>
                     <td>
-                      <div className={styles.titleCell}>
-                        <span className={styles.probTitle}>{p.title}</span>
-                        {p.topicTitle && (
-                          <span className={styles.topicLabel}>{p.topicTitle}</span>
-                        )}
-                      </div>
+                      <span className={styles.probTitle}>{p.title}</span>
                     </td>
-                    <td>{cat && <span className={`badge ${cat.cls}`}>{cat.label}</span>}</td>
-                    <td>{p.pattern && <span className={styles.patternChip}>{p.pattern}</span>}</td>
                     <td><span className={`badge ${diff.cls}`}>{diff.label}</span></td>
+                    <td>{p.pattern && <span className={styles.patternChip}>{p.pattern}</span>}</td>
+                    <td><span className={styles.topicLabel}>{p.topicTitle}</span></td>
                   </tr>
                 );
               })}
@@ -212,6 +229,67 @@ export default function ProblemsPage() {
           </table>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
+          <button className="btn btn-ghost btn-sm" disabled={currentPage === 0}
+            onClick={() => setFilters((f) => ({ ...f, page: f.page - 1 }))}>
+            ◀ Prev
+          </button>
+
+          {buildPageRange(currentPage, totalPages).map((p, i) =>
+            p === '…' ? (
+              <span key={`e${i}`} className={styles.ellipsis}>…</span>
+            ) : (
+              <button key={p}
+                className={`btn btn-sm ${p === currentPage ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setFilters((f) => ({ ...f, page: p }))}>
+                {p + 1}
+              </button>
+            )
+          )}
+
+          <button className="btn btn-ghost btn-sm" disabled={currentPage >= totalPages - 1}
+            onClick={() => setFilters((f) => ({ ...f, page: f.page + 1 }))}>
+            Next ▶
+          </button>
+
+          <span className={styles.pageInfo}>
+            Page {currentPage + 1} of {totalPages}
+            {' · '}{totalElements.toLocaleString()} problems
+          </span>
+        </div>
+      )}
     </div>
   );
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function Chip({ label, onRemove }) {
+  return (
+    <span className={styles.chip}>
+      {label}
+      <button className={styles.chipX} onClick={onRemove}>×</button>
+    </span>
+  );
+}
+
+function buildPageRange(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i);
+  const pages = new Set([0, total - 1, current]);
+  for (let d = -2; d <= 2; d++) {
+    const p = current + d;
+    if (p >= 0 && p < total) pages.add(p);
+  }
+  const sorted = [...pages].sort((a, b) => a - b);
+  const result = [];
+  let prev = -1;
+  for (const p of sorted) {
+    if (p - prev > 1) result.push('…');
+    result.push(p);
+    prev = p;
+  }
+  return result;
 }

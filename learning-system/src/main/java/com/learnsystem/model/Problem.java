@@ -61,6 +61,17 @@ private Integer displayOrder;
 
 // ── Phase 1 Fields ────────────────────────────────────────────────────────
 
+@Column(columnDefinition = "TEXT")
+private String constraints;
+
+// ── Editorial per-problem fields ───────────────────────────────────────────
+
+@Column(name = "brute_force", columnDefinition = "TEXT")
+private String bruteForce;
+
+@Column(name = "optimized_approach", columnDefinition = "TEXT")
+private String optimizedApproach;
+
 @Column(name = "hint_1", columnDefinition = "TEXT")
 private String hint1;
 

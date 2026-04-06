@@ -46,4 +46,11 @@ private String pseudocode;
 
 @Column(name = "flowchart_mermaid", columnDefinition = "TEXT")
 private String flowchartMermaid;
+
+// ── Phase 2 Tracer Fields ─────────────────────────────────────────────────
+// JSON array: [{line, lineCode, variables:{k:v}, phase, annotation}]
+// phase values: DECLARE | ASSIGN | LOOP_START | LOOP_ITER |
+//               CONDITION_TRUE | CONDITION_FALSE | CALL | RETURN | THROW
+@Column(name = "tracer_steps", columnDefinition = "TEXT")
+private String tracerSteps;
 }

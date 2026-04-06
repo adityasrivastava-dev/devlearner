@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../api';
 import toast from 'react-hot-toast';
@@ -12,7 +12,47 @@ export default function LoginPage() {
   const { saveAuth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const from = location.state?.from?.pathname || '/';
+
+  // ── Google OAuth2 token handler ───────────────────────────────────────────
+  // After Google login, Spring redirects to /login?token=JWT
+  // We read the token here, verify it via /api/auth/check, and log the user in.
+  useEffect(() => {
+    const oauthToken = searchParams.get('token');
+    const oauthError = searchParams.get('error');
+
+    if (oauthError) {
+      toast.error('Google login failed. Please try again.');
+      return;
+    }
+
+    if (!oauthToken) return;
+
+    // Save token first so the axios interceptor can attach it
+    localStorage.setItem('devlearn_token', oauthToken);
+
+    authApi.check()
+      .then((data) => {
+        saveAuth(oauthToken, {
+          id:     data.id,
+          name:   data.name,
+          email:  data.email,
+          role:   data.role,
+          roles:  data.roles || [],
+          avatar: data.avatarUrl || data.avatar || '',
+          streak: data.streakDays     ?? 0,
+          solved: data.problemsSolved ?? 0,
+        });
+        toast.success(`Welcome, ${data.name}!`);
+        navigate('/', { replace: true });
+      })
+      .catch(() => {
+        localStorage.removeItem('devlearn_token');
+        toast.error('Google login failed — please try again.');
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 

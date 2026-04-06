@@ -1,0 +1,21 @@
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+
+# Maven
+learning-system/target/
+
+# Node / React
+frontend/node_modules/
+frontend/dist/
+frontend/.env*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

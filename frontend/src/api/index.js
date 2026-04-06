@@ -65,11 +65,15 @@ export const topicsApi = {
 
 // ─── Problems ─────────────────────────────────────────────────────────────────
 export const problemsApi = {
+  // Global paginated + filtered listing  (GET /api/problems)
   getAll: (filters = {}) =>
     http.get('/api/problems', { params: filters }).then((r) => r.data),
 
+  // Filter metadata for dropdowns  (GET /api/problems/filters)
+  getFilters: () =>
+    http.get('/api/problems/filters').then((r) => r.data),
+
   // Bug 7 fix: editorial served only after user has an ACCEPTED submission
-  // Backend returns 403 if not solved yet — frontend handles gracefully
   getEditorial: (problemId) =>
     http.get(`/api/problems/${problemId}/editorial`).then((r) => r.data),
 };
@@ -186,6 +190,38 @@ export const adminApi = {
     http.delete(`/api/admin/problems/${id}`).then((r) => r.data),
 };
 
+// ─── Live Debugger ────────────────────────────────────────────────────────────
+export const debugApi = {
+  // POST /api/debug — step-by-step variable trace for Java code
+  debug: (code, stdin = '', javaVersion = '17') =>
+    http.post('/api/debug', { code, stdin, javaVersion }).then((r) => r.data),
+};
+
+// ─── Study Planner ────────────────────────────────────────────────────────────
+export const studyPlansApi = {
+  // GET /api/study-plans?start=YYYY-MM-DD&end=YYYY-MM-DD  (calendar range)
+  getByRange: (start, end) =>
+    http.get('/api/study-plans', { params: { start, end } }).then((r) => r.data),
+
+  getUpcoming: () =>
+    http.get('/api/study-plans/upcoming').then((r) => r.data),
+
+  getAll: () =>
+    http.get('/api/study-plans/all').then((r) => r.data),
+
+  create: (data) =>
+    http.post('/api/study-plans', data).then((r) => r.data),
+
+  update: (id, data) =>
+    http.put(`/api/study-plans/${id}`, data).then((r) => r.data),
+
+  complete: (id) =>
+    http.patch(`/api/study-plans/${id}/complete`).then((r) => r.data),
+
+  delete: (id) =>
+    http.delete(`/api/study-plans/${id}`).then((r) => r.data),
+};
+
 // ─── Roadmaps ─────────────────────────────────────────────────────────────────
 export const roadmapsApi = {
   getAll: () =>
@@ -206,17 +242,20 @@ export const roadmapsApi = {
 
 // ─── React Query Keys ─────────────────────────────────────────────────────────
 export const QUERY_KEYS = {
-  topics:      (cat)  => ['topics', cat],
-  topic:       (id)   => ['topic', id],
-  examples:    (tid)  => ['examples', tid],
-  problems:    (tid)  => ['problems', tid],
-  problem:     (pid)  => ['problem', pid],
-  allProblems: (f)    => ['allProblems', f],
-  heatmap:            ['heatmap'],
-  solvedIds:          ['solvedIds'],
-  streak:             ['streak'],
-  bookmarks:          ['bookmarks'],
-  adminUsers:         ['adminUsers'],
-  adminStats:         ['adminStats'],
-  roadmaps:           ['roadmaps'],
+  topics:            (cat)  => ['topics', cat],
+  topic:             (id)   => ['topic', id],
+  examples:          (tid)  => ['examples', tid],
+  problems:          (tid)  => ['problems', tid],
+  problem:           (pid)  => ['problem', pid],
+  allProblems:       (f)    => ['allProblems', f],
+  problemFilters:           ['problemFilters'],
+  submissionHistory: (pid)  => ['submissionHistory', pid],
+  heatmap:                  ['heatmap'],
+  solvedIds:                ['solvedIds'],
+  streak:                   ['streak'],
+  bookmarks:                ['bookmarks'],
+  adminUsers:               ['adminUsers'],
+  adminStats:               ['adminStats'],
+  roadmaps:                 ['roadmaps'],
+  studyPlans:               ['studyPlans'],
 };

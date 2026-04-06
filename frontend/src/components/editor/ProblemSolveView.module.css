@@ -191,3 +191,44 @@
 }
 .editorialLocked span { font-size:30px; }
 .editorialLocked p { font-size:12px; text-align:center; max-width:240px; }
+
+/* ── Solve timer ─────────────────────────────────────────────────────────────*/
+.timer {
+  font-size:11px; color:var(--text3); font-family:var(--font-code);
+  padding:3px 8px; background:var(--bg3); border:1px solid var(--border2);
+  border-radius:5px; white-space:nowrap; letter-spacing:.5px;
+}
+
+/* ── Solved badge in topbar ──────────────────────────────────────────────────*/
+.solvedBadge {
+  font-size:11px; font-weight:700; color:var(--accent);
+  background:var(--adim); border:1px solid rgba(74,222,128,.25);
+  border-radius:4px; padding:2px 8px; white-space:nowrap;
+}
+
+/* ── Constraints block in description ────────────────────────────────────────*/
+.constraintsBlock {
+  margin-top:14px;
+  background:var(--bg3); border:1px solid var(--border); border-radius:8px;
+  padding:12px 14px; font-size:12px;
+}
+
+/* ── Submissions history tab ─────────────────────────────────────────────────*/
+.submissionsTab {
+  display:flex; flex-direction:column; padding:8px 0;
+}
+.subRow {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 16px; border-bottom:1px solid var(--border);
+  transition:background .1s;
+}
+.subRow:last-child { border-bottom:none; }
+.subRow:hover { background:var(--bg3); }
+.subStatus { font-size:12px; font-weight:700; min-width:130px; }
+.subMeta { display:flex; gap:6px; flex:1; flex-wrap:wrap; }
+.subChip {
+  font-size:10px; color:var(--text3); background:var(--bg3);
+  border:1px solid var(--border2); border-radius:3px; padding:1px 6px;
+  font-family:var(--font-code);
+}
+.subDate { font-size:10px; color:var(--text3); white-space:nowrap; }

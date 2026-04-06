@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { codeApi, topicsApi, problemsApi, QUERY_KEYS } from '../../api';
+import { codeApi, topicsApi, problemsApi, submissionsApi, QUERY_KEYS } from '../../api';
 import { getDiffMeta, PROBLEM_STARTER_CODE } from '../../utils/helpers';
 import CodeEditor, { applyMarkers } from './CodeEditor';
 import toast from 'react-hot-toast';
@@ -31,10 +31,13 @@ export default function ProblemSolveView({
   const [splitPos,        setSplitPos]        = useState(40);
   const [cursorPos,       setCursorPos]       = useState({ line: 1, col: 1 });
   const [lineCount,       setLineCount]       = useState(0);
-  const [savedAt,         setSavedAt]         = useState(null); // timestamp of last save
+  const [savedAt,         setSavedAt]         = useState(null);
+  // ── Solve timer ──────────────────────────────────────────────────────────
+  const [timerSec,        setTimerSec]        = useState(0);
+  const solveStartRef = useRef(Date.now());
+
   const splitRef    = useRef(null);
   const isResizing  = useRef(false);
-  // Hold Monaco editor/monaco instance refs so we can apply markers from run result
   const editorRef   = useRef(null);
   const monacoRef   = useRef(null);
 
@@ -46,12 +49,20 @@ export default function ProblemSolveView({
     staleTime: 10 * 60 * 1000,
   });
 
-  // Editorial — fetched only after solved
+  // Editorial — fetched lazily; re-fetched after accepted submit
   const { data: editorial, refetch: refetchEditorial } = useQuery({
     queryKey: ['editorial', problemId],
     queryFn:  () => problemsApi.getEditorial(problemId),
     enabled:  false,
     retry:    false,
+  });
+
+  // ── Submission history — loaded when user opens Submissions tab ───────────
+  const { data: submissionHistory = [], refetch: refetchHistory } = useQuery({
+    queryKey: ['submissionHistory', problemId],
+    queryFn:  () => submissionsApi.getHistory(problemId),
+    enabled:  false,
+    staleTime: 30 * 1000,
   });
 
   // ── Initialize on problem change ──────────────────────────────────────────
@@ -68,6 +79,9 @@ export default function ProblemSolveView({
     setSubmitResult(null);
     setSyntaxState('ready');
     setSyntaxErrors([]);
+    // Reset solve timer
+    solveStartRef.current = Date.now();
+    setTimerSec(0);
   }, [problem, problemId]);
 
   // ── Auto-save code to sessionStorage ─────────────────────────────────────
@@ -78,16 +92,32 @@ export default function ProblemSolveView({
     setSavedAt(Date.now());
   }, [code, problemId]);
 
+  // ── Solve timer tick ──────────────────────────────────────────────────────
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTimerSec(Math.floor((Date.now() - solveStartRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // ── Derived: is this problem already solved? ──────────────────────────────
+  // BUG FIX: Previously only checked submitResult?.allPassed, so refreshing the
+  // page after solving would re-lock the editorial. Now also checks localStorage.
+  const isSolved = submitResult?.allPassed ||
+    JSON.parse(localStorage.getItem('devlearn_solved') || '[]').includes(problemId);
+
   // ── Run ───────────────────────────────────────────────────────────────────
   async function handleRun() {
     if (!code.trim()) return;
+    // BUG FIX: clear submitResult so the result panel shows the run output,
+    // not the stale submit result from a previous submission.
+    setSubmitResult(null);
     setIsRunning(true);
     setActiveResultTab('result');
     setRunResult({ loading: true });
     try {
       const res = await codeApi.execute(code, testInput, javaVersion);
       setRunResult(res);
-      // Apply any compile errors as Monaco markers so they show inline in editor
       if (res.compileErrors?.length) {
         applyMarkers(editorRef, monacoRef, res.compileErrors);
       }
@@ -102,10 +132,11 @@ export default function ProblemSolveView({
     setIsSubmitting(true);
     setActiveResultTab('result');
     setSubmitResult({ loading: true });
+    // BUG FIX: pass actual elapsed solve time instead of always 0
+    const solveTimeSecs = Math.floor((Date.now() - solveStartRef.current) / 1000);
     try {
-      const res = await codeApi.submit(problemId, code, 0, hintsShown >= 3, javaVersion);
+      const res = await codeApi.submit(problemId, code, solveTimeSecs, hintsShown >= 3, javaVersion);
       setSubmitResult(res);
-      // Apply compile errors from submit as Monaco markers too
       if (res.compileErrors?.length) {
         applyMarkers(editorRef, monacoRef, res.compileErrors);
       }
@@ -136,7 +167,7 @@ export default function ProblemSolveView({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, testInput, javaVersion]);
 
-  // ── Smart back button (Bug 5) ────────────────────────────────────────────
+  // ── Smart back button ─────────────────────────────────────────────────────
   function handleBack() {
     const from = location.state?.from || window.history.state?.from;
     if (from === '/problems') navigate('/problems');
@@ -167,11 +198,20 @@ export default function ProblemSolveView({
     return () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
   }, []);
 
-  // ── Click on error → jump to line ────────────────────────────────────────
+  // ── Click on error → jump to line in Monaco ───────────────────────────────
+  // BUG FIX: previously just set desc tab, never actually jumped to the line.
   function jumpToError(error) {
-    // Signal to CodeEditor — we don't have a direct ref, but tab focus is enough
-    // The Monaco markers already show inline. This opens the Problems view.
-    setActiveDescTab('desc'); // keep desc tab, errors are in the IDE gutter
+    if (editorRef.current && error.line) {
+      editorRef.current.revealLineInCenter(error.line);
+      editorRef.current.setPosition({ lineNumber: error.line, column: error.column || 1 });
+      editorRef.current.focus();
+    }
+  }
+
+  // ── Submissions tab open → fetch history ─────────────────────────────────
+  function handleDescTabChange(tab) {
+    setActiveDescTab(tab);
+    if (tab === 'submissions') refetchHistory();
   }
 
   if (isLoading) return (
@@ -198,9 +238,15 @@ export default function ProblemSolveView({
             <span className={styles.breadTitle}>{problem.title}</span>
           </div>
           <span className={`badge ${diff.cls}`}>{diff.label}</span>
+          {isSolved && <span className={styles.solvedBadge}>✓ Solved</span>}
         </div>
 
         <div className={styles.topRight}>
+          {/* Solve timer */}
+          <span className={styles.timer} title="Time spent on this problem">
+            ⏱ {formatTimer(timerSec)}
+          </span>
+
           {/* Syntax status pill */}
           <div className={`${styles.syntaxPill} ${styles[syntaxState]}`}>
             <div className={styles.syntaxDot} />
@@ -235,11 +281,11 @@ export default function ProblemSolveView({
             <option value="21">Java 21</option>
           </select>
 
-          <button className={`btn btn-ghost btn-sm`} onClick={handleRun} disabled={isRunning}
+          <button className="btn btn-ghost btn-sm" onClick={handleRun} disabled={isRunning}
             title="Run (Ctrl+Enter)">
             {isRunning ? <><span className="spinner" />Running…</> : '▶ Run'}
           </button>
-          <button className={`btn btn-primary btn-sm`} onClick={handleSubmit} disabled={isSubmitting}
+          <button className="btn btn-primary btn-sm" onClick={handleSubmit} disabled={isSubmitting}
             title="Submit (Ctrl+Shift+Enter)">
             {isSubmitting ? <><span className="spinner" />…</> : '⬆ Submit'}
           </button>
@@ -253,21 +299,23 @@ export default function ProblemSolveView({
         <div className={styles.leftPanel} style={{ width: `${splitPos}%` }}>
           <div className="tab-bar">
             {[
-              ['desc',     'Description'],
-              ['approach', 'My Approach'],
-              ['hints',    `Hints${hintsShown > 0 ? ` (${hintsShown})` : ''}`],
-              ['editorial','Editorial'],
+              ['desc',        'Description'],
+              ['approach',    'My Approach'],
+              ['hints',       `Hints${hintsShown > 0 ? ` (${hintsShown})` : ''}`],
+              ['submissions', 'Submissions'],
+              ['editorial',   'Editorial'],
             ].map(([t, l]) => (
               <button key={t} className={`tab-btn ${activeDescTab === t ? 'active' : ''}`}
-                onClick={() => setActiveDescTab(t)}>{l}</button>
+                onClick={() => handleDescTabChange(t)}>{l}</button>
             ))}
           </div>
           <div className={styles.descBody}>
-            {activeDescTab === 'desc'      && <DescriptionTab problem={problem} diff={diff} />}
-            {activeDescTab === 'approach'  && <ApproachTab problemId={problemId} value={approach} onChange={setApproach} />}
-            {activeDescTab === 'hints'     && <HintsTab problem={problem} hintsShown={hintsShown} onShowHint={(n) => setHintsShown(Math.max(hintsShown, n))} />}
-            {activeDescTab === 'editorial' && (
-              submitResult?.allPassed ? (
+            {activeDescTab === 'desc'        && <DescriptionTab problem={problem} diff={diff} />}
+            {activeDescTab === 'approach'    && <ApproachTab problemId={problemId} value={approach} onChange={setApproach} />}
+            {activeDescTab === 'hints'       && <HintsTab problem={problem} hintsShown={hintsShown} onShowHint={(n) => setHintsShown(Math.max(hintsShown, n))} />}
+            {activeDescTab === 'submissions' && <SubmissionsTab history={submissionHistory} />}
+            {activeDescTab === 'editorial'   && (
+              isSolved ? (
                 <EditorialTab problem={problem} editorial={editorial} />
               ) : (
                 <div className={styles.editorialLocked}>
@@ -292,7 +340,7 @@ export default function ProblemSolveView({
             <div className={styles.fileTab}>
               <span className={styles.fileTabIcon}>☕</span>
               <span>Solution.java</span>
-              {savedAt && <span className={styles.savedDot} title="Saved" />}
+              {savedAt && <span className={styles.savedDot} title="Auto-saved" />}
             </div>
             <div className={styles.fileTabActions}>
               <span className={styles.shortcutHint} title="Run: Ctrl+Enter  Submit: Ctrl+Shift+Enter">
@@ -316,7 +364,7 @@ export default function ProblemSolveView({
             />
           </div>
 
-          {/* ── Error list (clickable) ────────────────────────────────────── */}
+          {/* ── Error list (clickable → jump to line) ────────────────────── */}
           {syntaxErrors.length > 0 && (
             <div className={styles.errorList}>
               <div className={styles.errorListHeader}>
@@ -329,7 +377,7 @@ export default function ProblemSolveView({
               </div>
               {syntaxErrors.slice(0, 5).map((e, i) => (
                 <div key={i} className={`${styles.errorRow} ${e.severity === 'warning' ? styles.warnRow : ''}`}
-                  onClick={() => jumpToError(e)} title="Click to focus line in editor">
+                  onClick={() => jumpToError(e)} title="Click to jump to line in editor">
                   <span className={styles.errorSev}>{e.severity === 'warning' ? '⚠' : '✕'}</span>
                   <span className={styles.errorLoc}>Ln {e.line}{e.column ? `, Col ${e.column}` : ''}</span>
                   <span className={styles.errorMsg}>{e.message}</span>
@@ -363,7 +411,7 @@ export default function ProblemSolveView({
               <span className={styles.statusItem} title="Language">☕ Java {javaVersion}</span>
               <span className={styles.statusDivider}>│</span>
               <span className={styles.statusItem} title="Encoding">UTF-8</span>
-              {submitResult?.allPassed && (
+              {isSolved && (
                 <>
                   <span className={styles.statusDivider}>│</span>
                   <span className={styles.statusItem} style={{ color: 'var(--accent)' }}>✅ Accepted</span>
@@ -408,6 +456,13 @@ export default function ProblemSolveView({
   );
 }
 
+// ── Timer formatter ────────────────────────────────────────────────────────────
+function formatTimer(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 // ── Description tab ───────────────────────────────────────────────────────────
 function DescriptionTab({ problem, diff }) {
   return (
@@ -444,27 +499,40 @@ function DescriptionTab({ problem, diff }) {
           </div>
         </div>
       </div>
+      {/* Constraints section */}
+      {problem.constraints && (
+        <div className={styles.constraintsBlock}>
+          <div className={styles.exLabel}>Constraints</div>
+          <pre className={styles.exPre} style={{ whiteSpace: 'pre-wrap' }}>{problem.constraints}</pre>
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Approach tab ──────────────────────────────────────────────────────────────
+// ── Approach tab — BUG FIX: auto-saves on change (debounced) ─────────────────
 function ApproachTab({ problemId, value, onChange }) {
+  // Auto-save with 800ms debounce — user no longer loses work on navigate
+  useEffect(() => {
+    if (!value || !problemId) return;
+    const t = setTimeout(() => {
+      localStorage.setItem(`devlearn_approach_${problemId}`, value);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [value, problemId]);
+
   return (
     <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>✍️ Write your approach first</div>
       <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.6 }}>
         Describe your algorithm before coding — the single most impactful interview habit.
+        <span style={{ color: 'var(--accent)', marginLeft: 6 }}>Auto-saved.</span>
       </div>
-      <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={8}
+      <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={10}
         placeholder="Example: I'll use a HashMap to store each number as I scan. For each element, check if the complement (target - x) exists in the map…"
         style={{ width: '100%', background: 'var(--bg3)', border: '1px solid var(--border2)',
           borderRadius: 6, color: 'var(--text)', fontFamily: 'var(--font-ui)', fontSize: 12,
           lineHeight: 1.6, padding: '10px 12px', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
-      <button className="btn btn-primary btn-sm" style={{ alignSelf: 'flex-start' }}
-        onClick={() => { localStorage.setItem(`devlearn_approach_${problemId}`, value); toast.success('Approach saved!'); }}>
-        💾 Save
-      </button>
     </div>
   );
 }
@@ -511,6 +579,54 @@ function HintsTab({ problem, hintsShown, onShowHint }) {
           ⚑ This submission will be marked as hint-assisted
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Submissions History tab ────────────────────────────────────────────────────
+const STATUS_META = {
+  ACCEPTED:      { color: 'var(--accent)', label: 'Accepted',       icon: '✅' },
+  WRONG_ANSWER:  { color: 'var(--red)',    label: 'Wrong Answer',    icon: '❌' },
+  COMPILE_ERROR: { color: 'var(--red)',    label: 'Compile Error',   icon: '🔴' },
+  RUNTIME_ERROR: { color: 'var(--red)',    label: 'Runtime Error',   icon: '🔴' },
+  TLE:           { color: 'var(--yellow)', label: 'Time Limit',      icon: '⏰' },
+};
+
+function SubmissionsTab({ history }) {
+  if (!history || history.length === 0) {
+    return (
+      <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 12 }}>
+        <div style={{ fontSize: 28, marginBottom: 8 }}>📭</div>
+        No submissions yet. Hit ⬆ Submit to evaluate your solution.
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.submissionsTab}>
+      {history.map((sub) => {
+        const meta = STATUS_META[sub.status] || { color: 'var(--text3)', label: sub.status, icon: '·' };
+        const date = sub.createdAt ? new Date(sub.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+        return (
+          <div key={sub.id} className={styles.subRow}>
+            <div className={styles.subStatus} style={{ color: meta.color }}>
+              {meta.icon} {meta.label}
+            </div>
+            <div className={styles.subMeta}>
+              {sub.passedTests != null && (
+                <span className={styles.subChip}>{sub.passedTests}/{sub.totalTests} tests</span>
+              )}
+              {sub.executionTimeMs > 0 && (
+                <span className={styles.subChip}>⏱ {sub.executionTimeMs}ms</span>
+              )}
+              {sub.hintAssisted && (
+                <span className={styles.subChip} style={{ color: 'var(--yellow)' }}>💡 hint</span>
+              )}
+            </div>
+            <div className={styles.subDate}>{date}</div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -602,7 +718,7 @@ function ResultPanel({ runResult, submitResult }) {
     );
   }
 
-  // Run result
+  // Run result (shown when no submitResult — cleared by handleRun)
   if (!submitResult) {
     const ok = runResult.status === 'SUCCESS';
     return (
