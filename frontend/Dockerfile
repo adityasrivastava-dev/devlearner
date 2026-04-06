@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Install deps first (cached layer)
 COPY package*.json ./
-RUN npm ci --silent
+RUN npm install
 
 # Copy source
 COPY . .
