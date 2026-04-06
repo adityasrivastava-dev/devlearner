@@ -64,10 +64,8 @@ public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 					// Public read-only data
 					.requestMatchers(HttpMethod.GET,
 							"/api/topics", "/api/topics/**",
-							"/api/problems", "/api/problems/**",
+							"/api/problems", "/api/problems/filters",
 							"/api/submissions/percentile").permitAll()
-					.requestMatchers(HttpMethod.GET,
-							"/api/roadmaps", "/api/roadmaps/**").permitAll()
 
 					// Admin endpoints
 					.requestMatchers("/api/admin/**").hasRole("ADMIN")
