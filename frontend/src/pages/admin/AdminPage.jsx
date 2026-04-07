@@ -5,11 +5,12 @@ import { adminApi, topicsApi, QUERY_KEYS } from '../../api';
 import { getCategoryMeta, getDiffMeta, CATEGORIES } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 import styles from './AdminPage.module.css';
+import JsonBuilderSection from './JsonBuilderSection';
 
 export default function AdminPage() {
   const navigate   = useNavigate();
   const qc         = useQueryClient();
-  const [section, setSection] = useState('topics'); // topics | users | seed | stats
+  const [section, setSection] = useState('topics'); // topics | users | seed | build | stats
 
   return (
     <div className={styles.adminPage}>
@@ -24,6 +25,7 @@ export default function AdminPage() {
             { key: 'topics',  icon: '📚', label: 'Topics' },
             { key: 'users',   icon: '👥', label: 'Users' },
             { key: 'seed',    icon: '📦', label: 'Import JSON' },
+            { key: 'build',   icon: '🛠', label: 'Build JSON' },
             { key: 'stats',   icon: '📊', label: 'Stats' },
           ].map((item) => (
             <button
@@ -42,6 +44,7 @@ export default function AdminPage() {
         {section === 'topics' && <TopicsSection qc={qc} />}
         {section === 'users'  && <UsersSection />}
         {section === 'seed'   && <SeedSection />}
+        {section === 'build'  && <div className={styles.section}><div className={styles.sectionHeader}><span className={styles.sectionTitle}>JSON Builder</span></div><JsonBuilderSection /></div>}
         {section === 'stats'  && <StatsSection />}
       </div>
     </div>
