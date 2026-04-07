@@ -1,0 +1,459 @@
+{
+  "batchName": "B06-arrays",
+  "skipExisting": true,
+  "topics": [
+    {
+      "title": "Arrays in Java",
+      "category": "JAVA",
+      "story": "Imagine a parking lot with numbered spaces. Each space (index) can hold exactly one car (value). The lot has a fixed size decided at construction — you can't add more spaces later. You can instantly jump to space #47 without driving past the others (O(1) random access). Java arrays are that parking lot: fixed-size, indexed from 0, with all spots of the same type.",
+      "analogy": "An array is a row of numbered post-office boxes. All boxes are the same size, numbered sequentially, and you can open any box directly if you know its number. You can't add more boxes once the row is built — you'd need a new, larger row (a new array).",
+      "memoryAnchor": "FISC — Fixed size, Indexed from 0, Same type, Contiguous memory. Any time you think 'array', think FISC.",
+      "firstPrinciples": "An array is a contiguous block of memory. If the base address is 1000 and each int is 4 bytes, then arr[5] is at address 1000 + 5*4 = 1020. The JVM computes arr[i] as baseAddress + i * elementSize — O(1). The length is stored separately in the object header (arr.length). A 2D array in Java is an array of array references, not contiguous memory — each row can have different length (jagged array).",
+      "bruteForce": "Use nested loops for 2D traversal, manual index tracking for searching and sorting. While O(n²) sorting is suboptimal, it's easy to reason about. Start with brute force to verify correctness, then optimize.",
+      "optimizedApproach": "Use Arrays.sort() (dual-pivot quicksort for primitives, TimSort for objects — O(n log n)). Arrays.binarySearch() for sorted arrays (O(log n)). Arrays.copyOf() for resizing. For 2D, use System.arraycopy() for bulk row copies. Prefer enhanced for-each when index is not needed.",
+      "whenToUse": "Arrays are best when: size is known upfront, you need O(1) random access by index, cache locality matters (performance-critical), working with primitives (no boxing overhead like ArrayList). Use ArrayList when size is dynamic. Use arrays for: buffers, matrices, frequency counting, sliding windows, prefix sums.",
+      "examples": [
+        {
+          "displayOrder": 1,
+          "title": "1D Array Operations — Frequency Count",
+          "code": "import java.util.Arrays;\n\npublic class ArrayBasics {\n    public static void main(String[] args) {\n        // Declaration and initialization\n        int[] scores = new int[5];          // default: all 0\n        int[] primes = {2, 3, 5, 7, 11};   // inline init\n        String[] names = new String[3];     // default: all null\n\n        // Traversal and modification\n        for (int i = 0; i < primes.length; i++) {\n            scores[i % scores.length] += primes[i];\n        }\n        System.out.println(\"scores: \" + Arrays.toString(scores));\n\n        // Frequency count (character histogram)\n        String word = \"mississippi\";\n        int[] freq = new int[26];\n        for (char c : word.toCharArray()) {\n            freq[c - 'a']++;\n        }\n        System.out.println(\"Freq of 's': \" + freq['s' - 'a']);  // 4\n        System.out.println(\"Freq of 'i': \" + freq['i' - 'a']);  // 4\n\n        // Copy and sort\n        int[] copy = Arrays.copyOf(primes, primes.length);\n        Arrays.sort(copy);  // already sorted, but demo\n        System.out.println(\"Sorted copy: \" + Arrays.toString(copy));\n\n        // Binary search (array must be sorted)\n        int idx = Arrays.binarySearch(copy, 5);\n        System.out.println(\"Index of 5: \" + idx);  // 2\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":5,\"phase\":\"DECLARE\",\"variables\":{\"scores\":\"[0,0,0,0,0]\"},\"description\":\"int array of 5 zeros\"},{\"step\":2,\"line\":6,\"phase\":\"DECLARE\",\"variables\":{\"primes\":\"[2,3,5,7,11]\"},\"description\":\"inline init\"},{\"step\":3,\"line\":10,\"phase\":\"LOOP_START\",\"variables\":{\"i\":0},\"description\":\"i=0: scores[0] += primes[0] = 2\"},{\"step\":4,\"line\":10,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":1},\"description\":\"i=1: scores[1] += primes[1] = 3\"},{\"step\":5,\"line\":10,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":4},\"description\":\"i=4: scores[4] += primes[4] = 11\"},{\"step\":6,\"line\":16,\"phase\":\"LOOP_START\",\"variables\":{\"word\":\"mississippi\"},\"description\":\"frequency count loop\"},{\"step\":7,\"line\":17,\"phase\":\"ASSIGN\",\"variables\":{\"freq['m'-'a']\":1},\"description\":\"freq['m'-'a'] = 1\"},{\"step\":8,\"line\":17,\"phase\":\"ASSIGN\",\"variables\":{\"freq['s'-'a']\":4},\"description\":\"after full loop: freq['s'-'a'] = 4\"},{\"step\":9,\"line\":22,\"phase\":\"CALL\",\"variables\":{},\"description\":\"Arrays.copyOf creates new array\"},{\"step\":10,\"line\":27,\"phase\":\"RETURN\",\"variables\":{\"idx\":2},\"description\":\"binarySearch finds 5 at index 2\"}]",
+          "flowchartMermaid": "graph TD\n    A[Declare arrays] --> B[for loop: build scores]\n    B --> C[frequency count loop over word]\n    C --> D[freq array updated]\n    D --> E[Arrays.copyOf]\n    E --> F[Arrays.sort]\n    F --> G[Arrays.binarySearch]\n    G --> H[print results]",
+          "pseudocode": "scores[5] = {0}\nprimes[5] = {2,3,5,7,11}\nFOR i = 0 to 4:\n  scores[i%5] += primes[i]\n\nfreq[26] = {0}\nFOR c IN word.chars:\n  freq[c-'a']++\n\ncopy = Arrays.copyOf(primes)\nArrays.sort(copy)\nidx = Arrays.binarySearch(copy, 5)",
+          "explanation": "Arrays have O(1) access by index. The modulo trick (i % scores.length) wraps indices. Character frequency uses `c - 'a'` to map 'a'-'z' to indices 0-25. Arrays.sort uses dual-pivot quicksort for int[] (O(n log n)). Arrays.binarySearch requires a sorted array and returns negative (insertion point) if not found.",
+          "realWorldUse": "Frequency arrays are used in anagram detection, compression algorithms, and character counting. Arrays.sort is used extensively in sorting algorithms and data processing pipelines."
+        },
+        {
+          "displayOrder": 2,
+          "title": "2D Arrays — Matrix Multiplication",
+          "code": "import java.util.Arrays;\n\npublic class MatrixMultiply {\n    // Multiply two matrices A (m×k) × B (k×n) → result (m×n)\n    public static int[][] multiply(int[][] A, int[][] B) {\n        int m = A.length, k = A[0].length, n = B[0].length;\n        int[][] result = new int[m][n];\n        for (int i = 0; i < m; i++) {\n            for (int j = 0; j < n; j++) {\n                for (int p = 0; p < k; p++) {\n                    result[i][j] += A[i][p] * B[p][j];\n                }\n            }\n        }\n        return result;\n    }\n\n    public static void print(int[][] M) {\n        for (int[] row : M) System.out.println(Arrays.toString(row));\n    }\n\n    public static void main(String[] args) {\n        int[][] A = {{1, 2}, {3, 4}, {5, 6}};  // 3×2\n        int[][] B = {{7, 8, 9}, {10, 11, 12}}; // 2×3\n        int[][] C = multiply(A, B);             // result: 3×3\n        print(C);\n        // [27, 30, 33]\n        // [61, 68, 75]\n        // [95, 106, 117]\n\n        // Jagged array: each row different length\n        int[][] triangle = new int[4][];\n        for (int i = 0; i < 4; i++) {\n            triangle[i] = new int[i + 1];\n            Arrays.fill(triangle[i], i + 1);\n        }\n        System.out.println(\"\\nJagged:\");\n        print(triangle);\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":6,\"phase\":\"DECLARE\",\"variables\":{\"m\":3,\"k\":2,\"n\":3},\"description\":\"matrix dimensions\"},{\"step\":2,\"line\":7,\"phase\":\"DECLARE\",\"variables\":{\"result\":\"3x3 zeros\"},\"description\":\"result matrix initialized\"},{\"step\":3,\"line\":8,\"phase\":\"LOOP_START\",\"variables\":{\"i\":0,\"j\":0,\"p\":0},\"description\":\"i=0,j=0,p=0: result[0][0] += A[0][0]*B[0][0] = 1*7=7\"},{\"step\":4,\"line\":10,\"phase\":\"LOOP_ITER\",\"variables\":{\"p\":1},\"description\":\"p=1: result[0][0] += A[0][1]*B[1][0] = 2*10=20\"},{\"step\":5,\"line\":9,\"phase\":\"LOOP_ITER\",\"variables\":{\"j\":1},\"description\":\"j=1: compute result[0][1]\"},{\"step\":6,\"line\":8,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":1},\"description\":\"i=1: compute row 1\"},{\"step\":7,\"line\":30,\"phase\":\"DECLARE\",\"variables\":{\"triangle\":\"jagged array\"},\"description\":\"triangle[i] = new int[i+1]\"},{\"step\":8,\"line\":32,\"phase\":\"ASSIGN\",\"variables\":{\"triangle[3]\":\"[4,4,4,4]\"},\"description\":\"row 3 has 4 elements all=4\"}]",
+          "flowchartMermaid": "graph TD\n    A[A m×k, B k×n] --> B[result m×n zeros]\n    B --> C[for i=0 to m-1]\n    C --> D[for j=0 to n-1]\n    D --> E[for p=0 to k-1]\n    E --> F[result-i-j += A-i-p * B-p-j]\n    F --> E\n    E --> D\n    D --> C\n    C --> G[return result]",
+          "pseudocode": "FOR i in 0..m-1:\n  FOR j in 0..n-1:\n    FOR p in 0..k-1:\n      result[i][j] += A[i][p] * B[p][j]\n\nJagged:\nFOR i in 0..3:\n  triangle[i] = new int[i+1]\n  Arrays.fill(triangle[i], i+1)",
+          "explanation": "Matrix multiplication is O(m*k*n) — three nested loops. The innermost loop accumulates dot products. Java's 2D arrays are arrays of array references — int[][] is literally int[3][] where each row is a separate heap object. Jagged arrays exploit this: each row has independent length. Arrays.fill sets all elements of a 1D array to a value.",
+          "realWorldUse": "Matrix multiplication is fundamental to graphics (transformation matrices), machine learning (neural network layers), and scientific computing. Jagged arrays model triangular data structures like Pascal's triangle or adjacency lists."
+        },
+        {
+          "displayOrder": 3,
+          "title": "Prefix Sum Array — Range Query",
+          "code": "public class PrefixSum {\n    private final int[] prefix;\n\n    public PrefixSum(int[] arr) {\n        prefix = new int[arr.length + 1];\n        for (int i = 0; i < arr.length; i++) {\n            prefix[i + 1] = prefix[i] + arr[i];\n        }\n    }\n\n    // Sum of arr[left..right] inclusive in O(1)\n    public int rangeSum(int left, int right) {\n        return prefix[right + 1] - prefix[left];\n    }\n\n    public static void main(String[] args) {\n        int[] arr = {3, 1, 4, 1, 5, 9, 2, 6};\n        PrefixSum ps = new PrefixSum(arr);\n\n        System.out.println(ps.rangeSum(0, 3));  // 3+1+4+1 = 9\n        System.out.println(ps.rangeSum(2, 6));  // 4+1+5+9+2 = 21\n        System.out.println(ps.rangeSum(0, 7));  // sum of all = 31\n\n        // Find max sum subarray of length k using sliding window on prefix\n        int k = 3;\n        int maxSum = ps.rangeSum(0, k - 1);\n        for (int i = k; i < arr.length; i++) {\n            int windowSum = ps.rangeSum(i - k + 1, i);\n            if (windowSum > maxSum) maxSum = windowSum;\n        }\n        System.out.println(\"Max sum of \" + k + \" consecutive: \" + maxSum);  // 17\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":5,\"phase\":\"DECLARE\",\"variables\":{\"prefix\":\"[0,0,0,0,0,0,0,0,0]\"},\"description\":\"prefix[0]=0 (base case)\"},{\"step\":2,\"line\":6,\"phase\":\"LOOP_START\",\"variables\":{\"i\":0},\"description\":\"i=0: prefix[1] = prefix[0]+arr[0] = 0+3 = 3\"},{\"step\":3,\"line\":6,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":1},\"description\":\"prefix[2] = 3+1 = 4\"},{\"step\":4,\"line\":6,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":7},\"description\":\"prefix[8] = 25+6 = 31\"},{\"step\":5,\"line\":12,\"phase\":\"CALL\",\"variables\":{\"left\":0,\"right\":3},\"description\":\"rangeSum(0,3) = prefix[4]-prefix[0] = 9-0 = 9\"},{\"step\":6,\"line\":12,\"phase\":\"CALL\",\"variables\":{\"left\":2,\"right\":6},\"description\":\"rangeSum(2,6) = prefix[7]-prefix[2] = 25-4 = 21\"}]",
+          "flowchartMermaid": "graph TD\n    A[arr of n elements] --> B[prefix[0]=0]\n    B --> C[for i=0 to n-1]\n    C --> D[prefix-i+1 = prefix-i + arr-i]\n    D --> C\n    C --> E[prefix built]\n    E --> F[rangeSum-left-right]\n    F --> G[return prefix-right+1 - prefix-left O-1]",
+          "pseudocode": "prefix[0] = 0\nFOR i = 0 to n-1:\n  prefix[i+1] = prefix[i] + arr[i]\n\nrangeSum(l, r) = prefix[r+1] - prefix[l]  // O(1)\n\nFOR window of size k:\n  windowSum = rangeSum(i-k+1, i)",
+          "explanation": "Prefix sum converts O(n) range queries to O(1) after O(n) preprocessing. prefix[i] = sum of arr[0..i-1]. So arr[l..r] = prefix[r+1] - prefix[l]. The +1 offset in prefix avoids special-casing the empty prefix. This technique is ubiquitous in competitive programming and optimization.",
+          "realWorldUse": "Database aggregations, image processing (integral image for Viola-Jones), sliding window computations, range minimum queries (with sparse tables). NumPy's cumsum() is the Python equivalent."
+        },
+        {
+          "displayOrder": 4,
+          "title": "Arrays Utility Class — Sort, Search, Fill, Compare",
+          "code": "import java.util.*;\n\npublic class ArraysUtility {\n    public static void main(String[] args) {\n        // --- Sort ---\n        int[] arr = {5, 2, 8, 1, 9, 3};\n        Arrays.sort(arr);                    // dual-pivot quicksort, in-place\n        System.out.println(Arrays.toString(arr));  // [1, 2, 3, 5, 8, 9]\n\n        // Sort with range\n        int[] partial = {5, 2, 8, 1, 9, 3};\n        Arrays.sort(partial, 1, 4);          // sort indices 1 to 3 inclusive\n        System.out.println(Arrays.toString(partial)); // [5, 1, 2, 8, 9, 3]\n\n        // --- Binary Search ---\n        int pos = Arrays.binarySearch(arr, 8);\n        System.out.println(\"8 at index: \" + pos);  // 4\n        int missing = Arrays.binarySearch(arr, 4);\n        System.out.println(\"4 not found: \" + missing); // negative = -(insertion point)-1\n\n        // --- Fill ---\n        int[] filled = new int[5];\n        Arrays.fill(filled, 7);\n        System.out.println(Arrays.toString(filled)); // [7, 7, 7, 7, 7]\n\n        // --- Compare ---\n        int[] a = {1, 2, 3};\n        int[] b = {1, 2, 3};\n        int[] c = {1, 2, 4};\n        System.out.println(Arrays.equals(a, b));     // true\n        System.out.println(Arrays.equals(a, c));     // false\n        System.out.println(Arrays.compare(a, c));    // negative (3 < 4)\n\n        // --- 2D equals ---\n        int[][] m1 = {{1,2},{3,4}};\n        int[][] m2 = {{1,2},{3,4}};\n        System.out.println(Arrays.deepEquals(m1, m2));  // true\n        System.out.println(Arrays.deepToString(m1));    // [[1, 2], [3, 4]]\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":7,\"phase\":\"CALL\",\"variables\":{\"arr\":\"[5,2,8,1,9,3]\"},\"description\":\"Arrays.sort — dual-pivot quicksort\"},{\"step\":2,\"line\":7,\"phase\":\"ASSIGN\",\"variables\":{\"arr\":\"[1,2,3,5,8,9]\"},\"description\":\"sorted in-place\"},{\"step\":3,\"line\":11,\"phase\":\"CALL\",\"variables\":{\"partial\":\"[5,2,8,1,9,3]\",\"from\":1,\"to\":4},\"description\":\"sort only indices 1-3\"},{\"step\":4,\"line\":11,\"phase\":\"ASSIGN\",\"variables\":{\"partial\":\"[5,1,2,8,9,3]\"},\"description\":\"only middle portion sorted\"},{\"step\":5,\"line\":14,\"phase\":\"CALL\",\"variables\":{\"target\":8},\"description\":\"binarySearch in sorted arr\"},{\"step\":6,\"line\":14,\"phase\":\"RETURN\",\"variables\":{\"pos\":4},\"description\":\"8 found at index 4\"},{\"step\":7,\"line\":16,\"phase\":\"RETURN\",\"variables\":{\"missing\":-5},\"description\":\"4 not found: insertion point=4, return -4-1=-5\"},{\"step\":8,\"line\":27,\"phase\":\"RETURN\",\"variables\":{\"equals\":true},\"description\":\"a and b are element-wise equal\"}]",
+          "flowchartMermaid": "graph TD\n    A[Arrays.sort arr] --> B[arr sorted in-place]\n    C[Arrays.sort arr from to] --> D[partial range sorted]\n    E[Arrays.binarySearch sorted-arr target] --> F{found?}\n    F -- yes --> G[return index]\n    F -- no --> H[return neg insertion point - 1]\n    I[Arrays.fill arr val] --> J[all elements = val]\n    K[Arrays.equals a b] --> L[element-wise comparison]\n    M[Arrays.deepEquals 2D] --> N[recursive comparison]",
+          "pseudocode": "Arrays.sort(arr)              → O(n log n) in-place\nArrays.sort(arr, from, to)    → sort [from..to)\nArrays.binarySearch(arr, key) → O(log n)\nArrays.fill(arr, val)         → O(n)\nArrays.equals(a, b)           → O(n) for 1D\nArrays.deepEquals(m1, m2)     → O(m*n) for 2D\nArrays.deepToString(m)        → nested string representation",
+          "explanation": "Arrays utility class is your Swiss army knife. Key gotcha: Arrays.equals() only does shallow comparison — two int[][] with same values but different row references returns false; use deepEquals(). binarySearch() contract: array MUST be sorted; if not sorted, behavior is undefined. The insertion-point formula: -(insertionPoint)-1 allows distinguishing 'found at 0' (returns 0) from 'not found, would insert at 0' (returns -1).",
+          "realWorldUse": "Arrays.sort is used everywhere: database result sorting, rendering pipelines, event processing. Arrays.fill initializes DP tables. deepEquals is used in unit tests for matrix/grid comparisons."
+        },
+        {
+          "displayOrder": 5,
+          "title": "Sliding Window — Maximum Sum Subarray of Size K",
+          "code": "public class SlidingWindow {\n    // Fixed-size sliding window\n    public static int maxSumFixed(int[] arr, int k) {\n        if (arr.length < k) throw new IllegalArgumentException();\n        // Build first window\n        int windowSum = 0;\n        for (int i = 0; i < k; i++) windowSum += arr[i];\n        int maxSum = windowSum;\n        // Slide the window\n        for (int i = k; i < arr.length; i++) {\n            windowSum += arr[i];        // add new element\n            windowSum -= arr[i - k];   // remove oldest element\n            maxSum = Math.max(maxSum, windowSum);\n        }\n        return maxSum;\n    }\n\n    // Variable-size sliding window: longest subarray with sum <= target\n    public static int longestSubarrayWithSumAtMost(int[] arr, int target) {\n        int left = 0, sum = 0, maxLen = 0;\n        for (int right = 0; right < arr.length; right++) {\n            sum += arr[right];          // expand window\n            while (sum > target) {\n                sum -= arr[left++];    // shrink from left\n            }\n            maxLen = Math.max(maxLen, right - left + 1);\n        }\n        return maxLen;\n    }\n\n    public static void main(String[] args) {\n        int[] arr = {2, 1, 5, 1, 3, 2};\n        System.out.println(maxSumFixed(arr, 3));             // 9 (5+1+3)\n        System.out.println(longestSubarrayWithSumAtMost(arr, 7)); // 4 (2,1,3,2 ... wait, 1,5,1=7 len=3)\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":6,\"phase\":\"LOOP_START\",\"variables\":{\"windowSum\":0},\"description\":\"build first window of k=3\"},{\"step\":2,\"line\":6,\"phase\":\"LOOP_ITER\",\"variables\":{\"windowSum\":8},\"description\":\"first window sum = 2+1+5 = 8\"},{\"step\":3,\"line\":8,\"phase\":\"ASSIGN\",\"variables\":{\"maxSum\":8},\"description\":\"maxSum = 8\"},{\"step\":4,\"line\":10,\"phase\":\"LOOP_START\",\"variables\":{\"i\":3},\"description\":\"slide: add arr[3]=1, remove arr[0]=2\"},{\"step\":5,\"line\":11,\"phase\":\"ASSIGN\",\"variables\":{\"windowSum\":7},\"description\":\"8+1-2=7\"},{\"step\":6,\"line\":10,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":4},\"description\":\"add arr[4]=3, remove arr[1]=1\"},{\"step\":7,\"line\":11,\"phase\":\"ASSIGN\",\"variables\":{\"windowSum\":9},\"description\":\"7+3-1=9\"},{\"step\":8,\"line\":13,\"phase\":\"ASSIGN\",\"variables\":{\"maxSum\":9},\"description\":\"maxSum updated to 9\"}]",
+          "flowchartMermaid": "graph TD\n    A[build first window sum] --> B[maxSum = windowSum]\n    B --> C{i < arr.length?}\n    C -- yes --> D[add arr-i]\n    D --> E[remove arr-i-k]\n    E --> F[update maxSum]\n    F --> C\n    C -- no --> G[return maxSum]\n    H[variable window: right pointer] --> I[add arr-right to sum]\n    I --> J{sum > target?}\n    J -- yes --> K[subtract arr-left, left++]\n    K --> J\n    J -- no --> L[update maxLen]\n    L --> H",
+          "pseudocode": "FIXED WINDOW:\nwindowSum = sum(arr[0..k-1])\nmaxSum = windowSum\nFOR i = k to n-1:\n  windowSum += arr[i] - arr[i-k]\n  maxSum = max(maxSum, windowSum)\n\nVARIABLE WINDOW:\nleft=0, sum=0\nFOR right = 0 to n-1:\n  sum += arr[right]\n  WHILE sum > target: sum -= arr[left++]\n  maxLen = max(maxLen, right-left+1)",
+          "explanation": "Sliding window avoids recomputing sums from scratch. Fixed window: O(n) — one addition and one subtraction per step. Variable window: left pointer only moves right, so total iterations = O(n). The two-pointer technique is the array optimization to master first — it converts O(n²) brute force to O(n).",
+          "realWorldUse": "Network packet buffering, moving averages in finance, DNA sequence analysis, substring problems in string processing. Sliding window is one of the most commonly tested patterns in technical interviews."
+        }
+      ],
+      "problems": [
+        {
+          "displayOrder": 1,
+          "title": "Two Sum",
+          "description": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. Assume exactly one solution exists.",
+          "difficulty": "EASY",
+          "pattern": "HashMap Lookup",
+          "hint1": "For each element, check if (target - element) exists in the array.",
+          "hint2": "Use a HashMap to store value → index for O(1) lookup.",
+          "hint3": "Check the map before inserting the current element.",
+          "starterCode": "import java.util.*;\npublic class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // TODO\n        return new int[]{};\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        Map<Integer, Integer> seen = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int complement = target - nums[i];\n            if (seen.containsKey(complement)) {\n                return new int[]{seen.get(complement), i};\n            }\n            seen.put(nums[i], i);\n        }\n        return new int[]{};\n    }\n}",
+          "testCases": [
+            {"input": "nums=[2,7,11,15], target=9", "output": "[0,1]"},
+            {"input": "nums=[3,2,4], target=6", "output": "[1,2]"},
+            {"input": "nums=[3,3], target=6", "output": "[0,1]"}
+          ],
+          "constraints": "2 <= nums.length <= 10^4. -10^9 <= nums[i] <= 10^9. Exactly one solution.",
+          "editorial": "Classic HashMap trick: store seen values and check complement. O(n) time, O(n) space. Check before insert to handle the case where we'd use the same element twice."
+        },
+        {
+          "displayOrder": 2,
+          "title": "Find Maximum and Minimum",
+          "description": "Given an array of integers, return both the maximum and minimum values. Return as an int[] {min, max}. Do it in a single pass.",
+          "difficulty": "EASY",
+          "pattern": "Linear Scan",
+          "hint1": "Initialize min and max to the first element.",
+          "hint2": "Iterate from index 1, updating min and max as needed.",
+          "hint3": "Return {min, max} in a single int array.",
+          "starterCode": "public class Solution {\n    public int[] minMax(int[] nums) {\n        // TODO: single pass, return {min, max}\n        return new int[]{};\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int[] minMax(int[] nums) {\n        if (nums.length == 0) throw new IllegalArgumentException();\n        int min = nums[0], max = nums[0];\n        for (int i = 1; i < nums.length; i++) {\n            if (nums[i] < min) min = nums[i];\n            if (nums[i] > max) max = nums[i];\n        }\n        return new int[]{min, max};\n    }\n}",
+          "testCases": [
+            {"input": "[3,1,4,1,5,9,2,6]", "output": "[1,9]"},
+            {"input": "[-5,-1,-8,-3]", "output": "[-8,-1]"},
+            {"input": "[42]", "output": "[42,42]"}
+          ],
+          "constraints": "1 <= nums.length <= 10^5. -10^9 <= nums[i] <= 10^9",
+          "editorial": "Initialize min=max=nums[0], then single pass from index 1. O(n) time, O(1) space. This is the most basic array traversal pattern."
+        },
+        {
+          "displayOrder": 3,
+          "title": "Rotate Array",
+          "description": "Given an array, rotate it to the right by k steps in-place. E.g., [1,2,3,4,5] rotated by 2 → [4,5,1,2,3].",
+          "difficulty": "EASY",
+          "pattern": "Reversal Algorithm",
+          "hint1": "Brute force: rotate one step at a time, k times. O(n*k).",
+          "hint2": "Optimal: reverse the entire array, then reverse first k elements, then reverse the rest.",
+          "hint3": "Remember to normalize k: k = k % n to handle k > n.",
+          "starterCode": "public class Solution {\n    public void rotate(int[] nums, int k) {\n        // TODO: in-place rotation\n    }\n}",
+          "solutionCode": "public class Solution {\n    public void rotate(int[] nums, int k) {\n        int n = nums.length;\n        k %= n;\n        if (k == 0) return;\n        reverse(nums, 0, n - 1);\n        reverse(nums, 0, k - 1);\n        reverse(nums, k, n - 1);\n    }\n\n    private void reverse(int[] arr, int left, int right) {\n        while (left < right) {\n            int tmp = arr[left];\n            arr[left++] = arr[right];\n            arr[right--] = tmp;\n        }\n    }\n}",
+          "testCases": [
+            {"input": "nums=[1,2,3,4,5,6,7], k=3", "output": "[5,6,7,1,2,3,4]"},
+            {"input": "nums=[1,2], k=1", "output": "[2,1]"},
+            {"input": "nums=[1,2,3], k=4", "output": "[3,1,2]"}
+          ],
+          "constraints": "1 <= nums.length <= 10^5. -2^31 <= nums[i] <= 2^31-1. 0 <= k <= 10^5.",
+          "editorial": "Three-reversal algorithm: reverse all → reverse first k → reverse rest. O(n) time, O(1) space. Intuition: reversing the whole array brings the tail to the front, then fixing the two halves completes the rotation."
+        },
+        {
+          "displayOrder": 4,
+          "title": "Remove Duplicates from Sorted Array",
+          "description": "Given a sorted array, remove duplicates in-place so each unique element appears once. Return the new length. The relative order must be maintained.",
+          "difficulty": "EASY",
+          "pattern": "Two Pointers",
+          "hint1": "Use two pointers: slow (write pointer) and fast (read pointer).",
+          "hint2": "Only advance slow when a new unique element is found.",
+          "hint3": "Return slow + 1 (1-indexed count of unique elements).",
+          "starterCode": "public class Solution {\n    public int removeDuplicates(int[] nums) {\n        // TODO: in-place, return new length\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int removeDuplicates(int[] nums) {\n        if (nums.length == 0) return 0;\n        int slow = 0;\n        for (int fast = 1; fast < nums.length; fast++) {\n            if (nums[fast] != nums[slow]) {\n                slow++;\n                nums[slow] = nums[fast];\n            }\n        }\n        return slow + 1;\n    }\n}",
+          "testCases": [
+            {"input": "[1,1,2]", "output": "2"},
+            {"input": "[0,0,1,1,1,2,2,3,3,4]", "output": "5"},
+            {"input": "[1]", "output": "1"}
+          ],
+          "constraints": "1 <= nums.length <= 3*10^4. Array is sorted in non-decreasing order.",
+          "editorial": "Two-pointer in-place pattern. slow marks the last unique position, fast scans forward. When a new value is found, slow advances and overwrites. O(n) time, O(1) space."
+        },
+        {
+          "displayOrder": 5,
+          "title": "Second Largest Element",
+          "description": "Find the second largest distinct element in an array. If it doesn't exist (all elements equal), return -1.",
+          "difficulty": "EASY",
+          "pattern": "Single Pass Tracking",
+          "hint1": "Track both max and secondMax in a single pass.",
+          "hint2": "Update secondMax when you find a value greater than secondMax but less than max.",
+          "hint3": "When you update max, the old max might become secondMax.",
+          "starterCode": "public class Solution {\n    public int secondLargest(int[] nums) {\n        // TODO\n        return -1;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int secondLargest(int[] nums) {\n        int max = Integer.MIN_VALUE;\n        int second = Integer.MIN_VALUE;\n        for (int n : nums) {\n            if (n > max) {\n                second = max;\n                max = n;\n            } else if (n > second && n != max) {\n                second = n;\n            }\n        }\n        return second == Integer.MIN_VALUE ? -1 : second;\n    }\n}",
+          "testCases": [
+            {"input": "[3,1,4,1,5,9,2,6]", "output": "6"},
+            {"input": "[5,5,5]", "output": "-1"},
+            {"input": "[1,2]", "output": "1"},
+            {"input": "[10]", "output": "-1"}
+          ],
+          "constraints": "1 <= nums.length <= 10^5. -10^9 <= nums[i] <= 10^9.",
+          "editorial": "Track max and second in a single pass. When n > max: second becomes old max, max becomes n. When n is between second and max: update second. Return -1 if second was never updated (all same). O(n) time, O(1) space."
+        },
+        {
+          "displayOrder": 6,
+          "title": "Pascal's Triangle Row",
+          "description": "Given a row index n (0-based), return the nth row of Pascal's triangle as an array. E.g., row 4 = [1,4,6,4,1].",
+          "difficulty": "EASY",
+          "pattern": "In-Place Array Building",
+          "hint1": "Row n has n+1 elements. Start with [1].",
+          "hint2": "Build row n from row n-1: each middle element is sum of two above.",
+          "hint3": "Update in reverse order to avoid using previous values.",
+          "starterCode": "import java.util.*;\npublic class Solution {\n    public List<Integer> getRow(int rowIndex) {\n        // TODO\n        return new ArrayList<>();\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public List<Integer> getRow(int rowIndex) {\n        List<Integer> row = new ArrayList<>();\n        row.add(1);\n        for (int i = 1; i <= rowIndex; i++) {\n            // update from right to left to avoid overwriting\n            for (int j = row.size() - 1; j >= 1; j--) {\n                row.set(j, row.get(j) + row.get(j - 1));\n            }\n            row.add(1);\n        }\n        return row;\n    }\n}",
+          "testCases": [
+            {"input": "3", "output": "[1,3,3,1]"},
+            {"input": "0", "output": "[1]"},
+            {"input": "4", "output": "[1,4,6,4,1]"}
+          ],
+          "constraints": "0 <= rowIndex <= 33",
+          "editorial": "Build one row at a time, updating in-place from right to left to avoid clobbering values needed for the next computation. Time O(n²), space O(n) — only one row stored."
+        },
+        {
+          "displayOrder": 7,
+          "title": "Maximum Product Subarray",
+          "description": "Find the contiguous subarray with the largest product. The array can contain negative numbers and zeros.",
+          "difficulty": "MEDIUM",
+          "pattern": "Dynamic Programming — Track Min and Max",
+          "hint1": "A negative × negative = positive, so tracking the minimum product matters too.",
+          "hint2": "At each step, maxProd[i] = max(nums[i], nums[i]*maxPrev, nums[i]*minPrev).",
+          "hint3": "Reset when you hit 0 (both max and min become nums[i]).",
+          "starterCode": "public class Solution {\n    public int maxProduct(int[] nums) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int maxProduct(int[] nums) {\n        int maxProd = nums[0], minProd = nums[0], result = nums[0];\n        for (int i = 1; i < nums.length; i++) {\n            int n = nums[i];\n            int tempMax = Math.max(n, Math.max(maxProd * n, minProd * n));\n            int tempMin = Math.min(n, Math.min(maxProd * n, minProd * n));\n            maxProd = tempMax;\n            minProd = tempMin;\n            result = Math.max(result, maxProd);\n        }\n        return result;\n    }\n}",
+          "testCases": [
+            {"input": "[2,3,-2,4]", "output": "6"},
+            {"input": "[-2,0,-1]", "output": "0"},
+            {"input": "[-2,3,-4]", "output": "24"},
+            {"input": "[-2]", "output": "-2"}
+          ],
+          "constraints": "1 <= nums.length <= 2*10^4. -10 <= nums[i] <= 10.",
+          "editorial": "Track both max and min products ending at each position. Two negatives can flip min to max. tempMax/tempMin computed from all three candidates before assignment. O(n) time, O(1) space."
+        },
+        {
+          "displayOrder": 8,
+          "title": "Merge Sorted Arrays",
+          "description": "You have two sorted integer arrays nums1 and nums2. Merge nums2 into nums1 in-place. nums1 has extra space (zeros) at the end for the merged elements.",
+          "difficulty": "MEDIUM",
+          "pattern": "Two Pointers — Fill from Back",
+          "hint1": "Start filling from the end of nums1 to avoid overwriting unprocessed elements.",
+          "hint2": "Three pointers: i (nums1 last real), j (nums2 last), k (merge position = m+n-1).",
+          "hint3": "After the main loop, copy remaining nums2 elements if any.",
+          "starterCode": "public class Solution {\n    public void merge(int[] nums1, int m, int[] nums2, int n) {\n        // TODO: merge nums2 into nums1 in-place\n    }\n}",
+          "solutionCode": "public class Solution {\n    public void merge(int[] nums1, int m, int[] nums2, int n) {\n        int i = m - 1, j = n - 1, k = m + n - 1;\n        while (i >= 0 && j >= 0) {\n            if (nums1[i] > nums2[j]) nums1[k--] = nums1[i--];\n            else                     nums1[k--] = nums2[j--];\n        }\n        while (j >= 0) nums1[k--] = nums2[j--];  // remaining nums2\n    }\n}",
+          "testCases": [
+            {"input": "nums1=[1,2,3,0,0,0] m=3, nums2=[2,5,6] n=3", "output": "[1,2,2,3,5,6]"},
+            {"input": "nums1=[1] m=1, nums2=[] n=0", "output": "[1]"},
+            {"input": "nums1=[0] m=0, nums2=[1] n=1", "output": "[1]"}
+          ],
+          "constraints": "nums1.length == m+n. 0 <= m, n <= 200.",
+          "editorial": "Fill from back to front avoids the extra array. Compare from the largest ends of both arrays. O(m+n) time, O(1) space. The second while loop handles the case where nums2 has remaining elements (nums1 remaining are already in place)."
+        },
+        {
+          "displayOrder": 9,
+          "title": "Subarray Sum Equals K",
+          "description": "Given an integer array nums and an integer k, return the total number of subarrays whose sum equals k.",
+          "difficulty": "MEDIUM",
+          "pattern": "Prefix Sum + HashMap",
+          "hint1": "Use prefix sums. If prefixSum[j] - prefixSum[i] = k, then subarray i+1..j has sum k.",
+          "hint2": "Store prefix sum frequencies in a HashMap.",
+          "hint3": "For each prefix sum, check if (prefixSum - k) exists in the map.",
+          "starterCode": "import java.util.*;\npublic class Solution {\n    public int subarraySum(int[] nums, int k) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public int subarraySum(int[] nums, int k) {\n        Map<Integer, Integer> prefixCount = new HashMap<>();\n        prefixCount.put(0, 1);  // empty subarray\n        int count = 0, sum = 0;\n        for (int n : nums) {\n            sum += n;\n            count += prefixCount.getOrDefault(sum - k, 0);\n            prefixCount.merge(sum, 1, Integer::sum);\n        }\n        return count;\n    }\n}",
+          "testCases": [
+            {"input": "nums=[1,1,1], k=2", "output": "2"},
+            {"input": "nums=[1,2,3], k=3", "output": "2"},
+            {"input": "nums=[-1,-1,1], k=0", "output": "1"}
+          ],
+          "constraints": "1 <= nums.length <= 2*10^4. -1000 <= nums[i] <= 1000. -10^7 <= k <= 10^7.",
+          "editorial": "Prefix sum + HashMap: for each ending index j, count how many prefix sums equal currentSum - k (since if prefixSum[i] = currentSum - k, then arr[i+1..j] = k). Initialize map with {0:1} to handle subarrays starting at index 0. O(n) time and space."
+        },
+        {
+          "displayOrder": 10,
+          "title": "Find Duplicate Number — Floyd's Cycle",
+          "description": "Given an array nums of n+1 integers where each integer is between 1 and n, find the duplicate. Must use O(1) extra space (no marking/sorting).",
+          "difficulty": "MEDIUM",
+          "pattern": "Floyd's Cycle Detection on Array",
+          "hint1": "Treat the array as a linked list where nums[i] is the next pointer from node i.",
+          "hint2": "Use slow/fast pointers: slow = nums[slow], fast = nums[nums[fast]].",
+          "hint3": "After meeting, reset slow to 0, advance both at speed 1 to find cycle entry = duplicate.",
+          "starterCode": "public class Solution {\n    public int findDuplicate(int[] nums) {\n        // TODO: O(1) space, O(n) time\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int findDuplicate(int[] nums) {\n        int slow = nums[0], fast = nums[0];\n        // Phase 1: find meeting point\n        do {\n            slow = nums[slow];\n            fast = nums[nums[fast]];\n        } while (slow != fast);\n        // Phase 2: find cycle entry (duplicate)\n        slow = nums[0];\n        while (slow != fast) {\n            slow = nums[slow];\n            fast = nums[fast];\n        }\n        return slow;\n    }\n}",
+          "testCases": [
+            {"input": "[1,3,4,2,2]", "output": "2"},
+            {"input": "[3,1,3,4,2]", "output": "3"},
+            {"input": "[1,1]", "output": "1"},
+            {"input": "[2,2,2,2,2]", "output": "2"}
+          ],
+          "constraints": "n+1 integers, each in [1,n]. Exactly one duplicate. Cannot modify the array.",
+          "editorial": "Floyd's cycle detection applied to arrays: index as node, nums[i] as next pointer. The duplicate causes two nodes to point to the same index — creating a cycle. Phase 2 finds cycle entry in O(n) time, O(1) space. This is a classic interview trick question."
+        },
+        {
+          "displayOrder": 11,
+          "title": "Container With Most Water",
+          "description": "Given heights of n vertical lines, find two lines that form a container holding the most water. Return the maximum water volume.",
+          "difficulty": "MEDIUM",
+          "pattern": "Two Pointers — Greedy",
+          "hint1": "Use two pointers at both ends. Volume = min(height[left], height[right]) * (right - left).",
+          "hint2": "Move the pointer pointing to the shorter line inward.",
+          "hint3": "Moving the shorter side has a chance of finding a taller line; moving the taller side can only reduce width.",
+          "starterCode": "public class Solution {\n    public int maxArea(int[] height) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int maxArea(int[] height) {\n        int left = 0, right = height.length - 1;\n        int maxWater = 0;\n        while (left < right) {\n            int water = Math.min(height[left], height[right]) * (right - left);\n            maxWater = Math.max(maxWater, water);\n            if (height[left] <= height[right]) left++;\n            else                               right--;\n        }\n        return maxWater;\n    }\n}",
+          "testCases": [
+            {"input": "[1,8,6,2,5,4,8,3,7]", "output": "49"},
+            {"input": "[1,1]", "output": "1"},
+            {"input": "[4,3,2,1,4]", "output": "16"}
+          ],
+          "constraints": "n >= 2. 0 <= height[i] <= 10^4.",
+          "editorial": "Two pointers converging. Key insight: moving the taller side can never improve the result (width decreases, height bounded by shorter). Moving the shorter side might find a taller line. O(n) time, O(1) space."
+        },
+        {
+          "displayOrder": 12,
+          "title": "Trapping Rain Water",
+          "description": "Given an elevation map (non-negative integers), compute how much water can be trapped after raining.",
+          "difficulty": "MEDIUM",
+          "pattern": "Two Pointers or Prefix/Suffix Max",
+          "hint1": "Water at position i = min(maxLeft[i], maxRight[i]) - height[i].",
+          "hint2": "Precompute maxLeft and maxRight arrays, then sum the water.",
+          "hint3": "Two-pointer approach: if maxLeft <= maxRight, process left side (we know the constraint is maxLeft).",
+          "starterCode": "public class Solution {\n    public int trap(int[] height) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int trap(int[] height) {\n        int left = 0, right = height.length - 1;\n        int maxLeft = 0, maxRight = 0, water = 0;\n        while (left < right) {\n            if (height[left] <= height[right]) {\n                if (height[left] >= maxLeft) maxLeft = height[left];\n                else water += maxLeft - height[left];\n                left++;\n            } else {\n                if (height[right] >= maxRight) maxRight = height[right];\n                else water += maxRight - height[right];\n                right--;\n            }\n        }\n        return water;\n    }\n}",
+          "testCases": [
+            {"input": "[0,1,0,2,1,0,1,3,2,1,2,1]", "output": "6"},
+            {"input": "[4,2,0,3,2,5]", "output": "9"},
+            {"input": "[3,0,3]", "output": "3"}
+          ],
+          "constraints": "n >= 1. 0 <= height[i] <= 10^4.",
+          "editorial": "Two-pointer O(n) O(1) solution: whichever side has the smaller max height determines the water for that side. If maxLeft <= maxRight: the right boundary is already guaranteed, so process left side. Water = maxLeft - height[left] when height[left] < maxLeft."
+        },
+        {
+          "displayOrder": 13,
+          "title": "Largest Rectangle in Histogram",
+          "description": "Given an array of bar heights, find the largest rectangle that can be formed within the histogram.",
+          "difficulty": "HARD",
+          "pattern": "Monotonic Stack",
+          "hint1": "For each bar, find the nearest shorter bar to its left and right — that defines the maximum width.",
+          "hint2": "Use a stack to maintain indices of bars in increasing height order.",
+          "hint3": "When you find a bar shorter than the stack's top, pop and compute area for the popped bar.",
+          "starterCode": "import java.util.*;\npublic class Solution {\n    public int largestRectangleArea(int[] heights) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public int largestRectangleArea(int[] heights) {\n        Deque<Integer> stack = new ArrayDeque<>();\n        int maxArea = 0;\n        int n = heights.length;\n        for (int i = 0; i <= n; i++) {\n            int h = (i == n) ? 0 : heights[i];\n            while (!stack.isEmpty() && heights[stack.peek()] > h) {\n                int height = heights[stack.pop()];\n                int width = stack.isEmpty() ? i : i - stack.peek() - 1;\n                maxArea = Math.max(maxArea, height * width);\n            }\n            stack.push(i);\n        }\n        return maxArea;\n    }\n}",
+          "testCases": [
+            {"input": "[2,1,5,6,2,3]", "output": "10"},
+            {"input": "[2,4]", "output": "4"},
+            {"input": "[1]", "output": "1"},
+            {"input": "[6,7,5,2,4,5,9,3]", "output": "16"}
+          ],
+          "constraints": "1 <= heights.length <= 10^5. 0 <= heights[i] <= 10^4.",
+          "editorial": "Monotonic increasing stack stores indices. When a shorter bar is encountered, pop taller bars and compute their maximum rectangle. Width = distance to previous shorter bar (stack top) or left boundary. Append sentinel 0 at end to flush remaining stack. O(n) time — each bar is pushed/popped once."
+        },
+        {
+          "displayOrder": 14,
+          "title": "Median of Two Sorted Arrays",
+          "description": "Find the median of two sorted arrays in O(log(m+n)) time.",
+          "difficulty": "HARD",
+          "pattern": "Binary Search on Partition",
+          "hint1": "Binary search on the partition point of the smaller array.",
+          "hint2": "A valid partition: all elements in left halves <= all elements in right halves.",
+          "hint3": "Check: maxLeft1 <= minRight2 && maxLeft2 <= minRight1.",
+          "starterCode": "public class Solution {\n    public double findMedianSortedArrays(int[] nums1, int[] nums2) {\n        // TODO: O(log(m+n))\n        return 0.0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public double findMedianSortedArrays(int[] nums1, int[] nums2) {\n        if (nums1.length > nums2.length) return findMedianSortedArrays(nums2, nums1);\n        int m = nums1.length, n = nums2.length;\n        int lo = 0, hi = m;\n        while (lo <= hi) {\n            int p1 = (lo + hi) / 2;\n            int p2 = (m + n + 1) / 2 - p1;\n            int maxL1 = (p1 == 0) ? Integer.MIN_VALUE : nums1[p1-1];\n            int minR1 = (p1 == m) ? Integer.MAX_VALUE : nums1[p1];\n            int maxL2 = (p2 == 0) ? Integer.MIN_VALUE : nums2[p2-1];\n            int minR2 = (p2 == n) ? Integer.MAX_VALUE : nums2[p2];\n            if (maxL1 <= minR2 && maxL2 <= minR1) {\n                if ((m + n) % 2 == 1) return Math.max(maxL1, maxL2);\n                return (Math.max(maxL1, maxL2) + Math.min(minR1, minR2)) / 2.0;\n            } else if (maxL1 > minR2) hi = p1 - 1;\n            else lo = p1 + 1;\n        }\n        return 0.0;\n    }\n}",
+          "testCases": [
+            {"input": "nums1=[1,3], nums2=[2]", "output": "2.0"},
+            {"input": "nums1=[1,2], nums2=[3,4]", "output": "2.5"},
+            {"input": "nums1=[], nums2=[1]", "output": "1.0"}
+          ],
+          "constraints": "0 <= m, n <= 1000. -10^6 <= nums[i] <= 10^6.",
+          "editorial": "Binary search on partition. Ensure smaller array is nums1. p1 is partition of nums1 (number of elements in left half from nums1). p2 = (m+n+1)/2 - p1. The +1 handles odd total length. Check partition validity with 4 boundary values (use INT_MIN/MAX at edges). O(log min(m,n)) time."
+        },
+        {
+          "displayOrder": 15,
+          "title": "Dutch National Flag — Sort Colors",
+          "description": "Given an array with values 0, 1, 2 (representing red, white, blue), sort them in-place in O(n) with one pass. No library sort allowed.",
+          "difficulty": "HARD",
+          "pattern": "Three-Pointer Partition",
+          "hint1": "Maintain three regions: [0..low-1]=0s, [low..mid-1]=1s, [high+1..n-1]=2s.",
+          "hint2": "Process element at mid: if 0, swap with low and advance both. If 2, swap with high and retreat high. If 1, advance mid.",
+          "hint3": "Loop ends when mid > high.",
+          "starterCode": "public class Solution {\n    public void sortColors(int[] nums) {\n        // TODO: in-place, O(n), one pass\n    }\n}",
+          "solutionCode": "public class Solution {\n    public void sortColors(int[] nums) {\n        int low = 0, mid = 0, high = nums.length - 1;\n        while (mid <= high) {\n            switch (nums[mid]) {\n                case 0 -> { swap(nums, low++, mid++); }\n                case 1 -> { mid++; }\n                case 2 -> { swap(nums, mid, high--); }\n            }\n        }\n    }\n\n    private void swap(int[] arr, int i, int j) {\n        int tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;\n    }\n}",
+          "testCases": [
+            {"input": "[2,0,2,1,1,0]", "output": "[0,0,1,1,2,2]"},
+            {"input": "[2,0,1]", "output": "[0,1,2]"},
+            {"input": "[0]", "output": "[0]"},
+            {"input": "[1,2,0]", "output": "[0,1,2]"}
+          ],
+          "constraints": "n == nums.length. 1 <= n <= 300. nums[i] ∈ {0, 1, 2}.",
+          "editorial": "Dijkstra's Dutch National Flag algorithm. Three-pointer partition in one pass. When we swap mid with low (for 0), we know low pointed to a 1 (already processed), so mid advances. When we swap mid with high (for 2), we haven't processed the swapped-in element yet, so mid doesn't advance. O(n) time, O(1) space."
+        },
+        {
+          "displayOrder": 16,
+          "title": "Minimum Window Subarray",
+          "description": "Given an array of integers and a target, find the minimum length subarray whose sum is >= target. Return its length, or 0 if none.",
+          "difficulty": "HARD",
+          "pattern": "Variable Sliding Window",
+          "hint1": "Use variable-size sliding window: expand right, shrink from left when sum >= target.",
+          "hint2": "Track current window sum. When sum >= target, update minLen and shrink.",
+          "hint3": "Continue shrinking while sum >= target to find the smallest valid window.",
+          "starterCode": "public class Solution {\n    public int minSubArrayLen(int target, int[] nums) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int minSubArrayLen(int target, int[] nums) {\n        int left = 0, sum = 0, minLen = Integer.MAX_VALUE;\n        for (int right = 0; right < nums.length; right++) {\n            sum += nums[right];\n            while (sum >= target) {\n                minLen = Math.min(minLen, right - left + 1);\n                sum -= nums[left++];\n            }\n        }\n        return minLen == Integer.MAX_VALUE ? 0 : minLen;\n    }\n}",
+          "testCases": [
+            {"input": "target=7, nums=[2,3,1,2,4,3]", "output": "2"},
+            {"input": "target=4, nums=[1,4,4]", "output": "1"},
+            {"input": "target=11, nums=[1,1,1,1,1]", "output": "0"}
+          ],
+          "constraints": "1 <= target <= 10^9. 1 <= nums.length <= 10^5. 1 <= nums[i] <= 10^5.",
+          "editorial": "Variable sliding window: right pointer expands, left pointer shrinks when constraint is met. The while loop shrinks as much as possible to find minimum length. Each element is added/removed at most once → O(n) total."
+        },
+        {
+          "displayOrder": 17,
+          "title": "Next Permutation",
+          "description": "Rearrange nums in-place to the next lexicographically greater permutation. If the last permutation, rearrange to the lowest (ascending). Must be in-place and O(1) extra space.",
+          "difficulty": "HARD",
+          "pattern": "Array Traversal + In-Place Reversal",
+          "hint1": "Find the largest index i such that nums[i] < nums[i+1] (rightmost ascent).",
+          "hint2": "Find the largest index j > i such that nums[j] > nums[i]. Swap them.",
+          "hint3": "Reverse the suffix starting at i+1.",
+          "starterCode": "public class Solution {\n    public void nextPermutation(int[] nums) {\n        // TODO: in-place O(1) space\n    }\n}",
+          "solutionCode": "public class Solution {\n    public void nextPermutation(int[] nums) {\n        int n = nums.length, i = n - 2;\n        // Step 1: find rightmost ascent\n        while (i >= 0 && nums[i] >= nums[i + 1]) i--;\n        if (i >= 0) {\n            // Step 2: find smallest element > nums[i] from the right\n            int j = n - 1;\n            while (nums[j] <= nums[i]) j--;\n            swap(nums, i, j);\n        }\n        // Step 3: reverse suffix\n        reverse(nums, i + 1, n - 1);\n    }\n\n    private void swap(int[] a, int i, int j) {\n        int t = a[i]; a[i] = a[j]; a[j] = t;\n    }\n\n    private void reverse(int[] a, int l, int r) {\n        while (l < r) swap(a, l++, r--);\n    }\n}",
+          "testCases": [
+            {"input": "[1,2,3]", "output": "[1,3,2]"},
+            {"input": "[3,2,1]", "output": "[1,2,3]"},
+            {"input": "[1,1,5]", "output": "[1,5,1]"},
+            {"input": "[1,3,2]", "output": "[2,1,3]"}
+          ],
+          "constraints": "1 <= nums.length <= 100. 0 <= nums[i] <= 100.",
+          "editorial": "Three-step algorithm: (1) find pivot i where ascending order breaks from the right, (2) swap pivot with next larger element, (3) reverse the suffix. If array is fully descending (i = -1), just reverse the whole array. O(n) time, O(1) space."
+        },
+        {
+          "displayOrder": 18,
+          "title": "Longest Increasing Subsequence (Binary Search)",
+          "description": "Find the length of the longest strictly increasing subsequence. Must be O(n log n).",
+          "difficulty": "HARD",
+          "pattern": "Patience Sorting / Binary Search",
+          "hint1": "Maintain a 'tails' array where tails[i] is the smallest tail element of all increasing subsequences of length i+1.",
+          "hint2": "For each number, binary search for its position in tails.",
+          "hint3": "If num > tails.last, extend. Otherwise, replace the first element >= num in tails.",
+          "starterCode": "public class Solution {\n    public int lengthOfLIS(int[] nums) {\n        // TODO: O(n log n)\n        return 0;\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public int lengthOfLIS(int[] nums) {\n        List<Integer> tails = new ArrayList<>();\n        for (int num : nums) {\n            int lo = 0, hi = tails.size();\n            while (lo < hi) {\n                int mid = (lo + hi) / 2;\n                if (tails.get(mid) < num) lo = mid + 1;\n                else hi = mid;\n            }\n            if (lo == tails.size()) tails.add(num);\n            else tails.set(lo, num);\n        }\n        return tails.size();\n    }\n}",
+          "testCases": [
+            {"input": "[10,9,2,5,3,7,101,18]", "output": "4"},
+            {"input": "[0,1,0,3,2,3]", "output": "4"},
+            {"input": "[7,7,7,7,7]", "output": "1"},
+            {"input": "[1,3,6,7,9,4,10,5,6]", "output": "6"}
+          ],
+          "constraints": "1 <= nums.length <= 2500. -10^4 <= nums[i] <= 10^4.",
+          "editorial": "Patience sorting: 'tails' array always stays sorted. Binary search finds the correct position for each element. tails[i] is the smallest possible tail for an IS of length i+1. Size of tails = LIS length. O(n log n) due to binary search per element. Note: tails doesn't store an actual LIS — only its length."
+        },
+        {
+          "displayOrder": 19,
+          "title": "Maximum Gap",
+          "description": "Given an unsorted array of n integers, find the maximum difference between successive elements in its sorted form. Must be O(n) time and space (no comparison-based sort).",
+          "difficulty": "HARD",
+          "pattern": "Bucket Sort / Pigeonhole Principle",
+          "hint1": "By pigeonhole, if n elements span range [min,max], maximum gap >= ceil((max-min)/(n-1)).",
+          "hint2": "Create n-1 buckets of size ceil((max-min)/(n-1)). Each bucket stores only min and max of its elements.",
+          "hint3": "Maximum gap is the largest gap between consecutive non-empty buckets.",
+          "starterCode": "public class Solution {\n    public int maximumGap(int[] nums) {\n        // TODO: O(n) time\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int maximumGap(int[] nums) {\n        int n = nums.length;\n        if (n < 2) return 0;\n        int min = nums[0], max = nums[0];\n        for (int x : nums) { min = Math.min(min, x); max = Math.max(max, x); }\n        if (min == max) return 0;\n        int bucketSize = Math.max(1, (max - min) / (n - 1));\n        int bucketCount = (max - min) / bucketSize + 1;\n        int[] bucketMin = new int[bucketCount];\n        int[] bucketMax = new int[bucketCount];\n        java.util.Arrays.fill(bucketMin, Integer.MAX_VALUE);\n        java.util.Arrays.fill(bucketMax, Integer.MIN_VALUE);\n        for (int x : nums) {\n            int idx = (x - min) / bucketSize;\n            bucketMin[idx] = Math.min(bucketMin[idx], x);\n            bucketMax[idx] = Math.max(bucketMax[idx], x);\n        }\n        int maxGap = 0, prevMax = bucketMax[0];\n        for (int i = 1; i < bucketCount; i++) {\n            if (bucketMin[i] == Integer.MAX_VALUE) continue;  // empty bucket\n            maxGap = Math.max(maxGap, bucketMin[i] - prevMax);\n            prevMax = bucketMax[i];\n        }\n        return maxGap;\n    }\n}",
+          "testCases": [
+            {"input": "[3,6,9,1]", "output": "3"},
+            {"input": "[10]", "output": "0"},
+            {"input": "[1,10000000]", "output": "9999999"},
+            {"input": "[1,3,5,9,23]", "output": "14"}
+          ],
+          "constraints": "1 <= nums.length <= 10^5. 0 <= nums[i] <= 10^9.",
+          "editorial": "Bucket sort via pigeonhole: with n elements and range R, max gap >= R/(n-1). Buckets of this size ensure the max gap crosses bucket boundaries. Store only bucket min/max — elements within same bucket can't create the max gap. O(n) time and space."
+        },
+        {
+          "displayOrder": 20,
+          "title": "Count of Range Sum",
+          "description": "Given an integer array, return the number of range sums (subarrays) that lie in [lower, upper] inclusive.",
+          "difficulty": "HARD",
+          "pattern": "Merge Sort on Prefix Sums",
+          "hint1": "Build prefix sum array. Range sum nums[i..j] = prefix[j+1] - prefix[i].",
+          "hint2": "Count pairs (i, j) where lower <= prefix[j] - prefix[i] <= upper using merge sort.",
+          "hint3": "During merge sort's merge step, use two pointers to count valid pairs.",
+          "starterCode": "public class Solution {\n    public int countRangeSum(int[] nums, int lower, int upper) {\n        // TODO: O(n log n)\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    private int lower, upper;\n    private long[] temp;\n\n    public int countRangeSum(int[] nums, int lower, int upper) {\n        this.lower = lower; this.upper = upper;\n        int n = nums.length;\n        long[] prefix = new long[n + 1];\n        for (int i = 0; i < n; i++) prefix[i + 1] = prefix[i] + nums[i];\n        temp = new long[n + 1];\n        return mergeCount(prefix, 0, n + 1);\n    }\n\n    private int mergeCount(long[] arr, int lo, int hi) {\n        if (hi - lo <= 1) return 0;\n        int mid = (lo + hi) / 2;\n        int count = mergeCount(arr, lo, mid) + mergeCount(arr, mid, hi);\n        int j = mid, k = mid;\n        for (int i = lo; i < mid; i++) {\n            while (j < hi && arr[j] - arr[i] < lower) j++;\n            while (k < hi && arr[k] - arr[i] <= upper) k++;\n            count += k - j;\n        }\n        // merge step\n        int p = lo, q = mid, r = lo;\n        while (p < mid && q < hi)\n            temp[r++] = arr[p] <= arr[q] ? arr[p++] : arr[q++];\n        while (p < mid) temp[r++] = arr[p++];\n        while (q < hi)  temp[r++] = arr[q++];\n        System.arraycopy(temp, lo, arr, lo, hi - lo);\n        return count;\n    }\n}",
+          "testCases": [
+            {"input": "nums=[-2,5,-1], lower=-2, upper=2", "output": "3"},
+            {"input": "nums=[0], lower=0, upper=0", "output": "1"},
+            {"input": "nums=[0,-3], lower=-4, upper=-1", "output": "2"}
+          ],
+          "constraints": "1 <= nums.length <= 10^5. -2^31 <= nums[i] <= 2^31-1. -10^5 <= lower <= upper <= 10^5.",
+          "editorial": "Merge sort on prefix sums counts valid pairs during the merge step. After recursive sorting, for each prefix[i] in left half, find the range in right half where lower <= prefix[j] - prefix[i] <= upper using two monotonically advancing pointers. O(n log n) time. Note: use long for prefix to avoid overflow."
+        }
+      ]
+    }
+  ]
+}

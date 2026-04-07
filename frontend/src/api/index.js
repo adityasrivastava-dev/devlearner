@@ -169,6 +169,12 @@ export const adminApi = {
   seedBatch: (payload) =>
     http.post('/api/admin/seed-batch', payload).then((r) => r.data),
 
+  getSeedFiles: () =>
+    http.get('/api/admin/seed-files').then((r) => r.data),
+
+  importSeedFile: (filename) =>
+    http.post(`/api/admin/seed-files/${encodeURIComponent(filename)}`).then((r) => r.data),
+
   // Topic CRUD
   createTopic: (data) =>
     http.post('/api/admin/topics', data).then((r) => r.data),
@@ -257,6 +263,7 @@ export const QUERY_KEYS = {
   bookmarks:                ['bookmarks'],
   adminUsers:               ['adminUsers'],
   adminStats:               ['adminStats'],
+  seedFiles:                ['seedFiles'],
   roadmaps:                 ['roadmaps'],
   studyPlans:               ['studyPlans'],
 };

@@ -1,0 +1,464 @@
+{
+  "batchName": "B05-control-flow",
+  "skipExisting": true,
+  "topics": [
+    {
+      "title": "Control Flow in Java",
+      "category": "JAVA",
+      "story": "Imagine you're a traffic controller at a busy intersection. Every vehicle (instruction) that arrives needs to be routed: some go straight (sequential), some turn left or right based on signals (conditionals), some loop around the roundabout multiple times (loops), and emergency vehicles can break the normal flow and cut through (break/continue). Java's control flow is your traffic control system — it determines which code runs, how many times, and when to stop.",
+      "analogy": "Control flow is like a 'Choose Your Own Adventure' book. At each page you make decisions (if/else), sometimes you revisit the same page multiple times (loops), and occasionally you skip ahead or go back to a bookmark (break/continue/labels). The JVM is the reader following your instructions page by page.",
+      "memoryAnchor": "SLIC — Sequential, Loop, If/else, Continue/break. Every program is just SLIC logic stacked on top of each other.",
+      "firstPrinciples": "CPUs execute instructions sequentially. Control flow instructions alter the program counter (PC register) to jump to a different address. An 'if' compiles to a conditional branch (ifeq/ifne bytecode). A 'for' loop compiles to a backward jump. 'break' compiles to a goto. Understanding this means you know that every control structure is just a fancy abstraction over jump instructions in bytecode.",
+      "bruteForce": "Write deeply nested if/else chains and explicit index-based for loops. Use flags and counters everywhere. While verbose, this approach is always readable and debuggable — start here when learning.",
+      "optimizedApproach": "Use enhanced for-each for collections (avoids off-by-one errors), switch expressions (Java 14+) for multi-way branching (more readable than if-else chains), and labeled break/continue sparingly for nested loops. Prefer early returns over deeply nested conditions (guard clauses pattern).",
+      "whenToUse": "if/else: binary or multi-branch decisions. switch/switch expression: multi-way dispatch on a single value. for: when you know the iteration count. while: when you loop until a condition changes. do-while: when you need at least one execution. break/continue: to short-circuit loops. Labels: only for nested loop control (use sparingly).",
+      "examples": [
+        {
+          "displayOrder": 1,
+          "title": "if / else-if / else — Grade Classifier",
+          "code": "public class GradeClassifier {\n    public static String classify(int score) {\n        if (score < 0 || score > 100) {\n            throw new IllegalArgumentException(\"Score must be 0-100, got: \" + score);\n        } else if (score >= 90) {\n            return \"A\";\n        } else if (score >= 80) {\n            return \"B\";\n        } else if (score >= 70) {\n            return \"C\";\n        } else if (score >= 60) {\n            return \"D\";\n        } else {\n            return \"F\";\n        }\n    }\n\n    public static void main(String[] args) {\n        int[] scores = {95, 82, 71, 65, 45, 100, 0};\n        for (int s : scores) {\n            System.out.printf(\"Score %3d -> Grade %s%n\", s, classify(s));\n        }\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":3,\"phase\":\"CALL\",\"variables\":{\"score\":95},\"description\":\"classify(95) called\"},{\"step\":2,\"line\":4,\"phase\":\"CONDITION_FALSE\",\"variables\":{\"score\":95},\"description\":\"95 < 0 || 95 > 100 → false, skip throw\"},{\"step\":3,\"line\":6,\"phase\":\"CONDITION_TRUE\",\"variables\":{\"score\":95},\"description\":\"95 >= 90 → true\"},{\"step\":4,\"line\":7,\"phase\":\"RETURN\",\"variables\":{\"result\":\"A\"},\"description\":\"return 'A'\"},{\"step\":5,\"line\":3,\"phase\":\"CALL\",\"variables\":{\"score\":65},\"description\":\"classify(65) called\"},{\"step\":6,\"line\":4,\"phase\":\"CONDITION_FALSE\",\"variables\":{},\"description\":\"guard passes\"},{\"step\":7,\"line\":6,\"phase\":\"CONDITION_FALSE\",\"variables\":{},\"description\":\"65 >= 90 false\"},{\"step\":8,\"line\":8,\"phase\":\"CONDITION_FALSE\",\"variables\":{},\"description\":\"65 >= 80 false\"},{\"step\":9,\"line\":10,\"phase\":\"CONDITION_FALSE\",\"variables\":{},\"description\":\"65 >= 70 false\"},{\"step\":10,\"line\":12,\"phase\":\"CONDITION_TRUE\",\"variables\":{},\"description\":\"65 >= 60 true\"},{\"step\":11,\"line\":13,\"phase\":\"RETURN\",\"variables\":{\"result\":\"D\"},\"description\":\"return 'D'\"}]",
+          "flowchartMermaid": "graph TD\n    A[score] --> B{score < 0 or > 100?}\n    B -- yes --> C[throw IllegalArgumentException]\n    B -- no --> D{score >= 90?}\n    D -- yes --> E[return A]\n    D -- no --> F{score >= 80?}\n    F -- yes --> G[return B]\n    F -- no --> H{score >= 70?}\n    H -- yes --> I[return C]\n    H -- no --> J{score >= 60?}\n    J -- yes --> K[return D]\n    J -- no --> L[return F]",
+          "pseudocode": "FUNCTION classify(score):\n  IF score out of range → throw error\n  ELSE IF score >= 90 → return 'A'\n  ELSE IF score >= 80 → return 'B'\n  ELSE IF score >= 70 → return 'C'\n  ELSE IF score >= 60 → return 'D'\n  ELSE → return 'F'",
+          "explanation": "Guard clause at top rejects invalid input early. The else-if chain evaluates from highest score down — order matters! Each condition is checked only if all previous ones were false. This is O(n) in number of branches, but compilers often optimize dense ranges to a jump table.",
+          "realWorldUse": "Used in grading systems, HTTP status code handlers (2xx/3xx/4xx/5xx routing), and any classification problem. In Spring Boot, @ExceptionHandler methods use similar if-else-equivalent dispatch."
+        },
+        {
+          "displayOrder": 2,
+          "title": "switch Expression (Java 14+) — Day Type",
+          "code": "public class DayTypeChecker {\n    public static void main(String[] args) {\n        for (int day = 1; day <= 7; day++) {\n            String type = switch (day) {\n                case 1, 7 -> \"Weekend\";\n                case 2, 3, 4, 5, 6 -> \"Weekday\";\n                default -> \"Unknown\";\n            };\n            System.out.printf(\"Day %d: %s%n\", day, type);\n        }\n\n        // switch with blocks and yield\n        int score = 85;\n        String grade = switch (score / 10) {\n            case 10, 9 -> \"A\";\n            case 8 -> \"B\";\n            case 7 -> \"C\";\n            case 6 -> \"D\";\n            default -> {\n                System.out.println(\"Below passing threshold\");\n                yield \"F\";  // yield returns from a block\n            }\n        };\n        System.out.println(\"Grade: \" + grade);\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":3,\"phase\":\"LOOP_START\",\"variables\":{\"day\":1},\"description\":\"for loop starts, day=1\"},{\"step\":2,\"line\":4,\"phase\":\"CONDITION_TRUE\",\"variables\":{\"day\":1},\"description\":\"case 1,7 matches → 'Weekend'\"},{\"step\":3,\"line\":7,\"phase\":\"ASSIGN\",\"variables\":{\"type\":\"Weekend\"},\"description\":\"type = 'Weekend'\"},{\"step\":4,\"line\":3,\"phase\":\"LOOP_ITER\",\"variables\":{\"day\":2},\"description\":\"day++ → 2\"},{\"step\":5,\"line\":4,\"phase\":\"CONDITION_FALSE\",\"variables\":{\"day\":2},\"description\":\"case 1,7 no match\"},{\"step\":6,\"line\":5,\"phase\":\"CONDITION_TRUE\",\"variables\":{\"day\":2},\"description\":\"case 2,3,4,5,6 matches → 'Weekday'\"},{\"step\":7,\"line\":13,\"phase\":\"ASSIGN\",\"variables\":{\"score\":85},\"description\":\"score = 85, score/10 = 8\"},{\"step\":8,\"line\":15,\"phase\":\"CONDITION_TRUE\",\"variables\":{},\"description\":\"case 8 matches → 'B'\"},{\"step\":9,\"line\":23,\"phase\":\"ASSIGN\",\"variables\":{\"grade\":\"B\"},\"description\":\"grade = 'B'\"}]",
+          "flowchartMermaid": "graph TD\n    A[day value] --> B{switch day}\n    B -- 1 or 7 --> C[Weekend]\n    B -- 2-6 --> D[Weekday]\n    B -- default --> E[Unknown]\n    F[score/10] --> G{switch quotient}\n    G -- 10 or 9 --> H[A]\n    G -- 8 --> I[B]\n    G -- 7 --> J[C]\n    G -- 6 --> K[D]\n    G -- default --> L[print + yield F]",
+          "pseudocode": "FOR day = 1 to 7:\n  type = SWITCH day:\n    CASE 1, 7: 'Weekend'\n    CASE 2-6: 'Weekday'\n    DEFAULT: 'Unknown'\n  PRINT day, type\n\ngrade = SWITCH score/10:\n  CASE 10, 9: 'A' ...\n  DEFAULT: BLOCK → print + YIELD 'F'",
+          "explanation": "Switch expressions (arrow syntax) eliminate fall-through bugs. Multiple labels per case (case 1, 7) reduce duplication. The 'yield' keyword returns a value from a block case. The entire switch is an expression — it can be assigned, passed as argument, or returned directly.",
+          "realWorldUse": "Used in command pattern dispatch, HTTP method routing, enum-based state machines. Java 21 adds pattern matching in switch: `case String s when s.length() > 5 -> ...`"
+        },
+        {
+          "displayOrder": 3,
+          "title": "for / while / do-while — Fibonacci Generator",
+          "code": "public class FibonacciLoops {\n    public static void main(String[] args) {\n        int n = 10;\n\n        // --- Classic for loop ---\n        System.out.print(\"for:    \");\n        long a = 0, b = 1;\n        for (int i = 0; i < n; i++) {\n            System.out.print(a + \" \");\n            long next = a + b;\n            a = b;\n            b = next;\n        }\n        System.out.println();\n\n        // --- while loop ---\n        System.out.print(\"while:  \");\n        a = 0; b = 1;\n        int count = 0;\n        while (count < n) {\n            System.out.print(a + \" \");\n            long next = a + b;\n            a = b;\n            b = next;\n            count++;\n        }\n        System.out.println();\n\n        // --- do-while (always executes body at least once) ---\n        System.out.print(\"do-while: \");\n        a = 0; b = 1;\n        count = 0;\n        do {\n            System.out.print(a + \" \");\n            long next = a + b;\n            a = b;\n            b = next;\n            count++;\n        } while (count < n);\n        System.out.println();\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":7,\"phase\":\"DECLARE\",\"variables\":{\"a\":0,\"b\":1},\"description\":\"a=0, b=1 initialized\"},{\"step\":2,\"line\":8,\"phase\":\"LOOP_START\",\"variables\":{\"i\":0},\"description\":\"for loop: i=0, i<10 true\"},{\"step\":3,\"line\":9,\"phase\":\"LOOP_ITER\",\"variables\":{\"print\":0},\"description\":\"print a=0\"},{\"step\":4,\"line\":10,\"phase\":\"ASSIGN\",\"variables\":{\"next\":1},\"description\":\"next = 0+1 = 1\"},{\"step\":5,\"line\":11,\"phase\":\"ASSIGN\",\"variables\":{\"a\":1},\"description\":\"a = b = 1\"},{\"step\":6,\"line\":12,\"phase\":\"ASSIGN\",\"variables\":{\"b\":1},\"description\":\"b = next = 1\"},{\"step\":7,\"line\":8,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":1},\"description\":\"i++ → 1, 1<10 true\"},{\"step\":8,\"line\":9,\"phase\":\"LOOP_ITER\",\"variables\":{\"print\":1},\"description\":\"print a=1\"},{\"step\":9,\"line\":10,\"phase\":\"ASSIGN\",\"variables\":{\"next\":2},\"description\":\"next = 1+1 = 2\"}]",
+          "flowchartMermaid": "graph TD\n    A[init a=0 b=1 i=0] --> B{i < n?}\n    B -- yes --> C[print a]\n    C --> D[next = a+b]\n    D --> E[a = b]\n    E --> F[b = next]\n    F --> G[i++]\n    G --> B\n    B -- no --> H[done]\n    I[do-while: always enters body first] --> J[execute body]\n    J --> K{condition true?}\n    K -- yes --> J\n    K -- no --> L[exit]",
+          "pseudocode": "FOR i = 0 to n-1:\n  print a\n  next ← a + b\n  a ← b\n  b ← next\n\nWHILE count < n:\n  print a; update; count++\n\nDO:\n  print a; update; count++\nWHILE count < n",
+          "explanation": "All three loops produce identical output. 'for' is ideal when iteration count is known upfront. 'while' suits unknown-iteration scenarios (reading input, polling). 'do-while' guarantees at least one execution — useful for menu loops and input validation. Note: do-while is rarely seen in modern Java code; prefer while.",
+          "realWorldUse": "for loops: iterating arrays, processing batches. while loops: reading streams/sockets until EOF. do-while: retry loops, game loops, input validation loops."
+        },
+        {
+          "displayOrder": 4,
+          "title": "break / continue / labeled break — Matrix Search",
+          "code": "public class MatrixSearch {\n    public static void main(String[] args) {\n        int[][] matrix = {\n            {1, 3, 5, 7},\n            {2, 4, 6, 8},\n            {9, 11, 13, 15}\n        };\n        int target = 6;\n\n        // Labeled break: exit outer loop from inner loop\n        boolean found = false;\n        int foundRow = -1, foundCol = -1;\n\n        outerLoop:\n        for (int i = 0; i < matrix.length; i++) {\n            for (int j = 0; j < matrix[i].length; j++) {\n                if (matrix[i][j] == target) {\n                    found = true;\n                    foundRow = i;\n                    foundCol = j;\n                    break outerLoop;  // exits BOTH loops\n                }\n            }\n        }\n\n        if (found) {\n            System.out.printf(\"Found %d at [%d][%d]%n\", target, foundRow, foundCol);\n        }\n\n        // continue: skip even numbers, sum odd numbers\n        int sum = 0;\n        for (int[] row : matrix) {\n            for (int val : row) {\n                if (val % 2 == 0) continue;  // skip evens\n                sum += val;\n            }\n        }\n        System.out.println(\"Sum of odd numbers: \" + sum);  // 1+3+5+7+9+11+13+15=64\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":14,\"phase\":\"LOOP_START\",\"variables\":{\"i\":0},\"description\":\"outer loop i=0\"},{\"step\":2,\"line\":15,\"phase\":\"LOOP_START\",\"variables\":{\"j\":0},\"description\":\"inner loop j=0, matrix[0][0]=1\"},{\"step\":3,\"line\":16,\"phase\":\"CONDITION_FALSE\",\"variables\":{\"val\":1},\"description\":\"1 != 6, continue inner\"},{\"step\":4,\"line\":15,\"phase\":\"LOOP_ITER\",\"variables\":{\"j\":1},\"description\":\"j=1, matrix[0][1]=3\"},{\"step\":5,\"line\":15,\"phase\":\"LOOP_ITER\",\"variables\":{\"j\":2},\"description\":\"j=2, matrix[0][2]=5\"},{\"step\":6,\"line\":15,\"phase\":\"LOOP_ITER\",\"variables\":{\"j\":3},\"description\":\"j=3, matrix[0][3]=7\"},{\"step\":7,\"line\":14,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":1},\"description\":\"i=1 (row 2)\"},{\"step\":8,\"line\":15,\"phase\":\"LOOP_ITER\",\"variables\":{\"j\":0},\"description\":\"matrix[1][0]=2\"},{\"step\":9,\"line\":15,\"phase\":\"LOOP_ITER\",\"variables\":{\"j\":2},\"description\":\"j=2, matrix[1][2]=6\"},{\"step\":10,\"line\":16,\"phase\":\"CONDITION_TRUE\",\"variables\":{\"val\":6},\"description\":\"6 == 6 match!\"},{\"step\":11,\"line\":21,\"phase\":\"ASSIGN\",\"variables\":{\"foundRow\":1,\"foundCol\":2},\"description\":\"record position\"},{\"step\":12,\"line\":22,\"phase\":\"RETURN\",\"variables\":{},\"description\":\"break outerLoop — both loops exit\"}]",
+          "flowchartMermaid": "graph TD\n    A[outerLoop: i=0] --> B{i < rows?}\n    B -- no --> C[not found]\n    B -- yes --> D[inner: j=0]\n    D --> E{j < cols?}\n    E -- no --> F[i++, back to B]\n    E -- yes --> G{matrix-i-j == target?}\n    G -- yes --> H[set found, break outerLoop]\n    G -- no --> I[j++, back to E]\n    H --> J[print result]",
+          "pseudocode": "LABEL outerLoop:\nFOR i in rows:\n  FOR j in cols:\n    IF matrix[i][j] == target:\n      foundRow=i, foundCol=j\n      BREAK outerLoop  ← exits both loops\n\nFOR row in matrix:\n  FOR val in row:\n    IF val is even: CONTINUE  ← skip to next iteration\n    sum += val",
+          "explanation": "Labeled break solves the classic 'how to exit nested loops' problem cleanly. The label (outerLoop:) is placed before the outer for statement. 'break outerLoop' jumps to after the labeled statement. 'continue outerLoop' would skip to the outer loop's next iteration. Use labels sparingly — they can reduce readability.",
+          "realWorldUse": "Matrix/graph traversal when the target is found, game loops with nested state machines, parser loops with sub-parsers. In practice, extracting the nested loop to a method and using early return is often cleaner than labels."
+        },
+        {
+          "displayOrder": 5,
+          "title": "Enhanced for-each + Iterator Pattern",
+          "code": "import java.util.*;\n\npublic class ForEachDemo {\n    public static void main(String[] args) {\n        // Enhanced for-each: works on arrays and Iterables\n        int[] nums = {5, 3, 8, 1, 9, 2};\n        int max = nums[0];\n        for (int n : nums) {         // desugars to: for(int i=0; i<nums.length; i++)\n            if (n > max) max = n;\n        }\n        System.out.println(\"Max: \" + max);\n\n        // For-each on List\n        List<String> langs = List.of(\"Java\", \"Python\", \"Go\", \"Rust\");\n        for (String lang : langs) {  // desugars to: Iterator<String> it = langs.iterator(); while(it.hasNext())\n            System.out.println(lang.toLowerCase());\n        }\n\n        // CAUTION: can't modify index/remove during enhanced for\n        // Use explicit Iterator if you need removal\n        List<Integer> mutable = new ArrayList<>(Arrays.asList(1, 2, 3, 4, 5, 6));\n        Iterator<Integer> it = mutable.iterator();\n        while (it.hasNext()) {\n            int val = it.next();\n            if (val % 2 == 0) it.remove();  // safe removal\n        }\n        System.out.println(\"Odd only: \" + mutable);  // [1, 3, 5]\n\n        // for-each with index trick using external counter\n        int idx = 0;\n        for (String lang : langs) {\n            System.out.printf(\"%d: %s%n\", idx++, lang);\n        }\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":6,\"phase\":\"DECLARE\",\"variables\":{\"nums\":\"[5,3,8,1,9,2]\",\"max\":5},\"description\":\"init array, max=nums[0]=5\"},{\"step\":2,\"line\":7,\"phase\":\"LOOP_START\",\"variables\":{\"n\":5},\"description\":\"for-each: n=5 (first element)\"},{\"step\":3,\"line\":8,\"phase\":\"CONDITION_FALSE\",\"variables\":{\"n\":5,\"max\":5},\"description\":\"5 > 5 false\"},{\"step\":4,\"line\":7,\"phase\":\"LOOP_ITER\",\"variables\":{\"n\":3},\"description\":\"n=3\"},{\"step\":5,\"line\":8,\"phase\":\"CONDITION_FALSE\",\"variables\":{\"n\":3,\"max\":5},\"description\":\"3 > 5 false\"},{\"step\":6,\"line\":7,\"phase\":\"LOOP_ITER\",\"variables\":{\"n\":8},\"description\":\"n=8\"},{\"step\":7,\"line\":8,\"phase\":\"CONDITION_TRUE\",\"variables\":{\"n\":8,\"max\":5},\"description\":\"8 > 5 → max=8\"},{\"step\":8,\"line\":7,\"phase\":\"LOOP_ITER\",\"variables\":{\"n\":9},\"description\":\"n=9\"},{\"step\":9,\"line\":8,\"phase\":\"CONDITION_TRUE\",\"variables\":{\"n\":9,\"max\":8},\"description\":\"9 > 8 → max=9\"},{\"step\":10,\"line\":11,\"phase\":\"RETURN\",\"variables\":{\"max\":9},\"description\":\"print Max: 9\"}]",
+          "flowchartMermaid": "graph TD\n    A[array/Iterable] --> B[get Iterator]\n    B --> C{hasNext?}\n    C -- yes --> D[next → element]\n    D --> E[execute body]\n    E --> C\n    C -- no --> F[loop ends]\n    G[explicit Iterator] --> H{hasNext?}\n    H -- yes --> I[next]\n    I --> J{condition?}\n    J -- yes --> K[it.remove - safe]\n    J -- no --> H\n    H -- no --> L[done]",
+          "pseudocode": "FOR EACH n IN nums:\n  IF n > max: max = n\n\nFOR EACH lang IN langs:\n  print lang.toLowerCase()\n\nIT = mutable.iterator()\nWHILE IT.hasNext():\n  val = IT.next()\n  IF val is even: IT.remove()",
+          "explanation": "Enhanced for-each is syntactic sugar over Iterator. For arrays it uses index-based access; for Iterable it calls iterator(). You cannot use for-each to: (1) track index, (2) modify the collection, (3) iterate two collections simultaneously. Use explicit Iterator for safe removal. for-each prevents ConcurrentModificationException when removing via iterator.remove().",
+          "realWorldUse": "Processing database result sets, iterating repository results in Spring, processing event queues. The Iterator pattern is fundamental to Java Collections — every Collection implements Iterable."
+        }
+      ],
+      "problems": [
+        {
+          "displayOrder": 1,
+          "title": "FizzBuzz Classic",
+          "description": "Print numbers 1 to n. For multiples of 3 print 'Fizz', multiples of 5 print 'Buzz', multiples of both print 'FizzBuzz', otherwise print the number. Return results as a List<String>.",
+          "difficulty": "EASY",
+          "pattern": "Conditional Logic",
+          "hint1": "Check divisibility by 15 first (both 3 and 5), then 3, then 5.",
+          "hint2": "Use the modulo operator %. n % 3 == 0 means divisible by 3.",
+          "hint3": "Build a List<String> with a for loop from 1 to n inclusive.",
+          "starterCode": "import java.util.*;\npublic class Solution {\n    public List<String> fizzBuzz(int n) {\n        // TODO\n        return null;\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public List<String> fizzBuzz(int n) {\n        List<String> result = new ArrayList<>();\n        for (int i = 1; i <= n; i++) {\n            if (i % 15 == 0)      result.add(\"FizzBuzz\");\n            else if (i % 3 == 0)  result.add(\"Fizz\");\n            else if (i % 5 == 0)  result.add(\"Buzz\");\n            else                   result.add(String.valueOf(i));\n        }\n        return result;\n    }\n}",
+          "testCases": [
+            {"input": "15", "output": "[1, 2, Fizz, 4, Buzz, Fizz, 7, 8, Fizz, Buzz, 11, Fizz, 13, 14, FizzBuzz]"},
+            {"input": "5", "output": "[1, 2, Fizz, 4, Buzz]"},
+            {"input": "1", "output": "[1]"}
+          ],
+          "constraints": "1 <= n <= 10^4",
+          "editorial": "Check % 15 first to catch both divisors. The order matters — if you check % 3 before % 15, a multiple of 15 would print 'Fizz' instead of 'FizzBuzz'. O(n) time, O(n) space."
+        },
+        {
+          "displayOrder": 2,
+          "title": "Count Digits in a Number",
+          "description": "Given an integer n (may be negative), count the number of digits it contains. Do not use String conversion.",
+          "difficulty": "EASY",
+          "pattern": "Loop + Division",
+          "hint1": "Repeatedly divide by 10 until the number becomes 0.",
+          "hint2": "Handle negative numbers by taking the absolute value first.",
+          "hint3": "Special case: n = 0 has 1 digit.",
+          "starterCode": "public class Solution {\n    public int countDigits(int n) {\n        // TODO - do not use String.valueOf or Integer.toString\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int countDigits(int n) {\n        if (n == 0) return 1;\n        int count = 0;\n        long num = Math.abs((long) n);  // cast to long to handle Integer.MIN_VALUE\n        while (num > 0) {\n            num /= 10;\n            count++;\n        }\n        return count;\n    }\n}",
+          "testCases": [
+            {"input": "12345", "output": "5"},
+            {"input": "-987", "output": "3"},
+            {"input": "0", "output": "1"},
+            {"input": "1000000000", "output": "10"}
+          ],
+          "constraints": "Integer.MIN_VALUE <= n <= Integer.MAX_VALUE",
+          "editorial": "Use Math.abs and cast to long before taking abs value — Math.abs(Integer.MIN_VALUE) overflows in int. Divide by 10 in a while loop, counting iterations. O(log₁₀ n) time."
+        },
+        {
+          "displayOrder": 3,
+          "title": "Sum of Digits Until Single Digit",
+          "description": "Given a non-negative integer n, repeatedly sum its digits until the result is a single digit. Return the result. (Digital root problem)",
+          "difficulty": "EASY",
+          "pattern": "do-while / Math Formula",
+          "hint1": "Use a do-while loop to keep summing until the number is < 10.",
+          "hint2": "To sum digits: use % 10 to get last digit, / 10 to remove it.",
+          "hint3": "Mathematical shortcut: digital root = 1 + (n-1) % 9 for n > 0, 0 for n = 0.",
+          "starterCode": "public class Solution {\n    public int digitalRoot(int n) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int digitalRoot(int n) {\n        if (n == 0) return 0;\n        // Loop approach\n        while (n >= 10) {\n            int sum = 0;\n            while (n > 0) {\n                sum += n % 10;\n                n /= 10;\n            }\n            n = sum;\n        }\n        return n;\n        // O(1) math: return 1 + (n - 1) % 9;\n    }\n}",
+          "testCases": [
+            {"input": "493", "output": "7"},
+            {"input": "9875", "output": "2"},
+            {"input": "0", "output": "0"},
+            {"input": "9", "output": "9"}
+          ],
+          "constraints": "0 <= n <= 10^7",
+          "editorial": "Nested while loops: outer checks if n >= 10, inner sums digits. Alternatively, digital root has O(1) formula: for n>0, answer is 1 + (n-1) % 9. Both approaches are valid."
+        },
+        {
+          "displayOrder": 4,
+          "title": "Reverse a Number",
+          "description": "Given a 32-bit signed integer x, return x with its digits reversed. If the reversed integer overflows, return 0.",
+          "difficulty": "EASY",
+          "pattern": "While Loop + Overflow Check",
+          "hint1": "Extract last digit with x % 10, then remove it with x / 10.",
+          "hint2": "Build the reversed number by multiplying current result by 10 and adding the digit.",
+          "hint3": "Check overflow before multiplying: if (result > Integer.MAX_VALUE / 10) return 0.",
+          "starterCode": "public class Solution {\n    public int reverse(int x) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int reverse(int x) {\n        long result = 0;\n        while (x != 0) {\n            result = result * 10 + x % 10;\n            x /= 10;\n        }\n        if (result > Integer.MAX_VALUE || result < Integer.MIN_VALUE) return 0;\n        return (int) result;\n    }\n}",
+          "testCases": [
+            {"input": "123", "output": "321"},
+            {"input": "-456", "output": "-654"},
+            {"input": "1000000003", "output": "0"},
+            {"input": "0", "output": "0"}
+          ],
+          "constraints": "-2^31 <= x <= 2^31 - 1",
+          "editorial": "Use long to avoid overflow during computation. The while loop extracts digits using % 10 and builds result with * 10 + digit. Java's % operator on negative numbers returns a negative remainder, so the sign is preserved naturally."
+        },
+        {
+          "displayOrder": 5,
+          "title": "Pattern Printing — Right Triangle",
+          "description": "Given n, print a right triangle of stars. Row i has i stars (1-indexed). Return the pattern as a single String with newlines.",
+          "difficulty": "EASY",
+          "pattern": "Nested Loops",
+          "hint1": "Use a nested for loop: outer iterates rows (1 to n), inner prints stars.",
+          "hint2": "Append a newline character '\\n' after each row.",
+          "hint3": "Use StringBuilder for efficient string building inside loops.",
+          "starterCode": "public class Solution {\n    public String triangle(int n) {\n        // TODO\n        return \"\";\n    }\n}",
+          "solutionCode": "public class Solution {\n    public String triangle(int n) {\n        StringBuilder sb = new StringBuilder();\n        for (int i = 1; i <= n; i++) {\n            for (int j = 0; j < i; j++) {\n                sb.append('*');\n            }\n            sb.append('\\n');\n        }\n        return sb.toString();\n    }\n}",
+          "testCases": [
+            {"input": "4", "output": "*\n**\n***\n****\n"},
+            {"input": "1", "output": "*\n"},
+            {"input": "3", "output": "*\n**\n***\n"}
+          ],
+          "constraints": "1 <= n <= 50",
+          "editorial": "Classic nested loop pattern. Outer loop row i runs from 1 to n. Inner loop runs i times printing '*'. Always use StringBuilder for string concatenation inside loops — String + operator in a loop is O(n²)."
+        },
+        {
+          "displayOrder": 6,
+          "title": "First Non-Repeating Character",
+          "description": "Given a string, find the first character that does not repeat. Return its index, or -1 if none exists. Use control flow to exit early once found.",
+          "difficulty": "EASY",
+          "pattern": "Linear Search + Early Exit",
+          "hint1": "First pass: count frequency of each character using an int array of size 26.",
+          "hint2": "Second pass: iterate through the string and return the index of the first char with count == 1.",
+          "hint3": "Use 'return i' inside the loop for early exit — no need for a flag variable.",
+          "starterCode": "public class Solution {\n    public int firstUniqChar(String s) {\n        // TODO\n        return -1;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int firstUniqChar(String s) {\n        int[] count = new int[26];\n        for (char c : s.toCharArray()) {\n            count[c - 'a']++;\n        }\n        for (int i = 0; i < s.length(); i++) {\n            if (count[s.charAt(i) - 'a'] == 1) return i;\n        }\n        return -1;\n    }\n}",
+          "testCases": [
+            {"input": "leetcode", "output": "0"},
+            {"input": "aabb", "output": "-1"},
+            {"input": "loveleetcode", "output": "2"},
+            {"input": "z", "output": "0"}
+          ],
+          "constraints": "1 <= s.length <= 10^5. s consists of only lowercase letters.",
+          "editorial": "Two-pass O(n) solution. First pass builds frequency array. Second pass uses early return (control flow) to exit the loop as soon as the first unique character is found. The early return is an important control flow pattern — avoid using boolean flags when a return suffices."
+        },
+        {
+          "displayOrder": 7,
+          "title": "Collatz Sequence Counter",
+          "description": "Given a positive integer n, apply Collatz rules until reaching 1: if n is even, n = n/2; if n is odd, n = 3n+1. Count the number of steps. This is the famous unsolved Collatz conjecture.",
+          "difficulty": "MEDIUM",
+          "pattern": "While Loop + Mathematical Rule",
+          "hint1": "Use a while loop: continue while n != 1.",
+          "hint2": "Use n % 2 == 0 to check even, then apply appropriate rule.",
+          "hint3": "Use long to avoid integer overflow (3n+1 can temporarily exceed Integer.MAX_VALUE).",
+          "starterCode": "public class Solution {\n    public int collatzSteps(long n) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int collatzSteps(long n) {\n        if (n <= 0) throw new IllegalArgumentException();\n        int steps = 0;\n        while (n != 1) {\n            if (n % 2 == 0) {\n                n /= 2;\n            } else {\n                n = 3 * n + 1;\n            }\n            steps++;\n        }\n        return steps;\n    }\n}",
+          "testCases": [
+            {"input": "6", "output": "8"},
+            {"input": "27", "output": "111"},
+            {"input": "1", "output": "0"},
+            {"input": "2", "output": "1"}
+          ],
+          "constraints": "1 <= n <= 10^6 (conjecture holds for all tested values up to 2^68)",
+          "editorial": "Straightforward while loop. The interesting aspect is that nobody has proved this always terminates (Collatz conjecture), yet it does for all practical inputs. Use long to handle intermediate values that exceed Integer.MAX_VALUE (e.g., n=3 → 3*3+1=10, but for larger n, 3n+1 can overflow int)."
+        },
+        {
+          "displayOrder": 8,
+          "title": "Jump Game — Can Reach End",
+          "description": "Given an array of non-negative integers nums, each element represents your max jump length. Starting at index 0, determine if you can reach the last index.",
+          "difficulty": "MEDIUM",
+          "pattern": "Greedy + Control Flow",
+          "hint1": "Track the maximum reachable index as you iterate.",
+          "hint2": "At each index i, update maxReach = Math.max(maxReach, i + nums[i]).",
+          "hint3": "If i > maxReach at any point, you're stuck. If maxReach >= last index, you can reach the end.",
+          "starterCode": "public class Solution {\n    public boolean canJump(int[] nums) {\n        // TODO\n        return false;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public boolean canJump(int[] nums) {\n        int maxReach = 0;\n        for (int i = 0; i < nums.length; i++) {\n            if (i > maxReach) return false;  // stuck\n            maxReach = Math.max(maxReach, i + nums[i]);\n            if (maxReach >= nums.length - 1) return true;  // early exit\n        }\n        return true;\n    }\n}",
+          "testCases": [
+            {"input": "[2,3,1,1,4]", "output": "true"},
+            {"input": "[3,2,1,0,4]", "output": "false"},
+            {"input": "[0]", "output": "true"},
+            {"input": "[1,0,0]", "output": "false"}
+          ],
+          "constraints": "1 <= nums.length <= 10^4. 0 <= nums[i] <= 10^5",
+          "editorial": "Greedy: track maxReach = furthest index reachable so far. The early exit `if (i > maxReach) return false` is a key control flow optimization. Early return when maxReach covers the end also saves iterations. O(n) time, O(1) space."
+        },
+        {
+          "displayOrder": 9,
+          "title": "Spiral Order Matrix Traversal",
+          "description": "Given an m x n matrix, return all elements in spiral order (right → down → left → up, repeat). Demonstrate control flow with directional iteration.",
+          "difficulty": "MEDIUM",
+          "pattern": "Boundary Shrinking + Directional Loop",
+          "hint1": "Maintain four boundaries: top, bottom, left, right. Shrink them after each traversal pass.",
+          "hint2": "After traversing right: top++. After down: right--. After left: bottom--. After up: left++.",
+          "hint3": "Use a while (top <= bottom && left <= right) outer condition.",
+          "starterCode": "import java.util.*;\npublic class Solution {\n    public List<Integer> spiralOrder(int[][] matrix) {\n        // TODO\n        return new ArrayList<>();\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public List<Integer> spiralOrder(int[][] matrix) {\n        List<Integer> result = new ArrayList<>();\n        int top = 0, bottom = matrix.length - 1;\n        int left = 0, right = matrix[0].length - 1;\n        while (top <= bottom && left <= right) {\n            for (int i = left; i <= right; i++)  result.add(matrix[top][i]);\n            top++;\n            for (int i = top; i <= bottom; i++)  result.add(matrix[i][right]);\n            right--;\n            if (top <= bottom)\n                for (int i = right; i >= left; i--)  result.add(matrix[bottom][i]);\n            bottom--;\n            if (left <= right)\n                for (int i = bottom; i >= top; i--)  result.add(matrix[i][left]);\n            left++;\n        }\n        return result;\n    }\n}",
+          "testCases": [
+            {"input": "[[1,2,3],[4,5,6],[7,8,9]]", "output": "[1,2,3,6,9,8,7,4,5]"},
+            {"input": "[[1,2,3,4],[5,6,7,8],[9,10,11,12]]", "output": "[1,2,3,4,8,12,11,10,9,5,6,7]"},
+            {"input": "[[1]]", "output": "[1]"}
+          ],
+          "constraints": "m == matrix.length, n == matrix[i].length. 1 <= m, n <= 10",
+          "editorial": "Four directional passes with boundary shrinking. The `if (top <= bottom)` guards prevent re-traversing already-seen rows when the matrix has odd number of rows. O(m*n) time — each element visited exactly once."
+        },
+        {
+          "displayOrder": 10,
+          "title": "Longest Consecutive Sequence in Loop",
+          "description": "Given an array of integers, find the length of the longest consecutive sequence (e.g., [1,2,3,4]). Use O(n) time — demonstrate loop control with a HashSet.",
+          "difficulty": "MEDIUM",
+          "pattern": "HashSet + Sequence Detection",
+          "hint1": "Add all numbers to a HashSet for O(1) lookup.",
+          "hint2": "A sequence starts only when num-1 is NOT in the set — this avoids redundant counting.",
+          "hint3": "For each sequence start, use a while loop to count consecutive elements.",
+          "starterCode": "import java.util.*;\npublic class Solution {\n    public int longestConsecutive(int[] nums) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public int longestConsecutive(int[] nums) {\n        Set<Integer> set = new HashSet<>();\n        for (int n : nums) set.add(n);\n        int longest = 0;\n        for (int n : set) {\n            if (!set.contains(n - 1)) {  // start of sequence\n                int current = n, length = 1;\n                while (set.contains(current + 1)) {\n                    current++;\n                    length++;\n                }\n                longest = Math.max(longest, length);\n            }\n        }\n        return longest;\n    }\n}",
+          "testCases": [
+            {"input": "[100,4,200,1,3,2]", "output": "4"},
+            {"input": "[0,3,7,2,5,8,4,6,0,1]", "output": "9"},
+            {"input": "[]", "output": "0"},
+            {"input": "[1]", "output": "1"}
+          ],
+          "constraints": "0 <= nums.length <= 10^5. -10^9 <= nums[i] <= 10^9",
+          "editorial": "Key insight: only start counting from sequence beginnings (where n-1 is absent). The outer for loop only triggers the inner while loop O(n) total times across all sequences — so overall O(n) despite nested loops. The while loop is the control flow mechanism for extending the current sequence."
+        },
+        {
+          "displayOrder": 11,
+          "title": "Switch Expression — Roman to Integer",
+          "description": "Convert a Roman numeral string to an integer. Use a switch expression to map characters to values and control flow to handle subtraction cases.",
+          "difficulty": "MEDIUM",
+          "pattern": "Switch + Lookahead Control Flow",
+          "hint1": "Map each Roman letter to its value using a switch expression.",
+          "hint2": "If current value < next value, subtract current (e.g., IV = 5-1 = 4).",
+          "hint3": "Iterate left to right, adding or subtracting based on comparison with next char.",
+          "starterCode": "public class Solution {\n    public int romanToInt(String s) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    private int val(char c) {\n        return switch (c) {\n            case 'I' -> 1;\n            case 'V' -> 5;\n            case 'X' -> 10;\n            case 'L' -> 50;\n            case 'C' -> 100;\n            case 'D' -> 500;\n            case 'M' -> 1000;\n            default -> 0;\n        };\n    }\n\n    public int romanToInt(String s) {\n        int result = 0;\n        for (int i = 0; i < s.length(); i++) {\n            int curr = val(s.charAt(i));\n            int next = (i + 1 < s.length()) ? val(s.charAt(i + 1)) : 0;\n            if (curr < next) result -= curr;\n            else             result += curr;\n        }\n        return result;\n    }\n}",
+          "testCases": [
+            {"input": "III", "output": "3"},
+            {"input": "LVIII", "output": "58"},
+            {"input": "MCMXCIV", "output": "1994"},
+            {"input": "IV", "output": "4"}
+          ],
+          "constraints": "1 <= s.length <= 15. s contains only I,V,X,L,C,D,M.",
+          "editorial": "Switch expression cleanly maps characters to values. The lookahead (i+1 < length) control flow handles subtraction. The ternary for next value is a concise conditional. O(n) time — single pass through the string."
+        },
+        {
+          "displayOrder": 12,
+          "title": "Nested Loop — Print Prime Numbers up to N",
+          "description": "Print all prime numbers up to n using a nested loop (Sieve of Eratosthenes). Demonstrate break/continue for optimization.",
+          "difficulty": "MEDIUM",
+          "pattern": "Sieve / Nested Loop Optimization",
+          "hint1": "A number is prime if no integer from 2 to sqrt(n) divides it evenly.",
+          "hint2": "Use a boolean isPrime flag; set to false and break the inner loop if a divisor is found.",
+          "hint3": "For the Sieve: create a boolean array, mark composites false, collect remaining true indices.",
+          "starterCode": "import java.util.*;\npublic class Solution {\n    public List<Integer> sieveOfEratosthenes(int n) {\n        // TODO\n        return new ArrayList<>();\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public List<Integer> sieveOfEratosthenes(int n) {\n        boolean[] isComposite = new boolean[n + 1];  // false = prime\n        List<Integer> primes = new ArrayList<>();\n        for (int i = 2; i <= n; i++) {\n            if (isComposite[i]) continue;  // skip composites\n            primes.add(i);\n            // mark all multiples of i as composite\n            for (long j = (long)i * i; j <= n; j += i) {\n                isComposite[(int)j] = true;\n            }\n        }\n        return primes;\n    }\n}",
+          "testCases": [
+            {"input": "20", "output": "[2, 3, 5, 7, 11, 13, 17, 19]"},
+            {"input": "10", "output": "[2, 3, 5, 7]"},
+            {"input": "2", "output": "[2]"},
+            {"input": "1", "output": "[]"}
+          ],
+          "constraints": "1 <= n <= 10^6",
+          "editorial": "Sieve of Eratosthenes: for each prime i, mark i², i²+i, i²+2i, ... as composite. Start marking from i² because smaller multiples were already marked by smaller primes. 'continue' skips composites efficiently. O(n log log n) time — much better than O(n√n) trial division."
+        },
+        {
+          "displayOrder": 13,
+          "title": "Multi-Level Break with Labeled Loops — Word Search",
+          "description": "Given a 2D character board and a word, determine if the word exists in the board (horizontal/vertical adjacency only). Use labeled break to abort DFS branches.",
+          "difficulty": "HARD",
+          "pattern": "DFS + Backtracking + Labeled Control Flow",
+          "hint1": "Use DFS recursion: at each cell, check if board[r][c] == word.charAt(index).",
+          "hint2": "Mark cell as visited (e.g., board[r][c] = '#'), recurse in 4 directions, then restore.",
+          "hint3": "Return true immediately upon finding the word (labeled break equivalent via return).",
+          "starterCode": "public class Solution {\n    public boolean exist(char[][] board, String word) {\n        // TODO\n        return false;\n    }\n}",
+          "solutionCode": "public class Solution {\n    private int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0}};\n\n    public boolean exist(char[][] board, String word) {\n        int m = board.length, n = board[0].length;\n        for (int i = 0; i < m; i++) {\n            for (int j = 0; j < n; j++) {\n                if (board[i][j] == word.charAt(0) && dfs(board, word, i, j, 0))\n                    return true;  // labeled-break equivalent via early return\n            }\n        }\n        return false;\n    }\n\n    private boolean dfs(char[][] board, String word, int r, int c, int idx) {\n        if (idx == word.length()) return true;\n        if (r < 0 || r >= board.length || c < 0 || c >= board[0].length) return false;\n        if (board[r][c] != word.charAt(idx)) return false;\n        char tmp = board[r][c];\n        board[r][c] = '#';  // mark visited\n        for (int[] d : dirs) {\n            if (dfs(board, word, r + d[0], c + d[1], idx + 1)) {\n                board[r][c] = tmp;\n                return true;  // early exit — no need to try other directions\n            }\n        }\n        board[r][c] = tmp;  // restore\n        return false;\n    }\n}",
+          "testCases": [
+            {"input": "board=[[A,B,C,E],[S,F,C,S],[A,D,E,E]], word=ABCCED", "output": "true"},
+            {"input": "board=[[A,B,C,E],[S,F,C,S],[A,D,E,E]], word=SEE", "output": "true"},
+            {"input": "board=[[A,B,C,E],[S,F,C,S],[A,D,E,E]], word=ABCB", "output": "false"}
+          ],
+          "constraints": "m == board.length, n == board[i].length. 1 <= m,n <= 6. 1 <= word.length <= 15.",
+          "editorial": "Backtracking DFS with visited marking. The 'early return true' inside the direction loop is the labeled-break equivalent — once a valid path is found, no need to explore other directions. Restore board[r][c] on backtrack. O(m*n*4^L) worst case where L = word length."
+        },
+        {
+          "displayOrder": 14,
+          "title": "Iterator Implementation — Range Iterator",
+          "description": "Implement a RangeIterator class that iterates from start to end (exclusive) with a given step. It must implement Iterator<Integer>. Demonstrate control flow in hasNext()/next().",
+          "difficulty": "HARD",
+          "pattern": "Iterator Pattern + State Machine",
+          "hint1": "Store current position as state. hasNext() checks if current < end (for positive step).",
+          "hint2": "next() must throw NoSuchElementException if hasNext() is false.",
+          "hint3": "Handle negative steps (iterating downward): condition flips to current > end.",
+          "starterCode": "import java.util.*;\npublic class RangeIterator implements Iterator<Integer> {\n    // TODO: add fields\n\n    public RangeIterator(int start, int end, int step) {\n        // TODO\n    }\n\n    @Override\n    public boolean hasNext() {\n        // TODO\n        return false;\n    }\n\n    @Override\n    public Integer next() {\n        // TODO\n        return null;\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class RangeIterator implements Iterator<Integer> {\n    private int current;\n    private final int end;\n    private final int step;\n\n    public RangeIterator(int start, int end, int step) {\n        if (step == 0) throw new IllegalArgumentException(\"step cannot be 0\");\n        this.current = start;\n        this.end = end;\n        this.step = step;\n    }\n\n    @Override\n    public boolean hasNext() {\n        return step > 0 ? current < end : current > end;\n    }\n\n    @Override\n    public Integer next() {\n        if (!hasNext()) throw new NoSuchElementException();\n        int value = current;\n        current += step;\n        return value;\n    }\n\n    // Demo\n    public static void main(String[] args) {\n        RangeIterator ri = new RangeIterator(0, 10, 2);\n        while (ri.hasNext()) System.out.print(ri.next() + \" \");  // 0 2 4 6 8\n        System.out.println();\n        RangeIterator desc = new RangeIterator(10, 0, -3);\n        while (desc.hasNext()) System.out.print(desc.next() + \" \");  // 10 7 4 1\n    }\n}",
+          "testCases": [
+            {"input": "start=0, end=10, step=2", "output": "[0, 2, 4, 6, 8]"},
+            {"input": "start=10, end=0, step=-3", "output": "[10, 7, 4, 1]"},
+            {"input": "start=5, end=5, step=1", "output": "[]"}
+          ],
+          "constraints": "step != 0. All values fit in int.",
+          "editorial": "Iterator pattern encapsulates loop state. hasNext() uses ternary to handle both positive and negative steps. next() must validate state and throw NoSuchElementException — this is the contract defined by java.util.Iterator. The state machine: current advances by step on each call to next()."
+        },
+        {
+          "displayOrder": 15,
+          "title": "Validate Balanced Brackets using Switch",
+          "description": "Given a string of brackets, determine if it's valid (properly opened and closed). Use a switch expression to map closing to opening brackets.",
+          "difficulty": "HARD",
+          "pattern": "Stack + Switch Expression",
+          "hint1": "Use a Stack<Character>. For opening brackets, push onto stack.",
+          "hint2": "For closing brackets, pop from stack and check if it matches the expected opening bracket.",
+          "hint3": "Use switch expression: case ')' -> '(', case ']' -> '[', case '}' -> '{'",
+          "starterCode": "import java.util.*;\npublic class Solution {\n    public boolean isValid(String s) {\n        // TODO\n        return false;\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public boolean isValid(String s) {\n        Deque<Character> stack = new ArrayDeque<>();\n        for (char c : s.toCharArray()) {\n            switch (c) {\n                case '(', '[', '{' -> stack.push(c);\n                case ')', ']', '}' -> {\n                    if (stack.isEmpty()) return false;\n                    char expected = switch (c) {\n                        case ')' -> '(';\n                        case ']' -> '[';\n                        case '}' -> '{';\n                        default  -> ' ';\n                    };\n                    if (stack.pop() != expected) return false;\n                }\n            }\n        }\n        return stack.isEmpty();\n    }\n}",
+          "testCases": [
+            {"input": "()[]{}", "output": "true"},
+            {"input": "([)]", "output": "false"},
+            {"input": "{[]}", "output": "true"},
+            {"input": "(", "output": "false"},
+            {"input": "", "output": "true"}
+          ],
+          "constraints": "0 <= s.length <= 10^4. s consists of only '()[]{}'.",
+          "editorial": "Nested switch expressions: outer switch dispatches on character type (opener vs closer), inner switch expression maps closer to expected opener. Early return false on mismatch. Final check: stack must be empty (all openers were matched). O(n) time, O(n) space."
+        },
+        {
+          "displayOrder": 16,
+          "title": "Infinite Loop Detector — Floyd's Cycle",
+          "description": "Given a function int f(int x) and a starting value x0, detect if repeatedly applying f creates a cycle. Return the cycle start and length. (Floyd's tortoise and hare algorithm)",
+          "difficulty": "HARD",
+          "pattern": "Two-Pointer Loop + Cycle Detection",
+          "hint1": "Use slow (advances 1 step) and fast (advances 2 steps) pointers in a while loop.",
+          "hint2": "When slow == fast, a cycle exists. Find the entry point by resetting slow to start.",
+          "hint3": "Cycle length: after finding the meeting point, count steps until you return to it.",
+          "starterCode": "import java.util.function.IntUnaryOperator;\npublic class Solution {\n    public int[] detectCycle(int x0, IntUnaryOperator f) {\n        // returns [cycleStart, cycleLength]\n        // TODO\n        return new int[]{-1, 0};\n    }\n}",
+          "solutionCode": "import java.util.function.IntUnaryOperator;\npublic class Solution {\n    public int[] detectCycle(int x0, IntUnaryOperator f) {\n        // Phase 1: detect meeting point\n        int slow = f.applyAsInt(x0);\n        int fast = f.applyAsInt(f.applyAsInt(x0));\n        while (slow != fast) {\n            slow = f.applyAsInt(slow);\n            fast = f.applyAsInt(f.applyAsInt(fast));\n        }\n        // Phase 2: find cycle start (lambda)\n        int start = x0;\n        int steps = 0;\n        while (start != slow) {\n            start = f.applyAsInt(start);\n            slow  = f.applyAsInt(slow);\n            steps++;\n        }\n        int cycleStart = start;\n        // Phase 3: measure cycle length\n        int length = 1;\n        int runner = f.applyAsInt(cycleStart);\n        while (runner != cycleStart) {\n            runner = f.applyAsInt(runner);\n            length++;\n        }\n        return new int[]{steps, length}; // [steps to cycle start, cycle length]\n    }\n\n    public static void main(String[] args) {\n        // f(x) = (x*x + 1) % 255: known cycle\n        Solution sol = new Solution();\n        int[] result = sol.detectCycle(3, x -> (x * x + 1) % 255);\n        System.out.println(\"Cycle start after \" + result[0] + \" steps, length: \" + result[1]);\n    }\n}",
+          "testCases": [
+            {"input": "x0=3, f=x->(x*x+1)%255", "output": "cycle detected"},
+            {"input": "x0=2, f=x->x*2%10", "output": "cycleLength >= 1"}
+          ],
+          "constraints": "f must eventually cycle. x0 is within int range.",
+          "editorial": "Floyd's algorithm uses two while loops: phase 1 (find meeting point), phase 2 (find cycle start), phase 3 (measure length). Time O(λ+μ) where λ=cycle length, μ=tail length. Space O(1) — only two pointers. The key insight: at the meeting point, slow has traveled μ+λ-r and fast traveled μ+λ+r (with r = remainder), so resetting one to start and advancing both at speed 1 brings them to the cycle entry."
+        },
+        {
+          "displayOrder": 17,
+          "title": "Recursive Descent — Evaluate Math Expression",
+          "description": "Evaluate a mathematical expression string containing +, -, *, /, (, ) and integers. Implement a recursive descent parser. No built-in eval allowed.",
+          "difficulty": "HARD",
+          "pattern": "Recursive Descent Parser",
+          "hint1": "Use a global index (or pass by wrapper). Parse expression → term → factor recursively.",
+          "hint2": "expression: add/subtract terms. term: multiply/divide factors. factor: number or (expression).",
+          "hint3": "Use a while loop inside expression() to consume all + and - operators at the same level.",
+          "starterCode": "public class Solution {\n    private int pos;\n    private String expr;\n\n    public int calculate(String s) {\n        this.expr = s.replaceAll(\" \", \"\");\n        this.pos = 0;\n        return parseExpression();\n    }\n\n    private int parseExpression() { /* TODO */ return 0; }\n    private int parseTerm()       { /* TODO */ return 0; }\n    private int parseFactor()     { /* TODO */ return 0; }\n}",
+          "solutionCode": "public class Solution {\n    private int pos;\n    private String expr;\n\n    public int calculate(String s) {\n        this.expr = s.replaceAll(\" \", \"\");\n        this.pos = 0;\n        return parseExpression();\n    }\n\n    // expression = term (('+' | '-') term)*\n    private int parseExpression() {\n        int result = parseTerm();\n        while (pos < expr.length() && (expr.charAt(pos) == '+' || expr.charAt(pos) == '-')) {\n            char op = expr.charAt(pos++);\n            int right = parseTerm();\n            if (op == '+') result += right;\n            else           result -= right;\n        }\n        return result;\n    }\n\n    // term = factor (('*' | '/') factor)*\n    private int parseTerm() {\n        int result = parseFactor();\n        while (pos < expr.length() && (expr.charAt(pos) == '*' || expr.charAt(pos) == '/')) {\n            char op = expr.charAt(pos++);\n            int right = parseFactor();\n            if (op == '*') result *= right;\n            else           result /= right;\n        }\n        return result;\n    }\n\n    // factor = number | '(' expression ')'\n    private int parseFactor() {\n        if (expr.charAt(pos) == '(') {\n            pos++;  // consume '('\n            int result = parseExpression();\n            pos++;  // consume ')'\n            return result;\n        }\n        int start = pos;\n        if (expr.charAt(pos) == '-') pos++;  // unary minus\n        while (pos < expr.length() && Character.isDigit(expr.charAt(pos))) pos++;\n        return Integer.parseInt(expr.substring(start, pos));\n    }\n}",
+          "testCases": [
+            {"input": "3+2*2", "output": "7"},
+            {"input": "(3+2)*2", "output": "10"},
+            {"input": "14-3/2", "output": "13"},
+            {"input": "((2+3)*4-1)/3", "output": "6"}
+          ],
+          "constraints": "1 <= s.length <= 3*10^4. Valid expression with integers and +-*/().",
+          "editorial": "Recursive descent is the most readable parsing technique. Grammar: E→T((+|-)T)*, T→F((*|/)F)*, F→num|(E). Each level of recursion handles one precedence level. The while loops inside parseExpression and parseTerm handle left-associativity. pos is a shared mutable index — the state threading through the recursion."
+        },
+        {
+          "displayOrder": 18,
+          "title": "N-Queens — Count Solutions with Pruning",
+          "description": "Place N queens on an N×N board such that no two queens attack each other. Count all valid arrangements. Use control flow (continue/break) to prune invalid branches.",
+          "difficulty": "HARD",
+          "pattern": "Backtracking + Constraint Propagation",
+          "hint1": "Use three boolean arrays: cols[], diag1[] (r-c+n), diag2[] (r+c) to track attacks.",
+          "hint2": "For each row, try each column. If not attacked, place queen and recurse to next row.",
+          "hint3": "Use 'continue' to skip attacked columns cleanly instead of deeply nested ifs.",
+          "starterCode": "public class Solution {\n    public int totalNQueens(int n) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    private int count = 0;\n\n    public int totalNQueens(int n) {\n        boolean[] cols  = new boolean[n];\n        boolean[] diag1 = new boolean[2 * n];  // r - c + n\n        boolean[] diag2 = new boolean[2 * n];  // r + c\n        backtrack(0, n, cols, diag1, diag2);\n        return count;\n    }\n\n    private void backtrack(int row, int n, boolean[] cols, boolean[] diag1, boolean[] diag2) {\n        if (row == n) { count++; return; }\n        for (int col = 0; col < n; col++) {\n            if (cols[col] || diag1[row - col + n] || diag2[row + col]) continue; // pruning\n            // place queen\n            cols[col] = diag1[row - col + n] = diag2[row + col] = true;\n            backtrack(row + 1, n, cols, diag1, diag2);\n            // remove queen\n            cols[col] = diag1[row - col + n] = diag2[row + col] = false;\n        }\n    }\n}",
+          "testCases": [
+            {"input": "4", "output": "2"},
+            {"input": "8", "output": "92"},
+            {"input": "1", "output": "1"},
+            {"input": "6", "output": "4"}
+          ],
+          "constraints": "1 <= n <= 9",
+          "editorial": "Three attack-tracking arrays replace O(n²) conflict checking. The 'continue' in the for loop is the pruning mechanism — it skips attacked columns without nesting another if. Backtracking: set → recurse → unset. O(n!) worst case but heavily pruned in practice. The diagonal formulas: row-col+n is unique per anti-diagonal, row+col per main diagonal."
+        },
+        {
+          "displayOrder": 19,
+          "title": "State Machine — Traffic Light Controller",
+          "description": "Implement a TrafficLight class with states RED → GREEN → YELLOW → RED (with configurable durations). Use a switch expression in the tick() method. tick() advances by one second and transitions state when duration expires.",
+          "difficulty": "HARD",
+          "pattern": "State Machine + Switch Expression",
+          "hint1": "Store current state as an enum (RED, GREEN, YELLOW) and timeRemaining counter.",
+          "hint2": "tick() decrements timeRemaining. When it hits 0, transition to next state using switch.",
+          "hint3": "Use switch expression for both state transition and duration lookup.",
+          "starterCode": "public class TrafficLight {\n    enum State { RED, GREEN, YELLOW }\n\n    // TODO: add fields\n\n    public TrafficLight(int redDuration, int greenDuration, int yellowDuration) {\n        // TODO\n    }\n\n    public void tick() {\n        // TODO: advance one second, transition if needed\n    }\n\n    public State getState() { return null; }\n    public int getTimeRemaining() { return 0; }\n}",
+          "solutionCode": "public class TrafficLight {\n    enum State { RED, GREEN, YELLOW }\n\n    private State current;\n    private int timeRemaining;\n    private final int redDur, greenDur, yellowDur;\n\n    public TrafficLight(int redDuration, int greenDuration, int yellowDuration) {\n        this.redDur = redDuration;\n        this.greenDur = greenDuration;\n        this.yellowDur = yellowDuration;\n        this.current = State.RED;\n        this.timeRemaining = redDuration;\n    }\n\n    public void tick() {\n        timeRemaining--;\n        if (timeRemaining == 0) {\n            current = switch (current) {\n                case RED    -> State.GREEN;\n                case GREEN  -> State.YELLOW;\n                case YELLOW -> State.RED;\n            };\n            timeRemaining = switch (current) {\n                case RED    -> redDur;\n                case GREEN  -> greenDur;\n                case YELLOW -> yellowDur;\n            };\n        }\n    }\n\n    public State getState() { return current; }\n    public int getTimeRemaining() { return timeRemaining; }\n\n    public static void main(String[] args) {\n        TrafficLight tl = new TrafficLight(3, 5, 2);\n        for (int i = 0; i < 15; i++) {\n            System.out.printf(\"t=%2d: %s (%d)%n\", i, tl.getState(), tl.getTimeRemaining());\n            tl.tick();\n        }\n    }\n}",
+          "testCases": [
+            {"input": "red=3, green=5, yellow=2, tick 3 times", "output": "state=GREEN after 3 ticks"},
+            {"input": "red=1, green=1, yellow=1, tick 9 times", "output": "cycles through RED->GREEN->YELLOW->RED 3 times"},
+            {"input": "tick=0", "output": "RED with full duration"}
+          ],
+          "constraints": "All durations >= 1. tick() called sequentially.",
+          "editorial": "Two switch expressions: one for state transition (RED→GREEN→YELLOW→RED), one for duration lookup. Switch expressions without default work when all enum cases are covered — the compiler enforces exhaustiveness. State machine pattern: state × event → (newState, action). The if (timeRemaining == 0) is the event trigger."
+        },
+        {
+          "displayOrder": 20,
+          "title": "Optimal Loop Structure — Minimum Path Sum in Grid",
+          "description": "Given an m×n grid of non-negative integers, find the path from top-left to bottom-right (only right or down moves) that minimizes the sum of all numbers along the path.",
+          "difficulty": "HARD",
+          "pattern": "Dynamic Programming + Nested Loops",
+          "hint1": "Use a 2D DP array where dp[i][j] = min cost to reach cell (i,j).",
+          "hint2": "Base cases: dp[0][0] = grid[0][0]. First row: can only come from left. First col: can only come from top.",
+          "hint3": "Recurrence: dp[i][j] = grid[i][j] + Math.min(dp[i-1][j], dp[i][j-1]).",
+          "starterCode": "public class Solution {\n    public int minPathSum(int[][] grid) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int minPathSum(int[][] grid) {\n        int m = grid.length, n = grid[0].length;\n        int[][] dp = new int[m][n];\n        dp[0][0] = grid[0][0];\n        // Initialize first row\n        for (int j = 1; j < n; j++)\n            dp[0][j] = dp[0][j-1] + grid[0][j];\n        // Initialize first column\n        for (int i = 1; i < m; i++)\n            dp[i][0] = dp[i-1][0] + grid[i][0];\n        // Fill rest\n        for (int i = 1; i < m; i++) {\n            for (int j = 1; j < n; j++) {\n                dp[i][j] = grid[i][j] + Math.min(dp[i-1][j], dp[i][j-1]);\n            }\n        }\n        return dp[m-1][n-1];\n    }\n}",
+          "testCases": [
+            {"input": "[[1,3,1],[1,5,1],[4,2,1]]", "output": "7"},
+            {"input": "[[1,2,3],[4,5,6]]", "output": "12"},
+            {"input": "[[1]]", "output": "1"},
+            {"input": "[[1,2],[1,1]]", "output": "3"}
+          ],
+          "constraints": "m == grid.length, n == grid[i].length. 1 <= m, n <= 200. 0 <= grid[i][j] <= 100.",
+          "editorial": "Three separate loop blocks: initialize first row (left-only movement), first column (top-only movement), then fill the rest with min of top and left. The nested loop structure reflects the grid's topology. O(m*n) time and space. Space can be optimized to O(n) by reusing a 1D array (overwrite in-place)."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,464 @@
+{
+  "batchName": "B08-methods",
+  "skipExisting": true,
+  "topics": [
+    {
+      "title": "Methods, Recursion & Pass-by-Value in Java",
+      "category": "JAVA",
+      "story": "Imagine a restaurant kitchen. The head chef (main method) delegates tasks to station chefs (methods). Each station works in its own space (stack frame) — the pasta station doesn't share utensils with the grill station. When the head chef sends an order (argument), they hand over a copy of the order slip (pass-by-value) — if a station changes their slip, the original is unchanged. Recursion is when a chef delegates a smaller version of the same task back to themselves.",
+      "analogy": "A method is like a vending machine: you input money and a selection (arguments), it does its work internally (stack frame), and gives you back a result (return value). It doesn't need to know where you got the money, and you don't need to know how the machine works inside.",
+      "memoryAnchor": "SOVR — Signature (name + params), Overloading (same name, different params), Varargs (...), Recursion (base + recursive case). Remember SOVR for methods.",
+      "firstPrinciples": "Each method call creates a new stack frame containing: local variables, parameters (copies of arguments), return address. 'Pass-by-value' means Java copies the value — for primitives, it copies the bit pattern; for objects, it copies the reference (pointer). So you can modify an object's state through a reference copy, but you can't reassign the original reference. Stack frames are LIFO — the return address ensures execution resumes at the call site. Recursion = stack frames stacking up until the base case unwinds them.",
+      "bruteForce": "Write all logic inline in main(). As complexity grows, extract into methods for readability. Use iteration before recursion — recursion adds stack overhead.",
+      "optimizedApproach": "Design methods with single responsibility (do one thing well). Use method overloading for same-concept operations on different types. Memoize recursive functions with HashMap or int[] to avoid redundant computation (top-down DP). Use tail-recursion patterns where possible (Java doesn't optimize tail calls, but awareness helps).",
+      "whenToUse": "Methods: always — structure code into logical units. Overloading: same logical operation with different input types (Math.abs(int), Math.abs(long), Math.abs(double)). Varargs: when the number of arguments varies (printf-style APIs). Recursion: tree/graph traversal, divide-and-conquer, problems naturally defined recursively (factorial, Fibonacci, DFS). Iteration is usually more memory-efficient for deep recursion.",
+      "examples": [
+        {
+          "displayOrder": 1,
+          "title": "Pass-by-Value — Primitives vs Objects",
+          "code": "public class PassByValue {\n    // Primitives: cannot change caller's variable\n    static void tryDouble(int x) {\n        x = x * 2;  // only modifies local copy\n    }\n\n    // Objects: CAN modify object state, CANNOT reassign reference\n    static void addElement(java.util.List<Integer> list) {\n        list.add(99);          // modifies the object itself — caller sees this\n    }\n    static void tryReassign(java.util.List<Integer> list) {\n        list = new java.util.ArrayList<>();  // only changes local reference\n        list.add(999);          // caller's list is unaffected\n    }\n\n    public static void main(String[] args) {\n        // Primitive test\n        int a = 5;\n        tryDouble(a);\n        System.out.println(a);  // 5 — unchanged\n\n        // Object state mutation\n        java.util.List<Integer> nums = new java.util.ArrayList<>();\n        nums.add(1); nums.add(2);\n        addElement(nums);\n        System.out.println(nums);  // [1, 2, 99] — 99 was added\n\n        // Reference reassignment\n        tryReassign(nums);\n        System.out.println(nums);  // [1, 2, 99] — still unchanged\n\n        // int vs Integer (autoboxing pitfall)\n        Integer box = 5;\n        tryDouble(box);            // unboxed to int, then doubled locally\n        System.out.println(box);  // 5 — Integer is immutable\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":17,\"phase\":\"DECLARE\",\"variables\":{\"a\":5},\"description\":\"a=5 in main's stack frame\"},{\"step\":2,\"line\":18,\"phase\":\"CALL\",\"variables\":{\"x\":5},\"description\":\"tryDouble called: x = copy of a = 5\"},{\"step\":3,\"line\":4,\"phase\":\"ASSIGN\",\"variables\":{\"x\":10},\"description\":\"x = 10, but a in main is still 5\"},{\"step\":4,\"line\":18,\"phase\":\"RETURN\",\"variables\":{\"a\":5},\"description\":\"stack frame pops, a unchanged\"},{\"step\":5,\"line\":22,\"phase\":\"DECLARE\",\"variables\":{\"nums\":\"ref→[1,2]\"},\"description\":\"nums holds reference to list\"},{\"step\":6,\"line\":24,\"phase\":\"CALL\",\"variables\":{\"list\":\"ref→[1,2]\"},\"description\":\"addElement: list = copy of reference (same object)\"},{\"step\":7,\"line\":9,\"phase\":\"ASSIGN\",\"variables\":{\"list\":\"ref→[1,2,99]\"},\"description\":\"list.add(99) modifies the object\"},{\"step\":8,\"line\":24,\"phase\":\"RETURN\",\"variables\":{\"nums\":\"ref→[1,2,99]\"},\"description\":\"nums still points to same (modified) object\"},{\"step\":9,\"line\":27,\"phase\":\"CALL\",\"variables\":{\"list\":\"ref→[1,2,99]\"},\"description\":\"tryReassign: local list starts pointing same object\"},{\"step\":10,\"line\":13,\"phase\":\"ASSIGN\",\"variables\":{\"list\":\"ref→new[]\"},\"description\":\"local ref reassigned to new list\"},{\"step\":11,\"line\":27,\"phase\":\"RETURN\",\"variables\":{\"nums\":\"ref→[1,2,99]\"},\"description\":\"nums still [1,2,99] — only local ref changed\"}]",
+          "flowchartMermaid": "graph TD\n    A[main: int a=5] --> B[tryDouble-a: copy x=5]\n    B --> C[x=10, a stays 5]\n    D[main: nums→List] --> E[addElement: list=same ref]\n    E --> F[list.add-99: object mutated]\n    F --> G[nums sees change]\n    D --> H[tryReassign: list=same ref]\n    H --> I[list = new List]\n    I --> J[nums still points to original]",
+          "pseudocode": "PASS-BY-VALUE for primitives:\n  copy of bit pattern → local var\n  changes don't affect caller\n\nPASS-BY-VALUE for objects:\n  copy of reference → local var\n  can mutate object state (affects caller)\n  cannot change which object caller points to\n\nKey distinction:\n  list.add(99)   → mutates object     → caller sees it\n  list = new()   → changes local ref  → caller unchanged",
+          "explanation": "Java is ALWAYS pass-by-value. For objects, the 'value' passed is the reference (memory address). That's why modifying the object's contents affects the caller, but reassigning the local variable doesn't. This is often misunderstood as 'pass-by-reference' — it's not. Pass-by-reference would mean the method could reassign the caller's variable.",
+          "realWorldUse": "Understanding this is critical for Spring service methods (don't expect to 'return' changes by reassigning parameters), Hibernate entity modifications (mutate fields, don't reassign entity reference), and functional programming (pure functions that don't mutate arguments)."
+        },
+        {
+          "displayOrder": 2,
+          "title": "Method Overloading — print() Utility",
+          "code": "public class OverloadingDemo {\n    // Overloaded: same name, different parameter lists\n    static void print(int n)     { System.out.println(\"int: \" + n); }\n    static void print(double d)  { System.out.println(\"double: \" + d); }\n    static void print(String s)  { System.out.println(\"String: \" + s); }\n    static void print(int a, int b) { System.out.println(\"two ints: \" + a + \", \" + b); }\n    static void print(Object o)  { System.out.println(\"Object: \" + o); }\n\n    // Varargs — variable number of arguments\n    static int sum(int... nums) {\n        int total = 0;\n        for (int n : nums) total += n;  // varargs treated as int[]\n        return total;\n    }\n\n    // Overload resolution pitfall\n    public static void main(String[] args) {\n        print(42);          // calls print(int)\n        print(3.14);        // calls print(double)\n        print(\"hello\");     // calls print(String)\n        print(1, 2);        // calls print(int, int)\n        print(null);        // AMBIGUOUS! print(String) or print(Object)?\n        // Java chooses the most specific: print(String)\n\n        System.out.println(sum());          // 0\n        System.out.println(sum(1, 2, 3));   // 6\n        System.out.println(sum(1, 2, 3, 4, 5)); // 15\n\n        // Widening: byte→short→int→long→float→double\n        byte b = 10;\n        print(b);  // calls print(int) — widened, not print(Object)\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":17,\"phase\":\"CALL\",\"variables\":{\"n\":42},\"description\":\"print(42): compiler picks print(int) — exact match\"},{\"step\":2,\"line\":18,\"phase\":\"CALL\",\"variables\":{\"d\":3.14},\"description\":\"print(3.14): picks print(double)\"},{\"step\":3,\"line\":20,\"phase\":\"CALL\",\"variables\":{\"a\":1,\"b\":2},\"description\":\"print(1,2): picks print(int,int) — exact match\"},{\"step\":4,\"line\":21,\"phase\":\"CALL\",\"variables\":{\"s\":null},\"description\":\"print(null): ambiguous — compiler picks most specific (String over Object)\"},{\"step\":5,\"line\":23,\"phase\":\"CALL\",\"variables\":{\"nums\":\"[]\"},\"description\":\"sum(): nums is empty int[]\"},{\"step\":6,\"line\":24,\"phase\":\"CALL\",\"variables\":{\"nums\":\"[1,2,3]\"},\"description\":\"sum(1,2,3): nums = {1,2,3}\"},{\"step\":7,\"line\":29,\"phase\":\"CALL\",\"variables\":{\"b\":10},\"description\":\"print(b): byte widened to int → print(int)\"}]",
+          "flowchartMermaid": "graph TD\n    A[method call] --> B[compiler: find matching signature]\n    B --> C{exact match?}\n    C -- yes --> D[call that method]\n    C -- no --> E{widening conversion?}\n    E -- yes --> F[call widened version]\n    E -- no --> G{autoboxing?}\n    G -- yes --> H[box and call]\n    G -- no --> I{varargs?}\n    I -- yes --> J[wrap in array and call]\n    I -- no --> K[compile error: no match]",
+          "pseudocode": "OVERLOAD RESOLUTION (compile-time):\n1. Exact match\n2. Widening primitives (byte→int→long→double)\n3. Autoboxing (int→Integer)\n4. Varargs (...)\n\nVARARGS:\n  int... nums = int[] nums\n  can pass: 0, 1, or many args\n  OR pass an array directly\n  must be last parameter",
+          "explanation": "Overloading is resolved at compile time based on static types. Resolution order: exact match → widening → autoboxing → varargs. Varargs (int... nums) compiles to int[] — you can pass any number of args or an existing array. The compiler generates the array. Overloading ≠ overriding: overriding is runtime polymorphism on instance methods.",
+          "realWorldUse": "Java's Math.max(int,int), Math.max(long,long), Math.max(double,double) are overloaded. System.out.println is overloaded for all types. String.valueOf is overloaded. Spring's @RequestMapping overloads by HTTP method. Logger.info(String, Object...) uses varargs."
+        },
+        {
+          "displayOrder": 3,
+          "title": "Recursion — Tower of Hanoi",
+          "code": "public class TowerOfHanoi {\n    static int moves = 0;\n\n    static void hanoi(int n, char from, char to, char aux) {\n        if (n == 0) return;         // base case\n        hanoi(n - 1, from, aux, to); // move n-1 disks to aux\n        moves++;\n        System.out.printf(\"Move disk %d: %c → %c%n\", n, from, to);\n        hanoi(n - 1, aux, to, from); // move n-1 disks from aux to to\n    }\n\n    public static void main(String[] args) {\n        hanoi(3, 'A', 'C', 'B');\n        System.out.println(\"Total moves: \" + moves); // 2^n - 1 = 7\n    }\n    // Call tree for n=3:\n    // hanoi(3,A,C,B)\n    //   hanoi(2,A,B,C)\n    //     hanoi(1,A,C,B) → Move disk 1: A→C\n    //     Move disk 2: A→B\n    //     hanoi(1,C,B,A) → Move disk 1: C→B\n    //   Move disk 3: A→C\n    //   hanoi(2,B,C,A)\n    //     hanoi(1,B,A,C) → Move disk 1: B→A\n    //     Move disk 2: B→C\n    //     hanoi(1,A,C,B) → Move disk 1: A→C\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":4,\"phase\":\"CALL\",\"variables\":{\"n\":3,\"from\":\"A\",\"to\":\"C\",\"aux\":\"B\"},\"description\":\"hanoi(3,A,C,B) — new stack frame\"},{\"step\":2,\"line\":5,\"phase\":\"CALL\",\"variables\":{\"n\":2},\"description\":\"recurse: hanoi(2,A,B,C)\"},{\"step\":3,\"line\":5,\"phase\":\"CALL\",\"variables\":{\"n\":1},\"description\":\"recurse: hanoi(1,A,C,B)\"},{\"step\":4,\"line\":5,\"phase\":\"CALL\",\"variables\":{\"n\":0},\"description\":\"base case: return\"},{\"step\":5,\"line\":7,\"phase\":\"RETURN\",\"variables\":{\"move\":\"disk 1: A→C\"},\"description\":\"print move, moves=1\"},{\"step\":6,\"line\":5,\"phase\":\"CALL\",\"variables\":{\"n\":0},\"description\":\"hanoi(0,...) base case\"},{\"step\":7,\"line\":7,\"phase\":\"RETURN\",\"variables\":{\"move\":\"disk 2: A→B\"},\"description\":\"unwind hanoi(2): moves=2\"},{\"step\":8,\"line\":7,\"phase\":\"RETURN\",\"variables\":{\"move\":\"disk 3: A→C\"},\"description\":\"unwind hanoi(3): moves=4\"},{\"step\":9,\"line\":12,\"phase\":\"RETURN\",\"variables\":{\"totalMoves\":7},\"description\":\"all unwound, 2^3-1=7 moves\"}]",
+          "flowchartMermaid": "graph TD\n    A[hanoi n from to aux] --> B{n == 0?}\n    B -- yes --> C[return base case]\n    B -- no --> D[hanoi n-1 from aux to]\n    D --> E[print move disk n]\n    E --> F[hanoi n-1 aux to from]\n    F --> G[return]\n    H[call stack depth = n]",
+          "pseudocode": "HANOI(n, from, to, aux):\n  IF n == 0: RETURN  ← base case\n  HANOI(n-1, from, aux, to)  ← move smaller disks out of way\n  PRINT 'Move disk n: from → to'\n  HANOI(n-1, aux, to, from)  ← move smaller disks on top\n\nTotal moves = 2^n - 1\nRecursion depth = n (stack frames)",
+          "explanation": "Hanoi demonstrates the essence of recursion: reduce to smaller subproblem, trust that it works (inductive step), combine results. The call tree is binary with depth n — 2^n nodes. Stack depth is only n because each frame returns before its sibling is called (not exponential stack usage). The mathematical optimum is 2^n - 1 moves.",
+          "realWorldUse": "Tower of Hanoi is used to explain backup systems (moving data between servers), robotics motion planning, and as a benchmark for recursive hardware. The recursive pattern applies to tree traversal, divide-and-conquer sorting, and fractal generation."
+        },
+        {
+          "displayOrder": 4,
+          "title": "Memoization — Fibonacci with Cache",
+          "code": "import java.util.*;\n\npublic class FibMemo {\n    // Naive recursion: O(2^n) — exponential\n    static long fibNaive(int n) {\n        if (n <= 1) return n;\n        return fibNaive(n - 1) + fibNaive(n - 2);\n    }\n\n    // Top-down memoization: O(n)\n    static Map<Integer, Long> memo = new HashMap<>();\n    static long fibMemo(int n) {\n        if (n <= 1) return n;\n        if (memo.containsKey(n)) return memo.get(n);  // cache hit\n        long result = fibMemo(n - 1) + fibMemo(n - 2);\n        memo.put(n, result);                          // cache miss → compute and store\n        return result;\n    }\n\n    // Bottom-up iterative: O(n) time, O(1) space\n    static long fibDP(int n) {\n        if (n <= 1) return n;\n        long prev2 = 0, prev1 = 1;\n        for (int i = 2; i <= n; i++) {\n            long curr = prev1 + prev2;\n            prev2 = prev1;\n            prev1 = curr;\n        }\n        return prev1;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(fibNaive(10)); // 55 (fast for small n)\n        System.out.println(fibMemo(50));  // 12586269025 (fast)\n        System.out.println(fibDP(50));    // 12586269025 (fast, no extra space)\n        // fibNaive(50) would take ~hours\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":5,\"phase\":\"CALL\",\"variables\":{\"n\":5},\"description\":\"fibNaive(5) — calls fibNaive(4) and fibNaive(3)\"},{\"step\":2,\"line\":5,\"phase\":\"CALL\",\"variables\":{\"n\":4},\"description\":\"fibNaive(4) — calls fibNaive(3) AGAIN (redundant!)\"},{\"step\":3,\"line\":12,\"phase\":\"CALL\",\"variables\":{\"n\":5},\"description\":\"fibMemo(5): memo empty\"},{\"step\":4,\"line\":12,\"phase\":\"CALL\",\"variables\":{\"n\":4},\"description\":\"fibMemo(4): not in memo\"},{\"step\":5,\"line\":12,\"phase\":\"CALL\",\"variables\":{\"n\":3},\"description\":\"fibMemo(3): not in memo\"},{\"step\":6,\"line\":14,\"phase\":\"CONDITION_TRUE\",\"variables\":{\"n\":3},\"description\":\"compute fib(3)=2, store in memo\"},{\"step\":7,\"line\":13,\"phase\":\"CONDITION_TRUE\",\"variables\":{\"n\":3},\"description\":\"fibMemo(3) called again → cache hit! return 2\"},{\"step\":8,\"line\":19,\"phase\":\"LOOP_START\",\"variables\":{\"prev2\":0,\"prev1\":1,\"i\":2},\"description\":\"fibDP: iterative, no recursion\"},{\"step\":9,\"line\":19,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":5,\"curr\":5,\"prev2\":3,\"prev1\":5},\"description\":\"fib(5)=5\"}]",
+          "flowchartMermaid": "graph TD\n    A[fibMemo-n] --> B{n <= 1?}\n    B -- yes --> C[return n]\n    B -- no --> D{in memo?}\n    D -- yes --> E[return memo-n]\n    D -- no --> F[compute f-n-1 + f-n-2]\n    F --> G[store in memo]\n    G --> H[return result]\n    I[fibDP] --> J[i=2 loop]\n    J --> K[curr = prev1 + prev2]\n    K --> L[shift prev2=prev1, prev1=curr]\n    L --> J",
+          "pseudocode": "NAIVE: O(2^n) — recomputes same subproblems\nfib(n) = fib(n-1) + fib(n-2)\n\nMEMO: O(n) time + O(n) space\nIF n in cache: RETURN cache[n]\nresult = fib(n-1) + fib(n-2)\ncache[n] = result\nRETURN result\n\nDP: O(n) time, O(1) space\nFOR i = 2 to n:\n  curr = prev1 + prev2; shift pointers",
+          "explanation": "Naive recursion recomputes fib(k) exponentially many times. Memoization stores results — each value computed exactly once, reducing to O(n). Bottom-up DP is even better: no recursion overhead, O(1) space by only keeping two previous values. This pattern (naive → memo → iterative DP) applies to all overlapping subproblem problems.",
+          "realWorldUse": "Memoization is the foundation of dynamic programming used in route optimization (GPS), protein folding, compiler optimization (CSE — Common Subexpression Elimination), and caching in distributed systems (CDN edge caches)."
+        },
+        {
+          "displayOrder": 5,
+          "title": "Stack Frames — Visualizing Method Calls",
+          "code": "public class StackFrameViz {\n    static int factorial(int n) {\n        System.out.println(\"Enter factorial(\" + n + \")\");\n        if (n <= 1) {\n            System.out.println(\"Base case: factorial(1) = 1\");\n            return 1;\n        }\n        int result = n * factorial(n - 1);\n        System.out.println(\"Return factorial(\" + n + \") = \" + result);\n        return result;\n    }\n\n    // Iterative alternative — avoids StackOverflowError for large n\n    static long factorialIterative(int n) {\n        long result = 1;\n        for (int i = 2; i <= n; i++) result *= i;\n        return result;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"=== Recursive ===\");\n        System.out.println(factorial(4));\n        System.out.println(\"\\n=== Iterative ===\");\n        System.out.println(factorialIterative(20));  // 2432902008176640000\n\n        // StackOverflowError demo (commented out — would crash)\n        // factorial(100000);  // Default JVM stack ~512KB, each frame ~100 bytes\n        // JVM option: -Xss4m to increase stack size\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":2,\"phase\":\"CALL\",\"variables\":{\"n\":4},\"description\":\"factorial(4): stack frame 1\"},{\"step\":2,\"line\":2,\"phase\":\"CALL\",\"variables\":{\"n\":3},\"description\":\"factorial(3): stack frame 2\"},{\"step\":3,\"line\":2,\"phase\":\"CALL\",\"variables\":{\"n\":2},\"description\":\"factorial(2): stack frame 3\"},{\"step\":4,\"line\":2,\"phase\":\"CALL\",\"variables\":{\"n\":1},\"description\":\"factorial(1): stack frame 4\"},{\"step\":5,\"line\":5,\"phase\":\"RETURN\",\"variables\":{\"return\":1},\"description\":\"base case: return 1, frame 4 pops\"},{\"step\":6,\"line\":8,\"phase\":\"RETURN\",\"variables\":{\"result\":2},\"description\":\"2 * 1 = 2, return 2, frame 3 pops\"},{\"step\":7,\"line\":8,\"phase\":\"RETURN\",\"variables\":{\"result\":6},\"description\":\"3 * 2 = 6, return 6, frame 2 pops\"},{\"step\":8,\"line\":8,\"phase\":\"RETURN\",\"variables\":{\"result\":24},\"description\":\"4 * 6 = 24, return 24, frame 1 pops\"},{\"step\":9,\"line\":14,\"phase\":\"LOOP_START\",\"variables\":{\"result\":1,\"i\":2},\"description\":\"iterative: no stack growth\"}]",
+          "flowchartMermaid": "graph TD\n    A[main calls factorial-4] --> B[frame: n=4]\n    B --> C[frame: n=3]\n    C --> D[frame: n=2]\n    D --> E[frame: n=1, return 1]\n    E --> F[n=2: 2*1=2]\n    F --> G[n=3: 3*2=6]\n    G --> H[n=4: 4*6=24]\n    H --> I[main: result=24]\n    J[iterative: one frame, O-1 space]",
+          "pseudocode": "RECURSIVE factorial(n):\n  IF n <= 1: RETURN 1  ← base case\n  RETURN n * factorial(n-1)  ← recursive case\n  Stack depth = n frames\n\nITERATIVE factorial(n):\n  result = 1\n  FOR i = 2 to n: result *= i\n  RETURN result\n  Stack depth = 1 frame always",
+          "explanation": "Each recursive call adds a stack frame — local variables, parameters, return address. JVM default thread stack is 512KB-1MB. Each frame can be 50-500 bytes. factorial(10000) would use ~5MB and throw StackOverflowError. The iterative version uses one constant stack frame regardless of n. Tail recursion (result-accumulator pattern) could be optimized by some languages but not by Java's JVM.",
+          "realWorldUse": "Understanding stack frames is critical for debugging StackOverflowErrors, profiling recursive algorithms, and understanding why functional languages with tail-call optimization can run deep recursions that would crash Java."
+        }
+      ],
+      "problems": [
+        {
+          "displayOrder": 1,
+          "title": "Factorial (Recursive and Iterative)",
+          "description": "Implement factorial(n) both recursively and iteratively. Return the result. Handle n=0 (0! = 1). Use long to avoid overflow.",
+          "difficulty": "EASY",
+          "pattern": "Recursion / Iteration",
+          "hint1": "Base case: factorial(0) = 1, factorial(1) = 1.",
+          "hint2": "Recursive: return n * factorial(n-1).",
+          "hint3": "Iterative: multiply from 2 to n.",
+          "starterCode": "public class Solution {\n    public long factorialRecursive(int n) {\n        // TODO\n        return 0;\n    }\n    public long factorialIterative(int n) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public long factorialRecursive(int n) {\n        if (n <= 1) return 1;\n        return n * factorialRecursive(n - 1);\n    }\n    public long factorialIterative(int n) {\n        long result = 1;\n        for (int i = 2; i <= n; i++) result *= i;\n        return result;\n    }\n}",
+          "testCases": [
+            {"input": "0", "output": "1"},
+            {"input": "5", "output": "120"},
+            {"input": "10", "output": "3628800"},
+            {"input": "1", "output": "1"}
+          ],
+          "constraints": "0 <= n <= 20 (20! fits in long)",
+          "editorial": "Classic recursion intro. Base case n<=1 returns 1. Recursive multiplies n by factorial(n-1). Stack depth = n. Iterative is O(1) stack space. For n > 20, use BigInteger."
+        },
+        {
+          "displayOrder": 2,
+          "title": "Power Function (Fast Exponentiation)",
+          "description": "Implement pow(x, n) — raise x to the power n. Handle negative n. Must be O(log n), not O(n).",
+          "difficulty": "EASY",
+          "pattern": "Divide and Conquer Recursion",
+          "hint1": "If n is even: pow(x, n) = pow(x*x, n/2).",
+          "hint2": "If n is odd: pow(x, n) = x * pow(x, n-1).",
+          "hint3": "For negative n: pow(x, n) = 1 / pow(x, -n). Handle Integer.MIN_VALUE overflow.",
+          "starterCode": "public class Solution {\n    public double myPow(double x, int n) {\n        // TODO: O(log n)\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public double myPow(double x, int n) {\n        long N = n;  // use long to handle Integer.MIN_VALUE\n        if (N < 0) { x = 1 / x; N = -N; }\n        return fastPow(x, N);\n    }\n\n    private double fastPow(double x, long n) {\n        if (n == 0) return 1.0;\n        if (n % 2 == 0) return fastPow(x * x, n / 2);\n        return x * fastPow(x, n - 1);\n    }\n}",
+          "testCases": [
+            {"input": "x=2.0, n=10", "output": "1024.0"},
+            {"input": "x=2.1, n=3", "output": "9.261"},
+            {"input": "x=2.0, n=-2", "output": "0.25"},
+            {"input": "x=1.0, n=-2147483648", "output": "1.0"}
+          ],
+          "constraints": "-100.0 < x < 100.0. -2^31 <= n <= 2^31-1. x != 0 when n < 0.",
+          "editorial": "Fast exponentiation halves n on each call → O(log n) multiplications. Cast n to long before negating to handle Integer.MIN_VALUE (-2^31 has no positive int counterpart). Recursion depth = O(log n)."
+        },
+        {
+          "displayOrder": 3,
+          "title": "GCD and LCM",
+          "description": "Implement gcd(a, b) using Euclid's algorithm (recursive), and lcm(a, b) = a * b / gcd(a, b).",
+          "difficulty": "EASY",
+          "pattern": "Euclidean Algorithm",
+          "hint1": "Euclid's: gcd(a, b) = gcd(b, a % b). Base case: gcd(a, 0) = a.",
+          "hint2": "LCM = a * b / gcd. Divide first to avoid overflow: a / gcd * b.",
+          "hint3": "gcd(0, x) = x. Handle negative inputs with Math.abs.",
+          "starterCode": "public class Solution {\n    public int gcd(int a, int b) {\n        // TODO: recursive Euclid\n        return 0;\n    }\n    public long lcm(int a, int b) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int gcd(int a, int b) {\n        return b == 0 ? a : gcd(b, a % b);\n    }\n    public long lcm(int a, int b) {\n        return (long) a / gcd(a, b) * b;  // divide first to avoid overflow\n    }\n}",
+          "testCases": [
+            {"input": "gcd(12,8)", "output": "4"},
+            {"input": "gcd(100,75)", "output": "25"},
+            {"input": "lcm(4,6)", "output": "12"},
+            {"input": "gcd(0,5)", "output": "5"}
+          ],
+          "constraints": "0 <= a, b <= 10^9",
+          "editorial": "Euclid's algorithm: gcd(a,b) = gcd(b, a%b) because any divisor of a and b also divides a%b. Terminates in O(log min(a,b)) steps. LCM: divide before multiplying to avoid overflow."
+        },
+        {
+          "displayOrder": 4,
+          "title": "Sum of Digits (Recursive)",
+          "description": "Recursively compute the sum of digits of a non-negative integer n without using loops or string conversion.",
+          "difficulty": "EASY",
+          "pattern": "Recursion on Number",
+          "hint1": "Extract last digit with n % 10.",
+          "hint2": "Reduce the problem: n / 10 removes the last digit.",
+          "hint3": "Base case: n < 10 → return n.",
+          "starterCode": "public class Solution {\n    public int sumOfDigits(int n) {\n        // TODO: recursive, no loops or toString\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int sumOfDigits(int n) {\n        if (n < 10) return n;\n        return n % 10 + sumOfDigits(n / 10);\n    }\n}",
+          "testCases": [
+            {"input": "12345", "output": "15"},
+            {"input": "0", "output": "0"},
+            {"input": "999", "output": "27"},
+            {"input": "7", "output": "7"}
+          ],
+          "constraints": "0 <= n <= 10^9",
+          "editorial": "Classic digit recursion: sum last digit + recurse on rest. Base case when n is single digit. Recursion depth = number of digits = O(log n)."
+        },
+        {
+          "displayOrder": 5,
+          "title": "Overloaded Calculator",
+          "description": "Create a Calculator class with overloaded add() methods: add(int, int), add(double, double), add(int, int, int). Return appropriate types.",
+          "difficulty": "EASY",
+          "pattern": "Method Overloading",
+          "hint1": "Three separate methods with the same name but different parameter lists.",
+          "hint2": "Return int for int+int, double for double+double.",
+          "hint3": "The three-argument version can call the two-argument version.",
+          "starterCode": "public class Calculator {\n    public int add(int a, int b) { return 0; }\n    public double add(double a, double b) { return 0; }\n    public int add(int a, int b, int c) { return 0; }\n}",
+          "solutionCode": "public class Calculator {\n    public int add(int a, int b) {\n        return a + b;\n    }\n    public double add(double a, double b) {\n        return a + b;\n    }\n    public int add(int a, int b, int c) {\n        return add(a, b) + c;  // reuse two-arg version\n    }\n}",
+          "testCases": [
+            {"input": "add(3, 4)", "output": "7"},
+            {"input": "add(1.5, 2.5)", "output": "4.0"},
+            {"input": "add(1, 2, 3)", "output": "6"}
+          ],
+          "constraints": "Inputs fit in int/double ranges.",
+          "editorial": "Demonstrates overloading: same method name, different signatures. Compiler resolves at compile time based on argument types. Three-arg version delegates to two-arg — demonstrates method reuse."
+        },
+        {
+          "displayOrder": 6,
+          "title": "Flatten Nested Array (Varargs)",
+          "description": "Write a method sum(int... nums) that accepts any number of integers and returns their sum. Also write a method that accepts multiple int arrays and sums all elements.",
+          "difficulty": "EASY",
+          "pattern": "Varargs",
+          "hint1": "Varargs: int... nums — treated as int[] inside the method.",
+          "hint2": "Use enhanced for-each to iterate varargs.",
+          "hint3": "For multiple arrays: int[]... arrays — varargs of arrays.",
+          "starterCode": "public class Solution {\n    public int sum(int... nums) {\n        // TODO\n        return 0;\n    }\n    public int sumArrays(int[]... arrays) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int sum(int... nums) {\n        int total = 0;\n        for (int n : nums) total += n;\n        return total;\n    }\n    public int sumArrays(int[]... arrays) {\n        int total = 0;\n        for (int[] arr : arrays)\n            for (int n : arr) total += n;\n        return total;\n    }\n}",
+          "testCases": [
+            {"input": "sum(1,2,3,4,5)", "output": "15"},
+            {"input": "sum()", "output": "0"},
+            {"input": "sumArrays([1,2],[3,4],[5])", "output": "15"}
+          ],
+          "constraints": "All values fit in int. Max 100 arguments.",
+          "editorial": "Varargs compiles to array parameter. Can pass zero arguments (empty array) or many. Can also pass an existing array directly. Varargs must be the last parameter. sumArrays uses varargs of int[] — two nested for-each loops."
+        },
+        {
+          "displayOrder": 7,
+          "title": "Binary Search (Recursive)",
+          "description": "Implement recursive binary search on a sorted array. Return the index of target, or -1 if not found.",
+          "difficulty": "MEDIUM",
+          "pattern": "Divide and Conquer",
+          "hint1": "Helper method with lo and hi bounds. Base case: lo > hi → not found.",
+          "hint2": "Compute mid = lo + (hi - lo) / 2 (avoids overflow).",
+          "hint3": "If target < arr[mid]: recurse on left half. If target > arr[mid]: recurse on right half.",
+          "starterCode": "public class Solution {\n    public int binarySearch(int[] arr, int target) {\n        // TODO: recursive\n        return -1;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int binarySearch(int[] arr, int target) {\n        return search(arr, target, 0, arr.length - 1);\n    }\n\n    private int search(int[] arr, int target, int lo, int hi) {\n        if (lo > hi) return -1;\n        int mid = lo + (hi - lo) / 2;\n        if (arr[mid] == target) return mid;\n        if (arr[mid] > target)  return search(arr, target, lo, mid - 1);\n        return search(arr, target, mid + 1, hi);\n    }\n}",
+          "testCases": [
+            {"input": "arr=[1,3,5,7,9,11], target=7", "output": "3"},
+            {"input": "arr=[1,2,3,4,5], target=6", "output": "-1"},
+            {"input": "arr=[1], target=1", "output": "0"},
+            {"input": "arr=[2,4,6,8], target=1", "output": "-1"}
+          ],
+          "constraints": "Array is sorted. 1 <= arr.length <= 10^5. Values fit in int.",
+          "editorial": "Recursive binary search: divide in half each call. Use lo + (hi-lo)/2 instead of (lo+hi)/2 to avoid integer overflow. Recursion depth = O(log n). The helper method pattern (public wrapper + private recursive) is idiomatic Java."
+        },
+        {
+          "displayOrder": 8,
+          "title": "Merge Sort Implementation",
+          "description": "Implement merge sort on an integer array. Use a recursive divide-and-conquer approach. Return the sorted array.",
+          "difficulty": "MEDIUM",
+          "pattern": "Divide and Conquer",
+          "hint1": "Split the array in half, recursively sort each half.",
+          "hint2": "Merge two sorted halves into a single sorted array.",
+          "hint3": "The merge step is the key: use two pointers, compare, copy the smaller.",
+          "starterCode": "public class Solution {\n    public int[] mergeSort(int[] arr) {\n        // TODO\n        return arr;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int[] mergeSort(int[] arr) {\n        if (arr.length <= 1) return arr;\n        int mid = arr.length / 2;\n        int[] left  = mergeSort(java.util.Arrays.copyOfRange(arr, 0, mid));\n        int[] right = mergeSort(java.util.Arrays.copyOfRange(arr, mid, arr.length));\n        return merge(left, right);\n    }\n\n    private int[] merge(int[] left, int[] right) {\n        int[] result = new int[left.length + right.length];\n        int i = 0, j = 0, k = 0;\n        while (i < left.length && j < right.length) {\n            if (left[i] <= right[j]) result[k++] = left[i++];\n            else                     result[k++] = right[j++];\n        }\n        while (i < left.length)  result[k++] = left[i++];\n        while (j < right.length) result[k++] = right[j++];\n        return result;\n    }\n}",
+          "testCases": [
+            {"input": "[5,3,8,1,9,2,7]", "output": "[1,2,3,5,7,8,9]"},
+            {"input": "[1]", "output": "[1]"},
+            {"input": "[]", "output": "[]"},
+            {"input": "[5,5,5,5]", "output": "[5,5,5,5]"}
+          ],
+          "constraints": "0 <= arr.length <= 10^5. Values fit in int.",
+          "editorial": "Merge sort: O(n log n) time, O(n) space. Divide: split at midpoint. Conquer: recursive calls. Combine: merge two sorted halves. The recursion tree has O(log n) levels, each level does O(n) work. Stable sort — equal elements maintain relative order."
+        },
+        {
+          "displayOrder": 9,
+          "title": "Flood Fill (DFS Recursion)",
+          "description": "Given an image (2D int array), a starting pixel (sr, sc), and a new color, perform flood fill. Change all connected pixels of the original color to the new color.",
+          "difficulty": "MEDIUM",
+          "pattern": "DFS Recursion on Grid",
+          "hint1": "DFS from (sr, sc). Change color, then recurse in 4 directions.",
+          "hint2": "Base case: out of bounds, or pixel is not the original color.",
+          "hint3": "If new color == original color, return immediately to avoid infinite recursion.",
+          "starterCode": "public class Solution {\n    public int[][] floodFill(int[][] image, int sr, int sc, int color) {\n        // TODO\n        return image;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int[][] floodFill(int[][] image, int sr, int sc, int color) {\n        int orig = image[sr][sc];\n        if (orig == color) return image;  // avoid infinite recursion\n        dfs(image, sr, sc, orig, color);\n        return image;\n    }\n\n    private void dfs(int[][] img, int r, int c, int orig, int newColor) {\n        if (r < 0 || r >= img.length || c < 0 || c >= img[0].length) return;\n        if (img[r][c] != orig) return;\n        img[r][c] = newColor;\n        dfs(img, r+1, c, orig, newColor);\n        dfs(img, r-1, c, orig, newColor);\n        dfs(img, r, c+1, orig, newColor);\n        dfs(img, r, c-1, orig, newColor);\n    }\n}",
+          "testCases": [
+            {"input": "image=[[1,1,1],[1,1,0],[1,0,1]], sr=1, sc=1, color=2", "output": "[[2,2,2],[2,2,0],[2,0,1]]"},
+            {"input": "image=[[0,0,0],[0,0,0]], sr=0, sc=0, color=0", "output": "[[0,0,0],[0,0,0]]"},
+            {"input": "image=[[0,0,0],[0,1,1]], sr=1, sc=1, color=1", "output": "[[0,0,0],[0,1,1]]"}
+          ],
+          "constraints": "m == image.length. n == image[i].length. 1 <= m, n <= 50. 0 <= image[i][j], color < 2^16.",
+          "editorial": "DFS flood fill: change pixel, then recurse in 4 directions. Early return on bounds check and wrong color. Critical: check orig != color before starting to avoid marking all same-color pixels when color doesn't change. O(m*n) time."
+        },
+        {
+          "displayOrder": 10,
+          "title": "Generate All Subsets (Power Set)",
+          "description": "Given an integer array nums with unique elements, return all possible subsets (the power set). Include the empty subset.",
+          "difficulty": "MEDIUM",
+          "pattern": "Backtracking / Recursive Subsets",
+          "hint1": "For each element, you either include it or don't — 2^n subsets total.",
+          "hint2": "Recursive approach: at each index, branch into 'include' and 'exclude'.",
+          "hint3": "Or iterative: for each number, add it to all existing subsets.",
+          "starterCode": "import java.util.*;\npublic class Solution {\n    public List<List<Integer>> subsets(int[] nums) {\n        // TODO\n        return new ArrayList<>();\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public List<List<Integer>> subsets(int[] nums) {\n        List<List<Integer>> result = new ArrayList<>();\n        backtrack(nums, 0, new ArrayList<>(), result);\n        return result;\n    }\n\n    private void backtrack(int[] nums, int start, List<Integer> current, List<List<Integer>> result) {\n        result.add(new ArrayList<>(current));\n        for (int i = start; i < nums.length; i++) {\n            current.add(nums[i]);\n            backtrack(nums, i + 1, current, result);\n            current.remove(current.size() - 1);\n        }\n    }\n}",
+          "testCases": [
+            {"input": "[1,2,3]", "output": "[[],[1],[1,2],[1,2,3],[1,3],[2],[2,3],[3]]"},
+            {"input": "[0]", "output": "[[],[0]]"},
+            {"input": "[1,2]", "output": "[[],[1],[1,2],[2]]"}
+          ],
+          "constraints": "1 <= nums.length <= 10. All nums are unique.",
+          "editorial": "Backtracking: add current list to result at every node (not just leaves). For loop starting at 'start' prevents duplicates. Add element, recurse, remove element (backtrack). 2^n subsets, O(n * 2^n) time to copy all lists."
+        },
+        {
+          "displayOrder": 11,
+          "title": "Climbing Stairs (Memoized)",
+          "description": "You can climb 1 or 2 steps at a time. How many distinct ways to climb n stairs? Use memoization.",
+          "difficulty": "MEDIUM",
+          "pattern": "Memoized Recursion / DP",
+          "hint1": "ways(n) = ways(n-1) + ways(n-2) — same structure as Fibonacci.",
+          "hint2": "Use an int[] memo array to cache results.",
+          "hint3": "Base cases: ways(0) = 1 (empty path), ways(1) = 1.",
+          "starterCode": "public class Solution {\n    public int climbStairs(int n) {\n        // TODO: memoized\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int climbStairs(int n) {\n        int[] memo = new int[n + 1];\n        return dp(n, memo);\n    }\n\n    private int dp(int n, int[] memo) {\n        if (n <= 1) return 1;\n        if (memo[n] != 0) return memo[n];\n        memo[n] = dp(n - 1, memo) + dp(n - 2, memo);\n        return memo[n];\n    }\n}",
+          "testCases": [
+            {"input": "2", "output": "2"},
+            {"input": "3", "output": "3"},
+            {"input": "10", "output": "89"},
+            {"input": "45", "output": "1836311903"}
+          ],
+          "constraints": "1 <= n <= 45",
+          "editorial": "Identical to Fibonacci recurrence. Memoized: each subproblem solved once → O(n). The memo array is passed by reference — all recursive calls share the same cache. Demonstrate the pattern: check cache → compute → store → return."
+        },
+        {
+          "displayOrder": 12,
+          "title": "Permutations of Array",
+          "description": "Given an array of distinct integers, return all possible permutations.",
+          "difficulty": "MEDIUM",
+          "pattern": "Backtracking with Swap",
+          "hint1": "For each position, swap it with every element to its right.",
+          "hint2": "Recurse with the next position fixed. Swap back to restore state.",
+          "hint3": "Base case: start == nums.length-1 — add current arrangement.",
+          "starterCode": "import java.util.*;\npublic class Solution {\n    public List<List<Integer>> permute(int[] nums) {\n        // TODO\n        return new ArrayList<>();\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public List<List<Integer>> permute(int[] nums) {\n        List<List<Integer>> result = new ArrayList<>();\n        backtrack(nums, 0, result);\n        return result;\n    }\n\n    private void backtrack(int[] nums, int start, List<List<Integer>> result) {\n        if (start == nums.length) {\n            List<Integer> perm = new ArrayList<>();\n            for (int n : nums) perm.add(n);\n            result.add(perm);\n            return;\n        }\n        for (int i = start; i < nums.length; i++) {\n            swap(nums, start, i);\n            backtrack(nums, start + 1, result);\n            swap(nums, start, i);  // restore\n        }\n    }\n\n    private void swap(int[] a, int i, int j) {\n        int t = a[i]; a[i] = a[j]; a[j] = t;\n    }\n}",
+          "testCases": [
+            {"input": "[1,2,3]", "output": "[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]"},
+            {"input": "[0,1]", "output": "[[0,1],[1,0]]"},
+            {"input": "[1]", "output": "[[1]]"}
+          ],
+          "constraints": "1 <= nums.length <= 6. -10 <= nums[i] <= 10. All distinct.",
+          "editorial": "Swap-based permutation: fix current position by swapping it with each remaining element, recurse for the next position, then swap back. Produces n! permutations. O(n * n!) time to generate all."
+        },
+        {
+          "displayOrder": 13,
+          "title": "Memoized Coin Change",
+          "description": "Given coins and a target amount, find the minimum number of coins needed to make the amount. Return -1 if impossible. Use top-down memoization.",
+          "difficulty": "HARD",
+          "pattern": "Top-Down DP (Memoization)",
+          "hint1": "minCoins(amount) = 1 + min(minCoins(amount - coin) for coin in coins).",
+          "hint2": "Use a memo array initialized to -2 (unvisited). Return -1 for impossible.",
+          "hint3": "Base case: amount == 0 → return 0.",
+          "starterCode": "public class Solution {\n    public int coinChange(int[] coins, int amount) {\n        // TODO: top-down memoization\n        return -1;\n    }\n}",
+          "solutionCode": "public class Solution {\n    private int[] memo;\n\n    public int coinChange(int[] coins, int amount) {\n        memo = new int[amount + 1];\n        java.util.Arrays.fill(memo, -2);  // -2 = unvisited\n        return dp(coins, amount);\n    }\n\n    private int dp(int[] coins, int amount) {\n        if (amount < 0) return -1;\n        if (amount == 0) return 0;\n        if (memo[amount] != -2) return memo[amount];\n        int min = Integer.MAX_VALUE;\n        for (int coin : coins) {\n            int sub = dp(coins, amount - coin);\n            if (sub != -1) min = Math.min(min, sub + 1);\n        }\n        memo[amount] = (min == Integer.MAX_VALUE) ? -1 : min;\n        return memo[amount];\n    }\n}",
+          "testCases": [
+            {"input": "coins=[1,5,6,9], amount=11", "output": "2"},
+            {"input": "coins=[2], amount=3", "output": "-1"},
+            {"input": "coins=[1,2,5], amount=11", "output": "3"},
+            {"input": "coins=[1], amount=0", "output": "0"}
+          ],
+          "constraints": "1 <= coins.length <= 12. 1 <= coins[i] <= 2^31-1. 0 <= amount <= 10^4.",
+          "editorial": "Top-down DP: dp(amount) = 1 + min over all coins. Use -2 sentinel for unvisited (to distinguish from -1=impossible and 0=base case). For each coin, subtract and recurse. If the sub-result is -1 (impossible), skip. O(amount * |coins|) time."
+        },
+        {
+          "displayOrder": 14,
+          "title": "Mutual Recursion — Even/Odd Checker",
+          "description": "Implement isEven(n) and isOdd(n) using mutual recursion (isEven calls isOdd and vice versa). No modulo or bitwise operators allowed.",
+          "difficulty": "HARD",
+          "pattern": "Mutual Recursion",
+          "hint1": "isEven(0) = true, isOdd(0) = false (base cases).",
+          "hint2": "isEven(n) = isOdd(n - 1) for n > 0.",
+          "hint3": "Handle negative numbers by using Math.abs.",
+          "starterCode": "public class Solution {\n    public boolean isEven(int n) {\n        // TODO: no %, no &\n        return false;\n    }\n    public boolean isOdd(int n) {\n        // TODO: mutual recursion with isEven\n        return false;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public boolean isEven(int n) {\n        n = Math.abs(n);\n        if (n == 0) return true;\n        return isOdd(n - 1);\n    }\n\n    public boolean isOdd(int n) {\n        n = Math.abs(n);\n        if (n == 0) return false;\n        return isEven(n - 1);\n    }\n}",
+          "testCases": [
+            {"input": "isEven(4)", "output": "true"},
+            {"input": "isOdd(7)", "output": "true"},
+            {"input": "isEven(-6)", "output": "true"},
+            {"input": "isOdd(0)", "output": "false"}
+          ],
+          "constraints": "0 <= |n| <= 100 (stack depth bounded). Demonstrate concept.",
+          "editorial": "Mutual recursion: two functions call each other. isEven(n) = isOdd(n-1) because n is even iff n-1 is odd. Stack depth = n, so only works for small n in Java. Demonstrates the concept but use n%2 in practice."
+        },
+        {
+          "displayOrder": 15,
+          "title": "Recursive Tree Maximum Depth",
+          "description": "Given a binary tree, find its maximum depth (number of nodes along the longest root-to-leaf path).",
+          "difficulty": "HARD",
+          "pattern": "Tree Recursion",
+          "hint1": "maxDepth(null) = 0 (base case).",
+          "hint2": "maxDepth(node) = 1 + max(maxDepth(left), maxDepth(right)).",
+          "hint3": "Trust the recursion: the correct depth for left and right subtrees will be returned.",
+          "starterCode": "public class Solution {\n    static class TreeNode {\n        int val; TreeNode left, right;\n        TreeNode(int v) { val = v; }\n    }\n    public int maxDepth(TreeNode root) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    static class TreeNode {\n        int val; TreeNode left, right;\n        TreeNode(int v) { val = v; }\n    }\n    public int maxDepth(TreeNode root) {\n        if (root == null) return 0;\n        return 1 + Math.max(maxDepth(root.left), maxDepth(root.right));\n    }\n}",
+          "testCases": [
+            {"input": "[3,9,20,null,null,15,7]", "output": "3"},
+            {"input": "[1,null,2]", "output": "2"},
+            {"input": "[]", "output": "0"},
+            {"input": "[1]", "output": "1"}
+          ],
+          "constraints": "0 <= number of nodes <= 10^4. -100 <= Node.val <= 100.",
+          "editorial": "Tree recursion: null node has depth 0. Non-null node has depth 1 + max of subtree depths. This is the most elegant recursive solution. O(n) time — each node visited once. Stack depth = tree height = O(log n) for balanced, O(n) worst case."
+        },
+        {
+          "displayOrder": 16,
+          "title": "Decode Ways (Memoized)",
+          "description": "A string of digits can be decoded like: '1'→A, '2'→B, ..., '26'→Z. Count the number of ways to decode a string. Use memoized recursion.",
+          "difficulty": "HARD",
+          "pattern": "Memoized DP on String",
+          "hint1": "dp(i) = number of ways to decode s[i..n-1].",
+          "hint2": "At each position: try taking 1 digit (valid if not '0'), then try taking 2 digits (valid if 10-26).",
+          "hint3": "Base case: i == n → 1 way (empty suffix, valid decode).",
+          "starterCode": "public class Solution {\n    public int numDecodings(String s) {\n        // TODO: memoized\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    private int[] memo;\n\n    public int numDecodings(String s) {\n        memo = new int[s.length() + 1];\n        java.util.Arrays.fill(memo, -1);\n        return dp(s, 0);\n    }\n\n    private int dp(String s, int i) {\n        if (i == s.length()) return 1;\n        if (s.charAt(i) == '0') return 0;  // leading zero: invalid\n        if (memo[i] != -1) return memo[i];\n        int ways = dp(s, i + 1);  // take 1 digit\n        if (i + 1 < s.length()) {\n            int twoDigit = Integer.parseInt(s.substring(i, i + 2));\n            if (twoDigit <= 26) ways += dp(s, i + 2);  // take 2 digits\n        }\n        memo[i] = ways;\n        return ways;\n    }\n}",
+          "testCases": [
+            {"input": "12", "output": "2"},
+            {"input": "226", "output": "3"},
+            {"input": "06", "output": "0"},
+            {"input": "11106", "output": "2"}
+          ],
+          "constraints": "1 <= s.length <= 100. s contains only digits.",
+          "editorial": "Top-down DP: at each index, try 1-digit and 2-digit decodings. A digit starting with '0' is invalid (no A=0). Two-digit decode valid only if 10-26. Memoize to avoid re-exploring same suffix. O(n) time and space."
+        },
+        {
+          "displayOrder": 17,
+          "title": "Recursive Maze Solver",
+          "description": "Given a 2D maze (0=open, 1=wall), find if there's a path from (0,0) to (m-1,n-1). Mark the path. Use recursion with backtracking.",
+          "difficulty": "HARD",
+          "pattern": "Backtracking on Grid",
+          "hint1": "Mark current cell as visited (e.g., 2) before recursing.",
+          "hint2": "Try all 4 directions. If any direction finds the exit, return true.",
+          "hint3": "If no direction works, unmark the cell (backtrack) and return false.",
+          "starterCode": "public class Solution {\n    public boolean solveMaze(int[][] maze) {\n        // TODO: mark path with 2, return true if solved\n        return false;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public boolean solveMaze(int[][] maze) {\n        return solve(maze, 0, 0);\n    }\n\n    private boolean solve(int[][] maze, int r, int c) {\n        int m = maze.length, n = maze[0].length;\n        if (r < 0 || r >= m || c < 0 || c >= n) return false;\n        if (maze[r][c] != 0) return false;  // wall or visited\n        if (r == m - 1 && c == n - 1) { maze[r][c] = 2; return true; }  // reached exit\n        maze[r][c] = 2;  // mark as path\n        if (solve(maze, r+1, c) || solve(maze, r-1, c) ||\n            solve(maze, r, c+1) || solve(maze, r, c-1)) return true;\n        maze[r][c] = 0;  // backtrack: unmark\n        return false;\n    }\n}",
+          "testCases": [
+            {"input": "[[0,0,1,0],[0,0,0,0],[1,0,1,0],[0,0,0,0]]", "output": "true"},
+            {"input": "[[0,1],[1,0]]", "output": "false"},
+            {"input": "[[0]]", "output": "true"}
+          ],
+          "constraints": "1 <= m, n <= 10. maze[i][j] is 0 or 1. maze[0][0] = maze[m-1][n-1] = 0.",
+          "editorial": "Backtracking: mark as part of path (2), try all directions, if successful return true. If stuck, unmark and return false. The early exit with `||` short-circuits once a path is found. O(4^(m*n)) worst case but much better in practice due to pruning."
+        },
+        {
+          "displayOrder": 18,
+          "title": "Number of Islands (DFS)",
+          "description": "Given a 2D grid of '1's (land) and '0's (water), count the number of islands. An island is surrounded by water and formed by connecting adjacent lands horizontally/vertically.",
+          "difficulty": "HARD",
+          "pattern": "DFS / BFS on Grid",
+          "hint1": "Iterate through the grid. When you find '1', it's a new island — increment count and DFS to mark all connected land.",
+          "hint2": "DFS: change '1' to '0' (visited) and recurse in 4 directions.",
+          "hint3": "No need to restore — we're just counting, not backtracking.",
+          "starterCode": "public class Solution {\n    public int numIslands(char[][] grid) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int numIslands(char[][] grid) {\n        int count = 0;\n        for (int i = 0; i < grid.length; i++) {\n            for (int j = 0; j < grid[0].length; j++) {\n                if (grid[i][j] == '1') {\n                    count++;\n                    dfs(grid, i, j);\n                }\n            }\n        }\n        return count;\n    }\n\n    private void dfs(char[][] grid, int r, int c) {\n        if (r < 0 || r >= grid.length || c < 0 || c >= grid[0].length) return;\n        if (grid[r][c] != '1') return;\n        grid[r][c] = '0';  // mark visited\n        dfs(grid, r+1, c); dfs(grid, r-1, c);\n        dfs(grid, r, c+1); dfs(grid, r, c-1);\n    }\n}",
+          "testCases": [
+            {"input": "[[1,1,1,1,0],[1,1,0,1,0],[1,1,0,0,0],[0,0,0,0,0]]", "output": "1"},
+            {"input": "[[1,1,0,0,0],[1,1,0,0,0],[0,0,1,0,0],[0,0,0,1,1]]", "output": "3"},
+            {"input": "[[1]]", "output": "1"}
+          ],
+          "constraints": "m == grid.length. n == grid[i].length. 1 <= m, n <= 300.",
+          "editorial": "DFS on grid: each DFS call from an unvisited '1' explores one entire island, marking all cells visited. Count increments once per DFS root. O(m*n) time — each cell visited at most once. Modifies the grid; copy it first if preservation needed."
+        },
+        {
+          "displayOrder": 19,
+          "title": "Function Composition and Higher-Order Methods",
+          "description": "Write a method `compose(Function<Integer,Integer> f, Function<Integer,Integer> g)` that returns a new function that applies g first, then f. Also implement `applyN(Function<Integer,Integer> f, int n, int x)` that applies f n times to x.",
+          "difficulty": "HARD",
+          "pattern": "Functional Interfaces / Higher-Order Functions",
+          "hint1": "compose: return x -> f.apply(g.apply(x)) as a lambda.",
+          "hint2": "applyN: use recursion or a loop to apply f n times.",
+          "hint3": "applyN(f, 0, x) = x (base case: identity).",
+          "starterCode": "import java.util.function.*;\npublic class Solution {\n    public Function<Integer,Integer> compose(\n        Function<Integer,Integer> f,\n        Function<Integer,Integer> g) {\n        // TODO: return h where h(x) = f(g(x))\n        return null;\n    }\n    public int applyN(Function<Integer,Integer> f, int n, int x) {\n        // TODO: apply f n times to x\n        return 0;\n    }\n}",
+          "solutionCode": "import java.util.function.*;\npublic class Solution {\n    public Function<Integer,Integer> compose(\n        Function<Integer,Integer> f,\n        Function<Integer,Integer> g) {\n        return x -> f.apply(g.apply(x));\n    }\n\n    public int applyN(Function<Integer,Integer> f, int n, int x) {\n        if (n == 0) return x;\n        return applyN(f, n - 1, f.apply(x));\n    }\n\n    public static void main(String[] args) {\n        Solution sol = new Solution();\n        Function<Integer,Integer> doubleIt = x -> x * 2;\n        Function<Integer,Integer> addOne   = x -> x + 1;\n        Function<Integer,Integer> doubleThenAdd = sol.compose(addOne, doubleIt);\n        System.out.println(doubleThenAdd.apply(5));  // addOne(doubleIt(5)) = 11\n        System.out.println(sol.applyN(doubleIt, 3, 1));  // 1→2→4→8\n    }\n}",
+          "testCases": [
+            {"input": "compose(x->x+1, x->x*2).apply(5)", "output": "11"},
+            {"input": "applyN(x->x*2, 3, 1)", "output": "8"},
+            {"input": "applyN(x->x+1, 0, 5)", "output": "5"},
+            {"input": "compose(x->x*x, x->x+1).apply(3)", "output": "16"}
+          ],
+          "constraints": "0 <= n <= 20. Functions are well-defined for given inputs.",
+          "editorial": "Function composition: lambda captures f and g. applyN: recursive with base n=0 returning identity. applyN is tail-recursive in this form (accumulates with each f.apply). Demonstrates Java's Function<T,R> interface and lambda closures."
+        },
+        {
+          "displayOrder": 20,
+          "title": "Recursive Descent Parser for Boolean Expressions",
+          "description": "Parse and evaluate a boolean expression string: 't' (true), 'f' (false), '!(expr)', '&(e1,e2,...)', '|(e1,e2,...)'.",
+          "difficulty": "HARD",
+          "pattern": "Recursive Descent Parsing",
+          "hint1": "Use a global index. parseBool() reads one complete boolean expression.",
+          "hint2": "If current char is 't'/'f': return true/false. If '!': parse inner and negate.",
+          "hint3": "If '&' or '|': consume '(', parse comma-separated expressions, consume ')', reduce.",
+          "starterCode": "public class Solution {\n    private int pos;\n    private String expr;\n    public boolean parseBoolExpr(String expression) {\n        // TODO: recursive descent\n        return false;\n    }\n}",
+          "solutionCode": "public class Solution {\n    private int pos;\n    private String expr;\n\n    public boolean parseBoolExpr(String expression) {\n        this.expr = expression;\n        this.pos = 0;\n        return parse();\n    }\n\n    private boolean parse() {\n        char c = expr.charAt(pos++);\n        if (c == 't') return true;\n        if (c == 'f') return false;\n        if (c == '!') {\n            pos++;  // consume '('\n            boolean val = !parse();\n            pos++;  // consume ')'\n            return val;\n        }\n        // c is '&' or '|'\n        pos++;  // consume '('\n        boolean result = (c == '&');\n        while (true) {\n            boolean sub = parse();\n            result = (c == '&') ? result && sub : result || sub;\n            if (expr.charAt(pos) == ')') break;\n            pos++;  // consume ','\n        }\n        pos++;  // consume ')'\n        return result;\n    }\n}",
+          "testCases": [
+            {"input": "!(f)", "output": "true"},
+            {"input": "|(f,t)", "output": "true"},
+            {"input": "&(t,f)", "output": "false"},
+            {"input": "|(&(t,f),!(f))", "output": "true"}
+          ],
+          "constraints": "1 <= expression.length <= 2*10^4. expression is a valid expression.",
+          "editorial": "Recursive descent: parse() consumes one complete expression. For operators with multiple args, loop consuming subexpressions until ')' is reached. Short-circuit could be applied for '&' (stop at first false) and '|' (stop at first true). O(n) time — each char consumed exactly once."
+        }
+      ]
+    }
+  ]
+}

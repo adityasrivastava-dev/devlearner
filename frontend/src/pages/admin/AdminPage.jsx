@@ -339,8 +339,135 @@ function UsersSection() {
 
 /* ── Seed / Import section ───────────────────────────────────────────────────── */
 function SeedSection() {
-  const [json, setJson]       = useState('');
-  const [result, setResult]   = useState(null);
+  const qc = useQueryClient();
+  const [mode, setMode] = useState('files'); // files | paste
+
+  return (
+    <div className={styles.section}>
+      <div className={styles.sectionHeader}>
+        <span className={styles.sectionTitle}>Import Data</span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {[['files', '📁 Predefined Files'], ['paste', '📋 Paste JSON']].map(([key, label]) => (
+            <button
+              key={key}
+              className={`btn btn-sm ${mode === key ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setMode(key)}
+            >{label}</button>
+          ))}
+        </div>
+      </div>
+      {mode === 'files' ? <SeedFilesPanel qc={qc} /> : <SeedPastePanel />}
+    </div>
+  );
+}
+
+function SeedFilesPanel({ qc }) {
+  const { data: files = [], isLoading, refetch } = useQuery({
+    queryKey: QUERY_KEYS.seedFiles,
+    queryFn:  adminApi.getSeedFiles,
+    staleTime: 10 * 1000,
+  });
+
+  const [importing, setImporting] = useState(null); // filename currently being imported
+
+  async function handleImport(filename) {
+    setImporting(filename);
+    try {
+      const res = await adminApi.importSeedFile(filename);
+      toast.success(`Imported: ${res.topicsSeeded} topics · ${res.problemsSeeded} problems`);
+      refetch();
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.adminStats });
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Import failed');
+    } finally {
+      setImporting(null);
+    }
+  }
+
+  async function handleImportAll() {
+    const pending = files.filter(f => f.status === 'PENDING');
+    for (const f of pending) {
+      await handleImport(f.filename);
+    }
+  }
+
+  const pending = files.filter(f => f.status === 'PENDING');
+  const imported = files.filter(f => f.status === 'IMPORTED');
+
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <span style={{ fontSize: 12, color: 'var(--text3)' }}>
+          {files.length} files · <span style={{ color: 'var(--accent)' }}>{imported.length} imported</span>
+          {' · '}<span style={{ color: 'var(--yellow)' }}>{pending.length} pending</span>
+        </span>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => refetch()}>↻ Refresh</button>
+          {pending.length > 0 && (
+            <button
+              className="btn btn-primary btn-sm"
+              disabled={!!importing}
+              onClick={handleImportAll}
+            >
+              ⚡ Import All Pending ({pending.length})
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className={styles.loading}><span className="spinner" />Loading files…</div>
+      ) : (
+        <div className={styles.seedFileList}>
+          {files.map((file) => (
+            <div key={file.filename} className={styles.seedFileRow}>
+
+              {/* File info */}
+              <div className={styles.seedFileInfo}>
+                <span className={styles.seedFileName}>{file.filename}</span>
+                <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  {file.topicCount} topic{file.topicCount !== 1 ? 's' : ''}
+                  {file.status === 'IMPORTED' && (
+                    <> · {file.topicsSeeded}t · {file.examplesSeeded}ex · {file.problemsSeeded}p</>
+                  )}
+                </span>
+              </div>
+
+              {/* Status badge */}
+              <div style={{ minWidth: 100, textAlign: 'right' }}>
+                {file.status === 'IMPORTED' ? (
+                  <span className={styles.importedBadge}>✓ Imported</span>
+                ) : file.status === 'ERROR' ? (
+                  <span className={styles.errorBadge} title={file.errorMessage}>⚠ Error</span>
+                ) : (
+                  <span className={styles.pendingBadge}>Pending</span>
+                )}
+              </div>
+
+              {/* Import button */}
+              <button
+                className={`btn btn-sm ${file.status === 'IMPORTED' ? 'btn-ghost' : 'btn-primary'}`}
+                disabled={file.status === 'IMPORTED' || importing === file.filename || !!importing}
+                onClick={() => handleImport(file.filename)}
+                style={{ minWidth: 90 }}
+              >
+                {importing === file.filename
+                  ? <><span className="spinner" /> Importing…</>
+                  : file.status === 'IMPORTED'
+                    ? '✓ Done'
+                    : '↑ Import'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+function SeedPastePanel() {
+  const [json, setJson]     = useState('');
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSeed() {
@@ -360,13 +487,9 @@ function SeedSection() {
   }
 
   return (
-    <div className={styles.section}>
-      <div className={styles.sectionHeader}>
-        <span className={styles.sectionTitle}>Import JSON Batch</span>
-        <span className={styles.sectionSub}>POST to /api/admin/seed-batch</span>
-      </div>
+    <>
       <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.6 }}>
-        Paste a seed batch JSON file to import topics, examples, and problems.
+        Paste a seed batch JSON to import topics, examples, and problems.
         Set <code style={{ background: 'var(--bg3)', padding: '1px 4px', borderRadius: 3, fontSize: 11 }}>skipExisting: true</code> to skip already-imported topics.
       </p>
       <textarea
@@ -398,7 +521,7 @@ function SeedSection() {
           )}
         </div>
       )}
-    </div>
+    </>
   );
 }
 

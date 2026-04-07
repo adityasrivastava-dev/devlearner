@@ -1,0 +1,459 @@
+{
+  "batchName": "B07-strings",
+  "skipExisting": true,
+  "topics": [
+    {
+      "title": "Strings & StringBuilder in Java",
+      "category": "JAVA",
+      "story": "Imagine you're carving words into stone tablets (String) versus writing on a whiteboard (StringBuilder). Stone tablets are permanent — once carved, you must create a new tablet to change anything. Whiteboards can be erased and rewritten freely. Java's String is the immutable stone tablet stored in a special pool; StringBuilder is your whiteboard for building strings efficiently. Understanding when to use each can be the difference between O(n²) and O(n) code.",
+      "analogy": "A String is like a published book — immutable, can be referenced by many, stored in a library (String pool). StringBuilder is a Word document you're editing — mutable, temporary, efficient for changes, but meant to produce a final String when done.",
+      "memoryAnchor": "PILL — Pool (string literal pool), Immutable, Literal comparison pitfall, Length is a method (not a property). Remember PILL when working with Java Strings.",
+      "firstPrinciples": "String is backed by a char[] (or byte[] in Java 9+ with compact strings). Immutability means every 'modification' returns a new String object. The JVM maintains a String pool (interned strings) in the heap's Metaspace. `s1 == s2` compares references, not content — always use `.equals()`. `String + String` in a loop compiles to new StringBuilder per iteration (before Java 9), causing O(n²) allocations. Java 9+ uses invokedynamic/StringConcatFactory which is smarter but still prefer explicit StringBuilder for hot loops.",
+      "bruteForce": "Use String concatenation in loops (functional but slow). Use indexOf/substring for searching/parsing (readable). Use Character class methods for char classification. Start with String methods before reaching for regex.",
+      "optimizedApproach": "Use StringBuilder for building strings in loops. Use String.format() or formatted() for templates. For pattern matching, compile Pattern once and reuse Matcher. Use char[] directly for performance-critical char-by-char processing. Use String.chars() stream for functional char processing.",
+      "whenToUse": "String: immutable content that's passed around, used as Map key, compared, stored. StringBuilder: building strings in loops, parsing, constructing SQL/JSON/HTML. StringBuffer: thread-safe StringBuilder (rare — prefer StringBuilder + external synchronization). String.format: readable templates. char[]: passwords (can be wiped), performance char processing.",
+      "examples": [
+        {
+          "displayOrder": 1,
+          "title": "String Methods Reference",
+          "code": "public class StringMethods {\n    public static void main(String[] args) {\n        String s = \"  Hello, World!  \";\n\n        // --- Core methods ---\n        System.out.println(s.length());            // 17\n        System.out.println(s.trim());              // \"Hello, World!\"\n        System.out.println(s.strip());             // Java 11+ unicode-aware trim\n        System.out.println(s.toUpperCase());       // \"  HELLO, WORLD!  \"\n        System.out.println(s.toLowerCase());       // \"  hello, world!  \"\n        System.out.println(s.contains(\"World\"));  // true\n        System.out.println(s.indexOf(\"o\"));       // 5 (first occurrence)\n        System.out.println(s.lastIndexOf(\"o\"));   // 9\n        System.out.println(s.charAt(2));           // 'H'\n        System.out.println(s.substring(2, 7));    // \"Hello\"\n        System.out.println(s.replace(\"World\", \"Java\")); // \"  Hello, Java!  \"\n        System.out.println(s.startsWith(\"  H\"));  // true\n        System.out.println(s.endsWith(\"  \"));     // true\n        System.out.println(s.isEmpty());           // false\n        System.out.println(\"\".isEmpty());          // true\n        System.out.println(\"  \".isBlank());        // true (Java 11+)\n\n        // --- Split and Join ---\n        String csv = \"a,b,c,d\";\n        String[] parts = csv.split(\",\");           // [\"a\",\"b\",\"c\",\"d\"]\n        String joined = String.join(\"-\", parts);  // \"a-b-c-d\"\n        System.out.println(joined);\n\n        // --- charAt and comparison ---\n        String a = \"apple\", b = \"apple\", c = new String(\"apple\");\n        System.out.println(a == b);        // true  (same pool reference)\n        System.out.println(a == c);        // false (new String = heap object)\n        System.out.println(a.equals(c));  // true  (content comparison)\n        System.out.println(\"banana\".compareTo(\"apple\")); // positive (b > a)\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":4,\"phase\":\"DECLARE\",\"variables\":{\"s\":\"  Hello, World!  \"},\"description\":\"String literal stored in pool\"},{\"step\":2,\"line\":7,\"phase\":\"CALL\",\"variables\":{\"result\":17},\"description\":\"length() = 17\"},{\"step\":3,\"line\":8,\"phase\":\"CALL\",\"variables\":{\"result\":\"Hello, World!\"},\"description\":\"trim() removes leading/trailing spaces\"},{\"step\":4,\"line\":16,\"phase\":\"CALL\",\"variables\":{\"result\":5},\"description\":\"indexOf('o') = 5\"},{\"step\":5,\"line\":27,\"phase\":\"DECLARE\",\"variables\":{\"a\":\"apple\",\"b\":\"apple\"},\"description\":\"both point to same pool object\"},{\"step\":6,\"line\":29,\"phase\":\"CONDITION_TRUE\",\"variables\":{\"a==b\":true},\"description\":\"same reference from pool\"},{\"step\":7,\"line\":30,\"phase\":\"CONDITION_FALSE\",\"variables\":{\"a==c\":false},\"description\":\"new String creates heap object, different reference\"},{\"step\":8,\"line\":31,\"phase\":\"CONDITION_TRUE\",\"variables\":{\"a.equals(c)\":true},\"description\":\"equals compares content, not reference\"}]",
+          "flowchartMermaid": "graph TD\n    A[String literal] --> B[String Pool lookup]\n    B -- exists --> C[return pooled reference]\n    B -- new --> D[create in pool, return reference]\n    E[new String-s-] --> F[heap object, NOT pooled]\n    G[==] --> H[reference comparison]\n    I[.equals] --> J[content comparison]\n    K[.intern] --> L[force pool storage]",
+          "pseudocode": "s = \"  Hello, World!  \"\ns.trim() → removes ASCII whitespace\ns.strip() → removes Unicode whitespace\ncsv.split(\",\") → String[] of tokens\nString.join(\"-\", arr) → concatenated with separator\na == b → reference equality (avoid for Strings)\na.equals(b) → content equality (always use this)",
+          "explanation": "Key pitfall: `==` compares references. Two String literals with same content share the same pool reference, but `new String(...)` always creates a new heap object. Always use .equals() for String comparison. Java 11 added isBlank() (checks whitespace only), strip() (Unicode-aware trim), lines(), repeat(). substring() is O(1) in Java 7+ (no longer copies char[]).",
+          "realWorldUse": "String parsing in REST controllers (@RequestParam), configuration reading (application.properties), building SQL queries (use PreparedStatement!), logging messages, JSON key access."
+        },
+        {
+          "displayOrder": 2,
+          "title": "StringBuilder — Efficient String Building",
+          "code": "public class StringBuilderDemo {\n    public static void main(String[] args) {\n        // BAD: O(n²) — creates new String object on each iteration\n        String bad = \"\";\n        for (int i = 0; i < 5; i++) {\n            bad += i + \", \";  // new String object each time\n        }\n        System.out.println(bad);\n\n        // GOOD: O(n) — StringBuilder maintains internal char buffer\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < 5; i++) {\n            sb.append(i).append(\", \");\n        }\n        // Remove trailing \", \"\n        sb.setLength(sb.length() - 2);\n        System.out.println(sb.toString());  // \"0, 1, 2, 3, 4\"\n\n        // StringBuilder API\n        StringBuilder s = new StringBuilder(\"Hello\");\n        s.append(\" World\");          // \"Hello World\"\n        s.insert(5, \",\");            // \"Hello, World\"\n        s.delete(5, 7);              // \"Hello World\" (delete \", \")\n        s.replace(6, 11, \"Java\");    // \"Hello Java\"\n        s.reverse();                 // \"avaJ olleH\"\n        s.deleteCharAt(0);           // \"vaJ olleH\"\n        System.out.println(s);\n        System.out.println(\"Capacity: \" + s.capacity()); // initial 16 + grows\n        System.out.println(\"Length:   \" + s.length());\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":4,\"phase\":\"DECLARE\",\"variables\":{\"bad\":\"\"},\"description\":\"empty String\"},{\"step\":2,\"line\":6,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":0},\"description\":\"bad += '0, ' creates new String object\"},{\"step\":3,\"line\":6,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":4},\"description\":\"5 new String objects created total — O(n²)\"},{\"step\":4,\"line\":11,\"phase\":\"DECLARE\",\"variables\":{\"sb\":\"StringBuilder()\"},\"description\":\"internal char[16] buffer\"},{\"step\":5,\"line\":13,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":0},\"description\":\"append '0' then append ', '\"},{\"step\":6,\"line\":16,\"phase\":\"ASSIGN\",\"variables\":{\"sb\":\"0, 1, 2, 3, 4, \"},\"description\":\"setLength trims trailing 2 chars\"},{\"step\":7,\"line\":20,\"phase\":\"CALL\",\"variables\":{\"s\":\"Hello\"},\"description\":\"append → insert → delete → replace chain\"},{\"step\":8,\"line\":26,\"phase\":\"CALL\",\"variables\":{\"s\":\"avaJ olleH\"},\"description\":\"reverse() reverses in-place\"},{\"step\":9,\"line\":27,\"phase\":\"CALL\",\"variables\":{\"s\":\"vaJ olleH\"},\"description\":\"deleteCharAt(0) removes first char\"}]",
+          "flowchartMermaid": "graph TD\n    A[String concat in loop] --> B[new String object per iteration]\n    B --> C[O n² allocations]\n    D[StringBuilder.append] --> E[write to internal buffer]\n    E --> F{buffer full?}\n    F -- yes --> G[grow buffer 2x]\n    F -- no --> H[continue]\n    G --> H\n    H --> I[toString → final String copy]",
+          "pseudocode": "BAD: s = s + x  // O(n) copy each time\nGOOD: sb.append(x)  // O(1) amortized\n\nStringBuilder capacity grows 2x when full\nsetLength(n) truncates or pads with null chars\nreverse() reverses all chars in-place\ninsert(idx, str) shifts existing chars right\ndelete(from, to) shifts chars left",
+          "explanation": "StringBuilder uses an internal char[] that doubles when capacity is exceeded (amortized O(1) append). String concatenation in loops using + is O(n²) because each + creates a new String. StringBuilder.toString() creates one final copy. setLength(sb.length()-2) is the clean way to remove a trailing separator after a loop.",
+          "realWorldUse": "Building JSON strings, HTML generation, constructing SQL queries dynamically, log message formatting, reversing strings in-place."
+        },
+        {
+          "displayOrder": 3,
+          "title": "String Searching — KMP Algorithm",
+          "code": "public class KMPSearch {\n    // Knuth-Morris-Pratt: O(n+m) pattern search\n    public static int[] buildLPS(String pattern) {\n        int m = pattern.length();\n        int[] lps = new int[m];  // lps[i] = length of longest proper prefix=suffix\n        int len = 0, i = 1;\n        while (i < m) {\n            if (pattern.charAt(i) == pattern.charAt(len)) {\n                lps[i++] = ++len;\n            } else if (len != 0) {\n                len = lps[len - 1];  // don't increment i — try shorter prefix\n            } else {\n                lps[i++] = 0;\n            }\n        }\n        return lps;\n    }\n\n    public static int search(String text, String pattern) {\n        int n = text.length(), m = pattern.length();\n        if (m == 0) return 0;\n        int[] lps = buildLPS(pattern);\n        int i = 0, j = 0;\n        while (i < n) {\n            if (text.charAt(i) == pattern.charAt(j)) {\n                i++; j++;\n            }\n            if (j == m) return i - j;  // found at index i-j\n            else if (i < n && text.charAt(i) != pattern.charAt(j)) {\n                if (j != 0) j = lps[j - 1];\n                else i++;\n            }\n        }\n        return -1;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(search(\"aaabaaab\", \"aaab\"));  // 0\n        System.out.println(search(\"hello world\", \"world\")); // 6\n        System.out.println(search(\"abc\", \"xyz\"));           // -1\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":4,\"phase\":\"DECLARE\",\"variables\":{\"pattern\":\"aaab\",\"lps\":\"[0,0,0,0]\"},\"description\":\"build LPS for 'aaab'\"},{\"step\":2,\"line\":7,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":1,\"len\":0},\"description\":\"pattern[1]='a' == pattern[0]='a' → lps[1]=1, len=1\"},{\"step\":3,\"line\":7,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":2,\"len\":1},\"description\":\"pattern[2]='a' == pattern[1]='a' → lps[2]=2, len=2\"},{\"step\":4,\"line\":7,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":3,\"len\":2},\"description\":\"pattern[3]='b' != pattern[2]='a' → len=lps[1]=1\"},{\"step\":5,\"line\":7,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":3,\"len\":1},\"description\":\"'b' != 'a' → len=lps[0]=0\"},{\"step\":6,\"line\":7,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":3,\"len\":0},\"description\":\"'b' != 'a' (len=0) → lps[3]=0, i=4\"},{\"step\":7,\"line\":20,\"phase\":\"LOOP_START\",\"variables\":{\"i\":0,\"j\":0},\"description\":\"search: text='aaabaaab', pattern='aaab'\"},{\"step\":8,\"line\":22,\"phase\":\"LOOP_ITER\",\"variables\":{\"i\":4,\"j\":4},\"description\":\"j==m=4 → found at i-j=0\"}]",
+          "flowchartMermaid": "graph TD\n    A[build LPS table O-m] --> B[search phase O-n]\n    B --> C{text-i == pattern-j?}\n    C -- yes --> D[i++, j++]\n    D --> E{j == m?}\n    E -- yes --> F[FOUND at i-j]\n    E -- no --> C\n    C -- no --> G{j != 0?}\n    G -- yes --> H[j = lps-j-1, skip matched prefix]\n    G -- no --> I[i++]\n    H --> C\n    I --> C",
+          "pseudocode": "BUILD LPS(pattern):\n  lps[0] = 0\n  len=0, i=1\n  WHILE i < m:\n    IF pattern[i] == pattern[len]: lps[i++] = ++len\n    ELSE IF len != 0: len = lps[len-1]\n    ELSE: lps[i++] = 0\n\nSEARCH(text, pattern):\n  WHILE i < n:\n    IF text[i] == pattern[j]: i++, j++\n    IF j == m: FOUND\n    ELSE IF mismatch: j = (j!=0) ? lps[j-1] : i++",
+          "explanation": "KMP builds a 'failure function' (LPS: Longest Proper Prefix = Suffix) that allows the pattern to slide intelligently on mismatch, avoiding re-examination of already-matched characters. O(n+m) total vs O(n*m) naive. The LPS tells us: 'if we fail at position j, we already know the first lps[j-1] characters match'.",
+          "realWorldUse": "Text editors (find/replace), log parsing, DNA sequence matching, network intrusion detection (pattern matching in packet payloads), plagiarism detection."
+        },
+        {
+          "displayOrder": 4,
+          "title": "Regular Expressions — Email and Phone Validation",
+          "code": "import java.util.regex.*;\nimport java.util.*;\n\npublic class RegexDemo {\n    // Compile once, reuse — Pattern compilation is expensive\n    private static final Pattern EMAIL_PATTERN = Pattern.compile(\n        \"^[a-zA-Z0-9._%+\\\\-]+@[a-zA-Z0-9.\\\\-]+\\\\.[a-zA-Z]{2,}$\"\n    );\n    private static final Pattern PHONE_PATTERN = Pattern.compile(\n        \"^(\\\\+\\\\d{1,3}[- ]?)?(\\\\(?\\\\d{3}\\\\)?[- ]?){2}\\\\d{4}$\"\n    );\n\n    public static boolean isValidEmail(String email) {\n        return EMAIL_PATTERN.matcher(email).matches();\n    }\n\n    public static List<String> extractEmails(String text) {\n        List<String> emails = new ArrayList<>();\n        Matcher m = EMAIL_PATTERN.matcher(text);\n        while (m.find()) {\n            emails.add(m.group());\n        }\n        return emails;\n    }\n\n    public static void main(String[] args) {\n        // Validate\n        System.out.println(isValidEmail(\"user@example.com\"));   // true\n        System.out.println(isValidEmail(\"invalid@\"));            // false\n        System.out.println(isValidEmail(\"a.b+c@domain.co.uk\")); // true\n\n        // Extract\n        String text = \"Contact us: admin@site.org or support@help.io\";\n        System.out.println(extractEmails(text));  // [admin@site.org, support@help.io]\n\n        // Groups\n        Pattern datePattern = Pattern.compile(\"(\\\\d{4})-(\\\\d{2})-(\\\\d{2})\");\n        Matcher dm = datePattern.matcher(\"Today is 2024-12-25 and tomorrow 2024-12-26\");\n        while (dm.find()) {\n            System.out.printf(\"Year: %s, Month: %s, Day: %s%n\",\n                dm.group(1), dm.group(2), dm.group(3));\n        }\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":6,\"phase\":\"DECLARE\",\"variables\":{\"EMAIL_PATTERN\":\"compiled regex\"},\"description\":\"Pattern.compile once at class load\"},{\"step\":2,\"line\":13,\"phase\":\"CALL\",\"variables\":{\"email\":\"user@example.com\"},\"description\":\"matcher.matches() checks full string\"},{\"step\":3,\"line\":13,\"phase\":\"RETURN\",\"variables\":{\"result\":true},\"description\":\"valid email\"},{\"step\":4,\"line\":18,\"phase\":\"CALL\",\"variables\":{\"m\":\"Matcher\"},\"description\":\"m.find() scans for next match in text\"},{\"step\":5,\"line\":19,\"phase\":\"LOOP_ITER\",\"variables\":{\"match\":\"admin@site.org\"},\"description\":\"first match found\"},{\"step\":6,\"line\":19,\"phase\":\"LOOP_ITER\",\"variables\":{\"match\":\"support@help.io\"},\"description\":\"second match found\"},{\"step\":7,\"line\":33,\"phase\":\"LOOP_ITER\",\"variables\":{\"group1\":\"2024\",\"group2\":\"12\",\"group3\":\"25\"},\"description\":\"capture groups extracted\"}]",
+          "flowchartMermaid": "graph TD\n    A[Pattern.compile regex] --> B[Pattern object cached]\n    B --> C[pattern.matcher-text]\n    C --> D{matches or find?}\n    D -- matches --> E[full string match]\n    D -- find --> F[scan for next occurrence]\n    F --> G[m.group - whole match]\n    F --> H[m.group-n - capture group n]\n    G --> F",
+          "pseudocode": "// Compile once (expensive)\nPattern p = Pattern.compile(regex)\n\n// Use many times (cheap)\nMatcher m = p.matcher(input)\nm.matches()  → full string match\nm.find()     → next occurrence\nm.group()    → matched text\nm.group(n)   → nth capture group\nm.start()    → start index of match\nm.end()      → end index of match",
+          "explanation": "Pattern.compile() is expensive (NFA construction) — always compile as a static final constant. matches() checks the entire string; find() scans for occurrences. Capture groups use parentheses in the pattern; group(1) returns the first group. Use `\\\\d` in Java strings (double backslash: one for Java string, one for regex).",
+          "realWorldUse": "Form validation in web frameworks, log parsing (extracting timestamps/IPs), URL routing, data extraction from unstructured text. Spring's @PathVariable uses regex patterns. Logback and Log4j use regex for log filtering."
+        },
+        {
+          "displayOrder": 5,
+          "title": "String Interning, Immutability and char[] for Passwords",
+          "code": "public class StringInternals {\n    public static void main(String[] args) throws Exception {\n        // --- String Pool ---\n        String a = \"Java\";           // interned — in pool\n        String b = \"Java\";           // same pool reference\n        String c = new String(\"Java\"); // new heap object\n        String d = c.intern();        // force into pool\n        System.out.println(a == b);   // true\n        System.out.println(a == c);   // false\n        System.out.println(a == d);   // true (d is now pool reference)\n\n        // --- Immutability: all 'modifications' return new objects ---\n        String s = \"hello\";\n        String upper = s.toUpperCase();\n        System.out.println(s);        // still \"hello\"\n        System.out.println(upper);    // \"HELLO\" — new object\n        System.out.println(System.identityHashCode(s) == System.identityHashCode(upper)); // false\n\n        // --- String as Map key (safe because immutable) ---\n        java.util.Map<String, Integer> map = new java.util.HashMap<>();\n        map.put(\"key\", 42);\n        String key = new String(\"key\");\n        System.out.println(map.get(key));  // 42 (hashCode + equals, not ==)\n\n        // --- Password handling: use char[], not String ---\n        char[] password = {'s', 'e', 'c', 'r', 'e', 't'};\n        // ... use password ...\n        java.util.Arrays.fill(password, '\\0');  // wipe after use\n        // String password = \"secret\"; // BAD: stays in pool indefinitely\n\n        // --- String.format / formatted ---\n        String msg = \"User %s has %d credits\".formatted(\"alice\", 100);\n        System.out.println(msg);\n    }\n}",
+          "tracerSteps": "[{\"step\":1,\"line\":4,\"phase\":\"DECLARE\",\"variables\":{\"a\":\"pool:Java\"},\"description\":\"'Java' added to string pool\"},{\"step\":2,\"line\":5,\"phase\":\"DECLARE\",\"variables\":{\"b\":\"pool:Java\"},\"description\":\"same pool object returned\"},{\"step\":3,\"line\":6,\"phase\":\"DECLARE\",\"variables\":{\"c\":\"heap:Java\"},\"description\":\"new heap String, not in pool\"},{\"step\":4,\"line\":7,\"phase\":\"DECLARE\",\"variables\":{\"d\":\"pool:Java\"},\"description\":\"intern() returns pool reference\"},{\"step\":5,\"line\":14,\"phase\":\"ASSIGN\",\"variables\":{\"s\":\"hello\"},\"description\":\"s unchanged\"},{\"step\":6,\"line\":15,\"phase\":\"ASSIGN\",\"variables\":{\"upper\":\"HELLO\"},\"description\":\"new String object\"},{\"step\":7,\"line\":25,\"phase\":\"DECLARE\",\"variables\":{\"password\":\"[s,e,c,r,e,t]\"},\"description\":\"char array for sensitive data\"},{\"step\":8,\"line\":27,\"phase\":\"ASSIGN\",\"variables\":{\"password\":\"[\\\\0,\\\\0,\\\\0,\\\\0,\\\\0,\\\\0]\"},\"description\":\"zeroed out, no trace in memory\"}]",
+          "flowchartMermaid": "graph TD\n    A[String literal] --> B{in pool?}\n    B -- yes --> C[return pool ref]\n    B -- no --> D[add to pool, return ref]\n    E[new String-s-] --> F[heap object, skip pool]\n    F --> G[intern] --> C\n    H[String modification] --> I[new String object]\n    H --> J[original unchanged]\n    K[char-password] --> L[use]\n    L --> M[Arrays.fill zeros]\n    M --> N[wiped from memory]",
+          "pseudocode": "String pool: shared storage for literals\n== → reference comparison\n.equals() → content comparison\n.intern() → force pool storage\n\nImmutability:\n  s.toUpperCase() → new String\n  s unchanged\n\nPassword safety:\n  char[] → can be zeroed\n  String → stays in pool, GC timing uncertain",
+          "explanation": "String immutability enables safe sharing and use as HashMap keys (hashCode is stable). The String pool reduces memory for repeated literals. char[] for passwords is a security best practice: strings stay in memory until GC runs (timing unpredictable), and could appear in heap dumps. char[] can be explicitly zeroed. String.formatted() (Java 15+) is the instance-method version of String.format().",
+          "realWorldUse": "Strings as Map keys (always safe), HTTP headers, configuration keys. char[] for password in javax.crypto, JDBC password authentication, KeyStore APIs — these all accept char[] not String precisely for this security reason."
+        }
+      ],
+      "problems": [
+        {
+          "displayOrder": 1,
+          "title": "Reverse a String",
+          "description": "Reverse a string s in-place (given as char array). Do not allocate extra space.",
+          "difficulty": "EASY",
+          "pattern": "Two Pointers",
+          "hint1": "Use two pointers starting at both ends.",
+          "hint2": "Swap characters at left and right, then move them toward each other.",
+          "hint3": "Stop when left >= right.",
+          "starterCode": "public class Solution {\n    public void reverseString(char[] s) {\n        // TODO: in-place\n    }\n}",
+          "solutionCode": "public class Solution {\n    public void reverseString(char[] s) {\n        int left = 0, right = s.length - 1;\n        while (left < right) {\n            char tmp = s[left];\n            s[left++] = s[right];\n            s[right--] = tmp;\n        }\n    }\n}",
+          "testCases": [
+            {"input": "[h,e,l,l,o]", "output": "[o,l,l,e,h]"},
+            {"input": "[H,a,n,n,a,h]", "output": "[h,a,n,n,a,H]"},
+            {"input": "[a]", "output": "[a]"}
+          ],
+          "constraints": "1 <= s.length <= 10^5. s[i] is a printable ASCII character.",
+          "editorial": "Classic two-pointer swap. O(n) time, O(1) space. XOR swap without temp: s[l] ^= s[r]; s[r] ^= s[l]; s[l] ^= s[r]; — valid but less readable."
+        },
+        {
+          "displayOrder": 2,
+          "title": "Valid Anagram",
+          "description": "Given two strings s and t, return true if t is an anagram of s (same characters, same frequencies, possibly different order).",
+          "difficulty": "EASY",
+          "pattern": "Character Frequency",
+          "hint1": "An anagram has the same character frequencies. Count characters in s and t.",
+          "hint2": "Use an int[26] array. Increment for s, decrement for t.",
+          "hint3": "If all values are 0 at the end, it's an anagram.",
+          "starterCode": "public class Solution {\n    public boolean isAnagram(String s, String t) {\n        // TODO\n        return false;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public boolean isAnagram(String s, String t) {\n        if (s.length() != t.length()) return false;\n        int[] count = new int[26];\n        for (char c : s.toCharArray()) count[c - 'a']++;\n        for (char c : t.toCharArray()) count[c - 'a']--;\n        for (int n : count) if (n != 0) return false;\n        return true;\n    }\n}",
+          "testCases": [
+            {"input": "s=anagram, t=nagaram", "output": "true"},
+            {"input": "s=rat, t=car", "output": "false"},
+            {"input": "s=a, t=a", "output": "true"}
+          ],
+          "constraints": "1 <= s.length, t.length <= 5*10^4. s and t consist of lowercase letters.",
+          "editorial": "Frequency array approach: O(n) time, O(1) space. First check lengths to early-exit. Increment for s, decrement for t — if anagram, all slots return to 0."
+        },
+        {
+          "displayOrder": 3,
+          "title": "Valid Palindrome",
+          "description": "Given a string, determine if it's a palindrome considering only alphanumeric characters and ignoring case.",
+          "difficulty": "EASY",
+          "pattern": "Two Pointers + Character Filtering",
+          "hint1": "Use two pointers. Skip non-alphanumeric characters.",
+          "hint2": "Compare characters at both ends after converting to lowercase.",
+          "hint3": "Character.isLetterOrDigit(c) to filter, Character.toLowerCase(c) for normalization.",
+          "starterCode": "public class Solution {\n    public boolean isPalindrome(String s) {\n        // TODO\n        return false;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public boolean isPalindrome(String s) {\n        int left = 0, right = s.length() - 1;\n        while (left < right) {\n            while (left < right && !Character.isLetterOrDigit(s.charAt(left)))  left++;\n            while (left < right && !Character.isLetterOrDigit(s.charAt(right))) right--;\n            if (Character.toLowerCase(s.charAt(left)) != Character.toLowerCase(s.charAt(right)))\n                return false;\n            left++; right--;\n        }\n        return true;\n    }\n}",
+          "testCases": [
+            {"input": "A man, a plan, a canal: Panama", "output": "true"},
+            {"input": "race a car", "output": "false"},
+            {"input": " ", "output": "true"}
+          ],
+          "constraints": "1 <= s.length <= 2*10^5. s consists of printable ASCII characters.",
+          "editorial": "Two-pointer approach with inner while loops to skip non-alphanumeric chars. Compare lowercase. O(n) time, O(1) space. The inner while loops don't add to overall complexity — total character advances = O(n)."
+        },
+        {
+          "displayOrder": 4,
+          "title": "Longest Common Prefix",
+          "description": "Find the longest common prefix string among an array of strings. Return empty string if none.",
+          "difficulty": "EASY",
+          "pattern": "Vertical Scanning",
+          "hint1": "Take the first string as the reference prefix.",
+          "hint2": "For each subsequent string, shorten the prefix until it matches the string's start.",
+          "hint3": "Use String.startsWith() or compare character by character.",
+          "starterCode": "public class Solution {\n    public String longestCommonPrefix(String[] strs) {\n        // TODO\n        return \"\";\n    }\n}",
+          "solutionCode": "public class Solution {\n    public String longestCommonPrefix(String[] strs) {\n        if (strs.length == 0) return \"\";\n        String prefix = strs[0];\n        for (int i = 1; i < strs.length; i++) {\n            while (!strs[i].startsWith(prefix)) {\n                prefix = prefix.substring(0, prefix.length() - 1);\n                if (prefix.isEmpty()) return \"\";\n            }\n        }\n        return prefix;\n    }\n}",
+          "testCases": [
+            {"input": "[flower,flow,flight]", "output": "fl"},
+            {"input": "[dog,racecar,car]", "output": ""},
+            {"input": "[interview,inter,internal]", "output": "inter"}
+          ],
+          "constraints": "1 <= strs.length <= 200. 0 <= strs[i].length <= 200. Lowercase letters only.",
+          "editorial": "Horizontal scanning: take first string as prefix, shorten it until each other string starts with it. O(S) where S = total chars. Alternative: vertical scanning (compare column by column)."
+        },
+        {
+          "displayOrder": 5,
+          "title": "Count and Say",
+          "description": "The count-and-say sequence: '1' → '11' (one 1) → '21' (two 1s) → '1211' (one 2, one 1). Generate the nth term.",
+          "difficulty": "EASY",
+          "pattern": "StringBuilder + Run-Length Encoding",
+          "hint1": "Start with '1' and generate each subsequent term from the previous.",
+          "hint2": "Use a loop to count consecutive same characters.",
+          "hint3": "Append count + character to StringBuilder.",
+          "starterCode": "public class Solution {\n    public String countAndSay(int n) {\n        // TODO\n        return \"\";\n    }\n}",
+          "solutionCode": "public class Solution {\n    public String countAndSay(int n) {\n        String s = \"1\";\n        for (int i = 1; i < n; i++) {\n            StringBuilder sb = new StringBuilder();\n            int j = 0;\n            while (j < s.length()) {\n                char c = s.charAt(j);\n                int count = 0;\n                while (j < s.length() && s.charAt(j) == c) {\n                    j++; count++;\n                }\n                sb.append(count).append(c);\n            }\n            s = sb.toString();\n        }\n        return s;\n    }\n}",
+          "testCases": [
+            {"input": "1", "output": "1"},
+            {"input": "4", "output": "1211"},
+            {"input": "6", "output": "312211"}
+          ],
+          "constraints": "1 <= n <= 30",
+          "editorial": "Run-length encoding of the previous string. Nested while loop: outer advances j to next different character, inner counts the run. O(2^n) string length in worst case but bounded for n<=30."
+        },
+        {
+          "displayOrder": 6,
+          "title": "Roman Numeral to Integer using StringBuilder",
+          "description": "Build a method that takes an integer (1-3999) and converts it to a Roman numeral string using StringBuilder.",
+          "difficulty": "EASY",
+          "pattern": "Greedy + StringBuilder",
+          "hint1": "Create two arrays: values[] and symbols[]. Use the same index in both.",
+          "hint2": "Repeatedly subtract the largest fitting value and append its symbol.",
+          "hint3": "Include subtractive pairs: 4→IV, 9→IX, 40→XL, etc.",
+          "starterCode": "public class Solution {\n    public String intToRoman(int num) {\n        // TODO\n        return \"\";\n    }\n}",
+          "solutionCode": "public class Solution {\n    public String intToRoman(int num) {\n        int[] vals = {1000,900,500,400,100,90,50,40,10,9,5,4,1};\n        String[] syms = {\"M\",\"CM\",\"D\",\"CD\",\"C\",\"XC\",\"L\",\"XL\",\"X\",\"IX\",\"V\",\"IV\",\"I\"};\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < vals.length; i++) {\n            while (num >= vals[i]) {\n                sb.append(syms[i]);\n                num -= vals[i];\n            }\n        }\n        return sb.toString();\n    }\n}",
+          "testCases": [
+            {"input": "3", "output": "III"},
+            {"input": "1994", "output": "MCMXCIV"},
+            {"input": "58", "output": "LVIII"},
+            {"input": "4", "output": "IV"}
+          ],
+          "constraints": "1 <= num <= 3999",
+          "editorial": "Greedy: always subtract the largest fitting Roman value. Include all subtractive combinations (CM, CD, XC, XL, IX, IV) in the values array so they're handled naturally. O(1) since number is bounded."
+        },
+        {
+          "displayOrder": 7,
+          "title": "Minimum Window Substring",
+          "description": "Given strings s and t, find the minimum window in s that contains all characters of t. Return empty string if none.",
+          "difficulty": "MEDIUM",
+          "pattern": "Sliding Window + Character Count",
+          "hint1": "Use a frequency map for t characters. Use a sliding window on s.",
+          "hint2": "Track 'formed' (how many unique chars in window match t's requirements).",
+          "hint3": "Shrink left when all t characters are covered; expand right otherwise.",
+          "starterCode": "import java.util.*;\npublic class Solution {\n    public String minWindow(String s, String t) {\n        // TODO\n        return \"\";\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public String minWindow(String s, String t) {\n        if (s.isEmpty() || t.isEmpty()) return \"\";\n        int[] need = new int[128], have = new int[128];\n        for (char c : t.toCharArray()) need[c]++;\n        int required = (int) t.chars().distinct().count();\n        int formed = 0, left = 0;\n        int minLen = Integer.MAX_VALUE, minLeft = 0;\n        for (int right = 0; right < s.length(); right++) {\n            char rc = s.charAt(right);\n            have[rc]++;\n            if (need[rc] > 0 && have[rc] == need[rc]) formed++;\n            while (formed == required) {\n                if (right - left + 1 < minLen) {\n                    minLen = right - left + 1;\n                    minLeft = left;\n                }\n                char lc = s.charAt(left++);\n                have[lc]--;\n                if (need[lc] > 0 && have[lc] < need[lc]) formed--;\n            }\n        }\n        return minLen == Integer.MAX_VALUE ? \"\" : s.substring(minLeft, minLeft + minLen);\n    }\n}",
+          "testCases": [
+            {"input": "s=ADOBECODEBANC, t=ABC", "output": "BANC"},
+            {"input": "s=a, t=a", "output": "a"},
+            {"input": "s=a, t=aa", "output": ""}
+          ],
+          "constraints": "1 <= s.length, t.length <= 10^5. s and t consist of uppercase/lowercase letters.",
+          "editorial": "Variable sliding window with character frequency tracking. 'formed' tracks how many distinct chars have met their required count. Use int[128] arrays (ASCII) for O(1) lookup. O(|s| + |t|) time."
+        },
+        {
+          "displayOrder": 8,
+          "title": "Group Anagrams",
+          "description": "Given an array of strings, group the anagrams together. Each group can be in any order.",
+          "difficulty": "MEDIUM",
+          "pattern": "HashMap with Sorted Key",
+          "hint1": "Anagrams have the same sorted character form (e.g., 'eat', 'tea', 'ate' all sort to 'aet').",
+          "hint2": "Use a HashMap where key = sorted string, value = list of anagrams.",
+          "hint3": "Alternative key: character frequency array converted to String.",
+          "starterCode": "import java.util.*;\npublic class Solution {\n    public List<List<String>> groupAnagrams(String[] strs) {\n        // TODO\n        return new ArrayList<>();\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public List<List<String>> groupAnagrams(String[] strs) {\n        Map<String, List<String>> map = new HashMap<>();\n        for (String s : strs) {\n            char[] chars = s.toCharArray();\n            Arrays.sort(chars);\n            String key = new String(chars);\n            map.computeIfAbsent(key, k -> new ArrayList<>()).add(s);\n        }\n        return new ArrayList<>(map.values());\n    }\n}",
+          "testCases": [
+            {"input": "[eat,tea,tan,ate,nat,bat]", "output": "[[eat,tea,ate],[tan,nat],[bat]]"},
+            {"input": "[\"\"]", "output": "[[\"\"]]"},
+            {"input": "[a]", "output": "[[a]]"}
+          ],
+          "constraints": "1 <= strs.length <= 10^4. 0 <= strs[i].length <= 100. Lowercase letters.",
+          "editorial": "Sort each string to create a canonical key. computeIfAbsent initializes the list if absent. O(n * k log k) where k = max string length. Alternative O(n*k) key: use count array '#0a1b2c...' as string key."
+        },
+        {
+          "displayOrder": 9,
+          "title": "Longest Substring Without Repeating Characters",
+          "description": "Find the length of the longest substring without repeating characters.",
+          "difficulty": "MEDIUM",
+          "pattern": "Sliding Window + HashSet",
+          "hint1": "Use a sliding window with a HashSet to track current window characters.",
+          "hint2": "Expand right when the new char is unique in the window.",
+          "hint3": "Shrink from left when a duplicate is found.",
+          "starterCode": "public class Solution {\n    public int lengthOfLongestSubstring(String s) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int lengthOfLongestSubstring(String s) {\n        int[] lastSeen = new int[128];\n        java.util.Arrays.fill(lastSeen, -1);\n        int left = 0, maxLen = 0;\n        for (int right = 0; right < s.length(); right++) {\n            char c = s.charAt(right);\n            if (lastSeen[c] >= left) left = lastSeen[c] + 1;\n            lastSeen[c] = right;\n            maxLen = Math.max(maxLen, right - left + 1);\n        }\n        return maxLen;\n    }\n}",
+          "testCases": [
+            {"input": "abcabcbb", "output": "3"},
+            {"input": "bbbbb", "output": "1"},
+            {"input": "pwwkew", "output": "3"},
+            {"input": "", "output": "0"}
+          ],
+          "constraints": "0 <= s.length <= 5*10^4. s consists of English letters, digits, symbols, spaces.",
+          "editorial": "Optimized sliding window: instead of shrinking one step at a time, jump left directly to lastSeen[c]+1 when a duplicate is found. int[128] for ASCII characters. O(n) time, O(1) space (bounded alphabet)."
+        },
+        {
+          "displayOrder": 10,
+          "title": "String to Integer (atoi)",
+          "description": "Implement atoi: convert a string to a 32-bit signed integer. Handle leading whitespace, sign, overflow, and invalid characters.",
+          "difficulty": "MEDIUM",
+          "pattern": "String Parsing + Overflow Handling",
+          "hint1": "Step 1: skip leading whitespace. Step 2: read optional sign. Step 3: read digits.",
+          "hint2": "Stop on the first non-digit character.",
+          "hint3": "Check overflow before multiplying: if (result > (Integer.MAX_VALUE - digit) / 10) → overflow.",
+          "starterCode": "public class Solution {\n    public int myAtoi(String s) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int myAtoi(String s) {\n        int i = 0, n = s.length();\n        while (i < n && s.charAt(i) == ' ') i++;  // skip whitespace\n        if (i == n) return 0;\n        int sign = 1;\n        if (s.charAt(i) == '+')      { sign = 1; i++; }\n        else if (s.charAt(i) == '-') { sign = -1; i++; }\n        int result = 0;\n        while (i < n && Character.isDigit(s.charAt(i))) {\n            int digit = s.charAt(i++) - '0';\n            if (result > (Integer.MAX_VALUE - digit) / 10) {\n                return sign == 1 ? Integer.MAX_VALUE : Integer.MIN_VALUE;\n            }\n            result = result * 10 + digit;\n        }\n        return sign * result;\n    }\n}",
+          "testCases": [
+            {"input": "42", "output": "42"},
+            {"input": "   -42", "output": "-42"},
+            {"input": "4193 with words", "output": "4193"},
+            {"input": "-91283472332", "output": "-2147483648"}
+          ],
+          "constraints": "0 <= s.length <= 200. s consists of printable ASCII.",
+          "editorial": "Four phases: whitespace skip, sign, digits, stop on non-digit. Overflow check before multiplication: `result > (MAX_VALUE - digit) / 10`. This handles the boundary case where result would exceed int range. O(n) time."
+        },
+        {
+          "displayOrder": 11,
+          "title": "Decode String",
+          "description": "Given encoded string like '3[a2[c]]', decode it to 'accaccacc'. Brackets can be nested.",
+          "difficulty": "MEDIUM",
+          "pattern": "Stack-based String Building",
+          "hint1": "Use two stacks: one for counts (k), one for strings built so far.",
+          "hint2": "On '[': push current count and current string onto stacks. On ']': pop and repeat.",
+          "hint3": "Use StringBuilder to build the repeated string.",
+          "starterCode": "public class Solution {\n    public String decodeString(String s) {\n        // TODO\n        return \"\";\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public String decodeString(String s) {\n        Deque<Integer> countStack = new ArrayDeque<>();\n        Deque<StringBuilder> strStack = new ArrayDeque<>();\n        StringBuilder current = new StringBuilder();\n        int k = 0;\n        for (char c : s.toCharArray()) {\n            if (Character.isDigit(c)) {\n                k = k * 10 + (c - '0');\n            } else if (c == '[') {\n                countStack.push(k);\n                strStack.push(current);\n                current = new StringBuilder();\n                k = 0;\n            } else if (c == ']') {\n                int repeat = countStack.pop();\n                StringBuilder prev = strStack.pop();\n                for (int i = 0; i < repeat; i++) prev.append(current);\n                current = prev;\n            } else {\n                current.append(c);\n            }\n        }\n        return current.toString();\n    }\n}",
+          "testCases": [
+            {"input": "3[a]2[bc]", "output": "aaabcbc"},
+            {"input": "3[a2[c]]", "output": "accaccacc"},
+            {"input": "2[abc]3[cd]ef", "output": "abcabccdcdcdef"}
+          ],
+          "constraints": "1 <= s.length <= 30. s consists of lowercase letters, digits, and brackets. Guaranteed valid.",
+          "editorial": "Stack approach: when we see '[', save current state (count + built string). When we see ']', pop and repeat. k = k*10 + digit handles multi-digit numbers. O(maxNested * length) time."
+        },
+        {
+          "displayOrder": 12,
+          "title": "Word Break",
+          "description": "Given string s and dictionary wordDict, determine if s can be segmented into space-separated sequence of dictionary words.",
+          "difficulty": "MEDIUM",
+          "pattern": "DP + String Matching",
+          "hint1": "dp[i] = true if s[0..i-1] can be segmented.",
+          "hint2": "For each position i, try all j < i where dp[j] is true and s[j..i-1] is in the dictionary.",
+          "hint3": "Use a HashSet for O(1) dictionary lookup.",
+          "starterCode": "import java.util.*;\npublic class Solution {\n    public boolean wordBreak(String s, List<String> wordDict) {\n        // TODO\n        return false;\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    public boolean wordBreak(String s, List<String> wordDict) {\n        Set<String> dict = new HashSet<>(wordDict);\n        int n = s.length();\n        boolean[] dp = new boolean[n + 1];\n        dp[0] = true;  // empty string\n        for (int i = 1; i <= n; i++) {\n            for (int j = 0; j < i; j++) {\n                if (dp[j] && dict.contains(s.substring(j, i))) {\n                    dp[i] = true;\n                    break;\n                }\n            }\n        }\n        return dp[n];\n    }\n}",
+          "testCases": [
+            {"input": "s=leetcode, wordDict=[leet,code]", "output": "true"},
+            {"input": "s=applepenapple, wordDict=[apple,pen]", "output": "true"},
+            {"input": "s=catsandog, wordDict=[cats,dog,sand,and,cat]", "output": "false"}
+          ],
+          "constraints": "1 <= s.length <= 300. 1 <= wordDict.length <= 1000.",
+          "editorial": "DP: dp[i] = can we reach position i. For each i, try all j where dp[j]=true and s[j..i] is a word. O(n²) time with HashSet lookup. Break early when dp[i] is set. Optimized: only try j where s.length() <= max word length."
+        },
+        {
+          "displayOrder": 13,
+          "title": "Implement strStr (KMP)",
+          "description": "Implement strStr(haystack, needle): return index of first occurrence of needle in haystack, or -1 if not found. Must be O(n+m) — implement KMP.",
+          "difficulty": "HARD",
+          "pattern": "KMP String Search",
+          "hint1": "Build the LPS (failure function) array from the needle.",
+          "hint2": "Use two pointers i (haystack) and j (needle). On match advance both; on mismatch use LPS.",
+          "hint3": "When j == needle.length(), found at i - j.",
+          "starterCode": "public class Solution {\n    public int strStr(String haystack, String needle) {\n        // TODO: O(n+m) KMP\n        return -1;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int strStr(String haystack, String needle) {\n        if (needle.isEmpty()) return 0;\n        int n = haystack.length(), m = needle.length();\n        int[] lps = buildLPS(needle);\n        int i = 0, j = 0;\n        while (i < n) {\n            if (haystack.charAt(i) == needle.charAt(j)) { i++; j++; }\n            if (j == m) return i - j;\n            else if (i < n && haystack.charAt(i) != needle.charAt(j)) {\n                if (j != 0) j = lps[j - 1];\n                else i++;\n            }\n        }\n        return -1;\n    }\n\n    private int[] buildLPS(String pat) {\n        int m = pat.length();\n        int[] lps = new int[m];\n        int len = 0, i = 1;\n        while (i < m) {\n            if (pat.charAt(i) == pat.charAt(len)) lps[i++] = ++len;\n            else if (len != 0) len = lps[len - 1];\n            else lps[i++] = 0;\n        }\n        return lps;\n    }\n}",
+          "testCases": [
+            {"input": "haystack=sadbutsad, needle=sad", "output": "0"},
+            {"input": "haystack=leetcode, needle=leeto", "output": "-1"},
+            {"input": "haystack=aabaabaaf, needle=aabaaf", "output": "3"}
+          ],
+          "constraints": "0 <= haystack.length, needle.length <= 5*10^4.",
+          "editorial": "KMP in O(n+m). The LPS table allows the algorithm to skip redundant comparisons. When a mismatch occurs at needle[j], fall back to needle[lps[j-1]] — the longest proper prefix that's also a suffix. Never goes back in haystack."
+        },
+        {
+          "displayOrder": 14,
+          "title": "Palindrome Partitioning",
+          "description": "Given a string s, partition it such that every substring is a palindrome. Return all possible palindrome partitions.",
+          "difficulty": "HARD",
+          "pattern": "Backtracking + Palindrome Check",
+          "hint1": "Use backtracking: at each position, try all substrings starting here that are palindromes.",
+          "hint2": "Check palindrome with a two-pointer approach.",
+          "hint3": "Precompute palindrome checks with DP: isPalin[i][j] = (s[i]==s[j] && isPalin[i+1][j-1]).",
+          "starterCode": "import java.util.*;\npublic class Solution {\n    public List<List<String>> partition(String s) {\n        // TODO\n        return new ArrayList<>();\n    }\n}",
+          "solutionCode": "import java.util.*;\npublic class Solution {\n    private boolean[][] dp;\n    private List<List<String>> result;\n\n    public List<List<String>> partition(String s) {\n        int n = s.length();\n        dp = new boolean[n][n];\n        for (int i = n - 1; i >= 0; i--)\n            for (int j = i; j < n; j++)\n                dp[i][j] = s.charAt(i) == s.charAt(j) && (j - i <= 2 || dp[i+1][j-1]);\n        result = new ArrayList<>();\n        backtrack(s, 0, new ArrayList<>());\n        return result;\n    }\n\n    private void backtrack(String s, int start, List<String> current) {\n        if (start == s.length()) { result.add(new ArrayList<>(current)); return; }\n        for (int end = start; end < s.length(); end++) {\n            if (dp[start][end]) {\n                current.add(s.substring(start, end + 1));\n                backtrack(s, end + 1, current);\n                current.remove(current.size() - 1);\n            }\n        }\n    }\n}",
+          "testCases": [
+            {"input": "aab", "output": "[[a,a,b],[aa,b]]"},
+            {"input": "a", "output": "[[a]]"},
+            {"input": "aba", "output": "[[a,b,a],[aba]]"}
+          ],
+          "constraints": "1 <= s.length <= 16. s consists of lowercase letters.",
+          "editorial": "DP precomputes all palindrome substrings in O(n²). Backtracking then only tries palindromic prefixes. The DP recurrence: isPalin[i][j] = same endpoints and inner is also palindrome (or length <= 2). Bottom-up from short to long. O(n * 2^n) time for backtracking part."
+        },
+        {
+          "displayOrder": 15,
+          "title": "Regular Expression Matching",
+          "description": "Implement regex matching with '.' (any char) and '*' (zero or more of preceding element).",
+          "difficulty": "HARD",
+          "pattern": "DP on 2D Grid",
+          "hint1": "dp[i][j] = does s[0..i-1] match p[0..j-1].",
+          "hint2": "Base case: dp[0][0] = true. Empty pattern matches empty string.",
+          "hint3": "For p[j-1]=='*': dp[i][j] = dp[i][j-2] (zero use) OR (chars match && dp[i-1][j]).",
+          "starterCode": "public class Solution {\n    public boolean isMatch(String s, String p) {\n        // TODO\n        return false;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public boolean isMatch(String s, String p) {\n        int m = s.length(), n = p.length();\n        boolean[][] dp = new boolean[m + 1][n + 1];\n        dp[0][0] = true;\n        // patterns like a*, a*b*, a*b*c* can match empty string\n        for (int j = 2; j <= n; j++)\n            if (p.charAt(j - 1) == '*') dp[0][j] = dp[0][j - 2];\n        for (int i = 1; i <= m; i++) {\n            for (int j = 1; j <= n; j++) {\n                char sc = s.charAt(i - 1), pc = p.charAt(j - 1);\n                if (pc == '*') {\n                    dp[i][j] = dp[i][j-2];  // zero occurrences\n                    if (p.charAt(j-2) == '.' || p.charAt(j-2) == sc)\n                        dp[i][j] |= dp[i-1][j];  // one or more occurrences\n                } else if (pc == '.' || pc == sc) {\n                    dp[i][j] = dp[i-1][j-1];\n                }\n            }\n        }\n        return dp[m][n];\n    }\n}",
+          "testCases": [
+            {"input": "s=aa, p=a", "output": "false"},
+            {"input": "s=aa, p=a*", "output": "true"},
+            {"input": "s=ab, p=.*", "output": "true"},
+            {"input": "s=aab, p=c*a*b", "output": "true"}
+          ],
+          "constraints": "1 <= s.length <= 20. 1 <= p.length <= 30. s contains only lowercase. p contains lowercase, '.', '*'.",
+          "editorial": "2D DP: dp[i][j] = s[0..i-1] matches p[0..j-1]. For '*': zero occurrence (dp[i][j-2]) or one-more (dp[i-1][j] if chars match). The key insight: '*' must be treated with its preceding character as a unit. O(m*n) time and space."
+        },
+        {
+          "displayOrder": 16,
+          "title": "Longest Palindromic Substring",
+          "description": "Find the longest palindromic substring in a string. Return any one if multiple of same length.",
+          "difficulty": "HARD",
+          "pattern": "Expand Around Center",
+          "hint1": "For each index, try to expand a palindrome centered at that index.",
+          "hint2": "Handle both odd-length (center = i) and even-length (center between i and i+1).",
+          "hint3": "Track the start and max length of the longest palindrome found.",
+          "starterCode": "public class Solution {\n    public String longestPalindrome(String s) {\n        // TODO\n        return \"\";\n    }\n}",
+          "solutionCode": "public class Solution {\n    private int start, maxLen;\n\n    public String longestPalindrome(String s) {\n        if (s.length() < 2) return s;\n        for (int i = 0; i < s.length(); i++) {\n            expand(s, i, i);      // odd length\n            expand(s, i, i + 1); // even length\n        }\n        return s.substring(start, start + maxLen);\n    }\n\n    private void expand(String s, int l, int r) {\n        while (l >= 0 && r < s.length() && s.charAt(l) == s.charAt(r)) {\n            l--; r++;\n        }\n        if (r - l - 1 > maxLen) {\n            maxLen = r - l - 1;\n            start = l + 1;\n        }\n    }\n}",
+          "testCases": [
+            {"input": "babad", "output": "bab"},
+            {"input": "cbbd", "output": "bb"},
+            {"input": "a", "output": "a"},
+            {"input": "racecar", "output": "racecar"}
+          ],
+          "constraints": "1 <= s.length <= 1000. s consists of digits and letters.",
+          "editorial": "Expand-around-center: O(n²) time, O(1) space. Each center expands outward while chars match. Two expansions per center (odd + even). After expansion, l and r have moved one step too far (mismatch), so palindrome length = r - l - 1, start = l + 1. Manacher's algorithm achieves O(n) but is complex."
+        },
+        {
+          "displayOrder": 17,
+          "title": "Interleaving String",
+          "description": "Given s1, s2, s3, determine if s3 is formed by an interleaving of s1 and s2.",
+          "difficulty": "HARD",
+          "pattern": "2D DP on Strings",
+          "hint1": "dp[i][j] = can s3[0..i+j-1] be formed by interleaving s1[0..i-1] and s2[0..j-1].",
+          "hint2": "dp[i][j] = (dp[i-1][j] && s1[i-1]==s3[i+j-1]) || (dp[i][j-1] && s2[j-1]==s3[i+j-1]).",
+          "hint3": "Base case: dp[0][0] = true. Initialize first row/col.",
+          "starterCode": "public class Solution {\n    public boolean isInterleave(String s1, String s2, String s3) {\n        // TODO\n        return false;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public boolean isInterleave(String s1, String s2, String s3) {\n        int m = s1.length(), n = s2.length();\n        if (m + n != s3.length()) return false;\n        boolean[][] dp = new boolean[m + 1][n + 1];\n        dp[0][0] = true;\n        for (int i = 1; i <= m; i++)\n            dp[i][0] = dp[i-1][0] && s1.charAt(i-1) == s3.charAt(i-1);\n        for (int j = 1; j <= n; j++)\n            dp[0][j] = dp[0][j-1] && s2.charAt(j-1) == s3.charAt(j-1);\n        for (int i = 1; i <= m; i++) {\n            for (int j = 1; j <= n; j++) {\n                dp[i][j] = (dp[i-1][j] && s1.charAt(i-1) == s3.charAt(i+j-1))\n                         || (dp[i][j-1] && s2.charAt(j-1) == s3.charAt(i+j-1));\n            }\n        }\n        return dp[m][n];\n    }\n}",
+          "testCases": [
+            {"input": "s1=aabcc, s2=dbbca, s3=aadbbcbcac", "output": "true"},
+            {"input": "s1=aabcc, s2=dbbca, s3=aadbbbaccc", "output": "false"},
+            {"input": "s1=, s2=, s3=", "output": "true"}
+          ],
+          "constraints": "0 <= s1.length, s2.length <= 100. s3.length == s1.length + s2.length.",
+          "editorial": "2D DP where dp[i][j] represents using i chars from s1 and j chars from s2 to form s3[0..i+j-1]. A char from s3 can come from s1 OR s2. O(m*n) time and space."
+        },
+        {
+          "displayOrder": 18,
+          "title": "Wildcard Matching",
+          "description": "Implement wildcard pattern matching with '?' (match any single character) and '*' (match any sequence including empty).",
+          "difficulty": "HARD",
+          "pattern": "DP — Wildcard vs Regex",
+          "hint1": "dp[i][j] = does s[0..i-1] match p[0..j-1].",
+          "hint2": "For '*': dp[i][j] = dp[i-1][j] (use *) || dp[i][j-1] (skip *).",
+          "hint3": "For '?' or exact match: dp[i][j] = dp[i-1][j-1].",
+          "starterCode": "public class Solution {\n    public boolean isMatch(String s, String p) {\n        // TODO: wildcard matching\n        return false;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public boolean isMatch(String s, String p) {\n        int m = s.length(), n = p.length();\n        boolean[][] dp = new boolean[m + 1][n + 1];\n        dp[0][0] = true;\n        for (int j = 1; j <= n; j++)\n            if (p.charAt(j - 1) == '*') dp[0][j] = dp[0][j - 1];\n        for (int i = 1; i <= m; i++) {\n            for (int j = 1; j <= n; j++) {\n                char pc = p.charAt(j - 1);\n                if (pc == '*') {\n                    dp[i][j] = dp[i-1][j] || dp[i][j-1];\n                } else if (pc == '?' || pc == s.charAt(i - 1)) {\n                    dp[i][j] = dp[i-1][j-1];\n                }\n            }\n        }\n        return dp[m][n];\n    }\n}",
+          "testCases": [
+            {"input": "s=aa, p=a", "output": "false"},
+            {"input": "s=aa, p=*", "output": "true"},
+            {"input": "s=cb, p=?a", "output": "false"},
+            {"input": "s=adceb, p=*a*b", "output": "true"}
+          ],
+          "constraints": "0 <= s.length, p.length <= 2000. s contains lowercase letters. p contains lowercase, '?', '*'.",
+          "editorial": "Simpler than regex DP: '*' matches empty (skip with dp[i][j-1]) or one char (use with dp[i-1][j]). '?' matches exactly one char (like exact match). Initialize first column: stars can match empty. O(m*n) time and space."
+        },
+        {
+          "displayOrder": 19,
+          "title": "Shortest Palindrome (Add to Front)",
+          "description": "Find the shortest palindrome by adding characters to the front of the string. Equivalent to finding the longest palindromic prefix.",
+          "difficulty": "HARD",
+          "pattern": "KMP on Combined String",
+          "hint1": "The answer is: (suffix that's not part of palindromic prefix, reversed) + s.",
+          "hint2": "Build the string: s + '#' + reverse(s). Compute KMP failure function on this.",
+          "hint3": "The last value of the failure function tells the length of the longest palindromic prefix.",
+          "starterCode": "public class Solution {\n    public String shortestPalindrome(String s) {\n        // TODO\n        return \"\";\n    }\n}",
+          "solutionCode": "public class Solution {\n    public String shortestPalindrome(String s) {\n        String rev = new StringBuilder(s).reverse().toString();\n        String combined = s + \"#\" + rev;\n        int n = combined.length();\n        int[] kmp = new int[n];\n        int len = 0, i = 1;\n        while (i < n) {\n            if (combined.charAt(i) == combined.charAt(len)) kmp[i++] = ++len;\n            else if (len != 0) len = kmp[len - 1];\n            else kmp[i++] = 0;\n        }\n        int palLen = kmp[n - 1];\n        String add = rev.substring(0, s.length() - palLen);\n        return add + s;\n    }\n}",
+          "testCases": [
+            {"input": "aacecaaa", "output": "aaacecaaa"},
+            {"input": "abcd", "output": "dcbabcd"},
+            {"input": "aaaa", "output": "aaaa"},
+            {"input": "a", "output": "a"}
+          ],
+          "constraints": "0 <= s.length <= 5*10^4. s consists of lowercase letters.",
+          "editorial": "Key insight: the longest palindromic prefix of s has length = KMP failure function value of the last char in s+'#'+rev(s). The '#' separator prevents spurious matches. The characters not in the palindromic prefix are prepended in reverse. O(n) time using KMP."
+        },
+        {
+          "displayOrder": 20,
+          "title": "Edit Distance (Levenshtein)",
+          "description": "Given two strings word1 and word2, return the minimum number of operations (insert, delete, replace a character) to convert word1 to word2.",
+          "difficulty": "HARD",
+          "pattern": "Classic 2D DP",
+          "hint1": "dp[i][j] = min ops to convert word1[0..i-1] to word2[0..j-1].",
+          "hint2": "If chars match: dp[i][j] = dp[i-1][j-1]. If not: dp[i][j] = 1 + min(replace, insert, delete).",
+          "hint3": "replace = dp[i-1][j-1], delete = dp[i-1][j], insert = dp[i][j-1].",
+          "starterCode": "public class Solution {\n    public int minDistance(String word1, String word2) {\n        // TODO\n        return 0;\n    }\n}",
+          "solutionCode": "public class Solution {\n    public int minDistance(String word1, String word2) {\n        int m = word1.length(), n = word2.length();\n        int[][] dp = new int[m + 1][n + 1];\n        for (int i = 0; i <= m; i++) dp[i][0] = i;\n        for (int j = 0; j <= n; j++) dp[0][j] = j;\n        for (int i = 1; i <= m; i++) {\n            for (int j = 1; j <= n; j++) {\n                if (word1.charAt(i-1) == word2.charAt(j-1)) {\n                    dp[i][j] = dp[i-1][j-1];\n                } else {\n                    dp[i][j] = 1 + Math.min(dp[i-1][j-1],  // replace\n                                   Math.min(dp[i-1][j],     // delete\n                                            dp[i][j-1]));   // insert\n                }\n            }\n        }\n        return dp[m][n];\n    }\n}",
+          "testCases": [
+            {"input": "word1=horse, word2=ros", "output": "3"},
+            {"input": "word1=intention, word2=execution", "output": "5"},
+            {"input": "word1=, word2=abc", "output": "3"},
+            {"input": "word1=same, word2=same", "output": "0"}
+          ],
+          "constraints": "0 <= word1.length, word2.length <= 500. Words consist of lowercase letters.",
+          "editorial": "Classic DP. dp[0][j]=j (j insertions to build word2 from empty). dp[i][0]=i (i deletions). Transition: same char → inherit diagonal. Different → 1 + best of three operations. O(m*n) time and space. Space can be reduced to O(min(m,n)) with rolling array."
+        }
+      ]
+    }
+  ]
+}
