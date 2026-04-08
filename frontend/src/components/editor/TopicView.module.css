@@ -6,126 +6,181 @@
   background: var(--bg);
 }
 
+/* ── Header ──────────────────────────────────────────────────────────────────── */
 .header {
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid var(--border);
+  padding: 28px 32px 20px;
   flex-shrink: 0;
-  background: var(--bg2);
+  background: var(--bg);
+  position: relative;
 }
 
 .meta {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .complexity {
   font-size: 11px;
   color: var(--text3);
   font-family: var(--font-code);
+  letter-spacing: .2px;
 }
 
 .title {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 800;
   color: var(--text);
-  line-height: 1.25;
-  margin-bottom: 8px;
-  letter-spacing: -.3px;
+  line-height: 1.2;
+  margin-bottom: 6px;
+  letter-spacing: -.4px;
 }
 
 .desc {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text2);
-  line-height: 1.6;
-  margin-bottom: 14px;
-  max-width: 700px;
+  line-height: 1.65;
+  margin-bottom: 18px;
+  max-width: 640px;
 }
 
 .actionRow {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
+/* ── Tab bar ─────────────────────────────────────────────────────────────────── */
+.tabBar {
+  display: flex;
+  gap: 2px;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg);
+}
+
+.tabBtn {
+  position: relative;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .2s;
+  font-family: var(--font-ui);
+}
+.tabBtn:hover { color: var(--text2); }
+.tabBtn.active { color: var(--accent); }
+.tabBtn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+}
+
+/* ── Body ────────────────────────────────────────────────────────────────────── */
 .body {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
 }
 
-/* ── Theory ─────────────────────────────────────────────────────────────────── */
+/* ── Theory panel ────────────────────────────────────────────────────────────── */
 .theoryPanel {
-  padding: 20px 24px;
+  padding: 28px 32px 40px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  max-width: 760px;
+  gap: 18px;
+  max-width: 720px;
 }
 
+/* Memory anchor — top highlight card */
 .anchorCard {
-  background: rgba(74,222,128,.05);
-  border: 1px solid rgba(74,222,128,.15);
+  background: linear-gradient(135deg, rgba(74,222,128,.06) 0%, rgba(74,222,128,.02) 100%);
+  border: 1px solid rgba(74,222,128,.12);
   border-left: 3px solid var(--accent);
-  border-radius: 8px;
-  padding: 14px 16px;
+  border-radius: 10px;
+  padding: 18px 20px;
 }
 .anchorLabel {
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .6px;
+  letter-spacing: .7px;
   color: var(--accent);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 .anchorText {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text);
-  line-height: 1.65;
+  line-height: 1.7;
   font-weight: 500;
 }
 
+/* Theory content cards */
 .theoryCard {
   background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 16px 18px;
+  border-radius: 10px;
+  padding: 20px 22px;
+  transition: border-color .2s;
+}
+.theoryCard:hover {
+  border-color: var(--border2);
 }
 .cardTitle {
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .5px;
+  letter-spacing: .6px;
   color: var(--text3);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .cardBody {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text2);
-  line-height: 1.7;
+  line-height: 1.75;
 }
 
-/* ── Examples ───────────────────────────────────────────────────────────────── */
+/* ── Examples panel ──────────────────────────────────────────────────────────── */
 .examplesPanel {
-  padding: 16px 24px;
+  padding: 24px 32px 40px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-width: 800px;
+  gap: 14px;
+  max-width: 780px;
 }
 
 .exampleCard {
   background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: 10px;
   overflow: hidden;
+  transition: border-color .2s;
+}
+.exampleCard:hover {
+  border-color: var(--border2);
 }
 .exHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 12px 16px;
+  padding: 14px 18px;
   background: none;
   border: none;
   cursor: pointer;
@@ -137,28 +192,39 @@
 .exNum {
   font-size: 9px;
   font-weight: 700;
-  letter-spacing: .6px;
+  letter-spacing: .7px;
   color: var(--accent);
   text-transform: uppercase;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
-.exTitle { font-size: 14px; font-weight: 700; color: var(--text); }
+.exTitle { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
 .exToggle {
   color: var(--text3);
-  font-size: 12px;
-  transition: transform .2s;
-  display: inline-block;
+  font-size: 11px;
+  transition: transform .25s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex-shrink: 0;
 }
 .exToggle.open { transform: rotate(180deg); }
 
 .exBody {
-  padding: 0 16px 16px;
+  padding: 0 18px 20px;
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
-.exDesc { font-size: 13px; color: var(--text2); line-height: 1.6; padding-top: 12px; }
+.exDesc {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+  padding-top: 14px;
+}
 .pseudoSection {}
 .pseudoLabel {
   font-size: 10px;
@@ -166,41 +232,45 @@
   text-transform: uppercase;
   letter-spacing: .5px;
   color: var(--text3);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 .exMeta {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 12px;
+  gap: 8px;
+  font-size: 13px;
   color: var(--text2);
-  line-height: 1.6;
+  line-height: 1.65;
+  padding: 14px 16px;
+  background: var(--bg3);
+  border-radius: 8px;
 }
 .rwTag {
-  padding: 4px 10px;
-  background: var(--bg3);
+  padding: 5px 12px;
+  background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 20px;
   font-size: 11px;
   color: var(--text3);
   width: fit-content;
+  font-weight: 500;
 }
 
-/* ── Practice ───────────────────────────────────────────────────────────────── */
-.practicePanel { padding: 16px 24px; }
+/* ── Practice panel ──────────────────────────────────────────────────────────── */
+.practicePanel { padding: 24px 32px 40px; max-width: 780px; }
 .practiceHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
 }
-.practiceTitle { font-size: 14px; font-weight: 800; color: var(--text); }
+.practiceTitle { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.2px; }
 .diffFilters { display: flex; gap: 6px; }
 .diffBtn {
-  padding: 3px 10px;
-  border-radius: 4px;
+  padding: 4px 12px;
+  border-radius: 6px;
   font-size: 11px;
   font-weight: 700;
   background: var(--bg3);
@@ -208,22 +278,26 @@
   color: var(--text3);
   cursor: pointer;
   font-family: var(--font-ui);
-  transition: .15s;
+  transition: all .15s;
 }
-.diffBtn:hover { color: var(--text2); }
+.diffBtn:hover { color: var(--text2); background: var(--bg4); }
 .activeDiff { background: var(--bg4) !important; }
 
 .problemsList { display: flex; flex-direction: column; gap: 2px; }
 .problemRow {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: var(--radius);
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background .1s;
+  transition: all .12s ease;
+  border: 1px solid transparent;
 }
-.problemRow:hover { background: var(--bg3); }
+.problemRow:hover {
+  background: var(--bg2);
+  border-color: var(--border);
+}
 .probNum {
   font-size: 11px;
   color: var(--text3);
@@ -233,21 +307,23 @@
   text-align: right;
 }
 .solvedDot {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   border: 1.5px solid var(--border2);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 8px;
+  font-size: 9px;
   flex-shrink: 0;
   color: transparent;
+  transition: all .2s;
 }
 .solvedDot.solved {
   background: var(--accent);
   border-color: var(--accent);
   color: #0d0f12;
+  font-weight: 700;
 }
 .probTitle {
   flex: 1;
@@ -257,55 +333,64 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color .12s;
 }
 .problemRow:hover .probTitle { color: var(--text); }
-.probMeta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.probMeta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .patternChip {
   font-size: 10px;
-  padding: 2px 6px;
+  padding: 3px 8px;
   background: var(--bg3);
   border: 1px solid var(--border2);
-  border-radius: 3px;
+  border-radius: 4px;
   color: var(--text3);
   font-weight: 600;
 }
 
-/* ── Optimize ───────────────────────────────────────────────────────────────── */
+/* ── Optimize panel ──────────────────────────────────────────────────────────── */
 .optimizeGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  padding: 20px 24px;
+  gap: 16px;
+  padding: 28px 32px 40px;
   max-width: 760px;
 }
 .optCard {
   background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 16px 18px;
+  border-radius: 10px;
+  padding: 20px 22px;
+  transition: border-color .2s;
 }
+.optCard:hover { border-color: var(--border2); }
 .optHighlight {
-  background: var(--adim2);
-  border-color: rgba(74,222,128,.2);
+  background: linear-gradient(135deg, rgba(74,222,128,.05) 0%, rgba(74,222,128,.02) 100%);
+  border-color: rgba(74,222,128,.15);
 }
+.optHighlight:hover { border-color: rgba(74,222,128,.25); }
 .optTitle {
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--text2);
-  margin-bottom: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text3);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .optContent {
   font-size: 13px;
   color: var(--text2);
-  line-height: 1.7;
+  line-height: 1.75;
 }
 
-/* ── Shared ─────────────────────────────────────────────────────────────────── */
+/* ── Shared ──────────────────────────────────────────────────────────────────── */
 .loadingRow {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 30px 24px;
+  padding: 40px 32px;
   color: var(--text3);
   font-size: 13px;
 }
@@ -314,9 +399,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px 24px;
-  gap: 10px;
+  padding: 60px 32px;
+  gap: 12px;
   color: var(--text3);
 }
-.emptyState span { font-size: 36px; }
-.emptyState p { font-size: 13px; text-align: center; }
+.emptyState span { font-size: 40px; opacity: .7; }
+.emptyState p { font-size: 13px; text-align: center; line-height: 1.6; }

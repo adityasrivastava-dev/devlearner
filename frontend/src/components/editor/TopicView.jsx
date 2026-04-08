@@ -25,10 +25,6 @@ export default function TopicView({ topic, onProblemOpen }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  // BUG FIX: previously read localStorage inside map() — N reads per render cycle
-  // and stale after solving without navigating away. Now use React Query solvedIds
-  // (reactive — updates immediately after a submission) merged with localStorage
-  // (offline fallback when not logged in or cache is cold).
   const { data: solvedIdsFromServer = [] } = useQuery({
     queryKey: QUERY_KEYS.solvedIds,
     queryFn: submissionsApi.getSolvedIds,
@@ -42,11 +38,16 @@ export default function TopicView({ topic, onProblemOpen }) {
   const filteredProblems = diffFilter === 'ALL' ? problems
     : problems.filter((p) => p.difficulty === diffFilter);
 
-  const TABS = ['theory','examples','practice','optimize'];
+  const TABS = [
+    { key: 'theory',   label: 'Theory',   icon: '📖' },
+    { key: 'examples', label: 'Examples',  icon: '💡' },
+    { key: 'practice', label: 'Practice',  icon: '🎯' },
+    { key: 'optimize', label: 'Approach',  icon: '⚡' },
+  ];
 
   return (
     <div className={styles.topicView}>
-      {/* Header */}
+      {/* ── Header ─────────────────────────────────────────────── */}
       <div className={styles.header}>
         <div className={styles.meta}>
           <span className={`badge ${catMeta.cls}`}>{catMeta.label}</span>
@@ -71,23 +72,20 @@ export default function TopicView({ topic, onProblemOpen }) {
         </div>
       </div>
 
-      {/* Tab bar */}
-      <div className="tab-bar">
+      {/* ── Tab bar ────────────────────────────────────────────── */}
+      <div className={styles.tabBar}>
         {TABS.map((t) => (
           <button
-            key={t}
-            className={`tab-btn ${tab === t ? 'active' : ''}`}
-            onClick={() => setTab(t)}
+            key={t.key}
+            className={`${styles.tabBtn} ${tab === t.key ? styles.active : ''}`}
+            onClick={() => setTab(t.key)}
           >
-            {t === 'theory' ? '📖 Theory'
-             : t === 'examples' ? '💡 Examples'
-             : t === 'practice' ? '🎯 Practice'
-             : '⚡ Optimize'}
+            {t.icon} {t.label}
           </button>
         ))}
       </div>
 
-      {/* Tab panels */}
+      {/* ── Tab content ────────────────────────────────────────── */}
       <div className={styles.body}>
 
         {/* Theory */}
@@ -111,7 +109,7 @@ export default function TopicView({ topic, onProblemOpen }) {
             {topic.starterCode && (
               <div className={styles.theoryCard}>
                 <div className={styles.cardTitle}>🧩 Starter Template</div>
-                <pre className="code-block" style={{ fontSize: 12, margin: '8px 0 0 0' }}>
+                <pre className="code-block" style={{ fontSize: 12, margin: '4px 0 0 0' }}>
                   {topic.starterCode}
                 </pre>
               </div>
@@ -120,7 +118,7 @@ export default function TopicView({ topic, onProblemOpen }) {
               <div className={styles.emptyState}>
                 <span>✍️</span>
                 <p>Story content not yet written for this topic.</p>
-                <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>
+                <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
                   Switch to Examples or Practice to start learning.
                 </p>
               </div>
@@ -143,7 +141,7 @@ export default function TopicView({ topic, onProblemOpen }) {
                     onClick={() => setOpenExample(openExample === i ? -1 : i)}
                   >
                     <div>
-                      <div className={styles.exNum}>EXAMPLE {ex.displayOrder || i + 1}</div>
+                      <div className={styles.exNum}>Example {ex.displayOrder || i + 1}</div>
                       <div className={styles.exTitle}>{ex.title}</div>
                     </div>
                     <span className={`${styles.exToggle} ${openExample === i ? styles.open : ''}`}>▼</span>
@@ -159,12 +157,10 @@ export default function TopicView({ topic, onProblemOpen }) {
                       )}
                       <pre className="code-block">{ex.code}</pre>
 
-                      {/* Tracer player — shown when pre-recorded steps exist */}
                       {ex.tracerSteps && (
                         <TracerPlayer code={ex.code} tracerSteps={ex.tracerSteps} />
                       )}
 
-                      {/* Mermaid flowchart — shown when diagram definition exists */}
                       {ex.flowchartMermaid && (
                         <FlowchartViewer
                           definition={ex.flowchartMermaid}
@@ -256,7 +252,7 @@ export default function TopicView({ topic, onProblemOpen }) {
                   {key === '__complexity__' ? (
                     <>
                       <div><strong style={{ color: 'var(--accent)' }}>Time:</strong> {topic.timeComplexity || 'N/A'}</div>
-                      <div><strong style={{ color: 'var(--blue)' }}>Space:</strong> {topic.spaceComplexity || 'N/A'}</div>
+                      <div style={{ marginTop: 4 }}><strong style={{ color: 'var(--blue)' }}>Space:</strong> {topic.spaceComplexity || 'N/A'}</div>
                     </>
                   ) : (
                     topic[key] || 'N/A'
