@@ -4,11 +4,12 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { codeApi, topicsApi, problemsApi, submissionsApi, QUERY_KEYS } from '../../api';
 import { getDiffMeta, PROBLEM_STARTER_CODE } from '../../utils/helpers';
 import CodeEditor, { applyMarkers } from './CodeEditor';
+import RecallDrillModal from './RecallDrillModal';
 import toast from 'react-hot-toast';
 import styles from './ProblemSolveView.module.css';
 
 export default function ProblemSolveView({
-  problemId, topicTitle, onBack, onStudyTopic,
+  problemId, topicId, topicTitle, onBack, onStudyTopic,
   theme, fontSize, onFontChange, onThemeToggle, currentTheme,
 }) {
   const qc       = useQueryClient();
@@ -32,6 +33,8 @@ export default function ProblemSolveView({
   const [cursorPos,       setCursorPos]       = useState({ line: 1, col: 1 });
   const [lineCount,       setLineCount]       = useState(0);
   const [savedAt,         setSavedAt]         = useState(null);
+  // ── Recall drill ─────────────────────────────────────────────────────────
+  const [recallOpen,      setRecallOpen]      = useState(false);
   // ── Solve timer ──────────────────────────────────────────────────────────
   const [timerSec,        setTimerSec]        = useState(0);
   const solveStartRef = useRef(Date.now());
@@ -144,12 +147,18 @@ export default function ProblemSolveView({
         applyMarkers(editorRef, monacoRef, res.compileErrors);
       }
       if (res.allPassed) {
-        toast.success('✅ Accepted! Editorial unlocked.');
         const solved = JSON.parse(localStorage.getItem('devlearn_solved') || '[]').map(Number);
-        if (!solved.includes(_pid))
+        const isFirstSolve = !solved.includes(_pid);
+        toast.success('✅ Accepted! Editorial unlocked.');
+        if (isFirstSolve) {
           localStorage.setItem('devlearn_solved', JSON.stringify([...solved, _pid]));
+        }
         qc.invalidateQueries({ queryKey: QUERY_KEYS.solvedIds });
         refetchEditorial();
+        // Fire recall drill only on the very first AC for this problem
+        if (isFirstSolve) {
+          setTimeout(() => setRecallOpen(true), 600);
+        }
       }
     } catch {
       setSubmitResult({ error: 'Submission failed — server error' });
@@ -459,6 +468,15 @@ export default function ProblemSolveView({
           </div>
         </div>
       </div>
+
+      {/* ── Recall Drill Modal — fires once on first AC ──────────────── */}
+      <RecallDrillModal
+        isOpen={recallOpen}
+        onClose={() => setRecallOpen(false)}
+        topicId={topicId ?? null}
+        topicTitle={topicTitle || ''}
+        problemTitle={problem?.title || ''}
+      />
     </div>
   );
 }

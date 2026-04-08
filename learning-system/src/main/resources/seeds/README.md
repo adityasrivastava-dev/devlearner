@@ -151,45 +151,92 @@ The **filename prefix is for organization only**. The `"category"` field inside 
 | J07-modules | Java Modules (JPMS) | ⏳ |
 | J08-records-sealed | Records, Sealed Classes, Pattern Matching | ⏳ |
 
-### DSA — D series (target: 9 files)
-| File | Topic | Status |
-|------|-------|--------|
-| D01-arrays-hashing | Arrays & Hashing | ⏳ |
-| D02-linked-lists | Linked Lists | ⏳ |
-| D03-stacks-queues | Stacks & Queues | ⏳ |
-| D04-trees | Binary Trees & BST | ⏳ |
-| D05-heaps | Heaps & Priority Queues | ⏳ |
-| D06-graphs | Graphs (BFS/DFS) | ⏳ |
-| D07-sorting | Sorting Algorithms | ⏳ |
-| D08-binary-search | Binary Search & Two Pointers | ⏳ |
-| D09-dynamic-programming | Dynamic Programming | ⏳ |
+  ---
+DSA Series (D01–D09)
 
-### Spring Boot — S series (target: 6 files)
-| File | Topic | Status |
-|------|-------|--------|
-| S01-ioc-di | IoC & Dependency Injection | ⏳ |
-| S02-rest-api | REST API with Spring MVC | ⏳ |
-| S03-jpa-hibernate | JPA & Hibernate | ⏳ |
-| S04-spring-security | Spring Security & JWT | ⏳ |
-| S05-testing | Testing (JUnit 5, MockMvc) | ⏳ |
-| S06-microservices | Microservices Basics | ⏳ |
+┌──────┬────────────────┬───────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────┐
+│ File │     Topic      │                   Examples                    │                            Problems                             │
+├──────┼────────────────┼───────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│      │                │ Singly/doubly/circular,                       │ Reverse list, detect cycle, merge sorted lists, find middle,    │
+│ D01  │ Linked List    │ insert/delete/reverse, runner technique,      │ remove nth from end, palindrome check, flatten multilevel, LRU  │
+│      │                │ sentinel nodes                                │ cache, copy with random pointer, add two numbers                │
+├──────┼────────────────┼───────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│      │                │                                               │ Valid brackets, min stack, daily temperatures, next greater     │
+│ D02  │ Stack & Queue  │ Stack via array/linked list, queue via        │ element, sliding window max, evaluate RPN, largest rectangle    │
+│      │                │ circular array, monotonic stack, deque        │ histogram, task scheduler, circular queue, implement stack with │
+│      │                │                                               │  queues                                                         │
+├──────┼────────────────┼───────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│      │                │ BST insert/search/delete, DFS/BFS traversal,  │ Inorder/preorder/postorder, level order, max depth, path sum,   │
+│ D03  │ Trees          │ height/diameter, LCA                          │ validate BST, serialize/deserialize, lowest common ancestor,    │
+│      │                │                                               │ zigzag traversal, count nodes, binary tree cameras              │
+├──────┼────────────────┼───────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│      │ Heaps &        │ Min/max heap, heapify, top-K pattern,         │ Kth largest, top K frequent, merge K lists, median from stream, │
+│ D04  │ Priority       │ two-heap technique, merge K sorted            │  task scheduler, find K closest points, ugly number, employee   │
+│      │ Queues         │                                               │ free time, reorganize string, IPO problem                       │
+├──────┼────────────────┼───────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│      │                │ Adjacency list/matrix, DFS/BFS, topological   │ Number of islands, clone graph, course schedule, network delay  │
+│ D05  │ Graphs         │ sort, union-find, Dijkstra, Bellman-Ford      │ time, word ladder, minimum spanning tree, critical connections, │
+│      │                │                                               │  alien dictionary, cheapest flights, swim in rising water       │
+├──────┼────────────────┼───────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│      │ Sorting        │ Bubble/selection/insertion, merge sort, quick │ Sort colors, sort by frequency, merge intervals, largest        │
+│ D06  │ Algorithms     │  sort, counting sort, radix sort, comparison  │ number, wiggle sort, pancake sort, sort list linked, kth        │
+│      │                │                                               │ smallest in matrix, maximum gap, count inversions               │
+├──────┼────────────────┼───────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│      │                │                                               │ Fibonacci, climbing stairs, coin change, longest common         │
+│ D07  │ Dynamic        │ Memoization vs tabulation, 1D/2D DP,          │ subsequence, longest increasing subsequence, edit distance, 0/1 │
+│      │ Programming    │ knapsack, LCS, LIS patterns                   │  knapsack, partition equal subset, word break, unique paths,    │
+│      │                │                                               │ decode ways, burst balloons                                     │
+├──────┼────────────────┼───────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│      │ Recursion &    │ Recursion tree, pruning,                      │ N-Queens, Sudoku solver, letter combinations, subsets,          │
+│ D08  │ Backtracking   │ permutations/combinations/subsets, constraint │ permutations, combination sum, word search, palindrome          │
+│      │                │  propagation                                  │ partitioning, generate parentheses, knight's tour               │
+├──────┼────────────────┼───────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│      │ Trie &         │ Trie insert/search/startsWith, segment tree   │ Implement trie, word search II, replace words, autocomplete     │
+│ D09  │ Advanced Trees │ range query, Fenwick tree prefix sum          │ system, range sum query, range min query, count of range sum,   │
+│      │                │                                               │ longest word, map sum pairs, index pairs                        │
+└──────┴────────────────┴───────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────┘
 
-### MySQL — M series (target: 3 files)
-| File | Topic | Status |
-|------|-------|--------|
-| M01-sql-basics | SELECT, WHERE, ORDER BY, GROUP BY | ⏳ |
-| M02-joins-subqueries | JOINs, Subqueries, CTEs | ⏳ |
-| M03-indexes-transactions | Indexes, Transactions, EXPLAIN | ⏳ |
+  ---
+MySQL Series (M01–M03)
 
-### AWS — A series (target: 4 files)
-| File | Topic | Status |
-|------|-------|--------|
-| A01-ec2-vpc | EC2, VPC, Security Groups | ⏳ |
-| A02-s3-cloudfront | S3, CloudFront, IAM | ⏳ |
-| A03-rds-elasticache | RDS, ElastiCache, Parameter Groups | ⏳ |
-| A04-deployment | Elastic Beanstalk, ECS, CI/CD | ⏳ |
+┌──────┬──────────────┬─────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────┐
+│ File │    Topic     │                  Examples                   │                              Problems                               │
+├──────┼──────────────┼─────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
+│      │              │ SELECT/WHERE/ORDER BY/GROUP BY/HAVING,      │ Find duplicates, top N per group, filter by date range, count by    │
+│ M01  │ SQL Basics   │ aggregate functions, aliases, DISTINCT      │ category, running total, conditional aggregation, null handling,    │
+│      │              │                                             │ pagination with LIMIT OFFSET                                        │
+├──────┼──────────────┼─────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
+│      │ Joins &      │ INNER/LEFT/RIGHT/FULL JOIN, self join,      │ Customers with no orders, second highest salary, department top     │
+│ M02  │ Subqueries   │ correlated subquery, EXISTS/IN, CTEs        │ earner, find managers, tree hierarchy, consecutive seats, rising    │
+│      │              │                                             │ temperature, game play analysis                                     │
+├──────┼──────────────┼─────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
+│      │              │ Window functions (ROW_NUMBER, RANK,         │ Rank scores, median salary, monthly active users, retention         │
+│ M03  │ Advanced SQL │ LAG/LEAD), indexes, stored procedures,      │ analysis, consecutive available seats, first login per player,      │
+│      │              │ transactions                                │ query optimization with EXPLAIN, ACID transaction demo              │
+└──────┴──────────────┴─────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────┘
 
----
+  ---
+AWS Series (A01–A04)
+
+┌──────┬─────────────────┬─────────────────────────────────────────────────┬──────────────────────────────────────────────────────────────┐
+│ File │      Topic      │                    Examples                     │                           Problems                           │
+├──────┼─────────────────┼─────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│      │ AWS Core        │ IAM roles/policies, EC2 launch types, S3 bucket │ Design IAM for multi-team, S3 static hosting, EC2            │
+│ A01  │ Services        │  policies, VPC subnets, security groups         │ auto-scaling setup, cross-account access, cost optimization  │
+│      │                 │                                                 │ scenarios                                                    │
+├──────┼─────────────────┼─────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│      │ Serverless &    │ Lambda triggers, API Gateway REST/HTTP,         │ Serverless CRUD API, event-driven pipeline, DynamoDB access  │
+│ A02  │ Databases       │ DynamoDB single-table design, SQS/SNS patterns  │ patterns, fan-out notification, scheduled job with           │
+│      │                 │                                                 │ EventBridge                                                  │
+├──────┼─────────────────┼─────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│      │ Networking &    │ Route53 routing policies, CloudFront            │ Multi-region failover, CDN cache strategy, blue-green        │
+│ A03  │ CDN             │ distributions, Load Balancers (ALB/NLB), VPC    │ deployment, private API design, WAF rules                    │
+│      │                 │ peering                                         │                                                              │
+├──────┼─────────────────┼─────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│      │ DevOps &        │ ECS/EKS basics, CodePipeline CI/CD,             │ Design CI/CD pipeline, containerize Spring Boot,             │
+│ A04  │ Containers      │ CloudFormation IaC, CloudWatch alarms, X-Ray    │ infrastructure as code template, observability stack, cost   │
+│      │                 │ tracing                                         │ alerting setup                                               │
+└──────┴─────────────────┴─────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────┘
 
 ## Import Rules
 

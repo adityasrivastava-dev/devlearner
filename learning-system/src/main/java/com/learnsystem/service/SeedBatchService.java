@@ -191,9 +191,10 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
 
 @Transactional
 public void clearAll() {
-    problemRepo.deleteAll();
-    exampleRepo.deleteAll();
-    topicRepo.deleteAll();
+    problemRepo.deleteAllProblems();   // child
+    exampleRepo.deleteAllExamples();   // middle
+    topicRepo.deleteAllTopics();       // parent
+
     log.info("Cleared all topics, examples and problems.");
 }
 

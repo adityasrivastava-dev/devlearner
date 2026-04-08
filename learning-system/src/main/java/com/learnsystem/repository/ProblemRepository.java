@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -13,11 +14,13 @@ import java.util.List;
 
 @Repository
 public interface ProblemRepository extends JpaRepository<Problem, Long>,
-        JpaSpecificationExecutor<Problem> {
+		JpaSpecificationExecutor<Problem> {
 
-List<Problem> findByTopicIdOrderByDisplayOrder(Long topicId);
+@Query("SELECT p FROM Problem p WHERE p.topic.id = :topicId ORDER BY p.displayOrder")
+List<Problem> findByTopicIdOrderByDisplayOrder(@Param("topicId") Long topicId);
 
-List<Problem> findByTopicIdAndDifficulty(Long topicId, Problem.Difficulty difficulty);
+@Query("SELECT p FROM Problem p WHERE p.topic.id = :topicId AND p.difficulty = :difficulty")
+List<Problem> findByTopicIdAndDifficulty(@Param("topicId") Long topicId, @Param("difficulty") Problem.Difficulty difficulty);
 
 /**
  * BUG 1 FIX: JOIN FETCH loads topic in same SQL query.
@@ -45,7 +48,7 @@ List<String> findDistinctPatterns();
                OR LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')))
         ORDER BY t.category, t.id, p.displayOrder
         """,
-       countQuery = """
+		countQuery = """
         SELECT COUNT(p) FROM Problem p JOIN p.topic t
         WHERE (:category   IS NULL OR CAST(t.category   AS string) = :category)
           AND (:topicId    IS NULL OR t.id               = :topicId)
@@ -55,10 +58,14 @@ List<String> findDistinctPatterns();
                OR LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')))
         """)
 Page<Problem> findPageFiltered(
-        @Param("category")   String category,
-        @Param("topicId")    Long   topicId,
-        @Param("difficulty") String difficulty,
-        @Param("pattern")    String pattern,
-        @Param("search")     String search,
-        Pageable             pageable);
+		@Param("category")   String category,
+		@Param("topicId")    Long   topicId,
+		@Param("difficulty") String difficulty,
+		@Param("pattern")    String pattern,
+		@Param("search")     String search,
+		Pageable             pageable);
+
+@Modifying
+@Query("DELETE FROM Problem")
+void deleteAllProblems();
 }

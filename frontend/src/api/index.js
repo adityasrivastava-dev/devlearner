@@ -269,4 +269,19 @@ export const QUERY_KEYS = {
   seedFiles:                ['seedFiles'],
   roadmaps:                 ['roadmaps'],
   studyPlans:               ['studyPlans'],
+  srsQueue:                 ['srsQueue'],
+};
+// ─── Spaced Repetition ────────────────────────────────────────────────────────
+export const srsApi = {
+  getQueue: () =>
+    http.get('/api/srs/queue').then((r) => r.data).catch(() => ({ dueCount: 0, due: [], upcoming: [] })),
+
+  review: (itemType, itemId, quality) =>
+    http.post('/api/srs/review', { itemType, itemId, quality }).then((r) => r.data),
+};
+
+// ─── Recall Drill ─────────────────────────────────────────────────────────────
+export const recallApi = {
+  save: (topicId, topicTitle, text) =>
+    http.post('/api/recall', { topicId, topicTitle, text }).then((r) => r.data),
 };

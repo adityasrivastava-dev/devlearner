@@ -7,7 +7,7 @@ import FlowchartViewer from './FlowchartViewer';
 import styles from './TopicView.module.css';
 import ReadOnlyCodeViewer from './ReadOnlyCodeViewer';
 
-export default function TopicView({ topic, onProblemOpen }) {
+export default function TopicView({ topic, onProblemOpen, onBack }) {
   const [tab, setTab]               = useState('theory');
   const [activeExample, setActiveExample] = useState(null); // null = list, number = detail view
   const [diffFilter, setDiffFilter] = useState('ALL');
@@ -65,6 +65,11 @@ export default function TopicView({ topic, onProblemOpen }) {
       {/* ── Compact header ─────────────────────────────────────────────── */}
       <div className={styles.header}>
         <div className={styles.headerTop}>
+          {onBack && (
+            <button className={styles.backBtn} onClick={onBack} title="Back to Dashboard">
+              ← Home
+            </button>
+          )}
           <span className={`badge ${catMeta.cls}`}>{catMeta.label}</span>
           <h1 className={styles.title}>{topic.title}</h1>
         </div>

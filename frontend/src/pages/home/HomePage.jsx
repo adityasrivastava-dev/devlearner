@@ -5,6 +5,7 @@ import Sidebar from '../../components/sidebar/Sidebar';
 import TopicView from '../../components/editor/TopicView';
 import ProblemSolveView from '../../components/editor/ProblemSolveView';
 import { topicsApi, QUERY_KEYS } from '../../api';
+import DashboardPage from '../dashboard/DashboardPage';
 import styles from './HomePage.module.css';
 
 export default function HomePage() {
@@ -143,12 +144,13 @@ export default function HomePage() {
               theme={theme}
               fontSize={fontSize}
               onProblemOpen={openProblem}
+              onBack={() => selectTopic(null)}
             />
           ) : (
             <TopicSkeleton />
           )
         ) : (
-          <WelcomeScreen />
+          <DashboardPage />
         )}
       </main>
     </div>
