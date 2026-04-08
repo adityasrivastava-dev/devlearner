@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Repository
@@ -17,6 +18,7 @@ List<QuizQuestion> findBySetIdOrderByOrderIndex(Long setId);
 int countBySetId(Long setId);
 
 /** Delete all questions for a set (used when re-seeding) */
+@Transactional
 void deleteBySetId(Long setId);
 
 /** Random sample of N questions from a set (for large sets) */

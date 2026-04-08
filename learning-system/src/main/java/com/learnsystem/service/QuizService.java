@@ -19,7 +19,20 @@ private final QuizQuestionRepository questionRepo;
 private final QuizAttemptRepository  attemptRepo;
 private final QuizAnswerRepository   answerRepo;
 
-// ── Get all quiz sets ─────────────────────────────────────────────────────
+// ── Check if a set exists by title (used by file-listing endpoint) ──────────
+public boolean setExistsByTitle(String title) {
+	return setRepo.existsByTitle(title);
+}
+
+// ── Delete a quiz set + all its questions ─────────────────────────────────
+@Transactional
+public void deleteSet(Long setId) {
+	questionRepo.deleteBySetId(setId);
+	setRepo.deleteById(setId);
+	log.info("Quiz set deleted: id={}", setId);
+}
+
+// ── Get all sets ─────────────────────────────────────────────────────────
 public List<Map<String, Object>> getSets(String category) {
 	List<QuizSet> sets = (category != null && !category.isBlank() && !category.equals("ALL"))
 			? setRepo.findByCategoryAndActiveTrueOrderByDisplayOrderAsc(category)

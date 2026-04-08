@@ -6,6 +6,7 @@ import { getCategoryMeta, getDiffMeta, CATEGORIES } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 import styles from './AdminPage.module.css';
 import JsonBuilderSection from './JsonBuilderSection';
+import QuizAdminSection from './QuizAdminSection';
 
 export default function AdminPage() {
   const navigate   = useNavigate();
@@ -26,6 +27,7 @@ export default function AdminPage() {
             { key: 'users',   icon: '👥', label: 'Users' },
             { key: 'seed',    icon: '📦', label: 'Import JSON' },
             { key: 'build',   icon: '🛠', label: 'Build JSON' },
+            { key: 'quiz',    icon: '🧠', label: 'Quiz' },
             { key: 'stats',   icon: '📊', label: 'Stats' },
           ].map((item) => (
             <button
@@ -45,6 +47,7 @@ export default function AdminPage() {
         {section === 'users'  && <UsersSection />}
         {section === 'seed'   && <SeedSection />}
         {section === 'build'  && <div className={styles.section}><div className={styles.sectionHeader}><span className={styles.sectionTitle}>JSON Builder</span></div><JsonBuilderSection /></div>}
+        {section === 'quiz'   && <QuizAdminSection />}
         {section === 'stats'  && <StatsSection />}
       </div>
     </div>
@@ -173,6 +176,59 @@ function TopicEditor({ topic, onSaved }) {
 
   const [activeTab, setActiveTab] = useState('info');
 
+  // ── Seed file loader state ────────────────────────────────────────────────
+  const [showSeedLoader, setShowSeedLoader] = useState(false);
+  const [selectedFile,   setSelectedFile]   = useState('');
+  const [seedTopics,     setSeedTopics]     = useState([]);
+  const [loadingTopics,  setLoadingTopics]  = useState(false);
+  const [topicFilter,    setTopicFilter]    = useState('');
+
+  const { data: seedFiles = [] } = useQuery({
+    queryKey: QUERY_KEYS.seedFiles,
+    queryFn:  adminApi.getSeedFiles,
+    staleTime: 30_000,
+  });
+
+  async function handleFileSelect(filename) {
+    setSelectedFile(filename);
+    setSeedTopics([]);
+    setTopicFilter('');
+    if (!filename) return;
+    setLoadingTopics(true);
+    try {
+      const topics = await adminApi.getTopicsFromSeedFile(filename);
+      setSeedTopics(topics);
+    } catch {
+      toast.error('Could not load topics from file');
+    } finally {
+      setLoadingTopics(false);
+    }
+  }
+
+  function handleLoadTopic(seedTopic) {
+    setForm({
+      title:             seedTopic.title             || '',
+      category:          seedTopic.category          || 'DSA',
+      description:       seedTopic.description       || '',
+      timeComplexity:    seedTopic.timeComplexity     || '',
+      spaceComplexity:   seedTopic.spaceComplexity    || '',
+      bruteForce:        seedTopic.bruteForce         || '',
+      optimizedApproach: seedTopic.optimizedApproach  || '',
+      whenToUse:         seedTopic.whenToUse          || '',
+      memoryAnchor:      seedTopic.memoryAnchor       || '',
+      story:             seedTopic.story              || '',
+      analogy:           seedTopic.analogy            || '',
+      firstPrinciples:   seedTopic.firstPrinciples    || '',
+      starterCode:       seedTopic.starterCode        || '',
+    });
+    setShowSeedLoader(false);
+    toast.success(`Loaded "${seedTopic.title}" from seed file`);
+  }
+
+  const filteredSeedTopics = seedTopics.filter((t) =>
+    !topicFilter || t.title.toLowerCase().includes(topicFilter.toLowerCase())
+  );
+
   const mutation = useMutation({
     mutationFn: isNew
       ? (data) => adminApi.createTopic(data)
@@ -187,14 +243,101 @@ function TopicEditor({ topic, onSaved }) {
     <div className={styles.topicEditor}>
       <div className={styles.editorHeader}>
         <span className={styles.editorTitle}>{isNew ? '+ New Topic' : `Editing: ${topic.title}`}</span>
-        <button
-          className="btn btn-primary btn-sm"
-          disabled={mutation.isPending || !form.title}
-          onClick={() => mutation.mutate(form)}
-        >
-          {mutation.isPending ? <><span className="spinner" />Saving…</> : '💾 Save'}
-        </button>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {/* Seed file loader toggle */}
+          <button
+            className={`btn btn-ghost btn-sm ${showSeedLoader ? 'btn-primary' : ''}`}
+            onClick={() => setShowSeedLoader((v) => !v)}
+            title="Load fields from a seed JSON file"
+          >
+            📁 Load from seed
+          </button>
+          <button
+            className="btn btn-primary btn-sm"
+            disabled={mutation.isPending || !form.title}
+            onClick={() => mutation.mutate(form)}
+          >
+            {mutation.isPending ? <><span className="spinner" />Saving…</> : '💾 Save'}
+          </button>
+        </div>
       </div>
+
+      {/* ── Seed file loader panel ─────────────────────────────────── */}
+      {showSeedLoader && (
+        <div className={styles.seedLoaderPanel}>
+          <div className={styles.seedLoaderHeader}>
+            <span className={styles.seedLoaderTitle}>
+              📁 Load from Seed File
+            </span>
+            <span className={styles.seedLoaderSub}>
+              Pick a file, then click a topic to auto-fill all fields
+            </span>
+          </div>
+
+          {/* File selector */}
+          <div className={styles.seedFileSelect}>
+            <select
+              className="input"
+              value={selectedFile}
+              onChange={(e) => handleFileSelect(e.target.value)}
+              style={{ fontSize: 12 }}
+            >
+              <option value="">— Select a seed file —</option>
+              {seedFiles.map((f) => (
+                <option key={f.filename} value={f.filename}>
+                  {f.filename}
+                  {f.topicCount ? ` (${f.topicCount} topics)` : ''}
+                  {f.status === 'IMPORTED' ? ' ✓' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Topic list from file */}
+          {selectedFile && (
+            <>
+              {loadingTopics ? (
+                <div className={styles.seedLoaderMsg}>
+                  <span className="spinner" /> Loading topics from {selectedFile}…
+                </div>
+              ) : seedTopics.length === 0 ? (
+                <div className={styles.seedLoaderMsg}>No topics found in this file.</div>
+              ) : (
+                <>
+                  <input
+                    className="input"
+                    style={{ fontSize: 12, marginBottom: 8 }}
+                    placeholder={`🔍 Filter ${seedTopics.length} topics…`}
+                    value={topicFilter}
+                    onChange={(e) => setTopicFilter(e.target.value)}
+                  />
+                  <div className={styles.seedTopicList}>
+                    {filteredSeedTopics.map((t, i) => (
+                      <button
+                        key={i}
+                        className={styles.seedTopicRow}
+                        onClick={() => handleLoadTopic(t)}
+                      >
+                        <div className={styles.seedTopicMain}>
+                          <span className={styles.seedTopicTitle}>{t.title}</span>
+                          <span className={`badge badge-${t.category?.toLowerCase() === 'dsa' ? 'dsa' : 'java'}`}
+                            style={{ fontSize: 9 }}>
+                            {t.category}
+                          </span>
+                        </div>
+                        <div className={styles.seedTopicMeta}>
+                          {t.exampleCount} examples · {t.problemCount} problems
+                          {t.story ? ' · has story' : ''}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Editor tabs */}
       <div className="tab-bar">
@@ -546,12 +689,12 @@ function StatsSection() {
       toast.success('All data cleared successfully');
       refetch();
     },
-    onError: () => toast.error('Clear failed'),
+    onError: (err) => toast.error('Clear failed: ' + (err?.response?.data?.message || err?.message || 'unknown error')),
   });
 
   function handleClearAll() {
     if (!window.confirm(
-      '⚠️ DELETE ALL DATA?\n\nThis will permanently remove ALL topics, examples, and problems from the database.\n\nSeed log entries will remain so you can re-import.\n\nType OK to confirm.'
+      '⚠️ DELETE ALL DATA?\n\nThis will permanently remove ALL topics, examples, problems AND import history from the database.\n\nYou will need to re-import all seed files afterwards.\n\nConfirm?'
     )) return;
     clearMutation.mutate();
   }
@@ -614,8 +757,8 @@ function StatsSection() {
           <div className={styles.dangerInfo}>
             <div className={styles.dangerActionTitle}>Clear All Data</div>
             <div className={styles.dangerActionDesc}>
-              Permanently delete all topics, examples, and problems.
-              Seed log entries are preserved so you can re-import files.
+              Permanently delete all topics, examples, problems and import history.
+              You will need to re-import seed files afterwards.
             </div>
           </div>
           <button

@@ -178,6 +178,9 @@ export const adminApi = {
   importSeedFile: (filename) =>
     http.post(`/api/admin/seed-files/${encodeURIComponent(filename)}`).then((r) => r.data),
 
+  getTopicsFromSeedFile: (filename) =>
+    http.get(`/api/admin/seed-files/${encodeURIComponent(filename)}/topics`).then((r) => r.data),
+
   // Topic CRUD
   createTopic: (data) =>
     http.post('/api/admin/topics', data).then((r) => r.data),

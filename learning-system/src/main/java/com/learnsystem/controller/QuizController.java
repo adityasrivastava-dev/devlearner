@@ -1,15 +1,17 @@
 package com.learnsystem.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnsystem.model.User;
 import com.learnsystem.service.QuizService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Quiz endpoints — completely standalone, no coupling to topics/problems.
@@ -23,14 +25,18 @@ import java.util.Map;
  *   GET  /api/quiz/history           — user's past attempts
  *
  * Admin only (via /api/admin/quiz/**):
- *   POST /api/admin/quiz/seed        — seed a quiz set from JSON
+ *   GET  /api/admin/quiz/files       — list quiz JSON files from classpath:quiz/
+ *   POST /api/admin/quiz/files/:name — import one quiz file
+ *   POST /api/admin/quiz/seed        — seed a quiz set from raw JSON body
  */
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 public class QuizController {
 
-private final QuizService quizService;
+private final QuizService            quizService;
+private final ResourcePatternResolver resourcePatternResolver;
+private final ObjectMapper           objectMapper;
 
 // ── Public — list quiz sets ───────────────────────────────────────────────
 @GetMapping("/api/quiz/sets")
@@ -73,10 +79,81 @@ public ResponseEntity<?> getHistory(@AuthenticationPrincipal User user) {
 	return ResponseEntity.ok(quizService.getHistory(user.getId()));
 }
 
-// ── Admin — seed a quiz set ───────────────────────────────────────────────
+// ── Admin — list quiz seed files from classpath:quiz/ ─────────────────────
+@GetMapping("/api/admin/quiz/files")
+public ResponseEntity<List<Map<String, Object>>> listQuizFiles() {
+	List<Map<String, Object>> result = new ArrayList<>();
+	try {
+		Resource[] resources = resourcePatternResolver.getResources("classpath:quiz/*.json");
+		Arrays.sort(resources, Comparator.comparing(r -> r.getFilename() != null ? r.getFilename() : ""));
+
+		for (Resource resource : resources) {
+			String filename = resource.getFilename();
+			Map<String, Object> info = new LinkedHashMap<>();
+			info.put("filename", filename);
+			try {
+				@SuppressWarnings("unchecked")
+				Map<String, Object> parsed = objectMapper.readValue(
+						resource.getInputStream(), Map.class);
+				String title = (String) parsed.getOrDefault("title", filename);
+				@SuppressWarnings("unchecked")
+				List<?> questions = (List<?>) parsed.getOrDefault("questions", List.of());
+				info.put("title",         title);
+				info.put("category",      parsed.getOrDefault("category", "JAVA"));
+				info.put("difficulty",    parsed.getOrDefault("difficulty", "INTERMEDIATE"));
+				info.put("questionCount", questions.size());
+				// Check if already seeded by looking up title in DB
+				boolean alreadySeeded = quizService.setExistsByTitle(title);
+				info.put("status", alreadySeeded ? "IMPORTED" : "PENDING");
+			} catch (Exception e) {
+				info.put("title",  filename);
+				info.put("status", "ERROR");
+				info.put("error",  e.getMessage());
+			}
+			result.add(info);
+		}
+	} catch (Exception ignored) {}
+	return ResponseEntity.ok(result);
+}
+
+// ── Admin — import one quiz file by filename ──────────────────────────────
+@PostMapping("/api/admin/quiz/files/{filename}")
+public ResponseEntity<?> importQuizFile(@PathVariable String filename) {
+	if (!filename.endsWith(".json") || filename.contains("/") || filename.contains("..")) {
+		return ResponseEntity.badRequest().body(Map.of("error", "Invalid filename"));
+	}
+	try {
+		Resource[] resources = resourcePatternResolver.getResources("classpath:quiz/" + filename);
+		if (resources.length == 0) return ResponseEntity.notFound().build();
+
+		@SuppressWarnings("unchecked")
+		Map<String, Object> payload = objectMapper.readValue(
+				resources[0].getInputStream(), Map.class);
+
+		Map<String, Object> result = quizService.seedSet(payload);
+		return ResponseEntity.ok(result);
+	} catch (Exception e) {
+		return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+	}
+}
+
+// ── Admin — seed a quiz set from raw JSON body ────────────────────────────
 @PostMapping("/api/admin/quiz/seed")
 public ResponseEntity<Map<String, Object>> seedQuizSet(
 		@RequestBody Map<String, Object> payload) {
 	return ResponseEntity.ok(quizService.seedSet(payload));
+}
+
+// ── Admin — list all quiz sets for management ─────────────────────────────
+@GetMapping("/api/admin/quiz/sets")
+public ResponseEntity<List<Map<String, Object>>> adminListSets() {
+	return ResponseEntity.ok(quizService.getSets(null));
+}
+
+// ── Admin — delete a quiz set and all its questions ───────────────────────
+@DeleteMapping("/api/admin/quiz/sets/{id}")
+public ResponseEntity<?> deleteSet(@PathVariable Long id) {
+	quizService.deleteSet(id);
+	return ResponseEntity.ok(Map.of("deleted", true, "id", id));
 }
 }
