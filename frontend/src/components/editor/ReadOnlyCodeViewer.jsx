@@ -101,8 +101,9 @@ export default function ReadOnlyCodeViewer({
       decorRef.current = editorRef.current.deltaDecorations([], [{
         range: new monaco.Range(highlightLine, 1, highlightLine, 1),
         options: {
-          isWholeLine: true,
-          className:   'tracer-active-line',
+          isWholeLine:        true,
+          className:          'tracer-active-line',     // row background
+          linesDecorationsClassName: 'tracer-active-indicator', // left gutter arrow
         },
       }]);
       editorRef.current.revealLineInCenter(highlightLine);

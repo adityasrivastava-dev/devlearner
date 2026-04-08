@@ -2,49 +2,28 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import styles from './TracerPlayer.module.css';
 import ReadOnlyCodeViewer from './ReadOnlyCodeViewer';
 
-/**
- * TracerPlayer — step-by-step code execution visualiser.
- *
- * Props:
- *   code        : string  — full source code of the example
- *   tracerSteps : string  — JSON string: [{line, lineCode, variables, phase, annotation}]
- *
- * Each step shape:
- *   { line: number, lineCode: string, variables: {name: value},
- *     phase: 'ASSIGN'|'LOOP_START'|'LOOP_ITER'|'CONDITION_TRUE'|'CONDITION_FALSE'
- *            |'DECLARE'|'CALL'|'RETURN'|'THROW',
- *     annotation: string }
- */
 export default function TracerPlayer({ code = '', tracerSteps = '[]' }) {
-  const [steps, setSteps]       = useState([]);
-  const [current, setCurrent]   = useState(0);
-  const [playing, setPlaying]   = useState(false);
-  const [speed, setSpeed]       = useState(1200); // ms per step
-  const intervalRef             = useRef(null);
+  const [steps, setSteps]     = useState([]);
+  const [current, setCurrent] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed]     = useState(1200);
+  const intervalRef           = useRef(null);
 
-  // Parse steps once
   useEffect(() => {
     try {
       const parsed = typeof tracerSteps === 'string'
-        ? JSON.parse(tracerSteps)
-        : tracerSteps;
+        ? JSON.parse(tracerSteps) : tracerSteps;
       setSteps(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      setSteps([]);
-    }
+    } catch { setSteps([]); }
     setCurrent(0);
     setPlaying(false);
   }, [tracerSteps]);
 
-  // Auto-play interval
   useEffect(() => {
     if (playing) {
       intervalRef.current = setInterval(() => {
         setCurrent((c) => {
-          if (c >= steps.length - 1) {
-            setPlaying(false);
-            return c;
-          }
+          if (c >= steps.length - 1) { setPlaying(false); return c; }
           return c + 1;
         });
       }, speed);
@@ -52,13 +31,10 @@ export default function TracerPlayer({ code = '', tracerSteps = '[]' }) {
     return () => clearInterval(intervalRef.current);
   }, [playing, speed, steps.length]);
 
-
-  const step     = steps[current];
-
-  const prev  = useCallback(() => { setPlaying(false); setCurrent((c) => Math.max(0, c - 1)); }, []);
-  const next  = useCallback(() => { setPlaying(false); setCurrent((c) => Math.min(steps.length - 1, c + 1)); }, [steps.length]);
-  const first = useCallback(() => { setPlaying(false); setCurrent(0); }, []);
-  const last  = useCallback(() => { setPlaying(false); setCurrent(steps.length - 1); }, [steps.length]);
+  const prev       = useCallback(() => { setPlaying(false); setCurrent((c) => Math.max(0, c - 1)); }, []);
+  const next       = useCallback(() => { setPlaying(false); setCurrent((c) => Math.min(steps.length - 1, c + 1)); }, [steps.length]);
+  const first      = useCallback(() => { setPlaying(false); setCurrent(0); }, []);
+  const last       = useCallback(() => { setPlaying(false); setCurrent(steps.length - 1); }, [steps.length]);
   const togglePlay = useCallback(() => {
     if (current >= steps.length - 1) setCurrent(0);
     setPlaying((p) => !p);
@@ -66,86 +42,102 @@ export default function TracerPlayer({ code = '', tracerSteps = '[]' }) {
 
   if (!steps.length) return null;
 
-  const phaseColor = {
-    DECLARE:        'var(--blue)',
-    ASSIGN:         'var(--accent)',
-    LOOP_START:     'var(--purple, #9b59b6)',
-    LOOP_ITER:      'var(--purple, #9b59b6)',
-    CONDITION_TRUE: 'var(--green)',
-    CONDITION_FALSE:'var(--red, #e74c3c)',
-    CALL:           'var(--blue)',
-    RETURN:         'var(--green)',
-    THROW:          'var(--red, #e74c3c)',
-  };
+  const step       = steps[current];
   const activeLine = step?.line;
+  const progress   = ((current) / Math.max(steps.length - 1, 1)) * 100;
+
+  const PHASE_META = {
+    DECLARE:         { color: '#60a5fa', bg: 'rgba(96,165,250,.12)',  label: 'DECLARE'   },
+    ASSIGN:          { color: '#4ade80', bg: 'rgba(74,222,128,.12)',  label: 'ASSIGN'    },
+    LOOP_START:      { color: '#a78bfa', bg: 'rgba(167,139,250,.12)', label: 'LOOP'      },
+    LOOP_ITER:       { color: '#a78bfa', bg: 'rgba(167,139,250,.12)', label: 'LOOP ITER' },
+    CONDITION_TRUE:  { color: '#4ade80', bg: 'rgba(74,222,128,.12)',  label: '✓ TRUE'    },
+    CONDITION_FALSE: { color: '#f87171', bg: 'rgba(248,113,113,.12)', label: '✗ FALSE'   },
+    CALL:            { color: '#60a5fa', bg: 'rgba(96,165,250,.12)',  label: 'CALL'      },
+    RETURN:          { color: '#4ade80', bg: 'rgba(74,222,128,.12)',  label: 'RETURN'    },
+    THROW:           { color: '#f87171', bg: 'rgba(248,113,113,.12)', label: 'THROW'     },
+    OPEN:            { color: '#fbbf24', bg: 'rgba(251,191,36,.12)',  label: 'OPEN'      },
+    TERMINAL:        { color: '#fb923c', bg: 'rgba(251,146,60,.12)',  label: 'TERMINAL'  },
+    MAP:             { color: '#4ade80', bg: 'rgba(74,222,128,.12)',  label: 'MAP'       },
+    DISPATCH:        { color: '#60a5fa', bg: 'rgba(96,165,250,.12)',  label: 'DISPATCH'  },
+    INSPECT:         { color: '#fbbf24', bg: 'rgba(251,191,36,.12)',  label: 'INSPECT'   },
+    RETHROW:         { color: '#f87171', bg: 'rgba(248,113,113,.12)', label: 'RETHROW'   },
+    DEFINE:          { color: '#a78bfa', bg: 'rgba(167,139,250,.12)', label: 'DEFINE'    },
+    PERF:            { color: '#fb923c', bg: 'rgba(251,146,60,.12)',  label: 'PERF'      },
+  };
+
+  const meta = PHASE_META[step?.phase] || { color: 'var(--text3)', bg: 'rgba(255,255,255,.05)', label: step?.phase || '' };
 
   return (
     <div className={styles.tracer}>
-      {/* Code panel — Monaco read-only with active line highlight */}
+
+      {/* ── Code panel ─────────────────────────────────────────────────── */}
       <div className={styles.codePanel}>
-        <div className={styles.codePanelLabel}>Tracer</div>
         <ReadOnlyCodeViewer
           code={code}
           theme="dark"
           highlightLine={activeLine}
-          minLines={8}
-          maxLines={28}
+          maxLines={22}
         />
       </div>
 
-      {/* Variables panel */}
-      <div className={styles.statePanel}>
-        <div className={styles.variablesRow}>
-          {step && Object.entries(step.variables || {}).map(([k, v]) => (
-            <span key={k} className={styles.varChip}>
-              <span className={styles.varName}>{k}</span>
-              <span className={styles.varEq}>=</span>
-              <span className={styles.varVal}>{String(v)}</span>
-            </span>
-          ))}
-          {step && Object.keys(step.variables || {}).length === 0 && (
-            <span className={styles.noVars}>—</span>
-          )}
-        </div>
+      {/* ── Step info panel ────────────────────────────────────────────── */}
+      <div className={styles.stepPanel}>
 
-        {/* Phase badge + annotation */}
+        {/* Currently executing line */}
+        {step?.lineCode && (
+          <div className={styles.execLine}>
+            <span className={styles.execLineArrow}>▶</span>
+            <code className={styles.execLineCode}>{step.lineCode.trim()}</code>
+            <span className={styles.execLineNum}>line {step.line}</span>
+          </div>
+        )}
+
+        {/* Variables */}
+        {step && Object.keys(step.variables || {}).length > 0 && (
+          <div className={styles.variablesRow}>
+            {Object.entries(step.variables).map(([k, v]) => (
+              <span key={k} className={styles.varChip}>
+                <span className={styles.varName}>{k}</span>
+                <span className={styles.varEq}>=</span>
+                <span className={styles.varVal}>{String(v)}</span>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Phase + annotation */}
         {step && (
           <div className={styles.annotationRow}>
             <span
               className={styles.phaseBadge}
-              style={{ background: `${phaseColor[step.phase] || 'var(--text3)'}22`,
-                       color: phaseColor[step.phase] || 'var(--text3)',
-                       borderColor: `${phaseColor[step.phase] || 'var(--text3)'}55` }}
+              style={{ background: meta.bg, color: meta.color, borderColor: `${meta.color}55` }}
             >
-              {step.phase}
+              {meta.label}
             </span>
             <span className={styles.annotation}>{step.annotation}</span>
           </div>
         )}
 
-        {/* Controls */}
-        <div className={styles.controls}>
-          <button className={styles.ctrlBtn} onClick={first}  title="First step">⏮</button>
-          <button className={styles.ctrlBtn} onClick={prev}   title="Previous">◀</button>
-          <button
-            className={`${styles.ctrlBtn} ${styles.playBtn}`}
-            onClick={togglePlay}
-            title={playing ? 'Pause' : 'Play'}
-          >
-            {playing ? '⏸' : '▶'}
-          </button>
-          <button className={styles.ctrlBtn} onClick={next}   title="Next">▶</button>
-          <button className={styles.ctrlBtn} onClick={last}   title="Last step">⏭</button>
-
-          <span className={styles.stepCount}>
-            {current + 1} / {steps.length}
-          </span>
-
+        {/* Controls + progress */}
+        <div className={styles.controlsRow}>
+          <div className={styles.controls}>
+            <button className={styles.ctrlBtn} onClick={first}  title="First">⏮</button>
+            <button className={styles.ctrlBtn} onClick={prev}   title="Previous">◀</button>
+            <button
+              className={`${styles.ctrlBtn} ${styles.playBtn} ${playing ? styles.pauseBtn : ''}`}
+              onClick={togglePlay}
+            >
+              {playing ? '⏸' : '▶'}
+            </button>
+            <button className={styles.ctrlBtn} onClick={next}   title="Next">▶</button>
+            <button className={styles.ctrlBtn} onClick={last}   title="Last">⏭</button>
+            <span className={styles.stepCount}>{current + 1} / {steps.length}</span>
+          </div>
           <select
             className={styles.speedSelect}
             value={speed}
             onChange={(e) => setSpeed(Number(e.target.value))}
-            title="Playback speed"
           >
             <option value={2000}>0.5×</option>
             <option value={1200}>1×</option>
@@ -153,6 +145,12 @@ export default function TracerPlayer({ code = '', tracerSteps = '[]' }) {
             <option value={400}>2×</option>
           </select>
         </div>
+
+        {/* Progress bar */}
+        <div className={styles.progressBar}>
+          <div className={styles.progressFill} style={{ width: `${progress}%` }} />
+        </div>
+
       </div>
     </div>
   );

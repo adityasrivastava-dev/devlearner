@@ -1,133 +1,178 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   TracerPlayer — Monaco code + step info panel
+   ═══════════════════════════════════════════════════════════════════════ */
+
 .tracer {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
-  margin-top: 12px;
   background: var(--bg2);
+  margin-top: 4px;
 }
 
-/* ── Code panel ─────────────────────────────────────── */
+/* ── Code panel ─────────────────────────────────────────────────────── */
 .codePanel {
-  position: relative;
-  overflow: hidden;
+  /* ReadOnlyCodeViewer renders Monaco here */
 }
 
-.codePanelLabel {
-  position: absolute;
-  top: 6px; right: 10px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--text3);
-  pointer-events: none;
-}
-
-/* Code panel now uses ReadOnlyCodeViewer (Monaco) — old line styles removed */
-
-/* ── State panel ────────────────────────────────────── */
-.statePanel {
-  padding: 10px 14px;
+/* ── Step info panel ────────────────────────────────────────────────── */
+.stepPanel {
   border-top: 1px solid var(--border);
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  background: var(--bg3);
 }
 
+/* Currently executing line — the most important element */
+.execLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(74,222,128,.08);
+  border: 1px solid rgba(74,222,128,.2);
+  border-left: 3px solid #4ade80;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+.execLineArrow {
+  font-size: 10px;
+  color: #4ade80;
+  flex-shrink: 0;
+}
+.execLineCode {
+  font-family: var(--font-code);
+  font-size: 12px;
+  color: #e2e8f0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.execLineNum {
+  font-size: 10px;
+  color: var(--text3);
+  flex-shrink: 0;
+  font-family: var(--font-code);
+}
+
+/* Variables chips */
 .variablesRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  min-height: 28px;
+  gap: 5px;
+  min-height: 24px;
   align-items: center;
 }
-
 .varChip {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  background: var(--bg3, var(--bg1));
-  border: 1px solid var(--border);
+  background: var(--bg4);
+  border: 1px solid var(--border2);
   border-radius: 4px;
   padding: 2px 8px;
-  font-family: 'Fira Code', monospace;
+  font-family: var(--font-code);
   font-size: 12px;
 }
+.varName { color: #60a5fa; font-weight: 700; }
+.varEq   { color: var(--text3); }
+.varVal  { color: #4ade80; }
 
-.varName  { color: var(--blue); font-weight: 600; }
-.varEq    { color: var(--text3); }
-.varVal   { color: var(--accent); }
-.noVars   { color: var(--text3); font-size: 12px; }
-
+/* Phase badge + annotation */
 .annotationRow {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  flex-wrap: wrap;
 }
-
 .phaseBadge {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: .05em;
-  padding: 2px 7px;
+  padding: 3px 8px;
   border-radius: 4px;
   border: 1px solid;
   white-space: nowrap;
   flex-shrink: 0;
+  text-transform: uppercase;
+  font-family: var(--font-ui);
 }
-
 .annotation {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text2);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
-/* ── Controls ───────────────────────────────────────── */
+/* Controls row */
+.controlsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
 .controls {
   display: flex;
   align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
+  gap: 3px;
 }
-
 .ctrlBtn {
-  background: var(--bg3, var(--bg2));
-  border: 1px solid var(--border);
+  background: var(--bg2);
+  border: 1px solid var(--border2);
   border-radius: 5px;
-  padding: 4px 9px;
-  font-size: 13px;
+  padding: 5px 10px;
+  font-size: 12px;
   cursor: pointer;
-  color: var(--text1);
-  transition: background .15s;
+  color: var(--text2);
+  font-family: var(--font-ui);
+  transition: background .1s, color .1s;
+  line-height: 1;
 }
-
-.ctrlBtn:hover { background: var(--border); }
+.ctrlBtn:hover { background: var(--bg4); color: var(--text); }
 
 .playBtn {
-  background: var(--accent)22;
-  color: var(--accent);
-  border-color: var(--accent)55;
+  background: rgba(74,222,128,.12);
+  color: #4ade80;
+  border-color: rgba(74,222,128,.3);
   font-weight: 700;
-  padding: 4px 14px;
+  padding: 5px 16px;
 }
-
-.playBtn:hover { background: var(--accent)33; }
+.playBtn:hover { background: rgba(74,222,128,.2); }
+.pauseBtn {
+  background: rgba(251,191,36,.12);
+  color: #fbbf24;
+  border-color: rgba(251,191,36,.3);
+}
+.pauseBtn:hover { background: rgba(251,191,36,.2); }
 
 .stepCount {
-  margin-left: 6px;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text3);
+  font-family: var(--font-code);
+  margin-left: 6px;
   white-space: nowrap;
 }
-
 .speedSelect {
-  margin-left: auto;
   background: var(--bg2);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border2);
   border-radius: 4px;
   color: var(--text2);
-  font-size: 12px;
-  padding: 3px 6px;
+  font-size: 11px;
+  padding: 4px 6px;
   cursor: pointer;
+  font-family: var(--font-ui);
+}
+
+/* Progress bar */
+.progressBar {
+  height: 2px;
+  background: var(--border);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.progressFill {
+  height: 100%;
+  background: #4ade80;
+  border-radius: 1px;
+  transition: width .3s ease;
 }
