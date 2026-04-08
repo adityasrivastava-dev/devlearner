@@ -67,6 +67,13 @@ public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 							"/api/problems", "/api/problems/filters",
 							"/api/submissions/percentile").permitAll()
 
+					// Java completions — public, used by the code editor before login
+					// FIX: was incorrectly placed in Chain 2 (/java-completions/**) which
+					// never matched because Chain 1 intercepts all /api/** first.
+					.requestMatchers(HttpMethod.GET,
+							"/api/java/completions",
+							"/api/java/completions/**").permitAll()
+
 					// Admin endpoints
 					.requestMatchers("/api/admin/**").hasRole("ADMIN")
 
@@ -122,7 +129,6 @@ public SecurityFilterChain oauth2FilterChain(HttpSecurity http) throws Exception
 							"/login/oauth2/**",
 							"/error",
 							"/favicon.ico"
-							,"/java-completions/**"
 					).permitAll()
 					// Everything else: let the React app handle it (404 from Spring = React route)
 					.anyRequest().permitAll()

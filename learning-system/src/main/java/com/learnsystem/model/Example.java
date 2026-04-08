@@ -36,7 +36,7 @@ private String code;
 @Column(columnDefinition = "TEXT")
 private String explanation;
 
-@Column(name = "real_world_use")
+@Column(name = "real_world_use", columnDefinition = "TEXT")
 private String realWorldUse;
 
 // ── Phase 1 Fields ────────────────────────────────────────────────────────

@@ -72,5 +72,7 @@ public static class ProblemSeedDto {
     private String constraints;
     private String bruteForce;
     private String optimizedApproach;
+    // Editorial explanation shown after problem is solved
+    private String editorial;
 }
 }
