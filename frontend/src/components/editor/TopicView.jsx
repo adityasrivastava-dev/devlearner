@@ -108,7 +108,15 @@ export default function TopicView({ topic, onProblemOpen }) {
             {topic.firstPrinciples && (
               <TheoryCard icon="🔬" title="First Principles — WHY it works" text={topic.firstPrinciples} />
             )}
-            {!topic.memoryAnchor && !topic.story && !topic.analogy && !topic.firstPrinciples && (
+            {topic.starterCode && (
+              <div className={styles.theoryCard}>
+                <div className={styles.cardTitle}>🧩 Starter Template</div>
+                <pre className="code-block" style={{ fontSize: 12, margin: '8px 0 0 0' }}>
+                  {topic.starterCode}
+                </pre>
+              </div>
+            )}
+            {!topic.memoryAnchor && !topic.story && !topic.analogy && !topic.firstPrinciples && !topic.starterCode && (
               <div className={styles.emptyState}>
                 <span>✍️</span>
                 <p>Story content not yet written for this topic.</p>
