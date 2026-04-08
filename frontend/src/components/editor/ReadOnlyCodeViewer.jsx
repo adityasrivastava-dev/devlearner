@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import MonacoEditor from '@monaco-editor/react';
 
 const themeReady = { current: false };
@@ -18,14 +18,14 @@ const DARK_THEME = {
     { token: 'operator',          foreground: '89DDFF' },
   ],
   colors: {
-    'editor.background':              '#0d1117',
-    'editor.foreground':              '#e2e8f0',
-    'editor.lineHighlightBackground': '#0d1117',
-    'editorLineNumber.foreground':    '#4d5767',
-    'editorLineNumber.activeForeground': '#a0aec0',
-    'editorGutter.background':        '#0d1117',
-    'editor.selectionBackground':     '#264f7820',
-    'scrollbar.shadow':               '#00000000',
+    'editor.background':                  '#0d1117',
+    'editor.foreground':                  '#e2e8f0',
+    'editor.lineHighlightBackground':     '#0d1117',
+    'editorLineNumber.foreground':        '#4d5767',
+    'editorLineNumber.activeForeground':  '#a0aec0',
+    'editorGutter.background':            '#0d1117',
+    'editor.selectionBackground':         '#264f7820',
+    'scrollbar.shadow':                   '#00000000',
   },
 };
 
@@ -49,15 +49,11 @@ const LIGHT_THEME = {
 const LINE_HEIGHT = 21;
 const PADDING     = 24;
 
-/**
- * Walk up the DOM to find the nearest scrollable ancestor.
- * Returns null if none found (falls back to document.documentElement).
- */
 function getScrollParent(el) {
   if (!el) return document.documentElement;
   let node = el.parentElement;
   while (node && node !== document.body) {
-    const style = window.getComputedStyle(node);
+    const style    = window.getComputedStyle(node);
     const overflow = style.overflow + style.overflowY;
     if (/auto|scroll/.test(overflow) && node.scrollHeight > node.clientHeight) {
       return node;
@@ -85,6 +81,129 @@ export default function ReadOnlyCodeViewer({
   const editorHeight      = visLines * LINE_HEIGHT + PADDING;
   const hasInternalScroll = !!maxLines && lineCount > maxLines;
 
+  // ── Apply highlight + scroll ─────────────────────────────────────────────
+  const applyHighlight = useCallback(() => {
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!editor || !monaco) return;
+
+    // Clear previous decoration
+    decorRef.current = editor.deltaDecorations(decorRef.current, []);
+
+    if (!highlightLine || highlightLine <= 0) return;
+
+    // Apply new decoration — whole-line background + gutter arrow
+    decorRef.current = editor.deltaDecorations([], [{
+      range: new monaco.Range(highlightLine, 1, highlightLine, 1),
+      options: {
+        isWholeLine:               true,
+        className:                 'tracer-active-line',
+        linesDecorationsClassName: 'tracer-active-indicator',
+        // Also set line number color
+        marginClassName:           'tracer-active-line-number',
+      },
+    }]);
+
+    // ── Scroll to line — IDE-style: line appears 1/3 from top ──────────────
+    if (hasInternalScroll) {
+      // Monaco owns the scroll — use its reveal API
+      // revealLineInCenterIfOutsideViewport is gentler than revealLineInCenter
+      // (doesn't jump if line is already visible)
+      editor.revealLineInCenterIfOutsideViewport(highlightLine,
+        monaco.editor.ScrollType.Smooth);
+    } else {
+      // Full-height Monaco: scroll the page container
+      requestAnimationFrame(() => {
+        const wrapper = wrapperRef.current;
+        if (!wrapper) return;
+
+        const scrollParent = getScrollParent(wrapper);
+        const wrapperRect  = wrapper.getBoundingClientRect();
+        const parentRect   = scrollParent === document.documentElement
+          ? { top: 0 }
+          : scrollParent.getBoundingClientRect();
+
+        // Pixel offset of the active line from the top of the editor wrapper
+        const lineOffsetInEditor = PADDING / 2 + (highlightLine - 1) * LINE_HEIGHT;
+
+        // Absolute position in scroll container's coordinate space
+        const lineAbsTop = wrapperRect.top - parentRect.top
+          + scrollParent.scrollTop + lineOffsetInEditor;
+
+        // Position line at 30% from the top (IDE-style, not centre)
+        const visibleHeight = scrollParent === document.documentElement
+          ? window.innerHeight
+          : scrollParent.clientHeight;
+
+        const targetScroll = Math.max(0, lineAbsTop - visibleHeight * 0.3);
+        scrollParent.scrollTo({ top: targetScroll, behavior: 'smooth' });
+      });
+    }
+  }, [highlightLine, hasInternalScroll]);
+
+  // Run on every highlightLine change — defer by one frame so Monaco
+  // has finished painting the previous state before we move the viewport
+  useEffect(() => {
+    if (!ready) return;
+    // Two-step: immediate decoration + deferred scroll
+    // Step 1: apply decoration now so the green bar is visible instantly
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!editor || !monaco) return;
+
+    decorRef.current = editor.deltaDecorations(decorRef.current, []);
+    if (highlightLine && highlightLine > 0) {
+      decorRef.current = editor.deltaDecorations([], [{
+        range: new monaco.Range(highlightLine, 1, highlightLine, 1),
+        options: {
+          isWholeLine:               true,
+          className:                 'tracer-active-line',
+          linesDecorationsClassName: 'tracer-active-indicator',
+        },
+      }]);
+    }
+
+    // Step 2: scroll after Monaco settles (one rAF is often not enough for
+    // internal-scroll mode — use setTimeout(0) which runs after paint)
+    const timer = setTimeout(() => {
+      if (!editorRef.current || !highlightLine || highlightLine <= 0) return;
+
+      if (hasInternalScroll) {
+        editorRef.current.revealLineInCenterIfOutsideViewport(
+          highlightLine,
+          monacoRef.current?.editor?.ScrollType?.Smooth ?? 0
+        );
+      } else {
+        requestAnimationFrame(() => {
+          const wrapper = wrapperRef.current;
+          if (!wrapper) return;
+          const scrollParent = getScrollParent(wrapper);
+          const wrapperRect  = wrapper.getBoundingClientRect();
+          const parentRect   = scrollParent === document.documentElement
+            ? { top: 0 }
+            : scrollParent.getBoundingClientRect();
+
+          const lineOffsetInEditor = PADDING / 2 + (highlightLine - 1) * LINE_HEIGHT;
+          const lineAbsTop = wrapperRect.top - parentRect.top
+            + scrollParent.scrollTop + lineOffsetInEditor;
+          const visibleHeight = scrollParent === document.documentElement
+            ? window.innerHeight
+            : scrollParent.clientHeight;
+
+          const targetScroll = Math.max(0, lineAbsTop - visibleHeight * 0.3);
+          scrollParent.scrollTo({ top: targetScroll, behavior: 'smooth' });
+        });
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [highlightLine, ready, hasInternalScroll]);
+
+  useEffect(() => {
+    if (!monacoRef.current || !ready) return;
+    monacoRef.current.editor.setTheme(theme === 'light' ? 'rv-light' : 'rv-dark');
+  }, [theme, ready]);
+
   function handleMount(editor, monaco) {
     editorRef.current = editor;
     monacoRef.current = monaco;
@@ -96,66 +215,6 @@ export default function ReadOnlyCodeViewer({
     monaco.editor.setTheme(theme === 'light' ? 'rv-light' : 'rv-dark');
     setReady(true);
   }
-
-  useEffect(() => {
-    if (!editorRef.current || !monacoRef.current || !ready) return;
-    const monaco = monacoRef.current;
-    const editor = editorRef.current;
-
-    // Clear old decoration
-    decorRef.current = editor.deltaDecorations(decorRef.current, []);
-
-    if (highlightLine == null || highlightLine <= 0) return;
-
-    // Apply highlight
-    decorRef.current = editor.deltaDecorations([], [{
-      range: new monaco.Range(highlightLine, 1, highlightLine, 1),
-      options: {
-        isWholeLine:               true,
-        className:                 'tracer-active-line',
-        linesDecorationsClassName: 'tracer-active-indicator',
-      },
-    }]);
-
-    if (hasInternalScroll) {
-      // Monaco owns the scroll — use its API
-      editor.revealLineInCenter(highlightLine);
-    } else {
-      // Full-height Monaco: find the real scrollable parent div and scroll it
-      requestAnimationFrame(() => {
-        const wrapper = wrapperRef.current;
-        if (!wrapper) return;
-
-        const scrollParent = getScrollParent(wrapper);
-
-        // Position of wrapper top relative to the scroll parent's content top
-        const wrapperRect      = wrapper.getBoundingClientRect();
-        const parentRect       = scrollParent === document.documentElement
-          ? { top: 0 }
-          : scrollParent.getBoundingClientRect();
-
-        // Pixel offset of the active line from the top of the wrapper
-        const lineOffsetInEditor = PADDING / 2 + (highlightLine - 1) * LINE_HEIGHT + LINE_HEIGHT / 2;
-
-        // Absolute position of the line in the scroll container's coordinate space
-        const lineAbsTop = wrapperRect.top - parentRect.top + scrollParent.scrollTop + lineOffsetInEditor;
-
-        // Centre it in the visible area of the scroll parent
-        const visibleHeight = scrollParent === document.documentElement
-          ? window.innerHeight
-          : scrollParent.clientHeight;
-
-        const targetScroll = Math.max(0, lineAbsTop - visibleHeight / 2);
-
-        scrollParent.scrollTo({ top: targetScroll, behavior: 'smooth' });
-      });
-    }
-  }, [highlightLine, ready, hasInternalScroll]);
-
-  useEffect(() => {
-    if (!monacoRef.current || !ready) return;
-    monacoRef.current.editor.setTheme(theme === 'light' ? 'rv-light' : 'rv-dark');
-  }, [theme, ready]);
 
   return (
     <div
@@ -183,7 +242,9 @@ export default function ReadOnlyCodeViewer({
           minimap:               { enabled: false },
           scrollBeyondLastLine:  false,
           scrollbar: {
-            vertical:                hasInternalScroll ? 'auto' : 'hidden',
+            // Always show vertical scrollbar when in internal-scroll mode
+            // so user can manually scroll too
+            vertical:                hasInternalScroll ? 'visible' : 'hidden',
             horizontal:              'auto',
             verticalScrollbarSize:   6,
             horizontalScrollbarSize: 6,
@@ -207,8 +268,10 @@ export default function ReadOnlyCodeViewer({
           lightbulb:             { enabled: 'off' },
           padding:               { top: 12, bottom: 12 },
           automaticLayout:       true,
+          // Smooth scrolling — critical for IDE-feel
+          smoothScrolling:       true,
+          cursorSmoothCaretAnimation: 'off',
         }}
-      />
-    </div>
+      />\n    </div>
   );
 }

@@ -58,6 +58,7 @@ public ResponseEntity<Map<String, Object>> submitAndPersist(
 	com.learnsystem.dto.SubmitRequest evalReq = new com.learnsystem.dto.SubmitRequest();
 	evalReq.setProblemId(req.getProblemId());
 	evalReq.setCode(req.getCode());
+	evalReq.setJavaVersion(req.getJavaVersion() != null ? req.getJavaVersion() : "17");
 	SubmitResponse result = evaluationService.evaluate(evalReq);
 
 	// 2. Resolve current user (optional — anonymous submits allowed)
@@ -150,13 +151,17 @@ public ResponseEntity<Map<String, Object>> submitAndPersist(
 
 	// 7. Return combined response
 	Map<String, Object> response = new LinkedHashMap<>();
-	response.put("allPassed",   result.isAllPassed());
-	response.put("totalTests",  result.getTotalTests());
-	response.put("passedTests", result.getPassedTests());
-	response.put("hint",        result.getHint());
-	response.put("results",     result.getResults());
-	response.put("submissionId",sub.getId());
-	response.put("runtimeMs",   maxMs);
+	response.put("allPassed",              result.isAllPassed());
+	response.put("totalTests",             result.getTotalTests());
+	response.put("passedTests",            result.getPassedTests());
+	response.put("hint",                   result.getHint());
+	response.put("results",                result.getResults());
+	response.put("submissionId",           sub.getId());
+	response.put("runtimeMs",              maxMs);
+	// Smart feedback — algorithm detection
+	response.put("detectedPattern",        result.getDetectedPattern());
+	response.put("methodologyExplanation", result.getMethodologyExplanation());
+	response.put("optimizationNote",       result.getOptimizationNote());
 	response.putAll(extra);
 
 	return ResponseEntity.ok(response);

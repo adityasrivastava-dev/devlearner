@@ -94,8 +94,8 @@
 }
 .tabBtn:hover { color: var(--text2); }
 .tabActive {
-  color: var(--accent) !important;
-  border-bottom-color: var(--accent);
+  color: var(--accent3) !important;
+  border-bottom-color: var(--accent3);
 }
 
 .tabIcon { font-size: 13px; }
@@ -131,7 +131,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .6px;
-  color: var(--accent);
+  color: var(--accent3);
   margin-bottom: 5px;
 }
 .anchorText {
@@ -236,7 +236,7 @@
   min-height: 110px;
 }
 .exCard:hover {
-  border-color: var(--accent);
+  border-color: var(--accent3);
   background: var(--bg3);
   transform: translateY(-1px);
 }
@@ -246,7 +246,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .5px;
-  color: var(--accent);
+  color: var(--accent3);
 }
 .exCardTitle {
   font-size: 13px;
@@ -271,7 +271,7 @@
 }
 .exCardArrow {
   font-size: 11px;
-  color: var(--accent);
+  color: var(--accent3);
   font-weight: 600;
   margin-top: 2px;
   opacity: 0;
@@ -343,7 +343,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .5px;
-  color: var(--accent);
+  color: var(--accent3);
 }
 .exDetailTitle {
   font-size: 14px;
@@ -403,8 +403,8 @@
 }
 .exSectionBtn:hover { color: var(--text2); }
 .exSectionActive {
-  color: var(--accent) !important;
-  border-bottom-color: var(--accent);
+  color: var(--accent3) !important;
+  border-bottom-color: var(--accent3);
 }
 
 /* Detail body */
@@ -560,7 +560,7 @@
 }
 .solvedDot.solved {
   background: var(--accent);
-  border-color: var(--accent);
+  border-color: var(--accent3);
   color: #0d0f12;
 }
 .probTitle {

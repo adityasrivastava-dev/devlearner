@@ -10,6 +10,7 @@ import ProblemsPage   from './pages/problems/ProblemsPage';
 import AdminPage      from './pages/admin/AdminPage';
 import RoadmapPage    from './pages/roadmap/RoadmapPage';
 import PlaygroundPage from './pages/playground/PlaygroundPage';
+import ProfilePage    from './pages/profile/ProfilePage';
 
 // Apply saved theme on load
 const savedTheme = localStorage.getItem('devlearn_theme') || 'dark';
@@ -29,16 +30,16 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {/* Future flags silence React Router v6 → v7 warnings */}
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
-            <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
-            <Route path="/"        element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-            <Route path="/problems" element={<ProtectedRoute><ProblemsPage /></ProtectedRoute>} />
+            <Route path="/login"      element={<GuestRoute><LoginPage /></GuestRoute>} />
+            <Route path="/"           element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+            <Route path="/problems"   element={<ProtectedRoute><ProblemsPage /></ProtectedRoute>} />
             <Route path="/roadmap"    element={<ProtectedRoute><RoadmapPage /></ProtectedRoute>} />
             <Route path="/playground" element={<ProtectedRoute><PlaygroundPage /></ProtectedRoute>} />
+            <Route path="/profile"    element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/admin"      element={<AdminRoute><AdminPage /></AdminRoute>} />
-            <Route path="*"         element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+            <Route path="*"           element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
           </Routes>
         </BrowserRouter>
 
@@ -54,8 +55,8 @@ export default function App() {
               fontFamily: 'var(--font-ui)',
               borderRadius: '8px',
             },
-            success: { iconTheme: { primary: 'var(--accent)', secondary: '#0d0f12' } },
-            error:   { iconTheme: { primary: 'var(--red)',    secondary: '#0d0f12' } },
+            success: { iconTheme: { primary: 'var(--accent3)', secondary: '#0f1117' } },
+            error:   { iconTheme: { primary: 'var(--red)',     secondary: '#0f1117' } },
           }}
         />
       </AuthProvider>

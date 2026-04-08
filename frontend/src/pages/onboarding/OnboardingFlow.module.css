@@ -1,0 +1,145 @@
+.shell {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.glow {
+  position: absolute;
+  top: -200px; left: 50%;
+  transform: translateX(-50%);
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.card {
+  width: 100%;
+  max-width: 520px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-xl);
+  padding: 36px 32px;
+  position: relative;
+  z-index: 1;
+  box-shadow: var(--shadow-lg);
+}
+
+/* Progress */
+.progress {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+.dot {
+  height: 3px;
+  flex: 1;
+  border-radius: 2px;
+  background: var(--border2);
+  transition: background .3s;
+}
+.dotActive { background: var(--accent); }
+
+/* Step wrapper */
+.stepWrap { display: flex; flex-direction: column; gap: 6px; }
+
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; background: var(--adim); border: 1px solid rgba(99,102,241,.2);
+  border-radius: 20px; font-size: 11px; font-weight: 700; color: var(--accent3);
+  width: fit-content; margin-bottom: 4px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -.4px;
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--text3);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.backLink {
+  background: none; border: none; color: var(--text3); font-size: 12px;
+  font-weight: 600; cursor: pointer; font-family: var(--font-ui);
+  padding: 0; margin-bottom: 12px; transition: color .15s; text-align: left;
+}
+.backLink:hover { color: var(--text2); }
+
+/* Level options */
+.optionGrid { display: flex; flex-direction: column; gap: 10px; }
+.option {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 16px; background: var(--bg3);
+  border: 1.5px solid var(--border2); border-radius: var(--radius-lg);
+  cursor: pointer; text-align: left; font-family: var(--font-ui);
+  transition: border-color .15s, background .15s, transform .1s;
+}
+.option:hover {
+  border-color: var(--accent);
+  background: var(--adim2);
+  transform: translateX(3px);
+}
+.optionActive {
+  border-color: var(--accent) !important;
+  background: var(--adim) !important;
+}
+.optionIcon { font-size: 28px; flex-shrink: 0; }
+.optionTitle { font-size: 15px; font-weight: 700; color: var(--text); }
+.optionSub   { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+/* Goal cards */
+.goalGrid { display: flex; flex-direction: column; gap: 10px; }
+.goalCard {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px; background: var(--bg3);
+  border: 1.5px solid var(--border2); border-radius: var(--radius-lg);
+  cursor: pointer; text-align: left; font-family: var(--font-ui);
+  transition: border-color .15s, background .15s, transform .1s;
+}
+.goalCard:hover {
+  border-color: var(--violet);
+  background: var(--vdim);
+  transform: translateX(3px);
+}
+.goalIcon  { font-size: 28px; flex-shrink: 0; }
+.goalBody  { flex: 1; }
+.goalTitle { font-size: 14px; font-weight: 700; color: var(--text); }
+.goalSub   { font-size: 12px; color: var(--text3); margin-top: 3px; }
+.goalArrow { font-size: 16px; color: var(--text3); flex-shrink: 0; }
+.goalCard:hover .goalArrow { color: var(--violet); }
+
+/* Generating state */
+.generating {
+  display: flex; flex-direction: column;
+  align-items: center; padding: 32px 0;
+  gap: 12px;
+}
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.genIcon   { font-size: 40px; }
+.genTitle  { font-size: 17px; font-weight: 700; color: var(--text); }
+.genSub    { font-size: 13px; color: var(--text3); }
+
+@media (max-width: 480px) {
+  .card { padding: 24px 20px; }
+  .title { font-size: 19px; }
+}

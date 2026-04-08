@@ -1,3 +1,4 @@
+/* ── Layout ── */
 .layout {
   display: flex;
   height: 100vh;
@@ -14,105 +15,72 @@
   min-width: 0;
 }
 
-/* Floating theme/font controls */
+/* ── Floating desktop controls ── */
 .floatingControls {
   position: absolute;
-  top: 14px;
-  right: 16px;
+  top: 10px;
+  right: 12px;
   display: flex;
   gap: 4px;
   z-index: 20;
-  padding: 3px;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
 }
 .ctrlBtn {
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  color: var(--text3);
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all .15s;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 6px; color: var(--text3); font-size: 12px;
+  font-weight: 700; cursor: pointer; transition: .15s;
   font-family: var(--font-ui);
 }
-.ctrlBtn:hover { color: var(--text); background: var(--bg3); }
+.ctrlBtn:hover { color: var(--text); border-color: var(--text3); background: var(--bg3); }
 
-/* Welcome screen */
-.welcome {
-  display: flex;
+/* ── Mobile top bar — hidden on desktop ── */
+.mobileBar {
+  display: none;
   align-items: center;
-  justify-content: center;
-  height: 100%;
-  padding: 40px;
-}
-.welcomeInner {
-  text-align: center;
-  max-width: 520px;
-}
-.welcomeLogo {
-  font-size: 26px;
-  font-family: var(--font-code);
-  font-weight: 600;
-  color: var(--accent);
-  margin-bottom: 20px;
-  letter-spacing: -.5px;
-}
-.welcomeHead {
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--text);
-  margin-bottom: 10px;
-  letter-spacing: -.4px;
-  line-height: 1.25;
-}
-.welcomeSub {
-  font-size: 14px;
-  color: var(--text3);
-  line-height: 1.65;
-  margin-bottom: 28px;
-}
-.welcomeTags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin-bottom: 36px;
-}
-.welcomeTag {
-  padding: 5px 14px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  font-size: 12px;
-  color: var(--text2);
-  font-weight: 500;
-  cursor: default;
-  transition: all .2s;
-}
-.welcomeTag:hover { background: var(--adim); border-color: rgba(74,222,128,.2); color: var(--accent); }
-.welcomeStats {
-  display: flex;
-  gap: 28px;
-  justify-content: center;
-  padding: 24px;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 16px;
   background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 10;
 }
-.statItem {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
+
+.hamburger {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid var(--border2);
+  border-radius: 8px; color: var(--text2);
+  font-size: 18px; cursor: pointer;
+  font-family: var(--font-ui); transition: .15s;
 }
-.statItem span { font-size: 20px; color: var(--text3); }
-.statItem strong { font-size: 18px; font-weight: 800; color: var(--accent); }
-.statItem span:last-child { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
+.hamburger:hover { background: var(--bg3); color: var(--text); }
+
+.mobileLogo {
+  font-size: 16px; font-weight: 800;
+  font-family: var(--font-code); color: var(--text);
+  letter-spacing: -.3px;
+}
+.mobileLogo span { color: var(--accent3); }
+
+.themeToggle {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid var(--border2);
+  border-radius: 8px; font-size: 16px; cursor: pointer;
+  transition: .15s;
+}
+.themeToggle:hover { background: var(--bg3); }
+
+/* ── Mobile overrides ── */
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  .mobileBar { display: flex; }
+  .main { overflow-y: auto; }
+  .floatingControls { display: none !important; }
+}

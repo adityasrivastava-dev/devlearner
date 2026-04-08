@@ -3,61 +3,71 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* Core palette */
-  --bg:       #0d0f12;
-  --bg2:      #13161b;
-  --bg3:      #1a1e26;
-  --bg4:      #21262f;
-  --border:   #252b35;
-  --border2:  #2e3540;
-
-  /* Text */
-  --text:     #e2e8f0;
-  --text2:    #8892a4;
-  --text3:    #4d5767;
-
-  /* Accent — electric green */
-  --accent:   #4ade80;
-  --accent2:  #22c55e;
-  --adim:     rgba(74,222,128,.1);
-  --adim2:    rgba(74,222,128,.05);
-
-  /* Status */
+  --bg:       #07090d;
+  --bg2:      #0f1117;
+  --bg3:      #161b25;
+  --bg4:      #1e2535;
+  --border:   #1e2535;
+  --border2:  #28334a;
+  --text:     #e2e8f4;
+  --text2:    #8895b0;
+  --text3:    #4a5568;
+  --accent:   #6366f1;
+  --accent2:  #4f46e5;
+  --accent3:  #818cf8;
+  --violet:   #8b5cf6;
+  --violet2:  #7c3aed;
+  --adim:     rgba(99,102,241,.12);
+  --adim2:    rgba(99,102,241,.06);
+  --vdim:     rgba(139,92,246,.12);
+  --success:  #4ade80;
+  --success2: #22c55e;
+  --sdim:     rgba(74,222,128,.1);
   --red:      #f87171;
   --yellow:   #fbbf24;
   --blue:     #60a5fa;
-  --purple:   #a78bfa;
   --orange:   #fb923c;
-
-  /* Difficulty */
   --easy:     #4ade80;
   --medium:   #fbbf24;
   --hard:     #f87171;
-
-  /* Fonts */
   --font-ui:   'Inter', sans-serif;
   --font-code: 'JetBrains Mono', monospace;
-
-  /* Sizing */
+  --text-display: 20px;
+  --text-heading: 15px;
+  --text-body:    13px;
+  --text-label:   11px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
   --sidebar-w: 260px;
   --topbar-h:  44px;
   --radius:    8px;
   --radius-lg: 12px;
+  --radius-xl: 16px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.4);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.5);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.6);
 }
 
-/* Light theme override */
 [data-theme="light"] {
-  --bg:       #f8fafc;
+  --bg:       #f1f5f9;
   --bg2:      #ffffff;
-  --bg3:      #f1f5f9;
-  --bg4:      #e2e8f0;
+  --bg3:      #f8fafc;
+  --bg4:      #e8eef7;
   --border:   #e2e8f0;
   --border2:  #cbd5e1;
   --text:     #0f172a;
   --text2:    #475569;
   --text3:    #94a3b8;
-  --adim:     rgba(34,197,94,.1);
-  --adim2:    rgba(34,197,94,.05);
+  --adim:     rgba(99,102,241,.1);
+  --adim2:    rgba(99,102,241,.05);
+  --vdim:     rgba(139,92,246,.08);
+  --sdim:     rgba(34,197,94,.1);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.1);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.14);
 }
 
 html, body, #root {
@@ -70,294 +80,167 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
 }
+@media (max-width: 768px) { html, body, #root { overflow: auto; } }
 
-/* Scrollbars */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+::selection { background: var(--adim); color: var(--accent3); }
 
-/* Buttons */
+/* BUTTONS */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border-radius: var(--radius);
-  font-family: var(--font-ui);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all .15s ease;
-  border: 1px solid transparent;
-  white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--radius);
+  font-family: var(--font-ui); font-size: var(--text-body);
+  font-weight: 600; cursor: pointer; transition: all .15s ease;
+  border: 1px solid transparent; white-space: nowrap; text-decoration: none;
 }
-.btn-primary {
-  background: var(--accent);
-  color: #0d0f12;
-  border-color: var(--accent);
-}
-.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
-.btn-ghost {
-  background: var(--bg3);
-  color: var(--text2);
-  border-color: var(--border2);
-}
-.btn-ghost:hover { color: var(--text); border-color: var(--text3); background: var(--bg4); }
-.btn-danger {
-  background: rgba(248,113,113,.1);
-  color: var(--red);
-  border-color: rgba(248,113,113,.2);
-}
-.btn-danger:hover { background: rgba(248,113,113,.2); }
-.btn-sm { padding: 4px 10px; font-size: 12px; }
-.btn-xs { padding: 2px 8px; font-size: 11px; }
+.btn-primary  { background: var(--accent);  color: #fff; border-color: var(--accent); }
+.btn-primary:hover:not(:disabled)  { background: var(--accent2); border-color: var(--accent2); }
+.btn-violet   { background: var(--violet);  color: #fff; border-color: var(--violet); }
+.btn-violet:hover:not(:disabled)   { background: var(--violet2); border-color: var(--violet2); }
+.btn-ghost    { background: var(--bg3); color: var(--text2); border-color: var(--border2); }
+.btn-ghost:hover:not(:disabled)    { color: var(--text); border-color: var(--text3); background: var(--bg4); }
+.btn-success  { background: rgba(74,222,128,.12); color: var(--success); border-color: rgba(74,222,128,.25); }
+.btn-success:hover:not(:disabled)  { background: rgba(74,222,128,.2); }
+.btn-danger   { background: rgba(248,113,113,.1); color: var(--red); border-color: rgba(248,113,113,.2); }
+.btn-danger:hover:not(:disabled)   { background: rgba(248,113,113,.2); }
+.btn-sm   { padding: 4px 10px; font-size: 12px; }
+.btn-xs   { padding: 2px 8px;  font-size: 11px; }
 .btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn-back {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--radius); color: var(--text3); font-size: 12px;
+  font-weight: 600; cursor: pointer; font-family: var(--font-ui);
+  transition: .15s; white-space: nowrap; text-decoration: none;
+}
+.btn-back:hover { color: var(--text); border-color: var(--text3); background: var(--bg4); }
 
-/* Badges */
+/* BADGES */
 .badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .3px;
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 20px;
+  font-size: var(--text-label); font-weight: 700; letter-spacing: .3px;
 }
-.badge-easy   { background: rgba(74,222,128,.12); color: var(--easy);   border: 1px solid rgba(74,222,128,.2); }
-.badge-medium { background: rgba(251,191,36,.12);  color: var(--medium); border: 1px solid rgba(251,191,36,.2); }
-.badge-hard   { background: rgba(248,113,113,.12); color: var(--hard);   border: 1px solid rgba(248,113,113,.2); }
-.badge-dsa    { background: rgba(96,165,250,.1);   color: var(--blue);   border: 1px solid rgba(96,165,250,.2); }
-.badge-java   { background: rgba(251,191,36,.1);   color: var(--yellow); border: 1px solid rgba(251,191,36,.2); }
-.badge-adv    { background: rgba(167,139,250,.1);  color: var(--purple); border: 1px solid rgba(167,139,250,.2); }
-.badge-sql    { background: rgba(251,191,36,.1);   color: var(--yellow); border: 1px solid rgba(251,191,36,.2); }
-.badge-aws    { background: rgba(251,146,60,.1);   color: var(--orange); border: 1px solid rgba(251,146,60,.2); }
-.badge-spring { background: rgba(74,222,128,.1);   color: var(--accent); border: 1px solid rgba(74,222,128,.2); }
-.badge-js     { background: rgba(251,191,36,.1);   color: var(--yellow); border: 1px solid rgba(251,191,36,.2); }
-.badge-admin  { background: rgba(248,113,113,.1);  color: var(--red);    border: 1px solid rgba(248,113,113,.2); }
+.badge-easy    { background: rgba(74,222,128,.12);  color: var(--easy);    border: 1px solid rgba(74,222,128,.2); }
+.badge-medium  { background: rgba(251,191,36,.12);   color: var(--medium);  border: 1px solid rgba(251,191,36,.2); }
+.badge-hard    { background: rgba(248,113,113,.12);  color: var(--hard);    border: 1px solid rgba(248,113,113,.2); }
+.badge-dsa     { background: rgba(99,102,241,.12);   color: var(--accent3); border: 1px solid rgba(99,102,241,.2); }
+.badge-java    { background: rgba(251,191,36,.1);    color: var(--yellow);  border: 1px solid rgba(251,191,36,.2); }
+.badge-adv     { background: rgba(139,92,246,.12);   color: var(--violet);  border: 1px solid rgba(139,92,246,.2); }
+.badge-sql     { background: rgba(251,191,36,.1);    color: var(--yellow);  border: 1px solid rgba(251,191,36,.2); }
+.badge-aws     { background: rgba(251,146,60,.1);    color: var(--orange);  border: 1px solid rgba(251,146,60,.2); }
+.badge-spring  { background: rgba(74,222,128,.1);    color: var(--success); border: 1px solid rgba(74,222,128,.2); }
+.badge-js      { background: rgba(251,191,36,.1);    color: var(--yellow);  border: 1px solid rgba(251,191,36,.2); }
+.badge-admin   { background: rgba(248,113,113,.1);   color: var(--red);     border: 1px solid rgba(248,113,113,.2); }
+.badge-accent  { background: var(--adim);            color: var(--accent3); border: 1px solid rgba(99,102,241,.2); }
+.badge-violet  { background: var(--vdim);            color: var(--violet);  border: 1px solid rgba(139,92,246,.2); }
+.badge-success { background: var(--sdim);            color: var(--success); border: 1px solid rgba(74,222,128,.2); }
 
-/* Form inputs */
+/* INPUTS */
 .input {
-  width: 100%;
-  padding: 9px 12px;
-  background: var(--bg3);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius);
-  color: var(--text);
-  font-family: var(--font-ui);
-  font-size: 13px;
-  outline: none;
-  transition: border-color .15s, box-shadow .15s;
+  width: 100%; padding: 9px 12px; background: var(--bg3);
+  border: 1px solid var(--border2); border-radius: var(--radius);
+  color: var(--text); font-family: var(--font-ui); font-size: var(--text-body);
+  outline: none; transition: border-color .15s, box-shadow .15s;
 }
-.input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--adim);
-}
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--adim); }
 .input::placeholder { color: var(--text3); }
 
-/* Card */
-.card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-}
+/* CARD */
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); }
 
-/* Divider */
-.divider {
-  height: 1px;
-  background: var(--border);
-  margin: 12px 0;
-}
+/* DIVIDER */
+.divider { height: 1px; background: var(--border); margin: 12px 0; }
 
-/* Toast override */
-.react-hot-toast div { font-family: var(--font-ui) !important; }
-
-/* Spinner */
-@keyframes spin { to { transform: rotate(360deg); } }
-.spinner {
-  width: 16px; height: 16px;
-  border: 2px solid var(--border2);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin .6s linear infinite;
-  flex-shrink: 0;
-}
-
-/* Pulse skeleton */
-@keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
-.skeleton {
-  background: var(--bg3);
-  border-radius: 4px;
-  animation: pulse 1.5s ease infinite;
-}
-
-/* Tab bar */
-.tab-bar {
-  display: flex;
-  border-bottom: 1px solid var(--border);
-  overflow-x: auto;
-  flex-shrink: 0;
-}
+/* TAB BAR */
+.tab-bar { display: flex; border-bottom: 1px solid var(--border); overflow-x: auto; flex-shrink: 0; }
 .tab-bar::-webkit-scrollbar { height: 0; }
 .tab-btn {
-  padding: 8px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text3);
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: color .15s, border-color .15s;
+  padding: 8px 14px; font-size: 12px; font-weight: 600; color: var(--text3);
+  background: none; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; white-space: nowrap; transition: color .15s, border-color .15s;
   font-family: var(--font-ui);
 }
 .tab-btn:hover { color: var(--text2); }
-.tab-btn.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-}
+.tab-btn.active { color: var(--accent3); border-bottom-color: var(--accent); }
 
-/* Code block */
+/* CODE BLOCK */
 .code-block {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  font-family: var(--font-code);
-  font-size: 13px;
-  color: var(--text);
-  white-space: pre;
-  overflow-x: auto;
-  line-height: 1.6;
+  background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px 16px; font-family: var(--font-code); font-size: 13px;
+  color: var(--text); white-space: pre; overflow-x: auto; line-height: 1.6;
 }
 
-/* Selection color */
-::selection { background: var(--adim); color: var(--accent); }
+/* SPINNER */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 16px; height: 16px; border: 2px solid var(--border2);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin .6s linear infinite; flex-shrink: 0;
+}
 
-/* Transitions */
+/* SKELETON */
+@keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
+.skeleton { background: var(--bg3); border-radius: 4px; animation: pulse 1.5s ease infinite; }
+
+/* FADE */
 .fade-in { animation: fadeIn .2s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
 
-/* ── Monaco editor widget overrides ─────────────────────────────────────────
-   Monaco renders suggestion/hover widgets outside the editor's shadow root.
-   Theme color tokens set the initial palette, but some widgets need CSS
-   overrides to fully apply the dark theme (especially the suggest dropdown).  */
+/* TOAST */
+.react-hot-toast div { font-family: var(--font-ui) !important; }
 
-/* Autocomplete suggestion dropdown */
+/* MOBILE HELPERS */
+.mobile-only  { display: none !important; }
+.desktop-only { display: flex; }
+@media (max-width: 768px) {
+  .mobile-only  { display: flex !important; }
+  .desktop-only { display: none !important; }
+}
+
+/* MONACO OVERRIDES */
 .monaco-editor .suggest-widget {
-  background: #1a1e26 !important;
-  border: 1px solid #2e3540 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,.5) !important;
+  background: #161b25 !important; border: 1px solid #28334a !important;
+  border-radius: 6px !important; box-shadow: 0 8px 32px rgba(0,0,0,.6) !important;
 }
-.monaco-editor .suggest-widget .monaco-list {
-  background: #1a1e26 !important;
-}
-.monaco-editor .suggest-widget .monaco-list-row {
-  color: #c9d1d9 !important;
-}
+.monaco-editor .suggest-widget .monaco-list { background: #161b25 !important; }
+.monaco-editor .suggest-widget .monaco-list-row { color: #c9d1d9 !important; }
 .monaco-editor .suggest-widget .monaco-list-row.focused,
-.monaco-editor .suggest-widget .monaco-list-row:hover {
-  background: #1f3a5f !important;
-  color: #ffffff !important;
-}
-.monaco-editor .suggest-widget .monaco-list-row .monaco-highlighted-label .highlight {
-  color: #4ade80 !important;
-  font-weight: 700;
-}
-.monaco-editor .suggest-widget .details,
-.monaco-editor .suggest-widget .details-label {
-  background: #161b22 !important;
-  border-left: 1px solid #2e3540 !important;
-  color: #8b949e !important;
-}
-.monaco-editor .suggest-widget .type-label {
-  color: #8b949e !important;
-}
-.monaco-editor .suggest-widget .suggest-status-bar {
-  background: #161b22 !important;
-  border-top: 1px solid #2e3540 !important;
-  color: #4d5767 !important;
-}
-
-/* Hover documentation widget */
-.monaco-editor .monaco-hover {
-  background: #1a1e26 !important;
-  border: 1px solid #2e3540 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,.5) !important;
-  color: #e2e8f0 !important;
-}
-.monaco-editor .monaco-hover hr {
-  border-color: #2e3540 !important;
-}
-.monaco-editor .monaco-hover .hover-row p {
-  color: #c9d1d9 !important;
-}
-
-/* Signature help / parameter hints */
-.monaco-editor .parameter-hints-widget {
-  background: #1a1e26 !important;
-  border: 1px solid #2e3540 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,.5) !important;
-  color: #c9d1d9 !important;
-}
-.monaco-editor .parameter-hints-widget .phOver {
-  background: #1f3a5f !important;
-}
-.monaco-editor .parameter-hints-widget .parameter.active {
-  color: #4ade80 !important;
-  font-weight: 700;
-}
-.monaco-editor .parameter-hints-widget em {
-  color: #fbbf24 !important;
-}
-
-/* Find widget (Ctrl+F) */
-.monaco-editor .find-widget {
-  background: #1a1e26 !important;
-  border: 1px solid #2e3540 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,.5) !important;
-  color: #e2e8f0 !important;
-}
-.monaco-editor .find-widget input {
-  background: #0d1117 !important;
-  color: #e2e8f0 !important;
-  border: 1px solid #2e3540 !important;
-}
-
-/* Context menu (right-click) */
-.monaco-menu .monaco-action-bar.vertical .action-item .action-label {
-  color: #e2e8f0 !important;
-}
-.monaco-menu {
-  background: #1a1e26 !important;
-  border: 1px solid #2e3540 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,.5) !important;
-}
-.monaco-menu .monaco-action-bar.vertical .action-item:hover {
-  background: #1f3a5f !important;
-}
-/* ── ReadOnlyCodeViewer — tracer active line highlight ──────────────────── */
-.tracer-active-line {
-  background: rgba(74, 222, 128, 0.15) !important;
-}
-/* The border-left comes from Monaco's marginClassName — use a pseudo instead */
+.monaco-editor .suggest-widget .monaco-list-row:hover { background: rgba(99,102,241,.2) !important; color: #fff !important; }
+.monaco-editor .suggest-widget .monaco-list-row .monaco-highlighted-label .highlight { color: #818cf8 !important; font-weight: 700; }
+.monaco-editor .suggest-widget .details, .monaco-editor .suggest-widget .details-label { background: #0f1117 !important; border-left: 1px solid #28334a !important; color: #8895b0 !important; }
+.monaco-editor .suggest-widget .type-label { color: #8895b0 !important; }
+.monaco-editor .suggest-widget .suggest-status-bar { background: #0f1117 !important; border-top: 1px solid #28334a !important; color: #4a5568 !important; }
+.monaco-editor .monaco-hover { background: #161b25 !important; border: 1px solid #28334a !important; border-radius: 6px !important; box-shadow: 0 8px 32px rgba(0,0,0,.6) !important; color: var(--text) !important; }
+.monaco-editor .monaco-hover hr { border-color: #28334a !important; }
+.monaco-editor .monaco-hover .hover-row p { color: #c9d1d9 !important; }
+.monaco-editor .parameter-hints-widget { background: #161b25 !important; border: 1px solid #28334a !important; border-radius: 6px !important; box-shadow: 0 8px 32px rgba(0,0,0,.6) !important; color: #c9d1d9 !important; }
+.monaco-editor .parameter-hints-widget .phOver { background: rgba(99,102,241,.2) !important; }
+.monaco-editor .parameter-hints-widget .parameter.active { color: #818cf8 !important; font-weight: 700; }
+.monaco-editor .parameter-hints-widget em { color: #fbbf24 !important; }
+.monaco-editor .find-widget { background: #161b25 !important; border: 1px solid #28334a !important; border-radius: 6px !important; }
+.monaco-editor .find-widget input { background: #07090d !important; color: var(--text) !important; border: 1px solid #28334a !important; }
+.monaco-menu { background: #161b25 !important; border: 1px solid #28334a !important; border-radius: 6px !important; box-shadow: 0 8px 32px rgba(0,0,0,.6) !important; }
+.monaco-menu .monaco-action-bar.vertical .action-item .action-label { color: var(--text) !important; }
+.monaco-menu .monaco-action-bar.vertical .action-item:hover { background: rgba(99,102,241,.2) !important; }
+/* ── Tracer active line — IDE debugger style ── */
+.tracer-active-line { background: rgba(99,102,241,.22) !important; }
 .monaco-editor .tracer-active-line {
-  background: rgba(74, 222, 128, 0.15) !important;
+  background: rgba(99,102,241,.22) !important;
+  border-left: 3px solid #6366f1 !important;
 }
-/* Gutter arrow — shows in the line decorations column */
+/* Gutter arrow — the yellow arrow in VS Code debugger */
 .monaco-editor .tracer-active-indicator {
-  background: #4ade80;
-  width: 3px !important;
-  margin-left: 3px;
+  background: #6366f1 !important;
+  width: 4px !important;
+  margin-left: 2px !important;
+  border-radius: 0 2px 2px 0 !important;
 }
-/* Also target the line number gutter directly */
-.monaco-editor .current-line ~ .line-numbers,
-.monaco-editor .tracer-active-line .line-numbers {
-  color: #4ade80 !important;
+/* Line number color on active line */
+.monaco-editor .tracer-active-line-number {
+  color: #818cf8 !important;
+  font-weight: 700 !important;
 }

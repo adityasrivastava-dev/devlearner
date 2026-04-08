@@ -41,14 +41,16 @@ export default function TracerPlayer({ code = '', tracerSteps = '[]' }) {
     setPlaying((p) => !p);
   }, [current, steps.length]);
 
-  // Scroll tracer into view when play starts — MUST be before early return (Rules of Hooks)
+  // Scroll tracer panel into view when play starts or user steps manually
+  // MUST be before early return (Rules of Hooks)
   useEffect(() => {
-    if (!playing || !tracerRef.current) return;
+    if (!tracerRef.current) return;
     const rect = tracerRef.current.getBoundingClientRect();
-    if (rect.top < 0 || rect.bottom > window.innerHeight) {
+    // Only scroll if significantly out of view
+    if (rect.top < -100 || rect.bottom > window.innerHeight + 100) {
       tracerRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
-  }, [playing]);
+  }, [current]);
 
   if (!steps.length) return null;
 

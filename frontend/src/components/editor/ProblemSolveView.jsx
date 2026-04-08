@@ -430,7 +430,7 @@ export default function ProblemSolveView({
               {isSolved && (
                 <>
                   <span className={styles.statusDivider}>│</span>
-                  <span className={styles.statusItem} style={{ color: 'var(--accent)' }}>✅ Accepted</span>
+                  <span className={styles.statusItem} style={{ color: 'var(--success)' }}>✅ Accepted</span>
                 </>
               )}
             </div>
@@ -749,14 +749,14 @@ function ResultPanel({ runResult, submitResult }) {
     );
   }
 
-  // Run result (shown when no submitResult — cleared by handleRun)
+  // ── Run result ────────────────────────────────────────────────────────────
   if (!submitResult) {
     const ok = runResult.status === 'SUCCESS';
     return (
       <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 18 }}>{ok ? '✅' : '❌'}</span>
-          <span style={{ fontWeight: 700, color: ok ? 'var(--accent)' : 'var(--red)', fontSize: 14 }}>
+          <span style={{ fontWeight: 700, color: ok ? 'var(--success)' : 'var(--red)', fontSize: 14 }}>
             {ok ? 'Compiled & Ran Successfully' : runResult.status || 'Runtime Error'}
           </span>
           {runResult.executionTimeMs != null && (
@@ -781,29 +781,31 @@ function ResultPanel({ runResult, submitResult }) {
     );
   }
 
-  // Submit result
+  // ── Submit result ─────────────────────────────────────────────────────────
   const pass    = submitResult.allPassed;
   const dots    = submitResult.results || [];
   const failed  = dots.filter((r) => !r.passed);
   const passedN = submitResult.passedTests ?? dots.filter(r => r.passed).length;
   const totalN  = submitResult.totalTests  ?? dots.length;
+
   return (
     <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <span style={{ fontSize: 24 }}>{pass ? '✅' : '❌'}</span>
         <div>
-          <div style={{ fontWeight: 800, fontSize: 16, color: pass ? 'var(--accent)' : 'var(--red)' }}>
+          <div style={{ fontWeight: 800, fontSize: 16, color: pass ? 'var(--success)' : 'var(--red)' }}>
             {pass ? 'Accepted' : submitResult.status || 'Wrong Answer'}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
             {passedN}/{totalN} test cases passed
-            {submitResult.executionTimeMs && ` · ⏱ ${submitResult.executionTimeMs}ms`}
+            {submitResult.runtimeMs > 0 && ` · ⏱ ${submitResult.runtimeMs}ms`}
           </div>
         </div>
         {submitResult.percentile > 0 && (
           <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--blue)' }}>Top {100 - submitResult.percentile}%</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent3)' }}>Top {100 - submitResult.percentile}%</div>
             <div style={{ fontSize: 10, color: 'var(--text3)' }}>Faster than {submitResult.percentile}% of submissions</div>
           </div>
         )}
@@ -817,7 +819,7 @@ function ResultPanel({ runResult, submitResult }) {
             {dots.map((tc, i) => (
               <div key={i} title={`Test ${i + 1}: ${tc.passed ? 'PASS' : 'FAIL'}`}
                 style={{ width: 12, height: 12, borderRadius: 3, cursor: 'default',
-                  background: tc.passed ? 'var(--accent)' : 'var(--red)' }} />
+                  background: tc.passed ? 'var(--success)' : 'var(--red)' }} />
             ))}
           </div>
         </div>
@@ -828,18 +830,50 @@ function ResultPanel({ runResult, submitResult }) {
         <div key={i} style={{ padding: '10px 12px', background: 'rgba(248,113,113,.05)',
           border: '1px solid rgba(248,113,113,.15)', borderRadius: 8 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--red)', marginBottom: 6 }}>
-            Test Case {tc.testNumber || i + 1} — Wrong Answer
+            Test Case {tc.testNumber || i + 1} — {tc.status === 'COMPILE_ERROR' ? 'Compile Error' : tc.status === 'RUNTIME_ERROR' ? 'Runtime Error' : tc.status === 'TIMEOUT' ? 'Time Limit Exceeded' : 'Wrong Answer'}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', gap: '3px 10px', fontSize: 11 }}>
-            <span style={{ color: 'var(--text3)' }}>Input</span>
-            <code style={{ fontFamily: 'var(--font-code)', color: 'var(--text)' }}>{String(tc.input || '')}</code>
-            <span style={{ color: 'var(--text3)' }}>Expected</span>
-            <code style={{ fontFamily: 'var(--font-code)', color: 'var(--accent)' }}>{String(tc.expected || '')}</code>
+            {tc.input && <><span style={{ color: 'var(--text3)' }}>Input</span>
+            <code style={{ fontFamily: 'var(--font-code)', color: 'var(--text)' }}>{String(tc.input)}</code></>}
+            {tc.expected && <><span style={{ color: 'var(--text3)' }}>Expected</span>
+            <code style={{ fontFamily: 'var(--font-code)', color: 'var(--success)' }}>{String(tc.expected)}</code></>}
             <span style={{ color: 'var(--text3)' }}>Got</span>
             <code style={{ fontFamily: 'var(--font-code)', color: 'var(--red)' }}>{String(tc.actual || '')}</code>
           </div>
         </div>
       ))}
+
+      {/* Smart feedback card — algorithm detection */}
+      {submitResult.detectedPattern && submitResult.detectedPattern !== 'UNKNOWN' && (
+        <div style={{
+          padding: '10px 12px',
+          background: 'var(--adim2)',
+          border: '1px solid rgba(99,102,241,.2)',
+          borderRadius: 8,
+          display: 'flex', flexDirection: 'column', gap: 5
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 13 }}>🔍</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent3)' }}>
+              Pattern detected: {submitResult.detectedPattern.replace(/_/g, ' ')}
+            </span>
+          </div>
+          {submitResult.methodologyExplanation && (
+            <div style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.5, paddingLeft: 21 }}>
+              {submitResult.methodologyExplanation}
+            </div>
+          )}
+          {submitResult.optimizationNote && (
+            <div style={{
+              fontSize: 11, color: 'var(--yellow)', paddingLeft: 21,
+              display: 'flex', gap: 5, alignItems: 'flex-start'
+            }}>
+              <span>💡</span>
+              <span>{submitResult.optimizationNote}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Hint on wrong answer */}
       {!pass && submitResult.hint && (
@@ -849,7 +883,7 @@ function ResultPanel({ runResult, submitResult }) {
         </div>
       )}
 
-      {/* Error output */}
+      {/* Error output (compile/runtime) */}
       {submitResult.error && (
         <pre className="code-block" style={{ fontSize: 12, color: 'var(--red)' }}>{submitResult.error}</pre>
       )}

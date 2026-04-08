@@ -14,43 +14,36 @@ export default function UserBar() {
 
   return (
     <div className={styles.userBar}>
-      {/* Avatar */}
       <div className={styles.avatarWrap}>
         {user.avatar ? (
-          <img
-            src={user.avatar}
-            alt=""
-            className={styles.avatar}
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
+          <img src={user.avatar} alt="" className={styles.avatar}
+            onError={(e) => { e.target.style.display = 'none'; }} />
         ) : (
           <div className={styles.avatarInitial}>{initial}</div>
         )}
       </div>
 
-      {/* Info */}
       <div className={styles.info}>
         <div className={styles.name}>{user.name || user.email}</div>
         <div className={styles.stat}>
           {user.streak > 0
-            ? `🔥 ${user.streak} day streak`
-            : `✅ ${user.solved || 0} solved`}
+            ? <span className={styles.streak}>🔥 {user.streak} day streak</span>
+            : <span>✅ {user.solved || 0} solved</span>}
         </div>
       </div>
 
-      {/* Menu button */}
       <div className={styles.menuWrap}>
-        <button
-          className={styles.menuBtn}
-          onClick={() => setShowMenu((v) => !v)}
-          title="Menu"
-        >
-          ⋮
-        </button>
+        <button className={styles.menuBtn} onClick={() => setShowMenu((v) => !v)} title="Menu">⋮</button>
         {showMenu && (
           <>
             <div className={styles.overlay} onClick={() => setShowMenu(false)} />
             <div className={styles.menu}>
+              <button onClick={() => { navigate('/'); setShowMenu(false); }}>
+                ⌂ Dashboard
+              </button>
+              <button onClick={() => { navigate('/profile'); setShowMenu(false); }}>
+                👤 Profile
+              </button>
               <button onClick={() => { navigate('/problems'); setShowMenu(false); }}>
                 📋 Problems
               </button>

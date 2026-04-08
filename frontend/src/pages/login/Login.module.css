@@ -28,7 +28,7 @@
   transform: translateX(-50%);
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(74,222,128,.08) 0%, transparent 60%);
+  background: radial-gradient(circle, rgba(99,102,241,.12) 0%, transparent 60%);
   pointer-events: none;
 }
 
@@ -52,7 +52,7 @@
 .logoIcon {
   font-size: 28px;
   font-family: var(--font-code);
-  color: var(--accent);
+  color: var(--accent3);
   margin-bottom: 8px;
   font-weight: 600;
 }
@@ -64,7 +64,7 @@
   color: var(--text);
 }
 
-.logoText span { color: var(--accent); }
+.logoText span { color: var(--accent3); }
 
 .logoSub {
   font-size: 12px;
@@ -113,7 +113,7 @@
   font-family: var(--font-ui);
 }
 .tabBtn:hover { color: var(--text2); }
-.tabBtn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tabBtn.active { color: var(--accent3); border-bottom-color: var(--accent3); }
 
 .form {
   padding: 20px 28px 0;
@@ -200,5 +200,5 @@
   justify-content: center;
   align-items: center;
 }
-.footer a { color: var(--accent); text-decoration: none; }
+.footer a { color: var(--accent3); text-decoration: none; }
 .footer a:hover { color: var(--accent2); }

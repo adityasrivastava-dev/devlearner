@@ -1,0 +1,125 @@
+.page { height: 100%; overflow-y: auto; background: var(--bg); }
+
+.inner {
+  max-width: 820px; margin: 0 auto;
+  padding: var(--space-lg) var(--space-lg) 60px;
+  display: flex; flex-direction: column; gap: var(--space-lg);
+}
+
+/* ── Hero ── */
+.hero {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--radius-xl); padding: var(--space-lg);
+  display: flex; flex-direction: column; gap: var(--space-md);
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(99,102,241,.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.heroLeft { display: flex; align-items: center; gap: 16px; }
+.avatar { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border2); }
+.avatarInitial {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: var(--adim); border: 2px solid rgba(99,102,241,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 800; color: var(--accent3); flex-shrink: 0;
+}
+.heroName { font-size: 20px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+.heroEmail { font-size: 12px; color: var(--text3); margin: 2px 0 8px; }
+.heroBadges { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.heroStats {
+  display: flex; align-items: center; gap: 0;
+  background: var(--bg3); border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg); border: 1px solid var(--border);
+}
+.heroStat { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.heroStatNum { font-size: 22px; font-weight: 800; color: var(--text); }
+.heroStatLbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; margin-top: 2px; }
+.heroStatDivider { width: 1px; height: 36px; background: var(--border2); }
+
+.xpSection { display: flex; flex-direction: column; gap: 6px; }
+.xpLabels { display: flex; justify-content: space-between; font-size: 12px; color: var(--text3); }
+.xpRemain { font-weight: 600; }
+.xpBarWrap { height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+.xpBar { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent3)); border-radius: 3px; transition: width .8s ease; }
+
+/* ── Section ── */
+.section {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-xl); padding: var(--space-lg);
+}
+.sectionHeader { display: flex; align-items: baseline; gap: 10px; margin-bottom: var(--space-md); }
+.sectionTitle { font-size: var(--text-heading); font-weight: 700; color: var(--text); margin: 0; }
+.sectionSub { font-size: 11px; color: var(--text3); margin-left: auto; }
+
+/* ── Skill bars ── */
+.skillList { display: flex; flex-direction: column; gap: 12px; }
+.skillRow { display: flex; align-items: center; gap: 12px; }
+.skillLeft { width: 200px; flex-shrink: 0; }
+.skillName { font-size: 13px; font-weight: 600; color: var(--text2); }
+.skillMeta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.skillRight { flex: 1; display: flex; align-items: center; gap: 10px; }
+.barWrap { flex: 1; height: 8px; background: var(--bg4); border-radius: 4px; overflow: hidden; }
+.barFill { height: 100%; border-radius: 4px; transition: width .6s ease; }
+.scoreLabel { font-size: 12px; font-weight: 700; width: 34px; text-align: right; flex-shrink: 0; }
+
+/* ── Mistake journal ── */
+.mistakeList { display: flex; flex-direction: column; gap: 8px; }
+.mistakeRow {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 10px 12px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); border-left: 3px solid var(--red);
+}
+.mistakeLeft { flex: 1; min-width: 0; }
+.mistakeProblem { font-size: 13px; font-weight: 600; color: var(--text); }
+.mistakeTopic { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.mistakeRight { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.errorTag {
+  font-size: 10px; font-weight: 700; padding: 2px 6px;
+  background: rgba(248,113,113,.1); color: var(--red);
+  border-radius: 4px; text-transform: uppercase; letter-spacing: .3px;
+}
+.patternMismatch { font-size: 10px; color: var(--yellow); font-weight: 500; text-align: right; }
+.mistakeTime { font-size: 10px; color: var(--text3); }
+
+/* ── Heatmap ── */
+.heatmapWrap { display: flex; flex-direction: column; gap: 5px; overflow-x: auto; }
+.heatmapMonths {
+  display: grid; grid-auto-flow: column; grid-auto-columns: max-content;
+  font-size: 10px; color: var(--text3); min-height: 14px;
+}
+.heatmapMonths span { padding-left: 2px; }
+.heatmapGrid { display: flex; gap: 2px; }
+.heatmapWeek { display: flex; flex-direction: column; gap: 2px; }
+.heatmapCell { width: 11px; height: 11px; border-radius: 2px; background: var(--bg4); }
+.heatmapCell[data-intensity="0"] { background: var(--bg4); }
+.heatmapCell[data-intensity="1"] { background: rgba(99,102,241,.25); }
+.heatmapCell[data-intensity="2"] { background: rgba(99,102,241,.5); }
+.heatmapCell[data-intensity="3"] { background: rgba(99,102,241,.75); }
+.heatmapCell[data-intensity="4"] { background: var(--accent); }
+.heatmapCell[data-intensity="future"] { background: transparent; }
+.heatmapCell:hover { outline: 1.5px solid var(--accent3); outline-offset: 1px; }
+.heatmapLegend { display: flex; align-items: center; gap: 3px; justify-content: flex-end; font-size: 10px; color: var(--text3); margin-top: 4px; }
+
+/* ── Empty / loading states ── */
+.emptyState { display: flex; flex-direction: column; align-items: center; padding: 24px; gap: 8px; }
+.emptyIcon  { font-size: 32px; }
+.emptyTitle { font-size: 14px; font-weight: 700; color: var(--text2); }
+.emptySub   { font-size: 12px; color: var(--text3); text-align: center; max-width: 280px; line-height: 1.5; margin-bottom: 4px; }
+.loading    { display: flex; align-items: center; gap: 10px; padding: 24px; color: var(--text3); font-size: 13px; }
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  .inner { padding: var(--space-md); }
+  .heroStats { gap: 0; padding: var(--space-sm); }
+  .heroStatNum { font-size: 18px; }
+  .skillRow { flex-direction: column; align-items: flex-start; }
+  .skillLeft { width: 100%; }
+  .skillRight { width: 100%; }
+  .mistakeRow { flex-direction: column; }
+  .mistakeRight { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
+}

@@ -249,6 +249,15 @@ export const roadmapsApi = {
     http.delete(`/api/roadmaps/${id}`).then((r) => r.data),
 };
 
+// ─── Analytics ────────────────────────────────────────────────────────────────
+export const analyticsApi = {
+  getDashboard: () =>
+    http.get('/api/analytics/dashboard').then((r) => r.data).catch(() => ({})),
+
+  getMistakes: () =>
+    http.get('/api/analytics/mistakes').then((r) => r.data).catch(() => []),
+};
+
 // ─── React Query Keys ─────────────────────────────────────────────────────────
 export const QUERY_KEYS = {
   topics:            (cat)  => ['topics', cat],
