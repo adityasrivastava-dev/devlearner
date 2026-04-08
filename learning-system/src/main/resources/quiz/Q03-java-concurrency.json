@@ -1,0 +1,230 @@
+{
+  "title": "Java Concurrency — Threads, Locks & Synchronisation",
+  "description": "20 questions on threads, synchronisation, volatile, deadlocks, and java.util.concurrent. High-value interview topic.",
+  "category": "JAVA",
+  "difficulty": "ADVANCED",
+  "icon": "⚙️",
+  "displayOrder": 3,
+  "questions": [
+    {
+      "questionText": "What is the difference between a process and a thread?",
+      "optionA": "A process is lighter than a thread",
+      "optionB": "Threads within a process share the same memory space; processes have separate memory",
+      "optionC": "A thread can contain multiple processes",
+      "optionD": "Processes are managed by the JVM; threads are managed by the OS",
+      "correctOption": "B",
+      "explanation": "Threads within the same process share heap memory, static variables, and open files. Processes have isolated memory — one process cannot directly access another's memory. This makes thread communication faster but also riskier (shared state = race conditions).",
+      "difficulty": "EASY",
+      "tags": "threads,process,fundamentals"
+    },
+    {
+      "questionText": "What does the volatile keyword guarantee in Java?",
+      "optionA": "Atomicity of compound operations like i++",
+      "optionB": "Mutual exclusion",
+      "optionC": "Visibility — writes to a volatile variable are immediately visible to all threads",
+      "optionD": "Both atomicity and visibility",
+      "correctOption": "C",
+      "explanation": "volatile guarantees visibility only — every write is flushed to main memory, every read comes from main memory. It does NOT guarantee atomicity. i++ on a volatile int is still NOT thread-safe because it is a read-modify-write (3 operations).",
+      "difficulty": "INTERMEDIATE",
+      "tags": "volatile,visibility,memory-model"
+    },
+    {
+      "questionText": "Which of these creates a new thread in Java?",
+      "optionA": "new Thread(() -> {}).run()",
+      "optionB": "new Thread(() -> {}).start()",
+      "optionC": "Thread.create(() -> {})",
+      "optionD": "new Runnable(() -> {}).start()",
+      "correctOption": "B",
+      "explanation": "start() creates a new OS thread and calls run() in that thread. Calling run() directly just executes the Runnable on the current thread — no new thread is created. Runnable itself has no start() method.",
+      "difficulty": "EASY",
+      "tags": "threads,start,run"
+    },
+    {
+      "questionText": "What condition is required for a deadlock to occur?",
+      "optionA": "Two threads sharing the same lock",
+      "optionB": "A thread holding lock A waiting for lock B, while another thread holds lock B waiting for lock A",
+      "optionC": "A thread sleeping for too long",
+      "optionD": "Too many threads running concurrently",
+      "correctOption": "B",
+      "explanation": "Deadlock requires 4 conditions (Coffman): mutual exclusion, hold-and-wait, no preemption, and circular wait. The classic example is Thread 1 holds A, wants B; Thread 2 holds B, wants A — circular dependency, both block forever.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "deadlock,synchronisation"
+    },
+    {
+      "questionText": "What is the difference between synchronized method and synchronized block?",
+      "optionA": "No difference — they are identical",
+      "optionB": "synchronized method locks the entire object; synchronized block can lock a specific object",
+      "optionC": "synchronized block is faster but less safe",
+      "optionD": "synchronized method works on static methods only",
+      "correctOption": "B",
+      "explanation": "A synchronized method locks 'this' (the entire object) for the method's duration. A synchronized block gives fine-grained control — you choose which object to lock and only lock during the critical section. Smaller lock scope = less contention = better throughput.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "synchronized,locks"
+    },
+    {
+      "questionText": "What does ReentrantLock offer that synchronized does not?",
+      "optionA": "Better performance in all cases",
+      "optionB": "tryLock(), timed lock acquisition, interruptible lock waiting, and fairness",
+      "optionC": "Automatic deadlock prevention",
+      "optionD": "Works across multiple JVMs",
+      "correctOption": "B",
+      "explanation": "ReentrantLock adds: tryLock() (non-blocking attempt), tryLock(timeout) (timed), lockInterruptibly() (can be interrupted while waiting), and fairness option (threads served in order). synchronized has none of these — it's simpler but less flexible.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "reentrantlock,synchronized"
+    },
+    {
+      "questionText": "What is a race condition?",
+      "optionA": "A condition where threads compete for CPU time",
+      "optionB": "A bug where the program output depends on the relative timing/ordering of threads",
+      "optionC": "A performance issue caused by too many threads",
+      "optionD": "A deadlock between exactly two threads",
+      "correctOption": "B",
+      "explanation": "A race condition occurs when multiple threads access shared data concurrently and the final result depends on the order of execution. Classic example: two threads doing counter++ simultaneously — both read 0, both write 1, counter ends up as 1 instead of 2.",
+      "difficulty": "EASY",
+      "tags": "race-condition,concurrency"
+    },
+    {
+      "questionText": "What does CountDownLatch do in Java?",
+      "optionA": "Counts threads and terminates them when the count reaches zero",
+      "optionB": "Allows one or more threads to wait until a set of operations (counted down by other threads) complete",
+      "optionC": "Limits the number of concurrent threads",
+      "optionD": "Counts the number of deadlocks in a program",
+      "correctOption": "B",
+      "explanation": "CountDownLatch is initialized with a count. Threads call await() to block. Other threads call countDown() to decrement. When count reaches 0, all waiting threads are released. Unlike CyclicBarrier, CountDownLatch cannot be reused.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "countdownlatch,concurrent"
+    },
+    {
+      "questionText": "Which ExecutorService method blocks until all submitted tasks complete?",
+      "optionA": "executor.shutdown()",
+      "optionB": "executor.shutdownNow()",
+      "optionC": "executor.awaitTermination(long, TimeUnit)",
+      "optionD": "executor.waitAll()",
+      "correctOption": "C",
+      "explanation": "Pattern: executor.shutdown() signals no new tasks, then executor.awaitTermination(timeout, unit) blocks until all tasks finish or timeout expires. shutdownNow() attempts to cancel running tasks. There is no waitAll() method.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "executorservice,thread-pool"
+    },
+    {
+      "questionText": "What is the difference between Callable and Runnable?",
+      "optionA": "Callable runs in a separate thread; Runnable does not",
+      "optionB": "Callable can return a result and throw checked exceptions; Runnable cannot",
+      "optionC": "Runnable is newer than Callable",
+      "optionD": "Callable requires an ExecutorService; Runnable does not",
+      "correctOption": "B",
+      "explanation": "Runnable.run() returns void and cannot throw checked exceptions. Callable.call() returns a generic type V and can throw Exception. Use Callable when you need the task's result via Future.get().",
+      "difficulty": "EASY",
+      "tags": "callable,runnable,future"
+    },
+    {
+      "questionText": "What happens when you call Future.get() before the task completes?",
+      "optionA": "Returns null immediately",
+      "optionB": "Throws TimeoutException",
+      "optionC": "Blocks the calling thread until the task completes",
+      "optionD": "Cancels the task",
+      "correctOption": "C",
+      "explanation": "Future.get() is a blocking call — the current thread waits until the Callable finishes. Use get(timeout, unit) to avoid blocking indefinitely. If the Callable threw an exception, get() wraps it in ExecutionException.",
+      "difficulty": "EASY",
+      "tags": "future,callable,blocking"
+    },
+    {
+      "questionText": "What is the purpose of the happens-before relationship in the Java Memory Model?",
+      "optionA": "It defines the physical execution order of bytecode",
+      "optionB": "It guarantees that actions in one thread are visible to another thread in a predictable way",
+      "optionC": "It prevents deadlocks by ordering lock acquisitions",
+      "optionD": "It is a scheduling policy for the JVM thread scheduler",
+      "correctOption": "B",
+      "explanation": "The Java Memory Model defines happens-before: if A happens-before B, then all memory writes by A are visible to B. Key rules: synchronized release happens-before acquire; volatile write happens-before volatile read; thread.start() happens-before the thread's first action.",
+      "difficulty": "HARD",
+      "tags": "jmm,happens-before,memory-model"
+    },
+    {
+      "questionText": "What is a ThreadLocal variable?",
+      "optionA": "A variable that can only be accessed from the main thread",
+      "optionB": "A variable where each thread has its own independent copy",
+      "optionC": "A variable shared between all threads but with synchronised access",
+      "optionD": "A variable stored in thread-local cache for performance",
+      "correctOption": "B",
+      "explanation": "ThreadLocal provides thread-isolated storage. Each thread that accesses a ThreadLocal variable gets its own initialised copy — no synchronisation needed. Common use: per-thread database connections, user sessions in web applications.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "threadlocal,isolation"
+    },
+    {
+      "questionText": "Which concurrent collection allows concurrent reads without locking?",
+      "optionA": "Collections.synchronizedMap()",
+      "optionB": "Hashtable",
+      "optionC": "CopyOnWriteArrayList",
+      "optionD": "LinkedBlockingQueue",
+      "correctOption": "C",
+      "explanation": "CopyOnWriteArrayList creates a new copy of the underlying array on every write. Reads require no locking at all — they always see a consistent snapshot. Best for read-heavy, write-rare scenarios (e.g. listener lists).",
+      "difficulty": "INTERMEDIATE",
+      "tags": "concurrent-collections,copy-on-write"
+    },
+    {
+      "questionText": "What is the difference between wait() and sleep() in Java?",
+      "optionA": "sleep() releases the lock; wait() does not",
+      "optionB": "wait() releases the lock and waits for notify(); sleep() keeps the lock and pauses",
+      "optionC": "They are identical — both pause the thread",
+      "optionD": "wait() is for threads; sleep() is for processes",
+      "correctOption": "B",
+      "explanation": "wait() must be called inside a synchronized block and releases the monitor lock while waiting — other threads can enter the synchronized block. sleep() does NOT release any locks — the thread just pauses with its locks held. wait() is woken by notify()/notifyAll(); sleep() wakes after the specified time.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "wait,sleep,locks"
+    },
+    {
+      "questionText": "What is a Semaphore used for?",
+      "optionA": "Detecting deadlocks",
+      "optionB": "Controlling access to a resource pool by limiting the number of concurrent accessors",
+      "optionC": "Synchronising exactly two threads",
+      "optionD": "Broadcasting messages between threads",
+      "correctOption": "B",
+      "explanation": "Semaphore(n) allows up to n threads to acquire permits simultaneously. acquire() decrements the count (blocks if 0); release() increments it. Common use: connection pool of 10 connections — Semaphore(10) ensures at most 10 concurrent users.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "semaphore,resource-pool"
+    },
+    {
+      "questionText": "What does AtomicInteger.compareAndSet(expected, update) do?",
+      "optionA": "Sets the value to update only if it is currently equal to expected — atomically",
+      "optionB": "Compares two integers and returns true if equal",
+      "optionC": "Throws an exception if the current value differs from expected",
+      "optionD": "Locks the integer during the comparison",
+      "correctOption": "A",
+      "explanation": "CAS (Compare-And-Swap) atomically: if currentValue == expected, set to update and return true; else return false. This is the foundation of lock-free programming — no mutex needed for simple counters and flags.",
+      "difficulty": "HARD",
+      "tags": "atomicinteger,cas,lock-free"
+    },
+    {
+      "questionText": "What is a livelock?",
+      "optionA": "A deadlock where threads are still running",
+      "optionB": "Threads that keep responding to each other but neither makes progress",
+      "optionC": "A thread that has been waiting for more than 10 seconds",
+      "optionD": "A situation where all threads are in the RUNNABLE state",
+      "correctOption": "B",
+      "explanation": "In a livelock, threads are active (not blocked) but keep reacting to each other without making progress. Classic example: two people in a corridor stepping aside simultaneously in the same direction indefinitely. Unlike deadlock, CPU is being consumed but no work is done.",
+      "difficulty": "HARD",
+      "tags": "livelock,concurrency"
+    },
+    {
+      "questionText": "What is the recommended thread pool size for CPU-bound tasks?",
+      "optionA": "1 thread",
+      "optionB": "Number of available CPU cores",
+      "optionC": "Number of CPU cores × 2",
+      "optionD": "As many threads as tasks",
+      "correctOption": "B",
+      "explanation": "For CPU-bound tasks, use Runtime.getRuntime().availableProcessors() threads. More threads just cause context-switching overhead with no benefit. For I/O-bound tasks (waiting on network/disk), you can use more threads (cores × 2 or higher) since threads spend time blocked.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "thread-pool,cpu-bound"
+    },
+    {
+      "questionText": "What state does a thread enter after calling synchronized on a locked object?",
+      "optionA": "TERMINATED",
+      "optionB": "WAITING",
+      "optionC": "BLOCKED",
+      "optionD": "TIMED_WAITING",
+      "correctOption": "C",
+      "explanation": "A thread enters the BLOCKED state when it tries to acquire a monitor lock that another thread holds. WAITING is entered via wait(), join(), or LockSupport.park(). TIMED_WAITING is entered via sleep(n), wait(n), or join(n). TERMINATED means the thread has completed.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "thread-states,blocked,synchronized"
+    }
+  ]
+}

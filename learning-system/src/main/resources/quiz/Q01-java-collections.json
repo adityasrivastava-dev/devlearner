@@ -1,0 +1,232 @@
+{
+  "title": "Java Collections — Core Concepts",
+  "description": "20 questions covering ArrayList, HashMap, LinkedList, TreeMap, HashSet and their internals. Common in Java interviews.",
+  "category": "JAVA",
+  "difficulty": "INTERMEDIATE",
+  "icon": "☕",
+  "displayOrder": 1,
+  "timeLimitSecs": 0,
+  "questions": [
+    {
+      "questionText": "What is the default initial capacity of ArrayList in Java?",
+      "optionA": "8",
+      "optionB": "10",
+      "optionC": "16",
+      "optionD": "12",
+      "correctOption": "B",
+      "explanation": "ArrayList's default initial capacity is 10. When it exceeds this, it grows by 50% (newCapacity = oldCapacity + oldCapacity/2).",
+      "difficulty": "EASY",
+      "tags": "arraylist,collections"
+    },
+    {
+      "questionText": "What is the time complexity of get(index) in ArrayList?",
+      "optionA": "O(log n)",
+      "optionB": "O(n)",
+      "optionC": "O(1)",
+      "optionD": "O(n log n)",
+      "correctOption": "C",
+      "explanation": "ArrayList is backed by a plain array. Index-based access is O(1) — it's a direct array element lookup with pointer arithmetic.",
+      "difficulty": "EASY",
+      "tags": "arraylist,complexity"
+    },
+    {
+      "questionText": "Which of these does NOT allow duplicate elements?",
+      "optionA": "ArrayList",
+      "optionB": "LinkedList",
+      "optionC": "HashSet",
+      "optionD": "ArrayDeque",
+      "correctOption": "C",
+      "explanation": "HashSet implements Set which guarantees uniqueness. ArrayList, LinkedList and ArrayDeque all implement List/Deque and allow duplicates.",
+      "difficulty": "EASY",
+      "tags": "set,hashset,collections"
+    },
+    {
+      "questionText": "What is the time complexity of HashMap.get() in the average case?",
+      "optionA": "O(log n)",
+      "optionB": "O(1)",
+      "optionC": "O(n)",
+      "optionD": "O(n log n)",
+      "correctOption": "B",
+      "explanation": "HashMap uses a hash function to directly locate the bucket. Average case is O(1). Worst case (all keys hash to the same bucket) is O(n), but Java 8+ converts buckets to balanced trees at 8 entries, giving O(log n) worst case.",
+      "difficulty": "EASY",
+      "tags": "hashmap,complexity"
+    },
+    {
+      "questionText": "What happens to a HashMap when its load factor threshold is exceeded?",
+      "optionA": "It throws OutOfMemoryError",
+      "optionB": "It rejects new entries",
+      "optionC": "It rehashes and doubles its capacity",
+      "optionD": "It converts to a TreeMap",
+      "correctOption": "C",
+      "explanation": "When (size > capacity × loadFactor), HashMap rehashes — it creates a new array of double capacity and re-inserts all entries. Default loadFactor is 0.75, default initial capacity is 16, so rehash triggers at 12 entries.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "hashmap,internals"
+    },
+    {
+      "questionText": "What is the default load factor of HashMap?",
+      "optionA": "0.5",
+      "optionB": "1.0",
+      "optionC": "0.75",
+      "optionD": "0.6",
+      "correctOption": "C",
+      "explanation": "The default load factor is 0.75 — a balance between time and space cost. A lower value wastes memory; a higher value increases collision probability and degrades O(1) access.",
+      "difficulty": "EASY",
+      "tags": "hashmap,internals"
+    },
+    {
+      "questionText": "Which collection maintains insertion order AND allows duplicates?",
+      "optionA": "HashSet",
+      "optionB": "TreeSet",
+      "optionC": "LinkedHashSet",
+      "optionD": "LinkedList",
+      "correctOption": "D",
+      "explanation": "LinkedList (implementing List) maintains insertion order and allows duplicates. LinkedHashSet maintains insertion order but does NOT allow duplicates (it's a Set).",
+      "difficulty": "INTERMEDIATE",
+      "tags": "linkedlist,collections,order"
+    },
+    {
+      "questionText": "What is the time complexity of add() at the beginning of LinkedList vs ArrayList?",
+      "optionA": "Both O(1)",
+      "optionB": "LinkedList O(1), ArrayList O(n)",
+      "optionC": "LinkedList O(n), ArrayList O(1)",
+      "optionD": "Both O(n)",
+      "correctOption": "B",
+      "explanation": "LinkedList add-first is O(1) — just update head pointer. ArrayList add-first is O(n) — must shift all elements right by one position to make room.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "linkedlist,arraylist,complexity"
+    },
+    {
+      "questionText": "Which Map implementation keeps keys in sorted order?",
+      "optionA": "HashMap",
+      "optionB": "LinkedHashMap",
+      "optionC": "TreeMap",
+      "optionD": "WeakHashMap",
+      "correctOption": "C",
+      "explanation": "TreeMap is backed by a Red-Black Tree and keeps keys in their natural sorted order (or by a provided Comparator). get/put/remove are all O(log n).",
+      "difficulty": "EASY",
+      "tags": "treemap,sorting"
+    },
+    {
+      "questionText": "Which of these is thread-safe without external synchronisation?",
+      "optionA": "ArrayList",
+      "optionB": "HashMap",
+      "optionC": "ConcurrentHashMap",
+      "optionD": "LinkedList",
+      "correctOption": "C",
+      "explanation": "ConcurrentHashMap uses segment-level locking (Java 7) and CAS operations (Java 8+) for thread safety without locking the whole map. ArrayList, HashMap, and LinkedList are NOT thread-safe.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "concurrency,thread-safe,hashmap"
+    },
+    {
+      "questionText": "What does the poll() method of a Queue return when the queue is empty?",
+      "optionA": "Throws NoSuchElementException",
+      "optionB": "Returns null",
+      "optionC": "Returns 0",
+      "optionD": "Throws IllegalStateException",
+      "correctOption": "B",
+      "explanation": "poll() is the 'safe' retrieval method — returns null if empty. remove() throws NoSuchElementException if empty. This is a key difference to know for interviews.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "queue,collections"
+    },
+    {
+      "questionText": "Which collection should you use to implement a stack in modern Java?",
+      "optionA": "java.util.Stack",
+      "optionB": "ArrayDeque",
+      "optionC": "LinkedList",
+      "optionD": "PriorityQueue",
+      "correctOption": "B",
+      "explanation": "ArrayDeque is preferred over java.util.Stack (which is a legacy class extending Vector, a synchronized class with unnecessary overhead). ArrayDeque as a stack offers O(1) push/pop with no synchronisation penalty.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "stack,deque,collections"
+    },
+    {
+      "questionText": "What does TreeSet use internally to store elements?",
+      "optionA": "Hash table",
+      "optionB": "Array",
+      "optionC": "Red-Black Tree",
+      "optionD": "Linked list",
+      "correctOption": "C",
+      "explanation": "TreeSet uses a Red-Black Tree (same as TreeMap internally — TreeSet is backed by a TreeMap with dummy values). This gives O(log n) add/remove/contains and keeps elements sorted.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "treeset,internals"
+    },
+    {
+      "questionText": "What happens if you try to insert null as a key in TreeMap?",
+      "optionA": "It stores null at the first position",
+      "optionB": "It stores null at the last position",
+      "optionC": "It throws NullPointerException",
+      "optionD": "It is silently ignored",
+      "correctOption": "C",
+      "explanation": "TreeMap requires keys to be Comparable (or a Comparator to be provided). Inserting null causes a NullPointerException during comparison. HashMap allows one null key because it skips hashing for null.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "treemap,null,collections"
+    },
+    {
+      "questionText": "Which of these is correct about the Iterator's remove() method?",
+      "optionA": "It cannot remove the last returned element",
+      "optionB": "It removes the element from the underlying collection safely",
+      "optionC": "It throws ConcurrentModificationException",
+      "optionD": "It can only remove from the end",
+      "correctOption": "B",
+      "explanation": "Iterator.remove() is the safe way to remove an element during iteration. Calling collection.remove() directly while iterating causes ConcurrentModificationException. The Iterator's remove() updates the internal modCount correctly.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "iterator,collections"
+    },
+    {
+      "questionText": "What is the output of this code?\n\nMap<String,Integer> m = new HashMap<>();\nm.put(\"a\", 1); m.put(\"b\", 2); m.put(\"a\", 3);\nSystem.out.println(m.size());",
+      "optionA": "1",
+      "optionB": "2",
+      "optionC": "3",
+      "optionD": "Throws exception",
+      "correctOption": "B",
+      "explanation": "HashMap does not allow duplicate keys. The second put(\"a\", 3) overwrites the first value (1) with 3. The map contains {\"a\"→3, \"b\"→2}, so size() returns 2.",
+      "codeSnippet": "Map<String,Integer> m = new HashMap<>();\nm.put(\"a\", 1); m.put(\"b\", 2); m.put(\"a\", 3);\nSystem.out.println(m.size());",
+      "difficulty": "EASY",
+      "tags": "hashmap,output"
+    },
+    {
+      "questionText": "Which method returns a view of the portion of a List from fromIndex (inclusive) to toIndex (exclusive)?",
+      "optionA": "slice(fromIndex, toIndex)",
+      "optionB": "subList(fromIndex, toIndex)",
+      "optionC": "range(fromIndex, toIndex)",
+      "optionD": "partition(fromIndex, toIndex)",
+      "correctOption": "B",
+      "explanation": "List.subList(fromIndex, toIndex) returns a view (not a copy) of the specified range. Changes to the subList are reflected in the original list. fromIndex is inclusive, toIndex is exclusive.",
+      "difficulty": "EASY",
+      "tags": "list,arraylist,methods"
+    },
+    {
+      "questionText": "What is the complexity of contains() on a HashSet?",
+      "optionA": "O(n)",
+      "optionB": "O(log n)",
+      "optionC": "O(1) average",
+      "optionD": "O(n log n)",
+      "correctOption": "C",
+      "explanation": "HashSet is backed by a HashMap. contains() calls the underlying HashMap.containsKey() which is O(1) average — just hash the element and check if it exists in that bucket.",
+      "difficulty": "EASY",
+      "tags": "hashset,complexity"
+    },
+    {
+      "questionText": "What is the difference between LinkedHashMap and HashMap?",
+      "optionA": "LinkedHashMap is thread-safe, HashMap is not",
+      "optionB": "LinkedHashMap maintains insertion order, HashMap does not",
+      "optionC": "LinkedHashMap is faster than HashMap",
+      "optionD": "LinkedHashMap allows null keys, HashMap does not",
+      "correctOption": "B",
+      "explanation": "LinkedHashMap maintains a doubly-linked list across entries to record insertion order (or access order if accessOrder=true). HashMap makes no ordering guarantees. Both allow null keys. Both are NOT thread-safe.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "linkedhashmap,hashmap,order"
+    },
+    {
+      "questionText": "Which is true about PriorityQueue in Java?",
+      "optionA": "It maintains FIFO order",
+      "optionB": "It maintains elements in sorted order based on natural ordering or Comparator",
+      "optionC": "It does not allow duplicates",
+      "optionD": "It allows null elements",
+      "correctOption": "B",
+      "explanation": "PriorityQueue uses a min-heap internally. poll() always returns the smallest element (by natural order or Comparator). It does NOT guarantee full sorted order for iteration — only the head is always the minimum. It allows duplicates but NOT null elements.",
+      "difficulty": "INTERMEDIATE",
+      "tags": "priorityqueue,heap"
+    }
+  ]
+}

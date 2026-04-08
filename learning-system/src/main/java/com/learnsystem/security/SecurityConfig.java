@@ -74,6 +74,11 @@ public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 							"/api/java/completions",
 							"/api/java/completions/**").permitAll()
 
+					// Quiz — list and play are public; submit and history require auth
+					.requestMatchers(HttpMethod.GET,
+							"/api/quiz/sets",
+							"/api/quiz/sets/**").permitAll()
+
 					// Admin endpoints
 					.requestMatchers("/api/admin/**").hasRole("ADMIN")
 

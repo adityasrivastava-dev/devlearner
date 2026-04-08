@@ -47,6 +47,9 @@ export default function UserBar() {
               <button onClick={() => { navigate('/problems'); setShowMenu(false); }}>
                 📋 Problems
               </button>
+              <button onClick={() => { navigate('/quiz'); setShowMenu(false); }}>
+                🧠 MCQ Quiz
+              </button>
               <button onClick={() => { navigate('/roadmap'); setShowMenu(false); }}>
                 🗺 Roadmaps
               </button>

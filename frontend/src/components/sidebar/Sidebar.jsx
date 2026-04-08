@@ -48,6 +48,8 @@ export default function Sidebar({ selectedTopicId, onTopicSelect, isOpen, onClos
               onClick={() => { navTo('/'); onTopicSelect?.(null); }} title="Dashboard">⌂</button>
             <button className={`${styles.iconBtn} ${isActive('/roadmap') ? styles.iconActive : ''}`}
               onClick={() => navTo('/roadmap')} title="Roadmaps">🗺</button>
+            <button className={`${styles.iconBtn} ${isActive('/quiz') ? styles.iconActive : ''}`}
+              onClick={() => navTo('/quiz')} title="MCQ Quiz">🧠</button>
             <button className={`${styles.iconBtn} ${isActive('/problems') ? styles.iconActive : ''}`}
               onClick={() => navTo('/problems')} title="All Problems">📋</button>
             <button className={`${styles.iconBtn} ${isActive('/playground') ? styles.iconActive : ''}`}
