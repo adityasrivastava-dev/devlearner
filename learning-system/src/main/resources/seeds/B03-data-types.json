@@ -78,12 +78,25 @@
           "starterCode": "public class Q1 {\n    public static int safeAdd(int a, int b) {\n        // TODO: add a and b, throw ArithmeticException on overflow\n        return a + b;\n    }\n\n    public static int safeMultiply(int a, int b) {\n        // TODO: multiply a and b, throw ArithmeticException on overflow\n        return a * b;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(safeAdd(100, 200)); // 300\n        try { safeAdd(Integer.MAX_VALUE, 1); } catch (ArithmeticException e) { System.out.println(\"Overflow!\"); }\n        System.out.println(safeMultiply(1000, 2000)); // 2000000\n        try { safeMultiply(Integer.MAX_VALUE, 2); } catch (ArithmeticException e) { System.out.println(\"Overflow!\"); }\n    }\n}",
           "solutionCode": "public class Q1 {\n    public static int safeAdd(int a, int b) {\n        // Option 1: use Math.addExact (Java 8+)\n        return Math.addExact(a, b); // throws ArithmeticException on overflow\n\n        // Option 2: manual check\n        // long result = (long) a + b;\n        // if (result > Integer.MAX_VALUE || result < Integer.MIN_VALUE)\n        //     throw new ArithmeticException(\"integer overflow\");\n        // return (int) result;\n    }\n\n    public static int safeMultiply(int a, int b) {\n        return Math.multiplyExact(a, b); // throws ArithmeticException on overflow\n\n        // Manual: cast to long first\n        // long result = (long) a * b;\n        // if (result > Integer.MAX_VALUE || result < Integer.MIN_VALUE)\n        //     throw new ArithmeticException(\"integer overflow\");\n        // return (int) result;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(safeAdd(100, 200));         // 300\n        System.out.println(safeMultiply(1000, 2000));  // 2000000\n        try { safeAdd(Integer.MAX_VALUE, 1); }\n        catch (ArithmeticException e) { System.out.println(\"Add overflow!\"); }\n        try { safeMultiply(Integer.MAX_VALUE, 2); }\n        catch (ArithmeticException e) { System.out.println(\"Multiply overflow!\"); }\n    }\n}",
           "testCases": [
-            {"input": "100, 200", "output": "300"},
-            {"input": "Integer.MAX_VALUE, 1", "output": "Add overflow!"},
-            {"input": "1000, 2000", "output": "2000000"},
-            {"input": "Integer.MAX_VALUE, 2", "output": "Multiply overflow!"}
+            {
+              "input": "100, 200",
+              "output": "300"
+            },
+            {
+              "input": "Integer.MAX_VALUE, 1",
+              "output": "Add overflow!"
+            },
+            {
+              "input": "1000, 2000",
+              "output": "2000000"
+            },
+            {
+              "input": "Integer.MAX_VALUE, 2",
+              "output": "Multiply overflow!"
+            }
           ],
-          "constraints": "Must throw ArithmeticException on overflow. Use Math.addExact/multiplyExact or manual long-cast check."
+          "constraints": "Must throw ArithmeticException on overflow. Use Math.addExact/multiplyExact or manual long-cast check.",
+          "editorial": "Integer overflow wraps around silently — no exception. Use Math.addExact(a, b) to throw ArithmeticException on overflow. Check: (a > 0 && b > Integer.MAX_VALUE - a) before adding. Or detect post-addition: if (a > 0 && b > 0 && result < 0) then overflow occurred."
         },
         {
           "displayOrder": 2,
@@ -97,12 +110,25 @@
           "starterCode": "public class Q2 {\n    public static String fitInType(long value) {\n        // Return 'byte', 'short', 'int', or 'long'\n        return \"long\";\n    }\n\n    public static void main(String[] args) {\n        System.out.println(fitInType(100));          // byte\n        System.out.println(fitInType(200));          // short (> 127)\n        System.out.println(fitInType(40000));        // int   (> 32767)\n        System.out.println(fitInType(3000000000L));  // long  (> Integer.MAX_VALUE)\n    }\n}",
           "solutionCode": "public class Q2 {\n    public static String fitInType(long value) {\n        if (value >= Byte.MIN_VALUE    && value <= Byte.MAX_VALUE)    return \"byte\";\n        if (value >= Short.MIN_VALUE   && value <= Short.MAX_VALUE)   return \"short\";\n        if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) return \"int\";\n        return \"long\";\n    }\n\n    public static void main(String[] args) {\n        System.out.println(fitInType(100));           // byte\n        System.out.println(fitInType(200));           // short (>127)\n        System.out.println(fitInType(-129));          // short (<-128)\n        System.out.println(fitInType(40000));         // int\n        System.out.println(fitInType(3_000_000_000L)); // long\n        System.out.println(fitInType(Long.MAX_VALUE)); // long\n    }\n}",
           "testCases": [
-            {"input": "100", "output": "byte"},
-            {"input": "200", "output": "short"},
-            {"input": "40000", "output": "int"},
-            {"input": "3000000000", "output": "long"}
+            {
+              "input": "100",
+              "output": "byte"
+            },
+            {
+              "input": "200",
+              "output": "short"
+            },
+            {
+              "input": "40000",
+              "output": "int"
+            },
+            {
+              "input": "3000000000",
+              "output": "long"
+            }
           ],
-          "constraints": "Use MIN_VALUE/MAX_VALUE constants from wrapper classes. Return exact smallest fitting type."
+          "constraints": "Use MIN_VALUE/MAX_VALUE constants from wrapper classes. Return exact smallest fitting type.",
+          "editorial": "Each primitive has MIN_VALUE and MAX_VALUE constants. byte: -128 to 127. short: -32768 to 32767. int: ~-2.1B to 2.1B. long: ~-9.2E18 to 9.2E18. Use Long.parseLong and catch NumberFormatException. Compare against the type's actual bounds, not Double (floating point imprecision)."
         },
         {
           "displayOrder": 3,
@@ -116,10 +142,17 @@
           "starterCode": "public class Q3 {\n    public static boolean doubleEquals(double a, double b, double epsilon) {\n        return false; // TODO\n    }\n\n    public static void main(String[] args) {\n        double sum = 0.1 + 0.2;\n        System.out.println(\"0.1+0.2 == 0.3: \" + (sum == 0.3));                    // false!\n        System.out.println(\"doubleEquals: \" + doubleEquals(sum, 0.3, 1e-9));       // true\n        System.out.println(\"Actual value: \" + sum);                                 // 0.30000000000000004\n    }\n}",
           "solutionCode": "public class Q3 {\n    public static boolean doubleEquals(double a, double b, double epsilon) {\n        return Math.abs(a - b) <= epsilon;\n    }\n\n    // Better version for large numbers (relative epsilon)\n    public static boolean doubleEqualsRelative(double a, double b, double epsilon) {\n        if (a == b) return true; // handles infinities\n        return Math.abs(a - b) <= epsilon * Math.max(Math.abs(a), Math.abs(b));\n    }\n\n    public static void main(String[] args) {\n        double sum = 0.1 + 0.2;\n        System.out.println(\"0.1+0.2 == 0.3: \"    + (sum == 0.3));               // false!\n        System.out.println(\"Actual value: \"        + sum);                       // 0.30000000000000004\n        System.out.println(\"doubleEquals 1e-9: \"   + doubleEquals(sum, 0.3, 1e-9));  // true\n        System.out.println(\"doubleEquals 1e-15: \"  + doubleEquals(sum, 0.3, 1e-15)); // false (too tight)\n\n        // Large number comparison\n        double x = 1_000_000.1;\n        double y = 1_000_000.2;\n        System.out.println(\"Relative: \" + doubleEqualsRelative(x, y, 1e-6)); // false\n    }\n}",
           "testCases": [
-            {"input": "0.1+0.2 vs 0.3 with epsilon=1e-9", "output": "true"},
-            {"input": "0.1+0.2 == 0.3 direct", "output": "false"}
+            {
+              "input": "0.1+0.2 vs 0.3 with epsilon=1e-9",
+              "output": "true"
+            },
+            {
+              "input": "0.1+0.2 == 0.3 direct",
+              "output": "false"
+            }
           ],
-          "constraints": "Must use Math.abs(). epsilon must be a parameter (not hardcoded). Show both false (direct ==) and true (epsilon comparison)."
+          "constraints": "Must use Math.abs(). epsilon must be a parameter (not hardcoded). Show both false (direct ==) and true (epsilon comparison).",
+          "editorial": "Never use == or - for floating-point equality. Use Math.abs(a - b) < epsilon where epsilon is the acceptable tolerance (e.g., 1e-9). BigDecimal.compareTo() returns 0 for equal values — use it for exact decimal comparison. Double.compare() handles NaN and -0.0 correctly."
         },
         {
           "displayOrder": 4,
@@ -133,11 +166,21 @@
           "starterCode": "public class Q4 {\n    public static boolean[] integerCacheDemo() {\n        Integer a = 127; Integer b = 127;\n        Integer c = 128; Integer d = 128;\n        // Return: [a==b, c==d, c.equals(d)]\n        return new boolean[]{false, false, false}; // TODO\n    }\n\n    public static void main(String[] args) {\n        boolean[] r = integerCacheDemo();\n        System.out.println(\"127 == 127: \" + r[0]);\n        System.out.println(\"128 == 128: \" + r[1]);\n        System.out.println(\"128.equals(128): \" + r[2]);\n    }\n}",
           "solutionCode": "public class Q4 {\n    public static boolean[] integerCacheDemo() {\n        Integer a = 127; Integer b = 127;\n        Integer c = 128; Integer d = 128;\n        return new boolean[]{\n            a == b,        // true  — cached, same object\n            c == d,        // false — not cached, different objects\n            c.equals(d)    // true  — value equality always works\n        };\n    }\n\n    public static void main(String[] args) {\n        boolean[] r = integerCacheDemo();\n        System.out.println(\"127 == 127: \"      + r[0]); // true\n        System.out.println(\"128 == 128: \"      + r[1]); // false\n        System.out.println(\"128.equals(128): \" + r[2]); // true\n        // Moral: NEVER use == to compare Integer objects\n        // ALWAYS use .equals() or unbox to primitive first\n    }\n}",
           "testCases": [
-            {"input": "", "output": "127 == 127: true"},
-            {"input": "", "output": "128 == 128: false"},
-            {"input": "", "output": "128.equals(128): true"}
+            {
+              "input": "",
+              "output": "127 == 127: true"
+            },
+            {
+              "input": "",
+              "output": "128 == 128: false"
+            },
+            {
+              "input": "",
+              "output": "128.equals(128): true"
+            }
           ],
-          "constraints": "Must use Integer (wrapper) not int. Must demonstrate cache boundary at 127/128 exactly."
+          "constraints": "Must use Integer (wrapper) not int. Must demonstrate cache boundary at 127/128 exactly.",
+          "editorial": "Integer.valueOf() caches values from -128 to 127. Comparing cached Integer objects with == returns true because they're the same instance. Outside this range, new Integer objects are created — == returns false. Always use .equals() for Integer comparison, never ==."
         },
         {
           "displayOrder": 5,
@@ -151,12 +194,25 @@
           "starterCode": "public class Q5 {\n    public static int parseInt(String s, int defaultVal) {\n        return defaultVal; // TODO\n    }\n\n    public static double parseDouble(String s, double defaultVal) {\n        return defaultVal; // TODO\n    }\n\n    public static boolean parseBoolean(String s) {\n        return false; // TODO: handle true/false/yes/no/1/0\n    }\n\n    public static void main(String[] args) {\n        System.out.println(parseInt(\"42\", 0));        // 42\n        System.out.println(parseInt(\"abc\", -1));      // -1\n        System.out.println(parseDouble(\"3.14\", 0.0)); // 3.14\n        System.out.println(parseBoolean(\"yes\"));      // true\n        System.out.println(parseBoolean(\"0\"));         // false\n    }\n}",
           "solutionCode": "public class Q5 {\n    public static int parseInt(String s, int defaultVal) {\n        if (s == null) return defaultVal;\n        try { return Integer.parseInt(s.trim()); }\n        catch (NumberFormatException e) { return defaultVal; }\n    }\n\n    public static double parseDouble(String s, double defaultVal) {\n        if (s == null) return defaultVal;\n        try { return Double.parseDouble(s.trim()); }\n        catch (NumberFormatException e) { return defaultVal; }\n    }\n\n    public static boolean parseBoolean(String s) {\n        if (s == null) return false;\n        return switch (s.trim().toLowerCase()) {\n            case \"true\", \"yes\", \"1\", \"on\"  -> true;\n            case \"false\", \"no\", \"0\", \"off\" -> false;\n            default -> Boolean.parseBoolean(s); // standard parse\n        };\n    }\n\n    public static void main(String[] args) {\n        System.out.println(parseInt(\"42\", 0));         // 42\n        System.out.println(parseInt(\"abc\", -1));       // -1\n        System.out.println(parseInt(null, 99));         // 99\n        System.out.println(parseDouble(\"3.14\", 0.0));  // 3.14\n        System.out.println(parseBoolean(\"yes\"));       // true\n        System.out.println(parseBoolean(\"0\"));          // false\n        System.out.println(parseBoolean(\"TRUE\"));       // true\n    }\n}",
           "testCases": [
-            {"input": "parseInt(\"42\", 0)", "output": "42"},
-            {"input": "parseInt(\"abc\", -1)", "output": "-1"},
-            {"input": "parseBoolean(\"yes\")", "output": "true"},
-            {"input": "parseBoolean(\"0\")", "output": "false"}
+            {
+              "input": "parseInt(\"42\", 0)",
+              "output": "42"
+            },
+            {
+              "input": "parseInt(\"abc\", -1)",
+              "output": "-1"
+            },
+            {
+              "input": "parseBoolean(\"yes\")",
+              "output": "true"
+            },
+            {
+              "input": "parseBoolean(\"0\")",
+              "output": "false"
+            }
           ],
-          "constraints": "Handle null input. Use try-catch for NumberFormatException. parseBoolean must support true/false/yes/no/1/0 case-insensitively."
+          "constraints": "Handle null input. Use try-catch for NumberFormatException. parseBoolean must support true/false/yes/no/1/0 case-insensitively.",
+          "editorial": "Integer.parseInt() throws NumberFormatException for invalid strings. Double.parseDouble() is similar. Boolean.parseBoolean() is lenient — only 'true' (case-insensitive) returns true, everything else (including null) returns false. Character.getNumericValue() converts char digits to int."
         },
         {
           "displayOrder": 6,
@@ -170,10 +226,17 @@
           "starterCode": "public class Q6 {\n    public static String analyzeBits(int value) {\n        // Return multi-line analysis showing decimal, hex, octal, binary representations\n        return \"\";\n    }\n\n    public static void main(String[] args) {\n        System.out.println(analyzeBits(42));\n        System.out.println(analyzeBits(-1));\n        System.out.println(analyzeBits(Integer.MAX_VALUE));\n    }\n}",
           "solutionCode": "public class Q6 {\n    public static String analyzeBits(int value) {\n        String binary = String.format(\"%32s\",\n            Integer.toBinaryString(value)).replace(' ', '0');\n        char signBit = binary.charAt(0);\n        String valueBits = binary.substring(1);\n\n        return String.format(\n            \"Value: %d%n\" +\n            \"Hex:   0x%08X%n\" +\n            \"Octal: %o%n\" +\n            \"Bin:   [%c] %s%n\" +  // [sign] value_bits\n            \"       ^ sign bit (%s)\",\n            value,\n            value,\n            value,\n            signBit, valueBits,\n            signBit == '1' ? \"negative\" : \"positive\"\n        );\n    }\n\n    public static void main(String[] args) {\n        System.out.println(analyzeBits(42));\n        System.out.println();\n        System.out.println(analyzeBits(-1));  // all bits = 1 (two's complement)\n        System.out.println();\n        System.out.println(analyzeBits(Integer.MAX_VALUE)); // 0 followed by 31 ones\n    }\n}",
           "testCases": [
-            {"input": "42", "output": "Value: 42"},
-            {"input": "-1", "output": "all bits are 1 in binary"}
+            {
+              "input": "42",
+              "output": "Value: 42"
+            },
+            {
+              "input": "-1",
+              "output": "all bits are 1 in binary"
+            }
           ],
-          "constraints": "Binary must be exactly 32 characters (padded with zeros). Hex must use uppercase with 0x prefix. Sign bit must be identified."
+          "constraints": "Binary must be exactly 32 characters (padded with zeros). Hex must use uppercase with 0x prefix. Sign bit must be identified.",
+          "editorial": "Boolean: 1 bit logical, 1 byte storage. byte: 8-bit signed (-128 to 127). char: 16-bit unsigned UTF-16. Use Integer.bitCount() for set bits, Integer.toBinaryString() for binary representation. Type hierarchy: byte → short → int → long → float → double (widening conversions are implicit)."
         },
         {
           "displayOrder": 7,
@@ -186,8 +249,14 @@
           "hint3": "StringBuilder maintains a char[] buffer and resizes geometrically: O(n) amortized.",
           "starterCode": "public class Q7 {\n    static final int N = 10_000;\n\n    static long timeStringConcat() {\n        long start = System.nanoTime();\n        String s = \"\";\n        for (int i = 0; i < N; i++) s += \"x\";\n        return System.nanoTime() - start;\n    }\n\n    static long timeStringBuilder() {\n        long start = System.nanoTime();\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < N; i++) sb.append(\"x\");\n        String s = sb.toString();\n        return System.nanoTime() - start;\n    }\n\n    public static double benchmarkRatio() {\n        // Return timeStringConcat / timeStringBuilder\n        return 0;\n    }\n\n    public static void main(String[] args) {\n        System.out.printf(\"String+ is %.1fx slower than StringBuilder%n\", benchmarkRatio());\n    }\n}",
           "solutionCode": "public class Q7 {\n    static final int N = 10_000;\n\n    static long timeStringConcat() {\n        long start = System.nanoTime();\n        String s = \"\";\n        for (int i = 0; i < N; i++) s += \"x\";\n        if (s.isEmpty()) System.out.println(); // prevent dead-code elimination\n        return System.nanoTime() - start;\n    }\n\n    static long timeStringBuilder() {\n        long start = System.nanoTime();\n        StringBuilder sb = new StringBuilder(N); // pre-size to avoid resizing\n        for (int i = 0; i < N; i++) sb.append(\"x\");\n        String s = sb.toString();\n        if (s.isEmpty()) System.out.println(); // prevent dead-code elimination\n        return System.nanoTime() - start;\n    }\n\n    public static double benchmarkRatio() {\n        // Warm up JIT first\n        timeStringConcat();   timeStringBuilder();\n        timeStringConcat();   timeStringBuilder();\n\n        long concat  = timeStringConcat();\n        long builder = timeStringBuilder();\n        return (double) concat / builder;\n    }\n\n    public static void main(String[] args) {\n        double ratio = benchmarkRatio();\n        System.out.printf(\"String+ is %.1fx slower than StringBuilder%n\", ratio);\n        System.out.printf(\"Expected: > 10x (typically 50-500x for N=10000)%n\");\n    }\n}",
-          "testCases": [{"input": "N=10000", "output": "ratio > 10.0"}],
-          "constraints": "Must measure actual elapsed time. Ratio must be > 10 for N=10,000. Include JIT warm-up calls."
+          "testCases": [
+            {
+              "input": "N=10000",
+              "output": "ratio > 10.0"
+            }
+          ],
+          "constraints": "Must measure actual elapsed time. Ratio must be > 10 for N=10,000. Include JIT warm-up calls.",
+          "editorial": "StringBuilder is O(n) amortized for append — it doubles capacity when full (similar to ArrayList). String concatenation in a loop creates O(n) intermediate String objects. StringBuilder.toString() creates one final String. For thread-safe use, StringBuffer (synchronized version) or join at the end."
         },
         {
           "displayOrder": 8,
@@ -201,10 +270,17 @@
           "starterCode": "import java.util.*;\n\npublic class Q8 {\n    public static Map<String, String> convertAll(double value) {\n        // Convert to: byte, short, int, long, float, char (if in range)\n        return new LinkedHashMap<>();\n    }\n\n    public static void main(String[] args) {\n        convertAll(65.7).forEach((k, v) -> System.out.println(k + \" -> \" + v));\n        System.out.println(\"---\");\n        convertAll(Double.NaN).forEach((k, v) -> System.out.println(k + \" -> \" + v));\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q8 {\n    public static Map<String, String> convertAll(double value) {\n        Map<String, String> map = new LinkedHashMap<>();\n        map.put(\"byte\",  String.valueOf((byte)  value));\n        map.put(\"short\", String.valueOf((short) value));\n        map.put(\"int\",   String.valueOf((int)   value));  // NaN->0, +Inf->MAX_VALUE\n        map.put(\"long\",  String.valueOf((long)  value));\n        map.put(\"float\", String.valueOf((float) value));  // may lose precision\n        // char only if in valid range\n        if (!Double.isNaN(value) && value >= 0 && value <= 65535)\n            map.put(\"char\", String.valueOf((char) (int) value));\n        else\n            map.put(\"char\", \"(out of range)\");\n        return map;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"--- 65.7 ---\");\n        convertAll(65.7).forEach((k, v) -> System.out.println(k + \" -> \" + v));\n        // int=65 (truncated), char='A' (65)\n\n        System.out.println(\"--- NaN ---\");\n        convertAll(Double.NaN).forEach((k, v) -> System.out.println(k + \" -> \" + v));\n        // int=0, float=NaN, char=out of range\n\n        System.out.println(\"--- +Infinity ---\");\n        convertAll(Double.POSITIVE_INFINITY).forEach((k, v) -> System.out.println(k + \" -> \" + v));\n        // int=Integer.MAX_VALUE\n    }\n}",
           "testCases": [
-            {"input": "65.7", "output": "int -> 65 and char -> A"},
-            {"input": "Double.NaN", "output": "int -> 0"}
+            {
+              "input": "65.7",
+              "output": "int -> 65 and char -> A"
+            },
+            {
+              "input": "Double.NaN",
+              "output": "int -> 0"
+            }
           ],
-          "constraints": "Handle NaN and Infinity cases. char must only be shown if value is in valid Unicode range (0-65535)."
+          "constraints": "Handle NaN and Infinity cases. char must only be shown if value is in valid Unicode range (0-65535).",
+          "editorial": "Widening conversions are implicit and safe (except long→float which can lose precision). Narrowing conversions require explicit cast and can lose data. long→float: a 64-bit long can have more significant digits than a 32-bit float's mantissa (23 bits) — precision loss occurs for large values."
         },
         {
           "displayOrder": 9,
@@ -218,10 +294,17 @@
           "starterCode": "import java.math.*;\n\npublic class Q9 {\n    public static String addMoney(String a, String b) {\n        return \"\"; // TODO: use BigDecimal\n    }\n\n    public static String[] splitBill(String total, int ways) {\n        // Return [perPerson, remainder]\n        return new String[]{\"0.00\", \"0.00\"};\n    }\n\n    public static void main(String[] args) {\n        System.out.println(addMoney(\"0.10\", \"0.20\"));   // 0.30\n        System.out.println(addMoney(\"1.23\", \"4.57\"));   // 5.80\n        String[] split = splitBill(\"10.00\", 3);\n        System.out.println(\"Per person: \" + split[0] + \", remainder: \" + split[1]);\n        // Per person: 3.33, remainder: 0.01\n    }\n}",
           "solutionCode": "import java.math.*;\n\npublic class Q9 {\n    public static String addMoney(String a, String b) {\n        BigDecimal sum = new BigDecimal(a).add(new BigDecimal(b));\n        return sum.setScale(2, RoundingMode.HALF_UP).toPlainString();\n    }\n\n    public static String[] splitBill(String total, int ways) {\n        BigDecimal t = new BigDecimal(total);\n        BigDecimal divisor = BigDecimal.valueOf(ways);\n        BigDecimal share = t.divide(divisor, 2, RoundingMode.HALF_DOWN);\n        BigDecimal paidTotal = share.multiply(divisor);\n        BigDecimal remainder = t.subtract(paidTotal).setScale(2, RoundingMode.HALF_UP);\n        return new String[]{\n            share.toPlainString(),\n            remainder.toPlainString()\n        };\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"0.10 + 0.20 = \" + addMoney(\"0.10\", \"0.20\")); // 0.30\n        System.out.println(\"1.23 + 4.57 = \" + addMoney(\"1.23\", \"4.57\")); // 5.80\n\n        String[] split = splitBill(\"10.00\", 3);\n        System.out.println(\"Per person: \" + split[0]); // 3.33\n        System.out.println(\"Remainder:  \" + split[1]);  // 0.01\n\n        // vs double:\n        double dSum = 0.10 + 0.20;\n        System.out.println(\"double sum: \" + dSum); // 0.30000000000000004!\n    }\n}",
           "testCases": [
-            {"input": "addMoney(\"0.10\", \"0.20\")", "output": "0.30"},
-            {"input": "splitBill(\"10.00\", 3)", "output": "Per person: 3.33, remainder: 0.01"}
+            {
+              "input": "addMoney(\"0.10\", \"0.20\")",
+              "output": "0.30"
+            },
+            {
+              "input": "splitBill(\"10.00\", 3)",
+              "output": "Per person: 3.33, remainder: 0.01"
+            }
           ],
-          "constraints": "Must use BigDecimal(String) constructor, NOT BigDecimal(double). Use RoundingMode.HALF_UP for financial rounding."
+          "constraints": "Must use BigDecimal(String) constructor, NOT BigDecimal(double). Use RoundingMode.HALF_UP for financial rounding.",
+          "editorial": "BigDecimal stores exact decimal values — no floating-point rounding errors. Always use BigDecimal(String) constructor, not BigDecimal(double) (which inherits the double's imprecision). Use add(), subtract(), multiply(), divide() — not + - * /. setScale() controls decimal places. Use RoundingMode.HALF_UP for money."
         },
         {
           "displayOrder": 10,
@@ -235,10 +318,17 @@
           "starterCode": "import java.util.Arrays;\n\npublic class Q10 {\n    // UNSAFE: String password lingers in pool/heap\n    public static void storePasswordUnsafe(String password) {\n        // ... use password ...\n        // password = null; // only removes reference, object still in heap/pool\n        System.out.println(\"Unsafe: cannot zero String\");\n    }\n\n    // SAFE: char[] can be zeroed\n    public static void storePasswordSafe(char[] password) {\n        try {\n            // TODO: use password\n            System.out.println(\"Processing password of length: \" + password.length);\n        } finally {\n            // TODO: zero out the array\n        }\n    }\n\n    public static void main(String[] args) {\n        storePasswordUnsafe(\"mySecret123\");\n        storePasswordSafe(\"mySecret123\".toCharArray());\n    }\n}",
           "solutionCode": "import java.util.Arrays;\n\npublic class Q10 {\n    public static void storePasswordUnsafe(String password) {\n        // String is immutable: after use, we can only remove our reference\n        // But the String object may remain in heap/String Pool for GC to collect\n        // A memory dump (heap dump) will still show the password in plaintext!\n        System.out.println(\"Processing: \" + \"*\".repeat(password.length()));\n        password = null; // only nulls our reference — object still exists in heap\n        System.out.println(\"String set to null, but object may still be in memory\");\n    }\n\n    public static void storePasswordSafe(char[] password) {\n        try {\n            System.out.println(\"Processing password of length: \" + password.length);\n            // ... authenticate against stored hash ...\n            System.out.println(\"Authentication processed\");\n        } finally {\n            // Zero out immediately after use — no password in memory\n            Arrays.fill(password, '\\0');\n            System.out.println(\"Password zeroed: \" + Arrays.toString(password));\n            // Memory now contains only null chars — password is gone\n        }\n    }\n\n    public static void main(String[] args) {\n        storePasswordUnsafe(\"mySecret123\");\n        System.out.println();\n        storePasswordSafe(\"mySecret123\".toCharArray());\n        // Note: toCharArray() creates a new char[] — not the Pool object\n        // After Arrays.fill, the array is zeroed\n    }\n}",
           "testCases": [
-            {"input": "", "output": "Password zeroed"},
-            {"input": "", "output": "Authentication processed"}
+            {
+              "input": "",
+              "output": "Password zeroed"
+            },
+            {
+              "input": "",
+              "output": "Authentication processed"
+            }
           ],
-          "constraints": "char[] version must use Arrays.fill(password, '\\0') in finally block. Must explain why String is less secure."
+          "constraints": "char[] version must use Arrays.fill(password, '\\0') in finally block. Must explain why String is less secure.",
+          "editorial": "char[] is preferred over String for passwords because char[] can be zeroed (Arrays.fill(pwd, '\\0')) after use. String is immutable — the sensitive value persists in the String Pool until GC. This is why java.security.spec.KeySpec uses char[] for passwords (PBKDF2WithHmacSHA256)."
         },
         {
           "displayOrder": 11,
@@ -251,8 +341,14 @@
           "hint3": "Count occurrences of 'var ' at word boundary in each line.",
           "starterCode": "public class Q11 {\n    public static String analyzeVarUsage(String sourceCode) {\n        // Count var declarations and classify them\n        return \"\";\n    }\n\n    public static void main(String[] args) {\n        String code = \"var list = new ArrayList<String>();\\n\" +\n                      \"var map = new HashMap<>();\\n\" +\n                      \"var result = processData();\\n\" +  // unclear\n                      \"var x = 42;\\n\" +                  // literal - ok\n                      \"var stream = list.stream();\";       // method call - unclear?\n        System.out.println(analyzeVarUsage(code));\n    }\n}",
           "solutionCode": "import java.util.regex.*;\nimport java.util.*;\n\npublic class Q11 {\n    public static String analyzeVarUsage(String sourceCode) {\n        int total = 0, goodNew = 0, methodCall = 0, literal = 0;\n\n        Pattern varPattern = Pattern.compile(\"\\\\bvar\\\\s+(\\\\w+)\\\\s*=\\\\s*(.+?);\");\n        for (String line : sourceCode.split(\"\\n\")) {\n            Matcher m = varPattern.matcher(line.trim());\n            if (m.find()) {\n                total++;\n                String rhs = m.group(2).trim();\n                if (rhs.startsWith(\"new \")) goodNew++;\n                else if (rhs.matches(\"\\\\d+\\.?\\\\d*[fFdDlL]?\") || rhs.startsWith(\"\\\"\")\n                      || rhs.equals(\"true\") || rhs.equals(\"false\")) literal++;\n                else if (rhs.contains(\"(\")) methodCall++;\n            }\n        }\n        return String.format(\n            \"Total var declarations: %d%n\" +\n            \"Good (new expr): %d%n\" +\n            \"Literal (ok): %d%n\" +\n            \"Method call (review): %d\",\n            total, goodNew, literal, methodCall);\n    }\n\n    public static void main(String[] args) {\n        String code = \"var list = new ArrayList<String>();\\n\" +\n                      \"var map = new HashMap<>();\\n\" +\n                      \"var result = processData();\\n\" +\n                      \"var x = 42;\\n\" +\n                      \"var stream = list.stream();\";\n        System.out.println(analyzeVarUsage(code));\n    }\n}",
-          "testCases": [{"input": "5 var declarations", "output": "Total var declarations: 5"}],
-          "constraints": "Must count total var declarations and classify by RHS type. Use regex for detection."
+          "testCases": [
+            {
+              "input": "5 var declarations",
+              "output": "Total var declarations: 5"
+            }
+          ],
+          "constraints": "Must count total var declarations and classify by RHS type. Use regex for detection.",
+          "editorial": "var (local variable type inference, Java 10+) infers the type at compile time — it's not dynamic typing. The type is fixed and cannot change. var works only for local variables with initializer, for-each loop variables, and try-with-resources. Cannot use var for fields, parameters, or return types."
         },
         {
           "displayOrder": 12,
@@ -265,8 +361,14 @@
           "hint3": "Measure with System.gc() + Runtime before/after allocation to see real heap delta.",
           "starterCode": "public class Q12 {\n    static final int N = 1_000_000;\n\n    public static long[] measureMemory() {\n        Runtime rt = Runtime.getRuntime();\n        System.gc();\n        long base = rt.totalMemory() - rt.freeMemory();\n\n        int[] primitiveArray = new int[N];\n        long afterPrimitive = rt.totalMemory() - rt.freeMemory();\n\n        primitiveArray = null; System.gc();\n        long base2 = rt.totalMemory() - rt.freeMemory();\n\n        Integer[] wrapperArray = new Integer[N];\n        for (int i = 0; i < N; i++) wrapperArray[i] = i; // autobox!\n        long afterWrapper = rt.totalMemory() - rt.freeMemory();\n\n        return new long[]{\n            afterPrimitive - base,\n            afterWrapper - base2\n        };\n    }\n\n    public static void main(String[] args) {\n        long[] mem = measureMemory();\n        System.out.printf(\"int[1M]:     ~%dMB%n\", mem[0] / (1024*1024));\n        System.out.printf(\"Integer[1M]: ~%dMB%n\", mem[1] / (1024*1024));\n        System.out.printf(\"Wrapper uses %.1fx more memory%n\", (double)mem[1]/mem[0]);\n    }\n}",
           "solutionCode": "public class Q12 {\n    static final int N = 1_000_000;\n\n    public static long[] measureMemory() {\n        Runtime rt = Runtime.getRuntime();\n        System.gc();\n        long base = rt.totalMemory() - rt.freeMemory();\n\n        int[] primitiveArray = new int[N]; // N * 4 bytes = ~4MB\n        long afterPrimitive = rt.totalMemory() - rt.freeMemory();\n        long primitiveDelta = afterPrimitive - base;\n\n        primitiveArray = null; System.gc();\n        long base2 = rt.totalMemory() - rt.freeMemory();\n\n        // Autoboxing: each i is boxed. Values 0-127 are cached, 128+ are new objects\n        Integer[] wrapperArray = new Integer[N];\n        for (int i = 0; i < N; i++) wrapperArray[i] = i;\n        long afterWrapper = rt.totalMemory() - rt.freeMemory();\n        long wrapperDelta = afterWrapper - base2;\n\n        wrapperArray = null;\n        return new long[]{primitiveDelta, wrapperDelta};\n    }\n\n    public static void main(String[] args) {\n        // Theoretical:\n        System.out.println(\"=== Theoretical ===\");\n        System.out.printf(\"int[1M]:     %d bytes = ~%dMB%n\", 1_000_000 * 4L, 4);\n        System.out.printf(\"Integer[1M]: %d bytes = ~%dMB%n\",\n            1_000_000L * 4 + 1_000_000L * 16, 20); // refs + objects\n\n        System.out.println(\"=== Measured ===\");\n        long[] mem = measureMemory();\n        System.out.printf(\"int[1M]:     ~%dMB%n\", mem[0] / (1024*1024));\n        System.out.printf(\"Integer[1M]: ~%dMB%n\", mem[1] / (1024*1024));\n        if (mem[0] > 0)\n            System.out.printf(\"Wrapper uses %.1fx more memory%n\", (double)mem[1]/mem[0]);\n    }\n}",
-          "testCases": [{"input": "N=1_000_000", "output": "int[1M]: ~4MB"}],
-          "constraints": "Must measure actual heap delta. int[] should use ~4MB, Integer[] should use ~5-20MB depending on Integer cache hits."
+          "testCases": [
+            {
+              "input": "N=1_000_000",
+              "output": "int[1M]: ~4MB"
+            }
+          ],
+          "constraints": "Must measure actual heap delta. int[] should use ~4MB, Integer[] should use ~5-20MB depending on Integer cache hits.",
+          "editorial": "int[] stores primitive ints contiguously — no boxing, no object overhead. Integer[] stores references to Integer objects on the heap — 16 bytes per object plus 4 bytes per reference. For large arrays, int[] uses ~4x less memory and has better cache locality. Use primitive arrays for performance-critical code."
         },
         {
           "displayOrder": 13,
@@ -280,10 +382,17 @@
           "starterCode": "public class Q13 {\n    public static void demonstrateIntern() {\n        // Create strings without intern (all different objects)\n        String[] withoutIntern = new String[1000];\n        for (int i = 0; i < 1000; i++) withoutIntern[i] = new String(\"key-\" + (i % 10));\n        // 1000 objects, but only 10 unique values\n\n        // Create same strings WITH intern\n        String[] withIntern = new String[1000];\n        for (int i = 0; i < 1000; i++) withIntern[i] = new String(\"key-\" + (i % 10)).intern();\n        // Should produce only 10 unique objects\n\n        // Verify: same value = same reference after intern\n        System.out.println(\"Without intern: same value == same ref? \" +\n            (withoutIntern[0] == withoutIntern[10])); // false\n        System.out.println(\"With intern:    same value == same ref? \" +\n            (withIntern[0] == withIntern[10]));       // true\n    }\n\n    public static void main(String[] args) { demonstrateIntern(); }\n}",
           "solutionCode": "public class Q13 {\n    public static void demonstrateIntern() {\n        Runtime rt = Runtime.getRuntime();\n        System.gc();\n        long before = rt.totalMemory() - rt.freeMemory();\n\n        // 1000 new String objects with 10 unique values\n        String[] withoutIntern = new String[1000];\n        for (int i = 0; i < 1000; i++)\n            withoutIntern[i] = new String(\"key-\" + (i % 10)); // 1000 objects\n\n        long midpoint = rt.totalMemory() - rt.freeMemory();\n\n        // Intern them: pool deduplicates — only 10 canonical objects\n        String[] withIntern = new String[1000];\n        for (int i = 0; i < 1000; i++)\n            withIntern[i] = new String(\"key-\" + (i % 10)).intern();\n\n        // Reference equality after intern\n        System.out.println(\"Without intern (key-0 at idx 0 vs 10): \" +\n            (withoutIntern[0] == withoutIntern[10])); // false — different objects\n        System.out.println(\"With intern    (key-0 at idx 0 vs 10): \" +\n            (withIntern[0] == withIntern[10]));       // true  — same pool object\n\n        // Content still equal either way\n        System.out.println(\"Content equal (without): \" + withoutIntern[0].equals(withoutIntern[10]));\n        System.out.println(\"Content equal (with):    \" + withIntern[0].equals(withIntern[10]));\n    }\n\n    public static void main(String[] args) { demonstrateIntern(); }\n}",
           "testCases": [
-            {"input": "", "output": "Without intern (key-0 at idx 0 vs 10): false"},
-            {"input": "", "output": "With intern    (key-0 at idx 0 vs 10): true"}
+            {
+              "input": "",
+              "output": "Without intern (key-0 at idx 0 vs 10): false"
+            },
+            {
+              "input": "",
+              "output": "With intern    (key-0 at idx 0 vs 10): true"
+            }
           ],
-          "constraints": "Must use new String() to bypass pool initially. .intern() must produce == equality for same-content strings."
+          "constraints": "Must use new String() to bypass pool initially. .intern() must produce == equality for same-content strings.",
+          "editorial": "String.intern() returns the pooled reference. After intern, == comparison works for equal strings. The JDK interns all string literals automatically. Calling intern() on dynamically created strings moves them to the pool — can cause metaspace growth if abused. Modern JVMs (Java 7+) move the pool to the heap."
         },
         {
           "displayOrder": 14,
@@ -297,10 +406,17 @@
           "starterCode": "public class Q14 {\n    public static void demonstratePrecisionLoss() {\n        // Find the first long value that loses precision when cast to float\n        long firstLoss = 0;\n        for (long v = 1; v > 0; v++) {\n            if (v != (long)(float) v) { firstLoss = v; break; }\n        }\n        System.out.println(\"First long→float precision loss at: \" + firstLoss);\n        System.out.println(\"(float)firstLoss = \" + (float) firstLoss);\n        System.out.println(\"Error: \" + (firstLoss - (long)(float)firstLoss));\n    }\n\n    public static void main(String[] args) {\n        demonstratePrecisionLoss();\n        // Also show large long values\n        long big = 123_456_789_012_345L;\n        System.out.println(\"Original long: \" + big);\n        System.out.println(\"As float:      \" + (float) big); // loses ~8 digits\n        System.out.println(\"Difference:    \" + (big - (long)(float)big));\n    }\n}",
           "solutionCode": "public class Q14 {\n    public static void demonstratePrecisionLoss() {\n        // Find the smallest positive long that cannot be represented exactly as float\n        // float has 23-bit mantissa -> exact integers up to 2^24 = 16,777,216\n        long firstLoss = 0;\n        for (long v = 1L; v > 0; v++) {\n            if (v != (long)(float) v) { firstLoss = v; break; }\n        }\n        System.out.println(\"First long→float loss at: \" + firstLoss);\n        // Expected: 16,777,217 (= 2^24 + 1)\n        System.out.println(\"Expected 2^24+1 = \" + ((1L << 24) + 1));\n        System.out.println(\"(float)\" + firstLoss + \" = \" + (float)firstLoss);\n        System.out.println(\"Error: \" + (firstLoss - (long)(float)firstLoss));\n    }\n\n    public static void main(String[] args) {\n        demonstratePrecisionLoss();\n\n        System.out.println();\n        long big = 123_456_789_012_345L;\n        System.out.println(\"Original long: \" + big);\n        System.out.println(\"As float:      \" + (float) big);\n        System.out.println(\"Difference:    \" + (big - (long)(float)big));\n\n        // IMPORTANT: long→float is WIDENING (no cast required) but loses precision!\n        float f = big; // No cast needed — but precision is lost silently\n        System.out.println(\"\\nWARNING: long→float is widening (no cast) but silent precision loss!\");\n    }\n}",
           "testCases": [
-            {"input": "", "output": "First long→float loss at: 16777217"},
-            {"input": "big = 123_456_789_012_345L", "output": "Difference > 0"}
+            {
+              "input": "",
+              "output": "First long→float loss at: 16777217"
+            },
+            {
+              "input": "big = 123_456_789_012_345L",
+              "output": "Difference > 0"
+            }
           ],
-          "constraints": "Must find exact first precision loss value (2^24+1 = 16,777,217). Must show that widening can lose precision."
+          "constraints": "Must find exact first precision loss value (2^24+1 = 16,777,217). Must show that widening can lose precision.",
+          "editorial": "long (64-bit) to float (32-bit): float has only 23 bits of mantissa, so large longs (> 2^24) lose precision when converted. Example: (float) 16777217L == 16777216.0f — the last bit is lost. This is a widening conversion that can still lose information — unique among Java's widening conversions."
         },
         {
           "displayOrder": 15,
@@ -314,10 +430,17 @@
           "starterCode": "import java.util.Objects;\n\npublic class Q15 {\n    static final class SafeInt implements Comparable<SafeInt> {\n        private final int value;\n\n        public SafeInt(int value) { this.value = value; }\n\n        public SafeInt add(SafeInt other) { return new SafeInt(0); } // TODO\n        public SafeInt subtract(SafeInt other) { return new SafeInt(0); } // TODO\n        public SafeInt multiply(SafeInt other) { return new SafeInt(0); } // TODO\n\n        public int intValue() { return value; }\n\n        @Override public int compareTo(SafeInt other) { return 0; } // TODO\n        @Override public boolean equals(Object o) { return false; } // TODO\n        @Override public int hashCode() { return 0; } // TODO\n        @Override public String toString() { return String.valueOf(value); }\n    }\n\n    public static void main(String[] args) {\n        SafeInt a = new SafeInt(1000);\n        SafeInt b = new SafeInt(2000);\n        System.out.println(a.add(b));      // 3000\n        System.out.println(a.multiply(b)); // 2000000\n        try {\n            new SafeInt(Integer.MAX_VALUE).add(new SafeInt(1));\n        } catch (ArithmeticException e) { System.out.println(\"Overflow caught!\"); }\n    }\n}",
           "solutionCode": "import java.util.Objects;\n\npublic class Q15 {\n    static final class SafeInt implements Comparable<SafeInt> {\n        private final int value;\n\n        public SafeInt(int value) { this.value = value; }\n\n        public SafeInt add(SafeInt other) {\n            return new SafeInt(Math.addExact(this.value, other.value));\n        }\n        public SafeInt subtract(SafeInt other) {\n            return new SafeInt(Math.subtractExact(this.value, other.value));\n        }\n        public SafeInt multiply(SafeInt other) {\n            return new SafeInt(Math.multiplyExact(this.value, other.value));\n        }\n\n        public int intValue() { return value; }\n\n        @Override public int compareTo(SafeInt other) {\n            return Integer.compare(this.value, other.value);\n        }\n        @Override public boolean equals(Object o) {\n            if (this == o) return true;\n            if (!(o instanceof SafeInt s)) return false;\n            return this.value == s.value;\n        }\n        @Override public int hashCode() { return Integer.hashCode(value); }\n        @Override public String toString() { return String.valueOf(value); }\n    }\n\n    public static void main(String[] args) {\n        SafeInt a = new SafeInt(1000);\n        SafeInt b = new SafeInt(2000);\n        System.out.println(a.add(b));       // 3000\n        System.out.println(a.multiply(b));  // 2000000\n        System.out.println(a.compareTo(b)); // negative (1000 < 2000)\n        System.out.println(a.equals(new SafeInt(1000))); // true\n        try {\n            new SafeInt(Integer.MAX_VALUE).add(new SafeInt(1));\n        } catch (ArithmeticException e) { System.out.println(\"Overflow caught!\"); }\n        try {\n            new SafeInt(Integer.MIN_VALUE).subtract(new SafeInt(1));\n        } catch (ArithmeticException e) { System.out.println(\"Underflow caught!\"); }\n    }\n}",
           "testCases": [
-            {"input": "1000 + 2000", "output": "3000"},
-            {"input": "MAX_VALUE + 1", "output": "Overflow caught!"}
+            {
+              "input": "1000 + 2000",
+              "output": "3000"
+            },
+            {
+              "input": "MAX_VALUE + 1",
+              "output": "Overflow caught!"
+            }
           ],
-          "constraints": "Must use Math.addExact/subtractExact/multiplyExact. Must implement equals, hashCode, compareTo correctly. value must be final."
+          "constraints": "Must use Math.addExact/subtractExact/multiplyExact. Must implement equals, hashCode, compareTo correctly. value must be final.",
+          "editorial": "Wrap int in a class with overflow detection on all arithmetic operations. throw ArithmeticException on overflow. Use Math.addExact, Math.subtractExact, Math.multiplyExact internally. Expose a value() accessor returning the int. This is the pattern behind Guava's IntMath.checkedAdd()."
         },
         {
           "displayOrder": 16,
@@ -331,10 +454,17 @@
           "starterCode": "import java.math.BigDecimal;\nimport java.util.List;\n\npublic class Q16 {\n    static class NumberAccumulator<T extends Number> {\n        public double sum(List<T> numbers) {\n            return 0.0; // TODO\n        }\n\n        public BigDecimal preciseSum(List<T> numbers) {\n            return BigDecimal.ZERO; // TODO: use BigDecimal for precision\n        }\n    }\n\n    public static void main(String[] args) {\n        NumberAccumulator<Integer> intAcc = new NumberAccumulator<>();\n        System.out.println(intAcc.sum(List.of(1, 2, 3, 4, 5))); // 15.0\n\n        NumberAccumulator<Double> dblAcc = new NumberAccumulator<>();\n        System.out.println(dblAcc.sum(List.of(1.1, 2.2, 3.3))); // ~6.6\n\n        NumberAccumulator<BigDecimal> bdAcc = new NumberAccumulator<>();\n        System.out.println(bdAcc.preciseSum(List.of(\n            new BigDecimal(\"0.1\"), new BigDecimal(\"0.2\"))));\n    }\n}",
           "solutionCode": "import java.math.BigDecimal;\nimport java.util.List;\n\npublic class Q16 {\n    static class NumberAccumulator<T extends Number> {\n        public double sum(List<T> numbers) {\n            double total = 0.0;\n            for (T n : numbers) total += n.doubleValue();\n            return total;\n        }\n\n        public BigDecimal preciseSum(List<T> numbers) {\n            BigDecimal total = BigDecimal.ZERO;\n            for (T n : numbers) {\n                // Use BigDecimal arithmetic for precision\n                BigDecimal bd = (n instanceof BigDecimal bd2)\n                    ? bd2\n                    : new BigDecimal(n.toString()); // avoid new BigDecimal(double)\n                total = total.add(bd);\n            }\n            return total;\n        }\n    }\n\n    public static void main(String[] args) {\n        NumberAccumulator<Integer> intAcc = new NumberAccumulator<>();\n        System.out.println(intAcc.sum(List.of(1, 2, 3, 4, 5))); // 15.0\n\n        NumberAccumulator<Double> dblAcc = new NumberAccumulator<>();\n        System.out.println(dblAcc.sum(List.of(1.1, 2.2, 3.3))); // 6.6000000000000005\n\n        NumberAccumulator<BigDecimal> bdAcc = new NumberAccumulator<>();\n        System.out.println(bdAcc.preciseSum(List.of(\n            new BigDecimal(\"0.1\"), new BigDecimal(\"0.2\")))); // 0.3 exactly!\n    }\n}",
           "testCases": [
-            {"input": "integers [1,2,3,4,5]", "output": "15.0"},
-            {"input": "BigDecimal 0.1 + 0.2", "output": "0.3"}
+            {
+              "input": "integers [1,2,3,4,5]",
+              "output": "15.0"
+            },
+            {
+              "input": "BigDecimal 0.1 + 0.2",
+              "output": "0.3"
+            }
           ],
-          "constraints": "Must use T extends Number. Must call .doubleValue() for double sum. Must use BigDecimal arithmetic for preciseSum."
+          "constraints": "Must use T extends Number. Must call .doubleValue() for double sum. Must use BigDecimal arithmetic for preciseSum.",
+          "editorial": "T extends Number gives access to intValue(), doubleValue(), etc. Use a List<T> to store values. sum(): iterate calling doubleValue(). getMin()/getMax(): iterate with comparisons. The bounded type parameter enables type-safe generic numeric code that works for Integer, Double, BigDecimal."
         },
         {
           "displayOrder": 17,
@@ -348,10 +478,17 @@
           "starterCode": "public class Q17 {\n    public static void demonstrateUnsigned() {\n        int signed = -1; // as signed: -1. As unsigned 32-bit: 4,294,967,295\n\n        // TODO: demonstrate unsigned operations\n    }\n\n    public static void main(String[] args) {\n        demonstrateUnsigned();\n    }\n}",
           "solutionCode": "public class Q17 {\n    public static void demonstrateUnsigned() {\n        int minus1 = -1; // bits: 1111...1111\n\n        // Signed view:\n        System.out.println(\"Signed -1: \" + minus1);\n\n        // Unsigned view:\n        System.out.println(\"Unsigned -1: \" + Integer.toUnsignedString(minus1));   // 4294967295\n        System.out.println(\"Unsigned long: \" + Integer.toUnsignedLong(minus1));   // 4294967295L\n\n        // Comparison:\n        System.out.println(\"Signed   -1 < 1: \"   + (minus1 < 1));              // true\n        System.out.println(\"Unsigned -1 < 1: \"   + (Integer.compareUnsigned(minus1, 1) < 0)); // false! -1 unsigned = MAX\n\n        // Division:\n        System.out.println(\"Signed   (-1) / 2: \"  + (minus1 / 2));             // -1\n        System.out.println(\"Unsigned (-1) / 2: \"  + Integer.divideUnsigned(minus1, 2)); // 2147483647\n\n        // Real use case: network protocols (IP addresses, packet lengths in uint32)\n        int ipInt = 0xC0A80101; // 192.168.1.1 as unsigned 32-bit\n        System.out.printf(\"IP: %d.%d.%d.%d%n\",\n            (ipInt >>> 24) & 0xFF,\n            (ipInt >>> 16) & 0xFF,\n            (ipInt >>>  8) & 0xFF,\n             ipInt         & 0xFF);\n    }\n\n    public static void main(String[] args) {\n        demonstrateUnsigned();\n    }\n}",
           "testCases": [
-            {"input": "-1 unsigned", "output": "Unsigned -1: 4294967295"},
-            {"input": "IP 0xC0A80101", "output": "IP: 192.168.1.1"}
+            {
+              "input": "-1 unsigned",
+              "output": "Unsigned -1: 4294967295"
+            },
+            {
+              "input": "IP 0xC0A80101",
+              "output": "IP: 192.168.1.1"
+            }
           ],
-          "constraints": "Must use Integer.toUnsignedString(), Integer.compareUnsigned(), Integer.divideUnsigned(). Show signed vs unsigned difference for -1."
+          "constraints": "Must use Integer.toUnsignedString(), Integer.compareUnsigned(), Integer.divideUnsigned(). Show signed vs unsigned difference for -1.",
+          "editorial": "Java has no unsigned integer type. Simulate with long (use long for unsigned int). Integer.toUnsignedString() and Integer.compareUnsigned() treat the int bits as unsigned. For unsigned right shift, use >>> (zero-fills high bits) instead of >> (sign-extends). Long.toUnsignedString() for unsigned long."
         },
         {
           "displayOrder": 18,
@@ -364,8 +501,14 @@
           "hint3": "Return list of `ShadowReport(fieldName, location)` records.",
           "starterCode": "import java.util.*;\nimport java.util.regex.*;\n\npublic class Q18 {\n    record ShadowReport(String fieldName, String context) {}\n\n    public static List<ShadowReport> findShadowing(String sourceCode) {\n        // Find fields, then find parameters/locals with same names\n        return List.of();\n    }\n\n    public static void main(String[] args) {\n        String code = \"class Person {\\n\" +\n            \"  private String name;\\n\" +\n            \"  private int age;\\n\" +\n            \"  Person(String name, int age) {\\n\" +  // shadows!\n            \"    this.name = name;\\n\" +\n            \"    this.age = age;\\n\" +\n            \"  }\\n\" +\n            \"  void setName(String name) { this.name = name; }\\n\" + // shadows!\n            \"}\";\n        findShadowing(code).forEach(r ->\n            System.out.println(\"Shadow: '\" + r.fieldName() + \"' in \" + r.context()));\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.regex.*;\n\npublic class Q18 {\n    record ShadowReport(String fieldName, String context) {}\n\n    public static List<ShadowReport> findShadowing(String sourceCode) {\n        List<ShadowReport> reports = new ArrayList<>();\n\n        // Step 1: Find instance fields (private/protected/public <type> <name>;)\n        Set<String> fields = new HashSet<>();\n        Pattern fieldPat = Pattern.compile(\n            \"(?:private|protected|public)\\\\s+(?:static\\\\s+)?(?:final\\\\s+)?\\\\w+\\\\s+(\\\\w+)\\\\s*;\");\n        Matcher fm = fieldPat.matcher(sourceCode);\n        while (fm.find()) fields.add(fm.group(1));\n\n        // Step 2: Find method/constructor parameters\n        Pattern methodPat = Pattern.compile(\"\\\\w+\\\\s*\\\\(([^)]*)\\\\)\");\n        String[] lines = sourceCode.split(\"\\n\");\n        for (String line : lines) {\n            Matcher mm = methodPat.matcher(line.trim());\n            if (!mm.find()) continue;\n            String params = mm.group(1);\n            if (params.isBlank()) continue;\n            // Extract param names from 'Type name, Type name2' etc\n            for (String param : params.split(\",\")) {\n                String[] parts = param.trim().split(\"\\\\s+\");\n                if (parts.length >= 2) {\n                    String paramName = parts[parts.length - 1].replaceAll(\"[^a-zA-Z0-9_]\", \"\");\n                    if (fields.contains(paramName))\n                        reports.add(new ShadowReport(paramName, line.trim()));\n                }\n            }\n        }\n        return reports;\n    }\n\n    public static void main(String[] args) {\n        String code = \"class Person {\\n  private String name;\\n  private int age;\\n\" +\n            \"  Person(String name, int age) { this.name = name; this.age = age; }\\n\" +\n            \"  void setName(String name) { this.name = name; }\\n}\";\n        List<ShadowReport> shadows = findShadowing(code);\n        System.out.println(\"Found \" + shadows.size() + \" shadowing(s):\");\n        shadows.forEach(r -> System.out.println(\"  '\" + r.fieldName() + \"' in: \" + r.context()));\n    }\n}",
-          "testCases": [{"input": "class with name and age fields shadowed in constructor", "output": "Found 3 shadowing(s)"}],
-          "constraints": "Must detect field-to-parameter shadowing. Use regex for parsing. Return list of ShadowReport records."
+          "testCases": [
+            {
+              "input": "class with name and age fields shadowed in constructor",
+              "output": "Found 3 shadowing(s)"
+            }
+          ],
+          "constraints": "Must detect field-to-parameter shadowing. Use regex for parsing. Return list of ShadowReport records.",
+          "editorial": "Shadowing: a local variable with the same name as a field or outer-class member hides the outer one. this.x always refers to the field. Detect with reflection: compare Method.getParameters() names against Field names in the class. Shadowing is legal but confusing — many style guides forbid it."
         },
         {
           "displayOrder": 19,
@@ -378,8 +521,14 @@
           "hint3": "Use a Set<Class<?>> to avoid printing duplicates in diamond inheritance hierarchies.",
           "starterCode": "import java.util.*;\n\npublic class Q19 {\n    public static void typeHierarchy(Object obj) {\n        printHierarchy(obj.getClass(), 0, new HashSet<>());\n    }\n\n    static void printHierarchy(Class<?> clazz, int indent, Set<Class<?>> visited) {\n        if (clazz == null || visited.contains(clazz)) return;\n        visited.add(clazz);\n        String pad = \"  \".repeat(indent);\n        System.out.println(pad + clazz.getSimpleName() +\n            (clazz.isInterface() ? \" [interface]\" : \"\"));\n        // TODO: print superclass and interfaces\n    }\n\n    public static void main(String[] args) {\n        typeHierarchy(new java.util.ArrayList<>());\n        System.out.println(\"---\");\n        typeHierarchy(\"hello\");\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q19 {\n    public static void typeHierarchy(Object obj) {\n        System.out.println(\"Type hierarchy for: \" + obj.getClass().getName());\n        printHierarchy(obj.getClass(), 0, new HashSet<>());\n    }\n\n    static void printHierarchy(Class<?> clazz, int indent, Set<Class<?>> visited) {\n        if (clazz == null || visited.contains(clazz)) return;\n        visited.add(clazz);\n        String pad = \"  \".repeat(indent);\n        System.out.println(pad + (indent > 0 ? \"↑ \" : \"\") + clazz.getSimpleName() +\n            (clazz.isInterface() ? \" [interface]\" : \"\"));\n\n        // Print interfaces (sorted for consistency)\n        Class<?>[] ifaces = clazz.getInterfaces();\n        Arrays.sort(ifaces, Comparator.comparing(Class::getSimpleName));\n        for (Class<?> iface : ifaces)\n            printHierarchy(iface, indent + 1, visited);\n\n        // Print superclass\n        printHierarchy(clazz.getSuperclass(), indent + 1, visited);\n    }\n\n    public static void main(String[] args) {\n        typeHierarchy(new java.util.ArrayList<>());\n        System.out.println();\n        typeHierarchy(Integer.valueOf(42));\n    }\n}",
-          "testCases": [{"input": "new ArrayList<>()", "output": "contains ArrayList and AbstractList and List"}],
-          "constraints": "Must use getSuperclass() and getInterfaces(). Must stop at Object (getSuperclass() returns null for Object). Must avoid infinite loops for interfaces extending interfaces."
+          "testCases": [
+            {
+              "input": "new ArrayList<>()",
+              "output": "contains ArrayList and AbstractList and List"
+            }
+          ],
+          "constraints": "Must use getSuperclass() and getInterfaces(). Must stop at Object (getSuperclass() returns null for Object). Must avoid infinite loops for interfaces extending interfaces.",
+          "editorial": "Walk the type hierarchy: cls.getSuperclass() for parent classes, cls.getInterfaces() for interfaces. Recurse both. Use a Set<Class<?>> visited to avoid infinite loops (interfaces can be implemented multiple times via different paths). Collect all types in a List<String> of getSimpleName()."
         },
         {
           "displayOrder": 20,
@@ -393,9 +542,13 @@
           "starterCode": "import java.util.*;\n\npublic class Q20 {\n    record Question(String id, String code, String expectedOutput, String explanation) {}\n\n    public static List<Question> getQuestions() {\n        List<Question> qs = new ArrayList<>();\n        // TODO: add 10 questions about Java type system\n        return qs;\n    }\n\n    public static boolean checkAnswer(Question q, String userAnswer) {\n        return q.expectedOutput().trim().equalsIgnoreCase(userAnswer.trim());\n    }\n\n    public static void main(String[] args) {\n        // Self-test all questions\n        int correct = 0;\n        for (Question q : getQuestions()) {\n            boolean ok = checkAnswer(q, q.expectedOutput());\n            System.out.printf(\"%s: %s%n\", q.id(), ok ? \"PASS\" : \"FAIL\");\n            if (ok) correct++;\n        }\n        System.out.println(\"Self-test: \" + correct + \"/\" + getQuestions().size());\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q20 {\n    record Question(String id, String code, String expectedOutput, String explanation) {}\n\n    public static List<Question> getQuestions() {\n        return List.of(\n            new Question(\"Q1\",\n                \"byte b = 127; System.out.println((byte)(b+1));\",\n                \"-128\",\n                \"byte overflow wraps: 127+1=128 as int, cast to byte gives -128\"),\n            new Question(\"Q2\",\n                \"Integer a=127, b=127; System.out.println(a==b);\",\n                \"true\",\n                \"Integer cache: -128 to 127. 127 is cached, a==b is same object\"),\n            new Question(\"Q3\",\n                \"Integer c=128, d=128; System.out.println(c==d);\",\n                \"false\",\n                \"128 not cached. Different objects. Use .equals() for Integer comparison\"),\n            new Question(\"Q4\",\n                \"System.out.println(0.1+0.2==0.3);\",\n                \"false\",\n                \"IEEE 754 floating point: 0.1+0.2=0.30000000000000004, not exactly 0.3\"),\n            new Question(\"Q5\",\n                \"System.out.println((int)3.99);\",\n                \"3\",\n                \"Narrowing cast truncates (does not round). 3.99 -> 3\"),\n            new Question(\"Q6\",\n                \"String a=\\\"hi\\\", b=\\\"hi\\\"; System.out.println(a==b);\",\n                \"true\",\n                \"String literals interned in pool. Same literal = same object\"),\n            new Question(\"Q7\",\n                \"String a=\\\"hi\\\", b=new String(\\\"hi\\\"); System.out.println(a==b);\",\n                \"false\",\n                \"new String() creates new heap object, bypasses pool\"),\n            new Question(\"Q8\",\n                \"System.out.println(Integer.MAX_VALUE+1);\",\n                \"-2147483648\",\n                \"int overflow wraps to MIN_VALUE. Silent in Java\"),\n            new Question(\"Q9\",\n                \"long x=16777217L; float f=x; System.out.println(f==(float)x && x!=(long)f);\",\n                \"true\",\n                \"16777217 = 2^24+1. First long value that can't be exactly represented as float\"),\n            new Question(\"Q10\",\n                \"var x=42; x=\\\"hello\\\"; System.out.println(x);\",\n                \"COMPILE ERROR\",\n                \"var infers int from 42. Cannot assign String to int variable\")\n        );\n    }\n\n    public static boolean checkAnswer(Question q, String userAnswer) {\n        return q.expectedOutput().trim().equalsIgnoreCase(userAnswer.trim());\n    }\n\n    public static void main(String[] args) {\n        int correct = 0;\n        List<Question> qs = getQuestions();\n        for (Question q : qs) {\n            boolean ok = checkAnswer(q, q.expectedOutput());\n            System.out.printf(\"%s [%s]: %s%n\", q.id(), ok ? \"PASS\" : \"FAIL\", q.code());\n            if (ok) correct++;\n        }\n        System.out.printf(\"%nSelf-test score: %d/%d%n\", correct, qs.size());\n    }\n}",
           "testCases": [
-            {"input": "self-test all questions", "output": "Self-test score: 10/10"}
+            {
+              "input": "self-test all questions",
+              "output": "Self-test score: 10/10"
+            }
           ],
-          "constraints": "Must have exactly 10 questions. Must cover: overflow, autoboxing cache, string pool, casting, floating point, var. checkAnswer must be case-insensitive."
+          "constraints": "Must have exactly 10 questions. Must cover: overflow, autoboxing cache, string pool, casting, floating point, var. checkAnswer must be case-insensitive.",
+          "editorial": "Build a quiz engine with a Map<String, Runnable> of test cases. Each test verifies a specific type behavior (overflow, autoboxing cache, float precision). Use assert or custom check() method to report pass/fail. Return a score. This consolidates all type-system edge cases into a single runnable spec."
         }
       ]
     }

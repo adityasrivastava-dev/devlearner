@@ -664,13 +664,19 @@ function EditorialTab({ problem, editorial }) {
           <pre className="code-block" style={{ fontSize: 12 }}>{editorial.solutionCode}</pre>
         </div>
       )}
+      {(editorial?.editorial) && (
+        <div style={{ background: 'rgba(99,102,241,.06)', border: '1px solid rgba(99,102,241,.2)', borderLeft: '3px solid #6366f1', borderRadius: 8, padding: '12px 14px' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: '#6366f1', marginBottom: 6 }}>💡 Key Insight</div>
+          <p style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.8, margin: 0 }}>{editorial.editorial}</p>
+        </div>
+      )}
       {(editorial?.hint3 || problem.hint3) && (
         <div>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>📝 Key Steps</div>
           <pre className="code-block" style={{ fontSize: 12 }}>{editorial?.hint3 || problem.hint3}</pre>
         </div>
       )}
-      {!editorial?.solutionCode && !problem.bruteForce && !problem.hint3 && (
+      {!editorial?.solutionCode && !editorial?.editorial && !problem.bruteForce && !problem.hint3 && (
         <div style={{ color: 'var(--text3)', fontSize: 12 }}>Editorial content not yet added for this problem.</div>
       )}
     </div>

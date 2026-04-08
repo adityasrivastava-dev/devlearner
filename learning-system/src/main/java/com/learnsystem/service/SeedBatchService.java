@@ -23,15 +23,67 @@ private final ProblemRepository problemRepo;
 @Transactional
 public SeedBatchResponse seed(SeedBatchRequest req) {
     int seededTopics = 0, skippedTopics = 0, seededExamples = 0, seededProblems = 0;
+    int patchedProblems = 0;
     List<String> errors = new ArrayList<>();
 
     for (SeedBatchRequest.TopicSeedDto dto : req.getTopics()) {
         try {
-            if (req.isSkipExisting() && topicRepo.findByTitle(dto.getTitle()).isPresent()) {
-                log.info("Skipping existing topic: {}", dto.getTitle());
+            Optional<Topic> existing = topicRepo.findByTitle(dto.getTitle());
+
+            // ── PATCH MODE ────────────────────────────────────────────────────
+            // When skipExisting=true and the topic already exists:
+            // Instead of skipping entirely, patch any null/blank fields on
+            // existing problems (e.g. editorial added to a previously seeded batch).
+            // No new rows are created — only fills gaps on existing records.
+            if (req.isSkipExisting() && existing.isPresent()) {
+                Topic topic = existing.get();
+                if (dto.getProblems() != null) {
+                    List<Problem> existingProblems =
+                            problemRepo.findByTopicIdOrderByDisplayOrder(topic.getId());
+                    Map<Integer, Problem> byOrder = new HashMap<>();
+                    for (Problem p : existingProblems) byOrder.put(p.getDisplayOrder(), p);
+
+                    for (SeedBatchRequest.ProblemSeedDto pdto : dto.getProblems()) {
+                        Problem p = byOrder.get(pdto.getDisplayOrder());
+                        if (p == null) continue;
+
+                        boolean dirty = false;
+                        // Only fill fields that are currently null/blank in DB
+                        if (isBlank(p.getEditorial()) && notBlank(pdto.getEditorial())) {
+                            p.setEditorial(pdto.getEditorial()); dirty = true;
+                        }
+                        if (isBlank(p.getHint1()) && notBlank(pdto.getHint1())) {
+                            p.setHint1(pdto.getHint1()); dirty = true;
+                        }
+                        if (isBlank(p.getHint2()) && notBlank(pdto.getHint2())) {
+                            p.setHint2(pdto.getHint2()); dirty = true;
+                        }
+                        if (isBlank(p.getHint3()) && notBlank(pdto.getHint3())) {
+                            p.setHint3(pdto.getHint3()); dirty = true;
+                        }
+                        if (isBlank(p.getPattern()) && notBlank(pdto.getPattern())) {
+                            p.setPattern(pdto.getPattern()); dirty = true;
+                        }
+                        if (isBlank(p.getConstraints()) && notBlank(pdto.getConstraints())) {
+                            p.setConstraints(pdto.getConstraints()); dirty = true;
+                        }
+                        if (isBlank(p.getBruteForce()) && notBlank(pdto.getBruteForce())) {
+                            p.setBruteForce(pdto.getBruteForce()); dirty = true;
+                        }
+                        if (isBlank(p.getOptimizedApproach()) && notBlank(pdto.getOptimizedApproach())) {
+                            p.setOptimizedApproach(pdto.getOptimizedApproach()); dirty = true;
+                        }
+                        if (dirty) {
+                            problemRepo.save(p);
+                            patchedProblems++;
+                        }
+                    }
+                }
+                log.info("Patched existing topic: {} ({} problems updated)", dto.getTitle(), patchedProblems);
                 skippedTopics++;
                 continue;
             }
+            // ─────────────────────────────────────────────────────────────────
 
             Topic.Category cat;
             try {
@@ -51,7 +103,6 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
             topic.setOptimizedApproach(dto.getOptimizedApproach());
             topic.setWhenToUse(dto.getWhenToUse());
             topic.setStarterCode(dto.getStarterCode());
-            // Phase 1 story fields
             topic.setStory(dto.getStory());
             topic.setAnalogy(dto.getAnalogy());
             topic.setMemoryAnchor(dto.getMemoryAnchor());
@@ -95,7 +146,6 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
                     p.setHint(pdto.getHint());
                     p.setStarterCode(pdto.getStarterCode());
                     p.setSolutionCode(pdto.getSolutionCode());
-                    // Phase 1 hint fields
                     p.setHint1(pdto.getHint1());
                     p.setHint2(pdto.getHint2());
                     p.setHint3(pdto.getHint3());
@@ -103,6 +153,7 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
                     p.setConstraints(pdto.getConstraints());
                     p.setBruteForce(pdto.getBruteForce());
                     p.setOptimizedApproach(pdto.getOptimizedApproach());
+                    p.setEditorial(pdto.getEditorial());
                     try {
                         p.setDifficulty(Problem.Difficulty.valueOf(pdto.getDifficulty().toUpperCase()));
                     } catch (Exception e) {
@@ -131,8 +182,9 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
             .examplesSeeded(seededExamples)
             .problemsSeeded(seededProblems)
             .success(errors.isEmpty())
-            .message(String.format("Seeded %d topics, skipped %d, %d examples, %d problems",
-                    seededTopics, skippedTopics, seededExamples, seededProblems))
+            .message(String.format(
+                    "Seeded %d topics, patched %d existing (%d problems updated), %d examples, %d problems",
+                    seededTopics, skippedTopics, patchedProblems, seededExamples, seededProblems))
             .errors(errors)
             .build();
 }
@@ -144,4 +196,8 @@ public void clearAll() {
     topicRepo.deleteAll();
     log.info("Cleared all topics, examples and problems.");
 }
+
+// ── helpers ───────────────────────────────────────────────────────────────
+private boolean isBlank(String s) { return s == null || s.isBlank(); }
+private boolean notBlank(String s) { return s != null && !s.isBlank(); }
 }

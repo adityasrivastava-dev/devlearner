@@ -82,6 +82,7 @@ public ResponseEntity<?> getEditorial(
 	editorial.put("bruteForce",       bruteForce);
 	editorial.put("optimizedApproach",optimizedApproach);
 	editorial.put("hint3",            problem.getHint3());
+	editorial.put("editorial",        problem.getEditorial());  // per-problem explanation
 
 	return ResponseEntity.ok(editorial);
 }

@@ -72,6 +72,10 @@ private String bruteForce;
 @Column(name = "optimized_approach", columnDefinition = "TEXT")
 private String optimizedApproach;
 
+// Editorial explanation shown after the student solves the problem
+@Column(columnDefinition = "TEXT")
+private String editorial;
+
 @Column(name = "hint_1", columnDefinition = "TEXT")
 private String hint1;
 

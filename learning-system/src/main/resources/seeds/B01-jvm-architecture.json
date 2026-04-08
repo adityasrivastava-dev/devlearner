@@ -77,8 +77,14 @@
           "hint3": "Array types are objects — even int[] is an object on the heap. The variable 'arr' (the reference) is on the stack, but the array itself is on the heap.",
           "starterCode": "import java.util.*;\n\npublic class Q1 {\n    static int staticVal = 100;\n\n    public static Map<String, String> describeStorage() {\n        // Return a map: variable name -> \"stack\" or \"heap\"\n        // Variables to describe: staticVal, a, b, s, arr\n        Map<String, String> result = new HashMap<>();\n        // TODO: fill in the map\n        return result;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(describeStorage());\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q1 {\n    static int staticVal = 100;\n\n    public static Map<String, String> describeStorage() {\n        Map<String, String> result = new LinkedHashMap<>();\n        // staticVal: static field -> stored in Method Area (Metaspace), not stack/heap per se\n        // But for this exercise, static fields are NOT on heap and NOT on stack\n        result.put(\"staticVal\", \"method-area\");\n        // Local primitives -> stack\n        result.put(\"a\", \"stack\");          // int a = 5\n        result.put(\"b\", \"stack\");          // double b = 3.14\n        // References are on stack, but objects they point to are on heap\n        result.put(\"s_ref\", \"stack\");      // reference variable 's'\n        result.put(\"s_obj\", \"heap\");       // actual String object (String Pool on heap)\n        result.put(\"arr_ref\", \"stack\");    // reference variable 'arr'\n        result.put(\"arr_obj\", \"heap\");     // actual int[] array object\n        return result;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(describeStorage());\n    }\n}",
-          "testCases": [{"input": "", "output": "{staticVal=method-area, a=stack, b=stack, s_ref=stack, s_obj=heap, arr_ref=stack, arr_obj=heap}"}],
-          "constraints": "No constraints — conceptual exercise. Focus on correct classification."
+          "testCases": [
+            {
+              "input": "",
+              "output": "{staticVal=method-area, a=stack, b=stack, s_ref=stack, s_obj=heap, arr_ref=stack, arr_obj=heap}"
+            }
+          ],
+          "constraints": "No constraints — conceptual exercise. Focus on correct classification.",
+          "editorial": "Primitives (int, double, boolean) stored directly in the stack frame. Object references are on the stack, but the object itself is on the heap. Static fields live in the Method Area (Metaspace). int[] is an object — the array is on the heap, only the reference variable is on the stack."
         },
         {
           "displayOrder": 2,
@@ -92,10 +98,17 @@
           "starterCode": "import java.util.*;\n\npublic class Q2 {\n    public static String classLoaderChain(Class<?> clazz) {\n        // Return the chain as: \"ClassName -> ParentName -> ... -> Bootstrap(null)\"\n        // TODO\n        return \"\";\n    }\n\n    public static void main(String[] args) {\n        System.out.println(classLoaderChain(String.class));\n        System.out.println(classLoaderChain(Q2.class));\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q2 {\n    public static String classLoaderChain(Class<?> clazz) {\n        List<String> chain = new ArrayList<>();\n        ClassLoader cl = clazz.getClassLoader();\n        while (cl != null) {\n            chain.add(cl.getClass().getSimpleName());\n            cl = cl.getParent();\n        }\n        chain.add(\"Bootstrap(null)\");\n        return String.join(\" -> \", chain);\n    }\n\n    public static void main(String[] args) {\n        System.out.println(classLoaderChain(String.class)); // Bootstrap(null)\n        System.out.println(classLoaderChain(Q2.class));     // AppClassLoader -> ... -> Bootstrap(null)\n    }\n}",
           "testCases": [
-            {"input": "String.class", "output": "Bootstrap(null)"},
-            {"input": "Q2.class", "output": "contains AppClassLoader"}
+            {
+              "input": "String.class",
+              "output": "Bootstrap(null)"
+            },
+            {
+              "input": "Q2.class",
+              "output": "contains AppClassLoader"
+            }
           ],
-          "constraints": "Handle the case where getClassLoader() returns null immediately (Bootstrap-loaded classes)."
+          "constraints": "Handle the case where getClassLoader() returns null immediately (Bootstrap-loaded classes).",
+          "editorial": "Walk the chain with getParent() in a while loop. Null signals the Bootstrap ClassLoader (written in C — has no Java representation). Collect names using getClass().getName() or the literal 'Bootstrap'. Join with ' -> '."
         },
         {
           "displayOrder": 3,
@@ -108,8 +121,14 @@
           "hint3": "Even though 'list' held a reference to 'b' while inside the method, once 'list' itself is unreachable (method returned), everything it references is also unreachable.",
           "starterCode": "public class Q3 {\n    static String KEEP = \"static\";\n\n    public static int gcEligibleCount() {\n        // How many objects are eligible for GC after process() returns?\n        // Return the count\n        return 0;\n    }\n\n    static void process() {\n        String a = new String(\"alpha\");\n        String b = new String(\"beta\");\n        String c = a;\n        a = null;\n        String d = new String(\"delta\");\n        java.util.List<String> list = new java.util.ArrayList<>();\n        list.add(b);\n    }\n\n    public static void main(String[] args) {\n        process();\n        System.out.println(gcEligibleCount());\n    }\n}",
           "solutionCode": "public class Q3 {\n    static String KEEP = \"static\";\n\n    public static int gcEligibleCount() {\n        // Objects created in process():\n        // 1. new String(\"alpha\") — referenced by 'a' then by 'c'. After return, c gone -> eligible\n        // 2. new String(\"beta\")  — referenced by 'b', added to list. After return, list gone -> eligible\n        // 3. new String(\"delta\") — referenced by 'd'. After return, d gone -> eligible\n        // 4. new ArrayList<>()   — referenced by 'list'. After return, list gone -> eligible\n        // Note: a = null before return, but 'alpha' still reachable via 'c' until return\n        // KEEP is static -> not eligible\n        // String literals \"alpha\", \"beta\", \"delta\" in String Pool may survive\n        // But new String(...) creates HEAP objects separate from the pool\n        return 4; // alpha-obj, beta-obj, delta-obj, ArrayList-obj\n    }\n\n    static void process() {\n        String a = new String(\"alpha\");\n        String b = new String(\"beta\");\n        String c = a;\n        a = null;\n        String d = new String(\"delta\");\n        java.util.List<String> list = new java.util.ArrayList<>();\n        list.add(b);\n    }\n\n    public static void main(String[] args) {\n        process();\n        System.out.println(gcEligibleCount()); // 4\n    }\n}",
-          "testCases": [{"input": "", "output": "4"}],
-          "constraints": "Consider only objects explicitly created with 'new' in the process() method."
+          "testCases": [
+            {
+              "input": "",
+              "output": "4"
+            }
+          ],
+          "constraints": "Consider only objects explicitly created with 'new' in the process() method.",
+          "editorial": "After process() returns, all local references (sb, a, b, c, list) are gone. Objects they pointed to have no remaining strong reference — they are GC-eligible. Static fields (KEEP) are GC roots and are never eligible. Count every heap object that has no remaining path from a GC root."
         },
         {
           "displayOrder": 4,
@@ -122,8 +141,14 @@
           "hint3": "To check for JDK, try Class.forName('com.sun.tools.javac.Main') or check if 'java.home' contains 'jdk' substring.",
           "starterCode": "public class Q4 {\n    public static String getJvmInfo() {\n        // Return: \"<java.version> | <java.vendor> | <java.vm.name> | <JDK or JRE>\"\n        // TODO\n        return \"\";\n    }\n\n    public static void main(String[] args) {\n        System.out.println(getJvmInfo());\n    }\n}",
           "solutionCode": "public class Q4 {\n    public static String getJvmInfo() {\n        String version  = System.getProperty(\"java.version\");\n        String vendor   = System.getProperty(\"java.vendor\");\n        String vmName   = System.getProperty(\"java.vm.name\");\n        String jdkOrJre = isJdk() ? \"JDK\" : \"JRE\";\n        return version + \" | \" + vendor + \" | \" + vmName + \" | \" + jdkOrJre;\n    }\n\n    static boolean isJdk() {\n        try {\n            Class.forName(\"com.sun.tools.javac.Main\");\n            return true;\n        } catch (ClassNotFoundException e) {\n            // javac not available — this is a JRE-only installation\n            String javaHome = System.getProperty(\"java.home\").toLowerCase();\n            return javaHome.contains(\"jdk\");\n        }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(getJvmInfo());\n    }\n}",
-          "testCases": [{"input": "", "output": "contains '|' separators and Java version number"}],
-          "constraints": "Must use System.getProperty() API only. Output format: 'version | vendor | vmName | JDK/JRE'."
+          "testCases": [
+            {
+              "input": "",
+              "output": "contains '|' separators and Java version number"
+            }
+          ],
+          "constraints": "Must use System.getProperty() API only. Output format: 'version | vendor | vmName | JDK/JRE'.",
+          "editorial": "System.getProperty() reads JVM system properties at runtime. 'java.version', 'java.vendor', 'java.home' are always set. To detect JDK vs JRE, check for the presence of 'tools.jar' or try Class.forName('com.sun.tools.javac.Main')."
         },
         {
           "displayOrder": 5,
@@ -137,11 +162,21 @@
           "starterCode": "public class Q5 {\n    public static boolean[] compareStrings() {\n        String a = \"abc\";\n        String b = \"abc\";             // from String Pool\n        String c = new String(\"abc\"); // new heap object\n        String d = new String(\"abc\"); // another new heap object\n\n        // Return: [a==b, c==d, c.equals(d)]\n        return new boolean[]{false, false, false}; // TODO: fix\n    }\n\n    public static void main(String[] args) {\n        boolean[] results = compareStrings();\n        System.out.println(\"a==b (literals): \"  + results[0]);\n        System.out.println(\"c==d (new Strings): \" + results[1]);\n        System.out.println(\"c.equals(d): \"       + results[2]);\n    }\n}",
           "solutionCode": "public class Q5 {\n    public static boolean[] compareStrings() {\n        String a = \"abc\";\n        String b = \"abc\";             // same String Pool entry -> same reference\n        String c = new String(\"abc\"); // new heap object, different reference\n        String d = new String(\"abc\"); // another new heap object, different reference\n\n        boolean literalEq  = (a == b);         // true  — both point to String Pool \"abc\"\n        boolean newStrEq   = (c == d);         // false — different heap objects\n        boolean valueEq    = c.equals(d);      // true  — same content\n        return new boolean[]{literalEq, newStrEq, valueEq};\n    }\n\n    public static void main(String[] args) {\n        boolean[] results = compareStrings();\n        System.out.println(\"a==b (literals): \"    + results[0]); // true\n        System.out.println(\"c==d (new Strings): \" + results[1]); // false\n        System.out.println(\"c.equals(d): \"        + results[2]); // true\n    }\n}",
           "testCases": [
-            {"input": "", "output": "a==b (literals): true"},
-            {"input": "", "output": "c==d (new Strings): false"},
-            {"input": "", "output": "c.equals(d): true"}
+            {
+              "input": "",
+              "output": "a==b (literals): true"
+            },
+            {
+              "input": "",
+              "output": "c==d (new Strings): false"
+            },
+            {
+              "input": "",
+              "output": "c.equals(d): true"
+            }
           ],
-          "constraints": "Demonstrate all three cases. Do not use String.intern()."
+          "constraints": "Demonstrate all three cases. Do not use String.intern().",
+          "editorial": "String literals with the same value are interned — 'abc' and 'abc' are the same object in the String Pool, so == is true. new String('abc') creates a distinct heap object — == is false. .equals() compares content and returns true for all three. This is the most common Java equality trap."
         },
         {
           "displayOrder": 6,
@@ -154,8 +189,14 @@
           "hint3": "The depth varies by JVM stack size (-Xss flag) and frame size. Typical values: 5,000-20,000 depending on JVM settings.",
           "starterCode": "public class Q6 {\n    static int maxDepth = 0;\n\n    public static int maxRecursionDepth() {\n        try {\n            recurse(0);\n        } catch (StackOverflowError e) {\n            // depth recorded in maxDepth\n        }\n        return maxDepth;\n    }\n\n    static void recurse(int depth) {\n        // TODO: record depth and recurse deeper\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Max recursion depth: \" + maxRecursionDepth());\n    }\n}",
           "solutionCode": "public class Q6 {\n    static int maxDepth = 0;\n\n    public static int maxRecursionDepth() {\n        maxDepth = 0;\n        try {\n            recurse(0);\n        } catch (StackOverflowError e) {\n            // maxDepth holds the last successful depth\n        }\n        return maxDepth;\n    }\n\n    static void recurse(int depth) {\n        maxDepth = depth;       // record current depth\n        recurse(depth + 1);     // go deeper — eventually causes StackOverflowError\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Max recursion depth: \" + maxRecursionDepth());\n        // Typical output: 5000-20000 depending on -Xss setting\n    }\n}",
-          "testCases": [{"input": "", "output": "Max recursion depth: > 1000"}],
-          "constraints": "Must catch StackOverflowError (not Exception). Return value should be > 1000 on any standard JVM."
+          "testCases": [
+            {
+              "input": "",
+              "output": "Max recursion depth: > 1000"
+            }
+          ],
+          "constraints": "Must catch StackOverflowError (not Exception). Return value should be > 1000 on any standard JVM.",
+          "editorial": "Catch StackOverflowError (extends Error, not Exception) and return the depth counter. Frame size depends on local variables — add more locals to reduce max depth. Default JVM stack size is 512KB-1MB per thread; increase with -Xss. Typical values: 5,000–20,000 frames."
         },
         {
           "displayOrder": 7,
@@ -169,11 +210,21 @@
           "starterCode": "public class Q7 {\n    static int A = initA();\n    static int B = 20;\n    static int C = A + B;\n    static {\n        System.out.println(\"Static block: A=\" + A + \" B=\" + B + \" C=\" + C);\n    }\n\n    static int initA() {\n        System.out.println(\"initA called\");\n        return 10;\n    }\n\n    public static void main(String[] args) {\n        // Just accessing the class triggers static initialization\n        System.out.println(\"main: A=\" + A + \" B=\" + B + \" C=\" + C);\n    }\n}",
           "solutionCode": "public class Q7 {\n    // Initialization order is strictly top-to-bottom:\n    static int A = initA();    // (1) initA() called, prints \"initA called\", A=10\n    static int B = 20;         // (2) B=20\n    static int C = A + B;      // (3) C=10+20=30\n    static {\n        // (4) static block runs here in textual order\n        System.out.println(\"Static block: A=\" + A + \" B=\" + B + \" C=\" + C);\n    }\n\n    static int initA() {\n        System.out.println(\"initA called\");\n        return 10;\n    }\n\n    public static void main(String[] args) {\n        // Class is already initialized by the time main() runs\n        System.out.println(\"main: A=\" + A + \" B=\" + B + \" C=\" + C);\n    }\n    // Output:\n    // initA called\n    // Static block: A=10 B=20 C=30\n    // main: A=10 B=20 C=30\n}",
           "testCases": [
-            {"input": "", "output": "initA called"},
-            {"input": "", "output": "Static block: A=10 B=20 C=30"},
-            {"input": "", "output": "main: A=10 B=20 C=30"}
+            {
+              "input": "",
+              "output": "initA called"
+            },
+            {
+              "input": "",
+              "output": "Static block: A=10 B=20 C=30"
+            },
+            {
+              "input": "",
+              "output": "main: A=10 B=20 C=30"
+            }
           ],
-          "constraints": "Do not reorder fields. Output must match the textual initialization order exactly."
+          "constraints": "Do not reorder fields. Output must match the textual initialization order exactly.",
+          "editorial": "Static fields and static initializer blocks execute in textual (top-to-bottom) order when the class is first loaded. A static block reads/writes fields declared above it — fields below are not yet initialized. The JVM holds the class initialization lock, preventing concurrent initialization."
         },
         {
           "displayOrder": 8,
@@ -186,8 +237,14 @@
           "hint3": "Call System.gc() as a hint and check weakRef.get() — returns null if the object was collected.",
           "starterCode": "import java.lang.ref.WeakReference;\n\npublic class Q8 {\n    public static boolean weakRefCollected() throws InterruptedException {\n        // Create object with strong reference\n        Object strong = new Object();\n        WeakReference<Object> weakRef = new WeakReference<>(strong);\n\n        System.out.println(\"Before nulling strong ref: \" + weakRef.get());\n\n        // TODO: make object eligible for GC and check if weakRef.get() returns null\n        return false;\n    }\n\n    public static void main(String[] args) throws Exception {\n        System.out.println(\"WeakRef collected: \" + weakRefCollected());\n    }\n}",
           "solutionCode": "import java.lang.ref.WeakReference;\n\npublic class Q8 {\n    public static boolean weakRefCollected() throws InterruptedException {\n        Object strong = new Object();\n        WeakReference<Object> weakRef = new WeakReference<>(strong);\n\n        System.out.println(\"Before: weakRef.get() = \" + weakRef.get()); // not null\n\n        // Remove the only strong reference\n        strong = null;\n\n        // Hint to GC (not guaranteed, but usually works in test environments)\n        System.gc();\n        System.runFinalization();\n        Thread.sleep(100); // give GC a moment\n\n        Object result = weakRef.get();\n        System.out.println(\"After GC: weakRef.get() = \" + result); // likely null\n        return result == null;\n    }\n\n    public static void main(String[] args) throws Exception {\n        System.out.println(\"WeakRef collected: \" + weakRefCollected()); // likely true\n    }\n}",
-          "testCases": [{"input": "", "output": "WeakRef collected: true"}],
-          "constraints": "Use java.lang.ref.WeakReference. Note: System.gc() is not guaranteed — test may occasionally return false."
+          "testCases": [
+            {
+              "input": "",
+              "output": "WeakRef collected: true"
+            }
+          ],
+          "constraints": "Use java.lang.ref.WeakReference. Note: System.gc() is not guaranteed — test may occasionally return false.",
+          "editorial": "WeakReference allows GC to collect the referent when no strong reference exists. After nulling the strong reference and calling System.gc(), weakRef.get() returns null — the object was collected. Strong references always prevent GC regardless of gc() hints."
         },
         {
           "displayOrder": 9,
@@ -200,8 +257,14 @@
           "hint3": "Store objects in a List to prevent GC from collecting them before you measure.",
           "starterCode": "import java.util.*;\n\npublic class Q9 {\n    public static long measureHeapUsage() {\n        // Measure heap delta when allocating 10,000 Strings\n        // Return bytes used by the allocation\n        return 0;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Heap delta: \" + measureHeapUsage() + \" bytes\");\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q9 {\n    public static long measureHeapUsage() {\n        Runtime rt = Runtime.getRuntime();\n        System.gc();\n        long before = rt.totalMemory() - rt.freeMemory();\n        System.out.println(\"Heap before: \" + before + \" bytes\");\n\n        // Allocate 10,000 Strings — keep reference so GC doesn't collect\n        List<String> strings = new ArrayList<>(10_000);\n        for (int i = 0; i < 10_000; i++) {\n            strings.add(\"string-\" + i); // each creates a new String object\n        }\n\n        long after = rt.totalMemory() - rt.freeMemory();\n        System.out.println(\"Heap after:  \" + after  + \" bytes\");\n\n        long delta = after - before;\n        System.out.println(\"Delta: \" + delta + \" bytes (~\" + delta/1024 + \" KB)\");\n\n        // Prevent GC from collecting strings before measurement\n        strings.clear();\n        return delta;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Heap delta: \" + measureHeapUsage() + \" bytes\");\n    }\n}",
-          "testCases": [{"input": "", "output": "delta > 0 bytes"}],
-          "constraints": "Heap delta should be > 100,000 bytes for 10,000 String allocations."
+          "testCases": [
+            {
+              "input": "",
+              "output": "delta > 0 bytes"
+            }
+          ],
+          "constraints": "Heap delta should be > 100,000 bytes for 10,000 String allocations.",
+          "editorial": "Runtime.getRuntime().totalMemory() - freeMemory() gives approximate used heap. Call gc() before measuring for a cleaner baseline. Retain references in a List to prevent premature GC. The difference between before and after allocation approximates the heap cost of those objects."
         },
         {
           "displayOrder": 10,
@@ -214,8 +277,14 @@
           "hint3": "To test, compile a simple class to bytes using JavaCompiler API or use a pre-compiled byte array.",
           "starterCode": "public class Q10 {\n    static class ByteArrayClassLoader extends ClassLoader {\n        private final String className;\n        private final byte[] classBytes;\n\n        public ByteArrayClassLoader(String className, byte[] classBytes) {\n            this.className  = className;\n            this.classBytes = classBytes;\n        }\n\n        @Override\n        protected Class<?> findClass(String name) throws ClassNotFoundException {\n            // TODO: use defineClass to convert bytes to Class object\n            return super.findClass(name);\n        }\n    }\n\n    public static void main(String[] args) throws Exception {\n        // Demo: load and instantiate a class from its bytecode bytes\n        // (In real usage, read .class file bytes from disk or network)\n        System.out.println(\"ByteArrayClassLoader ready\");\n    }\n}",
           "solutionCode": "import java.io.*;\nimport java.nio.file.*;\n\npublic class Q10 {\n    static class ByteArrayClassLoader extends ClassLoader {\n        private final String className;\n        private final byte[] classBytes;\n\n        public ByteArrayClassLoader(String className, byte[] classBytes) {\n            this.className  = className;\n            this.classBytes = classBytes;\n        }\n\n        @Override\n        protected Class<?> findClass(String name) throws ClassNotFoundException {\n            if (name.equals(className)) {\n                // defineClass converts raw bytes to a live Class object\n                return defineClass(name, classBytes, 0, classBytes.length);\n            }\n            return super.findClass(name); // delegate for other classes\n        }\n    }\n\n    public static void main(String[] args) throws Exception {\n        // Read bytecode of any compiled class (example: read Q10.class itself)\n        String className = \"Q10\";\n        byte[] bytes = Files.readAllBytes(Path.of(className + \".class\"));\n\n        ByteArrayClassLoader loader = new ByteArrayClassLoader(className, bytes);\n        Class<?> clazz = loader.loadClass(className);\n        System.out.println(\"Loaded: \" + clazz.getName());\n        System.out.println(\"Loader: \" + clazz.getClassLoader().getClass().getSimpleName());\n    }\n}",
-          "testCases": [{"input": "", "output": "Loaded class name matches provided name"}],
-          "constraints": "Must extend ClassLoader and override findClass(). Must call defineClass() with the byte array."
+          "testCases": [
+            {
+              "input": "",
+              "output": "Loaded class name matches provided name"
+            }
+          ],
+          "constraints": "Must extend ClassLoader and override findClass(). Must call defineClass() with the byte array.",
+          "editorial": "Override findClass(String name) and call defineClass(name, bytes, 0, bytes.length). The parent-delegation model means loadClass() delegates to parent first — findClass() is only called when parent fails. defineClass() registers the Class object in this loader's namespace."
         },
         {
           "displayOrder": 11,
@@ -228,8 +297,14 @@
           "hint3": "To prevent parent delegation from caching, create a new ClassLoader instance for each class.",
           "starterCode": "import java.lang.ref.WeakReference;\nimport java.util.*;\n\npublic class Q11 {\n    // Simplified demo using ByteArrayClassLoader from Q10\n    // In real test: run with -XX:MaxMetaspaceSize=10m\n\n    static class MiniClassLoader extends ClassLoader {\n        Class<?> loadFromBytes(String name, byte[] bytes) {\n            return defineClass(name, bytes, 0, bytes.length);\n        }\n    }\n\n    public static int countClassesUntilOOM() {\n        List<Class<?>> classes = new ArrayList<>();\n        int count = 0;\n        try {\n            while (true) {\n                // TODO: generate a new class each iteration and load it\n                count++;\n            }\n        } catch (OutOfMemoryError e) {\n            System.out.println(\"OOM at class #\" + count + \": \" + e.getMessage());\n        }\n        return count;\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q11 {\n    // Minimal bytecode for an empty class 'DynN' (generated via ASM or hardcoded)\n    // For demo purposes we simulate by showing the pattern\n\n    static class MiniClassLoader extends ClassLoader {\n        Class<?> loadFromBytes(String name, byte[] bytes) {\n            return defineClass(name, bytes, 0, bytes.length);\n        }\n    }\n\n    // Minimal valid .class bytes for: public class DynN {}\n    // Header: magic(4) + minor(2) + major(2) + const_pool + access + this + super + ...\n    static byte[] generateMinimalClass(int index) {\n        // Use ASM in real scenario. Here we use a pre-built template for demo.\n        // This is a conceptual placeholder — actual bytecode needs proper structure.\n        // In production: use ObjectWeb ASM library\n        String name = \"Dyn\" + index;\n        // Return template bytes (simplified — won't compile without real ASM)\n        return new byte[0]; // placeholder\n    }\n\n    public static int countClassesUntilOOM() {\n        // Run with: java -XX:MaxMetaspaceSize=10m Q11\n        List<Class<?>> classes = new ArrayList<>();\n        int count = 0;\n        try {\n            while (true) {\n                MiniClassLoader cl = new MiniClassLoader();\n                // In real scenario: generate bytecode with ASM and load it\n                // Each new class uses Metaspace for class metadata\n                count++;\n                if (count > 100_000) break; // safety limit for demo\n            }\n        } catch (OutOfMemoryError e) {\n            System.out.println(\"Metaspace exhausted at class #\" + count);\n            System.out.println(\"Error: \" + e.getMessage());\n        }\n        return count;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Classes loaded before OOM: \" + countClassesUntilOOM());\n    }\n}",
-          "testCases": [{"input": "", "output": "demonstrates Metaspace pressure concept"}],
-          "constraints": "Conceptual exercise. Run with -XX:MaxMetaspaceSize=10m in real test. Must catch OutOfMemoryError."
+          "testCases": [
+            {
+              "input": "",
+              "output": "demonstrates Metaspace pressure concept"
+            }
+          ],
+          "constraints": "Conceptual exercise. Run with -XX:MaxMetaspaceSize=10m in real test. Must catch OutOfMemoryError.",
+          "editorial": "Each ClassLoader instance maintains its own namespace. Create a fresh ByteClassLoader per class to bypass caching — otherwise loadClass() returns the same cached class. Track classes in a List to prevent GC. Metaspace fills when the list grows, as each Class object consumes Metaspace."
         },
         {
           "displayOrder": 12,
@@ -243,11 +318,21 @@
           "starterCode": "import java.util.concurrent.*;\n\npublic class Q12 {\n    private static final ThreadLocal<String> requestId = new ThreadLocal<>();\n\n    public static void setRequestId(String id) {\n        // TODO\n    }\n\n    public static String getRequestId() {\n        // TODO\n        return null;\n    }\n\n    public static void main(String[] args) throws InterruptedException {\n        CountDownLatch latch = new CountDownLatch(2);\n        // Start two threads with different IDs and verify isolation\n        // TODO\n        latch.await();\n    }\n}",
           "solutionCode": "import java.util.concurrent.*;\n\npublic class Q12 {\n    private static final ThreadLocal<String> requestId = new ThreadLocal<>();\n\n    public static void setRequestId(String id) {\n        requestId.set(id);\n    }\n\n    public static String getRequestId() {\n        return requestId.get();\n    }\n\n    public static void main(String[] args) throws InterruptedException {\n        CountDownLatch latch = new CountDownLatch(2);\n\n        Thread t1 = new Thread(() -> {\n            setRequestId(\"req-001\");\n            try { Thread.sleep(50); } catch (InterruptedException e) {}\n            System.out.println(\"Thread-1 requestId: \" + getRequestId()); // req-001\n            requestId.remove(); // cleanup to prevent memory leak\n            latch.countDown();\n        });\n\n        Thread t2 = new Thread(() -> {\n            setRequestId(\"req-002\");\n            try { Thread.sleep(50); } catch (InterruptedException e) {}\n            System.out.println(\"Thread-2 requestId: \" + getRequestId()); // req-002\n            requestId.remove();\n            latch.countDown();\n        });\n\n        t1.start();\n        t2.start();\n        latch.await();\n        System.out.println(\"Main thread requestId: \" + getRequestId()); // null\n    }\n}",
           "testCases": [
-            {"input": "", "output": "Thread-1 requestId: req-001"},
-            {"input": "", "output": "Thread-2 requestId: req-002"},
-            {"input": "", "output": "Main thread requestId: null"}
+            {
+              "input": "",
+              "output": "Thread-1 requestId: req-001"
+            },
+            {
+              "input": "",
+              "output": "Thread-2 requestId: req-002"
+            },
+            {
+              "input": "",
+              "output": "Main thread requestId: null"
+            }
           ],
-          "constraints": "Must use ThreadLocal. Must call remove() after use to prevent memory leaks in thread pools."
+          "constraints": "Must use ThreadLocal. Must call remove() after use to prevent memory leaks in thread pools.",
+          "editorial": "ThreadLocal.set() stores value in the current thread's internal map (Thread.threadLocals). remove() clears it — essential to prevent memory leaks in thread-pool environments (Tomcat, Spring) where threads are reused. Each thread sees its own isolated value."
         },
         {
           "displayOrder": 13,
@@ -261,10 +346,17 @@
           "starterCode": "public class Q13 {\n    public static void main(String[] args) throws InterruptedException {\n        // TODO: Register a shutdown hook\n\n        System.out.println(\"Application starting...\");\n        Thread.sleep(100); // simulate work\n        System.out.println(\"Application work done.\");\n\n        System.exit(0); // shutdown hooks will run before JVM exits\n    }\n}",
           "solutionCode": "public class Q13 {\n    public static void main(String[] args) throws InterruptedException {\n        // Register shutdown hook — runs when JVM exits\n        Runtime.getRuntime().addShutdownHook(new Thread(() -> {\n            System.out.println(\"[SHUTDOWN HOOK] Cleaning up resources...\");\n            System.out.println(\"[SHUTDOWN HOOK] Closing DB connections, flushing logs\");\n            System.out.println(\"[SHUTDOWN HOOK] Goodbye!\");\n        }, \"shutdown-hook-thread\"));\n\n        System.out.println(\"Application starting...\");\n        Thread.sleep(100); // simulate work\n        System.out.println(\"Application work done.\");\n\n        System.exit(0);\n        // Output order:\n        // Application starting...\n        // Application work done.\n        // [SHUTDOWN HOOK] Cleaning up resources...\n        // [SHUTDOWN HOOK] Closing DB connections, flushing logs\n        // [SHUTDOWN HOOK] Goodbye!\n    }\n}",
           "testCases": [
-            {"input": "", "output": "Application work done."},
-            {"input": "", "output": "[SHUTDOWN HOOK] Cleaning up resources..."}
+            {
+              "input": "",
+              "output": "Application work done."
+            },
+            {
+              "input": "",
+              "output": "[SHUTDOWN HOOK] Cleaning up resources..."
+            }
           ],
-          "constraints": "Must use Runtime.getRuntime().addShutdownHook(). Hook must complete before JVM fully exits."
+          "constraints": "Must use Runtime.getRuntime().addShutdownHook(). Hook must complete before JVM fully exits.",
+          "editorial": "Runtime.getRuntime().addShutdownHook(new Thread(...)) registers a hook that runs when the JVM shuts down normally. Hooks execute concurrently — add synchronization if needed. SIGKILL (-9) bypasses hooks. Good for closing DB connections, flushing buffers."
         },
         {
           "displayOrder": 14,
@@ -277,8 +369,14 @@
           "hint3": "This is useful in diagnostic tools and health endpoints to report the JVM configuration.",
           "starterCode": "import java.lang.management.*;\nimport java.util.*;\nimport java.util.stream.*;\n\npublic class Q14 {\n    public static List<String> getJvmFlags() {\n        // Return JVM args starting with -X or -XX\n        return Collections.emptyList();\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"JVM Flags:\");\n        getJvmFlags().forEach(f -> System.out.println(\"  \" + f));\n    }\n}",
           "solutionCode": "import java.lang.management.*;\nimport java.util.*;\nimport java.util.stream.*;\n\npublic class Q14 {\n    public static List<String> getJvmFlags() {\n        return ManagementFactory.getRuntimeMXBean()\n            .getInputArguments()\n            .stream()\n            .filter(arg -> arg.startsWith(\"-X\"))\n            .collect(Collectors.toList());\n    }\n\n    public static void main(String[] args) {\n        List<String> flags = getJvmFlags();\n        System.out.println(\"JVM Flags (\" + flags.size() + \" found):\");\n        if (flags.isEmpty()) {\n            System.out.println(\"  (none — run with -Xmx256m to see flags)\");\n        } else {\n            flags.forEach(f -> System.out.println(\"  \" + f));\n        }\n    }\n}",
-          "testCases": [{"input": "", "output": "JVM Flags (0 found):"}],
-          "constraints": "Must use ManagementFactory.getRuntimeMXBean(). Run with -Xmx256m -Xss512k to see flags in output."
+          "testCases": [
+            {
+              "input": "",
+              "output": "JVM Flags (0 found):"
+            }
+          ],
+          "constraints": "Must use ManagementFactory.getRuntimeMXBean(). Run with -Xmx256m -Xss512k to see flags in output.",
+          "editorial": "ManagementFactory.getRuntimeMXBean().getInputArguments() returns JVM arguments passed at startup (-Xmx, -XX:+UseG1GC, etc.). Useful for diagnostics endpoints and health checks. Note: some JVM flags are not exposed this way — use -XX:+PrintFlagsFinal for the full list."
         },
         {
           "displayOrder": 15,
@@ -292,10 +390,17 @@
           "starterCode": "public class Q15 {\n    static class A {\n        static int val = B.computeA();\n        static int getVal() { return val; }\n    }\n\n    static class B {\n        static int val = A.getVal() + 10; // reads A.val during A's own initialization!\n        static int computeA() { return 42; }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"A.val = \" + A.val);\n        System.out.println(\"B.val = \" + B.val);\n        // What gets printed? Why?\n    }\n}",
           "solutionCode": "public class Q15 {\n    // Circular static initialization analysis:\n    // 1. main() accesses A.val -> triggers A's static initialization\n    // 2. A's init: val = B.computeA() -> triggers B's static initialization\n    // 3. B's init: val = A.getVal() + 10\n    //    -> tries to access A, but A is CURRENTLY BEING INITIALIZED\n    //    -> JVM returns A's PARTIAL state (val = 0, the default int value!)\n    //    -> B.val = 0 + 10 = 10\n    // 4. B init completes, B.computeA() returns 42\n    // 5. A.val = 42\n    // Final: A.val=42, B.val=10 (not 52 as you might expect!)\n\n    static class A {\n        static int val = B.computeA(); // triggers B init during A's init\n        static int getVal() { return val; }\n    }\n\n    static class B {\n        // Reads A.getVal() which returns A.val = 0 (A not fully initialized yet!)\n        static int val = A.getVal() + 10;\n        static int computeA() { return 42; }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"A.val = \" + A.val); // 42\n        System.out.println(\"B.val = \" + B.val); // 10 (NOT 52!)\n        System.out.println(\"Circular init caused B to see A's default value 0\");\n    }\n}",
           "testCases": [
-            {"input": "", "output": "A.val = 42"},
-            {"input": "", "output": "B.val = 10"}
+            {
+              "input": "",
+              "output": "A.val = 42"
+            },
+            {
+              "input": "",
+              "output": "B.val = 10"
+            }
           ],
-          "constraints": "Circular static initialization is a REAL Java pitfall. Output must demonstrate the partial-initialization anomaly."
+          "constraints": "Circular static initialization is a REAL Java pitfall. Output must demonstrate the partial-initialization anomaly.",
+          "editorial": "Circular static initialization: A's static block references B, B's static block references A. The JVM class init lock prevents true deadlock, but A may observe B's fields at default values (0/null/false) before B's initializer runs. This is undefined initialization order — avoid circular static dependencies."
         },
         {
           "displayOrder": 16,
@@ -309,10 +414,17 @@
           "starterCode": "public class Q16 {\n    // Pattern 1: Initialization-On-Demand Holder (correct)\n    public static class SafeSingleton {\n        private SafeSingleton() {}\n        // TODO: implement IODH\n        public static SafeSingleton getInstance() { return null; }\n    }\n\n    // Pattern 2: Broken DCL (without volatile)\n    public static class BrokenDCL {\n        private static BrokenDCL instance; // missing volatile!\n        private int value;\n        private BrokenDCL() { this.value = 42; }\n        public static BrokenDCL getInstance() {\n            if (instance == null) {\n                synchronized (BrokenDCL.class) {\n                    if (instance == null) instance = new BrokenDCL();\n                }\n            }\n            return instance;\n        }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(SafeSingleton.getInstance() == SafeSingleton.getInstance());\n    }\n}",
           "solutionCode": "public class Q16 {\n    // Pattern 1: Initialization-On-Demand Holder — correct and efficient\n    public static class SafeSingleton {\n        private final int value;\n        private SafeSingleton() { this.value = 42; }\n\n        // Holder class loaded ONLY when getInstance() is first called\n        // JVM class loading is thread-safe — no explicit sync needed\n        private static final class Holder {\n            static final SafeSingleton INSTANCE = new SafeSingleton();\n        }\n\n        public static SafeSingleton getInstance() {\n            return Holder.INSTANCE;\n        }\n\n        public int getValue() { return value; }\n    }\n\n    // Pattern 2: FIXED DCL with volatile\n    public static class FixedDCL {\n        // volatile ensures: (1) visibility, (2) prevents instruction reordering\n        // Without volatile: new FixedDCL() could be reordered to:\n        //   1. allocate memory, 2. assign reference, 3. run constructor\n        // Another thread sees non-null reference but uninitialized object!\n        private static volatile FixedDCL instance;\n        private int value;\n        private FixedDCL() { this.value = 42; }\n\n        public static FixedDCL getInstance() {\n            if (instance == null) {\n                synchronized (FixedDCL.class) {\n                    if (instance == null) {\n                        instance = new FixedDCL(); // volatile prevents reorder\n                    }\n                }\n            }\n            return instance;\n        }\n    }\n\n    public static void main(String[] args) {\n        SafeSingleton s1 = SafeSingleton.getInstance();\n        SafeSingleton s2 = SafeSingleton.getInstance();\n        System.out.println(\"Same instance: \" + (s1 == s2));    // true\n        System.out.println(\"Value: \" + s1.getValue());          // 42\n        System.out.println(\"IODH: no synchronization overhead after first load\");\n    }\n}",
           "testCases": [
-            {"input": "", "output": "Same instance: true"},
-            {"input": "", "output": "Value: 42"}
+            {
+              "input": "",
+              "output": "Same instance: true"
+            },
+            {
+              "input": "",
+              "output": "Value: 42"
+            }
           ],
-          "constraints": "IODH must use a static nested class as the holder. Fixed DCL must use volatile keyword."
+          "constraints": "IODH must use a static nested class as the holder. Fixed DCL must use volatile keyword.",
+          "editorial": "IODH leverages the JVM guarantee that class initialization is thread-safe and happens exactly once. The nested Holder class is not loaded until getInstance() is first called — giving lazy initialization without any synchronization overhead. Enum singleton is even simpler but less flexible."
         },
         {
           "displayOrder": 17,
@@ -326,10 +438,17 @@
           "starterCode": "import java.util.*;\n\npublic class Q17 {\n    // LEAKY: grows forever\n    static Map<String, byte[]> leakyCache = new HashMap<>();\n\n    static void processLeaky(String key) {\n        // TODO: add to cache without eviction\n    }\n\n    // FIXED: bounded LRU cache\n    static Map<String, byte[]> fixedCache = null;\n\n    static void initFixedCache(int maxSize) {\n        // TODO: create LRU-evicting LinkedHashMap\n    }\n\n    static void processFixed(String key) {\n        // TODO: add to bounded cache\n    }\n\n    public static void main(String[] args) {\n        // Demonstrate both versions\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q17 {\n    // LEAKY: static map grows forever (GC root keeps all values alive)\n    static Map<String, byte[]> leakyCache = new HashMap<>();\n\n    static void processLeaky(String key) {\n        // Each call adds 1KB to the unbounded cache — never evicted\n        leakyCache.put(key, new byte[1024]);\n    }\n\n    // FIXED: LRU cache capped at maxSize entries\n    static final int MAX = 1000;\n    static Map<String, byte[]> fixedCache = new LinkedHashMap<>(MAX, 0.75f, true) {\n        @Override\n        protected boolean removeEldestEntry(Map.Entry<String, byte[]> eldest) {\n            return size() > MAX; // evict oldest when over limit\n        }\n    };\n\n    static void processFixed(String key) {\n        fixedCache.put(key, new byte[1024]); // auto-evicts when > MAX\n    }\n\n    public static void main(String[] args) {\n        Runtime rt = Runtime.getRuntime();\n        System.gc();\n        long start = rt.totalMemory() - rt.freeMemory();\n\n        // Leaky: 10,000 unique keys = 10,000 x 1KB = ~10MB retained\n        for (int i = 0; i < 10_000; i++) processLeaky(\"key-\" + i);\n        long afterLeak = rt.totalMemory() - rt.freeMemory();\n\n        // Fixed: only MAX=1000 entries retained regardless of inserts\n        for (int i = 0; i < 10_000; i++) processFixed(\"key-\" + i);\n\n        System.out.printf(\"Leaky cache size:  %d entries, heap delta: +%dKB%n\",\n            leakyCache.size(), (afterLeak - start) / 1024);\n        System.out.printf(\"Fixed cache size:  %d entries (capped at %d)%n\",\n            fixedCache.size(), MAX);\n    }\n}",
           "testCases": [
-            {"input": "", "output": "Leaky cache size:  10000 entries"},
-            {"input": "", "output": "Fixed cache size:  1000 entries (capped at 1000)"}
+            {
+              "input": "",
+              "output": "Leaky cache size:  10000 entries"
+            },
+            {
+              "input": "",
+              "output": "Fixed cache size:  1000 entries (capped at 1000)"
+            }
           ],
-          "constraints": "Leaky version must show 10,000 entries. Fixed version must cap at MAX (1000) entries using removeEldestEntry."
+          "constraints": "Leaky version must show 10,000 entries. Fixed version must cap at MAX (1000) entries using removeEldestEntry.",
+          "editorial": "Static Map is a GC root — all values are permanently reachable and never collected. Fix: cap with LinkedHashMap(capacity, 0.75f, true) overriding removeEldestEntry. WeakHashMap keys are collected when no other strong reference exists — good when the key itself is the lifetime indicator."
         },
         {
           "displayOrder": 18,
@@ -343,10 +462,17 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q18 {\n    record ObjectStats(String className, int count, long bytesEach) {\n        long totalBytes() { return (long) count * bytesEach; }\n    }\n\n    public static List<ObjectStats> analyzeHeapUsage() {\n        // Simulate different object types with counts and sizes\n        List<ObjectStats> stats = new ArrayList<>();\n        // TODO: add 5 different types, sort by total bytes desc\n        return stats;\n    }\n\n    public static void main(String[] args) {\n        analyzeHeapUsage().forEach(s ->\n            System.out.printf(\"%-30s count=%-6d size=%-8d total=%dKB%n\",\n                s.className(), s.count(), s.bytesEach(), s.totalBytes()/1024));\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q18 {\n    record ObjectStats(String className, int count, long bytesEach) {\n        long totalBytes() { return (long) count * bytesEach; }\n    }\n\n    public static List<ObjectStats> analyzeHeapUsage() {\n        // Simulate a real heap analysis snapshot\n        List<ObjectStats> stats = new ArrayList<>();\n        stats.add(new ObjectStats(\"byte[]\",              50_000, 1024));  // 50MB\n        stats.add(new ObjectStats(\"java.lang.String\",   200_000,   56));  // 11MB\n        stats.add(new ObjectStats(\"java.util.HashMap\",   10_000,  128));  // 1.2MB\n        stats.add(new ObjectStats(\"com.app.UserSession\",  5_000,  256));  // 1.25MB\n        stats.add(new ObjectStats(\"java.util.ArrayList\",  8_000,   40));  // 320KB\n\n        // Sort by total bytes descending (like MAT's 'Retained Heap' view)\n        stats.sort(Comparator.comparingLong(ObjectStats::totalBytes).reversed());\n        return stats;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"=== Heap Analysis Report ===\");\n        System.out.printf(\"%-30s %-10s %-10s %s%n\", \"Class\", \"Count\", \"Size\", \"Total\");\n        System.out.println(\"-\".repeat(65));\n        analyzeHeapUsage().forEach(s ->\n            System.out.printf(\"%-30s count=%-6d bytes=%-8d total=%dKB%n\",\n                s.className(), s.count(), s.bytesEach(), s.totalBytes()/1024));\n    }\n}",
           "testCases": [
-            {"input": "", "output": "byte[] count=50000"},
-            {"input": "", "output": "sorted by total bytes descending"}
+            {
+              "input": "",
+              "output": "byte[] count=50000"
+            },
+            {
+              "input": "",
+              "output": "sorted by total bytes descending"
+            }
           ],
-          "constraints": "Must use Java record for ObjectStats. Must sort by totalBytes() descending. Must include 5+ object types."
+          "constraints": "Must use Java record for ObjectStats. Must sort by totalBytes() descending. Must include 5+ object types.",
+          "editorial": "Track per-class counts and bytes-each. Sort by total bytes (count * bytesEach) descending. ObjectStats as a record gives free equals/hashCode/toString. The pattern mirrors jmap -histo output which shows live objects by class, count, and total bytes — critical for OOM diagnosis."
         },
         {
           "displayOrder": 19,
@@ -359,8 +485,14 @@
           "hint3": "Expect batch 1-2 to be 10-100x slower than batch 8-10 due to JIT warm-up.",
           "starterCode": "public class Q19 {\n    // Computation to benchmark (simple but non-trivial)\n    static long compute(int n) {\n        long sum = 0;\n        for (int i = 1; i <= n; i++) sum += (long) i * i;\n        return sum;\n    }\n\n    public static long[] runBenchmark() {\n        // Run 10 batches of 10,000 calls, return nanoseconds per call per batch\n        long[] batchTimes = new long[10];\n        // TODO\n        return batchTimes;\n    }\n\n    public static void main(String[] args) {\n        long[] times = runBenchmark();\n        for (int i = 0; i < times.length; i++)\n            System.out.printf(\"Batch %2d: %,d ns/call%n\", i+1, times[i]);\n    }\n}",
           "solutionCode": "public class Q19 {\n    static volatile long blackhole; // prevent dead-code elimination\n\n    static long compute(int n) {\n        long sum = 0;\n        for (int i = 1; i <= n; i++) sum += (long) i * i;\n        return sum;\n    }\n\n    public static long[] runBenchmark() {\n        final int BATCHES = 10;\n        final int PER_BATCH = 10_000;\n        long[] batchNsPerCall = new long[BATCHES];\n\n        for (int batch = 0; batch < BATCHES; batch++) {\n            long start = System.nanoTime();\n            for (int i = 0; i < PER_BATCH; i++) {\n                blackhole = compute(1000); // sink result to prevent JIT elimination\n            }\n            long elapsed = System.nanoTime() - start;\n            batchNsPerCall[batch] = elapsed / PER_BATCH;\n        }\n        return batchNsPerCall;\n    }\n\n    public static void main(String[] args) {\n        long[] times = runBenchmark();\n        System.out.println(\"=== JIT Warm-up Benchmark ===\");\n        for (int i = 0; i < times.length; i++)\n            System.out.printf(\"Batch %2d: %,6d ns/call%s%n\",\n                i+1, times[i], i < 2 ? \" (cold)\" : i > 7 ? \" (hot/JIT)\" : \"\");\n\n        System.out.printf(\"%nCold (batch 1): %,d ns  |  Hot (batch 10): %,d ns%n\",\n            times[0], times[BATCHES-1]);\n        System.out.printf(\"Speedup: %.1fx%n\", (double) times[0] / times[BATCHES-1]);\n    }\n}",
-          "testCases": [{"input": "", "output": "Batch  1: larger ns/call than Batch 10"}],
-          "constraints": "Must use volatile blackhole sink. Must show at least 10 batches. Cold batch should be measurably slower than hot batch."
+          "testCases": [
+            {
+              "input": "",
+              "output": "Batch  1: larger ns/call than Batch 10"
+            }
+          ],
+          "constraints": "Must use volatile blackhole sink. Must show at least 10 batches. Cold batch should be measurably slower than hot batch.",
+          "editorial": "Batch calls rather than measuring per-call to reduce System.nanoTime() overhead (each call ~25ns). Use a volatile blackhole field to prevent dead-code elimination. Expect 10-100x speedup after JIT warm-up. Report median not mean — JIT spikes make means misleading."
         },
         {
           "displayOrder": 20,
@@ -374,10 +506,17 @@
           "starterCode": "import java.util.*;\n\npublic class Q20 {\n    static Deque<Integer> stack = new ArrayDeque<>();\n    static Map<String, Integer> vars = new HashMap<>();\n\n    static void execute(String[] program) {\n        for (String instr : program) {\n            String[] parts = instr.trim().split(\"\\\\s+\");\n            String op = parts[0];\n            // TODO: implement each instruction\n        }\n    }\n\n    public static void main(String[] args) {\n        // Compute (3 + 4) * 2\n        execute(new String[]{\n            \"PUSH 3\",\n            \"PUSH 4\",\n            \"ADD\",\n            \"PUSH 2\",\n            \"MUL\",\n            \"PRINT\"\n        });\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q20 {\n    static Deque<Integer> stack = new ArrayDeque<>();\n    static Map<String, Integer> vars = new HashMap<>();\n\n    static void execute(String[] program) {\n        stack.clear();\n        vars.clear();\n        for (String instr : program) {\n            String[] parts = instr.trim().split(\"\\\\s+\");\n            String op = parts[0].toUpperCase();\n            switch (op) {\n                case \"PUSH\"  -> stack.push(Integer.parseInt(parts[1]));\n                case \"POP\"   -> stack.pop();\n                case \"ADD\"   -> { int b = stack.pop(); int a = stack.pop(); stack.push(a + b); }\n                case \"MUL\"   -> { int b = stack.pop(); int a = stack.pop(); stack.push(a * b); }\n                case \"SUB\"   -> { int b = stack.pop(); int a = stack.pop(); stack.push(a - b); }\n                case \"DIV\"   -> { int b = stack.pop(); int a = stack.pop(); stack.push(a / b); }\n                case \"STORE\" -> vars.put(parts[1], stack.pop());\n                case \"LOAD\"  -> stack.push(vars.getOrDefault(parts[1], 0));\n                case \"PRINT\" -> System.out.println(stack.pop());\n                default      -> throw new IllegalArgumentException(\"Unknown opcode: \" + op);\n            }\n        }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Computing (3 + 4) * 2:\");\n        execute(new String[]{ \"PUSH 3\", \"PUSH 4\", \"ADD\", \"PUSH 2\", \"MUL\", \"PRINT\" });\n        // Output: 14\n\n        System.out.println(\"\\nComputing sum = 10 + 5, then sum * 3:\");\n        execute(new String[]{\n            \"PUSH 10\", \"PUSH 5\", \"ADD\", \"STORE sum\",\n            \"LOAD sum\", \"PUSH 3\", \"MUL\", \"PRINT\"\n        });\n        // Output: 45\n    }\n}",
           "testCases": [
-            {"input": "PUSH 3, PUSH 4, ADD, PUSH 2, MUL, PRINT", "output": "14"},
-            {"input": "PUSH 10, PUSH 5, ADD, STORE sum, LOAD sum, PUSH 3, MUL, PRINT", "output": "45"}
+            {
+              "input": "PUSH 3, PUSH 4, ADD, PUSH 2, MUL, PRINT",
+              "output": "14"
+            },
+            {
+              "input": "PUSH 10, PUSH 5, ADD, STORE sum, LOAD sum, PUSH 3, MUL, PRINT",
+              "output": "45"
+            }
           ],
-          "constraints": "Must support all 7 opcodes. Stack must be LIFO. Variables stored in HashMap. Must produce correct results for both test cases."
+          "constraints": "Must support all 7 opcodes. Stack must be LIFO. Variables stored in HashMap. Must produce correct results for both test cases.",
+          "editorial": "Stack-based VM: PUSH puts value on deque, ADD pops two and pushes sum, STORE pops into variable map, LOAD pushes from map, PRINT pops and prints. This is exactly how the JVM operand stack works. Deque<Integer> as the stack with push/pop on same end gives LIFO semantics."
         }
       ]
     }

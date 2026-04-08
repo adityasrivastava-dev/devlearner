@@ -78,14 +78,33 @@
           "starterCode": "public class Q1 {\n    public static boolean isPowerOfTwo(int n) {\n        return false; // TODO\n    }\n\n    public static void main(String[] args) {\n        for (int n : new int[]{-4, 0, 1, 2, 3, 4, 7, 8, 16, 1024, 1023}) {\n            System.out.printf(\"%5d: %s%n\", n, isPowerOfTwo(n));\n        }\n    }\n}",
           "solutionCode": "public class Q1 {\n    public static boolean isPowerOfTwo(int n) {\n        return n > 0 && (n & (n-1)) == 0;\n        // n > 0: exclude 0 and negatives\n        // n & (n-1): clears lowest set bit. If only one bit set (power of 2), result is 0\n    }\n\n    public static void main(String[] args) {\n        for (int n : new int[]{-4, 0, 1, 2, 3, 4, 7, 8, 16, 1024, 1023}) {\n            System.out.printf(\"%5d: %s%n\", n, isPowerOfTwo(n));\n        }\n        // Expected: -4=false, 0=false, 1=true, 2=true, 3=false, 4=true,\n        //           7=false, 8=true, 16=true, 1024=true, 1023=false\n    }\n}",
           "testCases": [
-            {"input": "1", "output": "true"},
-            {"input": "2", "output": "true"},
-            {"input": "3", "output": "false"},
-            {"input": "0", "output": "false"},
-            {"input": "-4", "output": "false"},
-            {"input": "1024", "output": "true"}
+            {
+              "input": "1",
+              "output": "true"
+            },
+            {
+              "input": "2",
+              "output": "true"
+            },
+            {
+              "input": "3",
+              "output": "false"
+            },
+            {
+              "input": "0",
+              "output": "false"
+            },
+            {
+              "input": "-4",
+              "output": "false"
+            },
+            {
+              "input": "1024",
+              "output": "true"
+            }
           ],
-          "constraints": "Must use bitwise operator n & (n-1). Must handle n <= 0. No loops allowed."
+          "constraints": "Must use bitwise operator n & (n-1). Must handle n <= 0. No loops allowed.",
+          "editorial": "A number is a power of two iff it has exactly one set bit: n > 0 && (n & (n-1)) == 0. The n-1 trick works because subtracting 1 flips the rightmost set bit and all lower bits. Powers of 2: 1, 2, 4, 8, 16... Edge case: 0 is not a power of 2. Long.bitCount(n) == 1 is an alternative."
         },
         {
           "displayOrder": 2,
@@ -99,12 +118,25 @@
           "starterCode": "public class Q2 {\n    public static int countBitsSimple(int n) {\n        int count = 0;\n        // TODO: check each of 32 bits\n        return count;\n    }\n\n    public static int countBitsKernighan(int n) {\n        int count = 0;\n        // TODO: use n & (n-1) trick\n        return count;\n    }\n\n    public static void main(String[] args) {\n        for (int n : new int[]{0, 1, 7, 8, 255, -1}) {\n            System.out.printf(\"%4d: simple=%d kernighan=%d builtin=%d%n\",\n                n, countBitsSimple(n), countBitsKernighan(n), Integer.bitCount(n));\n        }\n    }\n}",
           "solutionCode": "public class Q2 {\n    public static int countBitsSimple(int n) {\n        int count = 0;\n        for (int i = 0; i < 32; i++) {\n            if ((n & 1) == 1) count++;\n            n >>>= 1; // unsigned right shift — handles negative numbers\n        }\n        return count;\n    }\n\n    public static int countBitsKernighan(int n) {\n        int count = 0;\n        // Kernighan: n & (n-1) always clears the lowest set bit\n        // Count iterations until n becomes 0\n        while (n != 0) {\n            n &= (n - 1); // clear lowest set bit\n            count++;\n        }\n        return count;\n        // Kernighan is faster when bits are sparse (few 1s)\n    }\n\n    public static void main(String[] args) {\n        for (int n : new int[]{0, 1, 7, 8, 255, -1}) {\n            System.out.printf(\"%4d: simple=%d kernighan=%d builtin=%d%n\",\n                n, countBitsSimple(n), countBitsKernighan(n), Integer.bitCount(n));\n        }\n        // -1 (all 32 bits set) should show count=32\n    }\n}",
           "testCases": [
-            {"input": "0", "output": "0"},
-            {"input": "7", "output": "3"},
-            {"input": "255", "output": "8"},
-            {"input": "-1", "output": "32"}
+            {
+              "input": "0",
+              "output": "0"
+            },
+            {
+              "input": "7",
+              "output": "3"
+            },
+            {
+              "input": "255",
+              "output": "8"
+            },
+            {
+              "input": "-1",
+              "output": "32"
+            }
           ],
-          "constraints": "Must implement both approaches. Use >>> not >> in simple version for correct handling of negative numbers."
+          "constraints": "Must implement both approaches. Use >>> not >> in simple version for correct handling of negative numbers.",
+          "editorial": "Integer.bitCount(n) counts set bits in O(1). Manual approach: n & 1 extracts the LSB, then n >>>= 1 (unsigned right shift). Loop until n == 0. The Brian Kernighan trick: n &= (n-1) removes the lowest set bit each iteration — O(number of set bits) which is optimal."
         },
         {
           "displayOrder": 3,
@@ -118,10 +150,17 @@
           "starterCode": "public class Q3 {\n    public static int[] xorSwap(int a, int b) {\n        // TODO: swap using XOR, no temp variable\n        return new int[]{a, b};\n    }\n\n    public static void main(String[] args) {\n        int[] result = xorSwap(5, 10);\n        System.out.println(\"a=\" + result[0] + \" b=\" + result[1]); // a=10 b=5\n\n        // Swap in array\n        int[] arr = {3, 7, 1, 9};\n        // swap arr[0] and arr[3]\n        arr[0] ^= arr[3]; arr[3] ^= arr[0]; arr[0] ^= arr[3];\n        System.out.println(java.util.Arrays.toString(arr)); // [9, 7, 1, 3]\n    }\n}",
           "solutionCode": "public class Q3 {\n    public static int[] xorSwap(int a, int b) {\n        // XOR swap — no temp variable\n        // Step 1: a = a ^ b (a now holds combined bits)\n        a ^= b;\n        // Step 2: b = (a^b) ^ b = a (original a recovered)\n        b ^= a;\n        // Step 3: a = (a^b) ^ a = b (original b in a)\n        a ^= b;\n        return new int[]{a, b};\n        // Proof: let a0, b0 be original values\n        // After step 1: a = a0^b0, b = b0\n        // After step 2: b = (a0^b0)^b0 = a0^(b0^b0) = a0^0 = a0\n        // After step 3: a = (a0^b0)^a0 = (a0^a0)^b0 = 0^b0 = b0\n    }\n\n    public static int[] arithmeticSwap(int a, int b) {\n        // Arithmetic swap — overflow risk for large values!\n        a = a + b; // a = a+b (may overflow)\n        b = a - b; // b = (a+b) - b = a (original a)\n        a = a - b; // a = (a+b) - a = b (original b)\n        return new int[]{a, b};\n    }\n\n    public static void main(String[] args) {\n        System.out.println(java.util.Arrays.toString(xorSwap(5, 10)));        // [10, 5]\n        System.out.println(java.util.Arrays.toString(arithmeticSwap(5, 10))); // [10, 5]\n\n        // XOR swap same-location pitfall: a == b (same variable)\n        int x = 5;\n        x ^= x; // x = x^x = 0! Same location problem\n        System.out.println(\"Same-location XOR: \" + x); // 0 (WRONG!)\n        // Solution: always check (i != j) before XOR-swapping array elements\n    }\n}",
           "testCases": [
-            {"input": "xorSwap(5, 10)", "output": "[10, 5]"},
-            {"input": "xorSwap(0, 0)", "output": "[0, 0]"}
+            {
+              "input": "xorSwap(5, 10)",
+              "output": "[10, 5]"
+            },
+            {
+              "input": "xorSwap(0, 0)",
+              "output": "[0, 0]"
+            }
           ],
-          "constraints": "Must NOT use a temporary variable. Must demonstrate the 3-step XOR swap. Mention the same-location pitfall."
+          "constraints": "Must NOT use a temporary variable. Must demonstrate the 3-step XOR swap. Mention the same-location pitfall.",
+          "editorial": "XOR swap: a ^= b; b ^= a; a ^= b; — works because XOR is its own inverse. a^b^b = a. Arithmetic swap: a = a+b; b = a-b; a = a-b; — risks integer overflow. Destructuring swap (Java 14+): var temp trick. XOR swap fails if a and b are aliases (same memory location)."
         },
         {
           "displayOrder": 4,
@@ -135,12 +174,25 @@
           "starterCode": "public class Q4 {\n    public static char getGradeTernary(int score) {\n        return ' '; // TODO: use ternary chain\n    }\n\n    public static char getGradeSwitch(int score) {\n        return ' '; // TODO: use switch expression\n    }\n\n    public static void main(String[] args) {\n        for (int s : new int[]{95, 85, 75, 65, 55, 100, 0}) {\n            System.out.printf(\"%3d: ternary=%c switch=%c%n\",\n                s, getGradeTernary(s), getGradeSwitch(s));\n        }\n    }\n}",
           "solutionCode": "public class Q4 {\n    public static char getGradeTernary(int score) {\n        return score >= 90 ? 'A'\n             : score >= 80 ? 'B'\n             : score >= 70 ? 'C'\n             : score >= 60 ? 'D' : 'F';\n    }\n\n    public static char getGradeSwitch(int score) {\n        return switch (Math.min(score, 100) / 10) {\n            case 10, 9 -> 'A';\n            case 8     -> 'B';\n            case 7     -> 'C';\n            case 6     -> 'D';\n            default    -> 'F'; // 0-5\n        };\n    }\n\n    public static void main(String[] args) {\n        for (int s : new int[]{95, 85, 75, 65, 55, 100, 0}) {\n            System.out.printf(\"%3d: ternary=%c switch=%c%n\",\n                s, getGradeTernary(s), getGradeSwitch(s));\n        }\n    }\n}",
           "testCases": [
-            {"input": "95", "output": "A"},
-            {"input": "85", "output": "B"},
-            {"input": "75", "output": "C"},
-            {"input": "55", "output": "F"}
+            {
+              "input": "95",
+              "output": "A"
+            },
+            {
+              "input": "85",
+              "output": "B"
+            },
+            {
+              "input": "75",
+              "output": "C"
+            },
+            {
+              "input": "55",
+              "output": "F"
+            }
           ],
-          "constraints": "Must implement both ternary and switch expression versions. Results must be identical."
+          "constraints": "Must implement both ternary and switch expression versions. Results must be identical.",
+          "editorial": "Nested ternary: condition ? a : (condition2 ? b : c). Evaluate left to right. Use parentheses for clarity. Java ternary is right-associative. For letter grade: score>=90?'A':score>=80?'B':score>=70?'C':score>=60?'D':'F'. If-else chains are more readable for complex logic."
         },
         {
           "displayOrder": 5,
@@ -154,11 +206,21 @@
           "starterCode": "public class Q5 {\n    static int leftCalls = 0, rightCalls = 0;\n\n    static boolean left(boolean val)  { leftCalls++;  return val; }\n    static boolean right(boolean val) { rightCalls++; return val; }\n\n    public static int[][] testShortCircuit() {\n        int[][] results = new int[4][2]; // [left, right] calls for 4 expressions\n        // Test 1: false && true\n        leftCalls = rightCalls = 0;\n        boolean r1 = left(false) && right(true);\n        results[0] = new int[]{leftCalls, rightCalls};\n\n        // Test 2: true || false\n        leftCalls = rightCalls = 0;\n        boolean r2 = left(true) || right(false);\n        results[1] = new int[]{leftCalls, rightCalls};\n\n        // Test 3: true && false\n        leftCalls = rightCalls = 0;\n        boolean r3 = left(true) && right(false);\n        results[2] = new int[]{leftCalls, rightCalls};\n\n        // Test 4: false || true\n        leftCalls = rightCalls = 0;\n        boolean r4 = left(false) || right(true);\n        results[3] = new int[]{leftCalls, rightCalls};\n\n        return results;\n    }\n\n    public static void main(String[] args) {\n        int[][] r = testShortCircuit();\n        String[] exprs = {\"false && true\", \"true || false\", \"true && false\", \"false || true\"};\n        for (int i = 0; i < 4; i++)\n            System.out.printf(\"%s: left=%d right=%d%n\", exprs[i], r[i][0], r[i][1]);\n    }\n}",
           "solutionCode": "public class Q5 {\n    static int leftCalls = 0, rightCalls = 0;\n    static boolean left(boolean val)  { leftCalls++;  return val; }\n    static boolean right(boolean val) { rightCalls++; return val; }\n\n    public static int[][] testShortCircuit() {\n        int[][] results = new int[4][2];\n        // Test 1: false && true — right NOT evaluated\n        leftCalls = rightCalls = 0;\n        left(false) && right(true);\n        results[0] = new int[]{leftCalls, rightCalls}; // [1, 0]\n\n        // Test 2: true || false — right NOT evaluated\n        leftCalls = rightCalls = 0;\n        left(true) || right(false);\n        results[1] = new int[]{leftCalls, rightCalls}; // [1, 0]\n\n        // Test 3: true && false — right IS evaluated\n        leftCalls = rightCalls = 0;\n        left(true) && right(false);\n        results[2] = new int[]{leftCalls, rightCalls}; // [1, 1]\n\n        // Test 4: false || true — right IS evaluated\n        leftCalls = rightCalls = 0;\n        left(false) || right(true);\n        results[3] = new int[]{leftCalls, rightCalls}; // [1, 1]\n\n        return results;\n    }\n\n    public static void main(String[] args) {\n        int[][] r = testShortCircuit();\n        String[] exprs = {\"false && true\",\"true || false\",\"true && false\",\"false || true\"};\n        for (int i = 0; i < 4; i++)\n            System.out.printf(\"%s: left=%d right=%d%n\", exprs[i], r[i][0], r[i][1]);\n        // false && true: left=1 right=0 (short-circuit)\n        // true  || false: left=1 right=0 (short-circuit)\n        // true  && false: left=1 right=1 (both evaluated)\n        // false || true:  left=1 right=1 (both evaluated)\n    }\n}",
           "testCases": [
-            {"input": "false && true", "output": "left=1 right=0"},
-            {"input": "true || false", "output": "left=1 right=0"},
-            {"input": "true && false", "output": "left=1 right=1"}
+            {
+              "input": "false && true",
+              "output": "left=1 right=0"
+            },
+            {
+              "input": "true || false",
+              "output": "left=1 right=0"
+            },
+            {
+              "input": "true && false",
+              "output": "left=1 right=1"
+            }
           ],
-          "constraints": "Must use separate call-count variables. Short-circuit expressions must show right=0 when appropriate."
+          "constraints": "Must use separate call-count variables. Short-circuit expressions must show right=0 when appropriate.",
+          "editorial": "Short-circuit: && stops at first false operand. || stops at first true operand. Right side is not evaluated if left determines the result. Use this deliberately: if (list != null && !list.isEmpty()). The side effect test: increment a counter in the right operand — check if it was called."
         },
         {
           "displayOrder": 6,
@@ -172,11 +234,21 @@
           "starterCode": "public class Q6 {\n    static final int READ    = 0b100;\n    static final int WRITE   = 0b010;\n    static final int EXECUTE = 0b001;\n\n    public static int setPermission(int perms, int flag)    { return perms; }\n    public static int clearPermission(int perms, int flag)  { return perms; }\n    public static boolean hasPermission(int perms, int flag){ return false; }\n\n    public static String getPermissionString(int perms) {\n        // Return 'rwx', 'r-x', etc.\n        return \"---\";\n    }\n\n    public static void main(String[] args) {\n        int perms = 0;\n        perms = setPermission(perms, READ | WRITE);\n        System.out.println(getPermissionString(perms)); // rw-\n        perms = setPermission(perms, EXECUTE);\n        System.out.println(getPermissionString(perms)); // rwx\n        perms = clearPermission(perms, WRITE);\n        System.out.println(getPermissionString(perms)); // r-x\n        System.out.println(hasPermission(perms, READ)); // true\n        System.out.println(hasPermission(perms, WRITE)); // false\n    }\n}",
           "solutionCode": "public class Q6 {\n    static final int READ    = 0b100; // 4\n    static final int WRITE   = 0b010; // 2\n    static final int EXECUTE = 0b001; // 1\n\n    public static int setPermission(int perms, int flag) {\n        return perms | flag;  // turn on bits\n    }\n\n    public static int clearPermission(int perms, int flag) {\n        return perms & ~flag; // turn off bits\n    }\n\n    public static boolean hasPermission(int perms, int flag) {\n        return (perms & flag) == flag; // all bits of flag must be set\n    }\n\n    public static String getPermissionString(int perms) {\n        return \"\" +\n            (hasPermission(perms, READ)    ? 'r' : '-') +\n            (hasPermission(perms, WRITE)   ? 'w' : '-') +\n            (hasPermission(perms, EXECUTE) ? 'x' : '-');\n    }\n\n    public static void main(String[] args) {\n        int perms = 0;\n        perms = setPermission(perms, READ | WRITE);\n        System.out.println(getPermissionString(perms)); // rw-\n        perms = setPermission(perms, EXECUTE);\n        System.out.println(getPermissionString(perms)); // rwx\n        perms = clearPermission(perms, WRITE);\n        System.out.println(getPermissionString(perms)); // r-x\n        System.out.println(hasPermission(perms, READ));  // true\n        System.out.println(hasPermission(perms, WRITE)); // false\n\n        // Unix chmod 755\n        int owner = READ | WRITE | EXECUTE;\n        int group = READ | EXECUTE;\n        int others = READ | EXECUTE;\n        System.out.printf(\"chmod 755: %s%s%s%n\",\n            getPermissionString(owner), getPermissionString(group), getPermissionString(others));\n    }\n}",
           "testCases": [
-            {"input": "rw- after setting READ|WRITE", "output": "rw-"},
-            {"input": "r-x after clearing WRITE", "output": "r-x"},
-            {"input": "hasPermission(READ) after r-x", "output": "true"}
+            {
+              "input": "rw- after setting READ|WRITE",
+              "output": "rw-"
+            },
+            {
+              "input": "r-x after clearing WRITE",
+              "output": "r-x"
+            },
+            {
+              "input": "hasPermission(READ) after r-x",
+              "output": "true"
+            }
           ],
-          "constraints": "Must use bitwise operations only (no if-else chains for set/clear). getPermissionString must use hasPermission."
+          "constraints": "Must use bitwise operations only (no if-else chains for set/clear). getPermissionString must use hasPermission.",
+          "editorial": "Use bit flags (powers of 2) for permissions: READ=1, WRITE=2, EXECUTE=4. Set: perms |= WRITE. Unset: perms &= ~WRITE. Check: (perms & READ) != 0. Combine: READ | WRITE = 3. This is the pattern behind Unix file permissions (rwxrwxrwx) and Java's java.nio.file.attribute.PosixFilePermission."
         },
         {
           "displayOrder": 7,
@@ -190,11 +262,21 @@
           "starterCode": "public class Q7 {\n    public static int evaluate(String expr) {\n        int[] i = {0};\n        return parseExpr(expr.replaceAll(\"\\\\s\", \"\"), i);\n    }\n\n    static int parseExpr(String s, int[] i) { return 0; } // TODO\n    static int parseTerm(String s, int[] i) { return 0; } // TODO\n    static int parseFactor(String s, int[] i) { return 0; } // TODO\n\n    public static void main(String[] args) {\n        System.out.println(evaluate(\"2+3*4\"));     // 14\n        System.out.println(evaluate(\"(2+3)*4\"));   // 20\n        System.out.println(evaluate(\"10-3-2\"));    // 5\n        System.out.println(evaluate(\"100/10/2\")); // 5\n    }\n}",
           "solutionCode": "public class Q7 {\n    public static int evaluate(String expr) {\n        int[] i = {0};\n        return parseExpr(expr.replaceAll(\"\\\\s\", \"\"), i);\n    }\n\n    static int parseExpr(String s, int[] i) {\n        int val = parseTerm(s, i);\n        while (i[0] < s.length() && (s.charAt(i[0]) == '+' || s.charAt(i[0]) == '-')) {\n            char op = s.charAt(i[0]++);\n            int right = parseTerm(s, i);\n            val = (op == '+') ? val + right : val - right;\n        }\n        return val;\n    }\n\n    static int parseTerm(String s, int[] i) {\n        int val = parseFactor(s, i);\n        while (i[0] < s.length() && (s.charAt(i[0]) == '*' || s.charAt(i[0]) == '/')) {\n            char op = s.charAt(i[0]++);\n            int right = parseFactor(s, i);\n            val = (op == '*') ? val * right : val / right;\n        }\n        return val;\n    }\n\n    static int parseFactor(String s, int[] i) {\n        if (s.charAt(i[0]) == '(') {\n            i[0]++; // skip '('\n            int val = parseExpr(s, i);\n            i[0]++; // skip ')'\n            return val;\n        }\n        // Parse number (possibly multi-digit)\n        int start = i[0];\n        while (i[0] < s.length() && Character.isDigit(s.charAt(i[0]))) i[0]++;\n        return Integer.parseInt(s.substring(start, i[0]));\n    }\n\n    public static void main(String[] args) {\n        System.out.println(evaluate(\"2 + 3 * 4\"));    // 14\n        System.out.println(evaluate(\"(2 + 3) * 4\")); // 20\n        System.out.println(evaluate(\"10 - 3 - 2\"));   // 5\n        System.out.println(evaluate(\"100 / 10 / 2\")); // 5\n        System.out.println(evaluate(\"2 * (3 + 4) - 1\")); // 13\n    }\n}",
           "testCases": [
-            {"input": "2+3*4", "output": "14"},
-            {"input": "(2+3)*4", "output": "20"},
-            {"input": "10-3-2", "output": "5"}
+            {
+              "input": "2+3*4",
+              "output": "14"
+            },
+            {
+              "input": "(2+3)*4",
+              "output": "20"
+            },
+            {
+              "input": "10-3-2",
+              "output": "5"
+            }
           ],
-          "constraints": "Must respect operator precedence (* before +). Must handle parentheses. Multi-digit numbers should work."
+          "constraints": "Must respect operator precedence (* before +). Must handle parentheses. Multi-digit numbers should work.",
+          "editorial": "Shunting-yard algorithm: use two stacks (operators, output). Handle precedence (* before +). Scan tokens left to right: numbers go to output, operators go to operator stack after popping higher/equal precedence ops. Parentheses: push '(', pop until '(' on ')'. Post-fix evaluate with a value stack."
         },
         {
           "displayOrder": 8,
@@ -208,11 +290,21 @@
           "starterCode": "public class Q8 {\n    public static int reverseBits(int n) {\n        return 0; // TODO\n    }\n\n    public static void main(String[] args) {\n        System.out.println(Integer.toBinaryString(1));\n        System.out.println(Integer.toBinaryString(reverseBits(1)));\n        // 1 -> bit reversal -> 10000000000000000000000000000000\n        System.out.println(reverseBits(1));  // -2147483648 (signed) or 2^31\n\n        System.out.println(reverseBits(0b10000000000000000000000000000001));\n        // 10000001 -> reversed -> 10000001 = same (palindrome bits)\n    }\n}",
           "solutionCode": "public class Q8 {\n    public static int reverseBits(int n) {\n        int result = 0;\n        for (int i = 0; i < 32; i++) {\n            result = (result << 1) | (n & 1); // take LSB of n, add to result\n            n >>>= 1; // unsigned shift: fills with 0 (not sign bit)\n        }\n        return result;\n    }\n\n    public static void main(String[] args) {\n        // 1 = 00000000000000000000000000000001\n        // reversed: 10000000000000000000000000000000 = -2147483648\n        System.out.println(\"reverseBits(1) = \" + reverseBits(1));\n        System.out.printf(\"Binary: %s%n\", Integer.toBinaryString(reverseBits(1)));\n\n        // Palindrome bit pattern: 10000000000000000000000000000001 (2^31 + 1)\n        int palindrome = 0x80000001;\n        System.out.println(\"reverseBits(0x80000001) = \" + reverseBits(palindrome));\n        // Same value (bit palindrome)\n\n        // All zeros and all ones\n        System.out.println(\"reverseBits(0) = \" + reverseBits(0));  // 0\n        System.out.println(\"reverseBits(-1) = \" + reverseBits(-1)); // -1 (all 1s reversed = all 1s)\n    }\n}",
           "testCases": [
-            {"input": "1", "output": "-2147483648"},
-            {"input": "0", "output": "0"},
-            {"input": "-1", "output": "-1"}
+            {
+              "input": "1",
+              "output": "-2147483648"
+            },
+            {
+              "input": "0",
+              "output": "0"
+            },
+            {
+              "input": "-1",
+              "output": "-1"
+            }
           ],
-          "constraints": "Must use >>> (unsigned right shift) for correct bit extraction. Must process exactly 32 bits."
+          "constraints": "Must use >>> (unsigned right shift) for correct bit extraction. Must process exactly 32 bits.",
+          "editorial": "Reverse bits by extracting LSB with n & 1, placing it at the MSB position of result, shifting result left, shifting n right. For 32 bits: loop 32 times. Alternative: use Integer.reverse(n) (JDK built-in). Be careful with the unsigned right shift >>> to avoid sign-extension."
         },
         {
           "displayOrder": 9,
@@ -226,11 +318,21 @@
           "starterCode": "public class Q9 {\n    public static int singleNumber(int[] nums) {\n        return 0; // TODO: XOR all elements\n    }\n\n    public static void main(String[] args) {\n        System.out.println(singleNumber(new int[]{2, 2, 1}));        // 1\n        System.out.println(singleNumber(new int[]{4, 1, 2, 1, 2})); // 4\n        System.out.println(singleNumber(new int[]{1}));              // 1\n    }\n}",
           "solutionCode": "public class Q9 {\n    public static int singleNumber(int[] nums) {\n        int result = 0;\n        for (int n : nums) result ^= n;\n        // All paired numbers XOR to 0\n        // 0 ^ uniqueNumber = uniqueNumber\n        return result;\n    }\n\n    // Extension: find two unique numbers (exactly two appear once)\n    public static int[] twoSingleNumbers(int[] nums) {\n        int xorBoth = 0;\n        for (int n : nums) xorBoth ^= n; // XOR of the two unique numbers\n\n        // Find a bit that differs between the two unique numbers\n        int diffBit = xorBoth & (-xorBoth); // isolate lowest set bit\n\n        // Split into two groups by diffBit, XOR each group\n        int a = 0, b = 0;\n        for (int n : nums) {\n            if ((n & diffBit) != 0) a ^= n;\n            else b ^= n;\n        }\n        return new int[]{a, b};\n    }\n\n    public static void main(String[] args) {\n        System.out.println(singleNumber(new int[]{2, 2, 1}));        // 1\n        System.out.println(singleNumber(new int[]{4, 1, 2, 1, 2})); // 4\n\n        System.out.println(java.util.Arrays.toString(\n            twoSingleNumbers(new int[]{1, 2, 1, 3, 2, 5}))); // [3, 5]\n    }\n}",
           "testCases": [
-            {"input": "[2, 2, 1]", "output": "1"},
-            {"input": "[4, 1, 2, 1, 2]", "output": "4"},
-            {"input": "[1]", "output": "1"}
+            {
+              "input": "[2, 2, 1]",
+              "output": "1"
+            },
+            {
+              "input": "[4, 1, 2, 1, 2]",
+              "output": "4"
+            },
+            {
+              "input": "[1]",
+              "output": "1"
+            }
           ],
-          "constraints": "Must use XOR (single pass, O(n) time, O(1) space). No HashMap or sorting allowed."
+          "constraints": "Must use XOR (single pass, O(n) time, O(1) space). No HashMap or sorting allowed.",
+          "editorial": "XOR of a pair of equal numbers is 0. XOR of all numbers where every number appears twice except one: all pairs cancel out, leaving the unique number. x ^ x = 0, x ^ 0 = x, XOR is commutative and associative. O(n) time, O(1) space — optimal solution."
         },
         {
           "displayOrder": 10,
@@ -244,11 +346,21 @@
           "starterCode": "public class Q10 {\n    public static int add(int a, int b) {\n        // TODO: add without + or -\n        return 0;\n    }\n\n    public static int subtract(int a, int b) {\n        // Subtraction: a - b = a + (-b). In two's complement: -b = ~b + 1\n        // TODO: implement using add()\n        return 0;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(add(5, 3));       // 8\n        System.out.println(add(-1, 1));      // 0\n        System.out.println(subtract(10, 3)); // 7\n    }\n}",
           "solutionCode": "public class Q10 {\n    public static int add(int a, int b) {\n        while (b != 0) {\n            int carry = (a & b) << 1; // bits that need to carry\n            a = a ^ b;                // sum without carry\n            b = carry;                // new 'b' is the carry\n        }\n        return a;\n        // Recursive version:\n        // return b == 0 ? a : add(a ^ b, (a & b) << 1);\n    }\n\n    public static int subtract(int a, int b) {\n        // -b in two's complement = ~b + 1\n        return add(a, add(~b, 1));\n    }\n\n    public static int multiply(int a, int b) {\n        // Multiplication via repeated addition (slow but correct)\n        boolean negative = (a < 0) ^ (b < 0);\n        int absA = a < 0 ? add(~a, 1) : a;\n        int absB = b < 0 ? add(~b, 1) : b;\n        int result = 0;\n        while (absB != 0) {\n            if ((absB & 1) == 1) result = add(result, absA);\n            absA <<= 1;\n            absB >>>= 1;\n        }\n        return negative ? add(~result, 1) : result;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(add(5, 3));        // 8\n        System.out.println(add(-1, 1));       // 0\n        System.out.println(add(0, 0));        // 0\n        System.out.println(subtract(10, 3));  // 7\n        System.out.println(subtract(5, 8));   // -3\n        System.out.println(multiply(3, 4));   // 12\n    }\n}",
           "testCases": [
-            {"input": "add(5, 3)", "output": "8"},
-            {"input": "add(-1, 1)", "output": "0"},
-            {"input": "subtract(10, 3)", "output": "7"}
+            {
+              "input": "add(5, 3)",
+              "output": "8"
+            },
+            {
+              "input": "add(-1, 1)",
+              "output": "0"
+            },
+            {
+              "input": "subtract(10, 3)",
+              "output": "7"
+            }
           ],
-          "constraints": "Must NOT use +, -, *, / operators. Only bitwise operators allowed (^, &, |, ~, <<, >>). "
+          "constraints": "Must NOT use +, -, *, / operators. Only bitwise operators allowed (^, &, |, ~, <<, >>). ",
+          "editorial": "Addition with bit manipulation: sum = a ^ b (XOR gives sum without carry). carry = (a & b) << 1 (AND gives carry positions, shift left to add). Repeat until carry == 0. Handle negative numbers with two's complement (Java ints are already two's complement). Watch for infinite loop if both negative."
         },
         {
           "displayOrder": 11,
@@ -262,11 +374,21 @@
           "starterCode": "import java.math.*;\n\npublic class Q11 {\n    static final class Money {\n        private final BigDecimal amount;\n\n        public Money(String amount) { this.amount = new BigDecimal(amount); }\n        private Money(BigDecimal amount) { this.amount = amount; }\n\n        public Money add(Money other) { return new Money(BigDecimal.ZERO); } // TODO\n        public Money subtract(Money other) { return new Money(BigDecimal.ZERO); } // TODO\n        public Money multiply(int qty) { return new Money(BigDecimal.ZERO); } // TODO\n        public Money divide(int divisors) { return new Money(BigDecimal.ZERO); } // TODO\n\n        @Override public String toString() { return \"$\" + amount.setScale(2, RoundingMode.HALF_UP); }\n    }\n\n    public static void main(String[] args) {\n        Money price = new Money(\"9.99\");\n        Money tax   = new Money(\"0.85\");\n        System.out.println(price.add(tax));         // $10.84\n        System.out.println(price.multiply(3));      // $29.97\n        System.out.println(price.divide(3));        // $3.33\n    }\n}",
           "solutionCode": "import java.math.*;\n\npublic class Q11 {\n    static final class Money implements Comparable<Money> {\n        private final BigDecimal amount;\n\n        public Money(String amount) {\n            this.amount = new BigDecimal(amount).setScale(2, RoundingMode.HALF_UP);\n        }\n        private Money(BigDecimal amount) {\n            this.amount = amount.setScale(2, RoundingMode.HALF_UP);\n        }\n\n        public Money add(Money other) {\n            return new Money(this.amount.add(other.amount));\n        }\n        public Money subtract(Money other) {\n            return new Money(this.amount.subtract(other.amount));\n        }\n        public Money multiply(int qty) {\n            return new Money(this.amount.multiply(BigDecimal.valueOf(qty)));\n        }\n        public Money divide(int divisors) {\n            return new Money(this.amount.divide(\n                BigDecimal.valueOf(divisors), 2, RoundingMode.HALF_UP));\n        }\n        public boolean isPositive() { return amount.compareTo(BigDecimal.ZERO) > 0; }\n\n        @Override public int compareTo(Money o) { return this.amount.compareTo(o.amount); }\n        @Override public boolean equals(Object o) {\n            return o instanceof Money m && this.amount.compareTo(m.amount) == 0;\n        }\n        @Override public int hashCode() { return amount.stripTrailingZeros().hashCode(); }\n        @Override public String toString() { return \"$\" + amount.toPlainString(); }\n    }\n\n    public static void main(String[] args) {\n        Money price = new Money(\"9.99\");\n        Money tax   = new Money(\"0.85\");\n        System.out.println(price.add(tax));          // $10.84\n        System.out.println(price.multiply(3));       // $29.97\n        System.out.println(price.divide(3));         // $3.33\n        System.out.println(price.subtract(tax));     // $9.14\n\n        // Verbose vs hypothetical operator overloading:\n        // Java:    price.add(tax).multiply(2)\n        // Kotlin:  (price + tax) * 2  (Kotlin supports operator overloading)\n        System.out.println(\"Final: \" + price.add(tax).multiply(2)); // $21.68\n    }\n}",
           "testCases": [
-            {"input": "9.99 + 0.85", "output": "$10.84"},
-            {"input": "9.99 * 3", "output": "$29.97"},
-            {"input": "9.99 / 3", "output": "$3.33"}
+            {
+              "input": "9.99 + 0.85",
+              "output": "$10.84"
+            },
+            {
+              "input": "9.99 * 3",
+              "output": "$29.97"
+            },
+            {
+              "input": "9.99 / 3",
+              "output": "$3.33"
+            }
           ],
-          "constraints": "Must use BigDecimal(String) constructor. Must set scale=2. All operations return new Money (immutable). Use HALF_UP rounding."
+          "constraints": "Must use BigDecimal(String) constructor. Must set scale=2. All operations return new Money (immutable). Use HALF_UP rounding.",
+          "editorial": "BigDecimal has no operator overloading in Java. Wrap BigDecimal in a class with add(Money other), multiply(int factor) etc. returning new instances. Use compareTo() not equals() for value comparison (equals() also compares scale). This is the correct pattern for money arithmetic in Java."
         },
         {
           "displayOrder": 12,
@@ -280,11 +402,21 @@
           "starterCode": "public class Q12 {\n    static final class ModInt {\n        final int value;\n        final int mod;\n\n        ModInt(int value, int mod) {\n            this.mod = mod;\n            this.value = ((value % mod) + mod) % mod; // always positive\n        }\n\n        ModInt add(ModInt other)      { return new ModInt(0, mod); } // TODO\n        ModInt subtract(ModInt other) { return new ModInt(0, mod); } // TODO\n        ModInt multiply(ModInt other) { return new ModInt(0, mod); } // TODO\n        ModInt pow(int exp)           { return new ModInt(1, mod); } // TODO\n\n        @Override public String toString() { return value + \" (mod \" + mod + \")\"; }\n    }\n\n    public static void main(String[] args) {\n        int M = 7;\n        ModInt a = new ModInt(10, M); // 10 mod 7 = 3\n        ModInt b = new ModInt(5, M);  // 5 mod 7 = 5\n        System.out.println(a.add(b));      // (3+5) mod 7 = 1\n        System.out.println(a.subtract(b)); // (3-5) mod 7 = 5\n        System.out.println(a.pow(3));      // 3^3 mod 7 = 27 mod 7 = 6\n    }\n}",
           "solutionCode": "public class Q12 {\n    static final class ModInt {\n        final int value;\n        final int mod;\n\n        ModInt(int value, int mod) {\n            this.mod = mod;\n            this.value = ((value % mod) + mod) % mod;\n        }\n\n        ModInt add(ModInt other) {\n            return new ModInt(this.value + other.value, mod);\n        }\n        ModInt subtract(ModInt other) {\n            return new ModInt(this.value - other.value, mod); // constructor handles negative\n        }\n        ModInt multiply(ModInt other) {\n            return new ModInt((int)((long)this.value * other.value % mod), mod);\n        }\n        ModInt pow(int exp) {\n            if (exp == 0) return new ModInt(1, mod);\n            if (exp % 2 == 0) {\n                ModInt half = pow(exp / 2);\n                return half.multiply(half); // fast exponentiation\n            }\n            return this.multiply(pow(exp - 1));\n        }\n\n        @Override public String toString() { return value + \" (mod \" + mod + \")\"; }\n    }\n\n    public static void main(String[] args) {\n        int M = 7;\n        ModInt a = new ModInt(10, M); // 10 mod 7 = 3\n        ModInt b = new ModInt(5, M);  // 5 mod 7 = 5\n        System.out.println(a);             // 3 (mod 7)\n        System.out.println(a.add(b));      // 1 (mod 7): (3+5)%7=1\n        System.out.println(a.subtract(b)); // 5 (mod 7): (3-5+7)%7=5\n        System.out.println(a.multiply(b)); // 1 (mod 7): (3*5)%7=15%7=1\n        System.out.println(a.pow(3));      // 6 (mod 7): 3^3=27, 27%7=6\n\n        // Fermat's little theorem: a^(p-1) ≡ 1 (mod p) for prime p\n        ModInt three = new ModInt(3, 7);\n        System.out.println(three.pow(6));  // 1 (mod 7) — Fermat's little theorem\n    }\n}",
           "testCases": [
-            {"input": "10 mod 7 = 3, 5 mod 7 = 5; add", "output": "1 (mod 7)"},
-            {"input": "subtract", "output": "5 (mod 7)"},
-            {"input": "3^3 mod 7", "output": "6 (mod 7)"}
+            {
+              "input": "10 mod 7 = 3, 5 mod 7 = 5; add",
+              "output": "1 (mod 7)"
+            },
+            {
+              "input": "subtract",
+              "output": "5 (mod 7)"
+            },
+            {
+              "input": "3^3 mod 7",
+              "output": "6 (mod 7)"
+            }
           ],
-          "constraints": "Constructor must normalize to [0, mod) range. Use ((v%m)+m)%m. multiply must use long to prevent overflow. pow must use fast exponentiation."
+          "constraints": "Constructor must normalize to [0, mod) range. Use ((v%m)+m)%m. multiply must use long to prevent overflow. pow must use fast exponentiation.",
+          "editorial": "Modular arithmetic: all operations mod m. Addition: (a + b) % m. Multiplication: (a * b) % m. Use long intermediate to prevent overflow when a and b are up to int max. Negative modulo in Java: (-5 % 3) == -2, not 1 — fix with ((n % m) + m) % m for always-positive results."
         },
         {
           "displayOrder": 13,
@@ -298,10 +430,17 @@
           "starterCode": "public class Q13 {\n    public static boolean isValidSudoku(char[][] board) {\n        // Use bitmasks for rows, columns, and 3x3 boxes\n        int[] rows  = new int[9];\n        int[] cols  = new int[9];\n        int[] boxes = new int[9];\n\n        for (int r = 0; r < 9; r++) {\n            for (int c = 0; c < 9; c++) {\n                if (board[r][c] == '.') continue;\n                int d = board[r][c] - '0';\n                int bit = 1 << d;\n                int box = (r / 3) * 3 + (c / 3);\n\n                // TODO: check for duplicates using bitwise &, then set bits\n                if ((rows[r] & bit) != 0) return false;\n                // ...\n                rows[r] |= bit;\n                // ...\n            }\n        }\n        return true;\n    }\n\n    public static void main(String[] args) {\n        char[][] valid = {\n            {'5','3','.','.','7','.','.','.','.'},\n            {'6','.','.','1','9','5','.','.','.'},\n            {'.','9','8','.','.','.','.','6','.'},\n            {'8','.','.','.','6','.','.','.','3'},\n            {'4','.','.','8','.','3','.','.','1'},\n            {'7','.','.','.','2','.','.','.','6'},\n            {'.','6','.','.','.','.','2','8','.'},\n            {'.','.','.','4','1','9','.','.','5'},\n            {'.','.','.','.','8','.','.','7','9'}\n        };\n        System.out.println(isValidSudoku(valid)); // true\n    }\n}",
           "solutionCode": "public class Q13 {\n    public static boolean isValidSudoku(char[][] board) {\n        int[] rows  = new int[9];\n        int[] cols  = new int[9];\n        int[] boxes = new int[9];\n\n        for (int r = 0; r < 9; r++) {\n            for (int c = 0; c < 9; c++) {\n                if (board[r][c] == '.') continue;\n                int d   = board[r][c] - '0';\n                int bit = 1 << d;\n                int box = (r / 3) * 3 + (c / 3);\n\n                // Check duplicates in row, column, box simultaneously\n                if ((rows[r]  & bit) != 0) return false; // duplicate in row\n                if ((cols[c]  & bit) != 0) return false; // duplicate in col\n                if ((boxes[box] & bit) != 0) return false; // duplicate in box\n\n                // Set the bit to mark this digit as seen\n                rows[r]    |= bit;\n                cols[c]    |= bit;\n                boxes[box] |= bit;\n            }\n        }\n        return true;\n    }\n\n    public static void main(String[] args) {\n        char[][] valid = {\n            {'5','3','.','.','7','.','.','.','.'},\n            {'6','.','.','1','9','5','.','.','.'},\n            {'.','9','8','.','.','.','.','6','.'},\n            {'8','.','.','.','6','.','.','.','3'},\n            {'4','.','.','8','.','3','.','.','1'},\n            {'7','.','.','.','2','.','.','.','6'},\n            {'.','6','.','.','.','.','2','8','.'},\n            {'.','.','.','4','1','9','.','.','5'},\n            {'.','.','.','.','8','.','.','7','9'}\n        };\n        System.out.println(isValidSudoku(valid)); // true\n\n        char[][] invalid = {\n            {'8','3','.','.','7','.','.','.','.'},\n            {'6','.','.','1','9','5','.','.','.'},\n            {'.','9','8','.','.','.','.','6','.'},\n            {'8','.','.','.','6','.','.','.','3'}, // 8 in column 0 again\n            {'4','.','.','8','.','3','.','.','1'},\n            {'7','.','.','.','2','.','.','.','6'},\n            {'.','6','.','.','.','.','2','8','.'},\n            {'.','.','.','4','1','9','.','.','5'},\n            {'.','.','.','.','8','.','.','7','9'}\n        };\n        System.out.println(isValidSudoku(invalid)); // false\n    }\n}",
           "testCases": [
-            {"input": "valid Sudoku board", "output": "true"},
-            {"input": "invalid board with duplicate in column", "output": "false"}
+            {
+              "input": "valid Sudoku board",
+              "output": "true"
+            },
+            {
+              "input": "invalid board with duplicate in column",
+              "output": "false"
+            }
           ],
-          "constraints": "Must use bitmasks for row/col/box tracking. bit = 1 << digit. Check before set. O(81) time O(27) space."
+          "constraints": "Must use bitmasks for row/col/box tracking. bit = 1 << digit. Check before set. O(81) time O(27) space.",
+          "editorial": "Represent each row/column/3x3 box as a bitmask. For each cell value v, check if bit (1 << v) is already set in the mask — if so, duplicate found. Set the bit. Use 27 masks total (9 rows + 9 cols + 9 boxes). O(81) time, O(27) space — the most efficient Sudoku validator approach."
         },
         {
           "displayOrder": 14,
@@ -315,11 +454,21 @@
           "starterCode": "public class Q14 {\n    public static long multiply(long a, long b) {\n        // No * operator allowed. Use shifts and addition only.\n        return 0;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(multiply(5, 6));    // 30\n        System.out.println(multiply(12, 13));  // 156\n        System.out.println(multiply(-3, 4));   // -12\n        System.out.println(multiply(0, 100));  // 0\n    }\n}",
           "solutionCode": "public class Q14 {\n    public static long multiply(long a, long b) {\n        if (a == 0 || b == 0) return 0;\n        boolean negative = (a < 0) ^ (b < 0);\n        long absA = a < 0 ? -a : a; // Math.abs equivalent (no unary -... actually - is ok for unary)\n        long absB = b < 0 ? -b : b;\n\n        long result = 0;\n        while (absB > 0) {\n            if ((absB & 1) == 1) {       // if lowest bit of absB is set\n                result += absA;          // add a * (bit value)\n            }\n            absA <<= 1;                  // double a (next bit's contribution)\n            absB >>>= 1;                 // process next bit of b\n        }\n        return negative ? -result : result;\n    }\n\n    // Version using the shift decomposition explicitly\n    public static long multiplyExplicit(long a, long b) {\n        if (b < 0) return -multiplyExplicit(a, -b);\n        long result = 0;\n        for (int bit = 0; bit < 63; bit++) {\n            if ((b & (1L << bit)) != 0) {\n                result += a << bit; // a * 2^bit\n            }\n        }\n        return result;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(multiply(5, 6));        // 30\n        System.out.println(multiply(12, 13));      // 156\n        System.out.println(multiply(-3, 4));       // -12\n        System.out.println(multiply(0, 100));      // 0\n        System.out.println(multiplyExplicit(7, 8)); // 56\n    }\n}",
           "testCases": [
-            {"input": "multiply(5, 6)", "output": "30"},
-            {"input": "multiply(12, 13)", "output": "156"},
-            {"input": "multiply(-3, 4)", "output": "-12"}
+            {
+              "input": "multiply(5, 6)",
+              "output": "30"
+            },
+            {
+              "input": "multiply(12, 13)",
+              "output": "156"
+            },
+            {
+              "input": "multiply(-3, 4)",
+              "output": "-12"
+            }
           ],
-          "constraints": "Must NOT use * operator. Use bit shifts and addition only. Handle negative numbers correctly."
+          "constraints": "Must NOT use * operator. Use bit shifts and addition only. Handle negative numbers correctly.",
+          "editorial": "Russian peasant multiplication using bit shifts: result += (a << bit) when the corresponding bit of b is set. Or iteratively: while b > 0: if b is odd, result += a; a <<= 1; b >>= 1. This is O(log n) and how hardware multipliers worked before dedicated multiply circuits."
         },
         {
           "displayOrder": 15,
@@ -332,8 +481,14 @@
           "hint3": "Return as list of 'expression = result: explanation' strings.",
           "starterCode": "import java.util.*;\n\npublic class Q15 {\n    public static List<String> getAnswers() {\n        List<String> answers = new ArrayList<>();\n        // Add 10 answers: evaluate each expression and explain\n        // Format: \"expression → result: explanation\"\n        return answers;\n    }\n\n    public static void main(String[] args) {\n        getAnswers().forEach(a -> System.out.println(a));\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q15 {\n    public static List<String> getAnswers() {\n        List<String> a = new ArrayList<>();\n\n        // Evaluate each expression statically:\n        a.add(\"2 + 3 * 4 → 14: * has higher precedence than +, so 3*4=12 first\");\n        a.add(\"true || false && false → true: && before ||, false&&false=false, true||false=true\");\n        a.add(\"\\'A\\' + 1 → 66 (int): char+int = int. 65+1=66. Use (char)(\\'A\\'+1) to get \\'B\\'\");\n        a.add(\"\\\"x\\\" + 1 + 2 → x12: + is left-to-right. (\\\"x\\\"+1)=\\\"x1\\\", (\\\"x1\\\"+2)=\\\"x12\\\"\");\n        a.add(\"1 + 2 + \\\"x\\\" → 3x: 1+2=3 (int), then 3+\\\"x\\\"=\\\"3x\\\". + left-to-right\");\n        a.add(\"int x=5; x++ + ++x → 12: x++ returns 5 (x becomes 6), ++x makes 7 then returns 7. 5+7=12\");\n        a.add(\"5 / 2 → 2: integer division, fractional part discarded. Use 5.0/2 for 2.5\");\n        a.add(\"-1 >>> 1 → 2147483647: unsigned shift fills with 0. All-ones >>> 1 = 0111...1111 = MAX_VALUE\");\n        a.add(\"true ? 1 : true ? 2 : 3 → 1: ternary is RIGHT-associative. Reads: true ? 1 : (true ? 2 : 3)\");\n        a.add(\"(byte)(127 + 1) → -128: 127+1=128 as int. Cast to byte: 128 overflows → -128\");\n\n        return a;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Java Operator Precedence Traps:\");\n        System.out.println(\"=\" .repeat(50));\n        int i = 1;\n        for (String ans : getAnswers()) System.out.println(i++ + \". \" + ans);\n    }\n}",
-          "testCases": [{"input": "", "output": "10 answers covering precedence traps"}],
-          "constraints": "Must include exactly 10 questions. Must cover: *, &&/||, char+int, String+int, prefix/postfix, integer division, >>> , ternary associativity, byte overflow."
+          "testCases": [
+            {
+              "input": "",
+              "output": "10 answers covering precedence traps"
+            }
+          ],
+          "constraints": "Must include exactly 10 questions. Must cover: *, &&/||, char+int, String+int, prefix/postfix, integer division, >>> , ternary associativity, byte overflow.",
+          "editorial": "Operator precedence traps: (1) ++ prefix vs postfix — x = i++ vs x = ++i; (2) bitwise & before &&; (3) ternary lower precedence than arithmetic; (4) = (assignment) very low precedence — if (x = getValue()) != 0 needs parentheses; (5) >>> vs >> — unsigned vs signed shift."
         },
         {
           "displayOrder": 16,
@@ -347,10 +502,17 @@
           "starterCode": "public class Q16 {\n    public static int hammingDistance(int x, int y) {\n        return 0; // TODO\n    }\n\n    public static int totalHammingDistance(int[] nums) {\n        return 0; // TODO: O(32*n) approach\n    }\n\n    public static void main(String[] args) {\n        System.out.println(hammingDistance(1, 4));  // 2 (01 vs 100 → 2 different bits)\n        System.out.println(totalHammingDistance(new int[]{4, 14, 2})); // 6\n    }\n}",
           "solutionCode": "public class Q16 {\n    public static int hammingDistance(int x, int y) {\n        return Integer.bitCount(x ^ y);\n        // XOR: bits that differ are 1. bitCount counts those 1s.\n    }\n\n    public static int totalHammingDistance(int[] nums) {\n        int total = 0;\n        for (int bit = 0; bit < 32; bit++) {\n            int ones = 0;\n            for (int n : nums) ones += (n >> bit) & 1; // count set bits at position 'bit'\n            total += ones * (nums.length - ones); // ones * zeros = differing pairs\n        }\n        return total;\n        // O(32*n) vs brute force O(n²)\n    }\n\n    public static void main(String[] args) {\n        System.out.println(hammingDistance(1, 4));  // 1=001, 4=100, differ at 2 positions → 2\n        System.out.println(hammingDistance(3, 1));  // 3=011, 1=001, differ at 1 position  → 1\n\n        int[] nums = {4, 14, 2};\n        // 4=00100, 14=01110, 2=00010\n        // (4,14)=2, (4,2)=2, (14,2)=2 → total=6\n        System.out.println(totalHammingDistance(nums)); // 6\n    }\n}",
           "testCases": [
-            {"input": "hammingDistance(1, 4)", "output": "2"},
-            {"input": "totalHammingDistance([4,14,2])", "output": "6"}
+            {
+              "input": "hammingDistance(1, 4)",
+              "output": "2"
+            },
+            {
+              "input": "totalHammingDistance([4,14,2])",
+              "output": "6"
+            }
           ],
-          "constraints": "hammingDistance must use Integer.bitCount(x^y). totalHammingDistance must be O(32*n), not O(n²)."
+          "constraints": "hammingDistance must use Integer.bitCount(x^y). totalHammingDistance must be O(32*n), not O(n²).",
+          "editorial": "Hamming distance: XOR the two numbers (bits differ where XOR is 1), then count set bits with Integer.bitCount(). x = a ^ b; return Integer.bitCount(x). O(1) time. The bitCount algorithm uses Brian Kernighan's trick or SWAR (SIMD Within A Register) population count."
         },
         {
           "displayOrder": 17,
@@ -364,10 +526,17 @@
           "starterCode": "import java.util.*;\n\npublic class Q17 {\n    public static List<Integer> generateGrayCode(int n) {\n        // Return 2^n gray code values\n        return List.of();\n    }\n\n    public static boolean verifyGrayCode(List<Integer> codes) {\n        // Verify each consecutive pair differs by exactly 1 bit\n        return false;\n    }\n\n    public static void main(String[] args) {\n        List<Integer> code = generateGrayCode(3);\n        System.out.println(code);\n        System.out.println(\"Valid: \" + verifyGrayCode(code));\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q17 {\n    public static List<Integer> generateGrayCode(int n) {\n        int size = 1 << n; // 2^n\n        List<Integer> codes = new ArrayList<>(size);\n        for (int i = 0; i < size; i++) {\n            codes.add(i ^ (i >> 1)); // Gray code formula\n        }\n        return codes;\n    }\n\n    public static boolean verifyGrayCode(List<Integer> codes) {\n        for (int i = 0; i + 1 < codes.size(); i++) {\n            int diff = codes.get(i) ^ codes.get(i + 1);\n            if (Integer.bitCount(diff) != 1) return false; // must differ by exactly 1 bit\n        }\n        // Also check wrap-around (optional): last and first should also differ by 1\n        // For standard Gray code, this is guaranteed\n        return true;\n    }\n\n    public static int grayToBinary(int gray) {\n        // Convert Gray code back to binary\n        int binary = gray;\n        for (int mask = gray >> 1; mask != 0; mask >>= 1) {\n            binary ^= mask;\n        }\n        return binary;\n    }\n\n    public static void main(String[] args) {\n        List<Integer> code = generateGrayCode(3);\n        System.out.println(\"3-bit Gray code:\");\n        for (int i = 0; i < code.size(); i++) {\n            System.out.printf(\"  %d: binary=%s gray=%s%n\",\n                i, toBin(i, 3), toBin(code.get(i), 3));\n        }\n        System.out.println(\"Valid Gray code: \" + verifyGrayCode(code));\n\n        // Decode back\n        for (int g : code) {\n            System.out.printf(\"Gray %s → binary %d%n\", toBin(g, 3), grayToBinary(g));\n        }\n    }\n\n    static String toBin(int n, int bits) {\n        return String.format(\"%\" + bits + \"s\", Integer.toBinaryString(n)).replace(' ', '0');\n    }\n}",
           "testCases": [
-            {"input": "n=3", "output": "[0, 1, 3, 2, 6, 7, 5, 4]"},
-            {"input": "verifyGrayCode", "output": "Valid Gray code: true"}
+            {
+              "input": "n=3",
+              "output": "[0, 1, 3, 2, 6, 7, 5, 4]"
+            },
+            {
+              "input": "verifyGrayCode",
+              "output": "Valid Gray code: true"
+            }
           ],
-          "constraints": "Must use i ^ (i >> 1) formula. Must verify each consecutive pair differs by exactly 1 bit. Implement gray-to-binary conversion."
+          "constraints": "Must use i ^ (i >> 1) formula. Must verify each consecutive pair differs by exactly 1 bit. Implement gray-to-binary conversion.",
+          "editorial": "Gray code sequence: 0,1,3,2,6,7,5,4... Formula: gray(n) = n ^ (n >> 1). To generate sequence: for i in 0..2^n-1, output i^(i>>1). Property: adjacent codes differ by exactly 1 bit. Inverse: decode by XOR prefix scan. Used in rotary encoders to eliminate invalid states during transitions."
         },
         {
           "displayOrder": 18,
@@ -381,10 +550,17 @@
           "starterCode": "import java.util.*;\n\npublic class Q18 {\n    public static int maxAndBrute(int[] nums) {\n        int max = 0;\n        for (int i = 0; i < nums.length; i++)\n            for (int j = i+1; j < nums.length; j++)\n                max = Math.max(max, nums[i] & nums[j]);\n        return max;\n    }\n\n    public static int maxAndOptimized(int[] nums) {\n        return 0; // TODO: O(30n) approach\n    }\n\n    public static void main(String[] args) {\n        int[] nums = {4, 8, 12, 5, 7};\n        System.out.println(maxAndBrute(nums));     // 12 = 4&12=4, 8&12=8, 4&5=4... max\n        System.out.println(maxAndOptimized(nums)); // same\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q18 {\n    public static int maxAndBrute(int[] nums) {\n        int max = 0;\n        for (int i = 0; i < nums.length; i++)\n            for (int j = i+1; j < nums.length; j++)\n                max = Math.max(max, nums[i] & nums[j]);\n        return max;\n    }\n\n    public static int maxAndOptimized(int[] nums) {\n        int ans = 0;\n        List<Integer> candidates = new ArrayList<>();\n        for (int n : nums) candidates.add(n);\n\n        for (int bit = 29; bit >= 0; bit--) {\n            int tentative = ans | (1 << bit);\n            // Keep only candidates that have all bits of tentative set\n            List<Integer> filtered = new ArrayList<>();\n            for (int c : candidates) {\n                if ((c & tentative) == tentative) filtered.add(c);\n            }\n            if (filtered.size() >= 2) {\n                ans = tentative;     // can include this bit\n                candidates = filtered; // narrow down candidates\n            }\n        }\n        return ans;\n    }\n\n    public static void main(String[] args) {\n        int[] nums1 = {4, 8, 12, 5, 7};\n        // 4=0100, 5=0101, 7=0111, 8=1000, 12=1100\n        // 4&12=4, 8&12=8 → max AND = 8? Let's check: 8=1000, 12=1100, 8&12=1000=8\n        System.out.println(\"Brute:    \" + maxAndBrute(nums1));\n        System.out.println(\"Optimized:\" + maxAndOptimized(nums1));\n\n        int[] nums2 = {15, 13, 11, 9};\n        // 15=1111, 13=1101, 11=1011, 9=1001\n        // 15&13=13, 15&11=11, 13&11=9, max=13\n        System.out.println(maxAndBrute(nums2));      // 13\n        System.out.println(maxAndOptimized(nums2));  // 13\n    }\n}",
           "testCases": [
-            {"input": "[15, 13, 11, 9]", "output": "13"},
-            {"input": "[4, 8, 12, 5, 7]", "output": "4"}
+            {
+              "input": "[15, 13, 11, 9]",
+              "output": "13"
+            },
+            {
+              "input": "[4, 8, 12, 5, 7]",
+              "output": "4"
+            }
           ],
-          "constraints": "Both brute and optimized must give same answer. Optimized must work in O(30*n) using greedy bit-by-bit approach."
+          "constraints": "Both brute and optimized must give same answer. Optimized must work in O(30*n) using greedy bit-by-bit approach.",
+          "editorial": "For maximum AND pair: greedily set bits from MSB. For each bit from 31 to 0: check if at least 2 numbers have this bit set (using count of numbers with mask & bit). If yes, include in answer mask. O(32n) = O(n) time. The AND of two numbers cannot exceed either operand."
         },
         {
           "displayOrder": 19,
@@ -398,12 +574,25 @@
           "starterCode": "public class Q19 {\n    public static int numDecodings(String s) {\n        return 0; // TODO: DP solution\n    }\n\n    public static void main(String[] args) {\n        System.out.println(numDecodings(\"12\"));    // 2: 'AB' or 'L'\n        System.out.println(numDecodings(\"226\"));   // 3: 'BZ', 'VF', 'BBF'\n        System.out.println(numDecodings(\"06\"));    // 0: leading zero invalid\n        System.out.println(numDecodings(\"11106\")); // 2\n    }\n}",
           "solutionCode": "public class Q19 {\n    public static int numDecodings(String s) {\n        if (s == null || s.isEmpty() || s.charAt(0) == '0') return 0;\n\n        int n = s.length();\n        int prev2 = 1; // dp[0]: empty prefix has 1 way\n        int prev1 = 1; // dp[1]: first char (non-zero) has 1 way\n\n        for (int i = 2; i <= n; i++) {\n            int curr = 0;\n\n            // Single digit: s[i-1] is '1'-'9'\n            if (s.charAt(i-1) != '0') curr += prev1;\n\n            // Two digits: s[i-2..i-1] is 10-26\n            int twoDigit = Integer.parseInt(s.substring(i-2, i));\n            if (twoDigit >= 10 && twoDigit <= 26) curr += prev2;\n\n            prev2 = prev1;\n            prev1 = curr;\n        }\n        return prev1;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(numDecodings(\"12\"));    // 2\n        System.out.println(numDecodings(\"226\"));   // 3\n        System.out.println(numDecodings(\"06\"));    // 0\n        System.out.println(numDecodings(\"11106\")); // 2\n        System.out.println(numDecodings(\"10\"));    // 1 (J only)\n        System.out.println(numDecodings(\"27\"));    // 1 (BG only, 27>26)\n    }\n}",
           "testCases": [
-            {"input": "\"12\"", "output": "2"},
-            {"input": "\"226\"", "output": "3"},
-            {"input": "\"06\"", "output": "0"},
-            {"input": "\"11106\"", "output": "2"}
+            {
+              "input": "\"12\"",
+              "output": "2"
+            },
+            {
+              "input": "\"226\"",
+              "output": "3"
+            },
+            {
+              "input": "\"06\"",
+              "output": "0"
+            },
+            {
+              "input": "\"11106\"",
+              "output": "2"
+            }
           ],
-          "constraints": "O(n) time, O(1) space DP using two rolling variables. Handle leading zero. Handle '0' digits (only valid as second digit of 10 or 20)."
+          "constraints": "O(n) time, O(1) space DP using two rolling variables. Handle leading zero. Handle '0' digits (only valid as second digit of 10 or 20).",
+          "editorial": "Bitmask DP: dp[mask] = number of ways to decode the subset represented by mask. Transition: try extending current decode with 1 or 2 digits. dp[0] = 1 (empty string). For each position, check single digit (1-9) and double digit (10-26). The bitmask tracks which characters have been consumed."
         },
         {
           "displayOrder": 20,
@@ -417,10 +606,17 @@
           "starterCode": "public class Q20 {\n    public static int[] findMissingAndDuplicate(int[] nums) {\n        // Return [duplicate, missing]\n        return new int[]{-1, -1};\n    }\n\n    public static void main(String[] args) {\n        System.out.println(java.util.Arrays.toString(\n            findMissingAndDuplicate(new int[]{1, 2, 2, 4}))); // [2, 3]\n        System.out.println(java.util.Arrays.toString(\n            findMissingAndDuplicate(new int[]{1, 1})));       // [1, 2]\n    }\n}",
           "solutionCode": "public class Q20 {\n    public static int[] findMissingAndDuplicate(int[] nums) {\n        int n = nums.length;\n\n        // XOR of all elements XOR 1..n = missing ^ duplicate\n        int xorAll = 0;\n        for (int num : nums) xorAll ^= num;\n        for (int i = 1; i <= n; i++) xorAll ^= i;\n        // xorAll = missing ^ duplicate (all others cancelled)\n\n        // Find a bit that differs between missing and duplicate\n        int diffBit = xorAll & (-xorAll); // lowest set bit\n\n        // Split into two groups by diffBit\n        int group1 = 0, group2 = 0;\n        for (int num : nums) {\n            if ((num & diffBit) != 0) group1 ^= num;\n            else group2 ^= num;\n        }\n        for (int i = 1; i <= n; i++) {\n            if ((i & diffBit) != 0) group1 ^= i;\n            else group2 ^= i;\n        }\n        // group1 and group2 are the two candidates (missing and duplicate, order unknown)\n\n        // Determine which is missing and which is duplicate\n        // Check if group1 appears in array\n        boolean group1InArray = false;\n        for (int num : nums) if (num == group1) { group1InArray = true; break; }\n\n        return group1InArray\n            ? new int[]{group1, group2}  // group1=duplicate, group2=missing\n            : new int[]{group2, group1}; // group2=duplicate, group1=missing\n    }\n\n    public static void main(String[] args) {\n        // [duplicate, missing]\n        System.out.println(java.util.Arrays.toString(\n            findMissingAndDuplicate(new int[]{1, 2, 2, 4}))); // [2, 3]\n        System.out.println(java.util.Arrays.toString(\n            findMissingAndDuplicate(new int[]{1, 1})));        // [1, 2]\n        System.out.println(java.util.Arrays.toString(\n            findMissingAndDuplicate(new int[]{3, 1, 2, 5, 3}))); // [3, 4]\n    }\n}",
           "testCases": [
-            {"input": "[1, 2, 2, 4]", "output": "[2, 3]"},
-            {"input": "[1, 1]", "output": "[1, 2]"}
+            {
+              "input": "[1, 2, 2, 4]",
+              "output": "[2, 3]"
+            },
+            {
+              "input": "[1, 1]",
+              "output": "[1, 2]"
+            }
           ],
-          "constraints": "O(n) time, O(1) space. Must use XOR. Two-pass: first XOR pass, then split-by-bit pass. Final check to determine which is missing vs duplicate."
+          "constraints": "O(n) time, O(1) space. Must use XOR. Two-pass: first XOR pass, then split-by-bit pass. Final check to determine which is missing vs duplicate.",
+          "editorial": "XOR find missing and duplicate in array [1..n]: XOR all elements with all of 1..n. Result = missing ^ duplicate. Then use sum formula: sum(array) - sum(1..n) = duplicate - missing. Solve the two equations. O(n) time, O(1) space. No sorting, no extra storage."
         }
       ]
     }

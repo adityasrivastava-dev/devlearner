@@ -77,11 +77,21 @@
           "starterCode": "class Pair<A,B> { A first; B second; Pair(A a,B b){first=a;second=b;} }\nclass Solution {\n    public <T extends Comparable<T>> Pair<T,T> findMinMax(List<T> list) { }\n    public <T extends Comparable<T>> T findKth(List<T> list, int k) { }\n}",
           "solutionCode": "class Pair<A,B> { A first; B second; Pair(A a,B b){first=a;second=b;} }\nclass Solution {\n    public <T extends Comparable<T>> Pair<T,T> findMinMax(List<T> list) {\n        if (list.isEmpty()) throw new IllegalArgumentException(\"Empty list\");\n        T min = list.get(0), max = list.get(0);\n        for (T item : list) {\n            if (item.compareTo(min) < 0) min = item;\n            if (item.compareTo(max) > 0) max = item;\n        }\n        return new Pair<>(min, max);\n    }\n    public <T extends Comparable<T>> T findKth(List<T> list, int k) {\n        if (k < 1 || k > list.size()) throw new IllegalArgumentException();\n        List<T> copy = new ArrayList<>(list);\n        Collections.sort(copy);\n        return copy.get(k - 1);\n    }\n}",
           "testCases": [
-            {"input": "findMinMax([3,1,4,1,5,9,2,6])", "output": "Pair(1,9)"},
-            {"input": "findMinMax(['banana','apple','cherry'])", "output": "Pair('apple','cherry')"},
-            {"input": "findKth([5,3,1,4,2], 3)", "output": "3"}
+            {
+              "input": "findMinMax([3,1,4,1,5,9,2,6])",
+              "output": "Pair(1,9)"
+            },
+            {
+              "input": "findMinMax(['banana','apple','cherry'])",
+              "output": "Pair('apple','cherry')"
+            },
+            {
+              "input": "findKth([5,3,1,4,2], 3)",
+              "output": "3"
+            }
           ],
-          "constraints": "Single pass for findMinMax. T must implement Comparable."
+          "constraints": "Single pass for findMinMax. T must implement Comparable.",
+          "editorial": "Iterate the list once tracking min and max with Comparator.comparingNaturalOrder() or T's compareTo(). Return a Pair<T,T>(min,max). For findKth: copy the list, sort it with Collections.sort() (requires Comparable), return index k-1. Throw IllegalArgumentException if k < 1 or k > size."
         },
         {
           "displayOrder": 2,
@@ -95,10 +105,17 @@
           "starterCode": "class Solution {\n    public <T> void swap(T[] arr, int i, int j) { }\n    public <T> void reverse(T[] arr) { }\n}",
           "solutionCode": "class Solution {\n    public <T> void swap(T[] arr, int i, int j) {\n        T temp = arr[i]; arr[i] = arr[j]; arr[j] = temp;\n    }\n    public <T> void reverse(T[] arr) {\n        int left = 0, right = arr.length - 1;\n        while (left < right) swap(arr, left++, right--);\n    }\n}",
           "testCases": [
-            {"input": "swap([1,2,3,4,5], 1, 3)", "output": "[1,4,3,2,5]"},
-            {"input": "reverse(['a','b','c','d'])", "output": "['d','c','b','a']"}
+            {
+              "input": "swap([1,2,3,4,5], 1, 3)",
+              "output": "[1,4,3,2,5]"
+            },
+            {
+              "input": "reverse(['a','b','c','d'])",
+              "output": "['d','c','b','a']"
+            }
           ],
-          "constraints": "In-place operations. Works for any reference type array."
+          "constraints": "In-place operations. Works for any reference type array.",
+          "editorial": "Generic swap: T temp = arr[i]; arr[i] = arr[j]; arr[j] = temp. This works for any reference type T. Reverse: swap(arr, 0, arr.length-1), swap(arr, 1, arr.length-2), etc. — two-pointer approach, O(n/2) swaps. Note: you cannot create generic arrays (T[] arr = new T[n] is illegal) — pass an existing array."
         },
         {
           "displayOrder": 3,
@@ -112,11 +129,21 @@
           "starterCode": "public class Triple<A, B, C> {\n    public final A first;\n    public final B second;\n    public final C third;\n    // constructor, of, map1, toList, fromList\n}",
           "solutionCode": "public class Triple<A, B, C> {\n    public final A first;\n    public final B second;\n    public final C third;\n    public Triple(A a, B b, C c) { first=a; second=b; third=c; }\n    public static <X,Y,Z> Triple<X,Y,Z> of(X x, Y y, Z z) { return new Triple<>(x,y,z); }\n    public <X> Triple<X,B,C> map1(java.util.function.Function<A,X> f) {\n        return new Triple<>(f.apply(first), second, third);\n    }\n    public java.util.List<Object> toList() { return java.util.List.of(first, second, third); }\n    @SuppressWarnings(\"unchecked\")\n    public static <X,Y,Z> Triple<X,Y,Z> fromList(java.util.List<?> list) {\n        if (list.size() != 3) throw new IllegalArgumentException(\"Need exactly 3 elements\");\n        return new Triple<>((X)list.get(0), (Y)list.get(1), (Z)list.get(2));\n    }\n    public String toString() { return \"(\" + first + \",\" + second + \",\" + third + \")\"; }\n}",
           "testCases": [
-            {"input": "Triple.of('a', 1, true).toString()", "output": "(a,1,true)"},
-            {"input": "Triple.of('hello',2,3.0).map1(String::length).toString()", "output": "(5,2,3.0)"},
-            {"input": "Triple.of(1,2,3).toList()", "output": "[1, 2, 3]"}
+            {
+              "input": "Triple.of('a', 1, true).toString()",
+              "output": "(a,1,true)"
+            },
+            {
+              "input": "Triple.of('hello',2,3.0).map1(String::length).toString()",
+              "output": "(5,2,3.0)"
+            },
+            {
+              "input": "Triple.of(1,2,3).toList()",
+              "output": "[1, 2, 3]"
+            }
           ],
-          "constraints": "Immutable — no setters. map1 returns new Triple."
+          "constraints": "Immutable — no setters. map1 returns new Triple.",
+          "editorial": "Generic Triple<A,B,C> with factory of(a,b,c) for cleaner syntax. mapFirst(fn): return new Triple<>(fn.apply(first), second, third). toList(): return List.of(first,second,third) — but the list type is List<Object> since A, B, C can differ. equals/hashCode: compare all three fields."
         },
         {
           "displayOrder": 4,
@@ -130,10 +157,17 @@
           "starterCode": "class Solution {\n    public <T> Map<T, Integer> frequency(List<T> items) { }\n    public <T> List<T> topN(Map<T, Integer> freq, int n) { }\n}",
           "solutionCode": "class Solution {\n    public <T> Map<T, Integer> frequency(List<T> items) {\n        Map<T, Integer> freq = new HashMap<>();\n        for (T item : items) freq.merge(item, 1, Integer::sum);\n        return freq;\n    }\n    public <T> List<T> topN(Map<T, Integer> freq, int n) {\n        return freq.entrySet().stream()\n            .sorted(Map.Entry.<T,Integer>comparingByValue().reversed())\n            .limit(n)\n            .map(Map.Entry::getKey)\n            .collect(java.util.stream.Collectors.toList());\n    }\n}",
           "testCases": [
-            {"input": "frequency(['a','b','a','c','a','b'])", "output": "{a:3, b:2, c:1}"},
-            {"input": "topN({a:3,b:2,c:1}, 2)", "output": "['a','b']"}
+            {
+              "input": "frequency(['a','b','a','c','a','b'])",
+              "output": "{a:3, b:2, c:1}"
+            },
+            {
+              "input": "topN({a:3,b:2,c:1}, 2)",
+              "output": "['a','b']"
+            }
           ],
-          "constraints": "T must implement equals and hashCode."
+          "constraints": "T must implement equals and hashCode.",
+          "editorial": "Use Map.merge(item, 1, Integer::sum) for clean frequency counting — one line per item. topK: entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).limit(k).collect(toList()). getMode(): same sorted stream, take first entry's key."
         },
         {
           "displayOrder": 5,
@@ -147,11 +181,21 @@
           "starterCode": "class BST<T extends Comparable<T>> {\n    private Node<T> root;\n    private static class Node<T> {\n        T value; Node<T> left, right;\n        Node(T v) { value = v; }\n    }\n    public void insert(T value) { }\n    public boolean contains(T value) { }\n    public List<T> inorder() { }\n    public int size() { }\n}",
           "solutionCode": "class BST<T extends Comparable<T>> {\n    private Node<T> root;\n    private int size = 0;\n    private static class Node<T> {\n        T value; Node<T> left, right;\n        Node(T v) { value = v; }\n    }\n    public void insert(T value) { root = insert(root, value); }\n    private Node<T> insert(Node<T> node, T value) {\n        if (node == null) { size++; return new Node<>(value); }\n        int cmp = value.compareTo(node.value);\n        if (cmp < 0) node.left  = insert(node.left, value);\n        else if (cmp > 0) node.right = insert(node.right, value);\n        return node;\n    }\n    public boolean contains(T value) {\n        Node<T> cur = root;\n        while (cur != null) {\n            int cmp = value.compareTo(cur.value);\n            if (cmp < 0) cur = cur.left;\n            else if (cmp > 0) cur = cur.right;\n            else return true;\n        }\n        return false;\n    }\n    public List<T> inorder() {\n        List<T> result = new ArrayList<>();\n        inorder(root, result);\n        return result;\n    }\n    private void inorder(Node<T> node, List<T> result) {\n        if (node == null) return;\n        inorder(node.left, result);\n        result.add(node.value);\n        inorder(node.right, result);\n    }\n    public int size() { return size; }\n}",
           "testCases": [
-            {"input": "insert 5,3,7,1,4; inorder()", "output": "[1,3,4,5,7]"},
-            {"input": "contains(4)", "output": "true"},
-            {"input": "insert 'banana','apple','cherry'; inorder()", "output": "['apple','banana','cherry']"}
+            {
+              "input": "insert 5,3,7,1,4; inorder()",
+              "output": "[1,3,4,5,7]"
+            },
+            {
+              "input": "contains(4)",
+              "output": "true"
+            },
+            {
+              "input": "insert 'banana','apple','cherry'; inorder()",
+              "output": "['apple','banana','cherry']"
+            }
           ],
-          "constraints": "T extends Comparable<T>. Skip duplicates."
+          "constraints": "T extends Comparable<T>. Skip duplicates.",
+          "editorial": "BST insert: compare new value with root. If less, go left; if greater, go right; if equal, no duplicate (return). contains: same traversal, return true if found. inorder: left subtree → root → right subtree — produces sorted output. Size: count recursively. Height: 1 + Math.max(leftHeight, rightHeight)."
         },
         {
           "displayOrder": 6,
@@ -165,11 +209,21 @@
           "starterCode": "class Solution {\n    public double sumList(List<? extends Number> numbers) { }\n    public void addToAll(List<? super Integer> dest, List<Integer> src) { }\n}",
           "solutionCode": "class Solution {\n    public double sumList(List<? extends Number> numbers) {\n        double sum = 0;\n        for (Number n : numbers) sum += n.doubleValue();\n        return sum;\n    }\n    public void addToAll(List<? super Integer> dest, List<Integer> src) {\n        dest.addAll(src);\n    }\n}",
           "testCases": [
-            {"input": "sumList([1,2,3]) as List<Integer>", "output": "6.0"},
-            {"input": "sumList([1.5,2.5,3.0]) as List<Double>", "output": "7.0"},
-            {"input": "addToAll(List<Number>, [1,2,3])", "output": "List<Number> contains 1,2,3"}
+            {
+              "input": "sumList([1,2,3]) as List<Integer>",
+              "output": "6.0"
+            },
+            {
+              "input": "sumList([1.5,2.5,3.0]) as List<Double>",
+              "output": "7.0"
+            },
+            {
+              "input": "addToAll(List<Number>, [1,2,3])",
+              "output": "List<Number> contains 1,2,3"
+            }
           ],
-          "constraints": "PECS: sumList reads (producer extends), addToAll writes (consumer super)."
+          "constraints": "PECS: sumList reads (producer extends), addToAll writes (consumer super).",
+          "editorial": "List<? extends Number> is an upper-bounded wildcard — you can read from it (get() returns Number) but cannot add to it (compiler rejects add()). sumList: iterate calling n.doubleValue() and accumulate. addNumbers with List<? super Integer> uses lower-bounded wildcard — you can add Integer to it."
         },
         {
           "displayOrder": 7,
@@ -183,11 +237,21 @@
           "starterCode": "class Cache<K, V> {\n    private final long ttlMs;\n    public Cache(long ttlMs) { this.ttlMs = ttlMs; }\n    public void put(K key, V value) { }\n    public Optional<V> get(K key) { }\n    public void evictExpired() { }\n    public int size() { }\n}",
           "solutionCode": "class Cache<K, V> {\n    private static class Entry<V> {\n        final V value;\n        final long expiry;\n        Entry(V v, long ttl) { value = v; expiry = System.currentTimeMillis() + ttl; }\n        boolean isExpired() { return System.currentTimeMillis() >= expiry; }\n    }\n    private final Map<K, Entry<V>> store = new HashMap<>();\n    private final long ttlMs;\n    public Cache(long ttlMs) { this.ttlMs = ttlMs; }\n    public void put(K key, V value) { store.put(key, new Entry<>(value, ttlMs)); }\n    public Optional<V> get(K key) {\n        Entry<V> entry = store.get(key);\n        if (entry == null || entry.isExpired()) { store.remove(key); return Optional.empty(); }\n        return Optional.of(entry.value);\n    }\n    public void evictExpired() { store.entrySet().removeIf(e -> e.getValue().isExpired()); }\n    public int size() { evictExpired(); return store.size(); }\n}",
           "testCases": [
-            {"input": "Cache(100ms); put('k','v'); get('k') immediately", "output": "Optional.of('v')"},
-            {"input": "sleep 200ms; get('k')", "output": "Optional.empty()"},
-            {"input": "put 3 entries; sleep 200ms; size()", "output": "0"}
+            {
+              "input": "Cache(100ms); put('k','v'); get('k') immediately",
+              "output": "Optional.of('v')"
+            },
+            {
+              "input": "sleep 200ms; get('k')",
+              "output": "Optional.empty()"
+            },
+            {
+              "input": "put 3 entries; sleep 200ms; size()",
+              "output": "0"
+            }
           ],
-          "constraints": "TTL in milliseconds. get() does lazy eviction."
+          "constraints": "TTL in milliseconds. get() does lazy eviction.",
+          "editorial": "Store entries as CacheEntry(V value, long expiryTime = System.currentTimeMillis() + ttl). get(): check if current time < expiryTime — return null if expired and remove. evictExpired(): removeIf on entries where expiryTime <= now. size() returns current active (non-expired) count."
         },
         {
           "displayOrder": 8,
@@ -201,11 +265,21 @@
           "starterCode": "class Graph<V, E> {\n    private final Map<V, Map<V, E>> adjacency = new HashMap<>();\n    public void addVertex(V v) { }\n    public void addEdge(V from, V to, E weight) { }\n    public Map<V, E> getNeighbors(V v) { }\n    public boolean hasVertex(V v) { }\n    public boolean hasEdge(V from, V to) { }\n    public List<V> bfs(V start) { }\n}",
           "solutionCode": "class Graph<V, E> {\n    private final Map<V, Map<V, E>> adjacency = new HashMap<>();\n    public void addVertex(V v) { adjacency.putIfAbsent(v, new LinkedHashMap<>()); }\n    public void addEdge(V from, V to, E weight) {\n        if (!adjacency.containsKey(from)) throw new IllegalArgumentException(\"No vertex: \" + from);\n        if (!adjacency.containsKey(to))   throw new IllegalArgumentException(\"No vertex: \" + to);\n        adjacency.get(from).put(to, weight);\n    }\n    public Map<V, E> getNeighbors(V v) {\n        return Collections.unmodifiableMap(adjacency.getOrDefault(v, Collections.emptyMap()));\n    }\n    public boolean hasVertex(V v) { return adjacency.containsKey(v); }\n    public boolean hasEdge(V from, V to) {\n        return adjacency.containsKey(from) && adjacency.get(from).containsKey(to);\n    }\n    public List<V> bfs(V start) {\n        if (!adjacency.containsKey(start)) return Collections.emptyList();\n        List<V> order = new ArrayList<>();\n        Set<V> visited = new HashSet<>();\n        Queue<V> queue = new LinkedList<>();\n        queue.offer(start); visited.add(start);\n        while (!queue.isEmpty()) {\n            V curr = queue.poll();\n            order.add(curr);\n            for (V neighbor : adjacency.getOrDefault(curr, Collections.emptyMap()).keySet())\n                if (visited.add(neighbor)) queue.offer(neighbor);\n        }\n        return order;\n    }\n}",
           "testCases": [
-            {"input": "addVertex A,B,C; addEdge(A,B,1), addEdge(B,C,2); bfs(A)", "output": "[A,B,C]"},
-            {"input": "hasEdge(A,B)", "output": "true"},
-            {"input": "hasEdge(C,A)", "output": "false"}
+            {
+              "input": "addVertex A,B,C; addEdge(A,B,1), addEdge(B,C,2); bfs(A)",
+              "output": "[A,B,C]"
+            },
+            {
+              "input": "hasEdge(A,B)",
+              "output": "true"
+            },
+            {
+              "input": "hasEdge(C,A)",
+              "output": "false"
+            }
           ],
-          "constraints": "Directed graph. V and E can be any types."
+          "constraints": "Directed graph. V and E can be any types.",
+          "editorial": "Adjacency map: Map<V, Map<V, E>> adjacency. addEdge(from, to, weight): adjacency.get(from).put(to, weight). neighbors(v): adjacency.getOrDefault(v, Map.of()).keySet(). BFS: start from source, use Queue<V> and Set<V> visited, collect vertices in order. Dijkstra extends this with a priority queue."
         },
         {
           "displayOrder": 9,
@@ -219,11 +293,21 @@
           "starterCode": "class NumberStats<T extends Number & Comparable<T>> {\n    private final List<T> data;\n    public NumberStats(List<T> data) { this.data = new ArrayList<>(data); }\n    public double mean() { }\n    public T max() { }\n    public T min() { }\n    public double median() { }\n    public double variance() { }\n}",
           "solutionCode": "class NumberStats<T extends Number & Comparable<T>> {\n    private final List<T> data;\n    public NumberStats(List<T> data) {\n        if (data.isEmpty()) throw new IllegalArgumentException();\n        this.data = new ArrayList<>(data);\n    }\n    public double mean() {\n        return data.stream().mapToDouble(Number::doubleValue).average().orElse(0);\n    }\n    public T max() { return Collections.max(data); }\n    public T min() { return Collections.min(data); }\n    public double median() {\n        List<T> sorted = new ArrayList<>(data);\n        Collections.sort(sorted);\n        int n = sorted.size();\n        return n % 2 == 1 ? sorted.get(n/2).doubleValue()\n            : (sorted.get(n/2-1).doubleValue() + sorted.get(n/2).doubleValue()) / 2.0;\n    }\n    public double variance() {\n        double mean = mean();\n        return data.stream().mapToDouble(x -> { double d = x.doubleValue()-mean; return d*d; }).average().orElse(0);\n    }\n}",
           "testCases": [
-            {"input": "NumberStats([1,2,3,4,5]).mean()", "output": "3.0"},
-            {"input": "NumberStats([1,2,3,4,5]).median()", "output": "3.0"},
-            {"input": "NumberStats([2,4]).median()", "output": "3.0"}
+            {
+              "input": "NumberStats([1,2,3,4,5]).mean()",
+              "output": "3.0"
+            },
+            {
+              "input": "NumberStats([1,2,3,4,5]).median()",
+              "output": "3.0"
+            },
+            {
+              "input": "NumberStats([2,4]).median()",
+              "output": "3.0"
+            }
           ],
-          "constraints": "T extends Number & Comparable<T>."
+          "constraints": "T extends Number & Comparable<T>.",
+          "editorial": "T extends Number & Comparable<T>: both bounds required. mean(): sum all doubleValue() / size. min()/max(): stream().min/max(Comparator.naturalOrder()). median(): sort copy, middle element for odd size or average of two middle for even. standardDeviation(): sqrt(variance) where variance = mean of squared deviations."
         },
         {
           "displayOrder": 10,
@@ -237,11 +321,21 @@
           "starterCode": "class Pipeline<T> {\n    private final T value;\n    private final List<java.util.function.Function<T,T>> steps;\n    private Pipeline(T value) { this.value=value; this.steps=new ArrayList<>(); }\n    public static <T> Pipeline<T> start(T value) { return new Pipeline<>(value); }\n    public Pipeline<T> then(java.util.function.Function<T,T> step) { }\n    public Optional<T> filter(java.util.function.Predicate<T> pred) { }\n    public T execute() { }\n}",
           "solutionCode": "class Pipeline<T> {\n    private final T value;\n    private final List<java.util.function.Function<T,T>> steps;\n    private Pipeline(T value, List<java.util.function.Function<T,T>> steps) {\n        this.value = value; this.steps = steps;\n    }\n    private Pipeline(T value) { this(value, new ArrayList<>()); }\n    public static <T> Pipeline<T> start(T value) { return new Pipeline<>(value); }\n    public Pipeline<T> then(java.util.function.Function<T,T> step) {\n        steps.add(step); return this;\n    }\n    @SuppressWarnings(\"unchecked\")\n    public T execute() {\n        Object result = value;\n        for (var fn : steps) result = ((java.util.function.Function<Object,Object>)(Object)fn).apply(result);\n        return (T) result;\n    }\n    public Optional<T> filter(java.util.function.Predicate<T> pred) {\n        T result = execute();\n        return pred.test(result) ? Optional.of(result) : Optional.empty();\n    }\n}",
           "testCases": [
-            {"input": "Pipeline.start(5).then(x->x*2).then(x->x+1).execute()", "output": "11"},
-            {"input": "Pipeline.start(10).filter(x->x>5)", "output": "Optional.of(10)"},
-            {"input": "Pipeline.start(3).filter(x->x>5)", "output": "Optional.empty()"}
+            {
+              "input": "Pipeline.start(5).then(x->x*2).then(x->x+1).execute()",
+              "output": "11"
+            },
+            {
+              "input": "Pipeline.start(10).filter(x->x>5)",
+              "output": "Optional.of(10)"
+            },
+            {
+              "input": "Pipeline.start(3).filter(x->x>5)",
+              "output": "Optional.empty()"
+            }
           ],
-          "constraints": "Fluent API. then() returns this."
+          "constraints": "Fluent API. then() returns this.",
+          "editorial": "Pipeline<T>: stores List<Function<T,T>> steps. then(fn) adds to list, returns this for chaining. execute(T input) applies each function in sequence using reduce or a for-loop. This is the Builder pattern plus functional composition. Similar to Stream intermediate operations but for same-type transformations."
         },
         {
           "displayOrder": 11,
@@ -255,11 +349,21 @@
           "starterCode": "class EventBus {\n    private final Map<Class<?>, List<java.util.function.Consumer<?>>> handlers = new HashMap<>();\n    public <T> void subscribe(Class<T> type, java.util.function.Consumer<T> handler) { }\n    public <T> void unsubscribe(Class<T> type, java.util.function.Consumer<T> handler) { }\n    public <T> void publish(T event) { }\n}",
           "solutionCode": "class EventBus {\n    private final Map<Class<?>, List<java.util.function.Consumer<?>>> handlers = new HashMap<>();\n    public <T> void subscribe(Class<T> type, java.util.function.Consumer<T> handler) {\n        handlers.computeIfAbsent(type, k -> new ArrayList<>()).add(handler);\n    }\n    public <T> void unsubscribe(Class<T> type, java.util.function.Consumer<T> handler) {\n        List<java.util.function.Consumer<?>> list = handlers.get(type);\n        if (list != null) list.remove(handler);\n    }\n    @SuppressWarnings(\"unchecked\")\n    public <T> void publish(T event) {\n        List<java.util.function.Consumer<?>> list = handlers.get(event.getClass());\n        if (list != null)\n            for (java.util.function.Consumer<?> h : new ArrayList<>(list))\n                ((java.util.function.Consumer<T>) h).accept(event);\n    }\n}",
           "testCases": [
-            {"input": "subscribe(String.class, s->print(s)); publish('hello')", "output": "prints 'hello'"},
-            {"input": "subscribe(Integer.class, i->print(i*2)); publish(21)", "output": "prints 42"},
-            {"input": "unsubscribe handler; publish again", "output": "nothing printed"}
+            {
+              "input": "subscribe(String.class, s->print(s)); publish('hello')",
+              "output": "prints 'hello'"
+            },
+            {
+              "input": "subscribe(Integer.class, i->print(i*2)); publish(21)",
+              "output": "prints 42"
+            },
+            {
+              "input": "unsubscribe handler; publish again",
+              "output": "nothing printed"
+            }
           ],
-          "constraints": "Type-safe. Multiple handlers per type allowed."
+          "constraints": "Type-safe. Multiple handlers per type allowed.",
+          "editorial": "Map<Class<?>, List<Consumer<?>>> handlers. subscribe(Class<T> type, Consumer<T> handler): add to handlers.get(type). publish(T event): get handlers for event.getClass(), cast each consumer to Consumer<T> (unchecked), call accept(event). The Class<T> key provides type-safe dispatch at registration time."
         },
         {
           "displayOrder": 12,
@@ -273,10 +377,17 @@
           "starterCode": "class Solution {\n    public <T> List<T> mergeSort(List<T> list, Comparator<? super T> cmp) { }\n    public <T extends Comparable<T>> List<T> mergeSort(List<T> list) {\n        return mergeSort(list, Comparator.naturalOrder());\n    }\n}",
           "solutionCode": "class Solution {\n    public <T> List<T> mergeSort(List<T> list, Comparator<? super T> cmp) {\n        if (list.size() <= 1) return new ArrayList<>(list);\n        int mid = list.size() / 2;\n        List<T> left  = mergeSort(list.subList(0, mid), cmp);\n        List<T> right = mergeSort(list.subList(mid, list.size()), cmp);\n        return merge(left, right, cmp);\n    }\n    private <T> List<T> merge(List<T> left, List<T> right, Comparator<? super T> cmp) {\n        List<T> result = new ArrayList<>(left.size() + right.size());\n        int i = 0, j = 0;\n        while (i < left.size() && j < right.size()) {\n            if (cmp.compare(left.get(i), right.get(j)) <= 0) result.add(left.get(i++));\n            else result.add(right.get(j++));\n        }\n        while (i < left.size())  result.add(left.get(i++));\n        while (j < right.size()) result.add(right.get(j++));\n        return result;\n    }\n    public <T extends Comparable<T>> List<T> mergeSort(List<T> list) {\n        return mergeSort(list, Comparator.naturalOrder());\n    }\n}",
           "testCases": [
-            {"input": "mergeSort([5,3,8,1,9,2])", "output": "[1,2,3,5,8,9]"},
-            {"input": "mergeSort(['banana','apple','cherry'])", "output": "['apple','banana','cherry']"}
+            {
+              "input": "mergeSort([5,3,8,1,9,2])",
+              "output": "[1,2,3,5,8,9]"
+            },
+            {
+              "input": "mergeSort(['banana','apple','cherry'])",
+              "output": "['apple','banana','cherry']"
+            }
           ],
-          "constraints": "O(n log n). Returns new list. Comparator uses ? super T."
+          "constraints": "O(n log n). Returns new list. Comparator uses ? super T.",
+          "editorial": "Merge sort: split list in half recursively until size 1. Merge two sorted halves with two-pointer comparison using cmp.compare(). Comparator<? super T> allows using a parent-type comparator on T — e.g., Comparator<Animal> works on List<Dog>. O(n log n) time, O(n) space."
         },
         {
           "displayOrder": 13,
@@ -290,10 +401,17 @@
           "starterCode": "class LRUCache<K, V> {\n    private final int capacity;\n    private final List<K> evictedKeys = new ArrayList<>();\n    private final LinkedHashMap<K, V> cache;\n    public LRUCache(int capacity) { }\n    public Optional<V> get(K key) { }\n    public void put(K key, V value) { }\n    public boolean containsKey(K key) { }\n    public int size() { }\n    public List<K> evictedKeys() { }\n}",
           "solutionCode": "class LRUCache<K, V> {\n    private final int capacity;\n    private final List<K> evictedKeys = new ArrayList<>();\n    private final LinkedHashMap<K, V> cache;\n    public LRUCache(int capacity) {\n        this.capacity = capacity;\n        this.cache = new LinkedHashMap<K, V>(capacity, 0.75f, true) {\n            protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {\n                boolean evict = size() > capacity;\n                if (evict) evictedKeys.add(eldest.getKey());\n                return evict;\n            }\n        };\n    }\n    public Optional<V> get(K key) { return Optional.ofNullable(cache.get(key)); }\n    public void put(K key, V value) { cache.put(key, value); }\n    public boolean containsKey(K key) { return cache.containsKey(key); }\n    public int size() { return cache.size(); }\n    public List<K> evictedKeys() { return Collections.unmodifiableList(evictedKeys); }\n}",
           "testCases": [
-            {"input": "LRU(3); put 1,2,3; get(1); put 4; containsKey(2)", "output": "false (2 was LRU)"},
-            {"input": "evictedKeys() after above", "output": "[2]"}
+            {
+              "input": "LRU(3); put 1,2,3; get(1); put 4; containsKey(2)",
+              "output": "false (2 was LRU)"
+            },
+            {
+              "input": "evictedKeys() after above",
+              "output": "[2]"
+            }
           ],
-          "constraints": "LinkedHashMap accessOrder=true. Capacity strictly enforced."
+          "constraints": "LinkedHashMap accessOrder=true. Capacity strictly enforced.",
+          "editorial": "Use LinkedHashMap with access-order=true: new LinkedHashMap<>(capacity, 0.75f, true). Override removeEldestEntry to return size() > capacity. get() and put() automatically move accessed entries to the tail. get() returns Optional.ofNullable(map.get(key)). Track evicted keys with removeEldestEntry."
         },
         {
           "displayOrder": 14,
@@ -307,10 +425,17 @@
           "starterCode": "interface Observer<T> { void onChanged(T oldValue, T newValue); }\nclass Observable<T> {\n    private T value;\n    private final List<Observer<T>> observers = new ArrayList<>();\n    public Observable(T initial) { this.value = initial; }\n    public void addObserver(Observer<T> o) { }\n    public void removeObserver(Observer<T> o) { }\n    public T get() { return value; }\n    public void set(T newValue) { }\n}",
           "solutionCode": "interface Observer<T> { void onChanged(T oldValue, T newValue); }\nclass Observable<T> {\n    private T value;\n    private final List<Observer<T>> observers = new ArrayList<>();\n    public Observable(T initial) { this.value = initial; }\n    public void addObserver(Observer<T> o) { observers.add(o); }\n    public void removeObserver(Observer<T> o) { observers.remove(o); }\n    public T get() { return value; }\n    public void set(T newValue) {\n        T old = this.value; this.value = newValue;\n        for (Observer<T> o : new ArrayList<>(observers)) o.onChanged(old, newValue);\n    }\n}\nclass DerivedObservable<T, R> extends Observable<R> implements Observer<T> {\n    private final java.util.function.Function<T, R> transform;\n    public DerivedObservable(Observable<T> source, java.util.function.Function<T,R> f) {\n        super(f.apply(source.get()));\n        this.transform = f;\n        source.addObserver(this);\n    }\n    public void onChanged(T old, T newVal) { set(transform.apply(newVal)); }\n}",
           "testCases": [
-            {"input": "Observable<Integer> obs=new Observable<>(5); addObserver prints; obs.set(10)", "output": "onChanged(5,10)"},
-            {"input": "DerivedObservable<Integer,String> d = new Derived(obs, i->\"val:\"+i); obs.set(20)", "output": "d.get()='val:20'"}
+            {
+              "input": "Observable<Integer> obs=new Observable<>(5); addObserver prints; obs.set(10)",
+              "output": "onChanged(5,10)"
+            },
+            {
+              "input": "DerivedObservable<Integer,String> d = new Derived(obs, i->\"val:\"+i); obs.set(20)",
+              "output": "d.get()='val:20'"
+            }
           ],
-          "constraints": "Type-safe observers. DerivedObservable auto-updates."
+          "constraints": "Type-safe observers. DerivedObservable auto-updates.",
+          "editorial": "Observable<T> holds a T value and List<Observer<T>>. set(T) updates value and notifies all observers calling observer.onValueChanged(old, new). DerivedObservable<T,R> implements Observer<T>, stores current R = transform(T), notifies its own observers. This is the Reactive pattern foundation."
         },
         {
           "displayOrder": 15,
@@ -324,11 +449,21 @@
           "starterCode": "class TypeRegistry<T> {\n    private final Map<String, T> map = new HashMap<>();\n    public void put(String key, T val) { map.put(key, val); }\n    public T get(String key) { return map.get(key); }\n}\nclass MultiTypeRegistry {\n    private final Map<Class<?>, TypeRegistry<?>> registries = new HashMap<>();\n    public <T> void put(Class<T> type, String key, T value) { }\n    public <T> T get(Class<T> type, String key) { }\n    public <T> TypeRegistry<T> getRegistry(Class<T> type) { }\n}",
           "solutionCode": "class TypeRegistry<T> {\n    private final Map<String, T> map = new HashMap<>();\n    public void put(String key, T val) { map.put(key, val); }\n    public T get(String key) { return map.get(key); }\n}\nclass MultiTypeRegistry {\n    private final Map<Class<?>, TypeRegistry<?>> registries = new HashMap<>();\n    @SuppressWarnings(\"unchecked\")\n    public <T> TypeRegistry<T> getRegistry(Class<T> type) {\n        return (TypeRegistry<T>) registries.computeIfAbsent(type, k -> new TypeRegistry<T>());\n    }\n    public <T> void put(Class<T> type, String key, T value) { getRegistry(type).put(key, value); }\n    public <T> T get(Class<T> type, String key) { return getRegistry(type).get(key); }\n}",
           "testCases": [
-            {"input": "put(String.class,'name','Alice'); get(String.class,'name')", "output": "'Alice' no cast"},
-            {"input": "put(Integer.class,'age',30); get(Integer.class,'age')", "output": "30"},
-            {"input": "get(String.class,'age')", "output": "null"}
+            {
+              "input": "put(String.class,'name','Alice'); get(String.class,'name')",
+              "output": "'Alice' no cast"
+            },
+            {
+              "input": "put(Integer.class,'age',30); get(Integer.class,'age')",
+              "output": "30"
+            },
+            {
+              "input": "get(String.class,'age')",
+              "output": "null"
+            }
           ],
-          "constraints": "No casting in caller code. Each type has isolated registry."
+          "constraints": "No casting in caller code. Each type has isolated registry.",
+          "editorial": "Map<Class<?>, TypedRegistry<?>> registries. getRegistry(Class<T> type): return (TypedRegistry<T>) registries.computeIfAbsent(type, k -> new TypedRegistry<>()). The unchecked cast is safe by construction — we only put TypedRegistry<T> keyed by Class<T>. This is the type-safe heterogeneous container pattern (Bloch)."
         },
         {
           "displayOrder": 16,
@@ -342,12 +477,25 @@
           "starterCode": "class Lazy<T> {\n    private final java.util.function.Supplier<T> supplier;\n    private T cachedValue;\n    private boolean evaluated = false;\n    public Lazy(java.util.function.Supplier<T> supplier) { this.supplier = supplier; }\n    public T get() { }\n    public boolean isEvaluated() { return evaluated; }\n    public <R> Lazy<R> map(java.util.function.Function<T,R> f) { }\n    public <R> Lazy<R> flatMap(java.util.function.Function<T,Lazy<R>> f) { }\n    public static <T> Lazy<T> of(java.util.function.Supplier<T> s) { return new Lazy<>(s); }\n}",
           "solutionCode": "class Lazy<T> {\n    private final java.util.function.Supplier<T> supplier;\n    private T cachedValue;\n    private boolean evaluated = false;\n    public Lazy(java.util.function.Supplier<T> supplier) { this.supplier = supplier; }\n    public synchronized T get() {\n        if (!evaluated) { cachedValue = supplier.get(); evaluated = true; }\n        return cachedValue;\n    }\n    public boolean isEvaluated() { return evaluated; }\n    public <R> Lazy<R> map(java.util.function.Function<T,R> f) {\n        return new Lazy<>(() -> f.apply(this.get()));\n    }\n    public <R> Lazy<R> flatMap(java.util.function.Function<T,Lazy<R>> f) {\n        return new Lazy<>(() -> f.apply(this.get()).get());\n    }\n    public static <T> Lazy<T> of(java.util.function.Supplier<T> s) { return new Lazy<>(s); }\n    public String toString() { return evaluated ? \"Lazy(\" + cachedValue + \")\" : \"Lazy(unevaluated)\"; }\n}",
           "testCases": [
-            {"input": "Lazy<Integer> l=Lazy.of(()->42); l.isEvaluated()", "output": "false"},
-            {"input": "l.get(); l.isEvaluated()", "output": "returns 42, isEvaluated=true"},
-            {"input": "l.get() again (no recompute)", "output": "42"},
-            {"input": "l.map(x->x*2).get()", "output": "84"}
+            {
+              "input": "Lazy<Integer> l=Lazy.of(()->42); l.isEvaluated()",
+              "output": "false"
+            },
+            {
+              "input": "l.get(); l.isEvaluated()",
+              "output": "returns 42, isEvaluated=true"
+            },
+            {
+              "input": "l.get() again (no recompute)",
+              "output": "42"
+            },
+            {
+              "input": "l.map(x->x*2).get()",
+              "output": "84"
+            }
           ],
-          "constraints": "Compute once, cache forever. map/flatMap are lazy."
+          "constraints": "Compute once, cache forever. map/flatMap are lazy.",
+          "editorial": "Lazy<T>: store Supplier<T>, boolean evaluated = false, T value = null. get(): if (!evaluated) { value = supplier.get(); evaluated = true; } return value. map(f): return new Lazy<>(() -> f.apply(this.get())) — composition defers computation. ifPresent: if supplier doesn't return null, call consumer."
         },
         {
           "displayOrder": 17,
@@ -361,11 +509,21 @@
           "starterCode": "public final class ImmutableList<T> implements Iterable<T> {\n    private final Object[] data;\n    private ImmutableList(Object[] data) { this.data = data; }\n    @SafeVarargs\n    public static <T> ImmutableList<T> of(T... items) { }\n    public T get(int i) { }\n    public int size() { return data.length; }\n    // prepend, tail, concat, filter, map\n}",
           "solutionCode": "public final class ImmutableList<T> implements Iterable<T> {\n    private final Object[] data;\n    private ImmutableList(Object[] data) { this.data = Arrays.copyOf(data, data.length); }\n    @SafeVarargs\n    public static <T> ImmutableList<T> of(T... items) { return new ImmutableList<>(items); }\n    @SuppressWarnings(\"unchecked\")\n    public T get(int i) { return (T) data[i]; }\n    public int size() { return data.length; }\n    public boolean isEmpty() { return data.length == 0; }\n    public boolean contains(T item) {\n        for (Object o : data) if (Objects.equals(o, item)) return true;\n        return false;\n    }\n    public ImmutableList<T> prepend(T item) {\n        Object[] newData = new Object[data.length + 1];\n        newData[0] = item;\n        System.arraycopy(data, 0, newData, 1, data.length);\n        return new ImmutableList<>(newData);\n    }\n    public ImmutableList<T> tail() {\n        if (isEmpty()) throw new java.util.NoSuchElementException();\n        return new ImmutableList<>(Arrays.copyOfRange(data, 1, data.length));\n    }\n    public ImmutableList<T> concat(ImmutableList<T> other) {\n        Object[] combined = new Object[data.length + other.data.length];\n        System.arraycopy(data, 0, combined, 0, data.length);\n        System.arraycopy(other.data, 0, combined, data.length, other.data.length);\n        return new ImmutableList<>(combined);\n    }\n    @SuppressWarnings(\"unchecked\")\n    public ImmutableList<T> filter(java.util.function.Predicate<T> pred) {\n        List<Object> result = new ArrayList<>();\n        for (Object o : data) if (pred.test((T)o)) result.add(o);\n        return new ImmutableList<>(result.toArray());\n    }\n    @SuppressWarnings(\"unchecked\")\n    public <R> ImmutableList<R> map(java.util.function.Function<T,R> f) {\n        Object[] result = new Object[data.length];\n        for (int i=0; i<data.length; i++) result[i] = f.apply((T)data[i]);\n        return new ImmutableList<>(result);\n    }\n    public java.util.Iterator<T> iterator() {\n        return new java.util.Iterator<T>() {\n            int idx = 0;\n            public boolean hasNext() { return idx < data.length; }\n            @SuppressWarnings(\"unchecked\")\n            public T next() { return (T) data[idx++]; }\n        };\n    }\n    public String toString() { return Arrays.toString(data); }\n}",
           "testCases": [
-            {"input": "ImmutableList.of(1,2,3).prepend(0).toString()", "output": "[0, 1, 2, 3]"},
-            {"input": "ImmutableList.of(1,2,3,4,5).filter(x->x%2==0).toString()", "output": "[2, 4]"},
-            {"input": "ImmutableList.of(1,2,3).map(x->x*10).toString()", "output": "[10, 20, 30]"}
+            {
+              "input": "ImmutableList.of(1,2,3).prepend(0).toString()",
+              "output": "[0, 1, 2, 3]"
+            },
+            {
+              "input": "ImmutableList.of(1,2,3,4,5).filter(x->x%2==0).toString()",
+              "output": "[2, 4]"
+            },
+            {
+              "input": "ImmutableList.of(1,2,3).map(x->x*10).toString()",
+              "output": "[10, 20, 30]"
+            }
           ],
-          "constraints": "All operations return new ImmutableList. Original unchanged."
+          "constraints": "All operations return new ImmutableList. Original unchanged.",
+          "editorial": "Back with Object[] data. of(T... items): copy array. get(int i): (T) data[i] with unchecked cast. prepend(T item): new array of size+1, item at 0, copy rest. append: opposite. map(fn): iterate, apply fn to each, collect results into new Object[], wrap in new ImmutableList. contains: linear scan."
         },
         {
           "displayOrder": 18,
@@ -379,11 +537,21 @@
           "starterCode": "class NaryTree<T> {\n    private T value;\n    private final List<NaryTree<T>> children = new ArrayList<>();\n    public NaryTree(T value) { this.value = value; }\n    public NaryTree<T> addChild(T childValue) { }\n    public Optional<NaryTree<T>> find(T target) { }\n    public int depth() { }\n    public int size() { }\n    public List<T> toList() { }\n    public <R> NaryTree<R> map(java.util.function.Function<T,R> f) { }\n    public <R> R fold(R identity, java.util.function.BiFunction<R,T,R> acc) { }\n}",
           "solutionCode": "class NaryTree<T> {\n    private T value;\n    private final List<NaryTree<T>> children = new ArrayList<>();\n    public NaryTree(T value) { this.value = value; }\n    public T getValue() { return value; }\n    public NaryTree<T> addChild(T childValue) {\n        NaryTree<T> child = new NaryTree<>(childValue);\n        children.add(child);\n        return child;\n    }\n    public Optional<NaryTree<T>> find(T target) {\n        if (Objects.equals(value, target)) return Optional.of(this);\n        for (NaryTree<T> child : children) {\n            Optional<NaryTree<T>> found = child.find(target);\n            if (found.isPresent()) return found;\n        }\n        return Optional.empty();\n    }\n    public int depth() {\n        if (children.isEmpty()) return 0;\n        return 1 + children.stream().mapToInt(NaryTree::depth).max().orElse(0);\n    }\n    public int size() { return 1 + children.stream().mapToInt(NaryTree::size).sum(); }\n    public List<T> toList() {\n        List<T> result = new ArrayList<>();\n        Queue<NaryTree<T>> queue = new LinkedList<>();\n        queue.offer(this);\n        while (!queue.isEmpty()) {\n            NaryTree<T> node = queue.poll();\n            result.add(node.value);\n            queue.addAll(node.children);\n        }\n        return result;\n    }\n    public <R> NaryTree<R> map(java.util.function.Function<T,R> f) {\n        NaryTree<R> mapped = new NaryTree<>(f.apply(value));\n        for (NaryTree<T> child : children) mapped.children.add(child.map(f));\n        return mapped;\n    }\n    public <R> R fold(R identity, java.util.function.BiFunction<R,T,R> acc) {\n        R result = acc.apply(identity, value);\n        for (NaryTree<T> child : children) result = child.fold(result, acc);\n        return result;\n    }\n}",
           "testCases": [
-            {"input": "root(1).addChild(2); root.addChild(3); root.toList()", "output": "[1,2,3]"},
-            {"input": "root.fold(0, (a,v)->a+v)", "output": "6"},
-            {"input": "root.map(x->x*2).toList()", "output": "[2,4,6]"}
+            {
+              "input": "root(1).addChild(2); root.addChild(3); root.toList()",
+              "output": "[1,2,3]"
+            },
+            {
+              "input": "root.fold(0, (a,v)->a+v)",
+              "output": "6"
+            },
+            {
+              "input": "root.map(x->x*2).toList()",
+              "output": "[2,4,6]"
+            }
           ],
-          "constraints": "Recursive implementations. map() preserves tree structure."
+          "constraints": "Recursive implementations. map() preserves tree structure.",
+          "editorial": "NaryTree<T>: T value, List<NaryTree<T>> children. addChild(T) creates child node and returns it for chaining. size(): 1 + sum of children sizes. depth(): 0 for no children, 1 + max child depth. stream(): flatten to Stream with Stream.concat of value stream and children's streams. fold: recursive accumulation."
         },
         {
           "displayOrder": 19,
@@ -397,12 +565,25 @@
           "starterCode": "sealed interface Maybe<T> permits Maybe.Present, Maybe.Empty {\n    record Present<T>(T value) implements Maybe<T> {}\n    record Empty<T>() implements Maybe<T> {}\n    static <T> Maybe<T> of(T value) { }\n    static <T> Maybe<T> empty() { }\n    <R> Maybe<R> map(java.util.function.Function<T,R> f);\n    <R> Maybe<R> flatMap(java.util.function.Function<T,Maybe<R>> f);\n    boolean isPresent();\n    T orElse(T fallback);\n    static <T> Maybe<java.util.List<T>> sequence(java.util.List<Maybe<T>> maybes) { }\n}",
           "solutionCode": "sealed interface Maybe<T> permits Maybe.Present, Maybe.Empty {\n    record Present<T>(T value) implements Maybe<T> {}\n    record Empty<T>() implements Maybe<T> {}\n    static <T> Maybe<T> of(T value) { return value != null ? new Present<>(value) : new Empty<>(); }\n    static <T> Maybe<T> empty() { return new Empty<>(); }\n    default <R> Maybe<R> map(java.util.function.Function<T,R> f) {\n        return switch(this) {\n            case Present<T> p -> Maybe.of(f.apply(p.value()));\n            case Empty<T> e   -> Maybe.empty();\n        };\n    }\n    default <R> Maybe<R> flatMap(java.util.function.Function<T,Maybe<R>> f) {\n        return switch(this) {\n            case Present<T> p -> f.apply(p.value());\n            case Empty<T> e   -> Maybe.empty();\n        };\n    }\n    default Maybe<T> filter(java.util.function.Predicate<T> pred) {\n        return switch(this) {\n            case Present<T> p -> pred.test(p.value()) ? this : Maybe.empty();\n            case Empty<T> e   -> this;\n        };\n    }\n    default T orElse(T fallback) {\n        return switch(this) {\n            case Present<T> p -> p.value();\n            case Empty<T> e   -> fallback;\n        };\n    }\n    default T orElseGet(java.util.function.Supplier<T> s) {\n        return switch(this) {\n            case Present<T> p -> p.value();\n            case Empty<T> e   -> s.get();\n        };\n    }\n    default void ifPresent(java.util.function.Consumer<T> action) {\n        if (this instanceof Present<T> p) action.accept(p.value());\n    }\n    default boolean isPresent() { return this instanceof Present; }\n    static <T> Maybe<java.util.List<T>> sequence(java.util.List<Maybe<T>> maybes) {\n        java.util.List<T> values = new java.util.ArrayList<>();\n        for (Maybe<T> m : maybes) {\n            if (!m.isPresent()) return Maybe.empty();\n            values.add(((Present<T>)m).value());\n        }\n        return Maybe.of(values);\n    }\n}",
           "testCases": [
-            {"input": "Maybe.of(5).map(x->x*2).orElse(0)", "output": "10"},
-            {"input": "Maybe.<Integer>empty().map(x->x*2).orElse(-1)", "output": "-1"},
-            {"input": "sequence([of(1),of(2),of(3)])", "output": "Maybe.of([1,2,3])"},
-            {"input": "sequence([of(1),empty(),of(3)])", "output": "Maybe.empty()"}
+            {
+              "input": "Maybe.of(5).map(x->x*2).orElse(0)",
+              "output": "10"
+            },
+            {
+              "input": "Maybe.<Integer>empty().map(x->x*2).orElse(-1)",
+              "output": "-1"
+            },
+            {
+              "input": "sequence([of(1),of(2),of(3)])",
+              "output": "Maybe.of([1,2,3])"
+            },
+            {
+              "input": "sequence([of(1),empty(),of(3)])",
+              "output": "Maybe.empty()"
+            }
           ],
-          "constraints": "Java 21 sealed + records. sequence: all-or-nothing semantics."
+          "constraints": "Java 21 sealed + records. sequence: all-or-nothing semantics.",
+          "editorial": "Maybe<T> wraps Optional internally or use a sealed interface. map(fn): if empty, return empty(); else return of(fn.apply(value)). flatMap(fn): if empty, return empty(); else return fn.apply(value). orElse/orElseGet: return value or default. sequence(List<Maybe<T>>): if any empty, return empty; else collect all values."
         },
         {
           "displayOrder": 20,
@@ -416,12 +597,25 @@
           "starterCode": "public final class PersistentMap<K, V> {\n    private final List<Map.Entry<K,V>> entries;\n    private PersistentMap(List<Map.Entry<K,V>> entries) { this.entries = entries; }\n    public static <K,V> PersistentMap<K,V> empty() { }\n    public PersistentMap<K,V> put(K key, V value) { }\n    public Optional<V> get(K key) { }\n    public PersistentMap<K,V> remove(K key) { }\n    public boolean containsKey(K key) { }\n    public int size() { }\n    public Set<K> keys() { }\n}",
           "solutionCode": "public final class PersistentMap<K, V> {\n    private final List<Map.Entry<K,V>> entries;\n    \n    private PersistentMap(List<Map.Entry<K,V>> entries) {\n        this.entries = Collections.unmodifiableList(new ArrayList<>(entries));\n    }\n    \n    public static <K,V> PersistentMap<K,V> empty() {\n        return new PersistentMap<>(Collections.emptyList());\n    }\n    \n    public PersistentMap<K,V> put(K key, V value) {\n        List<Map.Entry<K,V>> newEntries = new ArrayList<>();\n        boolean replaced = false;\n        for (Map.Entry<K,V> e : entries) {\n            if (Objects.equals(e.getKey(), key)) {\n                newEntries.add(Map.entry(key, value));\n                replaced = true;\n            } else {\n                newEntries.add(e);\n            }\n        }\n        if (!replaced) newEntries.add(Map.entry(key, value));\n        return new PersistentMap<>(newEntries);\n    }\n    \n    public Optional<V> get(K key) {\n        return entries.stream()\n            .filter(e -> Objects.equals(e.getKey(), key))\n            .map(Map.Entry::getValue)\n            .findFirst();\n    }\n    \n    public PersistentMap<K,V> remove(K key) {\n        List<Map.Entry<K,V>> newEntries = entries.stream()\n            .filter(e -> !Objects.equals(e.getKey(), key))\n            .collect(Collectors.toList());\n        return new PersistentMap<>(newEntries);\n    }\n    \n    public boolean containsKey(K key) { return get(key).isPresent(); }\n    public int size() { return entries.size(); }\n    public Set<K> keys() {\n        return entries.stream().map(Map.Entry::getKey).collect(Collectors.toSet());\n    }\n    \n    public String toString() {\n        return entries.stream()\n            .map(e -> e.getKey() + \"=\" + e.getValue())\n            .collect(Collectors.joining(\", \", \"{\", \"}\"));\n    }\n}",
           "testCases": [
-            {"input": "empty().put('a',1).put('b',2).get('a')", "output": "Optional.of(1)"},
-            {"input": "map.put('a',99) → new map; original.get('a')", "output": "Optional.of(1) (unchanged)"},
-            {"input": "map.remove('a').containsKey('a')", "output": "false"},
-            {"input": "map.size() after 3 puts", "output": "3"}
+            {
+              "input": "empty().put('a',1).put('b',2).get('a')",
+              "output": "Optional.of(1)"
+            },
+            {
+              "input": "map.put('a',99) → new map; original.get('a')",
+              "output": "Optional.of(1) (unchanged)"
+            },
+            {
+              "input": "map.remove('a').containsKey('a')",
+              "output": "false"
+            },
+            {
+              "input": "map.size() after 3 puts",
+              "output": "3"
+            }
           ],
-          "constraints": "O(n) operations are fine. All operations return new map. Original never modified."
+          "constraints": "O(n) operations are fine. All operations return new map. Original never modified.",
+          "editorial": "Hash map with array of buckets (List<Entry<K,V>>[]). put(K,V): compute bucket = key.hashCode() % buckets.length, filter out existing key from that bucket, add new entry, return new PersistentMap with updated bucket. get(K): find entry in bucket. remove(K): filter entry out, return new map. All operations return new instances."
         }
       ]
     }

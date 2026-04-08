@@ -78,13 +78,29 @@
           "starterCode": "public class Q1 {\n    // Analyze each snippet and return compile results\n    // Return a String[] where each element is \"OK\" or \"COMPILE_ERROR: <reason>\"\n    public static String[] analyzeSnippets() {\n        return new String[5];\n        // TODO: fill in analysis for A, B, C, D, E\n    }\n\n    public static void main(String[] args) {\n        String[] results = analyzeSnippets();\n        char c = 'A';\n        for (String r : results) System.out.println((char)(c++) + \": \" + r);\n    }\n}",
           "solutionCode": "public class Q1 {\n    public static String[] analyzeSnippets() {\n        return new String[] {\n            // A: int x = \"hello\";\n            \"COMPILE_ERROR: Semantic Analysis — incompatible types: String cannot be converted to int\",\n\n            // B: String s = null; s.length();\n            \"OK — compiles fine. NullPointerException thrown at RUNTIME, not caught by compiler\",\n\n            // C: Foo f = new Foo(42); — no constructor with int parameter\n            \"COMPILE_ERROR: Semantic Analysis — no suitable constructor: Foo() does not accept int argument\",\n\n            // D: int y = 10 / 0;\n            \"OK — compiles fine (constant folding may warn). ArithmeticException at RUNTIME\",\n            // Note: javac actually does constant folding and MAY detect this for compile-time constants\n            // but it's JVM spec as runtime error\n\n            // E: @X @X void method() {} without @Repeatable\n            \"COMPILE_ERROR: Semantic Analysis — annotation @X is not @Repeatable, cannot appear more than once\"\n        };\n    }\n\n    public static void main(String[] args) {\n        String[] results = analyzeSnippets();\n        char c = 'A';\n        for (String r : results) System.out.println((char)(c++) + \": \" + r);\n    }\n}",
           "testCases": [
-            {"input": "", "output": "A: COMPILE_ERROR"},
-            {"input": "", "output": "B: OK"},
-            {"input": "", "output": "C: COMPILE_ERROR"},
-            {"input": "", "output": "D: OK"},
-            {"input": "", "output": "E: COMPILE_ERROR"}
+            {
+              "input": "",
+              "output": "A: COMPILE_ERROR"
+            },
+            {
+              "input": "",
+              "output": "B: OK"
+            },
+            {
+              "input": "",
+              "output": "C: COMPILE_ERROR"
+            },
+            {
+              "input": "",
+              "output": "D: OK"
+            },
+            {
+              "input": "",
+              "output": "E: COMPILE_ERROR"
+            }
           ],
-          "constraints": "Analyze statically. Do not compile and run the snippets."
+          "constraints": "Analyze statically. Do not compile and run the snippets.",
+          "editorial": "A: int x = 'hello' — type mismatch, compile error. B: final int x = 5; int[] arr = new int[x] — final constants allowed as array size, compiles. C: switch on String — legal since Java 7. D: @Override on interface default — legal since Java 8. E: duplicate annotation without @Repeatable — compile error."
         },
         {
           "displayOrder": 2,
@@ -98,9 +114,13 @@
           "starterCode": "public class Q2 {\n    public static boolean isJavaClassFile(byte[] fileBytes) {\n        // Check for 0xCAFEBABE magic number\n        return false;\n    }\n\n    public static int getClassFileMajorVersion(byte[] fileBytes) {\n        // Read bytes 6-7 as big-endian int\n        return -1;\n    }\n\n    public static void main(String[] args) {\n        byte[] magic = {(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE, 0, 0, 0, 61};\n        System.out.println(isJavaClassFile(magic));          // true\n        System.out.println(getClassFileMajorVersion(magic)); // 61 (Java 17)\n\n        byte[] notClass = {0x50, 0x4B, 0x03, 0x04}; // ZIP/JAR magic\n        System.out.println(isJavaClassFile(notClass)); // false\n    }\n}",
           "solutionCode": "public class Q2 {\n    public static boolean isJavaClassFile(byte[] fileBytes) {\n        if (fileBytes == null || fileBytes.length < 4) return false;\n        return (fileBytes[0] & 0xFF) == 0xCA &&\n               (fileBytes[1] & 0xFF) == 0xFE &&\n               (fileBytes[2] & 0xFF) == 0xBA &&\n               (fileBytes[3] & 0xFF) == 0xBE;\n    }\n\n    public static int getClassFileMajorVersion(byte[] fileBytes) {\n        if (fileBytes == null || fileBytes.length < 8) return -1;\n        return ((fileBytes[6] & 0xFF) << 8) | (fileBytes[7] & 0xFF);\n    }\n\n    public static void main(String[] args) {\n        byte[] magic = {(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE, 0, 0, 0, 61};\n        System.out.println(isJavaClassFile(magic));          // true\n        System.out.println(getClassFileMajorVersion(magic)); // 61 (Java 17)\n        System.out.println(\"Java version: \" + (getClassFileMajorVersion(magic) - 44)); // 17\n\n        byte[] notClass = {0x50, 0x4B, 0x03, 0x04};\n        System.out.println(isJavaClassFile(notClass)); // false\n    }\n}",
           "testCases": [
-            {"input": "0xCAFEBABE..., majorVersion=61", "output": "true\n61\n17\nfalse"}
+            {
+              "input": "0xCAFEBABE..., majorVersion=61",
+              "output": "true\n61\n17\nfalse"
+            }
           ],
-          "constraints": "Handle null and short arrays. Use bit masking (& 0xFF) to treat bytes as unsigned."
+          "constraints": "Handle null and short arrays. Use bit masking (& 0xFF) to treat bytes as unsigned.",
+          "editorial": "Java class files start with magic number 0xCAFEBABE (bytes [0xCA, 0xFE, 0xBA, 0xBE]). Major version is at bytes [6,7] as big-endian short. Java 8 = 52, 11 = 55, 17 = 61, 21 = 65. Formula: javaVersion = majorVersion - 44. Check fileBytes.length >= 8 before reading version."
         },
         {
           "displayOrder": 3,
@@ -113,8 +133,14 @@
           "hint3": "After compilation, use URLClassLoader pointing to the temp directory. Call Class.forName() then invoke the main method via reflection.",
           "starterCode": "import javax.tools.*;\nimport java.io.*;\nimport java.net.*;\nimport java.nio.file.*;\nimport java.lang.reflect.*;\n\npublic class Q3 {\n    public static void compileAndRun(String className, String sourceCode) throws Exception {\n        // TODO: write to temp file, compile, load, run\n    }\n\n    public static void main(String[] args) throws Exception {\n        compileAndRun(\"HelloRuntime\",\n            \"public class HelloRuntime { \" +\n            \"  public static void main(String[] a) { \" +\n            \"    System.out.println(\\\"Compiled and run at runtime!\\\"); }}\");\n    }\n}",
           "solutionCode": "import javax.tools.*;\nimport java.io.*;\nimport java.net.*;\nimport java.nio.file.*;\nimport java.lang.reflect.*;\n\npublic class Q3 {\n    public static void compileAndRun(String className, String sourceCode) throws Exception {\n        // Step 1: Write source to temp file\n        Path tempDir = Files.createTempDirectory(\"dyncompile\");\n        Path sourceFile = tempDir.resolve(className + \".java\");\n        Files.writeString(sourceFile, sourceCode);\n\n        // Step 2: Compile with javax.tools API\n        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();\n        if (compiler == null) throw new IllegalStateException(\"JDK required (not JRE)\");\n\n        int result = compiler.run(null, null, null, sourceFile.toString());\n        if (result != 0) throw new RuntimeException(\"Compilation failed\");\n\n        // Step 3: Load compiled class\n        URLClassLoader loader = new URLClassLoader(\n            new URL[]{tempDir.toUri().toURL()},\n            ClassLoader.getSystemClassLoader());\n        Class<?> clazz = loader.loadClass(className);\n\n        // Step 4: Invoke main method\n        Method main = clazz.getMethod(\"main\", String[].class);\n        main.invoke(null, (Object) new String[0]);\n\n        loader.close();\n    }\n\n    public static void main(String[] args) throws Exception {\n        compileAndRun(\"HelloRuntime\",\n            \"public class HelloRuntime { \" +\n            \"  public static void main(String[] a) { \" +\n            \"    System.out.println(\\\"Compiled and run at runtime!\\\"); }}\");\n    }\n}",
-          "testCases": [{"input": "HelloRuntime source", "output": "Compiled and run at runtime!"}],
-          "constraints": "Requires JDK (ToolProvider.getSystemJavaCompiler() returns null in JRE). Must clean up temp files."
+          "testCases": [
+            {
+              "input": "HelloRuntime source",
+              "output": "Compiled and run at runtime!"
+            }
+          ],
+          "constraints": "Requires JDK (ToolProvider.getSystemJavaCompiler() returns null in JRE). Must clean up temp files.",
+          "editorial": "JavaCompiler compiler = ToolProvider.getSystemJavaCompiler() — returns null if not running on JDK (only JRE). Write source to a temp .java file, compile with compiler.run(), then load with URLClassLoader pointing to the temp dir. Use reflection to call main() on the loaded class."
         },
         {
           "displayOrder": 4,
@@ -127,8 +153,14 @@
           "hint3": "Read the file bytes with Files.readAllBytes() then extract bytes 8-9 as big-endian short.",
           "starterCode": "import java.nio.file.*;\n\npublic class Q4 {\n    public static int getConstantPoolCount(byte[] classBytes) {\n        // Extract constant pool count from bytes 8-9\n        return -1;\n    }\n\n    public static void main(String[] args) throws Exception {\n        byte[] bytes = Files.readAllBytes(Path.of(\"Q4.class\"));\n        System.out.println(\"Constant pool count: \" + getConstantPoolCount(bytes));\n    }\n}",
           "solutionCode": "import java.nio.file.*;\n\npublic class Q4 {\n    public static int getConstantPoolCount(byte[] classBytes) {\n        if (classBytes == null || classBytes.length < 10) return -1;\n        // Bytes 8-9: constant pool count (big-endian, 2 bytes)\n        return ((classBytes[8] & 0xFF) << 8) | (classBytes[9] & 0xFF);\n        // Note: actual entries = count - 1 (index starts at 1)\n    }\n\n    public static void main(String[] args) throws Exception {\n        byte[] bytes = Files.readAllBytes(Path.of(\"Q4.class\"));\n        int count = getConstantPoolCount(bytes);\n        System.out.println(\"Constant pool count: \" + count);\n        System.out.println(\"Actual entries: \" + (count - 1));\n        // A simple class typically has 15-30 constant pool entries\n        // Large classes can have 500+ entries\n    }\n}",
-          "testCases": [{"input": "valid .class bytes with count=25 at bytes 8-9", "output": "Constant pool count: 25"}],
-          "constraints": "Read bytes 8-9 as big-endian 2-byte unsigned value. Handle short arrays gracefully."
+          "testCases": [
+            {
+              "input": "valid .class bytes with count=25 at bytes 8-9",
+              "output": "Constant pool count: 25"
+            }
+          ],
+          "constraints": "Read bytes 8-9 as big-endian 2-byte unsigned value. Handle short arrays gracefully.",
+          "editorial": "The constant pool count is stored as a big-endian unsigned short at bytes 8-9 (0-indexed) in the .class file. Read ((bytes[8] & 0xFF) << 8) | (bytes[9] & 0xFF). The count is one more than the actual number of entries (entry 0 is reserved). Check minimum length of 10 bytes first."
         },
         {
           "displayOrder": 5,
@@ -142,11 +174,21 @@
           "starterCode": "import java.lang.annotation.*;\nimport java.lang.reflect.*;\n\n@Retention(RetentionPolicy.SOURCE)\n@Target(ElementType.METHOD)\n@interface SourceOnly { }\n\n@Retention(RetentionPolicy.CLASS)\n@Target(ElementType.METHOD)\n@interface ClassOnly { }\n\n@Retention(RetentionPolicy.RUNTIME)\n@Target(ElementType.METHOD)\n@interface RuntimeVisible { }\n\npublic class Q5 {\n    @SourceOnly @ClassOnly @RuntimeVisible\n    public static void annotatedMethod() { }\n\n    public static void main(String[] args) throws Exception {\n        Method m = Q5.class.getMethod(\"annotatedMethod\");\n        // TODO: check which annotations are visible via reflection\n    }\n}",
           "solutionCode": "import java.lang.annotation.*;\nimport java.lang.reflect.*;\n\n@Retention(RetentionPolicy.SOURCE)\n@Target(ElementType.METHOD)\n@interface SourceOnly { }\n\n@Retention(RetentionPolicy.CLASS)\n@Target(ElementType.METHOD)\n@interface ClassOnly { }\n\n@Retention(RetentionPolicy.RUNTIME)\n@Target(ElementType.METHOD)\n@interface RuntimeVisible { }\n\npublic class Q5 {\n    @SourceOnly @ClassOnly @RuntimeVisible\n    public static void annotatedMethod() { }\n\n    public static void main(String[] args) throws Exception {\n        Method m = Q5.class.getMethod(\"annotatedMethod\");\n\n        // SOURCE: stripped by javac — class file doesn't contain it\n        SourceOnly src = m.getAnnotation(SourceOnly.class);\n        System.out.println(\"@SourceOnly visible at runtime: \" + (src != null));     // false\n\n        // CLASS: in .class file but NOT loaded into JVM memory by default\n        ClassOnly cls = m.getAnnotation(ClassOnly.class);\n        System.out.println(\"@ClassOnly visible at runtime: \"  + (cls != null));     // false\n\n        // RUNTIME: loaded into JVM, accessible via reflection\n        RuntimeVisible rt = m.getAnnotation(RuntimeVisible.class);\n        System.out.println(\"@RuntimeVisible at runtime: \"     + (rt != null));      // true\n\n        System.out.println(\"All runtime annotations: \" + m.getAnnotations().length); // 1\n    }\n}",
           "testCases": [
-            {"input": "", "output": "@SourceOnly visible at runtime: false"},
-            {"input": "", "output": "@ClassOnly visible at runtime: false"},
-            {"input": "", "output": "@RuntimeVisible at runtime: true"}
+            {
+              "input": "",
+              "output": "@SourceOnly visible at runtime: false"
+            },
+            {
+              "input": "",
+              "output": "@ClassOnly visible at runtime: false"
+            },
+            {
+              "input": "",
+              "output": "@RuntimeVisible at runtime: true"
+            }
           ],
-          "constraints": "Must define all three retention policies. getAnnotation() must return null for SOURCE and CLASS annotations."
+          "constraints": "Must define all three retention policies. getAnnotation() must return null for SOURCE and CLASS annotations.",
+          "editorial": "SOURCE annotations are discarded after compilation — not in .class file. CLASS annotations are in .class but not loaded at runtime. RUNTIME annotations are loaded and accessible via reflection. Spring's @Autowired, JUnit's @Test are RUNTIME. Lombok's @Data is SOURCE (annotation processor)."
         },
         {
           "displayOrder": 6,
@@ -160,10 +202,17 @@
           "starterCode": "public class Q6 {\n    static final boolean DEBUG = false;\n\n    public static void demonstrateDeadCode() {\n        // Case 1: code after return — try uncommenting to see compile error\n        // return;\n        // System.out.println(\"unreachable\"); // compile error\n\n        // Case 2: if(false) block — compiles but generates no bytecode\n        if (DEBUG) {\n            System.out.println(\"Debug mode\"); // dead code, but allowed!\n        }\n\n        // Case 3: if(true) else — else is dead code but allowed\n        if (true) {\n            System.out.println(\"Always executed\");\n        } else {\n            System.out.println(\"Never executed\"); // dead but no compile error\n        }\n    }\n\n    public static void main(String[] args) {\n        demonstrateDeadCode();\n    }\n}",
           "solutionCode": "public class Q6 {\n    static final boolean DEBUG = false; // compile-time constant\n\n    public static void demonstrateDeadCode() {\n        // if(DEBUG) with a compile-time constant false:\n        // javac knows DEBUG=false at compile time\n        // -> emits NO bytecode for the block\n        // -> but it's NOT a compile error (JLS special case for debug patterns)\n        if (DEBUG) {\n            System.out.println(\"Debug mode — no bytecode emitted\");\n        }\n\n        // if(true): else branch is dead code\n        // javac emits code only for the then-branch\n        if (true) {\n            System.out.println(\"Always executed\"); // has bytecode\n        } else {\n            System.out.println(\"Never executed\"); // no bytecode emitted\n        }\n\n        // After this method: verify with javap -c that debug and never blocks are absent\n        System.out.println(\"Dead code eliminated by compiler\");\n    }\n\n    public static void main(String[] args) {\n        demonstrateDeadCode();\n        // Output:\n        // Always executed\n        // Dead code eliminated by compiler\n        // (\"Debug mode\" and \"Never executed\" have no bytecode)\n    }\n}",
           "testCases": [
-            {"input": "", "output": "Always executed"},
-            {"input": "", "output": "Dead code eliminated by compiler"}
+            {
+              "input": "",
+              "output": "Always executed"
+            },
+            {
+              "input": "",
+              "output": "Dead code eliminated by compiler"
+            }
           ],
-          "constraints": "DEBUG must be a static final boolean constant. Verify with javap that dead blocks emit no bytecode."
+          "constraints": "DEBUG must be a static final boolean constant. Verify with javap that dead blocks emit no bytecode.",
+          "editorial": "if (DEBUG) where DEBUG is a compile-time constant (static final boolean = false) — javac eliminates the dead branch entirely, generating no bytecode for it. This is the 'compile-time conditional compilation' pattern. The else branch is included. Unreachable code after return/throw IS a compile error."
         },
         {
           "displayOrder": 7,
@@ -177,10 +226,17 @@
           "starterCode": "import java.util.*;\n\npublic class Q7 {\n    enum TokenType { KEYWORD, IDENTIFIER, NUMBER, STRING, OPERATOR, PUNCTUATION }\n    record Token(TokenType type, String value) {\n        public String toString() { return type + \"(\" + value + \")\"; }\n    }\n\n    static final Set<String> KEYWORDS = Set.of(\n        \"public\",\"private\",\"class\",\"int\",\"void\",\"if\",\"else\",\"return\",\"new\",\"static\"\n    );\n\n    public static List<Token> tokenize(String source) {\n        List<Token> tokens = new ArrayList<>();\n        int i = 0;\n        // TODO: scan source and build token list\n        return tokens;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(tokenize(\"int x = 42;\"));\n        System.out.println(tokenize(\"public class Hello { }\"));\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q7 {\n    enum TokenType { KEYWORD, IDENTIFIER, NUMBER, STRING, OPERATOR, PUNCTUATION }\n    record Token(TokenType type, String value) {\n        public String toString() { return type + \"(\" + value + \")\"; }\n    }\n\n    static final Set<String> KEYWORDS = Set.of(\n        \"public\",\"private\",\"class\",\"int\",\"void\",\"if\",\"else\",\"return\",\"new\",\"static\"\n    );\n\n    public static List<Token> tokenize(String source) {\n        List<Token> tokens = new ArrayList<>();\n        int i = 0;\n        while (i < source.length()) {\n            char c = source.charAt(i);\n\n            if (Character.isWhitespace(c)) { i++; continue; } // skip whitespace\n\n            if (Character.isLetter(c) || c == '_') {\n                // Keyword or identifier\n                int start = i;\n                while (i < source.length() && (Character.isLetterOrDigit(source.charAt(i)) || source.charAt(i) == '_')) i++;\n                String word = source.substring(start, i);\n                tokens.add(new Token(KEYWORDS.contains(word) ? TokenType.KEYWORD : TokenType.IDENTIFIER, word));\n\n            } else if (Character.isDigit(c)) {\n                // Number literal\n                int start = i;\n                while (i < source.length() && Character.isDigit(source.charAt(i))) i++;\n                tokens.add(new Token(TokenType.NUMBER, source.substring(start, i)));\n\n            } else if (c == '\"') {\n                // String literal\n                int start = ++i;\n                while (i < source.length() && source.charAt(i) != '\"') i++;\n                tokens.add(new Token(TokenType.STRING, source.substring(start, i++)));\n\n            } else if (\"+-*/=!<>\".indexOf(c) >= 0) {\n                // Operator (handle == and != as two-char)\n                if (i + 1 < source.length() && source.charAt(i+1) == '=') {\n                    tokens.add(new Token(TokenType.OPERATOR, \"\" + c + '=')); i += 2;\n                } else {\n                    tokens.add(new Token(TokenType.OPERATOR, String.valueOf(c))); i++;\n                }\n\n            } else if (\"{};(),\".indexOf(c) >= 0) {\n                tokens.add(new Token(TokenType.PUNCTUATION, String.valueOf(c))); i++;\n\n            } else { i++; } // skip unknown\n        }\n        return tokens;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(tokenize(\"int x = 42;\"));\n        System.out.println(tokenize(\"public class Hello { }\"));\n        System.out.println(tokenize(\"if (a == 42) return \\\"ok\\\";\"));\n    }\n}",
           "testCases": [
-            {"input": "\"int x = 42;\"", "output": "[KEYWORD(int), IDENTIFIER(x), OPERATOR(=), NUMBER(42), PUNCTUATION(;)]"},
-            {"input": "\"public class Hello { }\"", "output": "[KEYWORD(public), KEYWORD(class), IDENTIFIER(Hello), PUNCTUATION({), PUNCTUATION(})]"}
+            {
+              "input": "\"int x = 42;\"",
+              "output": "[KEYWORD(int), IDENTIFIER(x), OPERATOR(=), NUMBER(42), PUNCTUATION(;)]"
+            },
+            {
+              "input": "\"public class Hello { }\"",
+              "output": "[KEYWORD(public), KEYWORD(class), IDENTIFIER(Hello), PUNCTUATION({), PUNCTUATION(})]"
+            }
           ],
-          "constraints": "Handle all listed token types. Skip whitespace. Distinguish keywords from identifiers. Support == and != as 2-char operators."
+          "constraints": "Handle all listed token types. Skip whitespace. Distinguish keywords from identifiers. Support == and != as 2-char operators.",
+          "editorial": "Scan character by character. Track state: inside string literal, inside comment. Collect word chars for KEYWORD/IDENTIFIER — check against keyword set after collecting. For strings, collect everything between quotes. Operators and punctuation are single characters. Return List<Token> in order."
         },
         {
           "displayOrder": 8,
@@ -194,10 +250,17 @@
           "starterCode": "public class Q8 {\n    interface AstNode {\n        int evaluate();\n        String toSource();\n    }\n\n    record NumberNode(int value) implements AstNode {\n        public int evaluate() { return value; }\n        public String toSource() { return String.valueOf(value); }\n    }\n\n    record BinaryOpNode(AstNode left, char op, AstNode right) implements AstNode {\n        public int evaluate() {\n            // TODO\n            return 0;\n        }\n        public String toSource() {\n            return \"(\" + left.toSource() + \" \" + op + \" \" + right.toSource() + \")\";\n        }\n    }\n\n    record UnaryNegNode(AstNode child) implements AstNode {\n        public int evaluate() { return 0; } // TODO\n        public String toSource() { return \"(-\" + child.toSource() + \")\"; }\n    }\n\n    public static void main(String[] args) {\n        // Build AST for -(3 + 4) * 2\n        AstNode ast = new BinaryOpNode(\n            new UnaryNegNode(new BinaryOpNode(new NumberNode(3), '+', new NumberNode(4))),\n            '*',\n            new NumberNode(2)\n        );\n        System.out.println(ast.toSource());  // (-(3 + 4) * 2)\n        System.out.println(ast.evaluate());  // -14\n    }\n}",
           "solutionCode": "public class Q8 {\n    interface AstNode {\n        int evaluate();\n        String toSource();\n    }\n\n    record NumberNode(int value) implements AstNode {\n        public int evaluate() { return value; }\n        public String toSource() { return String.valueOf(value); }\n    }\n\n    record BinaryOpNode(AstNode left, char op, AstNode right) implements AstNode {\n        public int evaluate() {\n            return switch (op) {\n                case '+' -> left.evaluate() + right.evaluate();\n                case '-' -> left.evaluate() - right.evaluate();\n                case '*' -> left.evaluate() * right.evaluate();\n                case '/' -> left.evaluate() / right.evaluate();\n                default  -> throw new IllegalArgumentException(\"Unknown op: \" + op);\n            };\n        }\n        public String toSource() {\n            return \"(\" + left.toSource() + \" \" + op + \" \" + right.toSource() + \")\";\n        }\n    }\n\n    record UnaryNegNode(AstNode child) implements AstNode {\n        public int evaluate() { return -child.evaluate(); }\n        public String toSource() { return \"(-\" + child.toSource() + \")\"; }\n    }\n\n    public static void main(String[] args) {\n        // -(3 + 4) * 2\n        AstNode ast = new BinaryOpNode(\n            new UnaryNegNode(new BinaryOpNode(new NumberNode(3), '+', new NumberNode(4))),\n            '*',\n            new NumberNode(2)\n        );\n        System.out.println(ast.toSource());  // ((-(3 + 4)) * 2)\n        System.out.println(ast.evaluate());  // -14\n\n        // 10 - 3 * 2 = 4\n        AstNode ast2 = new BinaryOpNode(\n            new NumberNode(10), '-',\n            new BinaryOpNode(new NumberNode(3), '*', new NumberNode(2)));\n        System.out.println(ast2.evaluate()); // 4\n    }\n}",
           "testCases": [
-            {"input": "-(3+4)*2 AST", "output": "-14"},
-            {"input": "10 - 3*2 AST", "output": "4"}
+            {
+              "input": "-(3+4)*2 AST",
+              "output": "-14"
+            },
+            {
+              "input": "10 - 3*2 AST",
+              "output": "4"
+            }
           ],
-          "constraints": "Must use composition (AST nodes reference other nodes). evaluate() must be recursive. Support +, -, *, / operators."
+          "constraints": "Must use composition (AST nodes reference other nodes). evaluate() must be recursive. Support +, -, *, / operators.",
+          "editorial": "Sealed interface AstNode with record implementations is clean. evaluate() recurses — BinaryOpNode evaluates both children, applies operator. Division by zero: throw ArithmeticException. toSource() wraps children in parentheses for unambiguous output. Use pattern matching switch for operators."
         },
         {
           "displayOrder": 9,
@@ -211,10 +274,17 @@
           "starterCode": "import java.util.*;\n\npublic class Q9 {\n    // reverseGraph[B] = set of classes that depend on B\n    Map<String, Set<String>> reverseGraph = new HashMap<>();\n\n    public void addDependency(String classA, String classB) {\n        // A depends on B: if B changes, A needs recompilation\n        // TODO\n    }\n\n    public Set<String> getAffectedByChange(String changedClass) {\n        // Return all classes that need recompilation\n        // TODO\n        return Set.of();\n    }\n\n    public static void main(String[] args) {\n        Q9 g = new Q9();\n        g.addDependency(\"Controller\", \"Service\");  // Controller uses Service\n        g.addDependency(\"Service\",    \"Repository\");// Service uses Repository\n        g.addDependency(\"Service\",    \"Model\");     // Service uses Model\n        g.addDependency(\"View\",       \"Model\");     // View uses Model\n\n        System.out.println(g.getAffectedByChange(\"Model\"));\n        // Should include: Model, Service, View, Controller (transitive)\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q9 {\n    Map<String, Set<String>> reverseGraph = new HashMap<>();\n\n    public void addDependency(String classA, String classB) {\n        // A depends on B: add A to B's reverse-dependents\n        reverseGraph.computeIfAbsent(classB, k -> new HashSet<>()).add(classA);\n        reverseGraph.computeIfAbsent(classA, k -> new HashSet<>()); // ensure A exists\n    }\n\n    public Set<String> getAffectedByChange(String changedClass) {\n        Set<String> affected = new HashSet<>();\n        Queue<String> queue = new LinkedList<>();\n        queue.add(changedClass);\n        affected.add(changedClass);\n\n        while (!queue.isEmpty()) {\n            String current = queue.poll();\n            for (String dependent : reverseGraph.getOrDefault(current, Set.of())) {\n                if (!affected.contains(dependent)) {\n                    affected.add(dependent);\n                    queue.add(dependent); // BFS: propagate transitively\n                }\n            }\n        }\n        return affected;\n    }\n\n    public static void main(String[] args) {\n        Q9 g = new Q9();\n        g.addDependency(\"Controller\", \"Service\");\n        g.addDependency(\"Service\",    \"Repository\");\n        g.addDependency(\"Service\",    \"Model\");\n        g.addDependency(\"View\",       \"Model\");\n\n        System.out.println(\"Model changed, affects: \" + g.getAffectedByChange(\"Model\"));\n        // {Model, Service, View, Controller}\n        System.out.println(\"Repository changed: \" + g.getAffectedByChange(\"Repository\"));\n        // {Repository, Service, Controller}\n    }\n}",
           "testCases": [
-            {"input": "Model changes", "output": "contains Model, Service, View, Controller"},
-            {"input": "Repository changes", "output": "contains Repository, Service, Controller"}
+            {
+              "input": "Model changes",
+              "output": "contains Model, Service, View, Controller"
+            },
+            {
+              "input": "Repository changes",
+              "output": "contains Repository, Service, Controller"
+            }
           ],
-          "constraints": "BFS/DFS must handle transitive dependencies. Avoid infinite loops. Include the changed class in the result."
+          "constraints": "BFS/DFS must handle transitive dependencies. Avoid infinite loops. Include the changed class in the result.",
+          "editorial": "Build a reverse graph: for each 'A depends on B', store B -> A. BFS/DFS from the changed class on the reverse graph finds all classes that transitively depend on it. Include the changed class in results. Use a visited set to avoid cycles. This is how Maven Reactor and Bazel compute rebuild sets."
         },
         {
           "displayOrder": 10,
@@ -228,9 +298,13 @@
           "starterCode": "public class Q10 {\n    public static String formatCode(String unformatted) {\n        StringBuilder sb = new StringBuilder();\n        int indent = 0;\n        for (String rawLine : unformatted.split(\"\\n\")) {\n            String line = rawLine.trim();\n            if (line.isEmpty()) { sb.append(\"\\n\"); continue; }\n            // TODO: adjust indent and append indented line\n        }\n        return sb.toString().trim();\n    }\n\n    public static void main(String[] args) {\n        String ugly = \"public class Foo {\\nvoid bar() {\\nif (true) {\\nreturn;\\n}\\n}\\n}\";\n        System.out.println(formatCode(ugly));\n    }\n}",
           "solutionCode": "public class Q10 {\n    public static String formatCode(String unformatted) {\n        StringBuilder sb = new StringBuilder();\n        int indent = 0;\n        for (String rawLine : unformatted.split(\"\\n\")) {\n            String line = rawLine.trim();\n            if (line.isEmpty()) { sb.append(\"\\n\"); continue; }\n\n            // If line starts with '}' (or is just '}'), decrease indent first\n            if (line.startsWith(\"}\")) indent = Math.max(0, indent - 1);\n\n            sb.append(\"    \".repeat(indent)).append(line).append(\"\\n\");\n\n            // If line ends with '{', increase indent for next line\n            if (line.endsWith(\"{\")) indent++;\n        }\n        return sb.toString().trim();\n    }\n\n    public static void main(String[] args) {\n        String ugly = \"public class Foo {\\nvoid bar() {\\nif (true) {\\nreturn;\\n}\\n}\\n}\";\n        System.out.println(formatCode(ugly));\n        // Output:\n        // public class Foo {\n        //     void bar() {\n        //         if (true) {\n        //             return;\n        //         }\n        //     }\n        // }\n    }\n}",
           "testCases": [
-            {"input": "public class Foo {\\nvoid bar() {\\nreturn;\\n}\\n}", "output": "public class Foo {\n    void bar() {\n        return;\n    }\n}"}
+            {
+              "input": "public class Foo {\\nvoid bar() {\\nreturn;\\n}\\n}",
+              "output": "public class Foo {\n    void bar() {\n        return;\n    }\n}"
+            }
           ],
-          "constraints": "Handle only { and } for indentation. 4-space indent per level. Strip existing indentation with trim()."
+          "constraints": "Handle only { and } for indentation. 4-space indent per level. Strip existing indentation with trim().",
+          "editorial": "Process line by line. Track indent level (int). Before printing: if line starts with '}', decrement indent. Print indent (spaces * level) + trimmed line. After printing: if line ends with '{', increment indent. Handle edge cases: lines with both '{' and '}' (rare in well-formatted code)."
         },
         {
           "displayOrder": 11,
@@ -244,10 +318,17 @@
           "starterCode": "import java.lang.reflect.*;\nimport java.util.*;\n\npublic class Q11 {\n    // Type Token: anonymous subclass trick to preserve generic type\n    static abstract class TypeToken<T> {\n        public Type getType() {\n            // TODO: extract T from getGenericSuperclass()\n            return null;\n        }\n    }\n\n    public static void main(String[] args) {\n        // Demonstrate erasure\n        List<String>  strList = new ArrayList<>();\n        List<Integer> intList = new ArrayList<>();\n        System.out.println(\"Same class? \" + (strList.getClass() == intList.getClass()));\n\n        // Type token preserves the type\n        TypeToken<List<String>> token = new TypeToken<List<String>>() {}; // anonymous subclass\n        System.out.println(\"Preserved type: \" + token.getType());\n    }\n}",
           "solutionCode": "import java.lang.reflect.*;\nimport java.util.*;\n\npublic class Q11 {\n    static abstract class TypeToken<T> {\n        public Type getType() {\n            // getGenericSuperclass() returns TypeToken<T> as ParameterizedType\n            // for anonymous subclasses, T is preserved in class file\n            ParameterizedType superType = (ParameterizedType) getClass().getGenericSuperclass();\n            return superType.getActualTypeArguments()[0]; // the T\n        }\n    }\n\n    public static void main(String[] args) {\n        // Erasure: both lists have same runtime class\n        List<String>  strList = new ArrayList<>();\n        List<Integer> intList = new ArrayList<>();\n        System.out.println(\"Same class? \" + (strList.getClass() == intList.getClass())); // true\n        System.out.println(\"strList type: \" + strList.getClass().getName()); // java.util.ArrayList\n\n        // Type Token preserves generic type information\n        TypeToken<List<String>> strToken  = new TypeToken<List<String>>() {};\n        TypeToken<Map<String, Integer>> mapToken = new TypeToken<Map<String, Integer>>() {};\n\n        System.out.println(\"String list token: \" + strToken.getType());  // java.util.List<java.lang.String>\n        System.out.println(\"Map token: \"         + mapToken.getType());  // java.util.Map<java.lang.String, java.lang.Integer>\n    }\n}",
           "testCases": [
-            {"input": "", "output": "Same class? true"},
-            {"input": "", "output": "String list token: java.util.List<java.lang.String>"}
+            {
+              "input": "",
+              "output": "Same class? true"
+            },
+            {
+              "input": "",
+              "output": "String list token: java.util.List<java.lang.String>"
+            }
           ],
-          "constraints": "Type erasure demonstration must show same runtime class. TypeToken must use anonymous subclass trick. Must use getGenericSuperclass()."
+          "constraints": "Type erasure demonstration must show same runtime class. TypeToken must use anonymous subclass trick. Must use getGenericSuperclass().",
+          "editorial": "At runtime, List<String> and List<Integer> have the same Class object (java.util.List) — generics are erased. To preserve type at runtime, use a type token: abstract class TypeToken<T> { Type getType() { return ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0]; } }"
         },
         {
           "displayOrder": 12,
@@ -260,8 +341,14 @@
           "hint3": "After calling task.call(), iterate diagnosticCollector.getDiagnostics() to get all errors/warnings.",
           "starterCode": "import javax.tools.*;\nimport java.util.*;\nimport java.io.*;\n\npublic class Q12 {\n    public static List<String> collectDiagnostics(String className, String badSource) {\n        // Compile and return list of diagnostic messages\n        return List.of();\n    }\n\n    public static void main(String[] args) {\n        String badCode = \"public class BrokenClass { int x = \\\"hello\\\"; }\";\n        collectDiagnostics(\"BrokenClass\", badCode).forEach(System.out::println);\n    }\n}",
           "solutionCode": "import javax.tools.*;\nimport java.util.*;\nimport java.io.*;\nimport java.nio.file.*;\n\npublic class Q12 {\n    public static List<String> collectDiagnostics(String className, String sourceCode) throws Exception {\n        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();\n        if (compiler == null) return List.of(\"ERROR: JDK required\");\n\n        // Write source to temp file\n        Path tempDir = Files.createTempDirectory(\"diag\");\n        Path src = tempDir.resolve(className + \".java\");\n        Files.writeString(src, sourceCode);\n\n        // Set up diagnostic collector\n        DiagnosticCollector<JavaFileObject> collector = new DiagnosticCollector<>();\n        StandardJavaFileManager fm = compiler.getStandardFileManager(collector, null, null);\n        Iterable<? extends JavaFileObject> units = fm.getJavaFileObjects(src.toFile());\n\n        JavaCompiler.CompilationTask task = compiler.getTask(null, fm, collector, null, null, units);\n        task.call(); // run compilation\n        fm.close();\n\n        // Collect and format diagnostics\n        List<String> results = new ArrayList<>();\n        for (Diagnostic<? extends JavaFileObject> d : collector.getDiagnostics()) {\n            results.add(String.format(\"%s line %d: %s\",\n                d.getKind(), d.getLineNumber(), d.getMessage(null)));\n        }\n        return results;\n    }\n\n    public static void main(String[] args) throws Exception {\n        String badCode = \"public class BrokenClass { int x = \\\"hello\\\"; }\";\n        collectDiagnostics(\"BrokenClass\", badCode).forEach(System.out::println);\n        // ERROR line 1: incompatible types: String cannot be converted to int\n    }\n}",
-          "testCases": [{"input": "int x = \"hello\";", "output": "ERROR line 1: incompatible types"}],
-          "constraints": "Must use DiagnosticCollector. Must return List<String> of formatted messages, not print to stderr. Requires JDK."
+          "testCases": [
+            {
+              "input": "int x = \"hello\";",
+              "output": "ERROR line 1: incompatible types"
+            }
+          ],
+          "constraints": "Must use DiagnosticCollector. Must return List<String> of formatted messages, not print to stderr. Requires JDK.",
+          "editorial": "ToolProvider.getSystemJavaCompiler() + DiagnosticCollector<JavaFileObject> as listener. Pass the collector to getTask(). After compile(), call collector.getDiagnostics() and filter by Diagnostic.Kind. Returns structured error info (line, column, message) rather than raw stderr output."
         },
         {
           "displayOrder": 13,
@@ -275,10 +362,17 @@
           "starterCode": "public class Q13 {\n    sealed interface Expr permits Num, Add, Mul, Neg {}\n    record Num(int v)              implements Expr {}\n    record Add(Expr left, Expr right) implements Expr {}\n    record Mul(Expr left, Expr right) implements Expr {}\n    record Neg(Expr expr)          implements Expr {}\n\n    static int eval(Expr expr) {\n        // TODO: pattern matching switch\n        return 0;\n    }\n\n    public static void main(String[] args) {\n        Expr e = new Add(new Num(3), new Mul(new Num(4), new Neg(new Num(2))));\n        System.out.println(eval(e)); // 3 + (4 * -2) = -5\n    }\n}",
           "solutionCode": "public class Q13 {\n    sealed interface Expr permits Num, Add, Mul, Neg {}\n    record Num(int v)                 implements Expr {}\n    record Add(Expr left, Expr right) implements Expr {}\n    record Mul(Expr left, Expr right) implements Expr {}\n    record Neg(Expr expr)             implements Expr {}\n\n    static int eval(Expr expr) {\n        // Java 17+ pattern matching switch — compiler checks exhaustiveness\n        return switch (expr) {\n            case Num n  -> n.v();\n            case Add a  -> eval(a.left()) + eval(a.right());\n            case Mul m  -> eval(m.left()) * eval(m.right());\n            case Neg n  -> -eval(n.expr());\n            // No default needed — sealed interface is exhaustive\n        };\n    }\n\n    public static void main(String[] args) {\n        Expr e = new Add(new Num(3), new Mul(new Num(4), new Neg(new Num(2))));\n        System.out.println(eval(e)); // -5\n\n        // More complex: (2 + 3) * -(1 + 4) = 5 * -5 = -25\n        Expr e2 = new Mul(\n            new Add(new Num(2), new Num(3)),\n            new Neg(new Add(new Num(1), new Num(4))));\n        System.out.println(eval(e2)); // -25\n    }\n}",
           "testCases": [
-            {"input": "Add(Num(3), Mul(Num(4), Neg(Num(2))))", "output": "-5"},
-            {"input": "Mul(Add(Num(2),Num(3)), Neg(Add(Num(1),Num(4))))", "output": "-25"}
+            {
+              "input": "Add(Num(3), Mul(Num(4), Neg(Num(2))))",
+              "output": "-5"
+            },
+            {
+              "input": "Mul(Add(Num(2),Num(3)), Neg(Add(Num(1),Num(4))))",
+              "output": "-25"
+            }
           ],
-          "constraints": "Must use sealed interface with permits clause. Must use pattern matching switch (Java 17+). No instanceof casts."
+          "constraints": "Must use sealed interface with permits clause. Must use pattern matching switch (Java 17+). No instanceof casts.",
+          "editorial": "Sealed classes permit a closed set of subclasses — the compiler knows all cases. Pattern matching switch is exhaustive over sealed types without a default clause. Records are ideal as sealed subtypes. Combine with instanceof pattern matching for safe downcasting without explicit casts."
         },
         {
           "displayOrder": 14,
@@ -291,8 +385,14 @@
           "hint3": "Count frequencies in a Map<String, Integer>, then sort by value descending and return top 5.",
           "starterCode": "import java.util.*;\nimport java.util.regex.*;\nimport java.util.stream.*;\n\npublic class Q14 {\n    public static List<Map.Entry<String, Long>> topInstructions(String javapOutput) {\n        // Parse javap -c output and return top 5 most frequent opcodes\n        return List.of();\n    }\n\n    public static void main(String[] args) {\n        String sample = \"  public static void main(java.lang.String[]);\\n\" +\n            \"    Code:\\n\" +\n            \"       0: iconst_0\\n\" +\n            \"       1: istore_1\\n\" +\n            \"       2: iload_1\\n\" +\n            \"       3: bipush 10\\n\" +\n            \"       5: if_icmpge 18\\n\" +\n            \"       8: iload_1\\n\" +\n            \"      10: istore_2\\n\" +\n            \"      11: iinc 1, 1\\n\" +\n            \"      14: goto 2\\n\" +\n            \"      17: iload_1\\n\" +\n            \"      18: ireturn\\n\";\n        topInstructions(sample).forEach(e ->\n            System.out.println(e.getKey() + \": \" + e.getValue()));\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.regex.*;\nimport java.util.stream.*;\n\npublic class Q14 {\n    static final Pattern BYTECODE_LINE = Pattern.compile(\"^\\\\s+\\\\d+: (\\\\w+)\");\n\n    public static List<Map.Entry<String, Long>> topInstructions(String javapOutput) {\n        return Arrays.stream(javapOutput.split(\"\\n\"))\n            .map(BYTECODE_LINE::matcher)\n            .filter(Matcher::find)\n            .map(m -> m.group(1))\n            .collect(Collectors.groupingBy(s -> s, Collectors.counting()))\n            .entrySet().stream()\n            .sorted(Map.Entry.<String, Long>comparingByValue().reversed())\n            .limit(5)\n            .collect(Collectors.toList());\n    }\n\n    public static void main(String[] args) {\n        String sample = \"  Code:\\n\" +\n            \"       0: iconst_0\\n      1: istore_1\\n      2: iload_1\\n\" +\n            \"       3: bipush 10\\n    5: if_icmpge 18\\n   8: iload_1\\n\" +\n            \"      10: istore_2\\n    11: iinc 1, 1\\n    14: goto 2\\n\" +\n            \"      17: iload_1\\n     18: ireturn\\n\";\n        System.out.println(\"Top bytecode instructions:\");\n        topInstructions(sample).forEach(e ->\n            System.out.println(\"  \" + e.getKey() + \": \" + e.getValue() + \"x\"));\n        // iload_1 appears 3x, others 1x\n    }\n}",
-          "testCases": [{"input": "javap output with iload_1 appearing 3 times", "output": "iload_1: 3"}],
-          "constraints": "Must use regex to parse bytecode lines. Return top 5 sorted by frequency descending. Skip non-bytecode lines."
+          "testCases": [
+            {
+              "input": "javap output with iload_1 appearing 3 times",
+              "output": "iload_1: 3"
+            }
+          ],
+          "constraints": "Must use regex to parse bytecode lines. Return top 5 sorted by frequency descending. Skip non-bytecode lines.",
+          "editorial": "Read .class bytes, find each opcode by scanning the constant pool and code attributes. Count opcode occurrences in a Map<String,Integer>. Sort by count descending. Most frequent opcodes in real code: aload_0 (load this), invokevirtual (method calls), getfield, putfield, return."
         },
         {
           "displayOrder": 15,
@@ -305,8 +405,14 @@
           "hint3": "For toString(): format is `RecordName[field1=value1, field2=value2]` — note square brackets, not parentheses.",
           "starterCode": "public class Q15 {\n    public static String desugarRecord(String recordName, String[][] fields) {\n        // fields is an array of [type, name] pairs\n        // e.g., {{\"int\", \"x\"}, {\"int\", \"y\"}}\n        // Generate the desugared class source\n        StringBuilder sb = new StringBuilder();\n        // TODO\n        return sb.toString();\n    }\n\n    public static void main(String[] args) {\n        System.out.println(desugarRecord(\"Point\", new String[][]{{\"int\",\"x\"},{\"int\",\"y\"}}));\n    }\n}",
           "solutionCode": "public class Q15 {\n    public static String desugarRecord(String recordName, String[][] fields) {\n        StringBuilder sb = new StringBuilder();\n        sb.append(\"public final class \").append(recordName).append(\" {\\n\");\n\n        // Final fields\n        for (String[] f : fields)\n            sb.append(\"    private final \").append(f[0]).append(\" \").append(f[1]).append(\";\\n\");\n        sb.append(\"\\n\");\n\n        // Canonical constructor\n        sb.append(\"    public \").append(recordName).append(\"(\");\n        for (int i = 0; i < fields.length; i++) {\n            if (i > 0) sb.append(\", \");\n            sb.append(fields[i][0]).append(\" \").append(fields[i][1]);\n        }\n        sb.append(\") {\\n\");\n        for (String[] f : fields)\n            sb.append(\"        this.\").append(f[1]).append(\" = \").append(f[1]).append(\";\\n\");\n        sb.append(\"    }\\n\\n\");\n\n        // Accessor methods (no 'get' prefix — Java record style)\n        for (String[] f : fields)\n            sb.append(\"    public \").append(f[0]).append(\" \").append(f[1])\n              .append(\"() { return \").append(f[1]).append(\"; }\\n\");\n        sb.append(\"\\n\");\n\n        // equals()\n        sb.append(\"    @Override public boolean equals(Object o) {\\n\")\n          .append(\"        if (this == o) return true;\\n\")\n          .append(\"        if (!(o instanceof \").append(recordName).append(\" r)) return false;\\n\");\n        for (String[] f : fields)\n            sb.append(\"        if (!java.util.Objects.equals(\").append(f[1])\n              .append(\", r.\").append(f[1]).append(\")) return false;\\n\");\n        sb.append(\"        return true;\\n    }\\n\\n\");\n\n        // hashCode()\n        sb.append(\"    @Override public int hashCode() {\\n\")\n          .append(\"        return java.util.Objects.hash(\");\n        for (int i = 0; i < fields.length; i++) {\n            if (i > 0) sb.append(\", \");\n            sb.append(fields[i][1]);\n        }\n        sb.append(\");\\n    }\\n\\n\");\n\n        // toString() — record format: Name[f1=v1, f2=v2]\n        sb.append(\"    @Override public String toString() {\\n\")\n          .append(\"        return \\\"\").append(recordName).append(\"[\" + \"\\\" +\\n\");\n        for (int i = 0; i < fields.length; i++) {\n            if (i > 0) sb.append(\"            + \\\", \\\" +\\n\");\n            sb.append(\"            \\\"\").append(fields[i][1]).append(\"=\\\" + \").append(fields[i][1]).append(\" +\\n\");\n        }\n        sb.append(\"            \\\"]\\\";\\n    }\\n}\");\n        return sb.toString();\n    }\n\n    public static void main(String[] args) {\n        System.out.println(desugarRecord(\"Point\", new String[][]{{\"int\",\"x\"},{\"int\",\"y\"}}));\n    }\n}",
-          "testCases": [{"input": "Point with int x, int y", "output": "contains private final int x; and public int x() { return x; }"}],
-          "constraints": "Must generate: final fields, canonical constructor, accessors (no 'get' prefix), equals, hashCode, toString with record bracket format."
+          "testCases": [
+            {
+              "input": "Point with int x, int y",
+              "output": "contains private final int x; and public int x() { return x; }"
+            }
+          ],
+          "constraints": "Must generate: final fields, canonical constructor, accessors (no 'get' prefix), equals, hashCode, toString with record bracket format.",
+          "editorial": "A Java record `record Point(int x, int y){}` desugars to: final class Point with private final fields, canonical constructor, accessor methods x() and y(), equals(), hashCode(), toString(). The compact constructor body runs before field assignment. Generate this equivalent class programmatically."
         },
         {
           "displayOrder": 16,
@@ -320,10 +426,17 @@
           "starterCode": "import java.util.*;\nimport java.util.function.*;\nimport java.util.stream.*;\n\npublic class Q16 {\n    public static List<Integer> transformWithLambda(List<Integer> input) {\n        // Use lambda: x -> x * x\n        return input.stream().map(x -> x * x).collect(Collectors.toList());\n    }\n\n    public static List<Integer> transformWithAnonymousClass(List<Integer> input) {\n        // TODO: same logic using anonymous class\n        return List.of();\n    }\n\n    public static void main(String[] args) {\n        List<Integer> nums = List.of(1, 2, 3, 4, 5);\n        System.out.println(transformWithLambda(nums));\n        System.out.println(transformWithAnonymousClass(nums));\n        System.out.println(\"Equal: \" + transformWithLambda(nums).equals(transformWithAnonymousClass(nums)));\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.function.*;\nimport java.util.stream.*;\n\npublic class Q16 {\n    public static List<Integer> transformWithLambda(List<Integer> input) {\n        return input.stream().map(x -> x * x).collect(Collectors.toList());\n    }\n\n    public static List<Integer> transformWithAnonymousClass(List<Integer> input) {\n        // Pre-Java-8 anonymous class equivalent of x -> x * x\n        Function<Integer, Integer> squareFn = new Function<Integer, Integer>() {\n            @Override\n            public Integer apply(Integer x) {\n                return x * x;\n            }\n        };\n        return input.stream().map(squareFn).collect(Collectors.toList());\n    }\n\n    public static void main(String[] args) {\n        List<Integer> nums = List.of(1, 2, 3, 4, 5);\n        System.out.println(\"Lambda: \"    + transformWithLambda(nums));          // [1, 4, 9, 16, 25]\n        System.out.println(\"Anon class: \" + transformWithAnonymousClass(nums));  // [1, 4, 9, 16, 25]\n        System.out.println(\"Equal: \" + transformWithLambda(nums).equals(transformWithAnonymousClass(nums))); // true\n        // Key difference: lambda uses invokedynamic (no separate .class file)\n        // anonymous class creates Q16$1.class at compile time\n    }\n}",
           "testCases": [
-            {"input": "[1,2,3,4,5]", "output": "[1, 4, 9, 16, 25]"},
-            {"input": "", "output": "Equal: true"}
+            {
+              "input": "[1,2,3,4,5]",
+              "output": "[1, 4, 9, 16, 25]"
+            },
+            {
+              "input": "",
+              "output": "Equal: true"
+            }
           ],
-          "constraints": "Lambda and anonymous class must implement the same transformation. Use Function<Integer,Integer>."
+          "constraints": "Lambda and anonymous class must implement the same transformation. Use Function<Integer,Integer>.",
+          "editorial": "Lambda `(x) -> x * 2` desugars to an anonymous class implementing the functional interface, with the lambda body as the apply() method. Inner class captures effectively-final variables from the enclosing scope. For method references, the anonymous class delegates to the referenced method."
         },
         {
           "displayOrder": 17,
@@ -336,8 +449,14 @@
           "hint3": "Be careful: don't collapse whitespace inside string literals. Use a state machine or regex that excludes string contents.",
           "starterCode": "public class Q17 {\n    public static String minify(String source) {\n        // Remove /* */ block comments\n        // Remove // line comments  \n        // Collapse whitespace\n        // Remove blank lines\n        return source;\n    }\n\n    public static void main(String[] args) {\n        String code = \"// Header comment\\npublic class Foo {\\n  /* field */\\n  int x = 42; // inline\\n\\n  void bar() {\\n    System.out.println(x);\\n  }\\n}\";\n        System.out.println(minify(code));\n    }\n}",
           "solutionCode": "public class Q17 {\n    public static String minify(String source) {\n        // Step 1: Remove block comments /* ... */ (including multiline)\n        String s = source.replaceAll(\"/\\\\*[\\\\s\\\\S]*?\\\\*/\", \" \");\n\n        // Step 2: Remove line comments // ...\n        s = s.replaceAll(\"//[^\\n]*\", \"\");\n\n        // Step 3: Replace multiple whitespace (spaces, tabs, newlines) with single space\n        s = s.replaceAll(\"[\\\\s]+\", \" \");\n\n        // Step 4: Trim and collapse spaces around common tokens\n        s = s.replaceAll(\"\\\\s*([{};()=+\\\\-*/<>,])\\\\s*\", \"$1\");\n\n        return s.trim();\n    }\n\n    public static void main(String[] args) {\n        String code = \"// Header comment\\n\" +\n            \"public class Foo {\\n\" +\n            \"  /* field */\\n\" +\n            \"  int x = 42; // inline comment\\n\" +\n            \"\\n\" +\n            \"  void bar() {\\n\" +\n            \"    System.out.println(x);\\n\" +\n            \"  }\\n}\";\n        System.out.println(\"Original length: \" + code.length());\n        String minified = minify(code);\n        System.out.println(\"Minified: \" + minified);\n        System.out.println(\"Minified length: \" + minified.length());\n    }\n}",
-          "testCases": [{"input": "class with comments and whitespace", "output": "public class Foo{int x=42;void bar(){System.out.println(x);}}"}],
-          "constraints": "Must handle // and /* */ comments. Must collapse whitespace. Warning: string literals may contain // — this simplified version doesn't handle that edge case."
+          "testCases": [
+            {
+              "input": "class with comments and whitespace",
+              "output": "public class Foo{int x=42;void bar(){System.out.println(x);}}"
+            }
+          ],
+          "constraints": "Must handle // and /* */ comments. Must collapse whitespace. Warning: string literals may contain // — this simplified version doesn't handle that edge case.",
+          "editorial": "Remove all comments (line and block). Remove all unnecessary whitespace (multiple spaces → one). Shorten identifiers if safe. Keep string literals intact. Process as a character stream with state tracking (inside string, inside comment). Output should compile identically to the input."
         },
         {
           "displayOrder": 18,
@@ -351,11 +470,21 @@
           "starterCode": "public class Q18 {\n    public static String parseDescriptor(String descriptor) {\n        // Parse JVM method descriptor to human-readable form\n        return \"\";\n    }\n\n    public static void main(String[] args) {\n        System.out.println(parseDescriptor(\"(ILjava/lang/String;[D)Z\"));\n        // boolean method(int, String, double[])\n        System.out.println(parseDescriptor(\"(II)I\"));\n        // int method(int, int)\n        System.out.println(parseDescriptor(\"()V\"));\n        // void method()\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q18 {\n    static String[] pos = new String[1];\n\n    static String parseType(String d, int[] i) {\n        if (i[0] >= d.length()) return \"?\";\n        char c = d.charAt(i[0]++);\n        return switch (c) {\n            case 'Z' -> \"boolean\"; case 'B' -> \"byte\"; case 'C' -> \"char\";\n            case 'S' -> \"short\";   case 'I' -> \"int\";  case 'J' -> \"long\";\n            case 'F' -> \"float\";   case 'D' -> \"double\"; case 'V' -> \"void\";\n            case '[' -> parseType(d, i) + \"[]\";\n            case 'L' -> {\n                int end = d.indexOf(';', i[0]);\n                String cls = d.substring(i[0], end).replace('/', '.');\n                i[0] = end + 1;\n                // Use simple name\n                yield cls.contains(\".\") ? cls.substring(cls.lastIndexOf('.') + 1) : cls;\n            }\n            default -> String.valueOf(c);\n        };\n    }\n\n    public static String parseDescriptor(String descriptor) {\n        int[] i = {1}; // skip '('\n        List<String> params = new ArrayList<>();\n        while (i[0] < descriptor.length() && descriptor.charAt(i[0]) != ')') {\n            params.add(parseType(descriptor, i));\n        }\n        i[0]++; // skip ')'\n        String ret = parseType(descriptor, i);\n        return ret + \" method(\" + String.join(\", \", params) + \")\";\n    }\n\n    public static void main(String[] args) {\n        System.out.println(parseDescriptor(\"(ILjava/lang/String;[D)Z\"));\n        System.out.println(parseDescriptor(\"(II)I\"));\n        System.out.println(parseDescriptor(\"()V\"));\n    }\n}",
           "testCases": [
-            {"input": "(ILjava/lang/String;[D)Z", "output": "boolean method(int, String, double[])"},
-            {"input": "(II)I", "output": "int method(int, int)"},
-            {"input": "()V", "output": "void method()"}
+            {
+              "input": "(ILjava/lang/String;[D)Z",
+              "output": "boolean method(int, String, double[])"
+            },
+            {
+              "input": "(II)I",
+              "output": "int method(int, int)"
+            },
+            {
+              "input": "()V",
+              "output": "void method()"
+            }
           ],
-          "constraints": "Must support all primitive types, void, object (L...;), and array ([). Return type must appear before parameter list."
+          "constraints": "Must support all primitive types, void, object (L...;), and array ([). Return type must appear before parameter list.",
+          "editorial": "Parse method descriptor format: (param_types)return_type. L-prefixed names are object types ending with semicolon. [ prefix is array. B=byte, C=char, D=double, F=float, I=int, J=long, S=short, V=void, Z=boolean. Example: (ILjava/lang/String;)[D → (int, String) → double[]."
         },
         {
           "displayOrder": 19,
@@ -369,11 +498,21 @@
           "starterCode": "import java.util.*;\n\npublic class Q19 {\n    enum TT { NUM, PLUS, MINUS, STAR, SLASH, LPAREN, RPAREN }\n    record Tok(TT type, int value) {}\n\n    static List<Tok> tokenize(String s) {\n        List<Tok> toks = new ArrayList<>();\n        for (int i = 0; i < s.length(); ) {\n            char c = s.charAt(i);\n            if (Character.isWhitespace(c)) { i++; continue; }\n            if (Character.isDigit(c)) {\n                int n = 0; while (i < s.length() && Character.isDigit(s.charAt(i))) n = n*10 + (s.charAt(i++)-'0');\n                toks.add(new Tok(TT.NUM, n)); continue;\n            }\n            toks.add(switch (c) {\n                case '+' -> new Tok(TT.PLUS, 0); case '-' -> new Tok(TT.MINUS, 0);\n                case '*' -> new Tok(TT.STAR, 0); case '/' -> new Tok(TT.SLASH, 0);\n                case '(' -> new Tok(TT.LPAREN,0); case ')' -> new Tok(TT.RPAREN,0);\n                default  -> throw new RuntimeException(\"Unknown: \" + c);\n            }); i++;\n        }\n        return toks;\n    }\n\n    int[] pos = {0};\n    List<Tok> toks;\n\n    int parseExpr()  { /* TODO */ return 0; }\n    int parseTerm()  { /* TODO */ return 0; }\n    int parseFactor(){ /* TODO */ return 0; }\n\n    public static int evaluate(String expr) {\n        Q19 parser = new Q19();\n        parser.toks = tokenize(expr);\n        return parser.parseExpr();\n    }\n\n    public static void main(String[] args) {\n        System.out.println(evaluate(\"3 + 4 * 2 - 1\"));  // 10\n        System.out.println(evaluate(\"(3 + 4) * 2\"));     // 14\n        System.out.println(evaluate(\"10 / 2 + 3\"));      // 8\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q19 {\n    enum TT { NUM, PLUS, MINUS, STAR, SLASH, LPAREN, RPAREN }\n    record Tok(TT type, int value) {}\n\n    static List<Tok> tokenize(String s) {\n        List<Tok> toks = new ArrayList<>();\n        for (int i = 0; i < s.length(); ) {\n            char c = s.charAt(i);\n            if (Character.isWhitespace(c)) { i++; continue; }\n            if (Character.isDigit(c)) {\n                int n = 0; while (i < s.length() && Character.isDigit(s.charAt(i))) n = n*10 + (s.charAt(i++)-'0');\n                toks.add(new Tok(TT.NUM, n)); continue;\n            }\n            toks.add(switch (c) {\n                case '+' -> new Tok(TT.PLUS,0); case '-' -> new Tok(TT.MINUS,0);\n                case '*' -> new Tok(TT.STAR,0); case '/' -> new Tok(TT.SLASH,0);\n                case '(' -> new Tok(TT.LPAREN,0); case ')' -> new Tok(TT.RPAREN,0);\n                default  -> throw new RuntimeException(\"Unknown: \" + c);\n            }); i++;\n        }\n        return toks;\n    }\n\n    int[] pos = {0};\n    List<Tok> toks;\n\n    Tok peek() { return pos[0] < toks.size() ? toks.get(pos[0]) : new Tok(TT.NUM, 0); }\n    Tok consume() { return toks.get(pos[0]++); }\n\n    // expr → term (('+' | '-') term)*\n    int parseExpr() {\n        int val = parseTerm();\n        while (peek().type() == TT.PLUS || peek().type() == TT.MINUS) {\n            TT op = consume().type();\n            int right = parseTerm();\n            val = (op == TT.PLUS) ? val + right : val - right;\n        }\n        return val;\n    }\n\n    // term → factor (('*' | '/') factor)*\n    int parseTerm() {\n        int val = parseFactor();\n        while (peek().type() == TT.STAR || peek().type() == TT.SLASH) {\n            TT op = consume().type();\n            int right = parseFactor();\n            val = (op == TT.STAR) ? val * right : val / right;\n        }\n        return val;\n    }\n\n    // factor → NUMBER | '(' expr ')'\n    int parseFactor() {\n        Tok t = consume();\n        if (t.type() == TT.NUM) return t.value();\n        if (t.type() == TT.LPAREN) {\n            int val = parseExpr();\n            consume(); // ')'\n            return val;\n        }\n        throw new RuntimeException(\"Expected number or '('\");\n    }\n\n    public static int evaluate(String expr) {\n        Q19 parser = new Q19();\n        parser.toks = tokenize(expr);\n        return parser.parseExpr();\n    }\n\n    public static void main(String[] args) {\n        System.out.println(evaluate(\"3 + 4 * 2 - 1\"));  // 10\n        System.out.println(evaluate(\"(3 + 4) * 2\"));     // 14\n        System.out.println(evaluate(\"10 / 2 + 3\"));      // 8\n        System.out.println(evaluate(\"2 * (3 + 4 * 2)\"));  // 22\n    }\n}",
           "testCases": [
-            {"input": "3 + 4 * 2 - 1", "output": "10"},
-            {"input": "(3 + 4) * 2", "output": "14"},
-            {"input": "10 / 2 + 3", "output": "8"}
+            {
+              "input": "3 + 4 * 2 - 1",
+              "output": "10"
+            },
+            {
+              "input": "(3 + 4) * 2",
+              "output": "14"
+            },
+            {
+              "input": "10 / 2 + 3",
+              "output": "8"
+            }
           ],
-          "constraints": "Must implement operator precedence (* before +). Must handle parentheses. Use recursive descent with separate methods per grammar rule."
+          "constraints": "Must implement operator precedence (* before +). Must handle parentheses. Use recursive descent with separate methods per grammar rule.",
+          "editorial": "Recursive descent parser: parseExpr() handles + and - (lowest precedence), parseTerm() handles * and / (higher), parseFactor() handles numbers and parenthesized subexpressions. Each level calls the next level for higher-precedence operations, naturally enforcing operator precedence."
         },
         {
           "displayOrder": 20,
@@ -387,10 +526,17 @@
           "starterCode": "import java.util.*;\n\npublic class Q20 {\n    // Reuse tokenizer and expression parser, add variable support\n    static Map<String, Integer> symbolTable = new HashMap<>();\n\n    // TODO: implement the mini-compiler\n    // Hint: extend Q19's parser to support IDENTIFIER tokens and symbolTable lookup\n\n    public static void execute(String program) {\n        // Parse and execute each statement\n        System.out.println(\"TODO: implement execute()\");\n    }\n\n    public static void main(String[] args) {\n        execute(\"int a = 5;\\nint b = 3 + a;\\nprint(a * b);\");\n        // Expected: 40\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q20 {\n    enum TT { NUM, IDENT, INT, PRINT, ASSIGN, PLUS, MINUS, STAR, SLASH, LPAREN, RPAREN, SEMI }\n    record Tok(TT type, String sval, int ival) {}\n\n    static List<Tok> tokenize(String s) {\n        List<Tok> toks = new ArrayList<>();\n        int i = 0;\n        while (i < s.length()) {\n            char c = s.charAt(i);\n            if (Character.isWhitespace(c)) { i++; continue; }\n            if (Character.isDigit(c)) {\n                int n = 0; while (i < s.length() && Character.isDigit(s.charAt(i))) n = n*10+(s.charAt(i++)-'0');\n                toks.add(new Tok(TT.NUM, null, n)); continue;\n            }\n            if (Character.isLetter(c)) {\n                int j = i; while (i < s.length() && Character.isLetterOrDigit(s.charAt(i))) i++;\n                String w = s.substring(j, i);\n                toks.add(switch(w) { case \"int\" -> new Tok(TT.INT,w,0); case \"print\" -> new Tok(TT.PRINT,w,0);\n                    default -> new Tok(TT.IDENT,w,0); }); continue;\n            }\n            toks.add(switch(c) {\n                case '=' -> new Tok(TT.ASSIGN,null,0); case '+' -> new Tok(TT.PLUS,null,0);\n                case '-' -> new Tok(TT.MINUS,null,0);  case '*' -> new Tok(TT.STAR,null,0);\n                case '/' -> new Tok(TT.SLASH,null,0);  case '(' -> new Tok(TT.LPAREN,null,0);\n                case ')' -> new Tok(TT.RPAREN,null,0); case ';' -> new Tok(TT.SEMI,null,0);\n                default  -> throw new RuntimeException(\"Unknown: \" + c);\n            }); i++;\n        }\n        return toks;\n    }\n\n    List<Tok> toks; int[] p = {0};\n    Map<String, Integer> vars = new HashMap<>();\n\n    Tok peek() { return p[0] < toks.size() ? toks.get(p[0]) : new Tok(TT.SEMI,null,0); }\n    Tok consume() { return toks.get(p[0]++); }\n\n    int parseExpr() {\n        int v = parseTerm();\n        while (peek().type() == TT.PLUS || peek().type() == TT.MINUS) {\n            TT op = consume().type(); int r = parseTerm();\n            v = op == TT.PLUS ? v+r : v-r;\n        } return v;\n    }\n    int parseTerm() {\n        int v = parseFactor();\n        while (peek().type() == TT.STAR || peek().type() == TT.SLASH) {\n            TT op = consume().type(); int r = parseFactor();\n            v = op == TT.STAR ? v*r : v/r;\n        } return v;\n    }\n    int parseFactor() {\n        Tok t = consume();\n        if (t.type() == TT.NUM)   return t.ival();\n        if (t.type() == TT.IDENT) return vars.getOrDefault(t.sval(), 0);\n        if (t.type() == TT.LPAREN) { int v = parseExpr(); consume(); return v; }\n        throw new RuntimeException(\"Unexpected: \" + t);\n    }\n\n    void run() {\n        while (p[0] < toks.size()) {\n            Tok t = peek();\n            if (t.type() == TT.INT) {\n                consume(); // 'int'\n                String name = consume().sval(); // var name\n                consume(); // '='\n                int val = parseExpr();\n                consume(); // ';'\n                vars.put(name, val);\n            } else if (t.type() == TT.PRINT) {\n                consume(); consume(); // 'print' '('\n                int val = parseExpr();\n                consume(); consume(); // ')' ';'\n                System.out.println(val);\n            } else { consume(); } // skip unknown\n        }\n    }\n\n    public static void execute(String program) {\n        Q20 compiler = new Q20();\n        compiler.toks = tokenize(program);\n        compiler.run();\n    }\n\n    public static void main(String[] args) {\n        execute(\"int a = 5;\\nint b = 3 + a;\\nprint(a * b);\");\n        // b = 3 + 5 = 8; a * b = 5 * 8 = 40\n        execute(\"int x = 10;\\nint y = x * 2 + 1;\\nprint(y);\");\n        // y = 21\n    }\n}",
           "testCases": [
-            {"input": "int a = 5;\\nint b = 3 + a;\\nprint(a * b);", "output": "40"},
-            {"input": "int x = 10;\\nint y = x * 2 + 1;\\nprint(y);", "output": "21"}
+            {
+              "input": "int a = 5;\\nint b = 3 + a;\\nprint(a * b);",
+              "output": "40"
+            },
+            {
+              "input": "int x = 10;\\nint y = x * 2 + 1;\\nprint(y);",
+              "output": "21"
+            }
           ],
-          "constraints": "Must support: int declarations with expression RHS, print statement, variable lookup in expressions. Symbol table stored in Map<String,Integer>."
+          "constraints": "Must support: int declarations with expression RHS, print statement, variable lookup in expressions. Symbol table stored in Map<String,Integer>.",
+          "editorial": "Full pipeline: source string → tokenize → parse to AST → semantic check (type validation) → generate bytecode representation (instruction list) → execute instructions on a stack machine. Each phase transforms the representation. This mirrors javac's internal phases: scan → parse → analyze → generate."
         }
       ]
     }
