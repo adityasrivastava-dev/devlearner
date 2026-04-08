@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { quizApi, QUIZ_CATEGORIES, DIFFICULTY_META } from '../quiz/quizApi';
@@ -43,7 +43,7 @@ async function adminDeleteQuizSet(id) {
 }
 
 // ── root component ────────────────────────────────────────────────────────────
-export default function QuizAdminSection() {
+export default function QuizAdminSection({ embedded = false }) {
   const [tab, setTab] = useState('files'); // files | sets | build | paste
 
   const tabs = [
@@ -53,13 +53,8 @@ export default function QuizAdminSection() {
     { key: 'paste', label: '📋 Paste JSON'   },
   ];
 
-  return (
-    <div className={styles.section}>
-      <div className={styles.sectionHeader}>
-        <span className={styles.sectionTitle}>🧠 Quiz Management</span>
-        <span className={styles.sectionSub}>Seed, build and manage MCQ quiz sets</span>
-      </div>
-
+  const inner = (
+    <>
       {/* Sub-tabs */}
       <div className={qStyles.tabBar}>
         {tabs.map((t) => (
@@ -79,6 +74,19 @@ export default function QuizAdminSection() {
         {tab === 'build' && <QuizBuilderPanel onSaved={() => setTab('sets')} />}
         {tab === 'paste' && <QuizPastePanel />}
       </div>
+    </>
+  );
+
+  // When embedded inside Build JSON tab, no outer section wrapper needed
+  if (embedded) return <div style={{ paddingTop: 4 }}>{inner}</div>;
+
+  return (
+    <div className={styles.section}>
+      <div className={styles.sectionHeader}>
+        <span className={styles.sectionTitle}>🧠 Quiz Management</span>
+        <span className={styles.sectionSub}>Seed, build and manage MCQ quiz sets</span>
+      </div>
+      {inner}
     </div>
   );
 }
@@ -295,7 +303,257 @@ const BLANK_SET = () => ({
 });
 
 function QuizBuilderPanel({ onSaved }) {
-  const [set, setSet]               = useState(BLANK_SET());
+  const [mode, setMode] = useState(null); // null | 'create' | 'browse' | 'edit'
+  const [editInitial, setEditInitial] = useState(null); // pre-loaded set for edit mode
+
+  function handleLoadSet(setData) {
+    // setData is a full quiz set object — convert to our internal format
+    setEditInitial({
+      title:        setData.title        || '',
+      description:  setData.description  || '',
+      category:     setData.category     || 'JAVA',
+      difficulty:   setData.difficulty   || 'INTERMEDIATE',
+      icon:         setData.icon         || '📝',
+      displayOrder: setData.displayOrder || 0,
+      questions:    (setData.questions || []).map((q) => ({
+        ...q,
+        _id:          Math.random(),
+        optionC:      q.optionC      || '',
+        optionD:      q.optionD      || '',
+        codeSnippet:  q.codeSnippet  || '',
+        tags:         q.tags         || '',
+      })),
+    });
+    setMode('create'); // reuse the create form
+  }
+
+  // ── Home — mode cards ────────────────────────────────────────────────────
+  if (!mode) {
+    return (
+      <div className={qStyles.builderHome}>
+        <button className={qStyles.builderCard} onClick={() => { setEditInitial(null); setMode('create'); }}>
+          <span className={qStyles.builderCardIcon}>✨</span>
+          <span className={qStyles.builderCardTitle}>Create New Quiz</span>
+          <span className={qStyles.builderCardDesc}>Build a quiz set from scratch — fill in questions one by one</span>
+        </button>
+        <button className={qStyles.builderCard} onClick={() => setMode('browse')}>
+          <span className={qStyles.builderCardIcon}>📁</span>
+          <span className={qStyles.builderCardTitle}>Browse JSON Files</span>
+          <span className={qStyles.builderCardDesc}>Load any quiz set from resources/quiz/ and edit it field-by-field</span>
+        </button>
+        <button className={qStyles.builderCard} onClick={() => setMode('edit')}>
+          <span className={qStyles.builderCardIcon}>✏️</span>
+          <span className={qStyles.builderCardTitle}>Edit Existing JSON</span>
+          <span className={qStyles.builderCardDesc}>Paste a quiz JSON and edit every question in the form</span>
+        </button>
+      </div>
+    );
+  }
+
+  // ── Browse — pick a file, pick a set, load into editor ──────────────────
+  if (mode === 'browse') {
+    return <QuizBrowsePanel
+      onBack={() => setMode(null)}
+      onLoad={(setData) => handleLoadSet(setData)}
+    />;
+  }
+
+  // ── Edit — paste JSON then load ──────────────────────────────────────────
+  if (mode === 'edit') {
+    return <QuizEditPastePanel
+      onBack={() => setMode(null)}
+      onLoad={(setData) => handleLoadSet(setData)}
+    />;
+  }
+
+  // ── Create / Edit form ───────────────────────────────────────────────────
+  return <QuizEditorForm
+    initial={editInitial}
+    onBack={() => { setMode(null); setEditInitial(null); }}
+    onSaved={() => { setMode(null); setEditInitial(null); onSaved?.(); }}
+  />;
+}
+
+// ── Browse JSON files panel ───────────────────────────────────────────────────
+function QuizBrowsePanel({ onBack, onLoad }) {
+  const [files,         setFiles]         = useState([]);
+  const [filesLoading,  setFilesLoading]  = useState(true);
+  const [selectedFile,  setSelectedFile]  = useState('');
+  const [sets,          setSets]          = useState([]); // topics from the selected file
+  const [setsLoading,   setSetsLoading]   = useState(false);
+  const [filter,        setFilter]        = useState('');
+
+  useEffect(() => {
+    adminGetQuizFiles()
+      .then(setFiles)
+      .catch(() => setFiles([]))
+      .finally(() => setFilesLoading(false));
+  }, []);
+
+  async function handleFileSelect(filename) {
+    setSelectedFile(filename);
+    setSets([]);
+    setFilter('');
+    if (!filename) return;
+    setSetsLoading(true);
+    try {
+      // Load the file directly via the import-file endpoint in preview mode
+      // We fetch raw file data from the listing, then use a dedicated preview
+      const token = localStorage.getItem('devlearn_token');
+      const r = await fetch(`/api/admin/quiz/files/${encodeURIComponent(filename)}/preview`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (r.ok) {
+        const data = await r.json();
+        setSets(data.questions ? [data] : data); // single set or array
+      } else {
+        // Fallback: just show the file info we already have
+        const fileInfo = files.find((f) => f.filename === filename);
+        if (fileInfo) setSets([fileInfo]);
+      }
+    } catch {
+      const fileInfo = files.find((f) => f.filename === filename);
+      if (fileInfo) setSets([{ title: fileInfo.title, ...fileInfo }]);
+    } finally {
+      setSetsLoading(false);
+    }
+  }
+
+  const filtered = sets.filter((s) =>
+    !filter || (s.title || '').toLowerCase().includes(filter.toLowerCase())
+  );
+
+  return (
+    <div className={qStyles.builder}>
+      <div className={qStyles.builderActions} style={{ borderTop: 'none', paddingTop: 0 }}>
+        <button className="btn btn-ghost btn-sm" onClick={onBack}>← Back</button>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>📁 Browse Quiz JSON Files</span>
+        <span />
+      </div>
+
+      <p style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6, margin: 0 }}>
+        Select a file from <code style={{ background: 'var(--bg3)', padding: '1px 5px', borderRadius: 3, fontSize: 11 }}>resources/quiz/</code> to load it into the editor.
+      </p>
+
+      {/* File selector */}
+      <select
+        className="input"
+        value={selectedFile}
+        onChange={(e) => handleFileSelect(e.target.value)}
+        style={{ fontSize: 12 }}
+        disabled={filesLoading}
+      >
+        <option value="">
+          {filesLoading ? 'Loading files…' : `— Select a quiz file (${files.length} available) —`}
+        </option>
+        {files.map((f) => (
+          <option key={f.filename} value={f.filename}>
+            {f.filename}
+            {f.questionCount ? ` · ${f.questionCount} questions` : ''}
+            {f.status === 'IMPORTED' ? ' ✓' : ''}
+          </option>
+        ))}
+      </select>
+
+      {/* Set list from file */}
+      {selectedFile && (
+        setsLoading ? (
+          <div style={{ display: 'flex', gap: 8, fontSize: 12, color: 'var(--text3)', alignItems: 'center' }}>
+            <span className="spinner" /> Loading…
+          </div>
+        ) : sets.length === 0 ? (
+          <div style={{ fontSize: 12, color: 'var(--text3)' }}>Could not parse this file.</div>
+        ) : (
+          <>
+            {sets.length > 1 && (
+              <input className="input" style={{ fontSize: 12 }}
+                placeholder={`🔍 Filter ${sets.length} sets…`}
+                value={filter} onChange={(e) => setFilter(e.target.value)} />
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {filtered.map((s, i) => {
+                const diff = DIFFICULTY_META[s.difficulty] || DIFFICULTY_META.INTERMEDIATE;
+                return (
+                  <button key={i} className={qStyles.fileRow}
+                    style={{ textAlign: 'left', cursor: 'pointer' }}
+                    onClick={() => onLoad(s)}
+                  >
+                    <div className={qStyles.fileInfo}>
+                      <span className={qStyles.fileName}>{s.icon || '📝'} {s.title}</span>
+                      <span className={qStyles.fileMeta}>
+                        {s.category} ·
+                        <span style={{ color: diff.color }}> {diff.label}</span>
+                        {s.questionCount || (s.questions || []).length
+                          ? ` · ${s.questionCount || (s.questions || []).length} questions`
+                          : ''}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 12, color: 'var(--accent3)', fontWeight: 600, flexShrink: 0 }}>
+                      Load →
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+              Click a set to open it in the editor — all questions will be editable.
+            </div>
+          </>
+        )
+      )}
+    </div>
+  );
+}
+
+// ── Edit by pasting JSON ──────────────────────────────────────────────────────
+function QuizEditPastePanel({ onBack, onLoad }) {
+  const [json, setJson] = useState('');
+  const [err,  setErr]  = useState('');
+
+  function handleLoad() {
+    setErr('');
+    try {
+      const parsed = JSON.parse(json);
+      if (!parsed.title) throw new Error('Missing "title" field');
+      if (!parsed.questions || !Array.isArray(parsed.questions)) throw new Error('Missing "questions" array');
+      onLoad(parsed);
+    } catch (e) {
+      setErr(e.message);
+    }
+  }
+
+  return (
+    <div className={qStyles.builder}>
+      <div className={qStyles.builderActions} style={{ borderTop: 'none', paddingTop: 0 }}>
+        <button className="btn btn-ghost btn-sm" onClick={onBack}>← Back</button>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>✏️ Edit Existing Quiz JSON</span>
+        <span />
+      </div>
+      <p style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6, margin: 0 }}>
+        Paste a quiz set JSON (same format as the seed files). All questions will load into the editor.
+      </p>
+      <textarea
+        className="input"
+        rows={18}
+        value={json}
+        onChange={(e) => { setJson(e.target.value); setErr(''); }}
+        placeholder={'{\n  "title": "My Quiz",\n  "category": "JAVA",\n  "difficulty": "INTERMEDIATE",\n  "questions": [...]\n}'}
+        style={{ fontFamily: 'var(--font-code)', fontSize: 12, resize: 'vertical' }}
+      />
+      {err && <div style={{ fontSize: 12, color: 'var(--red)' }}>⚠ {err}</div>}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button className="btn btn-primary" disabled={!json.trim()} onClick={handleLoad}>
+          📂 Load into Editor →
+        </button>
+        <button className="btn btn-ghost btn-sm" onClick={() => { setJson(''); setErr(''); }}>Clear</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Core editor form (create + edit share this) ───────────────────────────────
+function QuizEditorForm({ initial, onBack, onSaved }) {
+  const [set, setSet]               = useState(initial || BLANK_SET());
   const [activeQ, setActiveQ]       = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [saving, setSaving]         = useState(false);
@@ -384,6 +642,21 @@ function QuizBuilderPanel({ onSaved }) {
 
   return (
     <div className={qStyles.builder}>
+
+      {/* ── Back + header ─────────────────────────────────────────── */}
+      <div className={qStyles.builderActions} style={{ borderTop: 'none', paddingTop: 0 }}>
+        <button className="btn btn-ghost btn-sm" onClick={onBack}>← Back</button>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+          {set.title ? `✏️ ${set.title}` : '✨ New Quiz Set'}
+        </span>
+        <button
+          className="btn btn-primary btn-sm"
+          onClick={handleSave}
+          disabled={saving || !set.title.trim()}
+        >
+          {saving ? <><span className="spinner" /> Saving…</> : '💾 Save'}
+        </button>
+      </div>
 
       {/* ── Set metadata ─────────────────────────────────────────── */}
       <div className={qStyles.builderMeta}>
@@ -599,18 +872,9 @@ function QuizBuilderPanel({ onSaved }) {
             ↺ Reset
           </button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-            {set.questions.length} question{set.questions.length !== 1 ? 's' : ''}
-          </span>
-          <button
-            className="btn btn-primary"
-            onClick={handleSave}
-            disabled={saving || !set.title.trim()}
-          >
-            {saving ? <><span className="spinner" /> Saving…</> : '💾 Save Quiz Set'}
-          </button>
-        </div>
+        <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+          {set.questions.length} question{set.questions.length !== 1 ? 's' : ''}
+        </span>
       </div>
 
       {/* ── JSON Preview ──────────────────────────────────────────── */}

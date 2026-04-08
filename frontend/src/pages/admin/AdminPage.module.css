@@ -555,3 +555,34 @@
   font-size: 10px;
   color: var(--text3);
 }
+
+/* ── Build JSON type switcher (Topics / Quiz) ───────────────────────────── */
+.builderTypeSwitcher {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  padding: 4px;
+  width: fit-content;
+}
+
+.typeBtn {
+  padding: 6px 20px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 700;
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: background .15s, color .15s;
+}
+.typeBtn:hover { color: var(--text2); }
+.typeBtnActive {
+  background: var(--bg2) !important;
+  color: var(--accent3) !important;
+  box-shadow: var(--shadow-sm);
+}
