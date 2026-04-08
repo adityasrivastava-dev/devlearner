@@ -9,6 +9,7 @@
 /* ── Code panel ─────────────────────────────────────── */
 .codePanel {
   position: relative;
+  overflow: hidden;
 }
 
 .codePanelLabel {
@@ -22,48 +23,7 @@
   pointer-events: none;
 }
 
-.codeScroll {
-  max-height: 240px;
-  overflow-y: auto;
-  font-family: 'Fira Code', 'Cascadia Code', monospace;
-  font-size: 13px;
-  background: var(--bg1);
-}
-
-.codeLine {
-  display: flex;
-  align-items: baseline;
-  padding: 1px 10px 1px 0;
-  transition: background 0.15s;
-  white-space: pre;
-}
-
-.activeLine {
-  background: var(--accent)22;
-  border-left: 3px solid var(--accent);
-}
-
-.codeLine:not(.activeLine) {
-  border-left: 3px solid transparent;
-}
-
-.lineNum {
-  min-width: 36px;
-  padding-right: 12px;
-  text-align: right;
-  color: var(--text3);
-  user-select: none;
-  font-size: 12px;
-}
-
-.lineText {
-  color: var(--text1);
-}
-
-.activeLine .lineText {
-  color: var(--text1);
-  font-weight: 600;
-}
+/* Code panel now uses ReadOnlyCodeViewer (Monaco) — old line styles removed */
 
 /* ── State panel ────────────────────────────────────── */
 .statePanel {

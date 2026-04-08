@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import styles from './TracerPlayer.module.css';
+import ReadOnlyCodeViewer from './ReadOnlyCodeViewer';
 
 /**
  * TracerPlayer — step-by-step code execution visualiser.
@@ -20,7 +21,6 @@ export default function TracerPlayer({ code = '', tracerSteps = '[]' }) {
   const [playing, setPlaying]   = useState(false);
   const [speed, setSpeed]       = useState(1200); // ms per step
   const intervalRef             = useRef(null);
-  const lineRefs                = useRef({});
 
   // Parse steps once
   useEffect(() => {
@@ -52,16 +52,8 @@ export default function TracerPlayer({ code = '', tracerSteps = '[]' }) {
     return () => clearInterval(intervalRef.current);
   }, [playing, speed, steps.length]);
 
-  // Scroll current line into view in the code panel
-  useEffect(() => {
-    const step = steps[current];
-    if (!step) return;
-    const el = lineRefs.current[step.line];
-    if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [current, steps]);
 
   const step     = steps[current];
-  const codeLines = code.split('\n');
 
   const prev  = useCallback(() => { setPlaying(false); setCurrent((c) => Math.max(0, c - 1)); }, []);
   const next  = useCallback(() => { setPlaying(false); setCurrent((c) => Math.min(steps.length - 1, c + 1)); }, [steps.length]);
@@ -89,25 +81,16 @@ export default function TracerPlayer({ code = '', tracerSteps = '[]' }) {
 
   return (
     <div className={styles.tracer}>
-      {/* Code panel */}
+      {/* Code panel — Monaco read-only with active line highlight */}
       <div className={styles.codePanel}>
         <div className={styles.codePanelLabel}>Tracer</div>
-        <div className={styles.codeScroll}>
-          {codeLines.map((line, idx) => {
-            const lineNum = idx + 1;
-            const isActive = lineNum === activeLine;
-            return (
-              <div
-                key={lineNum}
-                ref={(el) => { lineRefs.current[lineNum] = el; }}
-                className={`${styles.codeLine} ${isActive ? styles.activeLine : ''}`}
-              >
-                <span className={styles.lineNum}>{lineNum}</span>
-                <span className={styles.lineText}>{line || ' '}</span>
-              </div>
-            );
-          })}
-        </div>
+        <ReadOnlyCodeViewer
+          code={code}
+          theme="dark"
+          highlightLine={activeLine}
+          minLines={8}
+          maxLines={28}
+        />
       </div>
 
       {/* Variables panel */}

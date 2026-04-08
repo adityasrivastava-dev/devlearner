@@ -5,6 +5,7 @@ import { getCategoryMeta, getDiffMeta } from '../../utils/helpers';
 import TracerPlayer from './TracerPlayer';
 import FlowchartViewer from './FlowchartViewer';
 import styles from './TopicView.module.css';
+import ReadOnlyCodeViewer from './ReadOnlyCodeViewer';
 
 export default function TopicView({ topic, onProblemOpen }) {
   const [tab, setTab]               = useState('theory');
@@ -328,7 +329,7 @@ function ExampleDetailView({ ex, index, total, onBack, onPrev, onNext }) {
         {activeSection === 'code' && (
           <div className={styles.exSection}>
             <div className={styles.exSectionLabel}>Java Code</div>
-            <CodeBlock code={ex.code} />
+            <ReadOnlyCodeViewer code={ex.code} theme="dark" />
           </div>
         )}
 
@@ -367,20 +368,7 @@ function ExampleDetailView({ ex, index, total, onBack, onPrev, onNext }) {
   );
 }
 
-// ── Code block with line numbers ─────────────────────────────────────────────
-function CodeBlock({ code = '' }) {
-  const lines = code.split('\n');
-  return (
-    <div className={styles.codeWrapper}>
-      <div className={styles.codeLineNums}>
-        {lines.map((_, i) => (
-          <span key={i} className={styles.lineNum}>{i + 1}</span>
-        ))}
-      </div>
-      <pre className={styles.codeContent}>{code}</pre>
-    </div>
-  );
-}
+// CodeBlock replaced by ReadOnlyCodeViewer
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 function TheoryCard({ icon, title, text }) {
