@@ -169,6 +169,9 @@ export const adminApi = {
   seedBatch: (payload) =>
     http.post('/api/admin/seed-batch', payload).then((r) => r.data),
 
+  clearAllData: () =>
+    http.delete('/api/admin/seed-batch/clear').then((r) => r.data),
+
   getSeedFiles: () =>
     http.get('/api/admin/seed-files').then((r) => r.data),
 

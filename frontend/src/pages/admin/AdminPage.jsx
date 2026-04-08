@@ -530,11 +530,31 @@ function SeedPastePanel() {
 
 /* ── Stats section ───────────────────────────────────────────────────────────── */
 function StatsSection() {
+  const qc = useQueryClient();
   const { data, isLoading, refetch } = useQuery({
     queryKey: QUERY_KEYS.adminStats,
     queryFn:  adminApi.getStats,
     staleTime: 30 * 1000,
   });
+
+  const clearMutation = useMutation({
+    mutationFn: adminApi.clearAllData,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['topics'] });
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.adminStats });
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.seedFiles });
+      toast.success('All data cleared successfully');
+      refetch();
+    },
+    onError: () => toast.error('Clear failed'),
+  });
+
+  function handleClearAll() {
+    if (!window.confirm(
+      '⚠️ DELETE ALL DATA?\n\nThis will permanently remove ALL topics, examples, and problems from the database.\n\nSeed log entries will remain so you can re-import.\n\nType OK to confirm.'
+    )) return;
+    clearMutation.mutate();
+  }
 
   return (
     <div className={styles.section}>
@@ -583,6 +603,32 @@ function StatsSection() {
           )}
         </>
       ) : null}
+
+      {/* ── Danger Zone ─────────────────────────────────────────────────── */}
+      <div className={styles.dangerZone}>
+        <div className={styles.dangerHeader}>
+          <span className={styles.dangerTitle}>⚠️ Danger Zone</span>
+          <span className={styles.dangerSub}>These actions are irreversible</span>
+        </div>
+        <div className={styles.dangerRow}>
+          <div className={styles.dangerInfo}>
+            <div className={styles.dangerActionTitle}>Clear All Data</div>
+            <div className={styles.dangerActionDesc}>
+              Permanently delete all topics, examples, and problems.
+              Seed log entries are preserved so you can re-import files.
+            </div>
+          </div>
+          <button
+            className={styles.clearAllBtn}
+            disabled={clearMutation.isPending}
+            onClick={handleClearAll}
+          >
+            {clearMutation.isPending
+              ? <><span className="spinner" /> Clearing…</>
+              : '🗑 Clear All Data'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
