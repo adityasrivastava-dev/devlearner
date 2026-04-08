@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import MonacoEditor from '@monaco-editor/react';
 import { codeApi } from '../../api';
 import { debounce } from '../../utils/helpers';
+import { HOVER_DOCS } from './JavaCompletions';
 
 // ─── Themes ──────────────────────────────────────────────────────────────────
 const DARK_THEME = {
@@ -268,10 +269,44 @@ export default function CodeEditor({
       async provideHover(model, position) {
         const word = model.getWordAtPosition(position);
         if (!word) return null;
-        const items   = await fetchCompletions(version);
-        const lineCtx = model.getLineContent(position.lineNumber)
-          .substring(Math.max(0, position.column - 25), position.column + word.word.length);
-        const match   = items.find((item) =>
+        const lineContent = model.getLineContent(position.lineNumber);
+        const lineCtx = lineContent.substring(
+          Math.max(0, position.column - 60),
+          position.column + word.word.length + 10,
+        );
+
+        // ── 1. HOVER_DOCS: full key match (e.g. "Arrays.sort", "Math.max") ──
+        let hoverDoc = null;
+        for (const key of Object.keys(HOVER_DOCS)) {
+          if (lineCtx.includes(key)) { hoverDoc = HOVER_DOCS[key]; break; }
+        }
+        // ── 2. HOVER_DOCS: word-only match (e.g. word "sort" → "Arrays.sort",
+        //       or key "add" directly) ─────────────────────────────────────────
+        if (!hoverDoc) {
+          // Exact key (un-prefixed instance methods like 'add', 'put', 'filter')
+          if (HOVER_DOCS[word.word]) {
+            hoverDoc = HOVER_DOCS[word.word];
+          } else {
+            // Suffix match: word matches the last segment of a "Class.method" key
+            for (const key of Object.keys(HOVER_DOCS)) {
+              if (key.includes('.') && key.split('.').pop() === word.word) {
+                hoverDoc = HOVER_DOCS[key]; break;
+              }
+            }
+          }
+        }
+
+        if (hoverDoc) {
+          return {
+            range: new monaco.Range(position.lineNumber, word.startColumn,
+                                    position.lineNumber, word.endColumn),
+            contents: [{ value: hoverDoc }],
+          };
+        }
+
+        // ── 3. Fallback: JSON completion items hover ──────────────────────────
+        const items = await fetchCompletions(version);
+        const match = items.find((item) =>
           item.documentation &&
           (lineCtx.includes(item.label) || word.word === item.label));
         if (!match) return null;
