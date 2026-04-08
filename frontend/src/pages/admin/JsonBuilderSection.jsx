@@ -1,7 +1,8 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { adminApi } from '../../api';
 import toast from 'react-hot-toast';
 import styles from './AdminPage.module.css';
+import QuizAdminSection from './QuizAdminSection';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -413,7 +414,7 @@ function stateToJson(state) {
 // ─── WIZARD STEP ─────────────────────────────────────────────────────────────
 
 function SetupWizard({ onGenerate, onLoadJson }) {
-  const [mode, setMode]               = useState(null); // null | 'create' | 'edit'
+  const [mode, setMode]               = useState(null); // null | 'create' | 'edit' | 'browse'
   const [category, setCategory]       = useState('JAVA');
   const [batchName, setBatchName]     = useState('');
   const [topicTitle, setTopicTitle]   = useState('');
@@ -425,6 +426,24 @@ function SetupWizard({ onGenerate, onLoadJson }) {
   const [selectedTags, setSelectedTags] = useState([]);
   const [pasteJson, setPasteJson]     = useState('');
   const [loadError, setLoadError]     = useState('');
+
+  // ── Browse mode state ──────────────────────────────────────────────────────
+  const [browseFile,     setBrowseFile]     = useState('');
+  const [browseTopics,   setBrowseTopics]   = useState([]);
+  const [browseLoading,  setBrowseLoading]  = useState(false);
+  const [browseFilter,   setBrowseFilter]   = useState('');
+  const [seedFiles,      setSeedFiles]      = useState([]);
+  const [filesLoading,   setFilesLoading]   = useState(false);
+
+  // Fetch seed files when browse mode is entered
+  useEffect(() => {
+    if (mode !== 'browse') return;
+    setFilesLoading(true);
+    adminApi.getSeedFiles()
+      .then(setSeedFiles)
+      .catch(() => setSeedFiles([]))
+      .finally(() => setFilesLoading(false));
+  }, [mode]);
 
   const info = CATEGORY_INFO[category] || {};
   const tags = CATEGORY_TAGS[category] || [];
@@ -451,6 +470,61 @@ function SetupWizard({ onGenerate, onLoadJson }) {
     }
   }
 
+  // ── Browse handlers ────────────────────────────────────────────────────────
+  function handleEnterBrowse() {
+    setBrowseFile('');
+    setBrowseTopics([]);
+    setBrowseFilter('');
+    setMode('browse');
+  }
+
+  async function handleBrowseFileSelect(filename) {
+    setBrowseFile(filename);
+    setBrowseTopics([]);
+    setBrowseFilter('');
+    if (!filename) return;
+    setBrowseLoading(true);
+    try {
+      const topics = await adminApi.getTopicsFromSeedFile(filename);
+      setBrowseTopics(topics);
+    } catch {
+      toast.error('Could not load topics from this file');
+    } finally {
+      setBrowseLoading(false);
+    }
+  }
+
+  async function handleBrowseLoadTopic(seedTopic, filename) {
+    // Reconstruct a minimal valid seed JSON with just this topic
+    // so it can be loaded into the full BuilderForm
+    const payload = {
+      batchName:    filename.replace('.json', ''),
+      skipExisting: true,
+      topics: [{
+        title:             seedTopic.title             || '',
+        category:          seedTopic.category          || 'JAVA',
+        description:       seedTopic.description       || '',
+        timeComplexity:    seedTopic.timeComplexity     || '',
+        spaceComplexity:   seedTopic.spaceComplexity    || '',
+        bruteForce:        seedTopic.bruteForce         || '',
+        optimizedApproach: seedTopic.optimizedApproach  || '',
+        whenToUse:         seedTopic.whenToUse          || '',
+        story:             seedTopic.story              || '',
+        analogy:           seedTopic.analogy            || '',
+        memoryAnchor:      seedTopic.memoryAnchor       || '',
+        firstPrinciples:   seedTopic.firstPrinciples    || '',
+        starterCode:       seedTopic.starterCode        || '',
+        examples:          [],
+        problems:          [],
+      }],
+    };
+    onLoadJson(payload);
+  }
+
+  const filteredBrowseTopics = browseTopics.filter((t) =>
+    !browseFilter || t.title.toLowerCase().includes(browseFilter.toLowerCase())
+  );
+
   return (
     <div className={styles.wizardWrap}>
 
@@ -466,6 +540,11 @@ function SetupWizard({ onGenerate, onLoadJson }) {
             <span className={styles.wizardModeIcon}>✏️</span>
             <span className={styles.wizardModeTitle}>Edit Existing JSON</span>
             <span className={styles.wizardModeDesc}>Paste an existing seed JSON and edit it field-by-field</span>
+          </button>
+          <button className={styles.wizardModeCard} onClick={handleEnterBrowse}>
+            <span className={styles.wizardModeIcon}>📁</span>
+            <span className={styles.wizardModeTitle}>Browse Seed Files</span>
+            <span className={styles.wizardModeDesc}>Pick any topic from resources/seeds/ and load it into the editor</span>
           </button>
         </div>
       )}
@@ -640,11 +719,104 @@ function SetupWizard({ onGenerate, onLoadJson }) {
           </button>
         </div>
       )}
+      {mode === 'browse' && (
+        <div className={styles.wizardCard}>
+          <div className={styles.wizardHeader}>
+            <span className={styles.wizardTitle}>📁 Browse Seed Files</span>
+            <button className={styles.wizardBack} onClick={() => setMode(null)}>← Back</button>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text3)', margin: 0, lineHeight: 1.6 }}>
+            Pick a seed file from <code style={{ background: 'var(--bg3)', padding: '1px 5px', borderRadius: 3, fontSize: 11 }}>resources/seeds/</code>,
+            then click a topic to load it into the editor. Examples and problems will be empty — you can fill them in.
+          </p>
+
+          {/* File selector */}
+          {filesLoading ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text3)' }}>
+              <span className="spinner" /> Loading seed files…
+            </div>
+          ) : (
+            <select
+              className={styles.input}
+              value={browseFile}
+              onChange={(e) => handleBrowseFileSelect(e.target.value)}
+              style={{ fontSize: 12 }}
+            >
+              <option value="">
+                {seedFiles.length === 0
+                  ? '— No seed files found in resources/seeds/ —'
+                  : `— Select a seed file (${seedFiles.length} available) —`}
+              </option>
+              {seedFiles.map((f) => (
+                <option key={f.filename} value={f.filename}>
+                  {f.filename}
+                  {f.topicCount ? ` · ${f.topicCount} topic${f.topicCount !== 1 ? 's' : ''}` : ''}
+                  {f.status === 'IMPORTED' ? ' ✓' : ''}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* Topics from selected file */}
+          {browseFile && (
+            browseLoading ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text3)' }}>
+                <span className="spinner" /> Loading topics from {browseFile}…
+              </div>
+            ) : browseTopics.length === 0 ? (
+              <div style={{ fontSize: 12, color: 'var(--text3)' }}>No topics found in this file.</div>
+            ) : (
+              <>
+                <input
+                  className={styles.input}
+                  style={{ fontSize: 12 }}
+                  placeholder={`🔍 Filter ${browseTopics.length} topics…`}
+                  value={browseFilter}
+                  onChange={(e) => setBrowseFilter(e.target.value)}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 320, overflowY: 'auto' }}>
+                  {filteredBrowseTopics.map((t, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleBrowseLoadTopic(t, browseFile)}
+                      style={{
+                        display: 'flex', flexDirection: 'column', gap: 3,
+                        padding: '10px 12px', background: 'var(--bg3)',
+                        border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+                        textAlign: 'left', cursor: 'pointer', fontFamily: 'var(--font-ui)',
+                        transition: 'border-color .12s, background .12s',
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'var(--adim2)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg3)'; }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', flex: 1 }}>{t.title}</span>
+                        <span className={`badge badge-${(t.category || '').toLowerCase() === 'dsa' ? 'dsa' : 'java'}`}
+                          style={{ fontSize: 9, padding: '1px 6px' }}>
+                          {t.category}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--text3)' }}>
+                        {t.exampleCount > 0 && `${t.exampleCount} examples · `}
+                        {t.problemCount > 0 && `${t.problemCount} problems · `}
+                        {t.story ? 'has story · ' : ''}
+                        {t.timeComplexity ? `${t.timeComplexity}` : ''}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  Click any topic to load its fields into the JSON builder →
+                </div>
+              </>
+            )
+          )}
+        </div>
+      )}
+
     </div>
   );
 }
-
-// ─── BUILDER FORM ─────────────────────────────────────────────────────────────
 
 function BuilderForm({ initialState, onBack }) {
   const [state, setState]         = useState(initialState);
@@ -1111,7 +1283,8 @@ function BuilderForm({ initialState, onBack }) {
 // ─── MAIN EXPORT ──────────────────────────────────────────────────────────────
 
 export default function JsonBuilderSection() {
-  const [phase, setPhase]     = useState('setup'); // setup | build
+  const [type, setType]       = useState('topics'); // 'topics' | 'quiz'
+  const [phase, setPhase]     = useState('setup');  // setup | build
   const [formState, setFormState] = useState(null);
 
   function handleGenerate(cfg) {
@@ -1132,11 +1305,44 @@ export default function JsonBuilderSection() {
     }
   }
 
-  if (phase === 'build' && formState) {
-    return <BuilderForm initialState={formState} onBack={handleBack} />;
+  function switchType(t) {
+    if (t === type) return;
+    setType(t);
+    setPhase('setup');
+    setFormState(null);
   }
 
-  return <SetupWizard onGenerate={handleGenerate} onLoadJson={handleLoadJson} />;
+  return (
+    <div>
+      {/* ── Type switcher ── */}
+      <div className={styles.builderTypeSwitcher}>
+        <button
+          className={`${styles.typeBtn} ${type === 'topics' ? styles.typeBtnActive : ''}`}
+          onClick={() => switchType('topics')}
+        >
+          📚 Topics
+        </button>
+        <button
+          className={`${styles.typeBtn} ${type === 'quiz' ? styles.typeBtnActive : ''}`}
+          onClick={() => switchType('quiz')}
+        >
+          🧠 Quiz
+        </button>
+      </div>
+
+      {/* ── Topics builder ── */}
+      {type === 'topics' && (
+        phase === 'build' && formState
+          ? <BuilderForm initialState={formState} onBack={handleBack} />
+          : <SetupWizard onGenerate={handleGenerate} onLoadJson={handleLoadJson} />
+      )}
+
+      {/* ── Quiz builder — full 4-tab section ── */}
+      {type === 'quiz' && (
+        <QuizAdminSection embedded />
+      )}
+    </div>
+  );
 }
 
 // ─── Field wrapper ────────────────────────────────────────────────────────────
