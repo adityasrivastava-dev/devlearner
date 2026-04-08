@@ -37,6 +37,8 @@ export default function Sidebar({ selectedTopicId, onTopicSelect }) {
             className={styles.iconBtn} title="Roadmaps">🗺</a>
           <a href="/problems" onClick={(e) => { e.preventDefault(); navigate('/problems'); }}
             className={styles.iconBtn} title="All Problems">📋</a>
+          <a href="/playground" onClick={(e) => { e.preventDefault(); navigate('/playground'); }}
+            className={styles.iconBtn} title="Playground">{'</>'}</a>
           {isAdmin && (
             <a href="/admin" onClick={(e) => { e.preventDefault(); navigate('/admin'); }}
               className={styles.iconBtn} title="Admin">⚙</a>

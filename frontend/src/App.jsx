@@ -4,11 +4,12 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute, AdminRoute, GuestRoute } from './components/shared/RouteGuards';
 
-import LoginPage    from './pages/login/LoginPage';
-import HomePage     from './pages/home/HomePage';
-import ProblemsPage from './pages/problems/ProblemsPage';
-import AdminPage    from './pages/admin/AdminPage';
-import RoadmapPage  from './pages/roadmap/RoadmapPage';
+import LoginPage      from './pages/login/LoginPage';
+import HomePage       from './pages/home/HomePage';
+import ProblemsPage   from './pages/problems/ProblemsPage';
+import AdminPage      from './pages/admin/AdminPage';
+import RoadmapPage    from './pages/roadmap/RoadmapPage';
+import PlaygroundPage from './pages/playground/PlaygroundPage';
 
 // Apply saved theme on load
 const savedTheme = localStorage.getItem('devlearn_theme') || 'dark';
@@ -34,8 +35,9 @@ export default function App() {
             <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
             <Route path="/"        element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
             <Route path="/problems" element={<ProtectedRoute><ProblemsPage /></ProtectedRoute>} />
-            <Route path="/roadmap"  element={<ProtectedRoute><RoadmapPage /></ProtectedRoute>} />
-            <Route path="/admin"    element={<AdminRoute><AdminPage /></AdminRoute>} />
+            <Route path="/roadmap"    element={<ProtectedRoute><RoadmapPage /></ProtectedRoute>} />
+            <Route path="/playground" element={<ProtectedRoute><PlaygroundPage /></ProtectedRoute>} />
+            <Route path="/admin"      element={<AdminRoute><AdminPage /></AdminRoute>} />
             <Route path="*"         element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
           </Routes>
         </BrowserRouter>
