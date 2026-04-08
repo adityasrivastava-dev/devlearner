@@ -20,7 +20,7 @@ const DARK_THEME = {
   colors: {
     'editor.background':              '#0d1117',
     'editor.foreground':              '#e2e8f0',
-    'editor.lineHighlightBackground': '#1a1e2a',
+    'editor.lineHighlightBackground': '#0d1117',
     'editorLineNumber.foreground':    '#4d5767',
     'editorLineNumber.activeForeground': '#a0aec0',
     'editorGutter.background':        '#0d1117',
@@ -41,46 +41,53 @@ const LIGHT_THEME = {
   ],
   colors: {
     'editor.background':              '#f8fafc',
-    'editor.lineHighlightBackground': '#f1f5f9',
+    'editor.lineHighlightBackground': '#f8fafc',
     'editorLineNumber.foreground':    '#94a3b8',
   },
 };
 
-const LINE_HEIGHT = 21; // px — matches Monaco default at fontSize 13
-const PADDING     = 24; // top + bottom padding
+const LINE_HEIGHT = 21;
+const PADDING     = 24;
 
 /**
- * ReadOnlyCodeViewer — Monaco-powered syntax-highlighted read-only viewer.
- *
- * Props:
- *   code          string   source code
- *   language      string   monaco language (default 'java')
- *   theme         string   'dark' | 'light'
- *   highlightLine number   line to highlight (tracer active line)
- *   maxLines      number   cap height at N lines then scroll inside Monaco
- *                          default: undefined = expand to full height (no inner scroll)
+ * Walk up the DOM to find the nearest scrollable ancestor.
+ * Returns null if none found (falls back to document.documentElement).
  */
+function getScrollParent(el) {
+  if (!el) return document.documentElement;
+  let node = el.parentElement;
+  while (node && node !== document.body) {
+    const style = window.getComputedStyle(node);
+    const overflow = style.overflow + style.overflowY;
+    if (/auto|scroll/.test(overflow) && node.scrollHeight > node.clientHeight) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return document.documentElement;
+}
+
 export default function ReadOnlyCodeViewer({
   code = '',
   language = 'java',
   theme = 'dark',
   highlightLine = null,
-  maxLines,          // optional cap — if omitted, editor expands fully
+  maxLines,
 }) {
   const editorRef  = useRef(null);
   const monacoRef  = useRef(null);
+  const wrapperRef = useRef(null);
   const decorRef   = useRef([]);
   const [ready, setReady] = useState(false);
 
-  const lineCount    = Math.max((code || '').split('\n').length, 1);
-  // If maxLines given, cap and show inner scrollbar; otherwise full height, no scroll
-  const visLines     = maxLines ? Math.min(lineCount, maxLines) : lineCount;
-  const editorHeight = visLines * LINE_HEIGHT + PADDING;
+  const lineCount         = Math.max((code || '').split('\n').length, 1);
+  const visLines          = maxLines ? Math.min(lineCount, maxLines) : lineCount;
+  const editorHeight      = visLines * LINE_HEIGHT + PADDING;
+  const hasInternalScroll = !!maxLines && lineCount > maxLines;
 
   function handleMount(editor, monaco) {
     editorRef.current = editor;
     monacoRef.current = monaco;
-
     if (!themeReady.current) {
       monaco.editor.defineTheme('rv-dark',  DARK_THEME);
       monaco.editor.defineTheme('rv-light', LIGHT_THEME);
@@ -90,34 +97,71 @@ export default function ReadOnlyCodeViewer({
     setReady(true);
   }
 
-  // Apply highlight decoration when highlightLine changes
   useEffect(() => {
     if (!editorRef.current || !monacoRef.current || !ready) return;
     const monaco = monacoRef.current;
+    const editor = editorRef.current;
 
-    decorRef.current = editorRef.current.deltaDecorations(decorRef.current, []);
+    // Clear old decoration
+    decorRef.current = editor.deltaDecorations(decorRef.current, []);
 
-    if (highlightLine != null && highlightLine > 0) {
-      decorRef.current = editorRef.current.deltaDecorations([], [{
-        range: new monaco.Range(highlightLine, 1, highlightLine, 1),
-        options: {
-          isWholeLine:        true,
-          className:          'tracer-active-line',     // row background
-          linesDecorationsClassName: 'tracer-active-indicator', // left gutter arrow
-        },
-      }]);
-      editorRef.current.revealLineInCenter(highlightLine);
+    if (highlightLine == null || highlightLine <= 0) return;
+
+    // Apply highlight
+    decorRef.current = editor.deltaDecorations([], [{
+      range: new monaco.Range(highlightLine, 1, highlightLine, 1),
+      options: {
+        isWholeLine:               true,
+        className:                 'tracer-active-line',
+        linesDecorationsClassName: 'tracer-active-indicator',
+      },
+    }]);
+
+    if (hasInternalScroll) {
+      // Monaco owns the scroll — use its API
+      editor.revealLineInCenter(highlightLine);
+    } else {
+      // Full-height Monaco: find the real scrollable parent div and scroll it
+      requestAnimationFrame(() => {
+        const wrapper = wrapperRef.current;
+        if (!wrapper) return;
+
+        const scrollParent = getScrollParent(wrapper);
+
+        // Position of wrapper top relative to the scroll parent's content top
+        const wrapperRect      = wrapper.getBoundingClientRect();
+        const parentRect       = scrollParent === document.documentElement
+          ? { top: 0 }
+          : scrollParent.getBoundingClientRect();
+
+        // Pixel offset of the active line from the top of the wrapper
+        const lineOffsetInEditor = PADDING / 2 + (highlightLine - 1) * LINE_HEIGHT + LINE_HEIGHT / 2;
+
+        // Absolute position of the line in the scroll container's coordinate space
+        const lineAbsTop = wrapperRect.top - parentRect.top + scrollParent.scrollTop + lineOffsetInEditor;
+
+        // Centre it in the visible area of the scroll parent
+        const visibleHeight = scrollParent === document.documentElement
+          ? window.innerHeight
+          : scrollParent.clientHeight;
+
+        const targetScroll = Math.max(0, lineAbsTop - visibleHeight / 2);
+
+        scrollParent.scrollTo({ top: targetScroll, behavior: 'smooth' });
+      });
     }
-  }, [highlightLine, ready]);
+  }, [highlightLine, ready, hasInternalScroll]);
 
-  // Sync theme
   useEffect(() => {
     if (!monacoRef.current || !ready) return;
     monacoRef.current.editor.setTheme(theme === 'light' ? 'rv-light' : 'rv-dark');
   }, [theme, ready]);
 
   return (
-    <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
+    <div
+      ref={wrapperRef}
+      style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}
+    >
       <MonacoEditor
         height={editorHeight}
         language={language}
@@ -132,19 +176,18 @@ export default function ReadOnlyCodeViewer({
           fontFamily:            "'JetBrains Mono', 'Fira Code', monospace",
           fontLigatures:         true,
           lineNumbers:           'on',
-          lineNumbersMinChars:   4,   // enough room so gutter doesn't touch code
-          lineDecorationsWidth:  6,   // small gap between gutter and code
+          lineNumbersMinChars:   4,
+          lineDecorationsWidth:  8,
           glyphMargin:           false,
           folding:               false,
           minimap:               { enabled: false },
-          // No inner scroll when maxLines not set — editor is exactly full height
           scrollBeyondLastLine:  false,
           scrollbar: {
-            vertical:              maxLines ? 'auto' : 'hidden',
-            horizontal:            'auto',
-            verticalScrollbarSize:  6,
+            vertical:                hasInternalScroll ? 'auto' : 'hidden',
+            horizontal:              'auto',
+            verticalScrollbarSize:   6,
             horizontalScrollbarSize: 6,
-            alwaysConsumeMouseWheel: false,  // let page scroll wheel pass through
+            alwaysConsumeMouseWheel: hasInternalScroll,
           },
           overviewRulerLanes:    0,
           hideCursorInOverviewRuler: true,

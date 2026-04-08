@@ -8,6 +8,7 @@ export default function TracerPlayer({ code = '', tracerSteps = '[]' }) {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed]     = useState(1200);
   const intervalRef           = useRef(null);
+  const tracerRef             = useRef(null);   // scroll tracer into view on play
 
   useEffect(() => {
     try {
@@ -40,6 +41,15 @@ export default function TracerPlayer({ code = '', tracerSteps = '[]' }) {
     setPlaying((p) => !p);
   }, [current, steps.length]);
 
+  // Scroll tracer into view when play starts — MUST be before early return (Rules of Hooks)
+  useEffect(() => {
+    if (!playing || !tracerRef.current) return;
+    const rect = tracerRef.current.getBoundingClientRect();
+    if (rect.top < 0 || rect.bottom > window.innerHeight) {
+      tracerRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [playing]);
+
   if (!steps.length) return null;
 
   const step       = steps[current];
@@ -69,7 +79,7 @@ export default function TracerPlayer({ code = '', tracerSteps = '[]' }) {
   const meta = PHASE_META[step?.phase] || { color: 'var(--text3)', bg: 'rgba(255,255,255,.05)', label: step?.phase || '' };
 
   return (
-    <div className={styles.tracer}>
+    <div ref={tracerRef} className={styles.tracer}>
 
       {/* ── Code panel ─────────────────────────────────────────────────── */}
       <div className={styles.codePanel}>
@@ -77,7 +87,7 @@ export default function TracerPlayer({ code = '', tracerSteps = '[]' }) {
           code={code}
           theme="dark"
           highlightLine={activeLine}
-          maxLines={22}
+          maxLines={30}
         />
       </div>
 
