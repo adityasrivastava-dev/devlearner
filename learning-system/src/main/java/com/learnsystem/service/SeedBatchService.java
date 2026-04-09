@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.util.*;
 
@@ -19,6 +21,9 @@ public class SeedBatchService {
 private final TopicRepository   topicRepo;
 private final ExampleRepository exampleRepo;
 private final ProblemRepository problemRepo;
+
+@PersistenceContext
+private EntityManager em;
 
 @Transactional
 public SeedBatchResponse seed(SeedBatchRequest req) {
@@ -32,54 +37,95 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
 
             // ── PATCH MODE ────────────────────────────────────────────────────
             // When skipExisting=true and the topic already exists:
-            // Instead of skipping entirely, patch any null/blank fields on
-            // existing problems (e.g. editorial added to a previously seeded batch).
-            // No new rows are created — only fills gaps on existing records.
+            // 1. Patch any null/blank fields on existing problems
+            // 2. If examples are missing, create them
+            // 3. If problems are missing, create them
             if (req.isSkipExisting() && existing.isPresent()) {
                 Topic topic = existing.get();
-                if (dto.getProblems() != null) {
-                    List<Problem> existingProblems =
-                            problemRepo.findByTopicIdOrderByDisplayOrder(topic.getId());
+
+                // ── Seed missing examples ─────────────────────────────────────
+                long existingExampleCount = exampleRepo.countByTopicId(topic.getId());
+                if (existingExampleCount == 0 && dto.getExamples() != null && !dto.getExamples().isEmpty()) {
+                    for (SeedBatchRequest.ExampleSeedDto edto : dto.getExamples()) {
+                        Example ex = new Example();
+                        ex.setTopic(topic);
+                        ex.setDisplayOrder(edto.getDisplayOrder());
+                        ex.setTitle(edto.getTitle());
+                        ex.setDescription(edto.getDescription());
+                        ex.setCode(edto.getCode());
+                        ex.setExplanation(edto.getExplanation());
+                        ex.setRealWorldUse(edto.getRealWorldUse());
+                        ex.setPseudocode(edto.getPseudocode());
+                        ex.setFlowchartMermaid(edto.getFlowchartMermaid());
+                        ex.setTracerSteps(edto.getTracerSteps());
+                        exampleRepo.save(ex);
+                        seededExamples++;
+                    }
+                    log.info("Seeded {} missing examples for existing topic: {}", seededExamples, dto.getTitle());
+                }
+
+                // ── Seed missing problems ─────────────────────────────────────
+                List<Problem> existingProblems =
+                        problemRepo.findByTopicIdOrderByDisplayOrder(topic.getId());
+
+                if (existingProblems.isEmpty() && dto.getProblems() != null && !dto.getProblems().isEmpty()) {
+                    for (SeedBatchRequest.ProblemSeedDto pdto : dto.getProblems()) {
+                        Problem p = new Problem();
+                        p.setTopic(topic);
+                        p.setDisplayOrder(pdto.getDisplayOrder());
+                        p.setTitle(pdto.getTitle());
+                        p.setDescription(pdto.getDescription());
+                        p.setInputFormat(pdto.getInputFormat());
+                        p.setOutputFormat(pdto.getOutputFormat());
+                        p.setSampleInput(pdto.getSampleInput());
+                        p.setSampleOutput(pdto.getSampleOutput());
+                        if (pdto.getTestCases() != null)
+                            p.setTestCases(pdto.getTestCases().isTextual()
+                                    ? pdto.getTestCases().asText()
+                                    : pdto.getTestCases().toString());
+                        p.setHint(pdto.getHint());
+                        p.setStarterCode(pdto.getStarterCode());
+                        p.setSolutionCode(pdto.getSolutionCode());
+                        p.setHint1(pdto.getHint1());
+                        p.setHint2(pdto.getHint2());
+                        p.setHint3(pdto.getHint3());
+                        p.setPattern(pdto.getPattern());
+                        p.setConstraints(pdto.getConstraints());
+                        p.setBruteForce(pdto.getBruteForce());
+                        p.setOptimizedApproach(pdto.getOptimizedApproach());
+                        p.setEditorial(pdto.getEditorial());
+                        try {
+                            p.setDifficulty(Problem.Difficulty.valueOf(pdto.getDifficulty().toUpperCase()));
+                        } catch (Exception e) {
+                            p.setDifficulty(Problem.Difficulty.MEDIUM);
+                        }
+                        problemRepo.save(p);
+                        seededProblems++;
+                    }
+                    log.info("Seeded {} missing problems for existing topic: {}", seededProblems, dto.getTitle());
+                } else if (!existingProblems.isEmpty() && dto.getProblems() != null) {
+                    // ── Patch fields on existing problems ─────────────────────
                     Map<Integer, Problem> byOrder = new HashMap<>();
                     for (Problem p : existingProblems) byOrder.put(p.getDisplayOrder(), p);
 
                     for (SeedBatchRequest.ProblemSeedDto pdto : dto.getProblems()) {
                         Problem p = byOrder.get(pdto.getDisplayOrder());
                         if (p == null) continue;
-
                         boolean dirty = false;
-                        // Only fill fields that are currently null/blank in DB
-                        if (isBlank(p.getEditorial()) && notBlank(pdto.getEditorial())) {
-                            p.setEditorial(pdto.getEditorial()); dirty = true;
-                        }
-                        if (isBlank(p.getHint1()) && notBlank(pdto.getHint1())) {
-                            p.setHint1(pdto.getHint1()); dirty = true;
-                        }
-                        if (isBlank(p.getHint2()) && notBlank(pdto.getHint2())) {
-                            p.setHint2(pdto.getHint2()); dirty = true;
-                        }
-                        if (isBlank(p.getHint3()) && notBlank(pdto.getHint3())) {
-                            p.setHint3(pdto.getHint3()); dirty = true;
-                        }
-                        if (isBlank(p.getPattern()) && notBlank(pdto.getPattern())) {
-                            p.setPattern(pdto.getPattern()); dirty = true;
-                        }
-                        if (isBlank(p.getConstraints()) && notBlank(pdto.getConstraints())) {
-                            p.setConstraints(pdto.getConstraints()); dirty = true;
-                        }
-                        if (isBlank(p.getBruteForce()) && notBlank(pdto.getBruteForce())) {
-                            p.setBruteForce(pdto.getBruteForce()); dirty = true;
-                        }
-                        if (isBlank(p.getOptimizedApproach()) && notBlank(pdto.getOptimizedApproach())) {
-                            p.setOptimizedApproach(pdto.getOptimizedApproach()); dirty = true;
-                        }
-                        if (dirty) {
-                            problemRepo.save(p);
-                            patchedProblems++;
-                        }
+                        if (isBlank(p.getEditorial())        && notBlank(pdto.getEditorial()))        { p.setEditorial(pdto.getEditorial());               dirty = true; }
+                        if (isBlank(p.getHint1())            && notBlank(pdto.getHint1()))            { p.setHint1(pdto.getHint1());                       dirty = true; }
+                        if (isBlank(p.getHint2())            && notBlank(pdto.getHint2()))            { p.setHint2(pdto.getHint2());                       dirty = true; }
+                        if (isBlank(p.getHint3())            && notBlank(pdto.getHint3()))            { p.setHint3(pdto.getHint3());                       dirty = true; }
+                        if (isBlank(p.getPattern())          && notBlank(pdto.getPattern()))          { p.setPattern(pdto.getPattern());                   dirty = true; }
+                        if (isBlank(p.getConstraints())      && notBlank(pdto.getConstraints()))      { p.setConstraints(pdto.getConstraints());           dirty = true; }
+                        if (isBlank(p.getBruteForce())       && notBlank(pdto.getBruteForce()))       { p.setBruteForce(pdto.getBruteForce());             dirty = true; }
+                        if (isBlank(p.getOptimizedApproach())&& notBlank(pdto.getOptimizedApproach())){ p.setOptimizedApproach(pdto.getOptimizedApproach()); dirty = true; }
+                        if (dirty) { problemRepo.save(p); patchedProblems++; }
                     }
                 }
-                log.info("Patched existing topic: {} ({} problems updated)", dto.getTitle(), patchedProblems);
+
+                log.info("Patch mode for topic: {} — {}ex seeded, {}p seeded, {}p patched",
+                        dto.getTitle(), seededExamples, seededProblems, patchedProblems);
                 skippedTopics++;
                 continue;
             }
@@ -191,11 +237,14 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
 
 @Transactional
 public void clearAll() {
-    problemRepo.deleteAllProblems();   // child
-    exampleRepo.deleteAllExamples();   // middle
-    topicRepo.deleteAllTopics();       // parent
-
-    log.info("Cleared all topics, examples and problems.");
+    // Native SQL bulk deletes — orders respects FK constraints
+    // problems → examples → topics → seed_log
+    em.createNativeQuery("DELETE FROM problems").executeUpdate();
+    em.createNativeQuery("DELETE FROM examples").executeUpdate();
+    em.createNativeQuery("DELETE FROM topics").executeUpdate();
+    em.createNativeQuery("DELETE FROM seed_log").executeUpdate();
+    em.flush();
+    log.info("Cleared all topics, examples, problems and seed_log.");
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────

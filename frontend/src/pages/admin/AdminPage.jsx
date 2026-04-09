@@ -514,7 +514,24 @@ function SeedFilesPanel({ qc }) {
     staleTime: 10 * 1000,
   });
 
-  const [importing, setImporting] = useState(null); // filename currently being imported
+  const [expanded,  setExpanded]  = useState(null);   // filename of expanded row
+  const [preview,   setPreview]   = useState({});      // filename → { loading, json, error }
+  const [importing, setImporting] = useState(null);
+
+  async function handleExpand(filename) {
+    if (expanded === filename) { setExpanded(null); return; }
+    setExpanded(filename);
+    // Load preview if not already loaded
+    if (!preview[filename]) {
+      setPreview(p => ({ ...p, [filename]: { loading: true } }));
+      try {
+        const topics = await adminApi.getTopicsFromSeedFile(filename);
+        setPreview(p => ({ ...p, [filename]: { loading: false, topics } }));
+      } catch {
+        setPreview(p => ({ ...p, [filename]: { loading: false, error: 'Could not load preview' } }));
+      }
+    }
+  }
 
   async function handleImport(filename) {
     setImporting(filename);
@@ -523,6 +540,7 @@ function SeedFilesPanel({ qc }) {
       toast.success(`Imported: ${res.topicsSeeded} topics · ${res.problemsSeeded} problems`);
       refetch();
       qc.invalidateQueries({ queryKey: QUERY_KEYS.adminStats });
+      setExpanded(null);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Import failed');
     } finally {
@@ -532,29 +550,23 @@ function SeedFilesPanel({ qc }) {
 
   async function handleImportAll() {
     const pending = files.filter(f => f.status === 'PENDING');
-    for (const f of pending) {
-      await handleImport(f.filename);
-    }
+    for (const f of pending) await handleImport(f.filename);
   }
 
-  const pending = files.filter(f => f.status === 'PENDING');
+  const pending  = files.filter(f => f.status === 'PENDING');
   const imported = files.filter(f => f.status === 'IMPORTED');
 
   return (
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <span style={{ fontSize: 12, color: 'var(--text3)' }}>
-          {files.length} files · <span style={{ color: 'var(--accent)' }}>{imported.length} imported</span>
+          {files.length} files · <span style={{ color: 'var(--success)' }}>{imported.length} imported</span>
           {' · '}<span style={{ color: 'var(--yellow)' }}>{pending.length} pending</span>
         </span>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={() => refetch()}>↻ Refresh</button>
           {pending.length > 0 && (
-            <button
-              className="btn btn-primary btn-sm"
-              disabled={!!importing}
-              onClick={handleImportAll}
-            >
+            <button className="btn btn-primary btn-sm" disabled={!!importing} onClick={handleImportAll}>
               ⚡ Import All Pending ({pending.length})
             </button>
           )}
@@ -565,46 +577,96 @@ function SeedFilesPanel({ qc }) {
         <div className={styles.loading}><span className="spinner" />Loading files…</div>
       ) : (
         <div className={styles.seedFileList}>
-          {files.map((file) => (
-            <div key={file.filename} className={styles.seedFileRow}>
+          {files.map((file) => {
+            const isOpen   = expanded === file.filename;
+            const pv       = preview[file.filename] || {};
+            const isImported = file.status === 'IMPORTED';
+            const isImporting = importing === file.filename;
 
-              {/* File info */}
-              <div className={styles.seedFileInfo}>
-                <span className={styles.seedFileName}>{file.filename}</span>
-                <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-                  {file.topicCount} topic{file.topicCount !== 1 ? 's' : ''}
-                  {file.status === 'IMPORTED' && (
-                    <> · {file.topicsSeeded}t · {file.examplesSeeded}ex · {file.problemsSeeded}p</>
-                  )}
-                </span>
-              </div>
+            return (
+              <div key={file.filename} className={styles.seedFileCard}>
 
-              {/* Status badge */}
-              <div style={{ minWidth: 100, textAlign: 'right' }}>
-                {file.status === 'IMPORTED' ? (
-                  <span className={styles.importedBadge}>✓ Imported</span>
-                ) : file.status === 'ERROR' ? (
-                  <span className={styles.errorBadge} title={file.errorMessage}>⚠ Error</span>
-                ) : (
-                  <span className={styles.pendingBadge}>Pending</span>
+                {/* ── Row — always visible ── */}
+                <div
+                  className={styles.seedFileRow}
+                  onClick={() => handleExpand(file.filename)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className={styles.seedFileInfo}>
+                    <span className={styles.seedFileName}>{file.filename}</span>
+                    {isImported && (
+                      <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                        {file.topicsSeeded}t · {file.examplesSeeded}ex · {file.problemsSeeded}p
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {isImported ? (
+                      <span className={styles.importedBadge}>✓ Imported</span>
+                    ) : file.status === 'ERROR' ? (
+                      <span className={styles.errorBadge}>⚠ Error</span>
+                    ) : (
+                      <span className={styles.pendingBadge}>Pending</span>
+                    )}
+                    <span style={{ fontSize: 11, color: 'var(--text3)' }}>{isOpen ? '▲' : '▼'}</span>
+                  </div>
+                </div>
+
+                {/* ── Expanded preview ── */}
+                {isOpen && (
+                  <div className={styles.seedFilePreview}>
+                    {pv.loading ? (
+                      <div className={styles.loading}><span className="spinner" />Loading topics…</div>
+                    ) : pv.error ? (
+                      <div style={{ fontSize: 12, color: 'var(--red)' }}>{pv.error}</div>
+                    ) : pv.topics ? (
+                      <>
+                        <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8 }}>
+                          {pv.topics.length} topic{pv.topics.length !== 1 ? 's' : ''} in this file
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+                          {pv.topics.map((t, i) => (
+                            <div key={i} style={{
+                              display: 'flex', alignItems: 'center', gap: 8,
+                              padding: '6px 10px', background: 'var(--bg2)',
+                              borderRadius: 'var(--radius)', border: '1px solid var(--border)',
+                              fontSize: 12
+                            }}>
+                              <span style={{ flex: 1, fontWeight: 600, color: 'var(--text)' }}>{t.title}</span>
+                              <span className={`badge badge-${(t.category||'').toLowerCase()==='dsa'?'dsa':'java'}`}
+                                style={{ fontSize: 9 }}>{t.category}</span>
+                              <span style={{ color: 'var(--text3)', fontSize: 11 }}>
+                                {t.exampleCount}ex · {t.problemCount}p
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : null}
+
+                    {/* Import action */}
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <button
+                        className={`btn btn-sm ${isImported ? 'btn-ghost' : 'btn-primary'}`}
+                        disabled={isImported || isImporting || !!importing}
+                        onClick={(e) => { e.stopPropagation(); handleImport(file.filename); }}
+                      >
+                        {isImporting
+                          ? <><span className="spinner" /> Importing…</>
+                          : isImported ? '✓ Already Imported' : '↑ Import this file'}
+                      </button>
+                      {isImported && file.appliedAt && (
+                        <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                          Imported {new Date(file.appliedAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
-
-              {/* Import button */}
-              <button
-                className={`btn btn-sm ${file.status === 'IMPORTED' ? 'btn-ghost' : 'btn-primary'}`}
-                disabled={file.status === 'IMPORTED' || importing === file.filename || !!importing}
-                onClick={() => handleImport(file.filename)}
-                style={{ minWidth: 90 }}
-              >
-                {importing === file.filename
-                  ? <><span className="spinner" /> Importing…</>
-                  : file.status === 'IMPORTED'
-                    ? '✓ Done'
-                    : '↑ Import'}
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </>

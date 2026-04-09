@@ -59,36 +59,31 @@ public ResponseEntity<List<SeedFileInfo>> listSeedFiles() {
         log.info("Seed files found: {}", resources.length);
         Arrays.sort(resources, Comparator.comparing(r -> r.getFilename() != null ? r.getFilename() : ""));
 
+        // Load all seed_log rows in ONE query — no per-file DB hits, no file parsing
+        Map<String, com.learnsystem.model.SeedLog> logsByName = new java.util.HashMap<>();
+        seedLogRepository.findAll().forEach(sl -> logsByName.put(sl.getBatchName(), sl));
+
         for (Resource resource : resources) {
             String filename = resource.getFilename();
             SeedFileInfo info = new SeedFileInfo();
             info.setFilename(filename);
-            try {
-                // ── Lightweight parse: read ONLY batchName + topics array length ──
-                // Do NOT deserialize SeedBatchRequest — it pulls in all examples,
-                // problems, tracer steps etc. causing massive heap allocation × 22 files.
-                com.fasterxml.jackson.databind.JsonNode root =
-                        objectMapper.readTree(resource.getInputStream());
 
-                String batchName = root.path("batchName").asText(filename);
-                info.setBatchName(batchName);
+            // Derive batchName from filename (strip .json) — matches how importSeedFile stores it
+            String nameKey = (filename != null) ? filename.replace(".json", "") : "";
+            info.setBatchName(nameKey);
 
-                com.fasterxml.jackson.databind.JsonNode topics = root.path("topics");
-                info.setTopicCount(topics.isArray() ? topics.size() : 0);
+            // Check seed_log — try both the stripped name and the full filename
+            com.learnsystem.model.SeedLog sl = logsByName.get(nameKey);
+            if (sl == null) sl = logsByName.get(filename);
 
-                seedLogRepository.findById(batchName).ifPresentOrElse(seedLog -> {
-                    info.setStatus("IMPORTED");
-                    info.setAppliedAt(seedLog.getAppliedAt());
-                    info.setTopicsSeeded(seedLog.getTopicsSeeded());
-                    info.setExamplesSeeded(seedLog.getExamplesSeeded());
-                    info.setProblemsSeeded(seedLog.getProblemsSeeded());
-                }, () -> info.setStatus("PENDING"));
-
-            } catch (Exception e) {
-                log.warn("Could not parse seed file {}: {}", filename, e.getMessage());
-                info.setBatchName(filename);
-                info.setStatus("ERROR");
-                info.setErrorMessage(e.getMessage());
+            if (sl != null) {
+                info.setStatus("IMPORTED");
+                info.setAppliedAt(sl.getAppliedAt() != null ? sl.getAppliedAt().toString() : null);
+                info.setTopicsSeeded(sl.getTopicsSeeded());
+                info.setExamplesSeeded(sl.getExamplesSeeded());
+                info.setProblemsSeeded(sl.getProblemsSeeded());
+            } else {
+                info.setStatus("PENDING");
             }
             result.add(info);
         }
@@ -206,9 +201,7 @@ public ResponseEntity<?> patchEditorial(@PathVariable String filename) {
 
 /**
  * GET /api/admin/seed-files/{filename}/topics
- *
- * Returns topic metadata from a seed file without full deserialization.
- * Used by the Topic Editor "Load from seed" feature to auto-fill the form.
+ * Returns topic metadata using a streaming parser — skips examples/problems arrays entirely.
  */
 @GetMapping("/seed-files/{filename}/topics")
 public ResponseEntity<?> getTopicsFromFile(@PathVariable String filename) {
@@ -219,33 +212,69 @@ public ResponseEntity<?> getTopicsFromFile(@PathVariable String filename) {
         Resource[] resources = resourcePatternResolver.getResources("classpath:seeds/" + filename);
         if (resources.length == 0) return ResponseEntity.notFound().build();
 
-        // Use JsonNode to avoid full deserialization of examples/problems
-        com.fasterxml.jackson.databind.JsonNode root =
-                objectMapper.readTree(resources[0].getInputStream());
-
-        com.fasterxml.jackson.databind.JsonNode topics = root.path("topics");
-        if (!topics.isArray()) return ResponseEntity.ok(List.of());
-
         List<Map<String, Object>> result = new ArrayList<>();
-        for (com.fasterxml.jackson.databind.JsonNode t : topics) {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("title",             t.path("title").asText(""));
-            m.put("category",          t.path("category").asText(""));
-            m.put("description",       t.path("description").asText(""));
-            m.put("timeComplexity",    t.path("timeComplexity").asText(""));
-            m.put("spaceComplexity",   t.path("spaceComplexity").asText(""));
-            m.put("bruteForce",        t.path("bruteForce").asText(""));
-            m.put("optimizedApproach", t.path("optimizedApproach").asText(""));
-            m.put("whenToUse",         t.path("whenToUse").asText(""));
-            m.put("story",             t.path("story").asText(""));
-            m.put("analogy",           t.path("analogy").asText(""));
-            m.put("memoryAnchor",      t.path("memoryAnchor").asText(""));
-            m.put("firstPrinciples",   t.path("firstPrinciples").asText(""));
-            m.put("starterCode",       t.path("starterCode").asText(""));
-            m.put("exampleCount",      t.path("examples").isArray()  ? t.path("examples").size()  : 0);
-            m.put("problemCount",      t.path("problems").isArray()  ? t.path("problems").size()  : 0);
-            result.add(m);
+
+        com.fasterxml.jackson.core.JsonParser parser =
+                objectMapper.getFactory().createParser(resources[0].getInputStream());
+
+        // Navigate to "topics" array
+        while (parser.nextToken() != null) {
+            if (parser.currentToken() == com.fasterxml.jackson.core.JsonToken.FIELD_NAME
+                    && "topics".equals(parser.currentName())) {
+                parser.nextToken(); // START_ARRAY
+                if (parser.currentToken() != com.fasterxml.jackson.core.JsonToken.START_ARRAY) break;
+
+                // Iterate each topic object
+                while (parser.nextToken() != com.fasterxml.jackson.core.JsonToken.END_ARRAY) {
+                    if (parser.currentToken() != com.fasterxml.jackson.core.JsonToken.START_OBJECT) continue;
+
+                    Map<String, Object> topic = new LinkedHashMap<>();
+                    int exampleCount = 0, problemCount = 0;
+
+                    // Read fields of this topic object
+                    while (parser.nextToken() != com.fasterxml.jackson.core.JsonToken.END_OBJECT) {
+                        if (parser.currentToken() != com.fasterxml.jackson.core.JsonToken.FIELD_NAME) continue;
+                        String field = parser.currentName();
+                        parser.nextToken(); // move to value
+
+                        switch (field) {
+                            case "title", "category", "description",
+                                    "timeComplexity", "spaceComplexity",
+                                    "bruteForce", "optimizedApproach", "whenToUse",
+                                    "story", "analogy", "memoryAnchor",
+                                    "firstPrinciples", "starterCode" ->
+                                    topic.put(field, parser.getText());
+                            case "examples" -> {
+                                if (parser.currentToken() == com.fasterxml.jackson.core.JsonToken.START_ARRAY) {
+                                    while (parser.nextToken() != com.fasterxml.jackson.core.JsonToken.END_ARRAY) {
+                                        if (parser.currentToken() == com.fasterxml.jackson.core.JsonToken.START_OBJECT) {
+                                            exampleCount++;
+                                            parser.skipChildren();
+                                        }
+                                    }
+                                }
+                            }
+                            case "problems" -> {
+                                if (parser.currentToken() == com.fasterxml.jackson.core.JsonToken.START_ARRAY) {
+                                    while (parser.nextToken() != com.fasterxml.jackson.core.JsonToken.END_ARRAY) {
+                                        if (parser.currentToken() == com.fasterxml.jackson.core.JsonToken.START_OBJECT) {
+                                            problemCount++;
+                                            parser.skipChildren();
+                                        }
+                                    }
+                                }
+                            }
+                            default -> parser.skipChildren(); // skip unknown fields
+                        }
+                    }
+                    topic.put("exampleCount", exampleCount);
+                    topic.put("problemCount", problemCount);
+                    result.add(topic);
+                }
+                break; // done with topics array
+            }
         }
+        parser.close();
 
         return ResponseEntity.ok(result);
     } catch (Exception e) {
@@ -257,14 +286,14 @@ public ResponseEntity<?> getTopicsFromFile(@PathVariable String filename) {
 /** Response shape for GET /api/admin/seed-files */
 @Data
 public static class SeedFileInfo {
-    private String        filename;
-    private String        batchName;
-    private int           topicCount;
-    private String        status;        // IMPORTED | PENDING | ERROR
-    private LocalDateTime appliedAt;
-    private int           topicsSeeded;
-    private int           examplesSeeded;
-    private int           problemsSeeded;
-    private String        errorMessage;
+    private String filename;
+    private String batchName;
+    private int    topicCount;
+    private String status;        // IMPORTED | PENDING | ERROR
+    private String appliedAt;     // ISO string — avoids LocalDateTime serialization issues
+    private int    topicsSeeded;
+    private int    examplesSeeded;
+    private int    problemsSeeded;
+    private String errorMessage;
 }
 }
