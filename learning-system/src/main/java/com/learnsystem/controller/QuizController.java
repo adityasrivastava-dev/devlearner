@@ -156,4 +156,57 @@ public ResponseEntity<?> deleteSet(@PathVariable Long id) {
 	quizService.deleteSet(id);
 	return ResponseEntity.ok(Map.of("deleted", true, "id", id));
 }
+
+// ── Admin — update quiz set metadata ─────────────────────────────────────
+@PutMapping("/api/admin/quiz/sets/{id}")
+public ResponseEntity<?> updateSet(
+		@PathVariable Long id,
+		@RequestBody Map<String, Object> payload) {
+	try {
+		return ResponseEntity.ok(quizService.updateSet(id, payload));
+	} catch (RuntimeException e) {
+		return ResponseEntity.notFound().build();
+	}
+}
+
+// ── Admin — get questions for a set (with correct answers, for editing) ───
+@GetMapping("/api/admin/quiz/sets/{id}/questions")
+public ResponseEntity<?> getQuestionsAdmin(@PathVariable Long id) {
+	return ResponseEntity.ok(quizService.getQuestionsAdmin(id));
+}
+
+// ── Admin — add a question to a set ──────────────────────────────────────
+@PostMapping("/api/admin/quiz/sets/{id}/questions")
+public ResponseEntity<?> addQuestion(
+		@PathVariable Long id,
+		@RequestBody Map<String, Object> payload) {
+	try {
+		return ResponseEntity.ok(quizService.addQuestion(id, payload));
+	} catch (RuntimeException e) {
+		return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+	}
+}
+
+// ── Admin — update a question ─────────────────────────────────────────────
+@PutMapping("/api/admin/quiz/questions/{id}")
+public ResponseEntity<?> updateQuestion(
+		@PathVariable Long id,
+		@RequestBody Map<String, Object> payload) {
+	try {
+		return ResponseEntity.ok(quizService.updateQuestion(id, payload));
+	} catch (RuntimeException e) {
+		return ResponseEntity.notFound().build();
+	}
+}
+
+// ── Admin — delete a single question ─────────────────────────────────────
+@DeleteMapping("/api/admin/quiz/questions/{id}")
+public ResponseEntity<?> deleteQuestion(@PathVariable Long id) {
+	try {
+		quizService.deleteQuestion(id);
+		return ResponseEntity.ok(Map.of("deleted", true, "id", id));
+	} catch (RuntimeException e) {
+		return ResponseEntity.notFound().build();
+	}
+}
 }

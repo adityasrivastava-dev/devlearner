@@ -344,7 +344,7 @@ function TopicEditor({ topic, onSaved }) {
 
       {/* Editor tabs */}
       <div className="tab-bar">
-        {[['info','📋 Info'],['story','📖 Story'],['code','💻 Code']].map(([t,l]) => (
+        {[['info','📋 Info'],['story','📖 Story'],['code','💻 Code'], ...(!isNew ? [['problems','🎯 Problems']] : [])].map(([t,l]) => (
           <button key={t} className={`tab-btn ${activeTab === t ? 'active' : ''}`} onClick={() => setActiveTab(t)}>
             {l}
           </button>
@@ -384,6 +384,9 @@ function TopicEditor({ topic, onSaved }) {
             <Field label="Starter Code" value={form.starterCode} onChange={set('starterCode')} textarea rows={12} wide code />
           </div>
         )}
+        {activeTab === 'problems' && !isNew && (
+          <TopicProblemsPanel topicId={topic.id} />
+        )}
       </div>
     </div>
   );
@@ -403,6 +406,175 @@ function Field({ label, value, onChange, textarea, rows = 2, wide, code }) {
         />
       ) : (
         <input className="input" value={value} onChange={onChange} />
+      )}
+    </div>
+  );
+}
+
+/* ── Topic Problems Panel ─────────────────────────────────────────────────────── */
+function TopicProblemsPanel({ topicId }) {
+  const qc = useQueryClient();
+  const [editingProblem, setEditingProblem] = useState(null); // null | {} (new) | problem obj
+  const queryKey = ['admin-topic-problems', topicId];
+
+  const { data: problems = [], isLoading, refetch } = useQuery({
+    queryKey,
+    queryFn: () => topicsApi.getProblems(topicId),
+    staleTime: 0,
+  });
+
+  const createMut = useMutation({
+    mutationFn: (data) => adminApi.createProblem(topicId, data),
+    onSuccess: () => { toast.success('Problem created'); setEditingProblem(null); refetch(); },
+    onError: (e) => toast.error(e?.response?.data?.error || 'Create failed'),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }) => adminApi.updateProblem(id, data),
+    onSuccess: () => { toast.success('Problem updated'); setEditingProblem(null); refetch(); },
+    onError: (e) => toast.error(e?.response?.data?.error || 'Update failed'),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id) => adminApi.deleteProblem(id),
+    onSuccess: () => { toast.success('Problem deleted'); refetch(); },
+    onError: () => toast.error('Delete failed'),
+  });
+
+  if (editingProblem !== null) {
+    return <ProblemForm
+      problem={editingProblem?.id ? editingProblem : null}
+      onCancel={() => setEditingProblem(null)}
+      onSave={(data) => editingProblem?.id
+        ? updateMut.mutate({ id: editingProblem.id, data })
+        : createMut.mutate(data)
+      }
+      isPending={createMut.isPending || updateMut.isPending}
+    />;
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: 12, color: 'var(--text3)' }}>{problems.length} problem{problems.length !== 1 ? 's' : ''}</span>
+        <button className="btn btn-primary btn-sm" onClick={() => setEditingProblem({})}>+ New Problem</button>
+      </div>
+      {isLoading ? (
+        <div className={styles.loading}><span className="spinner" />Loading…</div>
+      ) : problems.length === 0 ? (
+        <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
+          No problems yet. Click "+ New Problem" to add one.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {problems.map((p) => {
+            const diff = getDiffMeta(p.difficulty);
+            return (
+              <div key={p.id} className={styles.problemRow}>
+                <span className={styles.problemTitle}>{p.title}</span>
+                <span className={`badge`} style={{ fontSize: 9, color: diff.color, borderColor: diff.color + '44', background: diff.bg, padding: '1px 6px', border: '1px solid', borderRadius: 4 }}>
+                  {p.difficulty}
+                </span>
+                <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+                  <button className="btn btn-ghost btn-xs" onClick={() => setEditingProblem(p)}>✏️ Edit</button>
+                  <button className="btn btn-danger btn-xs"
+                    onClick={() => window.confirm(`Delete problem "${p.title}"?`) && deleteMut.mutate(p.id)}
+                    disabled={deleteMut.isPending}
+                  >🗑</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const BLANK_PROBLEM = () => ({
+  title: '', description: '', difficulty: 'EASY',
+  inputFormat: '', outputFormat: '', sampleInput: '', sampleOutput: '',
+  constraints: '', hint: '', hint1: '', hint2: '', hint3: '',
+  starterCode: '', testCases: '[]', pattern: '', editorial: '',
+  displayOrder: 0,
+});
+
+function ProblemForm({ problem, onCancel, onSave, isPending }) {
+  const isNew = !problem;
+  const [form, setForm] = useState(problem ? {
+    title: problem.title || '', description: problem.description || '',
+    difficulty: problem.difficulty || 'EASY',
+    inputFormat: problem.inputFormat || '', outputFormat: problem.outputFormat || '',
+    sampleInput: problem.sampleInput || '', sampleOutput: problem.sampleOutput || '',
+    constraints: problem.constraints || '', hint: problem.hint || '',
+    hint1: problem.hint1 || '', hint2: problem.hint2 || '', hint3: problem.hint3 || '',
+    starterCode: problem.starterCode || '', testCases: problem.testCases || '[]',
+    pattern: problem.pattern || '', editorial: problem.editorial || '',
+    displayOrder: problem.displayOrder || 0,
+  } : BLANK_PROBLEM());
+
+  const [tab, setTab] = useState('basic');
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+          {isNew ? '+ New Problem' : `Editing: ${problem.title}`}
+        </span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className="btn btn-ghost btn-sm" onClick={onCancel}>Cancel</button>
+          <button className="btn btn-primary btn-sm" onClick={() => onSave(form)} disabled={!form.title || isPending}>
+            {isPending ? 'Saving…' : '💾 Save'}
+          </button>
+        </div>
+      </div>
+      <div className="tab-bar" style={{ marginBottom: 10 }}>
+        {[['basic','📋 Basic'],['io','🔄 I/O'],['hints','💡 Hints'],['code','💻 Code'],['editorial','📖 Editorial']].map(([t,l]) => (
+          <button key={t} className={`tab-btn ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>{l}</button>
+        ))}
+      </div>
+      {tab === 'basic' && (
+        <div className={styles.formGrid}>
+          <Field label="Title *" value={form.title} onChange={set('title')} wide />
+          <div className={styles.fieldWrap}>
+            <label className={styles.fieldLabel}>Difficulty *</label>
+            <select className={styles.select} value={form.difficulty} onChange={set('difficulty')}>
+              <option>EASY</option><option>MEDIUM</option><option>HARD</option>
+            </select>
+          </div>
+          <Field label="Pattern" value={form.pattern} onChange={set('pattern')} />
+          <Field label="Display Order" value={String(form.displayOrder)} onChange={set('displayOrder')} />
+          <Field label="Description" value={form.description} onChange={set('description')} textarea rows={5} wide />
+          <Field label="Constraints" value={form.constraints} onChange={set('constraints')} textarea rows={3} wide />
+        </div>
+      )}
+      {tab === 'io' && (
+        <div className={styles.formGrid}>
+          <Field label="Input Format" value={form.inputFormat} onChange={set('inputFormat')} textarea rows={3} wide />
+          <Field label="Output Format" value={form.outputFormat} onChange={set('outputFormat')} textarea rows={2} wide />
+          <Field label="Sample Input" value={form.sampleInput} onChange={set('sampleInput')} textarea rows={3} wide code />
+          <Field label="Sample Output" value={form.sampleOutput} onChange={set('sampleOutput')} textarea rows={2} wide code />
+          <Field label="Test Cases (JSON)" value={form.testCases} onChange={set('testCases')} textarea rows={6} wide code />
+        </div>
+      )}
+      {tab === 'hints' && (
+        <div className={styles.formGrid}>
+          <Field label="General Hint" value={form.hint} onChange={set('hint')} textarea rows={2} wide />
+          <Field label="Hint 1" value={form.hint1} onChange={set('hint1')} textarea rows={2} wide />
+          <Field label="Hint 2" value={form.hint2} onChange={set('hint2')} textarea rows={2} wide />
+          <Field label="Hint 3" value={form.hint3} onChange={set('hint3')} textarea rows={2} wide />
+        </div>
+      )}
+      {tab === 'code' && (
+        <div className={styles.formGrid}>
+          <Field label="Starter Code" value={form.starterCode} onChange={set('starterCode')} textarea rows={12} wide code />
+        </div>
+      )}
+      {tab === 'editorial' && (
+        <div className={styles.formGrid}>
+          <Field label="Editorial" value={form.editorial} onChange={set('editorial')} textarea rows={6} wide />
+        </div>
       )}
     </div>
   );

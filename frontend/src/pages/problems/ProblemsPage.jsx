@@ -113,10 +113,7 @@ export default function ProblemsPage() {
   }, [setSearchParams]);
 
   function openProblem(p) {
-    const url = p.topicId
-      ? `/?topic=${p.topicId}&openProblem=${p.id}`
-      : `/?openProblem=${p.id}`;
-    navigate(url, { state: { from: '/problems' } });
+    navigate(`/?openProblem=${p.id}&from=problems`);
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────

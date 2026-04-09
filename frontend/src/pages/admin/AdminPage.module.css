@@ -612,3 +612,12 @@
   padding: 2px 8px;
   border-radius: 20px;
 }
+
+/* ── Problem rows in topic editor ──────────────────────────────────────── */
+.problemRow {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; font-size: 12px;
+}
+.problemTitle { flex: 1; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }

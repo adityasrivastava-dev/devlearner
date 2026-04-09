@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { quizApi, QUIZ_CATEGORIES, DIFFICULTY_META } from '../quiz/quizApi';
+import { adminApi } from '../../api';
 import styles from './AdminPage.module.css';
 import qStyles from './QuizAdmin.module.css';
 
@@ -202,6 +203,7 @@ function QuizFilesPanel() {
 // ── SETS PANEL — manage existing quiz sets ────────────────────────────────────
 function QuizSetsPanel() {
   const qc = useQueryClient();
+  const [editingSet, setEditingSet] = useState(null); // set object to edit questions
 
   const { data: sets = [], isLoading, refetch } = useQuery({
     queryKey: ['quiz-admin-sets'],
@@ -211,7 +213,7 @@ function QuizSetsPanel() {
 
   const deleteMut = useMutation({
     mutationFn: adminDeleteQuizSet,
-    onSuccess: (_, id) => {
+    onSuccess: () => {
       toast.success('Quiz set deleted');
       qc.invalidateQueries({ queryKey: ['quiz-admin-sets'] });
       qc.invalidateQueries({ queryKey: ['quiz-admin-files'] });
@@ -223,6 +225,13 @@ function QuizSetsPanel() {
     if (window.confirm(`Delete "${set.title}" and all ${set.questionCount} questions? This cannot be undone.`)) {
       deleteMut.mutate(set.id);
     }
+  }
+
+  if (editingSet) {
+    return <QuizQuestionsEditor
+      set={editingSet}
+      onBack={() => { setEditingSet(null); refetch(); }}
+    />;
   }
 
   return (
@@ -261,6 +270,12 @@ function QuizSetsPanel() {
                 <span className={qStyles.qCount}>{set.questionCount}</span>
                 <span className={qStyles.rowActions}>
                   <button
+                    className="btn btn-ghost btn-xs"
+                    onClick={() => setEditingSet(set)}
+                  >
+                    ✏️ Questions
+                  </button>
+                  <button
                     className="btn btn-danger btn-xs"
                     onClick={() => confirmDelete(set)}
                     disabled={deleteMut.isPending}
@@ -274,6 +289,140 @@ function QuizSetsPanel() {
         </div>
       )}
     </>
+  );
+}
+
+// ── Question editor for an existing set ─────────────────────────────────────
+function QuizQuestionsEditor({ set, onBack }) {
+  const qc = useQueryClient();
+  const [addingNew, setAddingNew] = useState(false);
+  const [editQ, setEditQ] = useState(null); // question being edited
+
+  const { data: questions = [], isLoading, refetch } = useQuery({
+    queryKey: ['quiz-questions', set.id],
+    queryFn:  () => adminApi.getQuizQuestions(set.id),
+    staleTime: 0,
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (qid) => adminApi.deleteQuizQuestion(qid),
+    onSuccess: () => { toast.success('Question deleted'); refetch(); },
+    onError: () => toast.error('Delete failed'),
+  });
+
+  const addMut = useMutation({
+    mutationFn: (data) => adminApi.addQuizQuestion(set.id, data),
+    onSuccess: () => { toast.success('Question added'); setAddingNew(false); refetch(); },
+    onError: () => toast.error('Add failed'),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }) => adminApi.updateQuizQuestion(id, data),
+    onSuccess: () => { toast.success('Question updated'); setEditQ(null); refetch(); },
+    onError: () => toast.error('Update failed'),
+  });
+
+  if (addingNew || editQ) {
+    return (
+      <QuestionForm
+        initial={editQ}
+        onCancel={() => { setAddingNew(false); setEditQ(null); }}
+        onSave={(data) => editQ
+          ? updateMut.mutate({ id: editQ.id, data })
+          : addMut.mutate(data)
+        }
+        isPending={addMut.isPending || updateMut.isPending}
+      />
+    );
+  }
+
+  return (
+    <div>
+      <div className={qStyles.panelTop} style={{ marginBottom: 12 }}>
+        <button className="btn btn-ghost btn-sm" onClick={onBack}>← Back to Sets</button>
+        <span className={qStyles.panelMeta}>{set.icon} {set.title} — {questions.length} questions</span>
+        <button className="btn btn-primary btn-sm" onClick={() => setAddingNew(true)}>+ Add Question</button>
+      </div>
+
+      {isLoading ? (
+        <div className={styles.loading}><span className="spinner" /> Loading…</div>
+      ) : questions.length === 0 ? (
+        <div className={qStyles.emptyMsg}>No questions yet. Click "+ Add Question" to start.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {questions.map((q, i) => (
+            <div key={q.id} className={qStyles.qEditRow}>
+              <span className={qStyles.qEditNum}>Q{i + 1}</span>
+              <span className={qStyles.qEditText}>{q.questionText}</span>
+              <span className={qStyles.qEditAnswer}>✓ {q.correctOption}</span>
+              <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                <button className="btn btn-ghost btn-xs" onClick={() => setEditQ(q)}>✏️</button>
+                <button className="btn btn-danger btn-xs"
+                  onClick={() => window.confirm('Delete this question?') && deleteMut.mutate(q.id)}
+                  disabled={deleteMut.isPending}
+                >🗑</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function QuestionForm({ initial, onCancel, onSave, isPending }) {
+  const [form, setForm] = useState({
+    questionText:  initial?.questionText  || '',
+    optionA:       initial?.optionA       || '',
+    optionB:       initial?.optionB       || '',
+    optionC:       initial?.optionC       || '',
+    optionD:       initial?.optionD       || '',
+    correctOption: initial?.correctOption || 'A',
+    explanation:   initial?.explanation   || '',
+    codeSnippet:   initial?.codeSnippet   || '',
+    difficulty:    initial?.difficulty    || 'MEDIUM',
+  });
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const canSave = form.questionText && form.optionA && form.optionB;
+
+  return (
+    <div className={qStyles.qFormWrap}>
+      <div className={qStyles.panelTop} style={{ marginBottom: 12 }}>
+        <span className={qStyles.panelMeta}>{initial ? 'Edit Question' : 'New Question'}</span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className="btn btn-ghost btn-sm" onClick={onCancel}>Cancel</button>
+          <button className="btn btn-primary btn-sm" onClick={() => onSave(form)} disabled={!canSave || isPending}>
+            {isPending ? 'Saving…' : '💾 Save'}
+          </button>
+        </div>
+      </div>
+      <div className={qStyles.qFormGrid}>
+        <label className={qStyles.qFormLabel}>Question *</label>
+        <textarea className="input" rows={3} value={form.questionText} onChange={set('questionText')} />
+        <label className={qStyles.qFormLabel}>Code Snippet (optional)</label>
+        <textarea className="input" rows={4} style={{ fontFamily: 'var(--font-code)', fontSize: 12 }}
+          value={form.codeSnippet} onChange={set('codeSnippet')} placeholder="Java code shown with the question…" />
+        <label className={qStyles.qFormLabel}>Option A *</label>
+        <input className="input" value={form.optionA} onChange={set('optionA')} />
+        <label className={qStyles.qFormLabel}>Option B *</label>
+        <input className="input" value={form.optionB} onChange={set('optionB')} />
+        <label className={qStyles.qFormLabel}>Option C</label>
+        <input className="input" value={form.optionC} onChange={set('optionC')} />
+        <label className={qStyles.qFormLabel}>Option D</label>
+        <input className="input" value={form.optionD} onChange={set('optionD')} />
+        <label className={qStyles.qFormLabel}>Correct Answer *</label>
+        <select className="input" value={form.correctOption} onChange={set('correctOption')}>
+          <option>A</option><option>B</option><option>C</option><option>D</option>
+        </select>
+        <label className={qStyles.qFormLabel}>Explanation</label>
+        <textarea className="input" rows={2} value={form.explanation} onChange={set('explanation')}
+          placeholder="Why is this the correct answer?" />
+        <label className={qStyles.qFormLabel}>Difficulty</label>
+        <select className="input" value={form.difficulty} onChange={set('difficulty')}>
+          <option>EASY</option><option>MEDIUM</option><option>HARD</option>
+        </select>
+      </div>
+    </div>
   );
 }
 

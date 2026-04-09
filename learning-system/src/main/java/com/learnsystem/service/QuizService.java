@@ -233,6 +233,90 @@ public Map<String, Object> seedSet(Map<String, Object> payload) {
 			"title", title, "questionCount", rawQuestions.size());
 }
 
+// ── Admin: get questions for a set ───────────────────────────────────────
+public List<Map<String, Object>> getQuestionsAdmin(Long setId) {
+    return questionRepo.findBySetIdOrderByOrderIndex(setId)
+            .stream().map(this::questionToAdminDto).toList();
+}
+
+// ── Admin: update quiz set metadata ──────────────────────────────────────
+@Transactional
+public Map<String, Object> updateSet(Long setId, Map<String, Object> payload) {
+    QuizSet set = setRepo.findById(setId)
+            .orElseThrow(() -> new RuntimeException("Quiz set not found: " + setId));
+    if (payload.containsKey("title"))       set.setTitle((String) payload.get("title"));
+    if (payload.containsKey("description")) set.setDescription((String) payload.get("description"));
+    if (payload.containsKey("category"))    set.setCategory(((String) payload.get("category")).toUpperCase());
+    if (payload.containsKey("difficulty"))  set.setDifficulty(((String) payload.get("difficulty")).toUpperCase());
+    if (payload.containsKey("icon"))        set.setIcon((String) payload.get("icon"));
+    if (payload.containsKey("active"))      set.setActive(Boolean.TRUE.equals(payload.get("active")));
+    setRepo.save(set);
+    return setToDto(set);
+}
+
+// ── Admin: add a question to a set ───────────────────────────────────────
+@Transactional
+public Map<String, Object> addQuestion(Long setId, Map<String, Object> payload) {
+    if (!setRepo.existsById(setId)) throw new RuntimeException("Quiz set not found: " + setId);
+    int nextOrder = questionRepo.countBySetId(setId);
+    QuizQuestion q = QuizQuestion.builder()
+            .setId(setId)
+            .orderIndex(nextOrder)
+            .questionText((String) payload.get("questionText"))
+            .optionA((String) payload.get("optionA"))
+            .optionB((String) payload.get("optionB"))
+            .optionC((String) payload.getOrDefault("optionC", null))
+            .optionD((String) payload.getOrDefault("optionD", null))
+            .correctOption(((String) payload.get("correctOption")).toUpperCase())
+            .explanation((String) payload.getOrDefault("explanation", ""))
+            .codeSnippet((String) payload.getOrDefault("codeSnippet", null))
+            .difficulty(((String) payload.getOrDefault("difficulty", "MEDIUM")).toUpperCase())
+            .tags((String) payload.getOrDefault("tags", null))
+            .build();
+    questionRepo.save(q);
+    // Update denormalized count
+    setRepo.findById(setId).ifPresent(s -> {
+        s.setQuestionCount(questionRepo.countBySetId(setId));
+        setRepo.save(s);
+    });
+    return questionToAdminDto(q);
+}
+
+// ── Admin: update a question ──────────────────────────────────────────────
+@Transactional
+public Map<String, Object> updateQuestion(Long questionId, Map<String, Object> payload) {
+    QuizQuestion q = questionRepo.findById(questionId)
+            .orElseThrow(() -> new RuntimeException("Question not found: " + questionId));
+    if (payload.containsKey("questionText")) q.setQuestionText((String) payload.get("questionText"));
+    if (payload.containsKey("optionA"))      q.setOptionA((String) payload.get("optionA"));
+    if (payload.containsKey("optionB"))      q.setOptionB((String) payload.get("optionB"));
+    if (payload.containsKey("optionC"))      q.setOptionC((String) payload.get("optionC"));
+    if (payload.containsKey("optionD"))      q.setOptionD((String) payload.get("optionD"));
+    if (payload.containsKey("correctOption"))
+        q.setCorrectOption(((String) payload.get("correctOption")).toUpperCase());
+    if (payload.containsKey("explanation"))  q.setExplanation((String) payload.get("explanation"));
+    if (payload.containsKey("codeSnippet"))  q.setCodeSnippet((String) payload.get("codeSnippet"));
+    if (payload.containsKey("difficulty"))
+        q.setDifficulty(((String) payload.get("difficulty")).toUpperCase());
+    if (payload.containsKey("tags"))         q.setTags((String) payload.get("tags"));
+    questionRepo.save(q);
+    return questionToAdminDto(q);
+}
+
+// ── Admin: delete a question ─────────────────────────────────────────────
+@Transactional
+public void deleteQuestion(Long questionId) {
+    QuizQuestion q = questionRepo.findById(questionId)
+            .orElseThrow(() -> new RuntimeException("Question not found: " + questionId));
+    long setId = q.getSetId();
+    questionRepo.deleteById(questionId);
+    // Update denormalized count
+    setRepo.findById(setId).ifPresent(s -> {
+        s.setQuestionCount(questionRepo.countBySetId(setId));
+        setRepo.save(s);
+    });
+}
+
 // ── DTOs ─────────────────────────────────────────────────────────────────
 private Map<String, Object> setToDto(QuizSet s) {
 	Map<String, Object> m = new LinkedHashMap<>();
@@ -246,6 +330,25 @@ private Map<String, Object> setToDto(QuizSet s) {
 	m.put("timeLimitSecs", s.getTimeLimitSecs());
 	m.put("displayOrder",  s.getDisplayOrder());
 	return m;
+}
+
+/** Question DTO for admin — includes correctOption */
+private Map<String, Object> questionToAdminDto(QuizQuestion q) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("id",           q.getId());
+    m.put("setId",        q.getSetId());
+    m.put("orderIndex",   q.getOrderIndex());
+    m.put("questionText", q.getQuestionText());
+    m.put("optionA",      q.getOptionA());
+    m.put("optionB",      q.getOptionB());
+    m.put("optionC",      q.getOptionC());
+    m.put("optionD",      q.getOptionD());
+    m.put("correctOption",q.getCorrectOption());
+    m.put("explanation",  q.getExplanation());
+    m.put("codeSnippet",  q.getCodeSnippet());
+    m.put("difficulty",   q.getDifficulty());
+    m.put("tags",         q.getTags());
+    return m;
 }
 
 /** Question DTO for play — does NOT include correctOption */

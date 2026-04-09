@@ -201,6 +201,28 @@ export const adminApi = {
 
   deleteProblem: (id) =>
     http.delete(`/api/admin/problems/${id}`).then((r) => r.data),
+
+  // Quiz admin CRUD
+  getQuizSets: () =>
+    http.get('/api/admin/quiz/sets').then((r) => r.data),
+
+  updateQuizSet: (id, data) =>
+    http.put(`/api/admin/quiz/sets/${id}`, data).then((r) => r.data),
+
+  deleteQuizSet: (id) =>
+    http.delete(`/api/admin/quiz/sets/${id}`).then((r) => r.data),
+
+  getQuizQuestions: (setId) =>
+    http.get(`/api/admin/quiz/sets/${setId}/questions`).then((r) => r.data),
+
+  addQuizQuestion: (setId, data) =>
+    http.post(`/api/admin/quiz/sets/${setId}/questions`, data).then((r) => r.data),
+
+  updateQuizQuestion: (questionId, data) =>
+    http.put(`/api/admin/quiz/questions/${questionId}`, data).then((r) => r.data),
+
+  deleteQuizQuestion: (questionId) =>
+    http.delete(`/api/admin/quiz/questions/${questionId}`).then((r) => r.data),
 };
 
 // ─── Algorithm Admin API ─────────────────────────────────────────────────────

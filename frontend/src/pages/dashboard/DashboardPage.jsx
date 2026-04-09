@@ -204,6 +204,16 @@ export default function DashboardPage() {
           )}
         </div>
 
+        {/* ── Quick Win banner ─────────────────────────────────────────── */}
+        <button className={styles.quickWinBanner} onClick={() => navigate('/quick-win')}>
+          <span className={styles.quickWinIcon}>⚡</span>
+          <div className={styles.quickWinText}>
+            <span className={styles.quickWinTitle}>5-Minute Mode</span>
+            <span className={styles.quickWinSub}>One problem + one quiz to keep your streak alive</span>
+          </div>
+          <span className={styles.quickWinArrow}>→</span>
+        </button>
+
         {/* ── Top row: Streak + XP + Pause ────────────────────────────── */}
         <div className={styles.topRow}>
 

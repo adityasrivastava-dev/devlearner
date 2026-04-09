@@ -13,6 +13,7 @@ import PlaygroundPage from './pages/playground/PlaygroundPage';
 import ProfilePage      from './pages/profile/ProfilePage';
 import QuizPage         from './pages/quiz/QuizPage';
 import AlgorithmsPage   from './pages/algorithms/AlgorithmsPage';
+import QuickWinPage    from './pages/quickwin/QuickWinPage';
 
 // Apply saved theme on load
 const savedTheme = localStorage.getItem('devlearn_theme') || 'dark';
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="/profile"    element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/quiz"       element={<ProtectedRoute><QuizPage /></ProtectedRoute>} />
             <Route path="/algorithms" element={<ProtectedRoute><AlgorithmsPage /></ProtectedRoute>} />
+            <Route path="/quick-win"  element={<ProtectedRoute><QuickWinPage /></ProtectedRoute>} />
             <Route path="/admin"      element={<AdminRoute><AdminPage /></AdminRoute>} />
             <Route path="*"           element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
           </Routes>

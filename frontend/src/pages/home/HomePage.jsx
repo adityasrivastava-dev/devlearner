@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import Sidebar from '../../components/sidebar/Sidebar';
@@ -12,6 +12,7 @@ import styles from './HomePage.module.css';
 
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [selectedTopicId, setSelectedTopicId] = useState(null);
   const [openProblemId,   setOpenProblemId]   = useState(null);
   const [theme,    setTheme]    = useState(() => localStorage.getItem('devlearn_theme')    || 'dark');
@@ -22,6 +23,7 @@ export default function HomePage() {
   const queryClient = useQueryClient();
 
   // Sync state from URL
+  const fromParam = searchParams.get('from'); // 'problems' when opened from /problems
   useEffect(() => {
     const t = searchParams.get('topic');
     const p = searchParams.get('openProblem');
@@ -71,8 +73,13 @@ export default function HomePage() {
     window.history.replaceState({ from: 'topic' }, '');
   }
   function closeProblem() {
-    setOpenProblemId(null);
-    if (selectedTopicId) setSearchParams({ topic: selectedTopicId });
+    if (fromParam === 'problems') {
+      navigate('/problems');
+    } else {
+      setOpenProblemId(null);
+      if (selectedTopicId) setSearchParams({ topic: selectedTopicId });
+      else setSearchParams({});
+    }
   }
 
   // ── Theme & font helpers ─────────────────────────────────────────────────
@@ -93,24 +100,29 @@ export default function HomePage() {
   const inProblemView = !!openProblemId;
   const showTopicView = !inProblemView && !!selectedTopicId;
 
+  // ── Fullscreen problem view — no sidebar, like LeetCode ─────────────────
+  if (inProblemView) {
+    return (
+      <div style={{ height: '100vh', overflow: 'hidden', background: 'var(--bg)' }} data-theme={theme}>
+        <ProblemSolveView
+          problemId={openProblemId}
+          topicTitle={currentTopic?.title}
+          topicId={selectedTopicId}
+          theme={theme}
+          fontSize={fontSize}
+          onBack={closeProblem}
+          onStudyTopic={() => setOpenProblemId(null)}
+          onFontChange={adjustFont}
+          onThemeToggle={toggleTheme}
+          currentTheme={theme}
+        />
+      </div>
+    );
+  }
+
   // ── Decide main content ──────────────────────────────────────────────────
   let mainContent;
-  if (inProblemView) {
-    mainContent = (
-      <ProblemSolveView
-        problemId={openProblemId}
-        topicTitle={currentTopic?.title}
-        topicId={selectedTopicId}
-        theme={theme}
-        fontSize={fontSize}
-        onBack={closeProblem}
-        onStudyTopic={() => setOpenProblemId(null)}
-        onFontChange={adjustFont}
-        onThemeToggle={toggleTheme}
-        currentTheme={theme}
-      />
-    );
-  } else if (showTopicView) {
+  if (showTopicView) {
     mainContent = currentTopic ? (
       <TopicView
         topic={currentTopic}

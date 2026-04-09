@@ -1,0 +1,275 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+/* ── Topbar ────────────────────────────────────────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  height: 48px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.backBtn {
+  padding: 4px 12px;
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: .15s;
+}
+.backBtn:hover { color: var(--text); border-color: var(--text3); }
+.topTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.topMeta {
+  font-size: 12px;
+  color: var(--text3);
+  margin-left: auto;
+}
+
+/* ── Content ───────────────────────────────────────────────────────────────── */
+.content {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+/* ── Step card ──────────────────────────────────────────────────────────────  */
+.stepCard {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.stepHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stepNum {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--accent);
+}
+.stepTitle {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0;
+}
+.stepSub {
+  font-size: 13px;
+  color: var(--text3);
+  margin: 0;
+}
+
+/* ── Problem card ───────────────────────────────────────────────────────────  */
+.problemCard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+.probMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.probDiff {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.probPattern {
+  font-size: 11px;
+  color: var(--text3);
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 1px 7px;
+}
+.probTitle {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 10px;
+  line-height: 1.3;
+}
+.probDesc {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Quiz card ──────────────────────────────────────────────────────────────  */
+.quizCard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.quizQ {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.6;
+  margin: 0;
+  font-weight: 600;
+}
+.optionList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.optionBtn {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text2);
+  font-size: 13px;
+  font-family: var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+  transition: .15s;
+}
+.optionBtn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+.optionBtn.selected { border-color: var(--accent); color: var(--text); background: var(--adim); }
+.optionBtn.correct  { border-color: #4ade80; color: #4ade80; background: rgba(74,222,128,.08); }
+.optionBtn.wrong    { border-color: #f87171; color: #f87171; background: rgba(248,113,113,.08); }
+.optionBtn:disabled { cursor: default; }
+.optionLetter {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text3);
+  min-width: 16px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+.optionBtn.correct .optionLetter,
+.optionBtn.wrong   .optionLetter { color: inherit; }
+
+.feedback {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+.feedbackOk   { color: #4ade80; background: rgba(74,222,128,.1); }
+.feedbackWrong{ color: #f87171; background: rgba(248,113,113,.1); }
+
+/* ── Action row ──────────────────────────────────────────────────────────────  */
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-end;
+}
+.openBtn {
+  padding: 8px 18px;
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  text-decoration: none;
+  transition: .15s;
+}
+.openBtn:hover { color: var(--text); border-color: var(--text3); }
+.continueBtn {
+  padding: 10px 24px;
+  background: var(--accent2, #4ade80);
+  border: none;
+  border-radius: 8px;
+  color: #0f1117;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: .15s;
+}
+.continueBtn:hover:not(:disabled) { opacity: .85; }
+.continueBtn:disabled { opacity: .4; cursor: default; }
+
+/* ── Done screen ─────────────────────────────────────────────────────────────  */
+.doneWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px 20px;
+}
+.doneEmoji { font-size: 64px; line-height: 1; }
+.doneTitle {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0;
+}
+.doneSub { font-size: 14px; color: var(--text3); margin: 0; }
+
+/* ── Loading / error ─────────────────────────────────────────────────────────  */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+  color: var(--text3);
+  font-size: 13px;
+}
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.errorWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  justify-content: center;
+  color: var(--text3);
+  font-size: 13px;
+}
