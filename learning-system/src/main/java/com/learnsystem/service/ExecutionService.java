@@ -39,7 +39,8 @@ public ExecuteResponse execute(String code, String stdin, String javaVersion) {
     Path tempDir = null;
     try {
         tempDir = Files.createTempDirectory("learnsystem_");
-        Path sourceFile = tempDir.resolve("Main.java");
+        String className = extractPublicClassName(code);
+        Path sourceFile = tempDir.resolve(className + ".java");
         Files.writeString(sourceFile, code);
 
         CompileResult cr = compile(tempDir, sourceFile, code, javaVersion);
@@ -49,7 +50,7 @@ public ExecuteResponse execute(String code, String stdin, String javaVersion) {
                     .error(formatCompileErrors(cr.errors()))
                     .compileErrors(cr.errors()).build();
         }
-        return run(tempDir, stdin);
+        return run(tempDir, stdin, className);
     } catch (Exception e) {
         log.error("Execution failed", e);
         return ExecuteResponse.builder().success(false)
@@ -65,7 +66,8 @@ public List<ExecuteResponse> executeAll(String code, List<String> inputs, String
     Path tempDir = null;
     try {
         tempDir = Files.createTempDirectory("learnsystem_");
-        Path sourceFile = tempDir.resolve("Main.java");
+        String className = extractPublicClassName(code);
+        Path sourceFile = tempDir.resolve(className + ".java");
         Files.writeString(sourceFile, code);
 
         CompileResult cr = compile(tempDir, sourceFile, code, javaVersion);
@@ -78,7 +80,7 @@ public List<ExecuteResponse> executeAll(String code, List<String> inputs, String
         }
 
         List<ExecuteResponse> results = new ArrayList<>(inputs.size());
-        for (String input : inputs) results.add(run(tempDir, input));
+        for (String input : inputs) results.add(run(tempDir, input, className));
         return results;
 
     } catch (Exception e) {
@@ -93,7 +95,8 @@ public SyntaxCheckResponse syntaxCheck(String code, String javaVersion) {
     Path tempDir = null;
     try {
         tempDir = Files.createTempDirectory("learnsystem_syntax_");
-        Path sourceFile = tempDir.resolve("Main.java");
+        String className = extractPublicClassName(code);
+        Path sourceFile = tempDir.resolve(className + ".java");
         Files.writeString(sourceFile, code);
 
         CompileResult cr = compile(tempDir, sourceFile, code, javaVersion);
@@ -238,7 +241,7 @@ private CompileResult compileWithProcess(Path tempDir, Path sourceFile,
 }
 
 private static final Pattern JAVAC_ERROR_PATTERN =
-        Pattern.compile("^Main\\.java:(\\d+):\\s*(error|warning):\\s*(.+)$");
+        Pattern.compile("^\\w+\\.java:(\\d+):\\s*(error|warning):\\s*(.+)$");
 
 private List<CompileError> parseJavacOutput(String raw, String sourceCode) {
     if (raw == null || raw.isBlank()) return List.of();
@@ -279,7 +282,7 @@ private List<CompileError> parseJavacOutput(String raw, String sourceCode) {
 private String cleanMessage(String msg) {
     if (msg == null) return "Unknown error";
     // Remove path like "/tmp/xxx/Main.java:5: " prefix that some JDKs include in message
-    return msg.replaceAll("^.*Main\\.java:\\d+:\\s*", "")
+    return msg.replaceAll("^.*\\.java:\\d+:\\s*", "")
             .replaceAll("\\s+", " ").trim();
 }
 
@@ -302,9 +305,9 @@ private String formatCompileErrors(List<CompileError> errors) {
 
 // ── Run ───────────────────────────────────────────────────────────────────
 
-private ExecuteResponse run(Path tempDir, String stdin) throws Exception {
+private ExecuteResponse run(Path tempDir, String stdin, String className) throws Exception {
     ProcessBuilder pb = new ProcessBuilder(
-            "java", "-cp", tempDir.toString(), "-Xmx128m", "-Xss8m", "Main")
+            "java", "-cp", tempDir.toString(), "-Xmx128m", "-Xss8m", className)
             .directory(tempDir.toFile());
 
     long startTime = System.currentTimeMillis();
@@ -350,6 +353,13 @@ private ExecuteResponse run(Path tempDir, String stdin) throws Exception {
 private String readStream(InputStream is, long maxBytes) {
     try { return new String(is.readNBytes((int) maxBytes)).trim(); }
     catch (IOException e) { return ""; }
+}
+
+/** Extract the name of the public class from Java source code. Falls back to "Main". */
+private String extractPublicClassName(String code) {
+    if (code == null) return "Main";
+    Matcher m = Pattern.compile("public\\s+class\\s+(\\w+)").matcher(code);
+    return m.find() ? m.group(1) : "Main";
 }
 
 private void cleanup(Path dir) {

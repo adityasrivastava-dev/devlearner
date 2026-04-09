@@ -508,6 +508,45 @@ export default function ProblemSolveView({
   );
 }
 
+// ── Lightweight markdown renderer (no extra dependency) ───────────────────────
+// Handles: **bold**, `code`, newlines → paragraphs, **Example:** headers
+function MDText({ text }) {
+  if (!text) return null;
+
+  // Split on double newlines to get paragraphs; single newlines preserved within
+  const paragraphs = text.split(/\n{2,}/);
+
+  return (
+    <>
+      {paragraphs.map((para, pi) => {
+        const trimmed = para.trim();
+        if (!trimmed) return null;
+
+        // Render inline: **bold**, `code`
+        const renderInline = (str) => {
+          const parts = str.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+          return parts.map((p, i) => {
+            if (p.startsWith('**') && p.endsWith('**'))
+              return <strong key={i}>{p.slice(2, -2)}</strong>;
+            if (p.startsWith('`') && p.endsWith('`'))
+              return <code key={i} style={{ background: 'var(--bg3)', padding: '1px 5px', borderRadius: 3, fontFamily: 'var(--font-code)', fontSize: '0.85em' }}>{p.slice(1, -1)}</code>;
+            // Preserve single newlines within a paragraph as line breaks
+            return p.split('\n').flatMap((line, li, arr) =>
+              li < arr.length - 1 ? [line, <br key={`br-${i}-${li}`} />] : [line]
+            );
+          });
+        };
+
+        return (
+          <p key={pi} style={{ margin: '0 0 10px', lineHeight: 1.65 }}>
+            {renderInline(trimmed)}
+          </p>
+        );
+      })}
+    </>
+  );
+}
+
 // ── Timer formatter ────────────────────────────────────────────────────────────
 function formatTimer(sec) {
   const m = Math.floor(sec / 60);
@@ -531,7 +570,7 @@ function DescriptionTab({ problem, diff }) {
           )}
         </div>
       </div>
-      <p className={styles.probDesc}>{problem.description}</p>
+      <div className={styles.probDesc}><MDText text={problem.description} /></div>
       {(problem.inputFormat || problem.outputFormat) && (
         <div className={styles.formatBlock}>
           {problem.inputFormat  && <p><strong>Input:</strong> {problem.inputFormat}</p>}
