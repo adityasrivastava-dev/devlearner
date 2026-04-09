@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import FlowchartViewer from '../../components/editor/FlowchartViewer';
 import styles from './AlgorithmsPage.module.css';
 
 // ─── Category metadata (icons/labels only — counts come from DB) ──────────────
@@ -99,6 +100,7 @@ function AlgorithmDetail({ algo, onBack }) {
   const tabs = [
     { key: 'overview',   label: '📖 Overview'      },
     { key: 'howitworks', label: '⚙️ How It Works'   },
+    { key: 'visual',     label: '📊 Visual'         },
     { key: 'code',       label: '💻 Java Code'      },
     { key: 'usecases',   label: '🌍 Use Cases'      },
     { key: 'pitfalls',   label: '⚠️ Pitfalls'       },
@@ -215,6 +217,24 @@ function AlgorithmDetail({ algo, onBack }) {
             <div className={styles.stepsBox}>
               {renderLines(algo.howItWorks)}
             </div>
+          </div>
+        )}
+
+        {activeTab === 'visual' && (
+          <div className={styles.section}>
+            {algo.mermaidDiagram ? (
+              <>
+                <h3 className={styles.sectionTitle}>Step-by-Step Visualization</h3>
+                <p className={styles.visualHint}>Follow the flow to trace how the algorithm executes.</p>
+                <FlowchartViewer definition={algo.mermaidDiagram} />
+              </>
+            ) : (
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}>📊</div>
+                <div className={styles.emptyTitle}>No visualization yet</div>
+                <div className={styles.emptySub}>A diagram can be added for this algorithm via the Admin Panel.</div>
+              </div>
+            )}
           </div>
         )}
 

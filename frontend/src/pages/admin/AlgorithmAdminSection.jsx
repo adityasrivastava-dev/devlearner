@@ -23,6 +23,7 @@ const BLANK_ALGO = {
   useCases: '[{"title":"","desc":""}]',
   pitfalls: '[""]',
   variants: '[{"name":"","desc":""}]',
+  mermaidDiagram: '',
 };
 
 /* ── Main exported section ──────────────────────────────────────────────────── */
@@ -194,6 +195,7 @@ function AlgoPastePanel() {
       useCases: '[{"title":"Use Case 1","desc":"Description of use case."}]',
       pitfalls: '["Common mistake 1","Common mistake 2"]',
       variants: '[{"name":"Variant","desc":"How it differs."}]',
+      mermaidDiagram: 'graph TD\n    A[Start] --> B{Condition?}\n    B -- Yes --> C[Do something]\n    B -- No --> D[Done]',
     }],
   }, null, 2);
 
@@ -360,6 +362,8 @@ function AlgoFormPanel({ algo, onDone }) {
         placeholder='["Off-by-one: use low <= high not low < high","Integer overflow: use low + (high-low)/2"]' mono />
       <TextAreaField label='Variants (JSON): [{"name":"...","desc":"..."}]' value={form.variants} onChange={v => set('variants', v)} rows={3}
         placeholder='[{"name":"Lower Bound","desc":"Find first index where arr[i] >= target"}]' mono />
+      <TextAreaField label="Mermaid Diagram (optional — shown in the Visual tab)" value={form.mermaidDiagram} onChange={v => set('mermaidDiagram', v)} rows={8}
+        placeholder="graph TD&#10;    A[Start] --> B{Condition?}&#10;    B -- Yes --> C[Do something]&#10;    B -- No --> D[Done]" mono />
 
       <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
         <button className="btn btn-primary" disabled={saving} onClick={handleSave}>

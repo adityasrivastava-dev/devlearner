@@ -44,6 +44,7 @@ public static class AlgorithmDto {
 	private String useCases;             // JSON string: [{"title":"...","desc":"..."}]
 	private String pitfalls;             // JSON string: ["mistake 1", "mistake 2"]
 	private String variants;             // JSON string: [{"name":"...","desc":"..."}]
+	private String mermaidDiagram;       // Mermaid chart definition for visual tab
 	private Integer displayOrder;
 }
 }

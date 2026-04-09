@@ -83,6 +83,12 @@ private String stability;
  */
 @Column(columnDefinition = "TEXT") private String variants;
 
+/**
+ * Mermaid diagram definition for step-by-step visual walkthrough.
+ * E.g. "graph TD\n  A[Start] --> B{mid == target?}\n  ..."
+ */
+@Column(name = "mermaid_diagram", columnDefinition = "TEXT") private String mermaidDiagram;
+
 /** Controls display order within a category */
 @Column(name = "display_order")
 private Integer displayOrder;

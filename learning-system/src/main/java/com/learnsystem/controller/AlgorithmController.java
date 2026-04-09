@@ -244,6 +244,7 @@ private void mapDto(AlgorithmSeedRequest.AlgorithmDto dto, Algorithm algo) {
 	algo.setUseCases(dto.getUseCases());
 	algo.setPitfalls(dto.getPitfalls());
 	algo.setVariants(dto.getVariants());
+	algo.setMermaidDiagram(dto.getMermaidDiagram());
 	algo.setDisplayOrder(dto.getDisplayOrder() != null ? dto.getDisplayOrder() : 999);
 
 	try {
