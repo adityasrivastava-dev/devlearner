@@ -1,0 +1,52 @@
+{
+  "batchName": "A03-two-pointer-sliding-window",
+  "skipExisting": true,
+  "algorithms": [
+    {
+      "slug": "two-pointer-opposite",
+      "name": "Two Pointers (Opposite Ends)",
+      "category": "Two Pointer",
+      "emoji": "👈👉",
+      "difficulty": "BEGINNER",
+      "displayOrder": 1,
+      "tags": "[\"O(n)\", \"Sorted Array\", \"Space O(1)\"]",
+      "timeComplexityBest": "O(n)",
+      "timeComplexityAverage": "O(n)",
+      "timeComplexityWorst": "O(n)",
+      "spaceComplexity": "O(1)",
+      "stability": "N/A",
+      "analogy": "Two people walking toward each other from opposite ends of a corridor — they meet in the middle.",
+      "story": "You have a sorted list of weights and need to find two that sum to a target. Checking every pair is O(n²). Instead, put one finger at the lightest weight and one at the heaviest. If their sum is too big, move the right finger left. Too small? Move the left finger right. They meet in O(n). Two pointers turn O(n²) brute force into O(n) on sorted data.",
+      "whenToUse": "• Array is sorted and you need pairs satisfying a condition\n• Reversing an array or string in-place\n• Checking if a string is a palindrome\n• Container With Most Water, Three Sum problems\n• Removing duplicates from a sorted array in-place",
+      "howItWorks": "1. Sort the array if not already sorted\n2. Set left = 0, right = n - 1\n3. While left < right:\n   a. Compute the current pair's value (e.g. sum = arr[left] + arr[right])\n   b. If sum == target → found the pair\n   c. If sum < target → need a larger value, move left pointer right (left++)\n   d. If sum > target → need a smaller value, move right pointer left (right--)\n4. Continue until pointers cross",
+      "javaCode": "public class TwoPointers {\n\n    // Two Sum II — sorted array, return 1-indexed positions\n    public static int[] twoSum(int[] numbers, int target) {\n        int left = 0, right = numbers.length - 1;\n\n        while (left < right) {\n            int sum = numbers[left] + numbers[right];\n            if (sum == target)  return new int[]{left + 1, right + 1};\n            if (sum < target)   left++;   // need bigger sum\n            else                right--;  // need smaller sum\n        }\n        return new int[]{-1, -1}; // no solution\n    }\n\n    // Reverse an array in-place\n    public static void reverse(int[] arr) {\n        int left = 0, right = arr.length - 1;\n        while (left < right) {\n            int tmp    = arr[left];\n            arr[left]  = arr[right];\n            arr[right] = tmp;\n            left++;\n            right--;\n        }\n    }\n\n    // Check palindrome\n    public static boolean isPalindrome(String s) {\n        int left = 0, right = s.length() - 1;\n        while (left < right) {\n            if (s.charAt(left) != s.charAt(right)) return false;\n            left++;\n            right--;\n        }\n        return true;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(Arrays.toString(twoSum(new int[]{2,7,11,15}, 9))); // [1, 2]\n        System.out.println(isPalindrome(\"racecar\")); // true\n    }\n}",
+      "interviewTips": "• Always clarify: is the array sorted? Two pointers requires sorted data or a specific structure\n• For Three Sum, sort first, then for each element run two pointers on the remainder — O(n²) overall\n• Skip duplicates explicitly to avoid returning duplicate triplets/pairs\n• The key insight to communicate: 'when sum is too large, right-- eliminates all pairs with arr[right]' — this is why it's O(n)",
+      "useCases": "[{\"title\":\"Database Range Queries\",\"desc\":\"Finding pairs of records whose combined value satisfies a constraint (e.g., two orders summing to a budget) uses a sorted two-pointer scan.\"},{\"title\":\"Palindrome Validation\",\"desc\":\"DNS, URL, and input validators use two-pointer palindrome checks on strings of IDs and codes.\"},{\"title\":\"Container With Most Water\",\"desc\":\"Maximising the area between two vertical lines in a histogram — a classic interview problem solved exactly with opposite-end two pointers.\"}]",
+      "pitfalls": "[\"Using two pointers on an unsorted array without sorting first — the logic breaks down\",\"While condition left < right vs left <= right: use strict less-than to avoid processing the same element as both pointers\",\"Not skipping duplicates in Three Sum — leads to duplicate triplets in the result\"]",
+      "variants": "[{\"name\":\"Fast & Slow Pointers\",\"desc\":\"Both start at the same end — fast moves 2 steps, slow moves 1. Used for cycle detection in linked lists (Floyd's algorithm)\"},{\"name\":\"Three Pointers\",\"desc\":\"Extension of two pointers for Three Sum — fix one element, then run two pointers on the rest\"}]"
+    },
+    {
+      "slug": "sliding-window-variable",
+      "name": "Sliding Window (Variable Size)",
+      "category": "Sliding Window",
+      "emoji": "📐",
+      "difficulty": "INTERMEDIATE",
+      "displayOrder": 1,
+      "tags": "[\"O(n)\", \"Two Pointer\", \"Optimal Subarray\"]",
+      "timeComplexityBest": "O(n)",
+      "timeComplexityAverage": "O(n)",
+      "timeComplexityWorst": "O(n)",
+      "spaceComplexity": "O(1) to O(k)",
+      "stability": "N/A",
+      "analogy": "A rubber band stretching and shrinking as you drag it across an array — expand when you need more, shrink when you have too much.",
+      "story": "You're looking for the longest sequence of days where your spending stays under budget. Instead of checking every possible sequence (O(n²)), you maintain a window. You add days on the right as long as you're under budget. The moment you go over, you drop days from the left until you're back under. This expand-and-shrink motion visits each element at most twice — making it O(n).",
+      "whenToUse": "• Longest/shortest subarray satisfying a condition\n• Minimum window substring\n• Subarrays with sum equal to k (non-negative numbers)\n• Longest substring without repeating characters\n• At most K distinct characters in a window",
+      "howItWorks": "1. Set left = 0, result = 0, and any tracking state (sum, map, set)\n2. Expand: iterate right from 0 to n-1\n   a. Add arr[right] to the window state\n3. Shrink: while the window violates the condition:\n   a. Remove arr[left] from the window state\n   b. left++\n4. Update result with current window size (right - left + 1)\n5. Return result",
+      "javaCode": "public class SlidingWindowVariable {\n\n    // Longest substring without repeating characters\n    public static int lengthOfLongestSubstring(String s) {\n        Map<Character, Integer> lastSeen = new HashMap<>();\n        int left = 0, maxLen = 0;\n\n        for (int right = 0; right < s.length(); right++) {\n            char c = s.charAt(right);\n            // If char already in window, shrink left past its last position\n            if (lastSeen.containsKey(c) && lastSeen.get(c) >= left) {\n                left = lastSeen.get(c) + 1;\n            }\n            lastSeen.put(c, right);\n            maxLen = Math.max(maxLen, right - left + 1);\n        }\n        return maxLen;\n    }\n\n    // Minimum size subarray with sum >= target (positive numbers only)\n    public static int minSubarrayLen(int target, int[] nums) {\n        int left = 0, sum = 0, minLen = Integer.MAX_VALUE;\n\n        for (int right = 0; right < nums.length; right++) {\n            sum += nums[right];          // expand window\n            while (sum >= target) {      // shrink while valid\n                minLen = Math.min(minLen, right - left + 1);\n                sum -= nums[left++];\n            }\n        }\n        return minLen == Integer.MAX_VALUE ? 0 : minLen;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(lengthOfLongestSubstring(\"abcabcbb\")); // 3 (\"abc\")\n        System.out.println(minSubarrayLen(7, new int[]{2,3,1,2,4,3})); // 2 ([4,3])\n    }\n}",
+      "interviewTips": "• The template is always: expand right, shrink left while invalid, update answer — memorise this pattern\n• Variable window vs fixed window: variable uses a while loop to shrink, fixed just subtracts the outgoing element\n• When the problem says 'at most K' or 'longest with condition', think variable sliding window immediately\n• Amortized O(n): each element enters the window once and leaves once — total 2n operations",
+      "useCases": "[{\"title\":\"Network Packet Analysis\",\"desc\":\"Monitoring the longest burst of packets within a bandwidth threshold uses variable sliding window across time-series network data.\"},{\"title\":\"Substring Problems (LeetCode)\",\"desc\":\"Minimum Window Substring, Longest Substring with At Most K Distinct Characters — the entire category of substring problems maps to variable sliding window.\"},{\"title\":\"Stock Profit Windows\",\"desc\":\"Finding the longest period where a stock's daily gain stays above a threshold uses variable window on the daily delta array.\"}]",
+      "pitfalls": "[\"Using variable window on problems with negative numbers — shrinking doesn't guarantee the window improves (use prefix sum + HashMap for that)\",\"Forgetting to update the result after shrinking — some problems want the max, not the current window size\",\"Updating lastSeen map for characters outside the current window — must check lastSeen.get(c) >= left\"]",
+      "variants": "[{\"name\":\"Fixed Sliding Window\",\"desc\":\"Window size is constant (k) — just add the new element and subtract the outgoing element each step, O(n)\"},{\"name\":\"At Most K Template\",\"desc\":\"'Exactly K' problems = atMost(K) - atMost(K-1), where atMost uses a standard variable window\"}]"
+    }
+  ]
+}

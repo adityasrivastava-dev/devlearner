@@ -1,0 +1,52 @@
+{
+  "batchName": "A01-searching",
+  "skipExisting": true,
+  "algorithms": [
+    {
+      "slug": "binary-search",
+      "name": "Binary Search",
+      "category": "Searching",
+      "emoji": "🔍",
+      "difficulty": "BEGINNER",
+      "displayOrder": 1,
+      "tags": "[\"O(log n)\", \"Sorted Array\", \"Divide & Conquer\"]",
+      "timeComplexityBest": "O(1)",
+      "timeComplexityAverage": "O(log n)",
+      "timeComplexityWorst": "O(log n)",
+      "spaceComplexity": "O(1) iterative · O(log n) recursive",
+      "stability": "N/A",
+      "analogy": "Opening a dictionary in the middle — throw out half the book every time.",
+      "story": "Priya is playing a number guessing game. The host says 'higher' or 'lower' after each guess. Instead of guessing 1, 2, 3... she goes to the middle every time. After 20 guesses she can find any number out of a million. That's binary search — eliminate half the problem with every step.",
+      "whenToUse": "• Array is sorted (or can be sorted)\n• Need O(log n) search speed\n• Finding a boundary (first/last occurrence)\n• Searching on a monotonic answer space\n• Search space can be halved on each step",
+      "howItWorks": "1. Set low = 0, high = n - 1\n2. Compute mid = low + (high - low) / 2\n3. If arr[mid] == target → found, return mid\n4. If arr[mid] < target → target is in right half, set low = mid + 1\n5. If arr[mid] > target → target is in left half, set high = mid - 1\n6. Repeat until low > high\n7. Return -1 (not found)",
+      "javaCode": "public class BinarySearch {\n\n    // Iterative — O(log n) time, O(1) space\n    public static int search(int[] arr, int target) {\n        int low = 0, high = arr.length - 1;\n\n        while (low <= high) {\n            int mid = low + (high - low) / 2; // avoids integer overflow vs (low+high)/2\n\n            if (arr[mid] == target) return mid;\n            if (arr[mid] < target)  low  = mid + 1;  // search right half\n            else                    high = mid - 1;  // search left half\n        }\n        return -1; // not found\n    }\n\n    // Find FIRST occurrence of target in array with duplicates\n    public static int firstOccurrence(int[] arr, int target) {\n        int low = 0, high = arr.length - 1, result = -1;\n        while (low <= high) {\n            int mid = low + (high - low) / 2;\n            if (arr[mid] == target) {\n                result = mid;\n                high = mid - 1; // keep searching left\n            } else if (arr[mid] < target) {\n                low = mid + 1;\n            } else {\n                high = mid - 1;\n            }\n        }\n        return result;\n    }\n\n    public static void main(String[] args) {\n        int[] arr = {1, 3, 5, 7, 9, 11, 13};\n        System.out.println(search(arr, 7));   // 3\n        System.out.println(search(arr, 6));   // -1\n\n        int[] dups = {1, 2, 2, 2, 3, 4};\n        System.out.println(firstOccurrence(dups, 2)); // 1\n    }\n}",
+      "interviewTips": "• Always use mid = low + (high - low) / 2 — never (low + high) / 2 which overflows for large indices\n• The condition is low <= high (not low < high) — the equal case handles single-element arrays\n• For 'first/last occurrence' problems, don't return on match — narrow the range and remember the answer\n• Binary search applies beyond arrays: use it on answer spaces (e.g. 'minimum mid value such that condition holds')",
+      "useCases": "[{\"title\":\"Database Index Lookup\",\"desc\":\"B-tree indexes in MySQL use a variant of binary search to find rows in O(log n). A table with 1 billion rows needs at most 30 comparisons.\"},{\"title\":\"Git Bisect\",\"desc\":\"git bisect uses binary search to find the commit that introduced a bug. It halves the commit range on each step, finding the culprit in O(log n) test runs.\"},{\"title\":\"OS Page Table Walk\",\"desc\":\"Operating systems use binary search on sorted page tables to translate virtual addresses to physical memory addresses in O(log n).\"}]",
+      "pitfalls": "[\"Off-by-one: using low < high instead of low <= high misses the case where the answer is the last element remaining\",\"Integer overflow: (low + high) / 2 overflows when both are large — always use low + (high - low) / 2\",\"Applying to unsorted arrays: binary search gives undefined results on unsorted data — always verify the precondition\",\"Not adapting for duplicates: a plain binary search finds any occurrence, not the first or last — use the boundary variant explicitly\"]",
+      "variants": "[{\"name\":\"Lower Bound\",\"desc\":\"Find the first index where arr[i] >= target — equivalent to Java's Arrays.binarySearch() returning insertion point\"},{\"name\":\"Upper Bound\",\"desc\":\"Find the first index where arr[i] > target — useful for counting occurrences of a value in a sorted array\"}]"
+    },
+    {
+      "slug": "linear-search",
+      "name": "Linear Search",
+      "category": "Searching",
+      "emoji": "📋",
+      "difficulty": "BEGINNER",
+      "displayOrder": 2,
+      "tags": "[\"O(n)\", \"Unsorted Array\", \"Simple\"]",
+      "timeComplexityBest": "O(1)",
+      "timeComplexityAverage": "O(n)",
+      "timeComplexityWorst": "O(n)",
+      "spaceComplexity": "O(1)",
+      "stability": "N/A",
+      "analogy": "Checking every locker in a hallway until you find the right one.",
+      "story": "Arjun lost his phone somewhere in his apartment. He checks every room one by one — kitchen, bedroom, bathroom — until he finds it. That's linear search. No clever strategy, just checking each item in sequence. Slow? Yes. But it works on any collection, sorted or not.",
+      "whenToUse": "• Array is unsorted and sorting would cost more than the search\n• You need to find all occurrences, not just one\n• Dataset is very small (n < 20) where the O(n) overhead is negligible\n• Searching through a linked list (no random access, binary search impossible)\n• When the target is statistically near the front",
+      "howItWorks": "1. Start at index 0\n2. Compare current element with target\n3. If equal → return current index\n4. If not equal → move to next element\n5. Repeat until end of array\n6. Return -1 if target was not found",
+      "javaCode": "public class LinearSearch {\n\n    // Basic search — returns first index of target, or -1\n    public static int search(int[] arr, int target) {\n        for (int i = 0; i < arr.length; i++) {\n            if (arr[i] == target) return i;\n        }\n        return -1;\n    }\n\n    // Find ALL occurrences\n    public static List<Integer> searchAll(int[] arr, int target) {\n        List<Integer> indices = new ArrayList<>();\n        for (int i = 0; i < arr.length; i++) {\n            if (arr[i] == target) indices.add(i);\n        }\n        return indices;\n    }\n\n    // Search in a 2D array\n    public static int[] search2D(int[][] matrix, int target) {\n        for (int i = 0; i < matrix.length; i++) {\n            for (int j = 0; j < matrix[i].length; j++) {\n                if (matrix[i][j] == target) return new int[]{i, j};\n            }\n        }\n        return new int[]{-1, -1};\n    }\n\n    public static void main(String[] args) {\n        int[] arr = {5, 3, 8, 1, 9, 2};\n        System.out.println(search(arr, 8));       // 2\n        System.out.println(search(arr, 7));       // -1\n        System.out.println(searchAll(new int[]{1,2,1,3,1}, 1)); // [0, 2, 4]\n    }\n}",
+      "interviewTips": "• Linear search is rarely the optimal answer — if asked in an interview, mention it and then suggest binary search or a HashMap\n• Mention that for small or unsorted data, linear search has lower constant factors than binary search (no sorting cost)\n• For 'find all occurrences' problems, linear scan is the correct approach regardless of sorting",
+      "useCases": "[{\"title\":\"Grep / File Search\",\"desc\":\"Unix grep scans each line of a file sequentially looking for a pattern. Files are not 'sorted' so linear scan is the only option.\"},{\"title\":\"Linked List Search\",\"desc\":\"Java's LinkedList.contains() does linear search since linked lists have no random access — binary search is impossible without an index.\"},{\"title\":\"Unsorted Streaming Data\",\"desc\":\"Searching through a live log stream or queue where data arrives in arbitrary order requires linear scan.\"}]",
+      "pitfalls": "[\"Using linear search on a sorted array when binary search would be O(log n)\",\"Not returning early — some implementations scan the whole array even after finding the target\",\"Off-by-one in the loop bound: using i <= arr.length instead of i < arr.length causes ArrayIndexOutOfBoundsException\"]",
+      "variants": "[{\"name\":\"Sentinel Search\",\"desc\":\"Place the target at the end of the array to eliminate the bounds check per iteration — slightly faster in practice\"},{\"name\":\"Bidirectional Search\",\"desc\":\"Search from both ends simultaneously — finds the target in half the iterations on average\"}]"
+    }
+  ]
+}
