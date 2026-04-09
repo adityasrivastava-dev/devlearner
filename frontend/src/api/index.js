@@ -202,6 +202,33 @@ export const adminApi = {
     http.delete(`/api/admin/problems/${id}`).then((r) => r.data),
 };
 
+// ─── Algorithm Admin API ─────────────────────────────────────────────────────
+export const algorithmAdminApi = {
+  getAll:         () =>
+    http.get('/api/algorithms').then(r => r.data),
+
+  getSeedFiles:   () =>
+    http.get('/api/algorithms/admin/seed-files').then(r => r.data),
+
+  importSeedFile: (filename) =>
+    http.post(`/api/algorithms/admin/seed-file/${encodeURIComponent(filename)}`).then(r => r.data),
+
+  seedBatch:      (payload) =>
+    http.post('/api/algorithms/admin/seed-batch', payload).then(r => r.data),
+
+  create:         (data) =>
+    http.post('/api/algorithms/admin', data).then(r => r.data),
+
+  update:         (id, data) =>
+    http.put(`/api/algorithms/admin/${id}`, data).then(r => r.data),
+
+  delete:         (id) =>
+    http.delete(`/api/algorithms/admin/${id}`).then(r => r.data),
+
+  deleteAll:      () =>
+    http.delete('/api/algorithms/admin/all').then(r => r.data),
+};
+
 // ─── Live Debugger ────────────────────────────────────────────────────────────
 export const debugApi = {
   // POST /api/debug — step-by-step variable trace for Java code

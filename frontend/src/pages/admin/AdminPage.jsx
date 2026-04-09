@@ -7,11 +7,12 @@ import toast from 'react-hot-toast';
 import styles from './AdminPage.module.css';
 import JsonBuilderSection from './JsonBuilderSection';
 import QuizAdminSection from './QuizAdminSection';
+import AlgorithmAdminSection from './AlgorithmAdminSection';
 
 export default function AdminPage() {
   const navigate   = useNavigate();
   const qc         = useQueryClient();
-  const [section, setSection] = useState('topics'); // topics | users | seed | build | stats
+  const [section, setSection] = useState('topics'); // topics | users | seed | build | algorithms | stats
 
   return (
     <div className={styles.adminPage}>
@@ -23,12 +24,13 @@ export default function AdminPage() {
         </div>
         <nav className={styles.nav}>
           {[
-            { key: 'topics',  icon: '📚', label: 'Topics' },
-            { key: 'users',   icon: '👥', label: 'Users' },
-            { key: 'seed',    icon: '📦', label: 'Import JSON' },
-            { key: 'build',   icon: '🛠', label: 'Build JSON' },
-            { key: 'quiz',    icon: '🧠', label: 'Quiz' },
-            { key: 'stats',   icon: '📊', label: 'Stats' },
+            { key: 'topics',     icon: '📚', label: 'Topics' },
+            { key: 'users',      icon: '👥', label: 'Users' },
+            { key: 'seed',       icon: '📦', label: 'Import JSON' },
+            { key: 'build',      icon: '🛠', label: 'Build JSON' },
+            { key: 'quiz',       icon: '🧠', label: 'Quiz' },
+            { key: 'algorithms', icon: '⚡', label: 'Algorithms' },
+            { key: 'stats',      icon: '📊', label: 'Stats' },
           ].map((item) => (
             <button
               key={item.key}
@@ -43,12 +45,13 @@ export default function AdminPage() {
 
       {/* Content */}
       <div className={styles.content}>
-        {section === 'topics' && <TopicsSection qc={qc} />}
-        {section === 'users'  && <UsersSection />}
-        {section === 'seed'   && <SeedSection />}
-        {section === 'build'  && <div className={styles.section}><div className={styles.sectionHeader}><span className={styles.sectionTitle}>JSON Builder</span></div><JsonBuilderSection /></div>}
-        {section === 'quiz'   && <QuizAdminSection />}
-        {section === 'stats'  && <StatsSection />}
+        {section === 'topics'     && <TopicsSection qc={qc} />}
+        {section === 'users'      && <UsersSection />}
+        {section === 'seed'       && <SeedSection />}
+        {section === 'build'      && <div className={styles.section}><div className={styles.sectionHeader}><span className={styles.sectionTitle}>JSON Builder</span></div><JsonBuilderSection /></div>}
+        {section === 'quiz'       && <QuizAdminSection />}
+        {section === 'algorithms' && <AlgorithmAdminSection />}
+        {section === 'stats'      && <StatsSection />}
       </div>
     </div>
   );
