@@ -50,6 +50,8 @@ export default function Sidebar({ selectedTopicId, onTopicSelect, isOpen, onClos
               onClick={() => navTo('/roadmap')} title="Roadmaps">🗺</button>
             <button className={`${styles.iconBtn} ${isActive('/quiz') ? styles.iconActive : ''}`}
               onClick={() => navTo('/quiz')} title="MCQ Quiz">🧠</button>
+            <button className={`${styles.iconBtn} ${isActive('/algorithms') ? styles.iconActive : ''}`}
+              onClick={() => navTo('/algorithms')} title="Algorithms">⚡</button>
             <button className={`${styles.iconBtn} ${isActive('/problems') ? styles.iconActive : ''}`}
               onClick={() => navTo('/problems')} title="All Problems">📋</button>
             <button className={`${styles.iconBtn} ${isActive('/playground') ? styles.iconActive : ''}`}
