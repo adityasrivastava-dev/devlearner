@@ -39,29 +39,32 @@ export default function Sidebar({ selectedTopicId, onTopicSelect, isOpen, onClos
 
       <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
 
+        {/* Row 1: logo + mobile close */}
         <div className={styles.header}>
           <button className={styles.logoBtn} onClick={() => { navTo('/'); onTopicSelect?.(null); }} title="Dashboard">
             <span className={styles.logo}>⟨dev<span>learn</span>⟩</span>
           </button>
-          <div className={styles.headerActions}>
-            <button className={`${styles.iconBtn} ${isHome && !selectedTopicId ? styles.iconActive : ''}`}
-              onClick={() => { navTo('/'); onTopicSelect?.(null); }} title="Dashboard">⌂</button>
-            <button className={`${styles.iconBtn} ${isActive('/roadmap') ? styles.iconActive : ''}`}
-              onClick={() => navTo('/roadmap')} title="Roadmaps">🗺</button>
-            <button className={`${styles.iconBtn} ${isActive('/quiz') ? styles.iconActive : ''}`}
-              onClick={() => navTo('/quiz')} title="MCQ Quiz">🧠</button>
-            <button className={`${styles.iconBtn} ${isActive('/algorithms') ? styles.iconActive : ''}`}
-              onClick={() => navTo('/algorithms')} title="Algorithms">⚡</button>
-            <button className={`${styles.iconBtn} ${isActive('/problems') ? styles.iconActive : ''}`}
-              onClick={() => navTo('/problems')} title="All Problems">📋</button>
-            <button className={`${styles.iconBtn} ${isActive('/playground') ? styles.iconActive : ''}`}
-              onClick={() => navTo('/playground')} title="Playground">{'</>'}</button>
-            {isAdmin && (
-              <button className={`${styles.iconBtn} ${isActive('/admin') ? styles.iconActive : ''}`}
-                onClick={() => navTo('/admin')} title="Admin">⚙</button>
-            )}
-            <button className={`${styles.iconBtn} ${styles.closeBtn}`} onClick={onClose} title="Close">✕</button>
-          </div>
+          <button className={`${styles.iconBtn} ${styles.closeBtn}`} onClick={onClose} title="Close">✕</button>
+        </div>
+
+        {/* Row 2: nav icons — full width, always visible */}
+        <div className={styles.navRow}>
+          <button className={`${styles.navBtn} ${isHome && !selectedTopicId ? styles.navActive : ''}`}
+            onClick={() => { navTo('/'); onTopicSelect?.(null); }} title="Dashboard">⌂</button>
+          <button className={`${styles.navBtn} ${isActive('/roadmap') ? styles.navActive : ''}`}
+            onClick={() => navTo('/roadmap')} title="Roadmaps">🗺</button>
+          <button className={`${styles.navBtn} ${isActive('/quiz') ? styles.navActive : ''}`}
+            onClick={() => navTo('/quiz')} title="MCQ Quiz">🧠</button>
+          <button className={`${styles.navBtn} ${isActive('/algorithms') ? styles.navActive : ''}`}
+            onClick={() => navTo('/algorithms')} title="Algorithms">⚡</button>
+          <button className={`${styles.navBtn} ${isActive('/problems') ? styles.navActive : ''}`}
+            onClick={() => navTo('/problems')} title="Problems">📋</button>
+          <button className={`${styles.navBtn} ${isActive('/playground') ? styles.navActive : ''}`}
+            onClick={() => navTo('/playground')} title="Playground">{'</>'}</button>
+          {isAdmin && (
+            <button className={`${styles.navBtn} ${isActive('/admin') ? styles.navActive : ''}`}
+              onClick={() => navTo('/admin')} title="Admin">⚙</button>
+          )}
         </div>
 
         <UserBar />

@@ -25,7 +25,8 @@
 /* ── Header ── */
 .header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: var(--space-sm); border-bottom: 1px solid var(--border); flex-shrink: 0;
+  padding: 10px var(--space-sm) 8px;
+  flex-shrink: 0;
 }
 .logoBtn {
   background: none; border: none; cursor: pointer; padding: 0; line-height: 1;
@@ -36,8 +37,29 @@
 }
 .logo span { color: var(--accent3); }
 
-.headerActions { display: flex; align-items: center; gap: 1px; }
+/* Nav row sits below the logo, spans full sidebar width */
+.navRow {
+  display: flex; align-items: center;
+  padding: 0 6px 6px;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.navBtn {
+  flex: 1;
+  height: 30px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 6px; background: none; border: none;
+  font-size: 15px; color: var(--text3); cursor: pointer; font-family: var(--font-ui);
+  transition: background .15s, color .15s;
+}
+.navBtn:hover { background: var(--bg3); color: var(--text2); }
+.navActive {
+  background: var(--adim) !important;
+  color: var(--accent3) !important;
+}
 
+/* Close button — mobile only */
 .iconBtn {
   width: 26px; height: 26px; display: inline-flex; align-items: center;
   justify-content: center; border-radius: 6px; background: none; border: none;
@@ -45,11 +67,6 @@
   transition: background .15s, color .15s;
 }
 .iconBtn:hover { background: var(--bg3); color: var(--text2); }
-.iconActive {
-  background: var(--adim) !important;
-  color: var(--accent3) !important;
-}
-/* Hide close button on desktop */
 .closeBtn { display: none; }
 @media (max-width: 768px) { .closeBtn { display: inline-flex; } }
 
