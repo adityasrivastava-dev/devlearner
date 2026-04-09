@@ -57,6 +57,9 @@ private String code;             // submitted code snapshot
 @Column(name = "hint_assisted")
 private Boolean hintAssisted;
 
+@Column(name = "approach_text", columnDefinition = "TEXT")
+private String approachText;
+
 @Column(name = "java_version", length = 10)
 private String javaVersion;
 

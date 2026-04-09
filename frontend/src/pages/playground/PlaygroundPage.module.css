@@ -393,6 +393,13 @@
   line-height: 1.4;
 }
 
+/* ── Syntax status (status bar) ─────────────────────────────────────────── */
+.syntaxStatus { transition: color .2s; min-width: 70px; }
+.syntaxStatus.ok       { color: var(--accent); }
+.syntaxStatus.error    { color: var(--red, #f87171); }
+.syntaxStatus.checking { color: var(--text3); }
+.syntaxStatus.ready    { color: var(--text3); }
+
 /* ── Status badges ───────────────────────────────────────────────────────── */
 .badge {
   font-size: 10px;

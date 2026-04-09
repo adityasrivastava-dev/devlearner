@@ -215,6 +215,24 @@
 }
 .chipX:hover { opacity: 1; }
 
+/* Bookmark button */
+.bmBtn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--text3);
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color .15s, background .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bmBtn:hover { color: #f59e0b; background: rgba(245,158,11,.08); }
+.bmActive { color: #f59e0b !important; }
+
 /* Pagination */
 .pagination {
   display: flex;

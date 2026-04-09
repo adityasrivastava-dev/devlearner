@@ -24,12 +24,13 @@ export default function PlaygroundPage() {
   const [code,        setCode]        = useState(() => localStorage.getItem(STORAGE_KEY) || DEFAULT_CODE);
   const [stdin,       setStdin]       = useState(() => localStorage.getItem(STORAGE_STDIN) || '');
   const [javaVersion, setJavaVersion] = useState('17');
-  const [isRunning,   setIsRunning]   = useState(false);
-  const [result,      setResult]      = useState(null);   // ExecuteResponse
-  const [activeTab,   setActiveTab]   = useState('output'); // 'stdin' | 'output'
-  const [cursorPos,   setCursorPos]   = useState({ line: 1, col: 1 });
-  const [lineCount,   setLineCount]   = useState(0);
-  const [theme,       setTheme]       = useState(
+  const [isRunning,    setIsRunning]    = useState(false);
+  const [result,       setResult]       = useState(null);   // ExecuteResponse
+  const [activeTab,    setActiveTab]    = useState('output'); // 'stdin' | 'output'
+  const [cursorPos,    setCursorPos]    = useState({ line: 1, col: 1 });
+  const [syntaxState,  setSyntaxState]  = useState('ready'); // 'ready'|'checking'|'ok'|'error'
+  const [syntaxErrors, setSyntaxErrors] = useState([]);
+  const [theme,        setTheme]        = useState(
     () => localStorage.getItem('devlearn_theme') || 'dark'
   );
 
@@ -44,17 +45,15 @@ export default function PlaygroundPage() {
     setActiveTab('output');
 
     // Clear old markers
-    if (editorRef.current && monacoRef.current) {
-      applyMarkers(editorRef.current, monacoRef.current, []);
-    }
+    applyMarkers(editorRef, monacoRef, []);
 
     try {
       const res = await codeApi.execute(code, stdin, javaVersion);
       setResult(res);
 
       // Apply compile-error markers to Monaco
-      if (res.compileErrors?.length && editorRef.current && monacoRef.current) {
-        applyMarkers(editorRef.current, monacoRef.current, res.compileErrors);
+      if (res.compileErrors?.length) {
+        applyMarkers(editorRef, monacoRef, res.compileErrors);
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Execution failed');
@@ -67,9 +66,9 @@ export default function PlaygroundPage() {
     setCode(DEFAULT_CODE);
     setStdin('');
     setResult(null);
-    if (editorRef.current && monacoRef.current) {
-      applyMarkers(editorRef.current, monacoRef.current, []);
-    }
+    setSyntaxErrors([]);
+    setSyntaxState('ready');
+    applyMarkers(editorRef, monacoRef, []);
   }, []);
 
   const handleKeyDown = useCallback((e) => {
@@ -148,15 +147,19 @@ export default function PlaygroundPage() {
             height="100%"
             editorRefOut={editorRef}
             monacoRefOut={monacoRef}
-            onCursorChange={({ line, col, lineCount: lc }) => {
-              setCursorPos({ line, col });
-              setLineCount(lc);
-            }}
+            onCursorChange={(line, col) => setCursorPos({ line, col })}
+            onSyntaxChange={(state, errors) => { setSyntaxState(state); setSyntaxErrors(errors); }}
           />
           {/* Status bar */}
           <div className={styles.statusBar}>
+            <span className={`${styles.syntaxStatus} ${styles[syntaxState]}`}>
+              {syntaxState === 'checking' ? '⟳ Checking…'
+               : syntaxErrors.length > 0 ? `✕ ${syntaxErrors.length} error${syntaxErrors.length !== 1 ? 's' : ''}`
+               : syntaxState === 'ok' ? '✓ OK'
+               : ''}
+            </span>
             <span>Ln {cursorPos.line}, Col {cursorPos.col}</span>
-            <span>{lineCount} lines</span>
+            <span>{code.split('\n').length} lines</span>
             <span>Java {javaVersion}</span>
             <span>UTF-8</span>
           </div>

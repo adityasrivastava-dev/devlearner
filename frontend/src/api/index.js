@@ -83,12 +83,13 @@ export const codeApi = {
   execute: (code, stdin = '', javaVersion = '17') =>
     http.post('/api/execute', { code, stdin, javaVersion }).then((r) => r.data),
 
-  submit: (problemId, code, solveTimeSecs, hintAssisted, javaVersion = '17') =>
+  submit: (problemId, code, solveTimeSecs, hintAssisted, javaVersion = '17', approachText = '') =>
     http.post('/api/submissions/submit', {
       problemId, code,
       solveTimeSecs: solveTimeSecs || null,
       hintAssisted: !!hintAssisted,
       javaVersion,
+      approachText: approachText || null,
     }).then((r) => r.data),
 
   syntaxCheck: (code, javaVersion = '17') =>
@@ -303,6 +304,7 @@ export const QUERY_KEYS = {
   solvedIds:                ['solvedIds'],
   streak:                   ['streak'],
   bookmarks:                ['bookmarks'],
+  notes:             (tid)  => ['notes', tid],
   adminUsers:               ['adminUsers'],
   adminStats:               ['adminStats'],
   seedFiles:                ['seedFiles'],

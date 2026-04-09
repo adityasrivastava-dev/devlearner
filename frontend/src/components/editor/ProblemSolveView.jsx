@@ -29,6 +29,7 @@ export default function ProblemSolveView({
   const [isSubmitting,    setIsSubmitting]    = useState(false);
   const [hintsShown,      setHintsShown]      = useState(0);
   const [approach,        setApproach]        = useState('');
+  const [approachOpen,    setApproachOpen]    = useState(false);
   const [splitPos,        setSplitPos]        = useState(40);
   const [cursorPos,       setCursorPos]       = useState({ line: 1, col: 1 });
   const [lineCount,       setLineCount]       = useState(0);
@@ -76,7 +77,9 @@ export default function ProblemSolveView({
     setCode(initial);
     setLineCount(initial.split('\n').length);
     setTestInput(problem.sampleInput || '');
-    setApproach(localStorage.getItem(`devlearn_approach_${problemId}`) || '');
+    const savedApproach = localStorage.getItem(`devlearn_approach_${problemId}`) || '';
+    setApproach(savedApproach);
+    setApproachOpen(!savedApproach); // open when no approach written yet
     setHintsShown(0);
     setRunResult(null);
     setSubmitResult(null);
@@ -141,7 +144,7 @@ export default function ProblemSolveView({
     // BUG FIX: pass actual elapsed solve time instead of always 0
     const solveTimeSecs = Math.floor((Date.now() - solveStartRef.current) / 1000);
     try {
-      const res = await codeApi.submit(problemId, code, solveTimeSecs, hintsShown >= 3, javaVersion);
+      const res = await codeApi.submit(problemId, code, solveTimeSecs, hintsShown >= 3, javaVersion, approach);
       setSubmitResult(res);
       if (res.compileErrors?.length) {
         applyMarkers(editorRef, monacoRef, res.compileErrors);
@@ -363,6 +366,30 @@ export default function ProblemSolveView({
                 ⌨ Ctrl+↵ Run · Ctrl+⇧+↵ Submit
               </span>
             </div>
+          </div>
+
+          {/* ── Approach panel ──────────────────────────────────────── */}
+          <div className={styles.approachPanel}>
+            <button
+              className={styles.approachHeader}
+              onClick={() => setApproachOpen((o) => !o)}
+            >
+              <span>✍️</span>
+              <span className={styles.approachTitle}>Plan your approach</span>
+              {approach.trim()
+                ? <span className={styles.approachFilled}>✓ written</span>
+                : <span className={styles.approachEmpty}>write before coding</span>}
+              <span className={styles.approachChevron}>{approachOpen ? '▲' : '▼'}</span>
+            </button>
+            {approachOpen && (
+              <textarea
+                className={styles.approachTextarea}
+                placeholder="Describe your algorithm in plain English… e.g. 'I'll use a HashMap to store each number. For each element, check if (target − x) exists…'"
+                value={approach}
+                onChange={(e) => setApproach(e.target.value)}
+                rows={4}
+              />
+            )}
           </div>
 
           {/* Monaco editor */}

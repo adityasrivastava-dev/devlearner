@@ -91,6 +91,7 @@ public ResponseEntity<Map<String, Object>> submitAndPersist(
 			.code(req.getCode())
 			.hintAssisted(req.isHintAssisted())
 			.javaVersion(req.getJavaVersion())
+			.approachText(req.getApproachText())
 			.build();
 
 	submissionRepo.save(sub);
@@ -269,5 +270,6 @@ public static class SubmitPersistRequest {
 	private Long    solveTimeSecs;
 	private boolean hintAssisted;
 	private String  javaVersion = "17";
+	private String  approachText;
 }
 }

@@ -99,6 +99,67 @@
 .fileTabActions { margin-left:auto; }
 .shortcutHint { font-size:10px; color:var(--text3); font-family:var(--font-code); }
 
+/* ── Approach panel ──────────────────────────────────────────────────────────*/
+.approachPanel {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.approachHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  text-align: left;
+}
+.approachHeader:hover { background: var(--bg3); }
+.approachTitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+.approachFilled {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-left: 4px;
+}
+.approachEmpty {
+  font-size: 10px;
+  color: var(--yellow, #fbbf24);
+  margin-left: 4px;
+  font-style: italic;
+}
+.approachChevron {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--text3);
+}
+.approachTextarea {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: none;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.65;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+}
+.approachTextarea::placeholder { color: var(--text3); }
+.approachTextarea:focus { background: var(--bg2); }
+
 /* ── Editor ──────────────────────────────────────────────────────────────────*/
 .editorWrap { flex:1; min-height:0; overflow:hidden; }
 

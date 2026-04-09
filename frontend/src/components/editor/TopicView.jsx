@@ -1,19 +1,36 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { topicsApi, submissionsApi, QUERY_KEYS } from '../../api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { topicsApi, submissionsApi, bookmarksApi, notesApi, QUERY_KEYS } from '../../api';
 import { getCategoryMeta, getDiffMeta } from '../../utils/helpers';
 import TracerPlayer from './TracerPlayer';
 import FlowchartViewer from './FlowchartViewer';
 import styles from './TopicView.module.css';
 import ReadOnlyCodeViewer from './ReadOnlyCodeViewer';
 
-export default function TopicView({ topic, onProblemOpen, onBack }) {
+export default function TopicView({ topic, onProblemOpen, onBack, theme = 'dark' }) {
   const [tab, setTab]               = useState('theory');
   const [activeExample, setActiveExample] = useState(null); // null = list, number = detail view
   const [diffFilter, setDiffFilter] = useState('ALL');
+  const queryClient = useQueryClient();
 
   // Reset example detail on topic change
   useEffect(() => { setActiveExample(null); setTab('theory'); }, [topic.id]);
+
+  // ── Bookmark ─────────────────────────────────────────────────────────────────
+  const { data: bmData } = useQuery({
+    queryKey: ['bookmark', 'TOPIC', topic.id],
+    queryFn:  () => bookmarksApi.check('TOPIC', topic.id),
+    staleTime: 60 * 1000,
+  });
+  const isBookmarked = bmData?.bookmarked ?? false;
+
+  const { mutate: toggleBookmark } = useMutation({
+    mutationFn: () => bookmarksApi.toggle('TOPIC', topic.id, topic.title),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookmark', 'TOPIC', topic.id] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.bookmarks });
+    },
+  });
 
   const { data: examples = [], isLoading: exLoading } = useQuery({
     queryKey: QUERY_KEYS.examples(topic.id),
@@ -51,6 +68,7 @@ export default function TopicView({ topic, onProblemOpen, onBack }) {
           ex={ex}
           index={activeExample}
           total={examples.length}
+          theme={theme}
           onBack={() => setActiveExample(null)}
           onPrev={() => setActiveExample(i => Math.max(0, i - 1))}
           onNext={() => setActiveExample(i => Math.min(examples.length - 1, i + 1))}
@@ -72,6 +90,13 @@ export default function TopicView({ topic, onProblemOpen, onBack }) {
           )}
           <span className={`badge ${catMeta.cls}`}>{catMeta.label}</span>
           <h1 className={styles.title}>{topic.title}</h1>
+          <button
+            className={`${styles.bookmarkBtn} ${isBookmarked ? styles.bookmarked : ''}`}
+            onClick={toggleBookmark}
+            title={isBookmarked ? 'Remove bookmark' : 'Bookmark this topic'}
+          >
+            {isBookmarked ? '★' : '☆'}
+          </button>
         </div>
         {topic.description && (
           <p className={styles.desc}>{topic.description}</p>
@@ -85,6 +110,7 @@ export default function TopicView({ topic, onProblemOpen, onBack }) {
           { key: 'examples', label: 'Examples', icon: '💡' },
           { key: 'practice', label: 'Practice', icon: '🎯' },
           { key: 'optimize', label: 'Approach', icon: '⚡' },
+          { key: 'notes',    label: 'Notes',    icon: '📝' },
         ].map(({ key, label, icon }) => (
           <button
             key={key}
@@ -269,13 +295,132 @@ export default function TopicView({ topic, onProblemOpen, onBack }) {
           </div>
         )}
 
+        {/* NOTES */}
+        {tab === 'notes' && <NotesPanel key={topic.id} topicId={topic.id} />}
+
       </div>
     </div>
   );
 }
 
+// ── Notes Panel ───────────────────────────────────────────────────────────────
+function NotesPanel({ topicId }) {
+  const queryClient = useQueryClient();
+  const [noteText,   setNoteText]   = useState('');
+  const [editingId,  setEditingId]  = useState(null);
+  const [editText,   setEditText]   = useState('');
+
+  const { data: notes = [], isLoading } = useQuery({
+    queryKey: QUERY_KEYS.notes(topicId),
+    queryFn:  () => notesApi.getByTopic(topicId),
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { mutate: createNote, isPending: creating } = useMutation({
+    mutationFn: (content) => notesApi.create(topicId, content),
+    onSuccess: () => {
+      setNoteText('');
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.notes(topicId) });
+    },
+  });
+
+  const { mutate: updateNote } = useMutation({
+    mutationFn: ({ id, content }) => notesApi.update(id, content),
+    onSuccess: () => {
+      setEditingId(null);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.notes(topicId) });
+    },
+  });
+
+  const { mutate: deleteNote } = useMutation({
+    mutationFn: (id) => notesApi.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.notes(topicId) }),
+  });
+
+  return (
+    <div className={styles.notesPanel}>
+      <div className={styles.noteForm}>
+        <textarea
+          className={styles.noteTextarea}
+          placeholder="Write a note for this topic…"
+          value={noteText}
+          onChange={(e) => setNoteText(e.target.value)}
+          rows={3}
+        />
+        <button
+          className="btn btn-primary btn-sm"
+          disabled={!noteText.trim() || creating}
+          onClick={() => createNote(noteText.trim())}
+        >
+          {creating ? 'Saving…' : '+ Save Note'}
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className={styles.loadingRow}><span className="spinner" />Loading notes…</div>
+      ) : notes.length === 0 ? (
+        <div className={styles.emptyState}>
+          <span>📝</span>
+          <p>No notes yet. Write something above to remember this topic.</p>
+        </div>
+      ) : (
+        <div className={styles.notesList}>
+          {notes.map((note) => (
+            <div key={note.id} className={styles.noteCard}>
+              {editingId === note.id ? (
+                <>
+                  <textarea
+                    className={styles.noteTextarea}
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    rows={3}
+                    autoFocus
+                  />
+                  <div className={styles.noteActions}>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={() => { if (editText.trim()) updateNote({ id: note.id, content: editText.trim() }); }}
+                    >Save</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)}>Cancel</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={styles.noteContent}>{note.content}</div>
+                  <div className={styles.noteMeta}>
+                    <span className={styles.noteDate}>{formatNoteDate(note.updatedAt)}</span>
+                    <div className={styles.noteActions}>
+                      <button
+                        className={styles.noteActionBtn}
+                        onClick={() => { setEditingId(note.id); setEditText(note.content); }}
+                      >Edit</button>
+                      <button
+                        className={`${styles.noteActionBtn} ${styles.noteDelete}`}
+                        onClick={() => deleteNote(note.id)}
+                      >Delete</button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function formatNoteDate(str) {
+  if (!str) return '';
+  try {
+    return new Date(str).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch {
+    return str;
+  }
+}
+
 // ── Example Detail View (full-page) ──────────────────────────────────────────
-function ExampleDetailView({ ex, index, total, onBack, onPrev, onNext }) {
+function ExampleDetailView({ ex, index, total, theme = 'dark', onBack, onPrev, onNext }) {
   const [activeSection, setActiveSection] = useState('code');
 
   const sections = [
@@ -334,14 +479,14 @@ function ExampleDetailView({ ex, index, total, onBack, onPrev, onNext }) {
         {activeSection === 'code' && (
           <div className={styles.exSection}>
             <div className={styles.exSectionLabel}>Java Code</div>
-            <ReadOnlyCodeViewer code={ex.code} theme="dark" />
+            <ReadOnlyCodeViewer code={ex.code} theme={theme} />
           </div>
         )}
 
         {activeSection === 'tracer' && ex.tracerSteps && (
           <div className={styles.exSection}>
             <div className={styles.exSectionLabel}>Step-by-Step Tracer</div>
-            <TracerPlayer code={ex.code} tracerSteps={ex.tracerSteps} />
+            <TracerPlayer code={ex.code} tracerSteps={ex.tracerSteps} theme={theme} />
           </div>
         )}
 

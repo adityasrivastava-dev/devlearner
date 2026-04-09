@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import styles from './TracerPlayer.module.css';
 import ReadOnlyCodeViewer from './ReadOnlyCodeViewer';
 
-export default function TracerPlayer({ code = '', tracerSteps = '[]' }) {
+export default function TracerPlayer({ code = '', tracerSteps = '[]', theme = 'dark' }) {
   const [steps, setSteps]     = useState([]);
   const [current, setCurrent] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -87,7 +87,7 @@ export default function TracerPlayer({ code = '', tracerSteps = '[]' }) {
       <div className={styles.codePanel}>
         <ReadOnlyCodeViewer
           code={code}
-          theme="dark"
+          theme={theme}
           highlightLine={activeLine}
           maxLines={30}
         />

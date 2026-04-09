@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { problemsApi, submissionsApi, QUERY_KEYS } from '../../api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { problemsApi, submissionsApi, bookmarksApi, QUERY_KEYS } from '../../api';
 import { getDiffMeta, getCategoryMeta } from '../../utils/helpers';
 import styles from './ProblemsPage.module.css';
 
@@ -9,15 +9,19 @@ const PAGE_SIZE = 20;
 
 export default function ProblemsPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [filters, setFilters] = useState({
-    category:   '',
-    difficulty: '',
-    pattern:    '',
-    search:     '',
-    page:       0,
-  });
-  const [searchInput, setSearchInput] = useState('');
+  // ── Filter state driven by URL ───────────────────────────────────────────────
+  const filters = useMemo(() => ({
+    category:   searchParams.get('category')   || '',
+    difficulty: searchParams.get('difficulty') || '',
+    pattern:    searchParams.get('pattern')    || '',
+    search:     searchParams.get('search')     || '',
+    page:       parseInt(searchParams.get('page') || '0', 10),
+  }), [searchParams]);
+
+  const [searchInput, setSearchInput] = useState(() => searchParams.get('search') || '');
 
   // ── Filter metadata ─────────────────────────────────────────────────────────
   const { data: meta = { categories: [], patterns: [] } } = useQuery({
@@ -52,6 +56,22 @@ export default function ProblemsPage() {
     ...JSON.parse(localStorage.getItem('devlearn_solved') || '[]'),
   ]), [solvedIds]);
 
+  // ── Bookmarks ────────────────────────────────────────────────────────────────
+  const { data: allBookmarks = [] } = useQuery({
+    queryKey: QUERY_KEYS.bookmarks,
+    queryFn:  bookmarksApi.getAll,
+    staleTime: 60 * 1000,
+  });
+  const bookmarkedSet = useMemo(
+    () => new Set(allBookmarks.filter((b) => b.itemType === 'PROBLEM').map((b) => b.itemId)),
+    [allBookmarks]
+  );
+
+  const { mutate: toggleBookmark } = useMutation({
+    mutationFn: ({ id, title }) => bookmarksApi.toggle('PROBLEM', id, title),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.bookmarks }),
+  });
+
   // ── Derived ─────────────────────────────────────────────────────────────────
   const problems      = data?.content      ?? [];
   const totalElements = data?.totalElements ?? 0;
@@ -68,18 +88,29 @@ export default function ProblemsPage() {
   );
 
   // ── Handlers ────────────────────────────────────────────────────────────────
-  const setFilter = useCallback((key, value) =>
-    setFilters((f) => ({ ...f, [key]: value, page: 0 })), []);
+  const setFilter = useCallback((key, value) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (value) next.set(key, value); else next.delete(key);
+      next.delete('page');
+      return next;
+    });
+  }, [setSearchParams]);
 
   const handleSearch = useCallback((e) => {
     e.preventDefault();
-    setFilters((f) => ({ ...f, search: searchInput.trim(), page: 0 }));
-  }, [searchInput]);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (searchInput.trim()) next.set('search', searchInput.trim()); else next.delete('search');
+      next.delete('page');
+      return next;
+    });
+  }, [searchInput, setSearchParams]);
 
   const clearAll = useCallback(() => {
-    setFilters({ category: '', difficulty: '', pattern: '', search: '', page: 0 });
+    setSearchParams({});
     setSearchInput('');
-  }, []);
+  }, [setSearchParams]);
 
   function openProblem(p) {
     const url = p.topicId
@@ -167,7 +198,7 @@ export default function ProblemsPage() {
       {/* Active filter chips */}
       {hasActiveFilter && (
         <div className={styles.chips}>
-          {filters.search     && <Chip label={`"${filters.search}"`} onRemove={() => { setFilter('search',''); setSearchInput(''); }} />}
+          {filters.search     && <Chip label={`"${filters.search}"`} onRemove={() => { setFilter('search', ''); setSearchInput(''); }} />}
           {filters.category   && <Chip label={filters.category.replace(/_/g,' ')}  onRemove={() => setFilter('category','')}   />}
           {filters.difficulty && <Chip label={filters.difficulty}                   onRemove={() => setFilter('difficulty','')} />}
           {filters.pattern    && <Chip label={filters.pattern}                      onRemove={() => setFilter('pattern','')}    />}
@@ -192,6 +223,7 @@ export default function ProblemsPage() {
             <thead>
               <tr>
                 <th style={{ width: 28 }}></th>
+                <th style={{ width: 28 }}></th>
                 <th style={{ width: 40 }}>#</th>
                 <th>Title</th>
                 <th style={{ width: 100 }}>Difficulty</th>
@@ -201,9 +233,10 @@ export default function ProblemsPage() {
             </thead>
             <tbody>
               {problems.map((p, i) => {
-                const diff     = getDiffMeta(p.difficulty);
-                const isSolved = solvedSet.has(p.id);
-                const rowNum   = currentPage * PAGE_SIZE + i + 1;
+                const diff         = getDiffMeta(p.difficulty);
+                const isSolved     = solvedSet.has(p.id);
+                const isBookmarked = bookmarkedSet.has(p.id);
+                const rowNum       = currentPage * PAGE_SIZE + i + 1;
                 return (
                   <tr
                     key={p.id}
@@ -214,6 +247,15 @@ export default function ProblemsPage() {
                       <div className={`${styles.checkDot} ${isSolved ? styles.checked : ''}`}>
                         {isSolved && '✓'}
                       </div>
+                    </td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className={`${styles.bmBtn} ${isBookmarked ? styles.bmActive : ''}`}
+                        onClick={() => toggleBookmark({ id: p.id, title: p.title })}
+                        title={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
+                      >
+                        {isBookmarked ? '★' : '☆'}
+                      </button>
                     </td>
                     <td className={styles.numCell}>{rowNum}</td>
                     <td>
@@ -234,7 +276,7 @@ export default function ProblemsPage() {
       {totalPages > 1 && (
         <div className={styles.pagination}>
           <button className="btn btn-ghost btn-sm" disabled={currentPage === 0}
-            onClick={() => setFilters((f) => ({ ...f, page: f.page - 1 }))}>
+            onClick={() => setSearchParams((prev) => { const n = new URLSearchParams(prev); n.set('page', String(currentPage - 1)); return n; })}>
             ◀ Prev
           </button>
 
@@ -244,14 +286,14 @@ export default function ProblemsPage() {
             ) : (
               <button key={p}
                 className={`btn btn-sm ${p === currentPage ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => setFilters((f) => ({ ...f, page: p }))}>
+                onClick={() => setSearchParams((prev) => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; })}>
                 {p + 1}
               </button>
             )
           )}
 
           <button className="btn btn-ghost btn-sm" disabled={currentPage >= totalPages - 1}
-            onClick={() => setFilters((f) => ({ ...f, page: f.page + 1 }))}>
+            onClick={() => setSearchParams((prev) => { const n = new URLSearchParams(prev); n.set('page', String(currentPage + 1)); return n; })}>
             Next ▶
           </button>
 
