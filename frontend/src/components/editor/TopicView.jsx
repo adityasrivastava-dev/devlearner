@@ -4,6 +4,7 @@ import { topicsApi, submissionsApi, bookmarksApi, notesApi, ratingsApi, QUERY_KE
 import { getCategoryMeta, getDiffMeta } from '../../utils/helpers';
 import TracerPlayer from './TracerPlayer';
 import FlowchartViewer from './FlowchartViewer';
+import SqlTableVisualizer from '../sql/SqlTableVisualizer';
 import styles from './TopicView.module.css';
 import ReadOnlyCodeViewer from './ReadOnlyCodeViewer';
 
@@ -448,9 +449,11 @@ function formatNoteDate(str) {
 
 // ── Example Detail View (full-page) ──────────────────────────────────────────
 function ExampleDetailView({ ex, index, total, theme = 'dark', onBack, onPrev, onNext }) {
-  const [activeSection, setActiveSection] = useState('code');
+  // SQL examples default to table visualization; others default to code
+  const [activeSection, setActiveSection] = useState(ex.tableData ? 'tables' : 'code');
 
   const sections = [
+    ex.tableData       && { key: 'tables',    label: '⊞ Tables'     },
     ex.pseudocode      && { key: 'pseudo',    label: '≡ Pseudocode' },
     { key: 'code',       label: '{ } Code'    },
     ex.tracerSteps     && { key: 'tracer',    label: '▶ Tracer'     },
@@ -495,6 +498,13 @@ function ExampleDetailView({ ex, index, total, theme = 'dark', onBack, onPrev, o
 
       {/* Content */}
       <div className={styles.exDetailBody}>
+
+        {activeSection === 'tables' && ex.tableData && (
+          <div className={styles.exSection}>
+            <div className={styles.exSectionLabel}>Table Visualization</div>
+            <SqlTableVisualizer data={ex.tableData} />
+          </div>
+        )}
 
         {activeSection === 'pseudo' && ex.pseudocode && (
           <div className={styles.exSection}>

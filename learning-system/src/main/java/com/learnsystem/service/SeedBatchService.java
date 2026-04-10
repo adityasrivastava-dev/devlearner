@@ -83,6 +83,7 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
                             p.setTestCases(pdto.getTestCases().isTextual()
                                     ? pdto.getTestCases().asText()
                                     : pdto.getTestCases().toString());
+                        resolveHintsFromList(pdto);
                         p.setHint(pdto.getHint());
                         p.setStarterCode(pdto.getStarterCode());
                         p.setSolutionCode(pdto.getSolutionCode());
@@ -111,6 +112,7 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
                     for (SeedBatchRequest.ProblemSeedDto pdto : dto.getProblems()) {
                         Problem p = byOrder.get(pdto.getDisplayOrder());
                         if (p == null) continue;
+                        resolveHintsFromList(pdto);
                         boolean dirty = false;
                         if (isBlank(p.getEditorial())        && notBlank(pdto.getEditorial()))        { p.setEditorial(pdto.getEditorial());               dirty = true; }
                         if (isBlank(p.getHint1())            && notBlank(pdto.getHint1()))            { p.setHint1(pdto.getHint1());                       dirty = true; }
@@ -189,6 +191,7 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
                         p.setTestCases(pdto.getTestCases().isTextual()
                                 ? pdto.getTestCases().asText()
                                 : pdto.getTestCases().toString());
+                    resolveHintsFromList(pdto);
                     p.setHint(pdto.getHint());
                     p.setStarterCode(pdto.getStarterCode());
                     p.setSolutionCode(pdto.getSolutionCode());
@@ -250,4 +253,17 @@ public void clearAll() {
 // ── helpers ───────────────────────────────────────────────────────────────
 private boolean isBlank(String s) { return s == null || s.isBlank(); }
 private boolean notBlank(String s) { return s != null && !s.isBlank(); }
+
+/**
+ * Promotes a seed DTO's "hints" list (used in newer seed files) into the
+ * individual hint1/hint2/hint3 fields so the rest of the mapping code is
+ * unchanged.  Only fills slots that are not already populated.
+ */
+private void resolveHintsFromList(SeedBatchRequest.ProblemSeedDto pdto) {
+    List<String> list = pdto.getHints();
+    if (list == null || list.isEmpty()) return;
+    if (pdto.getHint1() == null && list.size() > 0) pdto.setHint1(list.get(0));
+    if (pdto.getHint2() == null && list.size() > 1) pdto.setHint2(list.get(1));
+    if (pdto.getHint3() == null && list.size() > 2) pdto.setHint3(list.get(2));
+}
 }

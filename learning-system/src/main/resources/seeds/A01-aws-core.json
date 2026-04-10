@@ -1,0 +1,216 @@
+{
+  "topics": [
+    {
+      "title": "AWS Core Services — IAM, EC2, S3 & VPC",
+      "category": "AWS",
+      "description": "Build the mental model for AWS's four foundational pillars: who can do what (IAM), compute power (EC2), object storage (S3), and private networking (VPC). These four services underpin virtually every AWS architecture.",
+      "story": "Imagine building a company's office building from scratch. IAM is the key-card system (who gets into which room). EC2 is the actual workstations employees work on. S3 is the massive file room where documents are stored forever. VPC is the building itself — the walls, floors, and security desk that separate your company from others in the same shared skyscraper (AWS's data centres).",
+      "analogy": "IAM = security badge system (user gets badge, badge has permissions, badge unlocks specific rooms). EC2 = renting a computer in a data centre (you pick CPU/RAM size, pay by the hour). S3 = infinite filing cabinet (any file, any size, retrieved by a unique key, pay per GB stored). VPC = private office floor in a shared building (you define the layout, subnets = rooms, route tables = corridors, internet gateway = front door).",
+      "memoryAnchor": "IAM: 'Who am I? What can I do?' — Identity and Access Management. EC2: 'Elastic Compute Cloud' — elastic means it scales, compute means CPU/RAM, cloud means remote. S3: 'Simple Storage Service' — three S's. VPC: 'Virtual Private Cloud' — your own isolated network slice inside AWS.",
+      "firstPrinciples": "AWS is a global network of data centres. Everything is API-driven — you describe what you want (infrastructure as code), AWS creates it. IAM is stateless policy evaluation: every API call checks 'Does the caller's identity have an Allow policy for this action on this resource, and is there no Deny?' EC2 uses hardware virtualisation (Nitro hypervisor) — you get a fraction of a physical server. S3 is an object store (not a file system): objects have a key (path-like string), value (bytes), and metadata. VPC is software-defined networking: your address space (CIDR), subnets (IP ranges per AZ), and routing rules defined in config.",
+      "bruteForce": "Without IAM: share the root account password with everyone — catastrophic security risk. Without EC2 isolation: run all workloads on one server — single point of failure. Without S3 versioning: overwrite files, lose history forever. Without VPC: resources exposed to the public internet by default — massive attack surface.",
+      "optimizedApproach": "IAM least-privilege principle: grant minimum permissions needed, use roles not static keys. EC2 right-sizing: choose instance type matching actual CPU/memory needs; use Auto Scaling Groups for elastic capacity. S3: enable versioning, lifecycle policies (auto-move old objects to Glacier), presigned URLs for time-limited access. VPC best practice: public subnets for load balancers, private subnets for servers and databases, NAT Gateway for outbound internet from private subnets, Security Groups as stateful firewalls per resource.",
+      "whenToUse": "IAM: always — every AWS resource interaction. EC2: stateful workloads, custom OS config, sustained compute (vs Lambda for event-driven). S3: static files, backups, data lake, hosting static websites, CDN origin. VPC: isolating environments (prod vs dev), compliance requirements, connecting on-premise via VPN/Direct Connect.",
+      "tags": ["aws", "iam", "ec2", "s3", "vpc", "cloud", "devops", "infrastructure"],
+      "examples": [
+        {
+          "displayOrder": 1,
+          "title": "IAM — Users, Roles, Policies, and Least Privilege",
+          "language": "json",
+          "code": "// IAM Policy — allows read-only access to a specific S3 bucket\n{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Sid\": \"ReadOnlySpecificBucket\",\n      \"Effect\": \"Allow\",\n      \"Action\": [\n        \"s3:GetObject\",\n        \"s3:ListBucket\"\n      ],\n      \"Resource\": [\n        \"arn:aws:s3:::my-app-bucket\",\n        \"arn:aws:s3:::my-app-bucket/*\"\n      ]\n    }\n  ]\n}\n\n// IAM Role for EC2 (no passwords — temporary credentials auto-rotated)\n// Attach this role to an EC2 instance via Instance Profile\n// The instance can then call S3 without storing any keys in code\n\n// Common IAM entities:\n// User    → a person/service with long-term credentials (access key + secret)\n// Group   → collection of users sharing the same policies\n// Role    → assumable identity with temporary credentials (best for EC2, Lambda)\n// Policy  → JSON document defining Allow/Deny rules",
+          "explanation": "IAM evaluates every AWS API call through a policy engine: start with implicit DENY, apply all relevant policies, any explicit DENY wins (overrides all ALLOWs), an ALLOW must be present for the call to succeed. The ARN (Amazon Resource Name) format is arn:aws:service:region:account-id:resource — it globally uniquely identifies any AWS resource. Roles are preferred over users for services because they use temporary credentials (STS tokens that expire in 1-12 hours) — no long-lived secrets stored anywhere.",
+          "pseudocode": "IAM evaluation logic for each API call:\n1. Collect all policies attached to caller (user policies + group policies + role policies)\n2. Check for explicit DENY → if found: DENY immediately\n3. Check for explicit ALLOW → if found: ALLOW\n4. Default: DENY (implicit deny)\n\nRole assumption (sts:AssumeRole):\n1. Caller requests role ARN\n2. STS validates trust policy of role\n3. STS issues temporary credentials (token + access key + secret, TTL 1h)\n4. Caller uses temp credentials for subsequent API calls",
+          "realWorldUse": "Every production AWS setup uses IAM roles. EC2 instances get roles via Instance Profiles (no keys in environment variables). Lambda functions get execution roles. Cross-account access uses role assumption with trust policies. CI/CD pipelines use OIDC federation to assume roles without long-lived keys.",
+          "flowchartMermaid": "flowchart TD\n  A[API Call: s3:GetObject] --> B[IAM Policy Engine]\n  B --> C{Explicit DENY?}\n  C -->|Yes| D[DENIED]\n  C -->|No| E{Explicit ALLOW?}\n  E -->|Yes| F[ALLOWED]\n  E -->|No| G[DENIED implicit]\n  H[IAM User] -->|attached| I[Policy]\n  J[IAM Role] -->|attached| I\n  K[EC2 Instance] -->|assumes| J\n  I --> B",
+          "tracerSteps": "[{\"step\":1,\"description\":\"Developer calls s3:GetObject on my-app-bucket/report.pdf\",\"state\":\"API call arrives at IAM policy engine\"},{\"step\":2,\"description\":\"Policy engine collects all policies for the caller\",\"state\":\"Found: ReadOnlySpecificBucket policy (Effect=Allow, Action=[s3:GetObject,s3:ListBucket], Resource=my-app-bucket)\"},{\"step\":3,\"description\":\"Check for explicit DENY statements\",\"state\":\"No DENY found — proceed\"},{\"step\":4,\"description\":\"Check for ALLOW matching this action and resource\",\"state\":\"s3:GetObject on my-app-bucket/* → MATCH\"},{\"step\":5,\"description\":\"Request ALLOWED — S3 returns the object\",\"state\":\"Developer receives report.pdf\"},{\"step\":6,\"description\":\"Same developer tries s3:DeleteObject (not in policy)\",\"state\":\"No ALLOW for s3:DeleteObject → implicit DENY → AccessDenied error\"}]"
+        },
+        {
+          "displayOrder": 2,
+          "title": "EC2 — Instance Types, Launch Config, and Auto Scaling",
+          "language": "bash",
+          "code": "# Launch an EC2 instance via AWS CLI\naws ec2 run-instances \\\n  --image-id ami-0c55b159cbfafe1f0 \\\n  --instance-type t3.micro \\\n  --key-name my-key-pair \\\n  --security-group-ids sg-0123456789abcdef0 \\\n  --subnet-id subnet-0123456789abcdef0 \\\n  --iam-instance-profile Name=MyAppRole \\\n  --user-data file://startup.sh \\\n  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=web-server}]'\n\n# EC2 instance type naming: t3.micro\n# t = burstable (CPU credits), 3 = generation, micro = size\n# Families: t (burstable), m (general), c (compute), r (memory), g (GPU)\n\n# Auto Scaling Group — automatically add/remove instances based on load\naws autoscaling create-auto-scaling-group \\\n  --auto-scaling-group-name web-asg \\\n  --launch-template LaunchTemplateName=web-template,Version='$Latest' \\\n  --min-size 2 \\\n  --max-size 10 \\\n  --desired-capacity 2 \\\n  --vpc-zone-identifier subnet-abc,subnet-def \\\n  --target-group-arns arn:aws:elasticloadbalancing:...\n\n# Scaling policy: scale out when CPU > 70%\naws autoscaling put-scaling-policy \\\n  --auto-scaling-group-name web-asg \\\n  --policy-name scale-out-cpu \\\n  --policy-type TargetTrackingScaling \\\n  --target-tracking-configuration \\\n    'TargetValue=70.0,PredefinedMetricSpecification={PredefinedMetricType=ASGAverageCPUUtilization}'",
+          "explanation": "EC2 instances are virtual machines running on AWS's Nitro hypervisor. Instance types encode CPU, memory, storage, and network characteristics in a naming pattern: [family][generation].[size]. Key billing model: On-Demand (pay by second, no commitment), Reserved (1-3 year commitment, 40-75% discount), Spot (bid on unused capacity, up to 90% discount but can be interrupted), Savings Plans (commit to $/hour spend, flexible across services). User Data is a startup script that runs once on first boot — used for software installation and configuration.",
+          "pseudocode": "EC2 launch sequence:\n1. Select AMI (Amazon Machine Image) — OS + pre-installed software snapshot\n2. Select instance type (t3.micro = 2 vCPU, 1GB RAM)\n3. Configure networking (VPC, subnet, public IP?)\n4. Attach IAM role (via instance profile)\n5. Attach security groups (firewall rules)\n6. Add EBS volumes (persistent storage)\n7. Set user data script (runs at first boot)\n8. Launch → hypervisor provisions VM → OS boots → user data runs\n\nAuto Scaling:\n  CloudWatch metric (CPU%) → Alarm → ASG adjusts desired count\n  Scale out: launch new instance(s) → register with load balancer\n  Scale in: deregister instance → drain connections → terminate",
+          "realWorldUse": "Web servers behind ALB (Application Load Balancer) in an Auto Scaling Group. Database servers on r-family instances (memory-optimised). Machine learning training on p or g instances (GPU). Batch jobs on Spot instances (cheap, OK if interrupted). Bastion hosts (jump boxes) for SSH access to private subnets.",
+          "flowchartMermaid": "flowchart TD\n  U[Users] --> ALB[Application Load Balancer]\n  ALB --> ASG[Auto Scaling Group]\n  ASG --> EC1[EC2 instance 1]\n  ASG --> EC2[EC2 instance 2]\n  ASG --> EC3[EC2 instance N]\n  CW[CloudWatch: CPU > 70%] -->|alarm| ASG\n  ASG -->|launch new| EC3\n  EC1 --> RDS[(RDS Database private subnet)]\n  EC2 --> RDS\n  EC1 --> S3[(S3 Bucket)]\n  EC2 --> S3",
+          "tracerSteps": "[{\"step\":1,\"description\":\"Traffic spike: 10,000 concurrent users hit the ALB\",\"state\":\"ASG desired=2, both EC2 instances at 85% CPU\"},{\"step\":2,\"description\":\"CloudWatch metric: ASGAverageCPUUtilization = 85% > 70% threshold\",\"state\":\"Alarm triggers scale-out policy\"},{\"step\":3,\"description\":\"ASG increases desired capacity from 2 to 4\",\"state\":\"Launching 2 new t3.micro instances (ami-xxx, subnet-a, subnet-b)\"},{\"step\":4,\"description\":\"New instances run user-data startup script\",\"state\":\"Installing app, configuring nginx, pulling latest Docker image\"},{\"step\":5,\"description\":\"Instances pass health checks → ALB registers them\",\"state\":\"ALB now routes to 4 healthy instances, CPU drops to ~42%\"},{\"step\":6,\"description\":\"Traffic subsides 30 min later — CPU drops to 15%\",\"state\":\"Scale-in: ASG terminates 2 instances (connection drain + 5min cooldown first)\"}]"
+        },
+        {
+          "displayOrder": 3,
+          "title": "S3 — Buckets, Objects, Storage Classes, and Security",
+          "language": "bash",
+          "code": "# Create a bucket (bucket names are globally unique across all AWS accounts)\naws s3api create-bucket \\\n  --bucket my-unique-app-bucket-2024 \\\n  --region us-east-1\n\n# Upload a file\naws s3 cp ./report.pdf s3://my-unique-app-bucket-2024/reports/2024/q1.pdf\n\n# Enable versioning (recoverable overwrites and deletes)\naws s3api put-bucket-versioning \\\n  --bucket my-unique-app-bucket-2024 \\\n  --versioning-configuration Status=Enabled\n\n# Lifecycle rule: move to Glacier after 90 days, delete after 365\naws s3api put-bucket-lifecycle-configuration \\\n  --bucket my-unique-app-bucket-2024 \\\n  --lifecycle-configuration '{\n    \"Rules\": [{\n      \"Status\": \"Enabled\",\n      \"Filter\": {\"Prefix\": \"reports/\"},\n      \"Transitions\": [{\"Days\": 90, \"StorageClass\": \"GLACIER\"}],\n      \"Expiration\": {\"Days\": 365}\n    }]\n  }'\n\n# Generate a presigned URL (time-limited download, no auth required)\naws s3 presign s3://my-unique-app-bucket-2024/reports/2024/q1.pdf \\\n  --expires-in 3600\n# Returns: https://my-unique-app-bucket-2024.s3.amazonaws.com/reports/2024/q1.pdf?X-Amz-Signature=...\n\n# S3 storage classes (cost vs retrieval speed):\n# Standard          → frequent access, ms latency, $0.023/GB\n# Standard-IA       → infrequent access, ms latency, $0.0125/GB\n# Glacier Instant   → archive, ms latency,  $0.004/GB\n# Glacier Flexible  → archive, 1-12h retrieval, $0.0036/GB\n# Glacier Deep      → rare access, 12-48h, $0.00099/GB",
+          "explanation": "S3 is an object store — not a file system. Objects are stored as key-value pairs (key = path-like string, value = bytes up to 5TB). S3 provides 11 nines of durability (99.999999999%) by replicating every object across 3+ AZs. Access control layers: Bucket Policy (JSON, resource-based, controls who can access), ACLs (legacy, use policies instead), Block Public Access (account/bucket-level override). S3 Intelligent-Tiering automatically moves objects between access tiers based on access patterns — zero retrieval fees, small monitoring fee per object.",
+          "pseudocode": "S3 object storage model:\n  Namespace: bucket-name + object-key (globally unique URL)\n  PUT object:\n    Client uploads bytes → S3 splits into parts → replicates to 3 AZs\n    Returns: ETag (MD5 of data, use for integrity check)\n  GET object:\n    S3 reads from nearest AZ replica → streams bytes to client\n    Latency: typically < 100ms (Standard class)\n  Versioning enabled:\n    Each PUT creates new version with unique VersionId\n    DELETE creates delete marker (object recoverable)\n    DELETE with VersionId → permanent delete",
+          "realWorldUse": "Static website hosting (React build output — free CDN via CloudFront). Application file uploads (profile pictures, documents). Data lake — Athena queries S3 directly with SQL. Backup and disaster recovery. Application deployment artifacts (JAR files, Docker layers). CloudTrail logs, ALB access logs all ship to S3.",
+          "flowchartMermaid": "flowchart TD\n  App[Application] -->|PUT report.pdf| S3[S3 Standard]\n  S3 -->|replicates| AZ1[AZ-1 copy]\n  S3 -->|replicates| AZ2[AZ-2 copy]\n  S3 -->|replicates| AZ3[AZ-3 copy]\n  S3 -->|after 90 days lifecycle| Glacier[S3 Glacier]\n  Glacier -->|after 365 days| Del[Deleted]\n  User[External User] -->|presigned URL| CF[CloudFront CDN]\n  CF -->|cache miss| S3\n  CF -->|cached response| User",
+          "tracerSteps": "[{\"step\":1,\"description\":\"App uploads report.pdf via PUT to S3\",\"state\":\"Key: reports/2024/q1.pdf | Size: 2.3MB | Class: Standard\"},{\"step\":2,\"description\":\"S3 replicates object to 3 availability zones atomically\",\"state\":\"3 copies confirmed — 11 nines durability achieved\"},{\"step\":3,\"description\":\"Versioning: 30 days later, updated report uploaded with same key\",\"state\":\"Version v1 preserved, v2 created — no data lost\"},{\"step\":4,\"description\":\"Lifecycle rule kicks in at day 90\",\"state\":\"Object transitioned to Glacier Instant Retrieval — cost drops 83%\"},{\"step\":5,\"description\":\"User requests download via presigned URL (no AWS account needed)\",\"state\":\"S3 validates signature + expiry → streams file to user\"},{\"step\":6,\"description\":\"Day 365: lifecycle expiration fires\",\"state\":\"Object permanently deleted — all versions removed\"}]"
+        },
+        {
+          "displayOrder": 4,
+          "title": "VPC — Subnets, Route Tables, and Security Groups",
+          "language": "bash",
+          "code": "# VPC CIDR: 10.0.0.0/16 → 65,536 IP addresses\naws ec2 create-vpc --cidr-block 10.0.0.0/16\n\n# Public subnet (has route to Internet Gateway)\naws ec2 create-subnet --vpc-id vpc-xxx \\\n  --cidr-block 10.0.1.0/24 \\\n  --availability-zone us-east-1a\n  # 10.0.1.0/24 = 254 usable IPs (AWS reserves 5)\n\n# Private subnet (no direct internet route)\naws ec2 create-subnet --vpc-id vpc-xxx \\\n  --cidr-block 10.0.2.0/24 \\\n  --availability-zone us-east-1a\n\n# Internet Gateway — allows public subnet traffic to reach internet\naws ec2 create-internet-gateway\naws ec2 attach-internet-gateway --vpc-id vpc-xxx --internet-gateway-id igw-xxx\n\n# Route table for public subnet: 0.0.0.0/0 → Internet Gateway\naws ec2 create-route \\\n  --route-table-id rtb-public \\\n  --destination-cidr-block 0.0.0.0/0 \\\n  --gateway-id igw-xxx\n\n# NAT Gateway — lets private subnet reach internet (outbound only)\n# (sits in public subnet, routes private traffic out via its Elastic IP)\naws ec2 create-nat-gateway \\\n  --subnet-id subnet-public \\\n  --allocation-id eipalloc-xxx  # Elastic IP\n\n# Route for private subnet: 0.0.0.0/0 → NAT Gateway\naws ec2 create-route \\\n  --route-table-id rtb-private \\\n  --destination-cidr-block 0.0.0.0/0 \\\n  --nat-gateway-id nat-xxx\n\n# Security Group — stateful firewall (attached to instances/load balancers)\naws ec2 create-security-group \\\n  --group-name web-sg \\\n  --description \"Allow HTTP/HTTPS from internet\" \\\n  --vpc-id vpc-xxx\n\naws ec2 authorize-security-group-ingress \\\n  --group-id sg-web \\\n  --protocol tcp --port 443 --cidr 0.0.0.0/0\n\naws ec2 authorize-security-group-ingress \\\n  --group-id sg-db \\\n  --protocol tcp --port 5432 \\\n  --source-group sg-web  # Only web servers can reach DB",
+          "explanation": "A VPC is your private network inside AWS. CIDR notation defines the IP address range: 10.0.0.0/16 means the first 16 bits are fixed (10.0.x.x), giving 65,536 addresses. Subnets divide the VPC into smaller ranges, each bound to one Availability Zone. Public subnets have a route to an Internet Gateway — resources there can have public IPs. Private subnets have no IGW route — reachable only from within the VPC (or via VPN). NAT Gateway enables outbound internet for private resources (OS updates, API calls) without exposing them to inbound connections. Security Groups are stateful — if outbound traffic is allowed, the return traffic is automatically allowed.",
+          "pseudocode": "VPC networking decision for outbound packet from private-subnet EC2:\n  Source: 10.0.2.10 (private EC2)\n  Destination: 8.8.8.8 (Google DNS)\n\n  1. Check private subnet route table:\n     10.0.0.0/16 → local (VPC internal) — no match\n     0.0.0.0/0   → nat-gateway-id    — MATCH\n  2. Packet sent to NAT Gateway (sits in public subnet)\n  3. NAT Gateway replaces source IP with its Elastic IP\n  4. Check public subnet route table:\n     0.0.0.0/0 → Internet Gateway   — MATCH\n  5. Packet exits to internet via IGW\n  6. Response returns to Elastic IP → NAT translates back → private EC2",
+          "realWorldUse": "Every production AWS architecture uses multi-AZ VPCs. Pattern: ALB in public subnets (ports 80/443 open to 0.0.0.0/0), application servers in private subnets (only ALB security group can reach them), RDS in private subnets (only app-tier security group can reach it). VPC Peering connects two VPCs. AWS PrivateLink connects services without traffic traversing the internet.",
+          "flowchartMermaid": "flowchart TD\n  Internet -->|443| IGW[Internet Gateway]\n  IGW --> PublicSubnet\n  subgraph PublicSubnet[Public Subnet 10.0.1.0/24]\n    ALB[Application Load Balancer]\n    NAT[NAT Gateway]\n  end\n  subgraph PrivateSubnet[Private Subnet 10.0.2.0/24]\n    EC2[EC2 App Servers]\n  end\n  subgraph DBSubnet[DB Subnet 10.0.3.0/24]\n    RDS[(RDS PostgreSQL)]\n  end\n  ALB -->|sg: only port 8080| EC2\n  EC2 -->|sg: only port 5432| RDS\n  EC2 -->|outbound only| NAT\n  NAT --> IGW",
+          "tracerSteps": "[{\"step\":1,\"description\":\"User sends HTTPS request to ALB public IP\",\"state\":\"Packet: Internet → IGW → ALB (public subnet, port 443 allowed by sg-alb)\"},{\"step\":2,\"description\":\"ALB terminates TLS, forwards to healthy EC2 on port 8080\",\"state\":\"Packet: ALB → EC2 (private subnet, sg-app allows port 8080 from sg-alb only)\"},{\"step\":3,\"description\":\"EC2 app queries RDS PostgreSQL\",\"state\":\"Packet: EC2 → RDS (db subnet, sg-db allows port 5432 from sg-app only)\"},{\"step\":4,\"description\":\"EC2 needs to download an npm package (outbound internet)\",\"state\":\"Route: 0.0.0.0/0 → NAT Gateway (public subnet)\"},{\"step\":5,\"description\":\"NAT Gateway translates private IP to Elastic IP, sends to internet\",\"state\":\"Internet sees NAT's Elastic IP, not EC2's private IP — EC2 is never directly exposed\"},{\"step\":6,\"description\":\"Hacker tries to directly connect to EC2's private IP from internet\",\"state\":\"No route from internet to private subnet — request silently dropped at IGW level\"}]"
+        },
+        {
+          "displayOrder": 5,
+          "title": "Putting It Together — Three-Tier Architecture on AWS",
+          "language": "bash",
+          "code": "# Complete 3-tier architecture:\n# Tier 1 (Presentation): CloudFront → S3 (static React app)\n# Tier 2 (Application):  ALB → EC2 Auto Scaling Group (Spring Boot API)\n# Tier 3 (Data):         RDS Multi-AZ (MySQL) + ElastiCache (Redis)\n\n# ── Tier 1: Static frontend ──────────────────────────────────────────\n# Build and deploy React app to S3\nnpm run build\naws s3 sync ./dist s3://my-app-frontend-bucket --delete\n\n# CloudFront distribution (CDN) in front of S3\naws cloudfront create-distribution \\\n  --origin-domain-name my-app-frontend-bucket.s3.amazonaws.com \\\n  --default-root-object index.html\n# CloudFront caches at 400+ edge locations globally → ~10ms latency\n\n# ── Tier 2: Application layer ──────────────────────────────────────────\n# Launch Template for EC2 instances\naws ec2 create-launch-template \\\n  --launch-template-name web-api-template \\\n  --launch-template-data '{\n    \"ImageId\": \"ami-xxx\",\n    \"InstanceType\": \"t3.small\",\n    \"IamInstanceProfile\": {\"Name\": \"AppServerRole\"},\n    \"SecurityGroupIds\": [\"sg-app\"],\n    \"UserData\": \"BASE64_ENCODED_STARTUP_SCRIPT\"\n  }'\n\n# ALB + target group\naws elbv2 create-load-balancer \\\n  --name web-alb \\\n  --subnets subnet-public-1a subnet-public-1b \\\n  --security-groups sg-alb\n\n# ── Tier 3: Data layer ──────────────────────────────────────────────\n# RDS Multi-AZ (automatic failover to standby in another AZ)\naws rds create-db-instance \\\n  --db-instance-identifier prod-mysql \\\n  --db-instance-class db.t3.medium \\\n  --engine mysql --engine-version 8.0 \\\n  --master-username admin \\\n  --master-user-password 'SecurePass123!' \\\n  --multi-az  \\\n  --db-subnet-group-name private-db-subnet-group \\\n  --vpc-security-group-ids sg-db",
+          "explanation": "The three-tier architecture separates concerns: presentation (static files, CDN-cached globally), application (stateless EC2 instances behind a load balancer, horizontally scalable), and data (managed RDS, not on EC2 — AWS handles backups, patches, and failover). CloudFront caches the React SPA at edge locations — users worldwide get sub-50ms page load times without hitting your origin server. Multi-AZ RDS keeps a synchronous standby replica in a second AZ — automatic failover in 60-120 seconds if primary fails. The API servers are stateless (session state in ElastiCache Redis) — any instance can handle any request, enabling seamless auto-scaling.",
+          "pseudocode": "Request flow for user viewing their profile:\n1. DNS resolves app.example.com → CloudFront edge IP\n2. CloudFront serves cached index.html (React app) from edge\n3. React app loads, calls API: GET api.example.com/user/profile\n4. DNS resolves api.example.com → ALB DNS\n5. ALB picks least-loaded EC2 instance, forwards request\n6. EC2 app:\n   a. Reads session token → validates JWT (stateless, no Redis needed)\n   b. Queries RDS MySQL for user profile data\n   c. Returns JSON response\n7. Response bubbles back: EC2 → ALB → CloudFront (no cache for API) → user",
+          "realWorldUse": "This is the standard pattern for 99% of web applications on AWS. Spring Boot backend = EC2 ASG. React frontend = S3 + CloudFront. MySQL = RDS Multi-AZ. Cache = ElastiCache Redis. Secrets (DB password) = AWS Secrets Manager (not env vars). Logs = CloudWatch Logs. Monitoring = CloudWatch Dashboards + Alarms.",
+          "flowchartMermaid": "flowchart TD\n  User -->|HTTPS| CF[CloudFront CDN]\n  CF -->|Static SPA| S3Bucket[S3 Frontend Bucket]\n  CF -->|API calls| ALB[Application Load Balancer]\n  ALB --> ASG\n  subgraph ASG[Auto Scaling Group — private subnets]\n    EC2a[EC2 t3.small]\n    EC2b[EC2 t3.small]\n  end\n  EC2a --> Cache[ElastiCache Redis]\n  EC2a --> RDS[(RDS MySQL Multi-AZ)]\n  EC2b --> Cache\n  EC2b --> RDS\n  RDS -.->|sync replication| Standby[(Standby AZ-b)]\n  EC2a --> SecretsMgr[Secrets Manager]\n  EC2b --> SecretsMgr",
+          "tracerSteps": "[{\"step\":1,\"description\":\"User opens app.example.com — CloudFront checks edge cache\",\"state\":\"Cache HIT: serves index.html + bundle.js from edge node in user's city (<10ms)\"},{\"step\":2,\"description\":\"React app boots, calls GET /api/users/me\",\"state\":\"ALB receives request, health checks both EC2 instances — routes to EC2a\"},{\"step\":3,\"description\":\"EC2a validates JWT token from Authorization header\",\"state\":\"JWT valid, user_id=42 extracted — no database call needed for auth\"},{\"step\":4,\"description\":\"EC2a checks ElastiCache for user profile cache\",\"state\":\"Cache MISS: first request — query RDS instead\"},{\"step\":5,\"description\":\"EC2a queries RDS MySQL: SELECT * FROM users WHERE id=42\",\"state\":\"RDS primary (AZ-a) responds in 3ms\"},{\"step\":6,\"description\":\"EC2a stores result in Redis (TTL 5min), returns JSON to ALB\",\"state\":\"Next request for same user: Cache HIT, <1ms\"},{\"step\":7,\"description\":\"Primary RDS fails (hardware issue in AZ-a)\",\"state\":\"Multi-AZ: automatic failover to standby in AZ-b within 90 seconds — no data loss\"}]"
+        }
+      ],
+      "problems": [
+        {
+          "title": "Design IAM Policy for S3 Read-Only Access",
+          "difficulty": "Easy",
+          "description": "Write an IAM policy JSON that allows a user to list all buckets in the account but only read objects from a specific bucket named 'prod-data'. The user should NOT be able to write, delete, or access any other bucket.",
+          "constraints": ["s3:ListAllMyBuckets requires Resource: '*'", "s3:ListBucket requires the bucket ARN (not the objects ARN)", "s3:GetObject requires the bucket/* ARN"],
+          "examples": [
+            {
+              "input": "User wants to: list buckets, list prod-data contents, download files from prod-data",
+              "output": "IAM policy with 3 statements: ListAllMyBuckets on *, ListBucket on bucket ARN, GetObject on bucket/* ARN",
+              "explanation": "S3 has a confusing two-level ARN: arn:aws:s3:::bucket-name for bucket operations, arn:aws:s3:::bucket-name/* for object operations"
+            }
+          ],
+          "hints": ["Two separate Resource entries needed for ListBucket vs GetObject", "Effect: Allow, never omit the Effect field", "Test with IAM Policy Simulator before applying to real user"]
+        },
+        {
+          "title": "Calculate EC2 Cost for a Production Setup",
+          "difficulty": "Medium",
+          "description": "Your team needs 2 t3.large instances running 24/7 for 3 months (on-demand), plus 1 m5.xlarge for batch jobs running 8 hours/day for 30 days. t3.large = $0.0832/hr, m5.xlarge = $0.192/hr. What is the total monthly cost? What would be the savings with 1-year Reserved Instances (40% discount)?",
+          "constraints": ["On-demand: billed per second, minimum 1 minute", "3 months = 90 days = 2160 hours", "Batch: 8h/day * 30 days = 240 hours"],
+          "examples": [
+            {
+              "input": "2x t3.large 24/7 for 3 months + 1x m5.xlarge 8h/day for 1 month",
+              "output": "t3.large: 2 * $0.0832 * 2160 = $359.42 | m5.xlarge: $0.192 * 240 = $46.08 | Total: $405.50",
+              "explanation": "Reserved Instance for t3.large: $359.42 * 0.6 = $215.65 (40% discount)"
+            }
+          ],
+          "hints": ["On-demand hours = 24 * days * instance_count", "Batch hours = 8 * days", "Reserved savings only apply to always-on instances, not intermittent batch"]
+        },
+        {
+          "title": "S3 Lifecycle Policy Design",
+          "difficulty": "Medium",
+          "description": "Design an S3 lifecycle policy for a logging bucket with these rules: (1) Move logs older than 30 days to Standard-IA, (2) Move logs older than 90 days to Glacier Flexible, (3) Delete logs older than 1 year. Write the lifecycle configuration JSON.",
+          "constraints": ["Transitions must be in ascending day order", "Glacier Flexible has minimum 90-day storage charge", "Expiration must be after the last transition"],
+          "examples": [
+            {
+              "input": "Logs in prefix 'application-logs/'",
+              "output": "3-rule lifecycle: Transition to STANDARD_IA at 30 days, GLACIER at 90 days, Expiration at 365 days",
+              "explanation": "Lifecycle JSON has 'Transitions' array and 'Expiration' object under each Rule"
+            }
+          ],
+          "hints": ["StorageClass values: STANDARD_IA, GLACIER, DEEP_ARCHIVE", "Filter.Prefix limits rule to specific object path prefix", "Days are from object creation date"]
+        },
+        {
+          "title": "VPC CIDR Planning",
+          "difficulty": "Medium",
+          "description": "You need to design a VPC for a 3-tier app with high availability across 2 AZs. Plan the CIDR ranges for: the VPC itself (must fit 500+ hosts), 2 public subnets (one per AZ, 50 hosts each), 2 private app subnets (one per AZ, 100 hosts each), 2 private DB subnets (one per AZ, 20 hosts each). What CIDR blocks would you use?",
+          "constraints": ["AWS reserves 5 IPs per subnet (network, broadcast, router, DNS, future)", "Subnets within a VPC cannot overlap", "/24 gives 251 usable IPs, /26 gives 59 usable IPs, /27 gives 27 usable IPs"],
+          "examples": [
+            {
+              "input": "VPC: 10.0.0.0/16 (65k IPs), plan 6 subnets",
+              "output": "Public-1a: 10.0.1.0/24, Public-1b: 10.0.2.0/24, App-1a: 10.0.10.0/24, App-1b: 10.0.11.0/24, DB-1a: 10.0.20.0/27, DB-1b: 10.0.21.0/27",
+              "explanation": "Leave gaps between ranges (10.0.1, 10.0.2 then jump to 10.0.10) for future expansion"
+            }
+          ],
+          "hints": ["Start with /16 VPC for plenty of room", "Use /24 for app and public subnets (251 usable IPs each)", "Use /27 for DB subnets (27 IPs sufficient for small DB fleets)"]
+        },
+        {
+          "title": "Security Group Rule Design",
+          "difficulty": "Easy",
+          "description": "Design Security Group rules for a 3-tier architecture: sg-alb (internet-facing ALB), sg-app (application servers), sg-db (RDS MySQL). Each tier should only accept traffic from the tier directly above it. What inbound rules does each security group need?",
+          "constraints": ["ALB needs to accept HTTP (80) and HTTPS (443) from 0.0.0.0/0", "App servers only accept port 8080 from ALB security group", "RDS only accepts port 3306 from app security group"],
+          "examples": [
+            {
+              "input": "3-tier: ALB → App servers → RDS MySQL",
+              "output": "sg-alb: 80+443 from 0.0.0.0/0 | sg-app: 8080 from sg-alb | sg-db: 3306 from sg-app",
+              "explanation": "Security groups can reference other security groups as sources — no hardcoded IPs needed"
+            }
+          ],
+          "hints": ["Use security group IDs as source, not IP ranges (dynamic IPs change on restart)", "Security groups are stateful — no explicit outbound rules needed for return traffic", "sg-db referencing sg-app means: allow only traffic from instances with sg-app attached"]
+        },
+        {
+          "title": "IAM Role Trust Policy for EC2",
+          "difficulty": "Medium",
+          "description": "Write the trust policy (assume-role-policy-document) that allows EC2 instances (the service ec2.amazonaws.com) to assume an IAM role. Then write the permission policy that allows the role to read from SSM Parameter Store and write to CloudWatch Logs.",
+          "constraints": ["Trust policy principal is the AWS service, not an account or user", "ec2.amazonaws.com is the service principal for EC2 instance profiles", "SSM read: ssm:GetParameter, ssm:GetParameters | CloudWatch Logs write: logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents"],
+          "examples": [
+            {
+              "input": "EC2 instance needs to read app config from SSM and write app logs to CloudWatch",
+              "output": "Trust policy: {Principal: {Service: ec2.amazonaws.com}, Action: sts:AssumeRole} | Permission policy: Allow ssm:GetParameter* + logs:* on specific resources",
+              "explanation": "Two separate JSON documents: trust policy (who can assume) and permission policy (what they can do)"
+            }
+          ],
+          "hints": ["Trust policy goes in the AssumeRolePolicyDocument field", "Permission policy is a separate managed or inline policy attached to the role", "Resource ARN for SSM: arn:aws:ssm:region:account:parameter/app/*"]
+        },
+        {
+          "title": "S3 Presigned URL Use Case",
+          "difficulty": "Easy",
+          "description": "Your application needs to let authenticated users upload profile photos directly to S3 from their browser (not through your server). The upload should expire in 10 minutes and be limited to JPEG files under 5MB. Describe the flow and generate the presigned PUT URL using AWS CLI.",
+          "constraints": ["Presigned URL for upload uses PUT method, not POST (unless using presigned POST with conditions)", "The URL carries the signer's permissions temporarily", "Content-Type header must match what was specified when generating the URL"],
+          "examples": [
+            {
+              "input": "User wants to upload profile.jpg to s3://user-uploads/user-42/profile.jpg",
+              "output": "aws s3 presign s3://user-uploads/user-42/profile.jpg --expires-in 600",
+              "explanation": "Browser PUTs directly to the presigned URL — your server never handles the file bytes, only generates the URL"
+            }
+          ],
+          "hints": ["Backend generates presigned URL, returns it to frontend", "Frontend uses fetch/axios to PUT directly to S3 URL with Content-Type header", "Advantages: no bandwidth cost on your servers, S3 scales infinitely"]
+        },
+        {
+          "title": "Multi-AZ High Availability Design",
+          "difficulty": "Hard",
+          "description": "An AZ outage occurs in us-east-1a. Your architecture has: ALB across 1a and 1b, EC2 ASG in 1a and 1b (2 instances each), RDS primary in 1a with Multi-AZ standby in 1b, ElastiCache Redis primary in 1a. What fails, what automatically recovers, what requires manual intervention?",
+          "constraints": ["ALB: automatically stops routing to unhealthy AZ", "ASG: automatically launches replacement instances in healthy AZ", "RDS Multi-AZ: automatic failover, 60-120 second downtime", "ElastiCache Redis: only Multi-AZ clusters with auto-failover enabled will recover automatically"],
+          "examples": [
+            {
+              "input": "AZ us-east-1a fails completely",
+              "output": "Auto-recovered: ALB re-routes, ASG launches 2 new instances in 1b, RDS fails over to standby. Manual: single-node Redis in 1a is down until AZ recovers — 1b receives 100% load",
+              "explanation": "RDS Multi-AZ and ASG across multiple AZs are the key to surviving single-AZ failure"
+            }
+          ],
+          "hints": ["ALB health checks detect unhealthy instances within 30-60 seconds", "ASG desired count stays the same — it just launches in available AZs", "RDS failover changes the endpoint DNS — application must not cache the IP, use the DNS endpoint"]
+        },
+        {
+          "title": "Cost Optimization: Spot Instances for Batch",
+          "difficulty": "Medium",
+          "description": "You run a nightly data processing job that takes 4 hours on a c5.2xlarge (8 vCPU, 16GB RAM). On-demand price: $0.34/hr. Spot price: $0.10/hr. The job is checkpointed every 30 minutes (can resume from last checkpoint if interrupted). Calculate: monthly on-demand cost, monthly spot cost, % savings. What is the maximum interruption risk you can tolerate?",
+          "constraints": ["Monthly = 30 runs * 4 hours = 120 compute-hours", "Spot interruption gives 2-minute warning before termination", "Checkpointing means you lose at most 30 min of work on interruption"],
+          "examples": [
+            {
+              "input": "c5.2xlarge, 4h/night, 30 nights",
+              "output": "On-demand: 120h * $0.34 = $40.80/month | Spot: 120h * $0.10 = $12.00/month | Savings: $28.80 (71%)",
+              "explanation": "With checkpointing, Spot is safe for batch jobs — interruption just adds 30min overhead"
+            }
+          ],
+          "hints": ["Spot savings vary by region and instance type — check AWS Spot Price History", "Use Spot Instance Advisor to see interruption frequency", "Mix On-Demand (base) + Spot (burst) in ASG for best risk/cost balance"]
+        },
+        {
+          "title": "VPC Flow Logs Troubleshooting",
+          "difficulty": "Hard",
+          "description": "Your EC2 app server cannot connect to RDS on port 3306. VPC Flow Logs show the traffic as REJECT. List the 5 most likely causes in order of probability, and describe how to diagnose each one systematically.",
+          "constraints": ["REJECT in flow logs means a Network ACL or Security Group blocked the traffic", "Security Groups are stateful; NACLs are stateless (need both inbound and outbound rules)", "RDS sits in a DB subnet with its own subnet association"],
+          "examples": [
+            {
+              "input": "Flow log entry: srcaddr=10.0.2.10 dstaddr=10.0.3.50 dstport=3306 action=REJECT",
+              "output": "Check: 1. sg-db inbound allows 3306 from sg-app? 2. sg-app outbound allows 3306? 3. DB subnet NACL inbound allows 3306? 4. DB subnet NACL outbound allows ephemeral ports (1024-65535)? 5. Is RDS endpoint/port correct in app config?",
+              "explanation": "Start with Security Groups (most common), then NACLs (stateless, often misconfigured), then DNS/config issues"
+            }
+          ],
+          "hints": ["Security Groups check first — most common cause", "NACLs are stateless: need explicit outbound rule for response traffic (ephemeral ports 1024-65535)", "Use VPC Reachability Analyzer to automatically trace the network path"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,231 @@
+{
+  "topics": [
+    {
+      "title": "Advanced SQL — Window Functions, CTEs & Transactions",
+      "category": "MySQL",
+      "description": "Master SQL's most powerful features: window functions for ranking and running totals, CTEs for readable multi-step queries, indexes for performance, and transactions for data integrity.",
+      "story": "You are the senior analyst at a bank. Junior queries with GROUP BY are useful, but leadership needs rankings per region, running totals over time, readable multi-step reports, and guaranteed data safety during transfers. Window functions, CTEs, indexes, and transactions are the tools that separate intermediate SQL from production-grade SQL.",
+      "analogy": "GROUP BY is like dividing a spreadsheet into tabs and summarising each tab. Window functions are like adding a new column that shows your rank within your tab — without losing any rows. CTEs are like naming intermediate calculation steps so anyone can read the formula. Transactions are like a 'save checkpoint' in a video game — if anything goes wrong, you reload to that safe point.",
+      "memoryAnchor": "WINDOW = 'look around you without losing your row'. PARTITION BY = 'within your group'. OVER() = 'defines the window'. CTE = 'name your intermediate steps'. ROLLBACK = 'undo everything back to START TRANSACTION'.",
+      "firstPrinciples": "SQL traditionally returns one row per GROUP BY group. Window functions break this constraint — they compute across a set of rows related to the current row (the 'window') and attach the result as a new column without collapsing rows. CTEs are just named subqueries that execute first and can reference each other. Indexes are sorted copies of column data stored in B-trees — O(log n) lookup vs O(n) full scan. Transactions wrap statements in an all-or-nothing guarantee using undo logs.",
+      "bruteForce": "Without window functions: use correlated subqueries (SELECT *, (SELECT COUNT(*) FROM t t2 WHERE t2.dept=t.dept AND t2.salary >= t.salary) AS rank FROM t) — O(N^2). Without CTEs: deep nested subqueries that are unreadable. Without indexes: full table scan on every query — O(N) per lookup. Without transactions: manual error checking and cleanup after every failed statement.",
+      "optimizedApproach": "Window functions with PARTITION BY compute rank/aggregate in a single O(N log N) pass. CTEs are syntactic sugar — the optimizer treats them the same as subqueries but code is readable. B-tree indexes reduce lookups from O(N) to O(log N). InnoDB transactions use MVCC (Multi-Version Concurrency Control) — readers don't block writers, writers don't block readers, achieved via row-level locking and undo logs.",
+      "whenToUse": "Window functions: ranking, running totals, moving averages, comparing a row to its neighbours (LAG/LEAD), percentiles. CTEs: any query needing more than 2 levels of nesting, recursive hierarchies. Indexes: any column used in WHERE, JOIN ON, or ORDER BY with > 10k rows. Transactions: any multi-statement write operation where partial completion would corrupt data (transfers, order checkout, batch inserts).",
+      "tags": ["window-functions", "cte", "indexes", "transactions", "rank", "partition-by", "with-clause", "acid"],
+      "examples": [
+        {
+          "displayOrder": 1,
+          "title": "ROW_NUMBER, RANK, DENSE_RANK — Ranking Within Groups",
+          "language": "sql",
+          "code": "-- Rank employees by salary within each department\nSELECT\n  name,\n  department,\n  salary,\n  ROW_NUMBER()  OVER (PARTITION BY department ORDER BY salary DESC) AS row_num,\n  RANK()        OVER (PARTITION BY department ORDER BY salary DESC) AS rank_val,\n  DENSE_RANK()  OVER (PARTITION BY department ORDER BY salary DESC) AS dense_rank\nFROM employees;\n\n-- Difference:\n-- ROW_NUMBER  → always unique (1,2,3,4...)\n-- RANK        → ties get same rank, next rank skips (1,1,3...)\n-- DENSE_RANK  → ties get same rank, next rank is consecutive (1,1,2...)",
+          "explanation": "Window functions operate OVER a 'window' of rows related to the current row — unlike GROUP BY they do NOT collapse rows. PARTITION BY divides rows into groups (like department); ORDER BY inside OVER defines the rank order within each partition. All three ranking functions handle ties differently: ROW_NUMBER always gives a unique integer; RANK gives the same number to ties then skips (like Olympic medal gaps); DENSE_RANK gives the same number to ties without gaps.",
+          "pseudocode": "FOR each partition (department):\n  Sort rows by salary DESC\n  FOR each row in partition:\n    row_num   = sequential position (no ties)\n    rank      = position of first occurrence in sorted order (skip on tie)\n    dense_rank = position without gaps (no skip on tie)",
+          "realWorldUse": "LeetCode: Department Top Three Salaries (184), Rank Scores (178). E-commerce: find top 3 best-selling products per category. HR: identify employees earning above the median in each department.",
+          "flowchartMermaid": "flowchart TD\n  A[employees table] --> B[PARTITION BY department]\n  B --> C1[Engineering partition]\n  B --> C2[Marketing partition]\n  C1 --> D1[Sort by salary DESC]\n  C2 --> D2[Sort by salary DESC]\n  D1 --> E1[Apply ROW_NUMBER/RANK/DENSE_RANK]\n  D2 --> E2[Apply ROW_NUMBER/RANK/DENSE_RANK]\n  E1 --> F[Full result — all rows preserved]\n  E2 --> F",
+          "tracerSteps": "[{\"step\":1,\"description\":\"PARTITION BY department splits rows into groups\",\"state\":\"Engineering: [Carol 92k, Alice 85k, Bob 55k] | Marketing: [Eve 78k, Frank 78k, Grace 60k]\"},{\"step\":2,\"description\":\"Within Engineering, ORDER BY salary DESC — sort descending\",\"state\":\"Carol=1st, Alice=2nd, Bob=3rd\"},{\"step\":3,\"description\":\"Apply all three functions to Carol (92000, Engineering, rank=1)\",\"state\":\"ROW_NUMBER=1, RANK=1, DENSE_RANK=1\"},{\"step\":4,\"description\":\"Apply to Alice (85000, Engineering)\",\"state\":\"ROW_NUMBER=2, RANK=2, DENSE_RANK=2\"},{\"step\":5,\"description\":\"Within Marketing, Eve and Frank both earn 78000 (tie!)\",\"state\":\"Eve: ROW_NUM=1, RANK=1, DENSE_RANK=1 | Frank: ROW_NUM=2, RANK=1, DENSE_RANK=1\"},{\"step\":6,\"description\":\"Grace (60000) — after two tied ranks 1\",\"state\":\"RANK skips to 3 (1,1,3) | DENSE_RANK goes to 2 (1,1,2)\"},{\"step\":7,\"description\":\"Result rows are NOT collapsed — all 6 rows appear with computed columns\",\"state\":\"Final 6 rows with row_num, rank_val, dense_rank columns added\"}]",
+          "tableData": "{\"type\":\"select\",\"table\":{\"name\":\"employees (with window columns)\",\"columns\":[\"name\",\"department\",\"salary\",\"row_num\",\"rank_val\",\"dense_rank\"],\"rows\":[[\"Carol\",\"Engineering\",92000,1,1,1],[\"Alice\",\"Engineering\",85000,2,2,2],[\"Bob\",\"Engineering\",55000,3,3,3],[\"Eve\",\"Marketing\",78000,1,1,1],[\"Frank\",\"Marketing\",78000,2,1,1],[\"Grace\",\"Marketing\",60000,3,3,2]]},\"selectedColumns\":[\"row_num\",\"rank_val\",\"dense_rank\"],\"filteredRows\":[0,1,2,3,4,5],\"note\":\"All rows are preserved (no GROUP BY collapse). Notice Frank & Eve both have rank_val=1 but different row_num. DENSE_RANK gives Grace rank 2, while RANK gives her rank 3 (skipping rank 2).\"}"
+        },
+        {
+          "displayOrder": 2,
+          "title": "LAG and LEAD — Comparing Rows to Neighbours",
+          "language": "sql",
+          "code": "-- Calculate daily sales change vs previous day\nSELECT\n  sale_date,\n  revenue,\n  LAG(revenue, 1)  OVER (ORDER BY sale_date) AS prev_day_revenue,\n  LEAD(revenue, 1) OVER (ORDER BY sale_date) AS next_day_revenue,\n  revenue - LAG(revenue, 1) OVER (ORDER BY sale_date) AS day_over_day_change\nFROM daily_sales\nORDER BY sale_date;\n\n-- Partitioned: compare within same category\nSELECT\n  product_category,\n  sale_date,\n  revenue,\n  LAG(revenue) OVER (PARTITION BY product_category ORDER BY sale_date) AS prev_rev\nFROM category_sales;",
+          "explanation": "LAG(col, N) looks back N rows in the window; LEAD(col, N) looks forward N rows. The first row has no previous row — LAG returns NULL there (LEAD returns NULL for the last row). These are perfect for time-series analysis: growth rates, day-over-day changes, detecting trends. An optional third argument provides a default instead of NULL: LAG(revenue, 1, 0).",
+          "pseudocode": "FOR each row r in ORDER BY sale_date:\n  LAG(revenue, 1):\n    IF prev row exists: return prev_row.revenue\n    ELSE: return NULL\n  LEAD(revenue, 1):\n    IF next row exists: return next_row.revenue\n    ELSE: return NULL\n  day_over_day_change = r.revenue - LAG(revenue)",
+          "realWorldUse": "LeetCode: Rising Temperature (197 — uses LAG to compare with yesterday), Game Play Analysis (512). Stock price movement, user retention analysis (did they log in yesterday?), e-commerce daily revenue trends.",
+          "flowchartMermaid": "flowchart LR\n  R1[\"2024-01-01 $1000\"] --> R2[\"2024-01-02 $1200\"]\n  R2 --> R3[\"2024-01-03 $1100\"]\n  R3 --> R4[\"2024-01-04 $1400\"]\n  R2 -.->|LAG looks back| R1\n  R3 -.->|LAG looks back| R2\n  R2 -.->|LEAD looks ahead| R3\n  R3 -.->|LEAD looks ahead| R4",
+          "tracerSteps": "[{\"step\":1,\"description\":\"Window ORDER BY sale_date — rows sorted chronologically\",\"state\":\"[Jan-01 1000, Jan-02 1200, Jan-03 1100, Jan-04 1400]\"},{\"step\":2,\"description\":\"Jan-01 (first row): LAG has no previous row → NULL\",\"state\":\"prev_day=NULL, change=NULL\"},{\"step\":3,\"description\":\"Jan-02: LAG looks back 1 → Jan-01 revenue = 1000\",\"state\":\"prev_day=1000, change=1200-1000=+200\"},{\"step\":4,\"description\":\"Jan-03: LAG looks back 1 → Jan-02 revenue = 1200\",\"state\":\"prev_day=1200, change=1100-1200=-100\"},{\"step\":5,\"description\":\"Jan-04: LAG looks back 1 → Jan-03 revenue = 1100\",\"state\":\"prev_day=1100, change=1400-1100=+300\"},{\"step\":6,\"description\":\"Jan-04 (last row): LEAD has no next row → NULL\",\"state\":\"next_day=NULL\"}]",
+          "tableData": "{\"type\":\"select\",\"table\":{\"name\":\"daily_sales (after LAG/LEAD)\",\"columns\":[\"sale_date\",\"revenue\",\"prev_day_revenue\",\"next_day_revenue\",\"day_over_day_change\"],\"rows\":[[\"2024-01-01\",1000,null,1200,null],[\"2024-01-02\",1200,1000,1100,200],[\"2024-01-03\",1100,1200,1400,-100],[\"2024-01-04\",1400,1100,null,300]]},\"selectedColumns\":[\"prev_day_revenue\",\"day_over_day_change\"],\"filteredRows\":[0,1,2,3],\"note\":\"First row has NULL for LAG (no previous day). Last row has NULL for LEAD (no next day). The day_over_day_change shows +200, -100, +300 trend.\"}"
+        },
+        {
+          "displayOrder": 3,
+          "title": "CTEs — WITH Clause for Readable Multi-Step Queries",
+          "language": "sql",
+          "code": "-- Find employees earning above their department average\n-- Without CTE (correlated subquery — hard to read):\nSELECT name, salary, dept_id\nFROM employees e\nWHERE salary > (\n  SELECT AVG(salary) FROM employees WHERE dept_id = e.dept_id\n);\n\n-- With CTE (clean, readable, reusable):\nWITH dept_avg AS (\n  SELECT dept_id, AVG(salary) AS avg_salary\n  FROM employees\n  GROUP BY dept_id\n),\nhigh_earners AS (\n  SELECT e.name, e.salary, e.dept_id, d.avg_salary\n  FROM employees e\n  JOIN dept_avg d ON e.dept_id = d.dept_id\n  WHERE e.salary > d.avg_salary\n)\nSELECT name, salary, dept_id, ROUND(avg_salary, 0) AS dept_avg\nFROM high_earners\nORDER BY salary DESC;\n\n-- Recursive CTE: generate number sequence\nWITH RECURSIVE nums AS (\n  SELECT 1 AS n\n  UNION ALL\n  SELECT n + 1 FROM nums WHERE n < 5\n)\nSELECT n FROM nums;",
+          "explanation": "A CTE (Common Table Expression) is a named temporary result set defined with the WITH keyword. CTEs execute first, then the main SELECT uses them like a table. Multiple CTEs can chain — earlier ones feed into later ones. Benefits: readability (logic split into named steps), reusability (same CTE referenced multiple times), testability (debug each CTE in isolation). Recursive CTEs (WITH RECURSIVE) allow traversing hierarchies like org charts or category trees.",
+          "pseudocode": "-- Phase 1: execute CTEs in order\ndept_avg  = GROUP employees by dept_id, compute AVG(salary)\nhigh_earners = JOIN employees with dept_avg, FILTER salary > avg\n-- Phase 2: execute main SELECT\nSELECT from high_earners\n  ORDER BY salary DESC",
+          "realWorldUse": "LeetCode: Consecutive Numbers (180 — multi-step self-join), Department Top Salaries (185). Real apps: building complex reports, recursive org-chart queries (who reports to whom transitively), date range generation.",
+          "flowchartMermaid": "flowchart TD\n  A[employees table] --> B[CTE 1: dept_avg GROUP BY dept_id]\n  B --> C[dept_avg result dept_id + avg_salary]\n  A --> D[CTE 2: high_earners JOIN employees + dept_avg]\n  C --> D\n  D --> E[Filter salary greater than avg_salary]\n  E --> F[Main SELECT ORDER BY salary DESC]",
+          "tracerSteps": "[{\"step\":1,\"description\":\"CTE dept_avg executes first — GROUP BY dept_id\",\"state\":\"Engineering: avg=77333 | Marketing: avg=72000\"},{\"step\":2,\"description\":\"CTE high_earners JOINs employees with dept_avg\",\"state\":\"Each employee row gets their dept avg_salary attached\"},{\"step\":3,\"description\":\"Filter WHERE salary > avg_salary\",\"state\":\"Alice 85000 > 77333 ✓ | Carol 92000 > 77333 ✓ | Bob 55000 < 77333\"},{\"step\":4,\"description\":\"Marketing: Eve 78000 > 72000 passes | Grace 65000 < 72000 fails\",\"state\":\"high_earners has: Carol, Alice, Eve\"},{\"step\":5,\"description\":\"Main SELECT reads from high_earners, ORDER BY salary DESC\",\"state\":\"Carol 92000, Alice 85000, Eve 78000\"},{\"step\":6,\"description\":\"CTEs are temporary — they disappear after the query finishes\",\"state\":\"Final result: 3 rows\"}]",
+          "tableData": "{\"type\":\"subquery\",\"subquerySQL\":\"SELECT dept_id, AVG(salary) AS avg_salary FROM employees GROUP BY dept_id\",\"subqueryResult\":{\"columns\":[\"dept_id\",\"avg_salary\"],\"rows\":[[10,77333],[20,72000]]},\"outerTable\":{\"name\":\"employees\",\"columns\":[\"name\",\"dept_id\",\"salary\"],\"rows\":[[\"Alice\",10,85000],[\"Bob\",10,55000],[\"Carol\",10,92000],[\"Eve\",20,78000],[\"Grace\",20,65000]]},\"filteredRows\":[0,2,3],\"result\":{\"columns\":[\"name\",\"salary\",\"dept_id\",\"dept_avg\"],\"rows\":[[\"Carol\",92000,10,77333],[\"Alice\",85000,10,77333],[\"Eve\",78000,20,72000]]},\"note\":\"CTE dept_avg (shown as subquery result) runs first and computes average per department. Main query uses that result to filter employees earning above their department average.\"}"
+        },
+        {
+          "displayOrder": 4,
+          "title": "Indexes — How MySQL Speeds Up Queries",
+          "language": "sql",
+          "code": "-- Create indexes\nCREATE INDEX idx_emp_salary  ON employees (salary);\nCREATE INDEX idx_emp_dept    ON employees (dept_id);\nCREATE UNIQUE INDEX idx_emp_email ON employees (email);\n\n-- Composite index (column order matters!)\nCREATE INDEX idx_emp_dept_salary ON employees (dept_id, salary);\n\n-- Check if index is being used (EXPLAIN)\nEXPLAIN SELECT * FROM employees WHERE dept_id = 10 AND salary > 70000;\n-- Good: type=range, key=idx_emp_dept_salary\n-- Bad:  type=ALL (full table scan)\n\n-- Covering index: query uses only indexed columns\nSELECT dept_id, salary FROM employees WHERE dept_id = 10;\n-- MySQL reads ONLY the index, never touches the main table!\n\n-- When indexes HURT performance:\n-- 1. NOT operator:  WHERE salary != 50000  (can't use index efficiently)\n-- 2. Leading wildcard: WHERE name LIKE '%Alice'  (no B-tree traversal)\n-- 3. Function on column: WHERE YEAR(hire_date) = 2023\n--    Use range instead: WHERE hire_date BETWEEN '2023-01-01' AND '2023-12-31'\n\nDROP INDEX idx_emp_salary ON employees;",
+          "explanation": "MySQL indexes are B-tree data structures that allow O(log n) lookups instead of O(n) full table scans. A B-tree index on `salary` keeps salary values sorted in a tree — MySQL walks the tree to find matching rows without reading every row. Composite indexes follow 'leftmost prefix' rule: an index on (dept_id, salary) helps queries filtering by dept_id alone OR dept_id+salary, but NOT salary alone. UNIQUE indexes enforce uniqueness AND speed lookups. EXPLAIN shows MySQL's query execution plan — `type=ALL` means full table scan (bad); `type=range` or `type=ref` means index used (good).",
+          "pseudocode": "Without index:\n  FULL TABLE SCAN: FOR each of N rows check WHERE → O(N)\n\nWith B-tree index on salary:\n  Navigate tree to salary > 70000 leaf → O(log N)\n  Follow row pointers only for matching rows\n\nComposite index (dept_id, salary):\n  Step 1: narrow by dept_id=10 (leftmost prefix)\n  Step 2: within those, salary > 70000 range scan",
+          "realWorldUse": "Every production database indexes foreign keys, frequently-filtered columns (email, status, created_at), and JOIN columns. Over-indexing slows writes — index must be updated on every INSERT/UPDATE/DELETE. Rule of thumb: index columns used in WHERE, JOIN ON, and ORDER BY in slow queries.",
+          "flowchartMermaid": "flowchart TD\n  A[Query: WHERE dept_id=10 AND salary>70000] --> B{Index exists?}\n  B -->|No| C[Full table scan O of N reads all rows]\n  B -->|Yes idx_emp_dept_salary| D[B-tree lookup O of log N]\n  D --> E[Navigate to dept_id=10 subtree]\n  E --> F[Apply salary > 70000 range]\n  F --> G[Return matching row pointers]\n  G --> H[Fetch only matched rows from table]\n  C --> I[Result]\n  H --> I",
+          "tracerSteps": "[{\"step\":1,\"description\":\"Without index: MySQL does full table scan — reads every row\",\"state\":\"10000 employees → 10000 rows read even if only 3 match\"},{\"step\":2,\"description\":\"CREATE INDEX idx_emp_dept_salary ON employees (dept_id, salary)\",\"state\":\"MySQL builds B-tree sorted by (dept_id, salary) pairs\"},{\"step\":3,\"description\":\"Query: WHERE dept_id=10 AND salary > 70000\",\"state\":\"B-tree: navigate to dept_id=10 leaf — skips all other departments instantly\"},{\"step\":4,\"description\":\"Within dept_id=10 subtree, apply salary > 70000 range scan\",\"state\":\"Finds Carol (92k) and Alice (85k) — skips Bob (55k)\"},{\"step\":5,\"description\":\"EXPLAIN output: type=range, key=idx_emp_dept_salary, rows=2\",\"state\":\"Only 2 rows examined instead of 10000 — massive speedup\"},{\"step\":6,\"description\":\"Leftmost prefix rule\",\"state\":\"Index on (dept_id, salary) helps WHERE dept_id=10 alone, but NOT WHERE salary>70000 alone\"}]",
+          "tableData": "{\"type\":\"select\",\"table\":{\"name\":\"EXPLAIN output\",\"columns\":[\"select_type\",\"table\",\"type\",\"key\",\"key_len\",\"rows\",\"Extra\"],\"rows\":[[\"SIMPLE\",\"employees\",\"range\",\"idx_emp_dept_salary\",\"8\",\"2\",\"Using index condition\"]]},\"selectedColumns\":[\"type\",\"key\",\"rows\"],\"filteredRows\":[0],\"whereCondition\":\"type != 'ALL' (index is used)\",\"note\":\"type=range means MySQL uses the index for a range scan. rows=2 means only 2 rows examined. If type=ALL appeared, the full 10000-row table would be scanned — add an index.\"}"
+        },
+        {
+          "displayOrder": 5,
+          "title": "Transactions — ACID Properties and COMMIT/ROLLBACK",
+          "language": "sql",
+          "code": "-- Bank transfer: debit Alice, credit Bob\n-- MUST be atomic — either both happen or neither\n\nSTART TRANSACTION;\n\nUPDATE accounts SET balance = balance - 500 WHERE id = 1;  -- debit Alice\nUPDATE accounts SET balance = balance + 500 WHERE id = 2;  -- credit Bob\n\n-- Check result before committing\nSELECT balance FROM accounts WHERE id = 1;  -- verify not negative\n\nCOMMIT;    -- make changes permanent and visible to others\n-- OR\nROLLBACK;  -- undo ALL changes since START TRANSACTION\n\n-- Savepoints: partial rollback within a transaction\nSTART TRANSACTION;\nINSERT INTO orders VALUES (101, 'Alice', 200.00);\nSAVEPOINT after_order;\nINSERT INTO order_items VALUES (101, 'Widget', 5);\n-- Widget is out of stock — undo only the items insert:\nROLLBACK TO SAVEPOINT after_order;\nCOMMIT;   -- keep the order row, discard the items row\n\n-- Isolation levels (SET before transaction starts)\nSET TRANSACTION ISOLATION LEVEL READ COMMITTED;\n-- READ UNCOMMITTED: fastest, dirty reads allowed\n-- READ COMMITTED:   only see committed data (prevents dirty reads)\n-- REPEATABLE READ:  same query returns same data (MySQL default)\n-- SERIALIZABLE:     strongest isolation, slowest",
+          "explanation": "A transaction groups SQL statements into an atomic unit. ACID guarantees: Atomicity (all-or-nothing — every statement commits or none do), Consistency (database moves from one valid state to another), Isolation (concurrent transactions do not interfere with each other — other sessions see old values until COMMIT), Durability (committed data survives crashes via write-ahead log). Without transactions, a server crash between two UPDATE statements in a bank transfer would debit Alice but never credit Bob — money disappears. ROLLBACK undoes all changes back to the START TRANSACTION point.",
+          "pseudocode": "START TRANSACTION:\n  Create undo log snapshot of current state\n  Execute statements (written to buffer, not disk yet):\n    UPDATE accounts debit Alice\n    UPDATE accounts credit Bob\n  IF all OK:\n    COMMIT → flush buffer to disk, release row locks\n  ELSE (error OR ROLLBACK called):\n    Apply undo log → restore original state\n    Release locks",
+          "realWorldUse": "Every financial system, e-commerce checkout, and inventory management relies on transactions. MySQL InnoDB supports full ACID. LeetCode: Delete Duplicate Emails (196 — uses transactions implicitly). Real apps: order + inventory decrement must be atomic; user registration + profile creation must both succeed or neither.",
+          "flowchartMermaid": "flowchart TD\n  A[START TRANSACTION] --> B[Debit Alice -500]\n  B --> C[Credit Bob +500]\n  C --> D{All statements OK?}\n  D -->|Yes| E[COMMIT changes are permanent]\n  D -->|Error or ROLLBACK| F[ROLLBACK undo ALL changes]\n  F --> G[Database unchanged as if nothing happened]\n  E --> H[Both accounts updated atomically]",
+          "tracerSteps": "[{\"step\":1,\"description\":\"START TRANSACTION — MySQL creates undo log snapshot\",\"state\":\"Alice: $1000 | Bob: $200 (saved to undo log)\"},{\"step\":2,\"description\":\"UPDATE accounts SET balance=balance-500 WHERE id=1\",\"state\":\"Alice: $500 in buffer (not committed) | Bob: $200\"},{\"step\":3,\"description\":\"UPDATE accounts SET balance=balance+500 WHERE id=2\",\"state\":\"Alice: $500 | Bob: $700 (both in buffer, not committed)\"},{\"step\":4,\"description\":\"Server crash BEFORE COMMIT — what happens?\",\"state\":\"MySQL replays undo log on restart: both updates rolled back\"},{\"step\":5,\"description\":\"After restart: Alice=$1000, Bob=$200 — money is safe\",\"state\":\"Atomicity saved us — partial transfer never happened\"},{\"step\":6,\"description\":\"Happy path: COMMIT — MySQL flushes buffer to disk\",\"state\":\"Alice=$500, Bob=$700 — permanent, durable\"},{\"step\":7,\"description\":\"Isolation: other sessions see Alice=$1000, Bob=$200 UNTIL commit\",\"state\":\"REPEATABLE READ prevents other transactions from seeing uncommitted data\"}]",
+          "tableData": "{\"type\":\"normalize\",\"normalForm\":\"BEFORE vs AFTER Transaction\",\"before\":{\"name\":\"accounts (before transaction)\",\"columns\":[\"id\",\"name\",\"balance\"],\"rows\":[[1,\"Alice\",1000],[2,\"Bob\",200]]},\"after\":[{\"name\":\"accounts (after COMMIT)\",\"columns\":[\"id\",\"name\",\"balance\"],\"rows\":[[1,\"Alice\",500],[2,\"Bob\",700]]}],\"issues\":[\"Without ACID: crash between UPDATE 1 and UPDATE 2 loses $500\",\"Dirty read: another query could see Alice=$500 before Bob gets credited\",\"Lost update: two concurrent transfers both read $1000 and both subtract — balance goes negative\"],\"gains\":[\"Atomicity: both debit and credit succeed together or neither happens\",\"Isolation: other sessions see old values ($1000, $200) until COMMIT\",\"Durability: write-ahead log ensures committed data survives crashes\",\"Consistency: total money in system always conserved ($1200 before and after)\"]}"
+        }
+      ],
+      "problems": [
+        {
+          "title": "Rank Scores",
+          "difficulty": "Medium",
+          "leetcodeNumber": 178,
+          "description": "Write a SQL query to rank scores. If there is a tie between two scores, both should have the same rank. After a tie, the next ranking number should be the next consecutive integer value (no gaps).",
+          "constraints": ["No gaps in rank after ties", "Higher score = lower rank number", "DENSE_RANK is the correct function"],
+          "examples": [
+            {
+              "input": "Scores: [3.50, 3.65, 4.00, 3.85, 4.00, 3.65]",
+              "output": "[4.00→1, 4.00→1, 3.85→2, 3.65→3, 3.65→3, 3.50→4]",
+              "explanation": "DENSE_RANK() OVER (ORDER BY score DESC) — no gaps after ties."
+            }
+          ],
+          "hints": ["Use DENSE_RANK() not RANK()", "ORDER BY score DESC in the OVER clause", "Alias the window result as 'rank'"]
+        },
+        {
+          "title": "Department Top Three Salaries",
+          "difficulty": "Hard",
+          "leetcodeNumber": 185,
+          "description": "Find employees who are in the top three unique salary tiers in each department.",
+          "constraints": ["A department may have fewer than 3 unique salaries", "Use DENSE_RANK with PARTITION BY department"],
+          "examples": [
+            {
+              "input": "IT dept salaries: [90k Max, 85k Joe, 85k Randy, 70k Will]",
+              "output": "Max, Joe, Randy (all three because only 2 unique salary tiers: 90k and 85k)",
+              "explanation": "DENSE_RANK PARTITION BY dept ORDER BY salary DESC, then WHERE dense_rank <= 3"
+            }
+          ],
+          "hints": ["CTE or subquery to compute dense_rank per department", "DENSE_RANK() OVER (PARTITION BY departmentId ORDER BY salary DESC)", "Filter WHERE rank <= 3 in outer query"]
+        },
+        {
+          "title": "Rising Temperature",
+          "difficulty": "Easy",
+          "leetcodeNumber": 197,
+          "description": "Find all dates where the temperature is higher than the previous day's temperature.",
+          "constraints": ["Use LAG or self-join on date-1", "Date column — use DATEDIFF or LAG"],
+          "examples": [
+            {
+              "input": "Jan-01: 10C, Jan-02: 12C, Jan-03: 11C, Jan-04: 15C",
+              "output": "Jan-02 (12>10), Jan-04 (15>11)",
+              "explanation": "LAG(temperature) OVER (ORDER BY recordDate) gives previous day temperature"
+            }
+          ],
+          "hints": ["LAG(temperature, 1) OVER (ORDER BY recordDate)", "Also check DATEDIFF(current.date, prev.date) = 1 for gaps in data", "Or self-join: w1 JOIN w2 ON DATEDIFF(w1.date, w2.date) = 1 AND w1.temp > w2.temp"]
+        },
+        {
+          "title": "Consecutive Numbers",
+          "difficulty": "Medium",
+          "leetcodeNumber": 180,
+          "description": "Find all numbers that appear at least three times consecutively in the Logs table.",
+          "constraints": ["Consecutive means consecutive id rows", "CTE with LAG/LEAD is the cleanest approach"],
+          "examples": [
+            {
+              "input": "Logs: [1→1, 2→1, 3→1, 4→2, 5→1, 6→2, 7→2]",
+              "output": "[1] — number 1 appears 3 times in rows 1,2,3",
+              "explanation": "Use LAG and LEAD to compare current, previous, and next number in same CTE"
+            }
+          ],
+          "hints": ["CTE: SELECT num, LAG(num,1) AS prev1, LEAD(num,1) AS next1 FROM Logs", "Filter WHERE num=prev1 AND num=next1", "SELECT DISTINCT to avoid duplicates in output"]
+        },
+        {
+          "title": "Last Person to Fit in the Bus",
+          "difficulty": "Medium",
+          "leetcodeNumber": 1204,
+          "description": "A bus has a weight limit of 1000 kg. People board in turn order. Find the last person who can board without exceeding the limit.",
+          "constraints": ["Use window SUM to compute running cumulative weight", "Find last person where running_total <= 1000"],
+          "examples": [
+            {
+              "input": "Queue: [Alice 250kg, Bob 380kg, Charlie 200kg, Dave 300kg]",
+              "output": "Charlie",
+              "explanation": "Running totals: Alice=250, Bob=630, Charlie=830, Dave=1130 (over). Charlie is last to fit."
+            }
+          ],
+          "hints": ["SUM(weight) OVER (ORDER BY turn) AS running_total", "SELECT person_name FROM cte WHERE running_total <= 1000 ORDER BY turn DESC LIMIT 1"]
+        },
+        {
+          "title": "Nth Highest Salary",
+          "difficulty": "Medium",
+          "leetcodeNumber": 177,
+          "description": "Write a stored function getNthHighestSalary(N) that returns the Nth highest distinct salary, or NULL if not enough distinct salaries exist.",
+          "constraints": ["DISTINCT salaries — duplicates count as one", "Return NULL if N exceeds number of distinct salaries"],
+          "examples": [
+            {
+              "input": "Salaries: [100, 200, 300], N=2",
+              "output": "200",
+              "explanation": "DENSE_RANK or ORDER BY DESC LIMIT 1 OFFSET N-1"
+            }
+          ],
+          "hints": ["CREATE FUNCTION with DECLARE M INT; SET M=N-1;", "SELECT DISTINCT salary FROM Employee ORDER BY salary DESC LIMIT 1 OFFSET M", "LIMIT OFFSET returns empty set (not NULL) when no row — wrap in SELECT ... FROM (...)"]
+        },
+        {
+          "title": "Game Play Analysis IV",
+          "difficulty": "Medium",
+          "leetcodeNumber": 550,
+          "description": "Report the fraction of players that logged in again the day after the day they first logged in, rounded to 2 decimal places.",
+          "constraints": ["first login = MIN(event_date) per player", "Check if first_login + 1 day exists for same player"],
+          "examples": [
+            {
+              "input": "Player 1 logins: [2016-03-01, 2016-03-02, 2016-03-05]",
+              "output": "Player 1 counts — first login=Mar01, next day Mar02 exists → counts",
+              "explanation": "CTE for first_login per player, then join on player_id and date = first_login + INTERVAL 1 DAY"
+            }
+          ],
+          "hints": ["CTE: SELECT player_id, MIN(event_date) AS first_login FROM Activity GROUP BY player_id", "JOIN Activity ON player_id and event_date = first_login + INTERVAL 1 DAY", "COUNT(matching rows) / COUNT(all players)"]
+        },
+        {
+          "title": "Investments in 2016",
+          "difficulty": "Medium",
+          "leetcodeNumber": 585,
+          "description": "Find the sum of tiv_2016 for policyholders who have the same tiv_2015 as at least one other policyholder AND are located in a unique city (no other policyholder in same lat/lon).",
+          "constraints": ["Two conditions combined with AND", "Use subqueries or window COUNT to identify duplicates vs unique"],
+          "examples": [
+            {
+              "input": "4 policyholders — 2 share same tiv_2015, 1 is in unique city",
+              "output": "Sum of tiv_2016 for the row(s) satisfying both conditions",
+              "explanation": "Subquery 1: tiv_2015 IN (SELECT tiv_2015 GROUP BY tiv_2015 HAVING COUNT > 1). Subquery 2: (lat,lon) IN unique cities"
+            }
+          ],
+          "hints": ["Condition 1: tiv_2015 IN (SELECT tiv_2015 FROM Insurance GROUP BY tiv_2015 HAVING COUNT(*)>1)", "Condition 2: (lat, lon) IN (SELECT lat, lon FROM Insurance GROUP BY lat, lon HAVING COUNT(*)=1)", "SUM(tiv_2016) WHERE both conditions hold"]
+        },
+        {
+          "title": "Find Median Given Frequency of Numbers",
+          "difficulty": "Hard",
+          "leetcodeNumber": 571,
+          "description": "Find the median of all numbers in the Numbers table, where each number appears Frequency times.",
+          "constraints": ["Expand using cumulative frequency", "Median is middle value when all occurrences are sorted"],
+          "examples": [
+            {
+              "input": "Number 0 (freq 7), Number 1 (freq 3), Number 2 (freq 1)",
+              "output": "0",
+              "explanation": "Total 11 numbers. Sorted: [0,0,0,0,0,0,0,1,1,1,2]. Median = position 6 = 0"
+            }
+          ],
+          "hints": ["CTE: running total with SUM(Frequency) OVER (ORDER BY Number)", "Median positions: total/2 and total/2+1 (even) or (total+1)/2 (odd)", "WHERE cumulative_freq >= total/2 AND cumulative_before < total/2+1"]
+        },
+        {
+          "title": "Department Highest Salary",
+          "difficulty": "Medium",
+          "leetcodeNumber": 184,
+          "description": "Find employees who have the highest salary in their department.",
+          "constraints": ["May be multiple employees tied for highest in same dept", "Use window MAX or subquery approach"],
+          "examples": [
+            {
+              "input": "IT dept: Alice 70k, Bob 70k, Carol 60k",
+              "output": "Alice and Bob (both tied at max 70k)",
+              "explanation": "MAX(salary) OVER (PARTITION BY dept) = salary, or subquery WHERE salary = (SELECT MAX...)"
+            }
+          ],
+          "hints": ["CTE: SELECT *, MAX(salary) OVER (PARTITION BY departmentId) AS dept_max FROM Employee", "Filter WHERE salary = dept_max", "JOIN with Department table for department name"]
+        }
+      ]
+    }
+  ]
+}

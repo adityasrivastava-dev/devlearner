@@ -3,6 +3,7 @@ package com.learnsystem.dto;
 import lombok.Data;
 import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * JSON structure for batch-seeding topics via POST /api/admin/seed-batch
@@ -69,7 +70,11 @@ public static class ProblemSeedDto {
     private String hint3;
     private String pattern;
     // Per-problem editorial — overrides topic-level fields in editorial tab
+    // Accepts either a plain string or a JSON array (array items are joined with \n)
+    @JsonDeserialize(using = StringOrArrayDeserializer.class)
     private String constraints;
+    // "hints": ["...", "...", "..."] in seed files maps to hint1/hint2/hint3
+    private List<String> hints;
     private String bruteForce;
     private String optimizedApproach;
     // Editorial explanation shown after problem is solved

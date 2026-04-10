@@ -1,0 +1,603 @@
+/* ── Root container ─────────────────────────────────────────────────────────── */
+.vizRoot {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.error {
+  color: #f87171;
+  padding: 12px;
+  background: #1f1f1f;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+/* ── Table box ───────────────────────────────────────────────────────────────── */
+.tableBox {
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  overflow: hidden;
+  min-width: 200px;
+  flex: 1;
+}
+
+.resultBox {
+  border-color: #2a6a3a;
+}
+
+.tableHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.tableName {
+  font-size: 12px;
+  font-weight: 700;
+  color: #60a5fa;
+  font-family: monospace;
+  letter-spacing: 0.5px;
+}
+
+.tableBadge {
+  font-size: 10px;
+  background: #1e3a5f;
+  color: #93c5fd;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.tableLabel {
+  font-size: 11px;
+  color: #666;
+  margin-left: auto;
+}
+
+.rowCount {
+  font-size: 11px;
+  color: #4ade80;
+  margin-left: auto;
+  font-weight: 600;
+}
+
+/* ── Table grid ─────────────────────────────────────────────────────────────── */
+.tableScroll {
+  overflow-x: auto;
+}
+
+.sqlTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: 'Fira Code', 'Courier New', monospace;
+}
+
+.th {
+  padding: 7px 12px;
+  background: #1e1e1e;
+  color: #a78bfa;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 1px solid #2a2a2a;
+  white-space: nowrap;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+
+.td {
+  padding: 6px 12px;
+  color: #e2e8f0;
+  border-bottom: 1px solid #1e1e1e;
+  white-space: nowrap;
+}
+
+.td:last-child, .th:last-child {
+  border-right: none;
+}
+
+/* ── Row highlights ─────────────────────────────────────────────────────────── */
+.rowMatched {
+  background: rgba(74, 222, 128, 0.08);
+}
+
+.rowMatched .td {
+  color: #4ade80;
+}
+
+.rowExcluded {
+  background: rgba(100, 100, 100, 0.05);
+}
+
+.rowExcluded .td {
+  color: #555;
+  text-decoration: line-through;
+}
+
+.rowResult {
+  background: rgba(96, 165, 250, 0.05);
+}
+
+.rowResult .td {
+  color: #bfdbfe;
+}
+
+/* ── Column highlights ──────────────────────────────────────────────────────── */
+.colHighlight {
+  background: rgba(167, 139, 250, 0.1);
+  color: #a78bfa !important;
+}
+
+.nullVal {
+  color: #6b7280;
+  font-style: italic;
+  font-size: 11px;
+}
+
+/* ── Legend ─────────────────────────────────────────────────────────────────── */
+.legend {
+  display: flex;
+  gap: 12px;
+  padding: 6px 12px;
+  background: #0f0f0f;
+  border-top: 1px solid #1e1e1e;
+  font-size: 11px;
+}
+
+.legendMatch { color: #4ade80; }
+.legendExcl  { color: #555; }
+
+/* ── JOIN Visualizer ─────────────────────────────────────────────────────────── */
+.joinBanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: #1a3a5c;
+}
+
+.joinTypePill {
+  font-size: 12px;
+  font-weight: 800;
+  background: #2563eb;
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 12px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.joinDesc {
+  font-size: 12px;
+  color: #93c5fd;
+}
+
+.inputTablesRow {
+  display: flex;
+  gap: 0;
+  align-items: flex-start;
+}
+
+.joinArrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  min-width: 80px;
+  flex-shrink: 0;
+  padding-top: 40px;
+}
+
+.joinArrowLine {
+  width: 1px;
+  height: 20px;
+  background: #3b82f6;
+}
+
+.joinArrowLabel {
+  font-size: 10px;
+  color: #60a5fa;
+  text-align: center;
+  background: #1e1e1e;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #3b82f6;
+  font-family: monospace;
+  white-space: nowrap;
+}
+
+/* ── Venn diagram — enhanced ─────────────────────────────────────────────────── */
+.vennWrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #0d1117;
+  border-radius: 14px;
+  padding: 14px 18px;
+  border: 1px solid #1e2530;
+}
+
+.vennDiagramSection {
+  flex: 1;
+  min-width: 0;
+}
+
+.vennSvgLarge {
+  width: 100%;
+  max-width: 320px;
+  height: 130px;
+  display: block;
+}
+
+/* ── = RESULT section ────────────────────────────────────────────────────────── */
+.vennResultSection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.vennEqSign {
+  font-size: 30px;
+  color: #374151;
+  font-weight: 300;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.vennResultBox {
+  background: #111827;
+  border: 2px solid #1f2937;
+  border-radius: 12px;
+  padding: 12px 16px;
+  min-width: 110px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.vennResultType {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.vennResultCount {
+  font-size: 36px;
+  font-weight: 800;
+  color: #f9fafb;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.vennResultRows {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.vennResultHint {
+  font-size: 9.5px;
+  color: #4b5563;
+  line-height: 1.4;
+  margin-top: 4px;
+  max-width: 110px;
+}
+
+/* ── Result arrow ───────────────────────────────────────────────────────────── */
+.resultArrow {
+  text-align: center;
+  color: #4ade80;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 0;
+}
+
+/* ── Note / explanation ─────────────────────────────────────────────────────── */
+.vizNote {
+  background: #1a1a2e;
+  border-left: 3px solid #7c3aed;
+  padding: 10px 14px;
+  border-radius: 0 8px 8px 0;
+  font-size: 12px;
+  color: #c4b5fd;
+  line-height: 1.5;
+}
+
+/* ── SELECT Visualizer ───────────────────────────────────────────────────────── */
+.selectBanner {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.inlineSQL {
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  color: #fbbf24;
+  word-break: break-all;
+}
+
+.selectStep {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stepLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filterNote {
+  background: #1a2a1a;
+  border: 1px solid #2a4a2a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #86efac;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filterIcon {
+  font-size: 14px;
+}
+
+/* ── GROUP BY Visualizer ─────────────────────────────────────────────────────── */
+.groupLayout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.groupBuckets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.groupBucket {
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  overflow: hidden;
+  border-left-width: 3px;
+}
+
+.groupBucketLabel {
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  font-family: monospace;
+}
+
+.groupBucketRows {
+  padding: 6px 10px;
+  background: #111;
+}
+
+.groupRow {
+  font-size: 12px;
+  color: #d1d5db;
+  padding: 2px 0;
+  font-family: monospace;
+}
+
+.groupAggregate {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4ade80;
+  background: #0a1a0a;
+  font-family: monospace;
+}
+
+/* ── NORMALIZE Visualizer ─────────────────────────────────────────────────────── */
+.normBanner {
+  display: flex;
+  justify-content: center;
+}
+
+.normPill {
+  font-size: 13px;
+  font-weight: 700;
+  background: #1a1a3a;
+  color: #a78bfa;
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid #4c1d95;
+}
+
+.normLayout {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.normBefore, .normAfter {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.normArrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  padding-top: 40px;
+  gap: 4px;
+}
+
+.normArrowLine {
+  width: 1px;
+  flex: 1;
+  background: #7c3aed;
+  min-height: 20px;
+}
+
+.normArrowLabel {
+  font-size: 10px;
+  color: #a78bfa;
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  background: #1a0a2a;
+  padding: 8px 4px;
+  border-radius: 4px;
+  border: 1px solid #4c1d95;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+}
+
+.issueList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.issue {
+  font-size: 11px;
+  color: #f87171;
+  background: #1a0a0a;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border-left: 2px solid #ef4444;
+}
+
+.gainList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.gain {
+  font-size: 11px;
+  color: #4ade80;
+  background: #0a1a0a;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border-left: 2px solid #22c55e;
+}
+
+/* ── SUBQUERY Visualizer ─────────────────────────────────────────────────────── */
+.subBanner {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.subStep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.subStepNum {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f59e0b;
+  white-space: nowrap;
+}
+
+.subLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subArrow {
+  text-align: center;
+  color: #f59e0b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ── Generic ─────────────────────────────────────────────────────────────────── */
+.genericRow {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .inputTablesRow {
+    flex-direction: column;
+  }
+
+  .joinArrow {
+    flex-direction: row;
+    padding-top: 0;
+    padding: 4px 0;
+    justify-content: center;
+  }
+
+  .joinArrowLine {
+    width: 20px;
+    height: 1px;
+  }
+
+  .vennWrapper {
+    flex-direction: column;
+  }
+
+  .vennResultSection {
+    justify-content: center;
+  }
+
+  .vennSvgLarge {
+    max-width: 100%;
+  }
+
+  .normLayout {
+    flex-direction: column;
+  }
+
+  .normArrow {
+    flex-direction: row;
+    padding-top: 0;
+    writing-mode: horizontal-tb;
+  }
+
+  .normArrowLine {
+    width: 20px;
+    height: 1px;
+    flex: none;
+  }
+
+  .normArrowLabel {
+    writing-mode: horizontal-tb;
+  }
+
+  .groupLayout {
+    flex-direction: column;
+  }
+}
