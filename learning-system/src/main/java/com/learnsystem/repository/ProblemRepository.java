@@ -12,9 +12,22 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
+
 @Repository
 public interface ProblemRepository extends JpaRepository<Problem, Long>,
 		JpaSpecificationExecutor<Problem> {
+
+/** Returns up to N problems sharing the same pattern, excluding the given id. */
+@Query("""
+    SELECT p FROM Problem p JOIN FETCH p.topic
+    WHERE p.pattern = :pattern AND p.id != :excludeId
+    ORDER BY p.difficulty, p.displayOrder
+    """)
+List<Problem> findSimilarByPattern(
+    @Param("pattern") String pattern,
+    @Param("excludeId") Long excludeId,
+    Pageable pageable);
 
 @Query("SELECT p FROM Problem p WHERE p.topic.id = :topicId ORDER BY p.displayOrder")
 List<Problem> findByTopicIdOrderByDisplayOrder(@Param("topicId") Long topicId);

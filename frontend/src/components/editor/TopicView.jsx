@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { topicsApi, submissionsApi, bookmarksApi, notesApi, QUERY_KEYS } from '../../api';
+import { topicsApi, submissionsApi, bookmarksApi, notesApi, ratingsApi, QUERY_KEYS } from '../../api';
 import { getCategoryMeta, getDiffMeta } from '../../utils/helpers';
 import TracerPlayer from './TracerPlayer';
 import FlowchartViewer from './FlowchartViewer';
@@ -15,6 +15,18 @@ export default function TopicView({ topic, onProblemOpen, onBack, theme = 'dark'
 
   // Reset example detail on topic change
   useEffect(() => { setActiveExample(null); setTab('theory'); }, [topic.id]);
+
+  // ── Rating ───────────────────────────────────────────────────────────────────
+  const { data: ratingData, refetch: refetchRating } = useQuery({
+    queryKey: QUERY_KEYS.topicRating(topic.id),
+    queryFn:  () => ratingsApi.get(topic.id),
+    staleTime: 60 * 1000,
+  });
+
+  const { mutate: submitRating, isPending: ratingPending } = useMutation({
+    mutationFn: (stars) => ratingsApi.rate(topic.id, stars),
+    onSuccess: () => refetchRating(),
+  });
 
   // ── Bookmark ─────────────────────────────────────────────────────────────────
   const { data: bmData } = useQuery({
@@ -97,6 +109,21 @@ export default function TopicView({ topic, onProblemOpen, onBack, theme = 'dark'
           >
             {isBookmarked ? '★' : '☆'}
           </button>
+
+          {/* Star rating */}
+          <div className={styles.starRating} title={ratingData?.count > 0 ? `${ratingData.average} avg (${ratingData.count} ratings)` : 'Rate this topic'}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                className={`${styles.starBtn} ${star <= (ratingData?.myRating ?? 0) ? styles.starFilled : ''}`}
+                onClick={() => !ratingPending && submitRating(star)}
+                title={`Rate ${star} star${star !== 1 ? 's' : ''}`}
+              >★</button>
+            ))}
+            {ratingData?.count > 0 && (
+              <span className={styles.ratingAvg}>{ratingData.average}</span>
+            )}
+          </div>
         </div>
         {topic.description && (
           <p className={styles.desc}>{topic.description}</p>

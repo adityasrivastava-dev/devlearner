@@ -558,6 +558,22 @@
   color: var(--red);
 }
 
+.modalBullets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 20px;
+}
+
+.modalBullet {
+  font-size: 12px;
+  color: var(--text2);
+  padding: 6px 10px;
+  background: var(--bg2);
+  border-radius: 6px;
+  text-align: left;
+}
+
 /* ── Quick Win banner ────────────────────────────────────────────────── */
 .quickWinBanner {
   display: flex;

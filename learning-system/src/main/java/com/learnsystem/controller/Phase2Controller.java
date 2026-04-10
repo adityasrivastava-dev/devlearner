@@ -55,6 +55,7 @@ private final BookmarkRepository           bookmarkRepo;
 private final UserTopicPerformanceRepository perfRepo;
 private final UserRepository               userRepo;
 private final JwtService                   jwtService;
+private final com.learnsystem.repository.TopicRatingRepository ratingRepo;
 
 // ═══════════════════════════════════════════════════════════════════
 // SPACED REPETITION
@@ -279,5 +280,64 @@ public ResponseEntity<?> checkBookmark(
 	boolean exists = bookmarkRepo.existsByUserIdAndItemTypeAndItemId(
 			user.getId(), itemType, itemId);
 	return ResponseEntity.ok(Map.of("bookmarked", exists));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// TOPIC RATINGS
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * POST /api/topics/{topicId}/rate
+ * Body: { "rating": 1-5 }
+ * Upserts the current user's rating for the topic.
+ */
+@PostMapping("/api/topics/{topicId}/rate")
+public ResponseEntity<?> rateTopic(
+		@PathVariable Long topicId,
+		@RequestBody Map<String, Object> body,
+		@AuthenticationPrincipal User user) {
+	if (user == null) return ResponseEntity.status(401).build();
+	int rating = body.get("rating") instanceof Number n ? n.intValue() : 0;
+	if (rating < 1 || rating > 5) {
+		return ResponseEntity.badRequest().body(Map.of("error", "rating must be 1–5"));
+	}
+	var existing = ratingRepo.findByUserIdAndTopicId(user.getId(), topicId);
+	com.learnsystem.model.TopicRating tr = existing.orElseGet(() ->
+			com.learnsystem.model.TopicRating.builder()
+					.userId(user.getId())
+					.topicId(topicId)
+					.build());
+	tr.setRating(rating);
+	ratingRepo.save(tr);
+	Double avg   = ratingRepo.getAverageRating(topicId);
+	Long   count = ratingRepo.getRatingCount(topicId);
+	return ResponseEntity.ok(Map.of(
+			"myRating", rating,
+			"average",  avg   != null ? Math.round(avg * 10.0) / 10.0 : rating,
+			"count",    count != null ? count : 1L
+	));
+}
+
+/**
+ * GET /api/topics/{topicId}/rating
+ * Returns average rating, count, and the current user's rating (0 if none).
+ */
+@GetMapping("/api/topics/{topicId}/rating")
+public ResponseEntity<?> getTopicRating(
+		@PathVariable Long topicId,
+		@AuthenticationPrincipal User user) {
+	Double avg   = ratingRepo.getAverageRating(topicId);
+	Long   count = ratingRepo.getRatingCount(topicId);
+	int    myRating = 0;
+	if (user != null) {
+		myRating = ratingRepo.findByUserIdAndTopicId(user.getId(), topicId)
+				.map(com.learnsystem.model.TopicRating::getRating)
+				.orElse(0);
+	}
+	return ResponseEntity.ok(Map.of(
+			"average",  avg   != null ? Math.round(avg * 10.0) / 10.0 : 0.0,
+			"count",    count != null ? count : 0L,
+			"myRating", myRating
+	));
 }
 }

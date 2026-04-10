@@ -130,7 +130,8 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [showPauseConfirm, setShowPauseConfirm] = useState(false);
+  const [showPauseConfirm,    setShowPauseConfirm]    = useState(false);
+  const [showRecoveryConfirm, setShowRecoveryConfirm] = useState(false);
 
   // ── Data fetching ────────────────────────────────────────────────────────
   const { data: streak, isLoading: streakLoading } = useQuery({
@@ -164,7 +165,10 @@ export default function DashboardPage() {
 
   const recoverMut = useMutation({
     mutationFn: streakApi.recover,
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEYS.streak }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.streak });
+      setShowRecoveryConfirm(false);
+    },
   });
 
   // ── Navigate to SRS item ─────────────────────────────────────────────────
@@ -257,8 +261,7 @@ export default function DashboardPage() {
                   {streak?.recoveryAvailable && !streak?.activeToday && (
                     <button
                       className={styles.recoveryBtn}
-                      onClick={() => recoverMut.mutate()}
-                      disabled={recoverMut.isPending}
+                      onClick={() => setShowRecoveryConfirm(true)}
                     >
                       ⚡ Recover streak
                     </button>
@@ -399,6 +402,41 @@ export default function DashboardPage() {
             </div>
             {pauseMut.data && !pauseMut.data.success && (
               <p className={styles.modalError}>{pauseMut.data.message}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Streak recovery modal ──────────────────────────────────────── */}
+      {showRecoveryConfirm && (
+        <div className={styles.modalOverlay} onClick={() => setShowRecoveryConfirm(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalIcon}>⚡</div>
+            <h3 className={styles.modalTitle}>Recover your streak?</h3>
+            <p className={styles.modalBody}>
+              You missed yesterday, but your{' '}
+              <strong>{streak?.streakDays ?? 0}-day streak</strong> can be restored.
+              Complete any problem or quiz today to lock it back in.
+            </p>
+            <div className={styles.modalBullets}>
+              <div className={styles.modalBullet}>✅ Streak restored immediately</div>
+              <div className={styles.modalBullet}>⏱ Stay active today to keep it</div>
+              <div className={styles.modalBullet}>🗓 One recovery allowed per 30 days</div>
+            </div>
+            <div className={styles.modalActions}>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowRecoveryConfirm(false)}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => recoverMut.mutate()}
+                disabled={recoverMut.isPending}
+              >
+                {recoverMut.isPending ? 'Recovering…' : '⚡ Recover streak'}
+              </button>
+            </div>
+            {recoverMut.data && !recoverMut.data.success && (
+              <p className={styles.modalError}>{recoverMut.data.message}</p>
             )}
           </div>
         </div>

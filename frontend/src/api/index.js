@@ -311,6 +311,21 @@ export const analyticsApi = {
     http.get('/api/analytics/mistakes').then((r) => r.data).catch(() => []),
 };
 
+// ─── Topic Ratings ────────────────────────────────────────────────────────────
+export const ratingsApi = {
+  get: (topicId) =>
+    http.get(`/api/topics/${topicId}/rating`).then((r) => r.data).catch(() => ({ average: 0, count: 0, myRating: 0 })),
+
+  rate: (topicId, rating) =>
+    http.post(`/api/topics/${topicId}/rate`, { rating }).then((r) => r.data),
+};
+
+// ─── Similar Problems ─────────────────────────────────────────────────────────
+export const similarApi = {
+  getSimilar: (problemId) =>
+    http.get(`/api/problems/${problemId}/similar`).then((r) => r.data).catch(() => []),
+};
+
 // ─── React Query Keys ─────────────────────────────────────────────────────────
 export const QUERY_KEYS = {
   topics:            (cat)  => ['topics', cat],
@@ -333,6 +348,8 @@ export const QUERY_KEYS = {
   roadmaps:                 ['roadmaps'],
   studyPlans:               ['studyPlans'],
   srsQueue:                 ['srsQueue'],
+  topicRating:   (tid)  => ['topicRating', tid],
+  similarProblems:(pid) => ['similarProblems', pid],
 };
 // ─── Spaced Repetition ────────────────────────────────────────────────────────
 export const srsApi = {

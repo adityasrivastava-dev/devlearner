@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { codeApi, topicsApi, problemsApi, submissionsApi, QUERY_KEYS } from '../../api';
+import { codeApi, topicsApi, problemsApi, submissionsApi, similarApi, QUERY_KEYS } from '../../api';
 import { getDiffMeta, PROBLEM_STARTER_CODE } from '../../utils/helpers';
 import CodeEditor, { applyMarkers } from './CodeEditor';
 import RecallDrillModal from './RecallDrillModal';
@@ -36,6 +36,11 @@ export default function ProblemSolveView({
   const [savedAt,         setSavedAt]         = useState(null);
   // ── Recall drill ─────────────────────────────────────────────────────────
   const [recallOpen,      setRecallOpen]      = useState(false);
+  // ── Reflect answers (saved to localStorage) ──────────────────────────────
+  const [reflectAnswers,  setReflectAnswers]  = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`devlearn_reflect_${problemId}`) || 'null') || {}; }
+    catch { return {}; }
+  });
   // ── Solve timer ──────────────────────────────────────────────────────────
   const [timerSec,        setTimerSec]        = useState(0);
   const solveStartRef = useRef(Date.now());
@@ -50,6 +55,14 @@ export default function ProblemSolveView({
     queryKey: QUERY_KEYS.problem(problemId),
     queryFn:  () => topicsApi.getProblem(problemId),
     enabled:  !!problemId,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // Similar problems — fetched once after accepted submit
+  const { data: similarProblems = [] } = useQuery({
+    queryKey: QUERY_KEYS.similarProblems(problemId),
+    queryFn:  () => similarApi.getSimilar(problemId),
+    enabled:  !!submitResult?.allPassed && !!problemId,
     staleTime: 10 * 60 * 1000,
   });
 
@@ -323,6 +336,7 @@ export default function ProblemSolveView({
               ['hints',       `Hints${hintsShown > 0 ? ` (${hintsShown})` : ''}`],
               ['submissions', 'Submissions'],
               ['editorial',   'Editorial'],
+              ...(isSolved ? [['reflect', '✍️ Reflect']] : []),
             ].map(([t, l]) => (
               <button key={t} className={`tab-btn ${activeDescTab === t ? 'active' : ''}`}
                 onClick={() => handleDescTabChange(t)}>{l}</button>
@@ -345,6 +359,16 @@ export default function ProblemSolveView({
                   </p>
                 </div>
               )
+            )}
+            {activeDescTab === 'reflect' && isSolved && (
+              <ReflectTab
+                problemId={problemId}
+                answers={reflectAnswers}
+                onChange={(updated) => {
+                  setReflectAnswers(updated);
+                  localStorage.setItem(`devlearn_reflect_${problemId}`, JSON.stringify(updated));
+                }}
+              />
             )}
           </div>
         </div>
@@ -495,6 +519,11 @@ export default function ProblemSolveView({
           </div>
         </div>
       </div>
+
+      {/* ── Similar Problems — shown after ACCEPTED ───────────────────── */}
+      {submitResult?.allPassed && similarProblems.length > 0 && (
+        <SimilarProblemsBar problems={similarProblems} onOpen={(p) => navigate(`/?openProblem=${p.id}&from=problems`)} />
+      )}
 
       {/* ── Recall Drill Modal — fires once on first AC ──────────────── */}
       <RecallDrillModal
@@ -790,6 +819,116 @@ function TestcasePanel({ testInput, setTestInput, sampleInput, sampleOutput }) {
       {sampleOutput && (
         <div style={{ fontSize: 11, color: 'var(--text3)' }}>
           Expected: <code style={{ background: 'var(--bg4)', padding: '1px 6px', borderRadius: 3, fontFamily: 'var(--font-code)', color: 'var(--accent)' }}>{sampleOutput}</code>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Similar Problems bar — shown below the split layout after ACCEPTED ────────
+function SimilarProblemsBar({ problems, onOpen }) {
+  const DIFF = { EASY: { color: '#4ade80', label: 'Easy' }, MEDIUM: { color: '#f59e0b', label: 'Medium' }, HARD: { color: '#f87171', label: 'Hard' } };
+  return (
+    <div style={{
+      margin: '0 0 0',
+      padding: '12px 20px',
+      background: 'var(--bg2)',
+      borderTop: '1px solid var(--border)',
+      display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+    }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text3)', whiteSpace: 'nowrap' }}>
+        Try next →
+      </span>
+      {problems.map((p) => {
+        const d = DIFF[p.difficulty] || { color: 'var(--text3)', label: p.difficulty };
+        return (
+          <button
+            key={p.id}
+            onClick={() => onOpen(p)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '5px 12px',
+              background: 'var(--bg3)',
+              border: '1px solid var(--border2)',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-ui)',
+              fontSize: 12,
+              color: 'var(--text)',
+              transition: 'border-color .15s',
+            }}
+          >
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
+            {p.title}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Reflect tab — explain-it-back after solving ───────────────────────────────
+const REFLECT_FIELDS = [
+  {
+    key: 'approach',
+    label: '✍️ Explain your approach in one sentence',
+    placeholder: 'e.g. "I stored each number in a HashMap and checked if the complement existed on each iteration."',
+  },
+  {
+    key: 'complexity',
+    label: '⏱ What is the time & space complexity? Why?',
+    placeholder: 'e.g. "O(n) time because we scan the array once. O(n) space for the HashMap in the worst case."',
+  },
+  {
+    key: 'edgeCase',
+    label: '⚠️ What edge case almost caught you?',
+    placeholder: 'e.g. "I forgot to handle the case where the same element is used twice — needed to check i ≠ j."',
+  },
+];
+
+function ReflectTab({ problemId, answers, onChange }) {
+  const allFilled = REFLECT_FIELDS.every((f) => (answers[f.key] || '').trim());
+  return (
+    <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div>
+        <div style={{ fontWeight: 800, fontSize: 13, color: 'var(--text)', marginBottom: 4 }}>
+          Explain it back
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.6 }}>
+          The best way to cement a solution: explain it to yourself before moving on.
+          Answers are saved locally.
+        </div>
+      </div>
+
+      {REFLECT_FIELDS.map((field) => (
+        <div key={field.key} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>{field.label}</label>
+          <textarea
+            rows={3}
+            value={answers[field.key] || ''}
+            onChange={(e) => onChange({ ...answers, [field.key]: e.target.value })}
+            placeholder={field.placeholder}
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              background: 'var(--bg3)', border: '1px solid var(--border2)',
+              borderRadius: 6, color: 'var(--text)', fontFamily: 'var(--font-ui)',
+              fontSize: 12, lineHeight: 1.6, padding: '8px 10px',
+              resize: 'vertical', outline: 'none',
+            }}
+          />
+        </div>
+      ))}
+
+      {allFilled && (
+        <div style={{
+          padding: '10px 14px',
+          background: 'rgba(74,222,128,.06)',
+          border: '1px solid rgba(74,222,128,.2)',
+          borderRadius: 8,
+          fontSize: 12, color: 'var(--accent)',
+          fontWeight: 600,
+        }}>
+          ✅ Great job! You've reflected on all three dimensions of this problem.
         </div>
       )}
     </div>

@@ -101,6 +101,31 @@ public class ProblemsController {
         return ResponseEntity.ok(filters);
     }
 
+    // ── Similar problems ─────────────────────────────────────────────────────
+
+    /**
+     * GET /api/problems/{id}/similar
+     * Returns up to 5 problems sharing the same pattern, excluding the current one.
+     * Used to show "Try next" after an accepted submission.
+     */
+    @GetMapping("/{id}/similar")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> getSimilar(@PathVariable Long id) {
+        var problem = problemRepo.findById(id).orElse(null);
+        if (problem == null || blank(problem.getPattern())) {
+            return ResponseEntity.ok(List.of());
+        }
+        var similar = problemRepo.findSimilarByPattern(
+                problem.getPattern(), id, PageRequest.of(0, 5));
+        return ResponseEntity.ok(similar.stream().map(p -> Map.of(
+                "id",         p.getId(),
+                "title",      p.getTitle(),
+                "difficulty", p.getDifficulty().name(),
+                "pattern",    p.getPattern() != null ? p.getPattern() : "",
+                "topicTitle", p.getTopic().getTitle()
+        )).toList());
+    }
+
     // ── Helper ────────────────────────────────────────────────────────────────
 
     private static boolean blank(String s) {
