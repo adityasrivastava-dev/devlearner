@@ -53,4 +53,10 @@ private String flowchartMermaid;
 //               CONDITION_TRUE | CONDITION_FALSE | CALL | RETURN | THROW
 @Column(name = "tracer_steps", columnDefinition = "TEXT")
 private String tracerSteps;
+
+// ── SQL Visualizer ────────────────────────────────────────────────────────
+// JSON object with type ("join","select","groupby","normalize","subquery")
+// rendered by SqlTableVisualizer in the frontend
+@Column(name = "table_data", columnDefinition = "TEXT")
+private String tableData;
 }

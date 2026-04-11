@@ -23,7 +23,7 @@ private Long id;
 private String title;
 
 @Enumerated(EnumType.STRING)
-@Column(nullable = false)
+@Column(nullable = false, columnDefinition = "VARCHAR(50)")
 private Category category;
 
 @Column(columnDefinition = "TEXT")
@@ -66,7 +66,7 @@ private String story;
 @Column(columnDefinition = "TEXT")
 private String analogy;
 
-@Column(name = "memory_anchor", length = 500)
+@Column(name = "memory_anchor", columnDefinition = "TEXT")
 private String memoryAnchor;
 
 @Column(name = "first_principles", columnDefinition = "TEXT")

@@ -70,10 +70,25 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
                         ex.setPseudocode(edto.getPseudocode());
                         ex.setFlowchartMermaid(edto.getFlowchartMermaid());
                         ex.setTracerSteps(edto.getTracerSteps());
+                        ex.setTableData(edto.getTableData());
                         exampleRepo.save(ex);
                         seededExamples++;
                     }
                     log.info("Seeded {} missing examples for existing topic: {}", seededExamples, dto.getTitle());
+                } else if (existingExampleCount > 0 && dto.getExamples() != null) {
+                    // ── Patch tableData on existing examples that are missing it ──
+                    List<Example> existingExamples = exampleRepo.findByTopicIdOrderByDisplayOrder(topic.getId());
+                    Map<String, SeedBatchRequest.ExampleSeedDto> dtoByTitle = new java.util.HashMap<>();
+                    for (SeedBatchRequest.ExampleSeedDto edto : dto.getExamples()) {
+                        if (edto.getTitle() != null) dtoByTitle.put(edto.getTitle(), edto);
+                    }
+                    for (Example ex : existingExamples) {
+                        SeedBatchRequest.ExampleSeedDto edto = dtoByTitle.get(ex.getTitle());
+                        if (edto != null && ex.getTableData() == null && edto.getTableData() != null) {
+                            ex.setTableData(edto.getTableData());
+                            exampleRepo.save(ex);
+                        }
+                    }
                 }
 
                 // ── Seed missing problems ─────────────────────────────────────
@@ -185,6 +200,7 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
                     ex.setPseudocode(edto.getPseudocode());
                     ex.setFlowchartMermaid(edto.getFlowchartMermaid());
                     ex.setTracerSteps(edto.getTracerSteps());
+                    ex.setTableData(edto.getTableData());
                     exampleRepo.save(ex);
                     seededExamples++;
                 }

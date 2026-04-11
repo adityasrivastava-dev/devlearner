@@ -1,0 +1,406 @@
+/* ── Container ──────────────────────────────────────────────────────────────── */
+.vizContainer {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.vizTitle {
+  padding: 10px 16px;
+  background: var(--bg4);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text2);
+  letter-spacing: 0.3px;
+}
+
+/* ── Input row ──────────────────────────────────────────────────────────────── */
+.inputRow {
+  display: flex;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--bg4);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.inputLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.inputField {
+  padding: 5px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font-code);
+  outline: none;
+  width: 240px;
+  transition: border-color .15s;
+}
+.inputField:focus { border-color: var(--accent); }
+
+.targetField { width: 64px; }
+
+.applyBtn {
+  padding: 5px 12px;
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: background .15s;
+  height: 28px;
+  align-self: flex-end;
+}
+.applyBtn:hover { background: var(--accent2); }
+
+/* ── Viz area ───────────────────────────────────────────────────────────────── */
+.vizArea {
+  padding: 20px 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  overflow-x: auto;
+}
+
+/* ── Array cells ────────────────────────────────────────────────────────────── */
+.arrayRow {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.cellWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.cell {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-code);
+  border: 2px solid transparent;
+  transition: background .2s, border-color .2s, color .2s;
+}
+
+.cellIndex {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: var(--font-code);
+}
+
+/* Cell states */
+.cellNormal  { background: var(--bg4); color: var(--text2); border-color: var(--border2); }
+.cellCompare { background: rgba(251,191,36,.18); color: var(--yellow); border-color: var(--yellow); }
+.cellActive  { background: rgba(99,102,241,.18); color: var(--accent3); border-color: var(--accent); }
+.cellFound   { background: rgba(74,222,128,.18); color: var(--success); border-color: var(--success2); }
+.cellExclude { background: rgba(30,37,53,.5); color: var(--text3); border-color: var(--border); opacity: 0.45; }
+.cellSwap    { background: rgba(248,113,113,.2); color: var(--red); border-color: var(--red); }
+.cellWindow  { background: rgba(139,92,246,.18); color: var(--violet); border-color: var(--violet); }
+.cellSorted  { background: rgba(74,222,128,.1); color: var(--success2); border-color: var(--success2); }
+.cellPivot   { background: rgba(251,146,60,.2); color: var(--orange); border-color: var(--orange); }
+
+/* ── Pointer row ────────────────────────────────────────────────────────────── */
+.pointerRow {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.pointerWrap {
+  width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-height: 20px;
+}
+
+.pointer {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 4px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.pLow    { background: rgba(99,102,241,.2);  color: var(--accent3); }
+.pHigh   { background: rgba(248,113,113,.2); color: var(--red); }
+.pMid    { background: rgba(251,191,36,.2);  color: var(--yellow); }
+.pLeft   { background: rgba(99,102,241,.2);  color: var(--accent3); }
+.pRight  { background: rgba(248,113,113,.2); color: var(--red); }
+.pCurr   { background: rgba(251,191,36,.2);  color: var(--yellow); }
+.pWindow { background: rgba(139,92,246,.2);  color: var(--violet); }
+.pKey    { background: rgba(74,222,128,.2);  color: var(--success); }
+.pPivot  { background: rgba(251,146,60,.2);  color: var(--orange); }
+
+/* ── Variables ──────────────────────────────────────────────────────────────── */
+.varsGrid {
+  display: flex;
+  gap: 6px;
+  padding: 0 16px 10px;
+  flex-wrap: wrap;
+}
+
+.varChip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--bg4);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: var(--font-code);
+}
+.varKey   { color: var(--text3); }
+.varValue { color: var(--accent3); font-weight: 700; }
+
+/* ── Message ────────────────────────────────────────────────────────────────── */
+.messageBox {
+  margin: 0 16px 10px;
+  padding: 9px 14px;
+  background: var(--bg4);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  font-size: 12px;
+  color: var(--text2);
+  font-family: var(--font-code);
+  line-height: 1.55;
+  min-height: 36px;
+}
+.messageDone  { border-left-color: var(--success); }
+.messageError { border-left-color: var(--red); }
+.messageSwap  { border-left-color: var(--red); }
+
+/* ── Controls ───────────────────────────────────────────────────────────────── */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--bg4);
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.ctrlBtn {
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 6px; font-size: 12px; cursor: pointer;
+  color: var(--text2); transition: all .15s;
+}
+.ctrlBtn:hover:not(:disabled) { background: var(--bg4); color: var(--text); }
+.ctrlBtn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.playBtn {
+  width: 38px; height: 30px;
+  background: var(--accent); border: none; border-radius: 6px;
+  font-size: 14px; cursor: pointer; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.playBtn:hover { background: var(--accent2); }
+
+.stepCount {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--font-code);
+  margin-left: auto;
+}
+
+.speedRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.speedSlider {
+  width: 64px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* ── Bar chart ──────────────────────────────────────────────────────────────── */
+.barChart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 120px;
+  padding: 0 4px;
+}
+
+.bar {
+  flex: 1;
+  border-radius: 4px 4px 0 0;
+  transition: height .2s ease, background .2s, border-color .2s;
+  min-width: 14px;
+  position: relative;
+}
+.barNormal  { background: var(--bg4); border: 1px solid var(--border2); }
+.barCompare { background: rgba(251,191,36,.4);  border: 1px solid var(--yellow); }
+.barSwap    { background: rgba(248,113,113,.4); border: 1px solid var(--red); }
+.barSorted  { background: rgba(74,222,128,.25); border: 1px solid var(--success2); }
+.barPivot   { background: rgba(251,146,60,.4);  border: 1px solid var(--orange); }
+
+.barLabel {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--text3);
+  font-family: var(--font-code);
+  white-space: nowrap;
+}
+
+.barLegend {
+  display: flex;
+  gap: 12px;
+  padding: 4px 16px 10px;
+  flex-wrap: wrap;
+}
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text3);
+}
+.legendDot {
+  width: 10px; height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* ── BFS / DFS grid ─────────────────────────────────────────────────────────── */
+.gridLabel {
+  font-size: 11px;
+  color: var(--text3);
+  text-align: center;
+  margin-bottom: 10px;
+  font-family: var(--font-code);
+}
+
+.bfsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bfsRow {
+  display: flex;
+  gap: 4px;
+}
+
+.bfsCell {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-code);
+  transition: background .25s, border-color .25s;
+}
+
+/* ── DP Fibonacci table ─────────────────────────────────────────────────────── */
+.dpWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.dpIndexRow, .dpValueRow, .dpArrowRow {
+  display: flex;
+  gap: 3px;
+}
+
+.dpIndex {
+  width: 44px;
+  text-align: center;
+  font-size: 9px;
+  color: var(--text3);
+  font-family: var(--font-code);
+  white-space: nowrap;
+}
+
+.dpCell {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-code);
+  border: 2px solid transparent;
+  transition: all .25s;
+}
+.dpCellEmpty   { background: var(--bg4); color: var(--text3); border-color: var(--border); }
+.dpCellFilled  { background: rgba(74,222,128,.12); color: var(--success); border-color: var(--success2); }
+.dpCellCurrent { background: rgba(251,191,36,.18); color: var(--yellow); border-color: var(--yellow); }
+
+.dpArrowCell {
+  width: 44px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dpArrow {
+  color: var(--accent3);
+  font-size: 12px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .cell { width: 36px; height: 36px; font-size: 11px; }
+  .pointerWrap { width: 36px; }
+  .bfsCell { width: 44px; height: 44px; }
+  .dpCell { width: 36px; height: 36px; font-size: 11px; }
+  .dpIndex { width: 36px; font-size: 8px; }
+  .dpArrowCell { width: 36px; }
+  .inputField { width: 180px; }
+  .barChart { height: 90px; }
+}

@@ -131,7 +131,7 @@
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .6px;
+  letter-spacing: .8px;
   color: var(--accent);
   margin-bottom: 10px;
 }
@@ -175,14 +175,15 @@
   font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .7px;
+  letter-spacing: .8px;
   color: var(--text3);
   margin-bottom: 10px;
 }
 .cardBody {
-  font-size: 13.5px;
+  font-family: var(--font-reading);
+  font-size: 14px;
   color: var(--text2);
-  line-height: 1.75;
+  line-height: 1.8;
 }
 
 /* ── Story card ────────────────────────────────────────────────────────────── */
@@ -196,10 +197,12 @@
   color: #d97706;
 }
 .storyBody {
+  font-family: var(--font-reading);
   font-style: italic;
-  font-size: 14px;
+  font-weight: 400;
+  font-size: 14.5px;
   color: var(--text);
-  line-height: 1.8;
+  line-height: 1.9;
 }
 
 /* ── Analogy card ──────────────────────────────────────────────────────────── */
@@ -242,9 +245,10 @@
   flex-shrink: 0;
 }
 .analogyMeaning {
-  font-size: 13px;
+  font-family: var(--font-reading);
+  font-size: 13.5px;
   color: var(--text);
-  line-height: 1.5;
+  line-height: 1.6;
   flex: 1;
   min-width: 0;
 }
@@ -271,9 +275,10 @@
   gap: 7px;
 }
 .principlesItem {
-  font-size: 13.5px;
+  font-family: var(--font-reading);
+  font-size: 14px;
   color: var(--text);
-  line-height: 1.65;
+  line-height: 1.8;
   padding-left: 4px;
 }
 .principlesItem::marker {

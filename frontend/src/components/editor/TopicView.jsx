@@ -249,6 +249,7 @@ export default function TopicView({ topic, onProblemOpen, onBack, theme = 'dark'
                       <div className={styles.exCardNum}>Example {ex.displayOrder || i + 1}</div>
                       <div className={styles.exCardTitle}>{ex.title}</div>
                       <div className={styles.exCardTags}>
+                        {ex.tableData && <span className={styles.exTag}>⊞ Tables</span>}
                         {ex.tracerSteps && <span className={styles.exTag}>▶ Tracer</span>}
                         {ex.flowchartMermaid && <span className={styles.exTag}>◈ Diagram</span>}
                         {ex.pseudocode && <span className={styles.exTag}>≡ Pseudocode</span>}

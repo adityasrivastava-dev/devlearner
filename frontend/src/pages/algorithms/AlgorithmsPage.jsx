@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FlowchartViewer from '../../components/editor/FlowchartViewer';
+import AlgorithmVisualizer from './AlgorithmVisualizer';
 import styles from './AlgorithmsPage.module.css';
 
 // ─── Category metadata (icons/labels only — counts come from DB) ──────────────
@@ -12,14 +13,20 @@ const CATEGORY_META = {
   'Sliding Window':       { icon: '🪟', label: 'Sliding Window' },
   'Dynamic Programming':  { icon: '🧩', label: 'Dynamic Prog.' },
   'Graph':                { icon: '🕸️',  label: 'Graph' },
+  'Trees':                { icon: '🌳', label: 'Trees' },
   'Tree':                 { icon: '🌲', label: 'Tree' },
   'Greedy':               { icon: '💰', label: 'Greedy' },
   'Backtracking':         { icon: '↩️',  label: 'Backtracking' },
   'Math':                 { icon: '🔢', label: 'Math' },
   'Linked List':          { icon: '🔗', label: 'Linked List' },
+  'Stack':                { icon: '📚', label: 'Stack' },
   'Stack & Queue':        { icon: '📦', label: 'Stack & Queue' },
   'Heap':                 { icon: '⛰️',  label: 'Heap' },
   'Bit Manipulation':     { icon: '⚡', label: 'Bit Tricks' },
+  'String':               { icon: '📝', label: 'String' },
+  'Hashing':              { icon: '#️⃣',  label: 'Hashing' },
+  'Design':               { icon: '🏗️',  label: 'Design' },
+  'Range Query':          { icon: '📐', label: 'Range Query' },
 };
 
 // ─── Parse JSON fields (tags, useCases, pitfalls, variants) ──────────────────
@@ -222,18 +229,21 @@ function AlgorithmDetail({ algo, onBack }) {
 
         {activeTab === 'visual' && (
           <div className={styles.section}>
-            {algo.mermaidDiagram ? (
-              <>
-                <h3 className={styles.sectionTitle}>Step-by-Step Visualization</h3>
-                <p className={styles.visualHint}>Follow the flow to trace how the algorithm executes.</p>
-                <FlowchartViewer definition={algo.mermaidDiagram} />
-              </>
-            ) : (
-              <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>📊</div>
-                <div className={styles.emptyTitle}>No visualization yet</div>
-                <div className={styles.emptySub}>A diagram can be added for this algorithm via the Admin Panel.</div>
-              </div>
+            <AlgorithmVisualizer algoName={algo.name} />
+            {!algo.name?.toLowerCase().match(/binary search|linear search|bubble|insertion|quick|merge|two.pointer|sliding window|bfs|breadth|dfs|depth|fibonacci|dynamic/) && (
+              algo.mermaidDiagram ? (
+                <>
+                  <h3 className={styles.sectionTitle}>Step-by-Step Visualization</h3>
+                  <p className={styles.visualHint}>Follow the flow to trace how the algorithm executes.</p>
+                  <FlowchartViewer definition={algo.mermaidDiagram} />
+                </>
+              ) : (
+                <div className={styles.emptyState}>
+                  <div className={styles.emptyIcon}>📊</div>
+                  <div className={styles.emptyTitle}>No visualization yet</div>
+                  <div className={styles.emptySub}>A diagram can be added for this algorithm via the Admin Panel.</div>
+                </div>
+              )
             )}
           </div>
         )}

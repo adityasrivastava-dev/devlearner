@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800;900&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -30,8 +30,9 @@
   --easy:     #4ade80;
   --medium:   #fbbf24;
   --hard:     #f87171;
-  --font-ui:   'Inter', sans-serif;
-  --font-code: 'JetBrains Mono', monospace;
+  --font-ui:      'Inter', sans-serif;
+  --font-reading: 'Lora', Georgia, serif;
+  --font-code:    'JetBrains Mono', monospace;
   --text-display: 20px;
   --text-heading: 15px;
   --text-body:    13px;

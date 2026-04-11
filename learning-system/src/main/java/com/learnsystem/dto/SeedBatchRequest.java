@@ -50,6 +50,8 @@ public static class ExampleSeedDto {
     private String flowchartMermaid;
     // Phase 2 tracer
     private String tracerSteps;
+    // SQL visualizer
+    private String tableData;
 }
 
 @Data
