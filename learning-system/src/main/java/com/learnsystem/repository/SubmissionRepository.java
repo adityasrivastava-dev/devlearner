@@ -58,4 +58,30 @@ List<Long> findSolvedProblemIdsByUserId(@Param("uid") Long userId);
     ORDER BY day ASC
     """, nativeQuery = true)
 List<Object[]> findDailyActivityForUser(@Param("uid") Long userId);
+
+/**
+ * Count DISTINCT problems a user has ACCEPTED per difficulty for a given topic.
+ * Returns Object[] rows: [difficulty_string, count]
+ */
+@Query(value = """
+    SELECT p.difficulty, COUNT(DISTINCT s.problem_id) AS cnt
+    FROM submissions s
+    JOIN problems p ON p.id = s.problem_id
+    WHERE s.user_id = :uid
+      AND s.status = 'ACCEPTED'
+      AND p.topic_id = :topicId
+    GROUP BY p.difficulty
+    """, nativeQuery = true)
+List<Object[]> countSolvedByDifficultyForTopic(@Param("uid") Long userId, @Param("topicId") Long topicId);
+
+/**
+ * Count total problems in a topic grouped by difficulty.
+ */
+@Query(value = """
+    SELECT p.difficulty, COUNT(*) AS cnt
+    FROM problems p
+    WHERE p.topic_id = :topicId
+    GROUP BY p.difficulty
+    """, nativeQuery = true)
+List<Object[]> countProblemsByDifficultyForTopic(@Param("topicId") Long topicId);
 }

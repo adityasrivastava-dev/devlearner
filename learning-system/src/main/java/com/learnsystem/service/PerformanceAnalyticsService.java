@@ -160,10 +160,19 @@ public Map<String, Object> getDashboard(Long userId) {
 	result.put("totalTopicsTried", all.size());
 	result.put("weakAreas",  weak.stream().limit(5).map(this::toPerfDto).toList());
 	result.put("strongAreas",strong.stream().limit(5).map(this::toPerfDto).toList());
-	result.put("errorBreakdown", errorTypes.stream().map(r ->
-			Map.of("type", r[0], "count", r[1])).toList());
-	result.put("patternConfusions", confusions.stream().limit(5).map(r ->
-			Map.of("detected", r[0], "correct", r[1], "count", r[2])).toList());
+	result.put("errorBreakdown", errorTypes.stream().map(r -> {
+		Map<String, Object> m = new LinkedHashMap<>();
+		m.put("type",  r[0] != null ? r[0] : "UNKNOWN");
+		m.put("count", r[1] != null ? r[1] : 0);
+		return m;
+	}).toList());
+	result.put("patternConfusions", confusions.stream().limit(5).map(r -> {
+		Map<String, Object> m = new LinkedHashMap<>();
+		m.put("detected", r[0] != null ? r[0] : "");
+		m.put("correct",  r[1] != null ? r[1] : "");
+		m.put("count",    r[2] != null ? r[2] : 0);
+		return m;
+	}).toList());
 	return result;
 }
 

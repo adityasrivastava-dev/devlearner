@@ -350,6 +350,8 @@ export const QUERY_KEYS = {
   srsQueue:                 ['srsQueue'],
   topicRating:   (tid)  => ['topicRating', tid],
   similarProblems:(pid) => ['similarProblems', pid],
+  gateStatus:       (tid)  => ['gateStatus', tid],
+  interviewQuestions:      ['interviewQuestions'],
 };
 // ─── Spaced Repetition ────────────────────────────────────────────────────────
 export const srsApi = {
@@ -364,4 +366,34 @@ export const srsApi = {
 export const recallApi = {
   save: (topicId, topicTitle, text) =>
     http.post('/api/recall', { topicId, topicTitle, text }).then((r) => r.data),
+};
+
+// ─── Interview Questions ──────────────────────────────────────────────────────
+export const interviewApi = {
+  getAll: (params = {}) =>
+    http.get('/api/interview-questions', { params }).then((r) => r.data),
+
+  create: (data) =>
+    http.post('/api/admin/interview-questions', data).then((r) => r.data),
+
+  update: (id, data) =>
+    http.put(`/api/admin/interview-questions/${id}`, data).then((r) => r.data),
+
+  delete: (id) =>
+    http.delete(`/api/admin/interview-questions/${id}`).then((r) => r.data),
+
+  bulkImport: (questions) =>
+    http.post('/api/admin/interview-questions/bulk', questions).then((r) => r.data),
+
+  deleteAll: () =>
+    http.delete('/api/admin/interview-questions').then((r) => r.data),
+};
+
+// ─── Learning Gate ────────────────────────────────────────────────────────────
+export const gateApi = {
+  getStatus: (topicId) =>
+    http.get(`/api/topics/${topicId}/gate`).then((r) => r.data),
+
+  completeTheory: (topicId, note) =>
+    http.post(`/api/topics/${topicId}/gate/theory`, { note }).then((r) => r.data),
 };

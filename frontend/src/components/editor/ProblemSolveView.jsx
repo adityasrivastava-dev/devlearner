@@ -29,7 +29,6 @@ export default function ProblemSolveView({
   const [isSubmitting,    setIsSubmitting]    = useState(false);
   const [hintsShown,      setHintsShown]      = useState(0);
   const [approach,        setApproach]        = useState('');
-  const [approachOpen,    setApproachOpen]    = useState(false);
   const [splitPos,        setSplitPos]        = useState(40);
   const [cursorPos,       setCursorPos]       = useState({ line: 1, col: 1 });
   const [lineCount,       setLineCount]       = useState(0);
@@ -92,7 +91,6 @@ export default function ProblemSolveView({
     setTestInput(problem.sampleInput || '');
     const savedApproach = localStorage.getItem(`devlearn_approach_${problemId}`) || '';
     setApproach(savedApproach);
-    setApproachOpen(!savedApproach); // open when no approach written yet
     setHintsShown(0);
     setRunResult(null);
     setSubmitResult(null);
@@ -263,23 +261,16 @@ export default function ProblemSolveView({
       <div className={styles.topbar}>
         <div className={styles.topLeft}>
           <button className={styles.backBtn} onClick={handleBack}>← Back</button>
-          {topicTitle && <button className={styles.studyBtn} onClick={onStudyTopic}>📖 Study</button>}
-          <div className={styles.breadcrumb}>
-            {topicTitle && <span className={styles.breadTopic} onClick={onStudyTopic}>{topicTitle}</span>}
-            {topicTitle && <span className={styles.breadSep}>/</span>}
-            <span className={styles.breadTitle}>{problem.title}</span>
-          </div>
+          <span className={styles.probName}>{problem.title}</span>
           <span className={`badge ${diff.cls}`}>{diff.label}</span>
           {isSolved && <span className={styles.solvedBadge}>✓ Solved</span>}
         </div>
 
         <div className={styles.topRight}>
-          {/* Solve timer */}
           <span className={styles.timer} title="Time spent on this problem">
             ⏱ {formatTimer(timerSec)}
           </span>
 
-          {/* Syntax status pill */}
           <div className={`${styles.syntaxPill} ${styles[syntaxState]}`}>
             <div className={styles.syntaxDot} />
             <span>
@@ -291,7 +282,6 @@ export default function ProblemSolveView({
             </span>
           </div>
 
-          {/* Font size */}
           {onFontChange && (
             <div className={styles.fontGroup}>
               <button className={styles.fontBtn} onClick={() => onFontChange(-1)}>A−</button>
@@ -313,13 +303,13 @@ export default function ProblemSolveView({
             <option value="21">Java 21</option>
           </select>
 
-          <button className="btn btn-ghost btn-sm" onClick={handleRun} disabled={isRunning}
+          <button className={styles.runBtn} onClick={handleRun} disabled={isRunning}
             title="Run (Ctrl+Enter)">
-            {isRunning ? <><span className="spinner" />Running…</> : '▶ Run'}
+            {isRunning ? <><span className="spinner" style={{width:12,height:12}} />Running…</> : '▶ Run'}
           </button>
-          <button className="btn btn-primary btn-sm" onClick={handleSubmit} disabled={isSubmitting}
+          <button className={styles.submitBtn} onClick={handleSubmit} disabled={isSubmitting}
             title="Submit (Ctrl+Shift+Enter)">
-            {isSubmitting ? <><span className="spinner" />…</> : '⬆ Submit'}
+            {isSubmitting ? <><span className="spinner" style={{width:12,height:12}} />…</> : '⬆ Submit'}
           </button>
         </div>
       </div>
@@ -390,30 +380,6 @@ export default function ProblemSolveView({
                 ⌨ Ctrl+↵ Run · Ctrl+⇧+↵ Submit
               </span>
             </div>
-          </div>
-
-          {/* ── Approach panel ──────────────────────────────────────── */}
-          <div className={styles.approachPanel}>
-            <button
-              className={styles.approachHeader}
-              onClick={() => setApproachOpen((o) => !o)}
-            >
-              <span>✍️</span>
-              <span className={styles.approachTitle}>Plan your approach</span>
-              {approach.trim()
-                ? <span className={styles.approachFilled}>✓ written</span>
-                : <span className={styles.approachEmpty}>write before coding</span>}
-              <span className={styles.approachChevron}>{approachOpen ? '▲' : '▼'}</span>
-            </button>
-            {approachOpen && (
-              <textarea
-                className={styles.approachTextarea}
-                placeholder="Describe your algorithm in plain English… e.g. 'I'll use a HashMap to store each number. For each element, check if (target − x) exists…'"
-                value={approach}
-                onChange={(e) => setApproach(e.target.value)}
-                rows={4}
-              />
-            )}
           </div>
 
           {/* Monaco editor */}

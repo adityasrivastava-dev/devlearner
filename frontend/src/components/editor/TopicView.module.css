@@ -806,3 +806,286 @@
 }
 .noteActionBtn:hover { color: var(--text); border-color: var(--text3); }
 .noteDelete:hover { color: var(--red, #e74c3c); border-color: var(--red, #e74c3c); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEARNING GATE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Stage badge in header */
+.stageBadge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+.stageTHEORY  { color: var(--text3);   border-color: var(--border2);              background: var(--bg3); }
+.stageEASY    { color: #4ade80;        border-color: rgba(74,222,128,.3);         background: rgba(74,222,128,.08); }
+.stageMEDIUM  { color: #fbbf24;        border-color: rgba(251,191,36,.3);         background: rgba(251,191,36,.08); }
+.stageHARD    { color: #f87171;        border-color: rgba(248,113,113,.3);        background: rgba(248,113,113,.08); }
+.stageMASTERED{ color: #a78bfa;        border-color: rgba(167,139,250,.3);        background: rgba(167,139,250,.08); }
+
+/* Locked tab style */
+.tabLocked { opacity: .5; }
+.tabLocked:hover { opacity: .7; }
+
+/* ── Theory Gate Form ────────────────────────────────────────────────────── */
+.gateForm {
+  margin-top: 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gateFormTitle {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -.2px;
+}
+
+.gateFormHint {
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.gateTextarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font-ui);
+  line-height: 1.6;
+  resize: vertical;
+  transition: border-color .15s;
+  box-sizing: border-box;
+}
+.gateTextarea:focus { outline: none; border-color: var(--accent); }
+.gateTextarea::placeholder { color: var(--text3); }
+
+.gateFormFooter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.gateCharCount {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--font-code);
+  transition: color .15s;
+}
+.gateCharOk { color: var(--accent); }
+
+.gateUnlockBtn {
+  padding: 7px 18px;
+  background: var(--accent);
+  border: none;
+  border-radius: 7px;
+  color: #0d0f12;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: opacity .15s;
+  white-space: nowrap;
+}
+.gateUnlockBtn:hover:not(:disabled) { opacity: .85; }
+.gateUnlockBtn:disabled { opacity: .35; cursor: default; }
+
+.gateError {
+  font-size: 12px;
+  color: #f87171;
+  margin: 0;
+}
+
+/* ── Theory Completed State ──────────────────────────────────────────────── */
+.gateCompleted {
+  margin-top: 8px;
+  background: rgba(74,222,128,.05);
+  border: 1px solid rgba(74,222,128,.2);
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.gateCompletedIcon { font-size: 22px; flex-shrink: 0; }
+
+.gateCompletedText {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text2);
+}
+.gateCompletedText strong { color: var(--accent); }
+
+.gateCompletedNote {
+  font-size: 12px;
+  color: var(--text3);
+  margin: 4px 0 0;
+  font-style: italic;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.gatePracticeBtn {
+  padding: 6px 16px;
+  background: var(--accent);
+  border: none;
+  border-radius: 7px;
+  color: #0d0f12;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: opacity .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: center;
+}
+.gatePracticeBtn:hover { opacity: .85; }
+
+/* ── Stage Progress Bar ──────────────────────────────────────────────────── */
+.stageProgress {
+  margin: 16px 24px 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stageProgressText {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text2);
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.stageProgressText strong { color: var(--accent); }
+
+.stageProgressCount {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--font-code);
+  flex-shrink: 0;
+}
+
+.stageProgressBar {
+  height: 5px;
+  background: var(--bg3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.stageProgressFill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width .4s ease;
+}
+
+/* ── Mastered Banner ─────────────────────────────────────────────────────── */
+.masteredBanner {
+  margin: 16px 24px 0;
+  background: rgba(167,139,250,.08);
+  border: 1px solid rgba(167,139,250,.25);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #a78bfa;
+  text-align: center;
+}
+
+/* ── Locked Practice State ───────────────────────────────────────────────── */
+.lockedState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  gap: 12px;
+  text-align: center;
+}
+
+.lockedIcon { font-size: 40px; }
+
+.lockedTitle {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0;
+}
+
+.lockedDesc {
+  font-size: 13px;
+  color: var(--text3);
+  line-height: 1.65;
+  max-width: 380px;
+  margin: 0;
+}
+
+.lockedBtn {
+  margin-top: 4px;
+  padding: 8px 20px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: .15s;
+}
+.lockedBtn:hover { color: var(--text); border-color: var(--accent); }
+
+/* ── Locked Difficulty Teaser ────────────────────────────────────────────── */
+.lockedTeaser {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  margin: 0 24px 16px;
+  background: var(--bg2);
+  border: 1px dashed var(--border2);
+  border-radius: 8px;
+  opacity: .65;
+}
+
+.lockedTeaserIcon { font-size: 14px; flex-shrink: 0; }
+
+.lockedTeaserLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+
+.lockedTeaserHint {
+  font-size: 11px;
+  color: var(--text3);
+  margin-left: auto;
+}

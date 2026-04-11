@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { problemsApi, submissionsApi, bookmarksApi, QUERY_KEYS } from '../../api';
-import { getDiffMeta, getCategoryMeta } from '../../utils/helpers';
+import { getDiffMeta } from '../../utils/helpers';
 import styles from './ProblemsPage.module.css';
 
 const PAGE_SIZE = 20;
@@ -23,7 +23,7 @@ export default function ProblemsPage() {
 
   const [searchInput, setSearchInput] = useState(() => searchParams.get('search') || '');
 
-  // ── Filter metadata ─────────────────────────────────────────────────────────
+  // ── Filter metadata ──────────────────────────────────────────────────────────
   const { data: meta = { categories: [], patterns: [] } } = useQuery({
     queryKey: QUERY_KEYS.problemFilters,
     queryFn:  problemsApi.getFilters,
@@ -42,7 +42,7 @@ export default function ProblemsPage() {
       size:       PAGE_SIZE,
     }),
     staleTime: 2 * 60 * 1000,
-    placeholderData: (prev) => prev, // keeps last page visible while fetching next
+    placeholderData: (prev) => prev,
   });
 
   // ── Solved IDs ───────────────────────────────────────────────────────────────
@@ -72,22 +72,18 @@ export default function ProblemsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.bookmarks }),
   });
 
-  // ── Derived ─────────────────────────────────────────────────────────────────
+  // ── Derived ──────────────────────────────────────────────────────────────────
   const problems      = data?.content      ?? [];
   const totalElements = data?.totalElements ?? 0;
   const totalPages    = data?.totalPages    ?? 0;
   const currentPage   = data?.page         ?? 0;
 
-  const hasActiveFilter = !!(filters.category || filters.difficulty
-    || filters.pattern || filters.search);
-
-  // For the progress bar — only when we know the full count
   const solvedCount = useMemo(
     () => problems.filter((p) => solvedSet.has(p.id)).length,
     [problems, solvedSet]
   );
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  // ── Handlers ─────────────────────────────────────────────────────────────────
   const setFilter = useCallback((key, value) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -116,69 +112,69 @@ export default function ProblemsPage() {
     navigate(`/?openProblem=${p.id}&from=problems`);
   }
 
+  const hasActiveFilter = !!(filters.category || filters.difficulty || filters.pattern || filters.search);
+
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
 
-      {/* Header */}
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <button className={styles.backBtn} onClick={() => navigate('/')}>← Back</button>
-          <div>
-            <h1 className={styles.heading}>Problem Set</h1>
-            <div className={styles.statsRow}>
-              <span className={styles.statPill}>{totalElements.toLocaleString()} total</span>
-              <span className={`${styles.statPill} ${styles.easy}`}>Easy</span>
-              <span className={`${styles.statPill} ${styles.medium}`}>Medium</span>
-              <span className={`${styles.statPill} ${styles.hard}`}>Hard</span>
-            </div>
-          </div>
+          <h1 className={styles.heading}>Problems</h1>
+          <span className={styles.totalCount}>{totalElements.toLocaleString()}</span>
         </div>
-
-        {/* Progress bar (page scope) */}
-        {problems.length > 0 && (
-          <div className={styles.progressWrap}>
-            <div className={styles.progressBar}>
-              <div
-                className={styles.progressFill}
-                style={{ width: `${(solvedCount / problems.length) * 100}%` }}
-              />
-            </div>
-            <div className={styles.progressLabel}>
+        <div className={styles.headerRight}>
+          {problems.length > 0 && (
+            <span className={styles.solvedStat}>
               {solvedCount} / {problems.length} solved this page
-            </div>
-          </div>
-        )}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className={styles.filters}>
+      {/* ── Filters ─────────────────────────────────────────────────────────── */}
+      <div className={styles.filterBar}>
+        {/* Search */}
         <form onSubmit={handleSearch} className={styles.searchForm}>
-          <input
-            className={`input ${styles.searchInput}`}
-            placeholder="🔍 Search problems…"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
-          <button type="submit" className="btn btn-primary btn-sm">Search</button>
+          <div className={styles.searchWrap}>
+            <span className={styles.searchIcon}>🔍</span>
+            <input
+              className={styles.searchInput}
+              placeholder="Search problems…"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+            {searchInput && (
+              <button type="button" className={styles.searchClear}
+                onClick={() => { setSearchInput(''); setFilter('search', ''); }}>✕</button>
+            )}
+          </div>
         </form>
 
-        <select className={styles.select} value={filters.difficulty}
-          onChange={(e) => setFilter('difficulty', e.target.value)}>
-          <option value="">All Difficulty</option>
-          <option value="EASY">Easy</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="HARD">Hard</option>
-        </select>
+        {/* Difficulty pills */}
+        <div className={styles.diffPills}>
+          {['', 'EASY', 'MEDIUM', 'HARD'].map((d) => (
+            <button
+              key={d || 'ALL'}
+              className={`${styles.diffPill} ${filters.difficulty === d ? styles.diffPillActive : ''} ${d ? styles[`diff${d}`] : ''}`}
+              onClick={() => setFilter('difficulty', d)}
+            >
+              {d === '' ? 'All' : d[0] + d.slice(1).toLowerCase()}
+            </button>
+          ))}
+        </div>
 
+        {/* Category */}
         <select className={styles.select} value={filters.category}
           onChange={(e) => setFilter('category', e.target.value)}>
-          <option value="">All Categories</option>
+          <option value="">All Topics</option>
           {meta.categories.map((c) => (
             <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>
           ))}
         </select>
 
+        {/* Pattern */}
         {meta.patterns.length > 0 && (
           <select className={styles.select} value={filters.pattern}
             onChange={(e) => setFilter('pattern', e.target.value)}>
@@ -187,45 +183,36 @@ export default function ProblemsPage() {
           </select>
         )}
 
+        {/* Clear */}
         {hasActiveFilter && (
-          <button className="btn btn-ghost btn-sm" onClick={clearAll}>✕ Clear</button>
+          <button className={styles.clearBtn} onClick={clearAll}>✕ Clear</button>
         )}
       </div>
 
-      {/* Active filter chips */}
-      {hasActiveFilter && (
-        <div className={styles.chips}>
-          {filters.search     && <Chip label={`"${filters.search}"`} onRemove={() => { setFilter('search', ''); setSearchInput(''); }} />}
-          {filters.category   && <Chip label={filters.category.replace(/_/g,' ')}  onRemove={() => setFilter('category','')}   />}
-          {filters.difficulty && <Chip label={filters.difficulty}                   onRemove={() => setFilter('difficulty','')} />}
-          {filters.pattern    && <Chip label={filters.pattern}                      onRemove={() => setFilter('pattern','')}    />}
-        </div>
-      )}
-
-      {/* Table */}
+      {/* ── Table ───────────────────────────────────────────────────────────── */}
       <div className={`${styles.tableWrap} ${isFetching ? styles.fetching : ''}`}>
         {isLoading ? (
-          <div className={styles.loading}><span className="spinner" />Loading problems…</div>
+          <div className={styles.loading}><span className="spinner" />Loading…</div>
         ) : isError ? (
-          <div className={styles.empty} style={{ color: 'var(--red,#e74c3c)' }}>
+          <div className={styles.empty}>
             <span>⚠</span><p>Failed to load problems. Try again.</p>
           </div>
         ) : problems.length === 0 ? (
           <div className={styles.empty}>
             <span>🔍</span>
-            <p>No problems match your filters. Try adjusting them.</p>
+            <p>No problems match your filters.</p>
           </div>
         ) : (
           <table className={styles.table}>
             <thead>
               <tr>
-                <th style={{ width: 28 }}></th>
-                <th style={{ width: 28 }}></th>
-                <th style={{ width: 40 }}>#</th>
+                <th style={{ width: 32 }}></th>
+                <th style={{ width: 32 }}></th>
+                <th style={{ width: 44 }}>#</th>
                 <th>Title</th>
                 <th style={{ width: 100 }}>Difficulty</th>
                 <th style={{ width: 130 }}>Pattern</th>
-                <th style={{ width: 130 }}>Topic</th>
+                <th style={{ width: 120 }}>Topic</th>
               </tr>
             </thead>
             <tbody>
@@ -241,7 +228,7 @@ export default function ProblemsPage() {
                     className={`${styles.row} ${isSolved ? styles.solvedRow : ''}`}
                   >
                     <td>
-                      <div className={`${styles.checkDot} ${isSolved ? styles.checked : ''}`}>
+                      <div className={`${styles.statusDot} ${isSolved ? styles.statusSolved : ''}`}>
                         {isSolved && '✓'}
                       </div>
                     </td>
@@ -256,9 +243,15 @@ export default function ProblemsPage() {
                     </td>
                     <td className={styles.numCell}>{rowNum}</td>
                     <td>
-                      <span className={styles.probTitle}>{p.title}</span>
+                      <span className={`${styles.probTitle} ${isSolved ? styles.probTitleSolved : ''}`}>
+                        {p.title}
+                      </span>
                     </td>
-                    <td><span className={`badge ${diff.cls}`}>{diff.label}</span></td>
+                    <td>
+                      <span className={`${styles.diffLabel} ${styles[`diff${p.difficulty}`]}`}>
+                        {p.difficulty ? p.difficulty[0] + p.difficulty.slice(1).toLowerCase() : '—'}
+                      </span>
+                    </td>
                     <td>{p.pattern && <span className={styles.patternChip}>{p.pattern}</span>}</td>
                     <td><span className={styles.topicLabel}>{p.topicTitle}</span></td>
                   </tr>
@@ -269,10 +262,10 @@ export default function ProblemsPage() {
         )}
       </div>
 
-      {/* Pagination */}
+      {/* ── Pagination ──────────────────────────────────────────────────────── */}
       {totalPages > 1 && (
         <div className={styles.pagination}>
-          <button className="btn btn-ghost btn-sm" disabled={currentPage === 0}
+          <button className={styles.pageBtn} disabled={currentPage === 0}
             onClick={() => setSearchParams((prev) => { const n = new URLSearchParams(prev); n.set('page', String(currentPage - 1)); return n; })}>
             ◀ Prev
           </button>
@@ -282,21 +275,20 @@ export default function ProblemsPage() {
               <span key={`e${i}`} className={styles.ellipsis}>…</span>
             ) : (
               <button key={p}
-                className={`btn btn-sm ${p === currentPage ? 'btn-primary' : 'btn-ghost'}`}
+                className={`${styles.pageBtn} ${p === currentPage ? styles.pageBtnActive : ''}`}
                 onClick={() => setSearchParams((prev) => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; })}>
                 {p + 1}
               </button>
             )
           )}
 
-          <button className="btn btn-ghost btn-sm" disabled={currentPage >= totalPages - 1}
+          <button className={styles.pageBtn} disabled={currentPage >= totalPages - 1}
             onClick={() => setSearchParams((prev) => { const n = new URLSearchParams(prev); n.set('page', String(currentPage + 1)); return n; })}>
             Next ▶
           </button>
 
           <span className={styles.pageInfo}>
-            Page {currentPage + 1} of {totalPages}
-            {' · '}{totalElements.toLocaleString()} problems
+            Page {currentPage + 1} of {totalPages} · {totalElements.toLocaleString()} problems
           </span>
         </div>
       )}
@@ -304,16 +296,7 @@ export default function ProblemsPage() {
   );
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function Chip({ label, onRemove }) {
-  return (
-    <span className={styles.chip}>
-      {label}
-      <button className={styles.chipX} onClick={onRemove}>×</button>
-    </span>
-  );
-}
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function buildPageRange(current, total) {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i);

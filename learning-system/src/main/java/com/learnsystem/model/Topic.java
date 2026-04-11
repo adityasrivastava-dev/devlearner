@@ -101,6 +101,9 @@ public enum Category {
     // Cloud
     AWS,
     // Web
-    JAVASCRIPT
+    JAVASCRIPT,
+    // Architecture
+    SYSTEM_DESIGN,
+    TESTING
 }
 }

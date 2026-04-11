@@ -42,6 +42,16 @@ const NAV_SECTIONS = [
   },
 ];
 
+// Which nav section label contains a given path?
+function sectionForPath(pathname) {
+  for (const s of NAV_SECTIONS) {
+    if (s.items.some((i) => i.path === pathname || (i.path !== '/' && pathname.startsWith(i.path)))) {
+      return s.label;
+    }
+  }
+  return null;
+}
+
 export default function Sidebar({ selectedTopicId, onTopicSelect, isOpen, onClose }) {
   const [category, setCategory] = useState('ALL');
   const [search, setSearch]     = useState('');
@@ -49,7 +59,26 @@ export default function Sidebar({ selectedTopicId, onTopicSelect, isOpen, onClos
   const location  = useLocation();
   const { isAdmin } = useAuth();
 
-  useEffect(() => { onClose?.(); }, [location.pathname]); // eslint-disable-line
+  // Accordion: only the section containing the active route starts open
+  const [openSections, setOpenSections] = useState(() => {
+    const active = sectionForPath(location.pathname);
+    return active ? new Set([active]) : new Set();
+  });
+
+  // When route changes, auto-open that section
+  useEffect(() => {
+    const active = sectionForPath(location.pathname);
+    if (active) setOpenSections((prev) => new Set([...prev, active]));
+    onClose?.();
+  }, [location.pathname]); // eslint-disable-line
+
+  function toggleSection(label) {
+    setOpenSections((prev) => {
+      const next = new Set(prev);
+      next.has(label) ? next.delete(label) : next.add(label);
+      return next;
+    });
+  }
 
   const { data: topics = [], isLoading } = useQuery({
     queryKey: QUERY_KEYS.topics(category),
@@ -63,22 +92,36 @@ export default function Sidebar({ selectedTopicId, onTopicSelect, isOpen, onClos
     return topics.filter((t) => t.title.toLowerCase().includes(q));
   }, [topics, search]);
 
-  // Group topics by subCategory for display.
-  // Returns array of { sectionName: string|null, topics: [] }
-  // If searching or ALL category: flat (no section headers)
+  // Group topics for display.
+  // searching → flat list, no headers
+  // ALL tab   → group by category (Java, DSA, SQL …)
+  // specific  → group by subCategory (OOP, Collections …)
   const grouped = useMemo(() => {
-    if (search.trim() || category === 'ALL') {
-      return [{ sectionName: null, topics: filtered }];
+    if (search.trim()) {
+      return [{ sectionName: null, sectionColor: null, topics: filtered }];
     }
-    const map = new Map(); // preserve insertion order
+    if (category === 'ALL') {
+      const map = new Map();
+      for (const t of filtered) {
+        const cat = t.category || 'OTHER';
+        if (!map.has(cat)) map.set(cat, []);
+        map.get(cat).push(t);
+      }
+      return Array.from(map.entries()).map(([cat, catTopics]) => {
+        const meta = getCategoryMeta(cat);
+        return { sectionName: meta.label, sectionColor: meta.color, topics: catTopics };
+      });
+    }
+    const map = new Map();
     for (const t of filtered) {
       const sec = t.subCategory || '';
       if (!map.has(sec)) map.set(sec, []);
       map.get(sec).push(t);
     }
-    return Array.from(map.entries()).map(([sectionName, topics]) => ({
+    return Array.from(map.entries()).map(([sectionName, secTopics]) => ({
       sectionName: sectionName || null,
-      topics,
+      sectionColor: null,
+      topics: secTopics,
     }));
   }, [filtered, search, category]);
 
@@ -105,31 +148,43 @@ export default function Sidebar({ selectedTopicId, onTopicSelect, isOpen, onClos
 
         {/* ── Nav ───────────────────────────────────────────────────────── */}
         <nav className={styles.nav}>
-          {NAV_SECTIONS.map((section) => (
-            <div key={section.label} className={styles.navSection}>
-              <div className={styles.navSectionLabel}>{section.label}</div>
-              {section.items.map(({ path, icon, label }) => (
+          {NAV_SECTIONS.map((section) => {
+            const isExpanded = openSections.has(section.label);
+            const hasActive  = section.items.some((i) => isActive(i.path));
+            return (
+              <div key={section.label} className={styles.navSection}>
                 <button
-                  key={path}
-                  className={`${styles.navItem} ${isActive(path) ? styles.navItemActive : ''}`}
-                  onClick={() => navTo(path)}
+                  className={`${styles.navAccordion} ${hasActive ? styles.navAccordionActive : ''}`}
+                  onClick={() => toggleSection(section.label)}
                 >
-                  <span className={styles.navIcon}>{icon}</span>
-                  <span className={styles.navLabel}>{label}</span>
+                  <span className={styles.navAccordionLabel}>{section.label}</span>
+                  <span className={`${styles.navChevron} ${isExpanded ? styles.navChevronOpen : ''}`}>›</span>
                 </button>
-              ))}
-            </div>
-          ))}
+                {isExpanded && (
+                  <div className={styles.navItems}>
+                    {section.items.map(({ path, icon, label }) => (
+                      <button
+                        key={path}
+                        className={`${styles.navItem} ${isActive(path) ? styles.navItemActive : ''}`}
+                        onClick={() => navTo(path)}
+                      >
+                        <span className={styles.navIcon}>{icon}</span>
+                        <span className={styles.navLabel}>{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
           {isAdmin && (
             <div className={styles.navSection}>
-              <div className={styles.navSectionLabel}>Admin</div>
               <button
-                className={`${styles.navItem} ${isActive('/admin') ? styles.navItemActive : ''}`}
+                className={`${styles.navAccordion} ${isActive('/admin') ? styles.navAccordionActive : ''}`}
                 onClick={() => navTo('/admin')}
               >
-                <span className={styles.navIcon}>⚙</span>
-                <span className={styles.navLabel}>Admin Panel</span>
+                <span className={styles.navAccordionLabel}>⚙ Admin</span>
               </button>
             </div>
           )}
@@ -140,10 +195,6 @@ export default function Sidebar({ selectedTopicId, onTopicSelect, isOpen, onClos
 
         {/* ── Topics ────────────────────────────────────────────────────── */}
         <div className={styles.topicsArea}>
-          <div className={styles.topicsHeader}>
-            <span className={styles.topicsHeading}>Topics</span>
-          </div>
-
           <div className={styles.catTabs}>
             {CATEGORIES.map((cat) => (
               <button key={cat.key}
@@ -167,25 +218,25 @@ export default function Sidebar({ selectedTopicId, onTopicSelect, isOpen, onClos
                 {search ? 'No topics match' : 'No topics in this category'}
               </li>
             ) : (
-              grouped.map(({ sectionName, topics: sectionTopics }) => (
+              grouped.map(({ sectionName, sectionColor, topics: sectionTopics }) => (
                 <li key={sectionName || '__ungrouped'} className={styles.topicGroup}>
                   {sectionName && (
-                    <div className={styles.topicGroupLabel}>{sectionName}</div>
+                    <div
+                      className={styles.topicGroupLabel}
+                      style={sectionColor ? { color: sectionColor, opacity: 1 } : undefined}
+                    >
+                      {sectionName}
+                    </div>
                   )}
                   <ul className={styles.topicGroupList}>
-                    {sectionTopics.map((topic) => {
-                      const meta = getCategoryMeta(topic.category);
-                      return (
-                        <li key={topic.id}
-                          className={`${styles.topicItem} ${selectedTopicId === topic.id ? styles.selected : ''}`}
-                          onClick={() => { onTopicSelect(topic.id); onClose?.(); }}>
-                          <span className={styles.topicName}>{topic.title}</span>
-                          {category === 'ALL' && (
-                            <span className={`badge ${meta.cls}`} style={{ fontSize: 9, padding: '1px 6px' }}>{meta.label}</span>
-                          )}
-                        </li>
-                      );
-                    })}
+                    {sectionTopics.map((topic) => (
+                      <li key={topic.id}
+                        className={`${styles.topicItem} ${selectedTopicId === topic.id ? styles.selected : ''}`}
+                        onClick={() => { onTopicSelect(topic.id); onClose?.(); }}>
+                        <span className={styles.topicDot} />
+                        <span className={styles.topicName}>{topic.title}</span>
+                      </li>
+                    ))}
                   </ul>
                 </li>
               ))

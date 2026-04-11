@@ -61,11 +61,15 @@ public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 					// Auth endpoints — always public
 					.requestMatchers("/api/auth/**").permitAll()
 
+					// Gate endpoints require authentication (user-specific data)
+					.requestMatchers("/api/topics/*/gate", "/api/topics/*/gate/**").authenticated()
+
 					// Public read-only data
 					.requestMatchers(HttpMethod.GET,
 							"/api/topics", "/api/topics/**",
 							"/api/problems", "/api/problems/filters",
-							"/api/submissions/percentile").permitAll()
+							"/api/submissions/percentile",
+							"/api/interview-questions", "/api/interview-questions/**").permitAll()
 
 					// Java completions — public, used by the code editor before login
 					// FIX: was incorrectly placed in Chain 2 (/java-completions/**) which

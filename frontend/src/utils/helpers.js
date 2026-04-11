@@ -13,6 +13,8 @@ export const CATEGORY_META = {
   MYSQL:           { label: 'SQL',    cls: 'badge-sql',    color: '#fbbf24' },
   AWS:             { label: 'AWS',    cls: 'badge-aws',    color: '#fb923c' },
   JAVASCRIPT:      { label: 'JS',     cls: 'badge-js',     color: '#fbbf24' },
+  SYSTEM_DESIGN:   { label: 'SysD',   cls: 'badge-adv',    color: '#f472b6' },
+  TESTING:         { label: 'Test',   cls: 'badge-dsa',    color: '#34d399' },
 };
 
 export const CATEGORIES = [
@@ -23,6 +25,8 @@ export const CATEGORIES = [
   { key: 'SPRING_BOOT',     label: 'Spring' },
   { key: 'MYSQL',           label: 'SQL' },
   { key: 'AWS',             label: 'AWS' },
+  { key: 'SYSTEM_DESIGN',   label: 'Sys Design' },
+  { key: 'TESTING',         label: 'Testing' },
   { key: 'JAVASCRIPT',      label: 'JS' },
 ];
 
