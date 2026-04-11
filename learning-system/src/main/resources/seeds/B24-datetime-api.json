@@ -1,0 +1,77 @@
+{
+  "batchName": "B24-datetime-api",
+  "skipExisting": true,
+  "topics": [
+    {
+      "title": "Date & Time API (java.time)",
+      "category": "JAVA",
+      "subCategory": "Core APIs",
+      "displayOrder": 24,
+      "description": "Java 8 introduced java.time (JSR-310) to replace the broken java.util.Date and Calendar. The key insight: immutable value objects (LocalDate, LocalTime, LocalDateTime, ZonedDateTime, Instant) that model date/time concepts precisely. Duration measures time between instants; Period measures calendar days/months/years. DateTimeFormatter handles parsing and formatting without thread-safety issues.",
+      "story": "The old Date class was a disaster — it stored milliseconds since epoch but had methods like getYear() that returned year-1900. Calendar was mutable and not thread-safe. Joda-Time (a third-party library) proved the right API design, and Java 8 adopted its approach as java.time. Now dates are like money amounts — immutable values you can add, subtract, and compare without mutating the original.",
+      "analogy": "LocalDate = a date on a wall calendar (no time, no timezone). LocalTime = a clock face (no date, no timezone). LocalDateTime = calendar + clock (still no timezone). ZonedDateTime = a calendar + clock + timezone label on the wall. Instant = a specific tick of the universal atomic clock (UTC offset). Duration = a stopwatch reading. Period = 'three months and five days' on a calendar.",
+      "memoryAnchor": "LocalDate.now(), LocalDate.of(2024,1,15). LocalDateTime.now(). ZonedDateTime.now(ZoneId.of('Asia/Kolkata')). Instant.now() — epoch-based. Duration.between(start,end) — for time. Period.between(date1,date2) — for dates. DateTimeFormatter.ofPattern('dd-MM-yyyy'). parse() vs format(). All immutable — plus/minus returns new object.",
+      "firstPrinciples": "java.util.Date mixes instant (absolute moment) with local date concepts, has deprecated mutating methods, and is not thread-safe. java.time cleanly separates: local (no timezone), zoned (with timezone), and instant (UTC epoch). Immutability makes them safe to share across threads.",
+      "bruteForce": "java.util.Date + SimpleDateFormat: not thread-safe (SimpleDateFormat has mutable state). Calendar.add() mutates in place. Date comparison with before()/after() works but verbose. Timezone handling is error-prone. Pre-8 code often stored dates as strings or long timestamps.",
+      "optimizedApproach": "java.time: LocalDate today = LocalDate.now(); LocalDate nextWeek = today.plusDays(7); long daysBetween = ChronoUnit.DAYS.between(today, nextWeek); DateTimeFormatter fmt = DateTimeFormatter.ofPattern('dd-MMM-yyyy'); String s = today.format(fmt); LocalDate parsed = LocalDate.parse('15-Jan-2024', fmt);",
+      "whenToUse": "LocalDate: birthdays, calendar events, no time needed. LocalDateTime: log timestamps in same timezone. ZonedDateTime: user-facing times that cross timezones. Instant: storing in DB (convert to/from epoch). Duration: measuring elapsed time in tests/profiling. Period: 'subscription expires in 30 days'. For DB: store as TIMESTAMP/DATE; Spring Data JPA maps LocalDate/LocalDateTime automatically.",
+      "examples": [
+        {
+          "displayOrder": 1,
+          "title": "LocalDate, LocalDateTime, Period & Duration",
+          "code": "import java.time.*;\nimport java.time.format.*;\nimport java.time.temporal.*;\n\npublic class DateTimeDemo {\n    public static void main(String[] args) {\n        // ── LocalDate ────────────────────────────────\n        LocalDate today    = LocalDate.now();\n        LocalDate dob      = LocalDate.of(1995, Month.JUNE, 15);\n        LocalDate nextYear = today.plusYears(1);\n\n        Period age = Period.between(dob, today);\n        System.out.println(\"Age: \" + age.getYears() + \" years, \" + age.getMonths() + \" months\");\n\n        // ── LocalDateTime ────────────────────────────\n        LocalDateTime now   = LocalDateTime.now();\n        LocalDateTime later = now.plusHours(2).plusMinutes(30);\n        Duration gap        = Duration.between(now, later);\n        System.out.println(\"Gap: \" + gap.toMinutes() + \" minutes\");\n\n        // ── Formatting & Parsing ─────────────────────\n        DateTimeFormatter fmt = DateTimeFormatter.ofPattern(\"dd-MMM-yyyy HH:mm\");\n        System.out.println(now.format(fmt));\n        LocalDateTime parsed = LocalDateTime.parse(\"25-Dec-2024 09:30\", fmt);\n        System.out.println(parsed.getDayOfWeek()); // WEDNESDAY\n\n        // ── ZonedDateTime ────────────────────────────\n        ZonedDateTime ist = ZonedDateTime.now(ZoneId.of(\"Asia/Kolkata\"));\n        ZonedDateTime utc = ist.withZoneSameInstant(ZoneOffset.UTC);\n        System.out.println(\"IST: \" + ist.toLocalTime());\n        System.out.println(\"UTC: \" + utc.toLocalTime());\n\n        // ── Instant ─────────────────────────────────\n        Instant start = Instant.now();\n        long   epochMs = start.toEpochMilli();\n        System.out.println(\"Epoch ms: \" + epochMs);\n\n        // ── ChronoUnit ───────────────────────────────\n        long daysUntilXmas = ChronoUnit.DAYS.between(today, LocalDate.of(today.getYear(), 12, 25));\n        System.out.println(\"Days until Xmas: \" + daysUntilXmas);\n    }\n}",
+          "explanation": "java.time types are immutable — plus/minus return new instances. Period is calendar-aware (months have different days). Duration is precise (always seconds + nanos). DateTimeFormatter is thread-safe unlike SimpleDateFormat. ZonedDateTime handles DST transitions correctly.",
+          "realWorldUse": "Spring Data JPA: @Column with LocalDate/LocalDateTime auto-mapped to DATE/TIMESTAMP. REST APIs: ISO-8601 format (DateTimeFormatter.ISO_DATE_TIME). Subscription expiry: LocalDate.now().plusDays(30). Audit fields: @CreatedDate Instant. Scheduling: next Monday = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY))."
+        },
+        {
+          "displayOrder": 2,
+          "title": "Temporal Adjusters & Business Day Logic",
+          "code": "import java.time.*;\nimport java.time.temporal.*;\nimport java.util.Set;\n\npublic class BusinessDays {\n\n    static final Set<DayOfWeek> WEEKENDS = Set.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);\n\n    // Custom TemporalAdjuster: next business day\n    static TemporalAdjuster nextBusinessDay() {\n        return temporal -> {\n            LocalDate date = LocalDate.from(temporal);\n            do { date = date.plusDays(1); } while (WEEKENDS.contains(date.getDayOfWeek()));\n            return date;\n        };\n    }\n\n    static long businessDaysBetween(LocalDate start, LocalDate end) {\n        long count = 0;\n        LocalDate d = start;\n        while (d.isBefore(end)) {\n            if (!WEEKENDS.contains(d.getDayOfWeek())) count++;\n            d = d.plusDays(1);\n        }\n        return count;\n    }\n\n    public static void main(String[] args) {\n        LocalDate friday = LocalDate.of(2024, 12, 6); // Friday\n        LocalDate next   = friday.with(nextBusinessDay());\n        System.out.println(\"Next biz day: \" + next + \" (\" + next.getDayOfWeek() + \")\");\n\n        // Built-in adjusters\n        LocalDate today = LocalDate.of(2024, 12, 10);\n        System.out.println(\"First of month: \" + today.with(TemporalAdjusters.firstDayOfMonth()));\n        System.out.println(\"Last of year:   \" + today.with(TemporalAdjusters.lastDayOfYear()));\n        System.out.println(\"Next Monday:    \" + today.with(TemporalAdjusters.next(DayOfWeek.MONDAY)));\n\n        LocalDate jan1 = LocalDate.of(2024, 1, 1);\n        LocalDate dec31 = LocalDate.of(2024, 12, 31);\n        System.out.println(\"Business days in 2024: \" + businessDaysBetween(jan1, dec31));\n    }\n}",
+          "explanation": "TemporalAdjusters allow complex calendar calculations without mutable state. Built-in adjusters cover common needs (firstDayOfMonth, nextOrSame(DayOfWeek)). Custom adjusters implement the functional interface TemporalAdjuster. This pattern is used for SLA calculation, billing cycle computation, and scheduling.",
+          "realWorldUse": "SLA deadline calculation (add N business days). Monthly billing cycles (first of next month). Expiry date calculation skipping weekends. Bank settlement dates. Reminder scheduling (next Monday after event)."
+        }
+      ],
+      "problems": [
+        {
+          "displayOrder": 1,
+          "title": "Age Calculator",
+          "description": "Write `calculateAge(String dob)` that accepts a date string in format 'yyyy-MM-dd' and returns the age in years as of today.",
+          "difficulty": "EASY",
+          "pattern": "LocalDate, Period",
+          "hint1": "Parse the string with LocalDate.parse(dob).",
+          "hint2": "Use Period.between(birthDate, LocalDate.now()).",
+          "hint3": "Return period.getYears().",
+          "starterCode": "import java.time.*;\n\npublic class Q1 {\n    public static int calculateAge(String dob) {\n        // TODO\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(calculateAge(\"1995-06-15\")); // depends on today\n    }\n}",
+          "solutionCode": "import java.time.*;\n\npublic class Q1 {\n    public static int calculateAge(String dob) {\n        LocalDate birth = LocalDate.parse(dob);\n        return Period.between(birth, LocalDate.now()).getYears();\n    }\n    public static void main(String[] args) {\n        System.out.println(calculateAge(\"1995-06-15\"));\n    }\n}",
+          "testCases": "provide a fixed past date and verify output is positive integer"
+        },
+        {
+          "displayOrder": 2,
+          "title": "Convert IST to UTC",
+          "description": "Given a datetime string in format 'yyyy-MM-dd HH:mm' representing IST (Asia/Kolkata), return the equivalent UTC time as a string in the same format.",
+          "difficulty": "EASY",
+          "pattern": "ZonedDateTime, timezone conversion",
+          "hint1": "Parse into LocalDateTime, then create ZonedDateTime at IST zone.",
+          "hint2": "Use withZoneSameInstant(ZoneOffset.UTC) to convert.",
+          "hint3": "Format back to string with the same DateTimeFormatter.",
+          "starterCode": "import java.time.*;\nimport java.time.format.*;\n\npublic class Q2 {\n    public static String istToUtc(String istDateTime) {\n        // TODO\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(istToUtc(\"2024-06-15 14:30\")); // 2024-06-15 09:00\n    }\n}",
+          "solutionCode": "import java.time.*;\nimport java.time.format.*;\n\npublic class Q2 {\n    static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm\");\n    public static String istToUtc(String istDateTime) {\n        LocalDateTime ldt = LocalDateTime.parse(istDateTime, FMT);\n        ZonedDateTime ist = ldt.atZone(ZoneId.of(\"Asia/Kolkata\"));\n        ZonedDateTime utc = ist.withZoneSameInstant(ZoneOffset.UTC);\n        return utc.toLocalDateTime().format(FMT);\n    }\n    public static void main(String[] args) {\n        System.out.println(istToUtc(\"2024-06-15 14:30\")); // 2024-06-15 09:00\n    }\n}",
+          "testCases": "2024-06-15 14:30\n2024-06-15 09:00"
+        },
+        {
+          "displayOrder": 3,
+          "title": "Days Until Next Birthday",
+          "description": "Given a birthday as 'MM-dd' (e.g. '06-15'), calculate how many days until the next occurrence of that birthday from today. If today IS the birthday, return 0.",
+          "difficulty": "MEDIUM",
+          "pattern": "LocalDate arithmetic, year wrapping",
+          "hint1": "Build the birthday in the current year with LocalDate.of(year, month, day).",
+          "hint2": "If birthday this year has already passed, check next year.",
+          "hint3": "Use ChronoUnit.DAYS.between(today, nextBirthday).",
+          "starterCode": "import java.time.*;\nimport java.time.format.*;\nimport java.time.temporal.*;\n\npublic class Q3 {\n    public static long daysUntilBirthday(String mmdd) {\n        // TODO\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(daysUntilBirthday(\"12-25\")); // days until next Dec 25\n    }\n}",
+          "solutionCode": "import java.time.*;\nimport java.time.temporal.*;\n\npublic class Q3 {\n    public static long daysUntilBirthday(String mmdd) {\n        String[] parts = mmdd.split(\"-\");\n        int month = Integer.parseInt(parts[0]), day = Integer.parseInt(parts[1]);\n        LocalDate today = LocalDate.now();\n        LocalDate next = LocalDate.of(today.getYear(), month, day);\n        if (next.isBefore(today)) next = next.plusYears(1);\n        return ChronoUnit.DAYS.between(today, next);\n    }\n    public static void main(String[] args) {\n        System.out.println(daysUntilBirthday(\"12-25\"));\n    }\n}",
+          "testCases": "returns non-negative long"
+        }
+      ]
+    }
+  ]
+}

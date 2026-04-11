@@ -1,0 +1,77 @@
+{
+  "batchName": "D11-array-patterns",
+  "skipExisting": true,
+  "topics": [
+    {
+      "title": "Array Patterns — Sliding Window, Two Pointers & Prefix Sum",
+      "category": "DSA",
+      "subCategory": "Arrays",
+      "displayOrder": 10,
+      "description": "Three high-frequency array patterns that transform O(n²) brute-force solutions into O(n): Sliding Window (fixed or variable window over a contiguous subarray), Two Pointers (converging from both ends or fast/slow on same direction), and Prefix Sum (precompute cumulative sums for O(1) range queries). Kadane's Algorithm finds the maximum subarray sum in O(n) using dynamic programming on a running max.",
+      "story": "Imagine reading a long novel (array) looking for the most exciting 100-page chapter (subarray). Brute force: read every possible 100-page stretch (O(n²)). Sliding window: read first 100 pages, then slide one page at a time — remove the oldest, add the newest. You process each page exactly once — O(n). Two pointers: reading from both ends simultaneously to find a matching pair. Prefix sum: precompute 'total excitement up to page k' so any range query is instant subtraction.",
+      "analogy": "Sliding window = a peephole sliding along a fence (fixed size) or a rubber band stretching/shrinking. Two pointers = two fingers on opposite ends of a ruler moving toward each other. Prefix sum = a running odometer — to find distance between cities, just subtract two odometer readings. Kadane's = a taxi meter that resets to zero when it goes negative (dropping unprofitable customers).",
+      "memoryAnchor": "Sliding window fixed: r-l+1==k → slide. Variable: expand r until invalid, shrink l. Two pointer sorted array: lo=0,hi=n-1, sum<target→lo++, sum>target→hi--. Two pointer fast/slow: cycle detection, find middle. Prefix sum: pre[i]=pre[i-1]+arr[i-1]. Range [l,r] sum = pre[r+1]-pre[l]. Kadane: maxSoFar=max(num, maxSoFar+num). Max subarray = track globalMax.",
+      "firstPrinciples": "Sliding window works when the 'valid condition' changes monotonically as the window expands/shrinks. Two pointers work on sorted arrays or when moving one pointer closer to optimal is guaranteed by the problem structure. Prefix sum precomputes so each query is O(1) subtraction instead of O(n) scan. All three eliminate redundant recomputation of overlapping subproblems.",
+      "bruteForce": "Max sum of k-length subarray: for each i, sum arr[i..i+k-1] — O(nk). Two sum in sorted array: for each element, scan the rest — O(n²). Range sum query: scan [l..r] each time — O(n) per query, O(nm) for m queries.",
+      "optimizedApproach": "Max sum k-window: slide sum by -arr[l]+arr[r] — O(n). Two sum sorted: converge pointers — O(n). Range sum: prefix array, each query O(1) — O(n) precompute + O(1) per query. Kadane's max subarray: one pass track local and global max — O(n).",
+      "whenToUse": "Sliding window: subarray/substring with constraint on size or property (sum, distinct chars, etc.). Two pointers: pair/triplet problems on sorted arrays, palindrome check, remove duplicates in-place. Prefix sum: multiple range sum queries, subarray sum equals k, 2D grid sums. Kadane's: maximum/minimum subarray sum.",
+      "examples": [
+        {
+          "displayOrder": 1,
+          "title": "Sliding Window — Fixed & Variable Size",
+          "code": "import java.util.*;\n\npublic class SlidingWindow {\n\n    // ── FIXED WINDOW: Max sum of k consecutive elements ─────────\n    static int maxSumFixed(int[] arr, int k) {\n        int windowSum = 0;\n        for (int i = 0; i < k; i++) windowSum += arr[i]; // first window\n        int maxSum = windowSum;\n        for (int r = k; r < arr.length; r++) {\n            windowSum += arr[r] - arr[r - k]; // slide: add new, remove old\n            maxSum = Math.max(maxSum, windowSum);\n        }\n        return maxSum;\n    }\n\n    // ── VARIABLE WINDOW: Longest substring without repeating chars\n    static int longestUniqueSubstring(String s) {\n        Map<Character, Integer> lastSeen = new HashMap<>();\n        int maxLen = 0, l = 0;\n        for (int r = 0; r < s.length(); r++) {\n            char c = s.charAt(r);\n            if (lastSeen.containsKey(c) && lastSeen.get(c) >= l) {\n                l = lastSeen.get(c) + 1; // shrink: move l past duplicate\n            }\n            lastSeen.put(c, r);\n            maxLen = Math.max(maxLen, r - l + 1);\n        }\n        return maxLen;\n    }\n\n    // ── VARIABLE WINDOW: Minimum window size with sum >= target\n    static int minSubarrayLen(int target, int[] nums) {\n        int l = 0, sum = 0, minLen = Integer.MAX_VALUE;\n        for (int r = 0; r < nums.length; r++) {\n            sum += nums[r];\n            while (sum >= target) { // window is valid — try to shrink\n                minLen = Math.min(minLen, r - l + 1);\n                sum -= nums[l++];\n            }\n        }\n        return minLen == Integer.MAX_VALUE ? 0 : minLen;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(maxSumFixed(new int[]{2,1,5,1,3,2}, 3));    // 9 (5+1+3)\n        System.out.println(longestUniqueSubstring(\"abcabcbb\"));         // 3 (abc)\n        System.out.println(longestUniqueSubstring(\"pwwkew\"));           // 3 (wke)\n        System.out.println(minSubarrayLen(7, new int[]{2,3,1,2,4,3})); // 2 (4+3)\n    }\n}",
+          "explanation": "Fixed window: one operation per slide (O(1) update). Variable window: expand r until invalid, shrink l until valid again — each element enters and exits the window at most once, so O(n) total. The key insight: the window invariant (all unique / sum >= target) dictates when to expand vs shrink.",
+          "realWorldUse": "Rate limiting: count requests in last 60 seconds (sliding window over time). Network: max throughput in any 5-second window. Text search: find minimum window in S containing all chars of T. Monitoring: max CPU usage in last N seconds."
+        },
+        {
+          "displayOrder": 2,
+          "title": "Two Pointers & Prefix Sum — Kadane's Algorithm",
+          "code": "import java.util.*;\n\npublic class TwoPointersPrefixSum {\n\n    // ── TWO POINTERS: Two Sum in sorted array ───────────────────\n    static int[] twoSumSorted(int[] sorted, int target) {\n        int lo = 0, hi = sorted.length - 1;\n        while (lo < hi) {\n            int sum = sorted[lo] + sorted[hi];\n            if (sum == target) return new int[]{lo, hi};\n            else if (sum < target) lo++; // need larger\n            else hi--;                   // need smaller\n        }\n        return new int[]{-1, -1};\n    }\n\n    // ── TWO POINTERS: Remove duplicates in-place ─────────────────\n    static int removeDuplicates(int[] sorted) {\n        if (sorted.length == 0) return 0;\n        int slow = 0;\n        for (int fast = 1; fast < sorted.length; fast++)\n            if (sorted[fast] != sorted[slow])\n                sorted[++slow] = sorted[fast];\n        return slow + 1; // new length\n    }\n\n    // ── PREFIX SUM: Range sum query ──────────────────────────────\n    static int[] buildPrefix(int[] arr) {\n        int[] pre = new int[arr.length + 1];\n        for (int i = 0; i < arr.length; i++)\n            pre[i+1] = pre[i] + arr[i];\n        return pre; // pre[i] = sum of arr[0..i-1]\n    }\n    static int rangeSum(int[] pre, int l, int r) {\n        return pre[r+1] - pre[l]; // O(1) query\n    }\n\n    // ── KADANE'S: Maximum subarray sum ──────────────────────────\n    static int maxSubarraySum(int[] arr) {\n        int maxSoFar = arr[0], globalMax = arr[0];\n        for (int i = 1; i < arr.length; i++) {\n            maxSoFar = Math.max(arr[i], maxSoFar + arr[i]); // extend or restart\n            globalMax = Math.max(globalMax, maxSoFar);\n        }\n        return globalMax;\n    }\n\n    // ── KADANE with indices: track start/end of max subarray\n    static int[] maxSubarrayWithIndices(int[] arr) {\n        int maxSoFar = arr[0], globalMax = arr[0];\n        int start = 0, end = 0, tempStart = 0;\n        for (int i = 1; i < arr.length; i++) {\n            if (arr[i] > maxSoFar + arr[i]) { maxSoFar = arr[i]; tempStart = i; }\n            else maxSoFar += arr[i];\n            if (maxSoFar > globalMax) { globalMax = maxSoFar; start = tempStart; end = i; }\n        }\n        return new int[]{globalMax, start, end};\n    }\n\n    public static void main(String[] args) {\n        System.out.println(Arrays.toString(twoSumSorted(new int[]{2,7,11,15}, 9))); // [0,1]\n\n        int[] dup = {1,1,2,2,3,4,4};\n        System.out.println(removeDuplicates(dup) + \" unique\"); // 4 unique\n\n        int[] arr = {3,1,4,1,5,9,2,6};\n        int[] pre = buildPrefix(arr);\n        System.out.println(\"Sum [1..4] = \" + rangeSum(pre, 1, 4)); // 1+4+1+5=11\n\n        System.out.println(maxSubarraySum(new int[]{-2,1,-3,4,-1,2,1,-5,4})); // 6\n        System.out.println(Arrays.toString(\n            maxSubarrayWithIndices(new int[]{-2,1,-3,4,-1,2,1,-5,4}))); // [6,3,6]\n    }\n}",
+          "explanation": "Two pointers on sorted array: converge from both ends, O(n). Prefix sum: precompute once O(n), each range query O(1) — essential for competitive programming. Kadane's: at each position, the best subarray ending here is either just the current element (restart) or extend the previous best. Track globalMax separately from running localMax.",
+          "realWorldUse": "Stock profit: max subarray = max profit window. Game: max score in any K-turn window. Database: rolling average over time window. Genomics: find highest-scoring gene region. Prefix sums used in 2D image processing (integral images for fast area sums)."
+        }
+      ],
+      "problems": [
+        {
+          "displayOrder": 1,
+          "title": "Maximum Average Subarray of Length K",
+          "description": "Given an integer array and integer k, find the contiguous subarray of length k with the maximum average value. Return the maximum average (as double).",
+          "difficulty": "EASY",
+          "pattern": "Sliding window fixed",
+          "hint1": "Compute sum of first k elements as initial window.",
+          "hint2": "Slide: windowSum += arr[r] - arr[r-k].",
+          "hint3": "Track maxSum, return maxSum / k.",
+          "starterCode": "public class Q1 {\n    public static double findMaxAverage(int[] nums, int k) {\n        // TODO O(n)\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(findMaxAverage(new int[]{1,12,-5,-6,50,3}, 4)); // 12.75\n        System.out.println(findMaxAverage(new int[]{5}, 1));               // 5.0\n    }\n}",
+          "solutionCode": "public class Q1 {\n    public static double findMaxAverage(int[] nums, int k) {\n        int sum = 0;\n        for (int i = 0; i < k; i++) sum += nums[i];\n        int maxSum = sum;\n        for (int r = k; r < nums.length; r++) {\n            sum += nums[r] - nums[r - k];\n            maxSum = Math.max(maxSum, sum);\n        }\n        return (double) maxSum / k;\n    }\n    public static void main(String[] args) {\n        System.out.println(findMaxAverage(new int[]{1,12,-5,-6,50,3}, 4)); // 12.75\n        System.out.println(findMaxAverage(new int[]{5}, 1));               // 5.0\n    }\n}",
+          "testCases": "12.75\n5.0"
+        },
+        {
+          "displayOrder": 2,
+          "title": "Subarray Sum Equals K",
+          "description": "Given an integer array and integer k, return the total number of contiguous subarrays whose sum equals k. Array may have negative numbers.",
+          "difficulty": "MEDIUM",
+          "pattern": "Prefix sum + HashMap",
+          "hint1": "Sliding window doesn't work with negative numbers — use prefix sum.",
+          "hint2": "For each prefix sum 'curr', count how many previous prefix sums equal 'curr - k'.",
+          "hint3": "HashMap stores (prefixSum → count). Init with {0:1} for subarrays starting at index 0.",
+          "starterCode": "import java.util.*;\n\npublic class Q2 {\n    public static int subarraySum(int[] nums, int k) {\n        // TODO O(n)\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(subarraySum(new int[]{1,1,1}, 2)); // 2\n        System.out.println(subarraySum(new int[]{1,2,3}, 3)); // 2\n    }\n}",
+          "solutionCode": "import java.util.*;\n\npublic class Q2 {\n    public static int subarraySum(int[] nums, int k) {\n        Map<Integer,Integer> prefixCount = new HashMap<>();\n        prefixCount.put(0, 1); // empty prefix\n        int curr = 0, count = 0;\n        for (int num : nums) {\n            curr += num;\n            count += prefixCount.getOrDefault(curr - k, 0);\n            prefixCount.merge(curr, 1, Integer::sum);\n        }\n        return count;\n    }\n    public static void main(String[] args) {\n        System.out.println(subarraySum(new int[]{1,1,1}, 2)); // 2\n        System.out.println(subarraySum(new int[]{1,2,3}, 3)); // 2\n    }\n}",
+          "testCases": "2\n2"
+        },
+        {
+          "displayOrder": 3,
+          "title": "Container With Most Water",
+          "description": "Given n non-negative integers representing heights of lines, find two lines that together with the x-axis forms a container holding the most water. Return the maximum water volume. (Classic two-pointer problem)",
+          "difficulty": "MEDIUM",
+          "pattern": "Two pointers, greedy",
+          "hint1": "Water = (hi - lo) * min(height[lo], height[hi]).",
+          "hint2": "Move the pointer with the smaller height inward (keeping larger heights is always better).",
+          "hint3": "Start lo=0, hi=n-1 and converge.",
+          "starterCode": "public class Q3 {\n    public static int maxWater(int[] height) {\n        // TODO O(n)\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(maxWater(new int[]{1,8,6,2,5,4,8,3,7})); // 49\n        System.out.println(maxWater(new int[]{1,1}));                // 1\n    }\n}",
+          "solutionCode": "public class Q3 {\n    public static int maxWater(int[] height) {\n        int lo = 0, hi = height.length - 1, max = 0;\n        while (lo < hi) {\n            int water = (hi - lo) * Math.min(height[lo], height[hi]);\n            max = Math.max(max, water);\n            if (height[lo] < height[hi]) lo++; // move smaller side\n            else hi--;\n        }\n        return max;\n    }\n    public static void main(String[] args) {\n        System.out.println(maxWater(new int[]{1,8,6,2,5,4,8,3,7})); // 49\n        System.out.println(maxWater(new int[]{1,1}));                // 1\n    }\n}",
+          "testCases": "49\n1"
+        }
+      ]
+    }
+  ]
+}

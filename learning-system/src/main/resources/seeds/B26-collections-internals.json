@@ -1,0 +1,77 @@
+{
+  "batchName": "B26-collections-internals",
+  "skipExisting": true,
+  "topics": [
+    {
+      "title": "Collections Internal Working — HashMap, Comparators & Iterators",
+      "category": "JAVA",
+      "subCategory": "Collections Framework",
+      "displayOrder": 26,
+      "description": "Understanding how HashMap works internally (hash function → bucket → linked list → tree) is the most-asked Java collections interview topic. Comparable vs Comparator defines natural vs custom ordering. Fail-fast iterators (ArrayList, HashMap) throw ConcurrentModificationException on structural modification during iteration; fail-safe iterators (CopyOnWriteArrayList, ConcurrentHashMap) iterate over a snapshot.",
+      "story": "HashMap is like a library with 16 shelves (default buckets). Each book gets a shelf number from its title (hash). If two books land on the same shelf (collision), they chain together. When the library gets 75% full (load factor), it doubles shelf count and re-shelves everything (resize). Java 8 improved this: when a shelf gets more than 8 books, the chain becomes a balanced BST (treeification) for O(log n) worst case instead of O(n).",
+      "analogy": "HashMap bucket array = apartment building floors. hash() = elevator floor selector. Entry = apartment door. Collision = two tenants assigned same floor (chain/tree). Load factor 0.75 = 75% occupancy triggers building expansion. TreeMap = tenants sorted alphabetically on a single long corridor. LinkedHashMap = insertion-order guest book with fast lookup. Fail-fast iterator = library catalog that screams if a book moves mid-search.",
+      "memoryAnchor": "HashMap: default capacity 16, load factor 0.75, threshold = cap*LF → resize doubles. Collision: linked list, tree if >8 entries (TREEIFY_THRESHOLD). Java 8 key.hashCode() ^ (h>>>16) — spread high bits. HashMap not thread-safe; ConcurrentHashMap: segment locks (Java 7) → CAS + synchronized buckets (Java 8). Comparable: compareTo() on same class. Comparator: external, lambda-able. Fail-fast: ConcurrentModificationException on modCount change. Fail-safe: copies on write.",
+      "firstPrinciples": "A hash table trades space for O(1) average lookup. The hash function converts key to int; modulo bucket count maps to array index. Collisions are inevitable (pigeonhole); chaining (linked list) and open addressing handle them. A good hash function distributes keys uniformly — poor distribution causes all keys to land in one bucket (O(n) lookup).",
+      "bruteForce": "Without hashing: store key-value pairs in a list. Lookup = linear scan O(n). For N=1M entries, 1M comparisons per lookup. For sorted data TreeMap gives O(log n) but still slower than HashMap's O(1) average. HashMap wins for lookup-heavy workloads.",
+      "optimizedApproach": "HashMap: get/put O(1) average, O(log n) worst (treeified). TreeMap: O(log n) all ops, sorted. LinkedHashMap: O(1) with insertion order. ConcurrentHashMap: thread-safe, O(1) avg. Choosing right implementation: need sorted? TreeMap. need insertion order? LinkedHashMap. need thread safety? ConcurrentHashMap. need LRU? LinkedHashMap with removeEldestEntry.",
+      "whenToUse": "HashMap: most lookup/cache scenarios. TreeMap: sorted iteration, range queries (subMap, headMap). LinkedHashMap: LRU cache, ordered iteration. ConcurrentHashMap: shared state in multi-threaded apps. EnumMap: enum keys (array-backed, fastest). Comparable: natural ordering on own class (implement in model). Comparator: external/multiple orderings (pass to sort/TreeSet constructor).",
+      "examples": [
+        {
+          "displayOrder": 1,
+          "title": "HashMap Internals — Hash, Collision, Resize",
+          "code": "import java.util.*;\n\npublic class HashMapInternals {\n\n    // Custom key — must implement hashCode + equals correctly\n    static class Point {\n        final int x, y;\n        Point(int x, int y) { this.x = x; this.y = y; }\n\n        @Override public int hashCode() {\n            return Objects.hash(x, y); // uses prime multiplication\n        }\n        @Override public boolean equals(Object o) {\n            if (!(o instanceof Point p)) return false;\n            return x == p.x && y == p.y;\n        }\n        @Override public String toString() { return \"(\" + x + \",\" + y + \")\"; }\n    }\n\n    public static void main(String[] args) {\n        // ── Basic ops ────────────────────────────────────────\n        Map<Point, String> map = new HashMap<>();\n        map.put(new Point(1,2), \"A\");\n        map.put(new Point(3,4), \"B\");\n        map.put(new Point(1,2), \"C\"); // replaces A (equal key)\n        System.out.println(map.size()); // 2\n        System.out.println(map.get(new Point(1,2))); // C\n\n        // ── If hashCode broken (all return 42) → O(n) ────────\n        // Every entry lands in bucket 42 → full linked list scan\n\n        // ── Demonstrate resize ────────────────────────────────\n        Map<Integer,Integer> growing = new HashMap<>();\n        for (int i = 0; i < 13; i++) growing.put(i, i); // 16*0.75=12 → resize at 13\n        System.out.println(\"After 13 entries: size=\" + growing.size());\n        // Internal capacity is now 32\n\n        // ── computeIfAbsent — cleaner than containsKey+put ────\n        Map<String, List<Integer>> groups = new HashMap<>();\n        groups.computeIfAbsent(\"evens\", k -> new ArrayList<>()).add(2);\n        groups.computeIfAbsent(\"evens\", k -> new ArrayList<>()).add(4); // reuses existing\n        System.out.println(groups); // {evens=[2, 4]}\n\n        // ── merge — great for counting ─────────────────────────\n        String text = \"a b a c b a\";\n        Map<String,Integer> freq = new HashMap<>();\n        for (String w : text.split(\" \"))\n            freq.merge(w, 1, Integer::sum);\n        System.out.println(freq); // {a=3, b=2, c=1}\n    }\n}",
+          "explanation": "hashCode() determines the bucket; equals() confirms key identity. Equal objects MUST have equal hashCodes — violating this breaks HashMap entirely. Java 8 treeifies buckets with >8 entries to prevent O(n) worst case from hash collisions. computeIfAbsent and merge are cleaner alternatives to manual containsKey + put patterns.",
+          "realWorldUse": "Entity ID as HashMap key: override hashCode/equals on @Id field only. Spring @Bean uses ConcurrentHashMap for singleton registry. Frequency counting (groupBy). Caching computed results. Graph adjacency list: Map<Node, List<Node>>."
+        },
+        {
+          "displayOrder": 2,
+          "title": "Comparable vs Comparator, Fail-fast vs Fail-safe",
+          "code": "import java.util.*;\nimport java.util.concurrent.*;\n\npublic class OrderingAndIterators {\n\n    // Comparable: natural order (by salary)\n    static class Employee implements Comparable<Employee> {\n        String name; int salary;\n        Employee(String name, int salary) { this.name = name; this.salary = salary; }\n        @Override public int compareTo(Employee o) { return Integer.compare(this.salary, o.salary); }\n        @Override public String toString() { return name + \"(\" + salary + \")\"; }\n    }\n\n    public static void main(String[] args) {\n        List<Employee> emps = new ArrayList<>(List.of(\n            new Employee(\"Alice\", 80000),\n            new Employee(\"Bob\",   50000),\n            new Employee(\"Carol\", 95000)\n        ));\n\n        // Natural order (Comparable)\n        Collections.sort(emps);\n        System.out.println(\"By salary: \" + emps);\n\n        // External Comparator (by name)\n        emps.sort(Comparator.comparing(e -> e.name));\n        System.out.println(\"By name: \" + emps);\n\n        // Chained comparators\n        emps.sort(Comparator.comparingInt((Employee e) -> e.salary).reversed()\n                            .thenComparing(e -> e.name));\n        System.out.println(\"Desc salary, then name: \" + emps);\n\n        // ── Fail-fast: ConcurrentModificationException ────────\n        List<String> list = new ArrayList<>(List.of(\"a\",\"b\",\"c\"));\n        try {\n            for (String s : list) {\n                if (s.equals(\"b\")) list.remove(s); // structural mod → CME\n            }\n        } catch (ConcurrentModificationException e) {\n            System.out.println(\"CME caught — fail-fast iterator\");\n        }\n\n        // FIX: use removeIf\n        list.removeIf(s -> s.equals(\"b\"));\n        System.out.println(\"After removeIf: \" + list); // [a, c]\n\n        // ── Fail-safe: CopyOnWriteArrayList ──────────────────\n        CopyOnWriteArrayList<String> cowList = new CopyOnWriteArrayList<>(List.of(\"x\",\"y\",\"z\"));\n        for (String s : cowList) {\n            if (s.equals(\"y\")) cowList.remove(s); // safe — iterates snapshot\n        }\n        System.out.println(\"COW after remove: \" + cowList); // [x, z]\n    }\n}",
+          "explanation": "Comparable puts ordering inside the class (only one natural order). Comparator externalises it (multiple orderings, reusable, lambda-friendly). Fail-fast iterators check modCount on every next() call — any structural modification changes modCount and triggers ConcurrentModificationException. CopyOnWriteArrayList creates a fresh array copy on every write, so iterators see a snapshot and never throw CME (at the cost of expensive writes).",
+          "realWorldUse": "TreeSet<Employee> uses Comparable. Priority queues with Comparator. Sorting REST list endpoints. CopyOnWriteArrayList for event listener lists (reads >> writes). ConcurrentHashMap for shared caches. Use removeIf/Iterator.remove() to safely remove during iteration."
+        }
+      ],
+      "problems": [
+        {
+          "displayOrder": 1,
+          "title": "Group Anagrams",
+          "description": "Given a list of strings, group them into lists of anagrams. Return a List<List<String>> where each inner list contains words that are anagrams of each other. Order within groups and order of groups doesn't matter.",
+          "difficulty": "MEDIUM",
+          "pattern": "HashMap with sorted-string key",
+          "hint1": "Two words are anagrams if their sorted char arrays are equal.",
+          "hint2": "Use a HashMap<String, List<String>> where key = sorted version of word.",
+          "hint3": "Return new ArrayList(map.values()).",
+          "starterCode": "import java.util.*;\n\npublic class Q1 {\n    public static List<List<String>> groupAnagrams(List<String> words) {\n        // TODO\n        return new ArrayList<>();\n    }\n    public static void main(String[] args) {\n        System.out.println(groupAnagrams(List.of(\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\")));\n        // [[eat, tea, ate], [tan, nat], [bat]]\n    }\n}",
+          "solutionCode": "import java.util.*;\n\npublic class Q1 {\n    public static List<List<String>> groupAnagrams(List<String> words) {\n        Map<String, List<String>> map = new HashMap<>();\n        for (String w : words) {\n            char[] chars = w.toCharArray(); Arrays.sort(chars);\n            String key = new String(chars);\n            map.computeIfAbsent(key, k -> new ArrayList<>()).add(w);\n        }\n        return new ArrayList<>(map.values());\n    }\n    public static void main(String[] args) {\n        System.out.println(groupAnagrams(List.of(\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\")));\n    }\n}",
+          "testCases": "eat,tea,tan,ate,nat,bat\n[[eat, tea, ate], [tan, nat], [bat]]"
+        },
+        {
+          "displayOrder": 2,
+          "title": "Top K Frequent Elements",
+          "description": "Given an int array and integer k, return the k most frequent elements. If two elements have the same frequency, return either. You may return in any order.",
+          "difficulty": "MEDIUM",
+          "pattern": "HashMap + PriorityQueue (min-heap)",
+          "hint1": "First build a frequency map with HashMap.",
+          "hint2": "Use a PriorityQueue (min-heap) of size k — keep only the k most frequent.",
+          "hint3": "When heap size > k, poll() to remove the least frequent.",
+          "starterCode": "import java.util.*;\n\npublic class Q2 {\n    public static int[] topKFrequent(int[] nums, int k) {\n        // TODO\n        return new int[0];\n    }\n    public static void main(String[] args) {\n        System.out.println(Arrays.toString(topKFrequent(new int[]{1,1,1,2,2,3}, 2)));\n        // [1, 2]\n    }\n}",
+          "solutionCode": "import java.util.*;\n\npublic class Q2 {\n    public static int[] topKFrequent(int[] nums, int k) {\n        Map<Integer,Integer> freq = new HashMap<>();\n        for (int n : nums) freq.merge(n, 1, Integer::sum);\n        PriorityQueue<Integer> heap = new PriorityQueue<>(Comparator.comparingInt(freq::get));\n        for (int n : freq.keySet()) {\n            heap.offer(n);\n            if (heap.size() > k) heap.poll();\n        }\n        int[] res = new int[k];\n        for (int i = k-1; i >= 0; i--) res[i] = heap.poll();\n        return res;\n    }\n    public static void main(String[] args) {\n        System.out.println(Arrays.toString(topKFrequent(new int[]{1,1,1,2,2,3}, 2)));\n    }\n}",
+          "testCases": "1 1 1 2 2 3\nk=2\n[1, 2]"
+        },
+        {
+          "displayOrder": 3,
+          "title": "Sort Students by GPA then Name",
+          "description": "Given a list of Student objects (name: String, gpa: double), sort them: primary descending GPA, secondary ascending name. Return the sorted list.",
+          "difficulty": "EASY",
+          "pattern": "Comparator chaining",
+          "hint1": "Use Comparator.comparingDouble(s -> s.gpa).reversed().",
+          "hint2": "Then .thenComparing(s -> s.name) for tie-breaking.",
+          "hint3": "list.sort(comparator) or Collections.sort(list, comparator).",
+          "starterCode": "import java.util.*;\n\npublic class Q3 {\n    static class Student { String name; double gpa;\n        Student(String n, double g) { name=n; gpa=g; }\n        public String toString() { return name+\"(\"+gpa+\")\"; }\n    }\n    public static List<Student> sortStudents(List<Student> students) {\n        // TODO\n        return students;\n    }\n    public static void main(String[] args) {\n        List<Student> s = new ArrayList<>(List.of(\n            new Student(\"Bob\",3.8), new Student(\"Alice\",3.9),\n            new Student(\"Carol\",3.8), new Student(\"Dave\",4.0)));\n        System.out.println(sortStudents(s));\n        // [Dave(4.0), Alice(3.9), Bob(3.8), Carol(3.8)]\n    }\n}",
+          "solutionCode": "import java.util.*;\n\npublic class Q3 {\n    static class Student { String name; double gpa;\n        Student(String n, double g) { name=n; gpa=g; }\n        public String toString() { return name+\"(\"+gpa+\")\"; }\n    }\n    public static List<Student> sortStudents(List<Student> students) {\n        students.sort(Comparator.comparingDouble((Student s) -> s.gpa)\n                                .reversed()\n                                .thenComparing(s -> s.name));\n        return students;\n    }\n    public static void main(String[] args) {\n        List<Student> s = new ArrayList<>(List.of(\n            new Student(\"Bob\",3.8), new Student(\"Alice\",3.9),\n            new Student(\"Carol\",3.8), new Student(\"Dave\",4.0)));\n        System.out.println(sortStudents(s));\n    }\n}",
+          "testCases": "[Dave(4.0), Alice(3.9), Bob(3.8), Carol(3.8)]"
+        }
+      ]
+    }
+  ]
+}

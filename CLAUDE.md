@@ -35,6 +35,8 @@ cd frontend
 docker-compose up          # Build and run both services
 ```
 
+---
+
 ## Architecture
 
 ### Frontend Structure
@@ -102,50 +104,202 @@ The API base URL is the `VITE_API_URL` environment variable (baked in at build t
 
 Users accumulate XP and level up (Beginner → Architect). Streaks are tracked daily; "pause days" earned from streaks can protect the streak. Progress is surfaced on the `/profile` page.
 
+### Topic Category Enum
+
+Categories in `Topic.Category`:
+- `JAVA`, `ADVANCED_JAVA` — Java core + concurrency
+- `SPRING_BOOT` — used for ALL Spring topics (Core, Boot, Security, JPA, REST, Microservices); `subCategory` field distinguishes them
+- `DSA` — data structures and algorithms
+- `MYSQL` — MySQL/SQL topics
+- `AWS` — cloud services
+- `SYSTEM_DESIGN` — architecture patterns (added 2026-04-11)
+- `TESTING` — unit/integration testing (added 2026-04-11)
+
+Frontend `CATEGORIES` array and `CATEGORY_META` in `src/utils/helpers.js` must match the backend enum.
+
 ---
 
-## Key Features Built
+## What Is Built (Current State — 2026-04-11)
+
+### Auth & Users
+JWT login, Google OAuth2, email/password, multi-role (admin/user), 3-step onboarding, user profile with XP/streak/level badge.
 
 ### Learning Gate System
-Progressive content unlocking — game-style, designed for new/junior users.
+Progressive content unlocking — game-style.
 
 **Stages (per topic):** `THEORY → EASY → MEDIUM → HARD → MASTERED`
 
 **Gate conditions:**
-- `THEORY → EASY`: User writes a 20+ char note proving understanding ("I Understood This" button)
-- `EASY → MEDIUM`: 3 Easy problems solved (ACCEPTED submissions)
+- `THEORY → EASY`: User writes a 20+ char note ("I Understood This" button)
+- `EASY → MEDIUM`: 3 Easy problems solved
 - `MEDIUM → HARD`: 2 Medium problems solved
 - `HARD → MASTERED`: 1 Hard problem solved
 
-**Backend:**
-- `model/UserTopicProgress.java` — tracks `theoryCompleted`, `theoryNote`, `theoryCompletedAt` per user per topic
-- `service/LearningGateService.java` — derives stage, handles theory completion
-- `controller/LearningGateController.java` — `GET/POST /api/topics/{topicId}/gate`
-- `repository/SubmissionRepository.java` — added `countSolvedByDifficultyForTopic` and `countProblemsByDifficultyForTopic` native queries
+**Backend:** `UserTopicProgress`, `LearningGateService`, `LearningGateController`
+**Frontend:** `TopicView.jsx` — stage badge, locked Practice tab, theory gate form, stage progress bar, gated problems, locked difficulty teasers
 
-**Frontend:**
-- `api/index.js` — `gateApi.getStatus(topicId)`, `gateApi.completeTheory(topicId, note)`, `QUERY_KEYS.gateStatus`
-- `TopicView.jsx` — stage badge in header, locked Practice tab until theory done, theory gate form, stage progress bar, problems gated by difficulty, locked difficulty teasers
+### Theory Tab UI (redesigned 2026-04-11)
+Each section in the Theory tab now has distinct visual treatment:
+- **Memory Anchor** — green chips (each fact = one scannable pill with `key: value` bolding)
+- **The Story** — amber left-border, italic narrative text
+- **Visual Analogy** — purple accent, `X = Y` sentences rendered as concept ≡ meaning rows
+- **First Principles** — sky-blue accent, numbered sentence list
+Components: `MemoryAnchorCard`, `StoryCard`, `AnalogyCard`, `PrinciplesCard` in `TopicView.jsx`
+
+### Sidebar Navigation
+Accordion sections (Learn, Practice, Interview, Account) — only active section auto-opens, giving maximum space to the topics list. Topic rows have border separator + dot indicator. Category tabs with horizontal scroll.
+
+### Practice System
+- Problems per topic, Easy/Medium/Hard
+- 3-tier hint system (direction → approach → pseudocode)
+- Code submission with test case evaluation
+- Smart feedback card: detected algorithm pattern, methodology, optimization suggestion
+- Recall drill modal after first accepted submission
+
+### Habit Engine
+Daily streak + pause days, XP + level system, GitHub-style heatmap, spaced repetition queue.
+
+### MCQ Quiz System (`/quiz`)
+Quiz sets by category, per-question timer, results with grade + review accordion.
+
+### Algorithms Page (`/algorithms`)
+10 algorithms with 5-tab detail view (story, steps, code, complexity, real-world).
 
 ### Pattern Name Drill (`/drill`)
-Flashcard-style drill that shows problem title+description, user types the pattern name. Alias matching handles variations (two-pointer / two pointers / etc.). Pool: all problems with a `pattern` field set.
+Flashcard drill: see problem description, type the pattern name. Alias matching.
 
 ### ProblemsPage (`/problems`)
-Clean LeetCode-style table. Difficulty filter as pill buttons (not dropdown). Inline search with clear button. Bookmark toggle per row. Pagination.
+LeetCode-style table with difficulty pills, inline search, bookmark toggle, pagination.
 
-### ProblemSolveView
-Split-panel editor (left: problem description, right: Monaco). Removed approach banner above editor. Clean topbar: back button + problem title + difficulty badge + solved badge + run/submit buttons.
+### Admin Panel (`/admin`)
+Topic/example/problem management, seed file loader, user management.
 
-### Interview Data (`src/pages/interview/interviewData.js`)
-50+ curated Q&A across Java, Advanced Java, DSA, SQL, AWS. Each entry has `quickAnswer`, `keyPoints[]`, optional `codeExample`. UI pages (`/interview-prep`, `/revision`) not yet built.
+### Notes & Bookmarks
+**Backend:** 100% complete (models, repos, controllers all exist)
+**Frontend:** Notes panel in TopicView Theory tab, bookmark toggle in topic header + ProblemsPage
 
 ---
 
-## Pending Features (priority order)
+## Seed Files (Content)
 
-1. **InterviewPrepPage** (`/interview-prep`) — two-column browse + study view using `interviewData.js`
-2. **RevisionPage** (`/revision`) — 30-min timed Q&A session
-3. **Smart Approach System** — replace free-text approach with pattern dropdown + complexity selector
-4. **Editorial unlock improvement** — unlock after 2 attempts OR 10+ min, not only after AC
-5. **Pattern page** (`/patterns`) — pattern as first-class entity with explanation, when-to-use, common mistakes, problems list
-6. **Interview Mode** — timed 45-min session, no hints, approach-first flow
+All seeds live in `learning-system/src/main/resources/seeds/`. Load via Admin → Import JSON.
+Format: `{ batchName, skipExisting: true, topics: [...] }`. Each topic has: `title`, `category`, `subCategory`, `displayOrder`, `description`, `story`, `analogy`, `memoryAnchor`, `firstPrinciples`, `bruteForce`, `optimizedApproach`, `whenToUse`, `examples[]`, `problems[]`.
+
+### ✅ Java Core (B01–B32)
+| File | Topic |
+|------|-------|
+| B01–B22 | OOP, Collections, Streams, Lambdas, Threads, Generics, etc. (original 22) |
+| B23 | Wrapper Classes & Autoboxing |
+| B24 | Date & Time API (java.time) |
+| B25 | Garbage Collection & Memory |
+| B26 | Collections Internals (HashMap, Comparator) |
+| B27 | Reflection & Custom Annotations |
+| B28 | Java Serialization & Externalization |
+| B29 | CompletableFuture (async pipeline) |
+| B30 | Locks & Concurrency (ReentrantLock, ReadWriteLock, Semaphore) |
+| B31 | JDBC & Connection Pooling (HikariCP) |
+| B32 | Optional & Parallel Streams |
+
+### ✅ Spring Boot (S01–S06)
+| File | Topic |
+|------|-------|
+| S01 | Spring Core — IoC, DI, Bean lifecycle, scopes |
+| S02 | Spring Boot — Auto-config, Profiles, @ConfigurationProperties |
+| S03 | Spring Security — JWT filter, BCrypt, OAuth2 |
+| S04 | JPA & Hibernate — Entity lifecycle, N+1, @Version, Pagination |
+| S05 | REST API Design — HTTP methods, status codes, GlobalExceptionHandler |
+| S06 | Microservices — Feign, Circuit Breaker, API Gateway, Saga pattern |
+
+### ✅ DSA Patterns (D10–D14)
+| File | Topic |
+|------|-------|
+| D10 | Complexity Analysis — Big-O hierarchy, recurrences |
+| D11 | Array Patterns — Sliding Window, Two Pointers, Prefix Sum, Kadane's |
+| D12 | String Algorithms — Anagrams, Palindrome, Min Window Substring |
+| D13 | Bit Manipulation — XOR tricks, Bitmask, Kernighan's |
+| D14 | Greedy Algorithms — Intervals, Jump Game, Activity Selection |
+
+### ✅ MySQL (M01–M06)
+| File | Topic |
+|------|-------|
+| M01 | SQL Basics |
+| M02 | Joins & Subqueries |
+| M03 | Advanced SQL (window functions) |
+| M04 | Indexing — Clustered, Composite, Covering, EXPLAIN |
+| M05 | Query Optimization — EXPLAIN plans, slow query tuning |
+| M06 | MySQL Internals — InnoDB, MVCC, Deadlocks |
+
+### ✅ AWS (A01–A04)
+| File | Topic |
+|------|-------|
+| A01 | AWS Core Services |
+| A02 | Serverless & Messaging |
+| A03 | Networking & CDN |
+| A04 | DevOps & Containers |
+
+### ✅ System Design (SD01–SD04)
+| File | Topic |
+|------|-------|
+| SD01 | System Design Fundamentals — Caching, LB, Rate Limiter, Consistent Hashing |
+| SD02 | Auth Systems — JWT rotation, OAuth2 flow, Token Bucket |
+| SD03 | Distributed Systems — CAP theorem, Sharding, Replication |
+| SD04 | Performance Patterns — Circuit Breaker, Retry, Bulkhead, Idempotency |
+
+### ✅ Testing (T01)
+| File | Topic |
+|------|-------|
+| T01 | Unit Testing — JUnit 5 assertions, @ParameterizedTest, Mockito mocks/verify/captor |
+
+### ❌ Missing DSA (Core Data Structures — HIGH PRIORITY)
+These 9 files cover fundamental interview topics and must be created:
+- `D01-linked-list.json` — singly/doubly/circular, runner technique, sentinel nodes
+- `D02-stack-queue.json` — monotonic stack, deque, circular queue
+- `D03-trees.json` — BST, DFS/BFS, LCA, height/diameter
+- `D04-heaps.json` — top-K, two-heap, merge K sorted
+- `D05-graphs.json` — adjacency list, DFS/BFS, topological sort, union-find, Dijkstra
+- `D06-sorting.json` — merge/quick/counting/radix, stability, comparison
+- `D07-dynamic-programming.json` — memoization, tabulation, knapsack, LCS, 1D/2D DP
+- `D08-recursion-backtracking.json` — pruning, permutations, N-queens, constraint propagation
+- `D09-trie.json` — Trie insert/search/prefix, segment tree basics
+
+---
+
+## Pending Features (Priority Order)
+
+### High Priority
+1. **DSA D01–D09 seed files** — Core data structures missing; most interview questions fall here
+2. **InterviewPrepPage** (`/interview-prep`) — Browse + study 50+ Q&A from `interviewData.js`; two-column layout (list left, detail right)
+3. **RevisionPage** (`/revision`) — 30-min timed Q&A session, score card, review
+4. **SQL Practice Engine** — H2 embedded DB, query editor, EXPLAIN plan output in-browser
+
+### Medium Priority
+5. **Interview Mode** — Timed 45-min session, no hints, approach-first, scored
+6. **Daily Challenge** — Same problem for all users each day (Wordle-style)
+7. **Editorial unlock improvement** — Unlock after 2 attempts OR 10+ min, not only after AC
+8. **Cheat Sheet PDF generator** — Per-topic 1-page printable reference
+9. **Recall Drill page** (`/recall`) — Flashcard mode: see topic name, recall memory anchor
+
+### Lower Priority / Phase 3+
+10. **Groups + friend challenges** — Biggest retention driver; needs Group, GroupMember tables
+11. **Pattern page** (`/patterns`) — Pattern as first-class entity with problems list
+12. **Resume upload + JD gap analyzer** — PdfImportService foundation exists
+13. **System design visual builder** — Drag-drop canvas
+14. **Weekly report card** — Backend analytics exist, frontend not built
+15. **Subscription tiers** — Free / Pro ₹199/mo / Career Pro ₹399/mo
+
+---
+
+## Key File Locations
+
+| Purpose | Path |
+|---------|------|
+| Topic view + theory tab | `frontend/src/components/editor/TopicView.jsx` |
+| Topic view styles | `frontend/src/components/editor/TopicView.module.css` |
+| Sidebar navigation | `frontend/src/components/sidebar/Sidebar.jsx` |
+| Sidebar styles | `frontend/src/components/sidebar/Sidebar.module.css` |
+| Category metadata | `frontend/src/utils/helpers.js` |
+| API layer | `frontend/src/api/index.js` |
+| Topic entity | `learning-system/src/main/java/com/learnsystem/model/Topic.java` |
+| Seed batch service | `learning-system/src/main/java/com/learnsystem/service/SeedBatchService.java` |
+| Seed files | `learning-system/src/main/resources/seeds/` |
+| Security config | `learning-system/src/main/java/com/learnsystem/config/SecurityConfig.java` |

@@ -1,0 +1,77 @@
+{
+  "batchName": "B23-wrapper-enums",
+  "skipExisting": true,
+  "topics": [
+    {
+      "title": "Wrapper Classes & Autoboxing",
+      "category": "JAVA",
+      "subCategory": "Core APIs",
+      "displayOrder": 23,
+      "description": "Every primitive in Java (int, long, double, boolean…) has a corresponding Wrapper class (Integer, Long, Double, Boolean…) in java.lang. Wrappers let primitives participate in collections, generics, and reflection. Autoboxing is the compiler silently converting int ↔ Integer; unboxing does the reverse. The Integer cache (-128 to 127) is a classic interview trap.",
+      "story": "Imagine a VIP club (Collections API) that only lets in people with name badges (objects). Raw int values are anonymous — no badge, no entry. Wrapper classes are the badge-printing station: they wrap the raw value in an object so it can enter the club. Autoboxing is the bouncer doing the wrapping automatically so you don't have to think about it. But watch out — two badges printed for the same VIP number above 127 are different physical objects (== fails).",
+      "analogy": "Primitive int = cash (lightweight, no identity). Integer = a cheque (heavyweight object with identity). Autoboxing = bank prints a cheque for your cash automatically. Cache = bank keeps pre-printed cheques for small amounts (-128–127) — same cheque object reused. == compares cheque identity; equals() compares the written amount.",
+      "memoryAnchor": "Primitives: byte,short,int,long,float,double,char,boolean. Wrappers: Byte,Short,Integer,Long,Float,Double,Character,Boolean. Cache: Integer.valueOf(-128..127) same ref. Autobox: int→Integer (boxing), Integer→int (unboxing). Unboxing null → NullPointerException. parseInt/valueOf difference: parseInt returns int, valueOf returns Integer.",
+      "firstPrinciples": "Java generics and collections are erased to Object at runtime — they cannot hold primitives. Wrapper classes bridge the gap. The Integer cache exists because small integers are so common that reusing instances saves heap allocation. Autoboxing is purely syntactic sugar inserted by javac.",
+      "bruteForce": "Pre-autoboxing (Java 1.4): List list = new ArrayList(); list.add(Integer.valueOf(42)); int val = ((Integer)list.get(0)).intValue(); — manual boxing/unboxing everywhere. Verbose, error-prone, easy to forget intValue().",
+      "optimizedApproach": "Java 5+: List<Integer> list = new ArrayList<>(); list.add(42); int val = list.get(0); — compiler inserts boxing/unboxing. But beware: repeated autoboxing in loops (for(int i=0;i<n;i++) sum+=list.get(i)) creates n Integer objects. Use intStream or int[] when performance matters.",
+      "whenToUse": "Use Integer/Long/Double when: storing in collections, using as generic type params, needing null to represent 'absent', calling static utility methods (Integer.parseInt, Integer.MAX_VALUE, Integer.toBinaryString). Use primitives for local variables, arrays, and performance-critical loops to avoid boxing overhead and GC pressure.",
+      "examples": [
+        {
+          "displayOrder": 1,
+          "title": "Autoboxing, Cache Trap & Unboxing NPE",
+          "code": "public class WrapperDemo {\n    public static void main(String[] args) {\n        // ── Autoboxing ──────────────────────────────\n        Integer a = 42;          // compiler: Integer.valueOf(42)\n        int     b = a;           // compiler: a.intValue()\n        System.out.println(\"a=\" + a + \", b=\" + b);\n\n        // ── Cache trap: -128 to 127 reuses instances ──\n        Integer x = 127; Integer y = 127;\n        Integer p = 128; Integer q = 128;\n        System.out.println(\"127 == 127: \" + (x == y));  // true  (same cache object)\n        System.out.println(\"128 == 128: \" + (p == q));  // false (different objects)\n        System.out.println(\"128 equals: \" + p.equals(q)); // true\n\n        // ── Utility methods ──────────────────────────\n        System.out.println(Integer.MAX_VALUE);          // 2147483647\n        System.out.println(Integer.toBinaryString(255)); // 11111111\n        System.out.println(Integer.parseInt(\"FF\", 16)); // 255\n\n        // ── Unboxing NPE ─────────────────────────────\n        Integer nullInt = null;\n        try {\n            int val = nullInt; // NullPointerException!\n        } catch (NullPointerException e) {\n            System.out.println(\"Unboxing null → NPE\");\n        }\n\n        // ── Performance: avoid boxing in loops ────────\n        long sum = 0;\n        Long boxedSum = 0L; // BAD: creates Long each iteration\n        for (int i = 0; i < 1_000; i++) {\n            sum += i;       // primitive — no allocation\n            boxedSum += i;  // creates new Long(boxedSum + i) each time!\n        }\n        System.out.println(\"sum=\" + sum + \", boxedSum=\" + boxedSum);\n    }\n}",
+          "explanation": "The cache trap (== for Integer -128..127) is one of the most common Java interview questions. Autoboxing hides heap allocation — in tight loops it causes GC pressure. Always use equals() for Integer comparison. Unboxing a null wrapper throws NPE — guard with null checks.",
+          "realWorldUse": "HashMap<Integer,Integer> autoboxes keys/values. Optional<Integer> vs OptionalInt. Spring @Value injection into Integer fields. JSON deserialization into Integer allows null. JdbcTemplate returns Integer for nullable DB columns."
+        },
+        {
+          "displayOrder": 2,
+          "title": "Enums — Constants, Fields, Methods, Switch",
+          "code": "public class EnumDemo {\n\n    enum Day {\n        MON(false), TUE(false), WED(false), THU(false), FRI(false),\n        SAT(true), SUN(true);\n\n        private final boolean weekend;\n        Day(boolean weekend) { this.weekend = weekend; }\n        public boolean isWeekend() { return weekend; }\n    }\n\n    enum Planet {\n        MERCURY(3.303e+23, 2.4397e6),\n        VENUS  (4.869e+24, 6.0518e6),\n        EARTH  (5.976e+24, 6.37814e6);\n\n        private final double mass;   // kg\n        private final double radius; // metres\n        Planet(double mass, double radius) { this.mass = mass; this.radius = radius; }\n        static final double G = 6.67300E-11;\n        double surfaceGravity() { return G * mass / (radius * radius); }\n        double surfaceWeight(double earthWeight) {\n            return earthWeight * surfaceGravity() / EARTH.surfaceGravity();\n        }\n    }\n\n    public static void main(String[] args) {\n        // Enum basics\n        Day today = Day.WED;\n        System.out.println(today.isWeekend()); // false\n        System.out.println(today.name());      // WED\n        System.out.println(today.ordinal());   // 2\n\n        // Switch on enum (exhaustive in Java 14+)\n        String type = switch (today) {\n            case SAT, SUN -> \"weekend\";\n            default       -> \"weekday\";\n        };\n        System.out.println(type);\n\n        // Enum.values() iteration\n        for (Day d : Day.values())\n            if (d.isWeekend()) System.out.print(d + \" \");\n        System.out.println();\n\n        // Enum.valueOf\n        Day fri = Day.valueOf(\"FRI\");\n        System.out.println(fri.isWeekend()); // false\n\n        // Planet weight on Mars (not in enum but shows pattern)\n        double earthWeight = 75.0;\n        System.out.printf(\"EARTH: %.2f%n\", Planet.EARTH.surfaceWeight(earthWeight));\n        System.out.printf(\"VENUS: %.2f%n\", Planet.VENUS.surfaceWeight(earthWeight));\n    }\n}",
+          "explanation": "Enums are compile-safe constants — no magic strings or ints. They can carry fields and methods, making them behaviour-rich. Enum constructors are private. switch on enum is exhaustive with pattern matching. name() returns string, ordinal() returns position (don't persist ordinal — it breaks on reorder). Use EnumSet/EnumMap for enum-keyed collections — faster than HashMap.",
+          "realWorldUse": "Status enums (OrderStatus.PENDING/SHIPPED/CANCELLED) in domain models. HTTP method enums in frameworks. Role enums in Spring Security. @Enumerated(EnumType.STRING) in JPA — always STRING, never ORDINAL. Strategy pattern where each enum constant overrides an abstract method."
+        }
+      ],
+      "problems": [
+        {
+          "displayOrder": 1,
+          "title": "Count Word Frequencies Using Map",
+          "description": "Given a sentence string, count the frequency of each word (case-insensitive). Return as a Map<String, Integer> sorted by word alphabetically.",
+          "difficulty": "EASY",
+          "pattern": "HashMap + autoboxing",
+          "hint1": "Split the string on \\s+ and lowercase each word.",
+          "hint2": "Use map.getOrDefault(word, 0) + 1 for counting.",
+          "hint3": "Use a TreeMap so keys are naturally sorted.",
+          "starterCode": "import java.util.*;\n\npublic class Q1 {\n    public static Map<String, Integer> wordCount(String sentence) {\n        // TODO\n        return new TreeMap<>();\n    }\n    public static void main(String[] args) {\n        System.out.println(wordCount(\"the cat sat on the mat the cat\"));\n        // {cat=2, mat=1, on=1, sat=1, the=3}\n    }\n}",
+          "solutionCode": "import java.util.*;\n\npublic class Q1 {\n    public static Map<String, Integer> wordCount(String sentence) {\n        Map<String, Integer> freq = new TreeMap<>();\n        for (String w : sentence.toLowerCase().split(\"\\\\s+\"))\n            freq.put(w, freq.getOrDefault(w, 0) + 1);\n        return freq;\n    }\n    public static void main(String[] args) {\n        System.out.println(wordCount(\"the cat sat on the mat the cat\"));\n    }\n}",
+          "testCases": "the cat sat on the mat the cat\n{cat=2, mat=1, on=1, sat=1, the=3}"
+        },
+        {
+          "displayOrder": 2,
+          "title": "Day Type Classifier with Enum",
+          "description": "Define a `DayType` enum with values WEEKDAY, WEEKEND. Write `classify(String day)` that takes a day name (e.g. 'Monday') and returns the DayType. Saturday and Sunday are WEEKEND, rest are WEEKDAY. Throw IllegalArgumentException for unknown day names.",
+          "difficulty": "EASY",
+          "pattern": "Enum, switch",
+          "hint1": "Define an enum DayType { WEEKDAY, WEEKEND }.",
+          "hint2": "Use a switch on the input string (uppercase it first).",
+          "hint3": "Throw new IllegalArgumentException for default case.",
+          "starterCode": "public class Q2 {\n    enum DayType { WEEKDAY, WEEKEND }\n\n    public static DayType classify(String day) {\n        // TODO\n        return DayType.WEEKDAY;\n    }\n    public static void main(String[] args) {\n        System.out.println(classify(\"Saturday\")); // WEEKEND\n        System.out.println(classify(\"Monday\"));   // WEEKDAY\n    }\n}",
+          "solutionCode": "public class Q2 {\n    enum DayType { WEEKDAY, WEEKEND }\n\n    public static DayType classify(String day) {\n        return switch (day.toUpperCase()) {\n            case \"SATURDAY\", \"SUNDAY\" -> DayType.WEEKEND;\n            case \"MONDAY\",\"TUESDAY\",\"WEDNESDAY\",\"THURSDAY\",\"FRIDAY\" -> DayType.WEEKDAY;\n            default -> throw new IllegalArgumentException(\"Unknown day: \" + day);\n        };\n    }\n    public static void main(String[] args) {\n        System.out.println(classify(\"Saturday\")); // WEEKEND\n        System.out.println(classify(\"Monday\"));   // WEEKDAY\n    }\n}",
+          "testCases": "Saturday\nWEEKEND\nMonday\nWEEKDAY"
+        },
+        {
+          "displayOrder": 3,
+          "title": "Integer Cache Comparison",
+          "description": "Without running code, predict whether `a == b` is true or false for: (1) Integer a=100, b=100; (2) Integer a=200, b=200; (3) Integer a=Integer.valueOf(50), b=Integer.valueOf(50). Write a program that prints the actual results and explain why.",
+          "difficulty": "EASY",
+          "pattern": "Integer cache, object identity vs equality",
+          "hint1": "Java caches Integer instances from -128 to 127.",
+          "hint2": "Integer.valueOf() uses the cache; new Integer() (deprecated) never does.",
+          "hint3": "== compares object references, not values.",
+          "starterCode": "public class Q3 {\n    public static void main(String[] args) {\n        Integer a1 = 100, b1 = 100;\n        Integer a2 = 200, b2 = 200;\n        Integer a3 = Integer.valueOf(50), b3 = Integer.valueOf(50);\n        // Print reference equality and value equality for each pair\n        // TODO\n    }\n}",
+          "solutionCode": "public class Q3 {\n    public static void main(String[] args) {\n        Integer a1 = 100, b1 = 100;\n        System.out.println(\"100 == 100  ref: \" + (a1 == b1));      // true  (cached)\n        System.out.println(\"100 equals: \" + a1.equals(b1));        // true\n\n        Integer a2 = 200, b2 = 200;\n        System.out.println(\"200 == 200  ref: \" + (a2 == b2));      // false (not cached)\n        System.out.println(\"200 equals: \" + a2.equals(b2));        // true\n\n        Integer a3 = Integer.valueOf(50), b3 = Integer.valueOf(50);\n        System.out.println(\"50 valueOf ref: \" + (a3 == b3));       // true  (cache)\n    }\n}",
+          "testCases": "100 == 100  ref: true\n200 == 200  ref: false\n50 valueOf ref: true"
+        }
+      ]
+    }
+  ]
+}

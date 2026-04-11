@@ -193,19 +193,16 @@ export default function TopicView({ topic, onProblemOpen, onBack, theme = 'dark'
         {tab === 'theory' && (
           <div className={styles.theoryPanel}>
             {topic.memoryAnchor && (
-              <div className={styles.anchorCard}>
-                <div className={styles.anchorLabel}>⚡ Memory Anchor</div>
-                <div className={styles.anchorText}>{topic.memoryAnchor}</div>
-              </div>
+              <MemoryAnchorCard text={topic.memoryAnchor} />
             )}
             {topic.story && (
-              <TheoryCard icon="📖" title="The Story" text={topic.story} />
+              <StoryCard text={topic.story} />
             )}
             {topic.analogy && (
-              <TheoryCard icon="🎨" title="Visual Analogy" text={topic.analogy} />
+              <AnalogyCard text={topic.analogy} />
             )}
             {topic.firstPrinciples && (
-              <TheoryCard icon="🔬" title="First Principles" text={topic.firstPrinciples} />
+              <PrinciplesCard text={topic.firstPrinciples} />
             )}
             {topic.starterCode && (
               <div className={styles.theoryCard}>
@@ -734,6 +731,92 @@ function ExampleDetailView({ ex, index, total, theme = 'dark', onBack, onPrev, o
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
+
+// Split text into sentences on ". " boundaries (only where next char is uppercase or end)
+function splitSentences(text) {
+  const raw = text.split(/\.\s+(?=[A-Z0-9])/);
+  return raw.map(s => s.replace(/\.$/, '').trim()).filter(Boolean);
+}
+
+// Memory Anchor → scannable chips
+function MemoryAnchorCard({ text }) {
+  const chips = splitSentences(text);
+  return (
+    <div className={styles.anchorCard}>
+      <div className={styles.anchorLabel}>⚡ Memory Anchor</div>
+      <div className={styles.anchorChips}>
+        {chips.map((chip, i) => {
+          const colonIdx = chip.indexOf(':');
+          const hasKey = colonIdx > 0 && colonIdx < 40;
+          return (
+            <span key={i} className={styles.anchorChip}>
+              {hasKey ? (
+                <>
+                  <strong className={styles.chipKey}>{chip.slice(0, colonIdx)}</strong>
+                  <span className={styles.chipVal}>{chip.slice(colonIdx)}</span>
+                </>
+              ) : chip}
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Story → narrative card with italic/amber feel
+function StoryCard({ text }) {
+  return (
+    <div className={`${styles.theoryCard} ${styles.storyCard}`}>
+      <div className={styles.cardTitle}>📖 The Story</div>
+      <div className={`${styles.cardBody} ${styles.storyBody}`}>{text}</div>
+    </div>
+  );
+}
+
+// Analogy → key = value pairs
+function AnalogyCard({ text }) {
+  const sentences = splitSentences(text);
+  return (
+    <div className={`${styles.theoryCard} ${styles.analogyCard}`}>
+      <div className={styles.cardTitle}>🔗 Visual Analogy</div>
+      <div className={styles.analogyList}>
+        {sentences.map((s, i) => {
+          const eqIdx = s.indexOf(' = ');
+          if (eqIdx > 0 && eqIdx < 60) {
+            const concept = s.slice(0, eqIdx).trim();
+            const meaning = s.slice(eqIdx + 3).trim();
+            return (
+              <div key={i} className={styles.analogyRow}>
+                <span className={styles.analogyConcept}>{concept}</span>
+                <span className={styles.analogyEq}>≡</span>
+                <span className={styles.analogyMeaning}>{meaning}</span>
+              </div>
+            );
+          }
+          return <p key={i} className={`${styles.cardBody} ${styles.analogyNote}`}>{s}.</p>;
+        })}
+      </div>
+    </div>
+  );
+}
+
+// First Principles → numbered list with teal accent
+function PrinciplesCard({ text }) {
+  const sentences = splitSentences(text);
+  return (
+    <div className={`${styles.theoryCard} ${styles.principlesCard}`}>
+      <div className={styles.cardTitle}>🔬 First Principles</div>
+      <ol className={styles.principlesList}>
+        {sentences.map((s, i) => (
+          <li key={i} className={styles.principlesItem}>{s}.</li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+// Generic fallback card (kept for any unexpected usage)
 function TheoryCard({ icon, title, text }) {
   return (
     <div className={styles.theoryCard}>

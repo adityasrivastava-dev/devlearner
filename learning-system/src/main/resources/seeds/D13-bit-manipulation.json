@@ -1,0 +1,77 @@
+{
+  "batchName": "D13-bit-manipulation",
+  "skipExisting": true,
+  "topics": [
+    {
+      "title": "Bit Manipulation",
+      "category": "DSA",
+      "subCategory": "Advanced DSA",
+      "displayOrder": 13,
+      "description": "Bit manipulation uses bitwise operators (AND &, OR |, XOR ^, NOT ~, LEFT SHIFT <<, RIGHT SHIFT >>) to operate directly on binary representations. It enables O(1) tricks that replace expensive arithmetic or data structures. Key patterns: check/set/clear/toggle a bit, find single non-duplicate using XOR, count set bits (Brian Kernighan), detect powers of two, and bitmask DP for subset enumeration.",
+      "story": "Every int is 32 bits. Most programmers treat numbers as decimal values. Bit-savvy programmers see the binary machinery underneath. XOR is magic: a^a=0 (anything XORed with itself = 0), a^0=a (anything XORed with 0 = itself). Finding the one unique element in a list of pairs? XOR all values — pairs cancel to 0, unique survives. It's like finding the one person without a twin by having everyone hold hands in pairs — one person is left standing.",
+      "analogy": "Bitwise AND = only keep bits where BOTH sides have 1 (intersection). OR = keep bits where EITHER has 1 (union). XOR = keep bits where sides DIFFER (symmetric difference). Left shift << = multiply by 2. Right shift >> = divide by 2. n & (n-1) = clear the lowest set bit (like removing the smallest denomination coin). n & (-n) = isolate the lowest set bit. Bitmask = a tiny Set<int> stored as a single integer — 32 elements in one int, constant-time operations.",
+      "memoryAnchor": "Check bit k: (n >> k) & 1. Set bit k: n | (1 << k). Clear bit k: n & ~(1 << k). Toggle bit k: n ^ (1 << k). Count set bits (Kernighan): while(n) n&=n-1, count++. Power of 2: n>0 && (n&(n-1))==0. XOR pairs: a^a=0, a^0=a. Get lowest set bit: n & (-n). Bitmask DP: 1<<n subsets. Integer.bitCount(n) in Java.",
+      "firstPrinciples": "Computers store everything as bits. Bitwise operations are single CPU instructions — the fastest possible operations. XOR has algebraic properties (commutative, associative, self-inverse) that make it useful for cancellation. Bitmasks represent sets as integers — subset enumeration via bit iteration avoids allocating Set objects.",
+      "bruteForce": "Finding unique element: sort and scan pairs — O(n log n). Count set bits: convert to string, count '1's — O(log n). Check power of 2: keep dividing by 2 — O(log n). Subset generation: recursive with boolean array — O(2ⁿ) with higher constant.",
+      "optimizedApproach": "Unique element: XOR all → O(n), O(1). Count set bits: Kernighan's n&=n-1 → O(set bits). Power of 2: n&(n-1)==0 → O(1). Bitmask for subset: 0..(1<<n)-1, each int is a subset → O(2ⁿ) with minimal overhead.",
+      "whenToUse": "Bit manipulation: competitive programming and system-level code. Interview: 'Find single number', 'Number of 1 bits', 'Power of two', 'Reverse bits'. Bitmask DP: traveling salesman, Hamiltonian path, subset-sum with small n. Permissions/flags: multiple boolean flags in one int. Don't use bit tricks in business logic — readability matters more there.",
+      "examples": [
+        {
+          "displayOrder": 1,
+          "title": "Core Bit Operations — Check, Set, Clear, Toggle",
+          "code": "public class BitOps {\n    // Check if bit k is set\n    static boolean isBitSet(int n, int k) { return ((n >> k) & 1) == 1; }\n    // Set bit k\n    static int setBit(int n, int k) { return n | (1 << k); }\n    // Clear bit k\n    static int clearBit(int n, int k) { return n & ~(1 << k); }\n    // Toggle bit k\n    static int toggleBit(int n, int k) { return n ^ (1 << k); }\n    // Count set bits — Brian Kernighan's algorithm\n    static int countBits(int n) {\n        int count = 0;\n        while (n != 0) { n &= n - 1; count++; } // clears lowest set bit each iter\n        return count;\n    }\n    // Is power of two?\n    static boolean isPowerOfTwo(int n) { return n > 0 && (n & (n-1)) == 0; }\n    // Get lowest set bit position\n    static int lowestSetBit(int n) { return n & (-n); }\n\n    public static void main(String[] args) {\n        int n = 0b1010; // 10 in binary\n        System.out.println(\"n = \" + n + \" = \" + Integer.toBinaryString(n));\n        System.out.println(\"Bit 1 set? \" + isBitSet(n, 1));  // bit 1 = 1 → true\n        System.out.println(\"Bit 2 set? \" + isBitSet(n, 2));  // bit 2 = 0 → false\n        System.out.println(\"Set bit 0: \" + Integer.toBinaryString(setBit(n, 0)));   // 1011\n        System.out.println(\"Clear bit 1: \" + Integer.toBinaryString(clearBit(n, 1)));// 1000\n        System.out.println(\"Toggle bit 0: \" + Integer.toBinaryString(toggleBit(n,0)));// 1011\n        System.out.println(\"Count bits in 7: \" + countBits(7));   // 3 (111)\n        System.out.println(\"Count bits in 12: \" + countBits(12)); // 2 (1100)\n        System.out.println(\"16 power of 2? \" + isPowerOfTwo(16)); // true\n        System.out.println(\"12 power of 2? \" + isPowerOfTwo(12)); // false\n        System.out.println(\"Lowest bit of 12: \" + lowestSetBit(12)); // 4 (100)\n        // Same as Integer.bitCount(n)\n        System.out.println(\"Java built-in: \" + Integer.bitCount(255)); // 8\n    }\n}",
+          "explanation": "n & (n-1) clears the lowest set bit — because subtracting 1 flips the lowest bit and all below it. Repeating this until n=0 counts exactly the number of set bits. n & (-n) gives the lowest set bit because -n is the two's complement (~n+1) — only the lowest set bit survives the AND. These are O(1) or O(set bits) operations, far faster than string conversion.",
+          "realWorldUse": "Permission systems: READ=1, WRITE=2, EXEC=4 — store all in one int. Check: perms & READ != 0. Set: perms |= WRITE. Remove: perms &= ~WRITE. Java's EnumSet uses bitmask internally for enums < 64 values. Redis bitfield commands. BloomFilter uses multiple bits per element."
+        },
+        {
+          "displayOrder": 2,
+          "title": "XOR Tricks & Bitmask Subset Enumeration",
+          "code": "import java.util.*;\n\npublic class XorAndBitmask {\n\n    // ── XOR: Find single unique element among pairs ──────────────\n    static int singleNumber(int[] nums) {\n        int result = 0;\n        for (int n : nums) result ^= n; // pairs cancel: a^a=0\n        return result; // only unique survives\n    }\n\n    // ── XOR: Find two non-duplicate numbers (harder variant) ─────\n    static int[] twoSingleNumbers(int[] nums) {\n        int xorAll = 0;\n        for (int n : nums) xorAll ^= n; // xorAll = a ^ b\n        // Find any differing bit between a and b\n        int diffBit = xorAll & (-xorAll); // lowest set bit\n        int a = 0;\n        for (int n : nums)\n            if ((n & diffBit) != 0) a ^= n; // group by that bit\n        return new int[]{a, xorAll ^ a}; // b = xorAll ^ a\n    }\n\n    // ── Bitmask: Enumerate all subsets of a set ───────────────────\n    static void enumerateSubsets(int[] set) {\n        int n = set.length;\n        // 1<<n = 2^n possible subsets\n        for (int mask = 0; mask < (1 << n); mask++) {\n            List<Integer> subset = new ArrayList<>();\n            for (int i = 0; i < n; i++)\n                if ((mask & (1 << i)) != 0) // bit i is set in mask\n                    subset.add(set[i]);\n            System.out.println(Integer.toBinaryString(mask) + \" → \" + subset);\n        }\n    }\n\n    // ── Bitmask: Subset sum with tracking ────────────────────────\n    static boolean subsetSumExists(int[] arr, int target) {\n        int n = arr.length;\n        for (int mask = 0; mask < (1 << n); mask++) {\n            int sum = 0;\n            for (int i = 0; i < n; i++)\n                if ((mask >> i & 1) == 1) sum += arr[i];\n            if (sum == target) return true;\n        }\n        return false;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(singleNumber(new int[]{4,1,2,1,2}));    // 4\n        System.out.println(Arrays.toString(twoSingleNumbers(new int[]{1,2,1,3,2,5}))); // [3,5]\n        System.out.println();\n        System.out.println(\"Subsets of {1,2,3}:\");\n        enumerateSubsets(new int[]{1, 2, 3});\n        System.out.println(\"\\nSubset sum 6 in {1,3,5,2}: \" + subsetSumExists(new int[]{1,3,5,2}, 6));\n    }\n}",
+          "explanation": "XOR cancellation: any value XORed with itself = 0. XOR all array elements — pairs cancel, unique survives. For two uniques: XOR gives a^b, find a differing bit, partition array by that bit to isolate each unique. Bitmask subset enumeration: 2ⁿ masks, each bit represents element inclusion. Works well for n ≤ 20.",
+          "realWorldUse": "XOR used in cryptography (one-time pad), parity checking, CRC checksums. Bitmask DP: TSP (Traveling Salesman), minimum cost to visit all nodes. Feature flags: store 32 features in one int. Java BitSet for large bitmasks."
+        }
+      ],
+      "problems": [
+        {
+          "displayOrder": 1,
+          "title": "Number of 1 Bits (Hamming Weight)",
+          "description": "Write a function that returns the number of '1' bits in the binary representation of a non-negative integer n. Do NOT use Integer.bitCount().",
+          "difficulty": "EASY",
+          "pattern": "Kernighan's bit count",
+          "hint1": "n & (n-1) clears the lowest set bit.",
+          "hint2": "Loop while n != 0, clearing one set bit per iteration and counting.",
+          "hint3": "Also works: check (n & 1), then n >>= 1 for 32 iterations.",
+          "starterCode": "public class Q1 {\n    public static int hammingWeight(int n) {\n        // TODO: count set bits without Integer.bitCount\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(hammingWeight(11));  // 3 (1011)\n        System.out.println(hammingWeight(128)); // 1 (10000000)\n        System.out.println(hammingWeight(255)); // 8 (11111111)\n    }\n}",
+          "solutionCode": "public class Q1 {\n    public static int hammingWeight(int n) {\n        int count = 0;\n        while (n != 0) { n &= n - 1; count++; }\n        return count;\n    }\n    public static void main(String[] args) {\n        System.out.println(hammingWeight(11));  // 3\n        System.out.println(hammingWeight(128)); // 1\n        System.out.println(hammingWeight(255)); // 8\n    }\n}",
+          "testCases": "3\n1\n8"
+        },
+        {
+          "displayOrder": 2,
+          "title": "Single Number — XOR",
+          "description": "Given a non-empty array where every element appears twice EXCEPT one. Find that single element. Must be O(n) time and O(1) space.",
+          "difficulty": "EASY",
+          "pattern": "XOR cancellation",
+          "hint1": "a ^ a = 0 for any a.",
+          "hint2": "a ^ 0 = a for any a.",
+          "hint3": "XOR all elements — pairs cancel, unique remains.",
+          "starterCode": "public class Q2 {\n    public static int singleNumber(int[] nums) {\n        // TODO O(n) time, O(1) space\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(singleNumber(new int[]{2,2,1}));         // 1\n        System.out.println(singleNumber(new int[]{4,1,2,1,2}));     // 4\n        System.out.println(singleNumber(new int[]{1}));             // 1\n    }\n}",
+          "solutionCode": "public class Q2 {\n    public static int singleNumber(int[] nums) {\n        int res = 0;\n        for (int n : nums) res ^= n;\n        return res;\n    }\n    public static void main(String[] args) {\n        System.out.println(singleNumber(new int[]{2,2,1}));     // 1\n        System.out.println(singleNumber(new int[]{4,1,2,1,2})); // 4\n        System.out.println(singleNumber(new int[]{1}));         // 1\n    }\n}",
+          "testCases": "1\n4\n1"
+        },
+        {
+          "displayOrder": 3,
+          "title": "Generate All Subsets Using Bitmask",
+          "description": "Given an array of distinct integers, return all possible subsets (power set) using bitmask enumeration. Do not use recursion.",
+          "difficulty": "MEDIUM",
+          "pattern": "Bitmask subset enumeration",
+          "hint1": "There are 2^n subsets for n elements.",
+          "hint2": "For each mask from 0 to (1<<n)-1, collect elements where bit i is set.",
+          "hint3": "Use (mask >> i) & 1 or (mask & (1<<i)) != 0 to check inclusion.",
+          "starterCode": "import java.util.*;\n\npublic class Q3 {\n    public static List<List<Integer>> subsets(int[] nums) {\n        // TODO: bitmask approach, no recursion\n        return new ArrayList<>();\n    }\n    public static void main(String[] args) {\n        System.out.println(subsets(new int[]{1,2,3}));\n        // [[], [1], [2], [1,2], [3], [1,3], [2,3], [1,2,3]]\n    }\n}",
+          "solutionCode": "import java.util.*;\n\npublic class Q3 {\n    public static List<List<Integer>> subsets(int[] nums) {\n        int n = nums.length;\n        List<List<Integer>> result = new ArrayList<>();\n        for (int mask = 0; mask < (1 << n); mask++) {\n            List<Integer> subset = new ArrayList<>();\n            for (int i = 0; i < n; i++)\n                if ((mask & (1 << i)) != 0) subset.add(nums[i]);\n            result.add(subset);\n        }\n        return result;\n    }\n    public static void main(String[] args) {\n        System.out.println(subsets(new int[]{1,2,3}));\n    }\n}",
+          "testCases": "[[], [1], [2], [1, 2], [3], [1, 3], [2, 3], [1, 2, 3]]"
+        }
+      ]
+    }
+  ]
+}

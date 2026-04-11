@@ -1,0 +1,77 @@
+{
+  "batchName": "B25-garbage-collection",
+  "skipExisting": true,
+  "topics": [
+    {
+      "title": "Garbage Collection & Memory Leaks",
+      "category": "JAVA",
+      "subCategory": "JVM & Memory",
+      "displayOrder": 25,
+      "description": "Java's Garbage Collector automatically reclaims heap memory from objects no longer reachable from GC roots (stack variables, static fields, JNI references). Modern JVMs use generational GC based on the weak generational hypothesis: most objects die young. G1GC (default Java 9+) divides the heap into regions and aims for predictable pause times. Memory leaks in Java happen when live references are held to objects that logically should be dead — the GC cannot reclaim them.",
+      "story": "Imagine a hotel where rooms are heap memory. Guests (objects) check in and out. The hotel manager (GC) periodically walks the corridors looking for empty rooms (unreachable objects). New guests mostly stay one night (young generation dies fast). Long-term guests stay in a VIP wing (old generation). The manager does quick sweeps of normal rooms (minor GC) and occasional full floor inspections (major/full GC). A memory leak is like a ghost that never checked out — the manager can't clean the room because the booking system (reference) still shows it occupied.",
+      "analogy": "Heap generations: Eden = hotel lobby (new objects). Survivor spaces = short-term stay rooms. Old gen = long-term wing. Metaspace = the hotel staff area (class metadata). Minor GC = sweeping Eden quickly. Major GC = cleaning old gen (slower). Full GC = closing the entire hotel for deep cleaning (STW pause). Memory leak = zombie bookings preventing room release.",
+      "memoryAnchor": "Heap: Young (Eden + S0 + S1) + Old + Metaspace. Minor GC: Eden → Survivor → age. Tenuring threshold: age 15 → Old Gen. G1GC: region-based, predictable pause, -XX:MaxGCPauseMillis. ZGC: concurrent, sub-millisecond pauses (Java 15+). STW = Stop-The-World. Leak causes: static collections, unclosed listeners, ThreadLocal, static caches. Tools: jmap, jstat, VisualVM, heap dump.",
+      "firstPrinciples": "GC roots keep objects alive: local variables on stack, static fields, JNI refs, monitor locks. An object is collectible when no GC root can reach it transitively. The GC does NOT collect objects you hold references to — that's the root cause of every Java memory leak.",
+      "bruteForce": "C/C++ manual memory management: malloc/free. Every allocation needs a matching free. Forget one free → leak. Double-free → undefined behavior. No safety net. Java eliminated this class of bug by design — at the cost of GC pauses.",
+      "optimizedApproach": "G1GC tuning: -Xms4g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=200. Profile with jstat -gcutil <pid> 1s. Take heap dumps with jmap -dump:format=b,file=heap.hprof <pid>. Analyze with Eclipse MAT or VisualVM. For near-zero pauses on large heaps: -XX:+UseZGC (Java 15+).",
+      "whenToUse": "Tune GC when: latency p99 spikes correlate with GC pauses (check GC logs -Xlog:gc*), OOM errors, heap growing monotonically (leak). G1GC for most apps. ZGC/Shenandoah for latency-critical apps. Adjust Xmx to leave OS headroom (60-70% of total RAM for JVM heap). Monitor: gc.pause, heap.used, gc.frequency.",
+      "examples": [
+        {
+          "displayOrder": 1,
+          "title": "GC Generations & Object Lifecycle",
+          "code": "public class GCGenerations {\n\n    // Short-lived: will be collected in minor GC\n    static String processRequest(int id) {\n        StringBuilder sb = new StringBuilder(); // dies after method returns\n        for (int i = 0; i < 100; i++) sb.append(id).append(',';\n        return sb.toString(); // String may survive if returned to caller\n    }\n\n    // Long-lived: promoted to old generation\n    static final java.util.List<String> CACHE = new java.util.ArrayList<>();\n\n    static void demonstrateGenerations() {\n        // These StringBuilder objects are short-lived → collected in minor GC\n        for (int i = 0; i < 1_000; i++) processRequest(i);\n\n        // These Strings stay in old gen (referenced by CACHE)\n        for (int i = 0; i < 10; i++) CACHE.add(\"persistent-\" + i);\n\n        System.out.println(\"Young gen mostly cleared, old gen holds CACHE\");\n    }\n\n    // SoftReference: cleared only when JVM needs memory\n    static java.lang.ref.SoftReference<byte[]> softCache;\n    static void softRefDemo() {\n        softCache = new java.lang.ref.SoftReference<>(new byte[1024 * 1024]); // 1MB\n        byte[] data = softCache.get();\n        System.out.println(\"SoftRef data: \" + (data != null ? data.length + \" bytes\" : \"GC'd\"));\n    }\n\n    // WeakReference: collected on next GC regardless\n    static void weakRefDemo() {\n        Object obj = new Object();\n        java.lang.ref.WeakReference<Object> weakRef = new java.lang.ref.WeakReference<>(obj);\n        System.out.println(\"Before nulling: \" + weakRef.get());\n        obj = null; // remove strong reference\n        System.gc(); // suggest GC (not guaranteed)\n        System.out.println(\"After GC: \" + weakRef.get()); // likely null\n    }\n\n    public static void main(String[] args) {\n        demonstrateGenerations();\n        softRefDemo();\n        weakRefDemo();\n    }\n}",
+          "explanation": "Objects created in methods die quickly (Eden → minor GC). Static field references keep objects in old gen. SoftReferences enable memory-sensitive caches (GC clears them under pressure). WeakReferences are used by WeakHashMap — keys are weakly referenced, allowing map entries to be GC'd when keys have no other references.",
+          "realWorldUse": "String.intern() pool uses weak references. WeakHashMap for canonical maps. SoftReference for image caches. Guava Cache uses SoftValues for optional GC-able caching. Caffeine cache uses weak keys/values. Java's class loader references keep Classes in Metaspace until loader is GC'd."
+        },
+        {
+          "displayOrder": 2,
+          "title": "Common Memory Leak Patterns",
+          "code": "import java.util.*;\n\npublic class MemoryLeaks {\n\n    // ── LEAK 1: Static collection grows unbounded ──────────────────\n    static final Map<Integer, byte[]> STATIC_MAP = new HashMap<>();\n    static void leak1_staticCollection(int id) {\n        STATIC_MAP.put(id, new byte[1024]); // never removed → leak\n    }\n\n    // ── LEAK 2: Listener not removed ──────────────────────────────\n    interface EventListener { void onEvent(String e); }\n    static final List<EventListener> LISTENERS = new ArrayList<>();\n    static class MyWidget {\n        final EventListener listener;\n        MyWidget() {\n            this.listener = e -> System.out.println(\"Widget got: \" + e);\n            LISTENERS.add(this.listener); // REGISTERED\n        }\n        void destroy() {\n            LISTENERS.remove(this.listener); // MUST deregister!\n        }\n    }\n\n    // ── LEAK 3: ThreadLocal not cleaned ───────────────────────────\n    static final ThreadLocal<List<String>> TL = ThreadLocal.withInitial(ArrayList::new);\n    static void processInThread() {\n        TL.get().add(\"data\");\n        // Must call TL.remove() after use in thread pools!\n        // Thread pool reuses threads — ThreadLocal persists across tasks\n        TL.remove(); // FIX\n    }\n\n    // ── FIX: Use WeakHashMap for automatic cleanup ─────────────────\n    static final Map<Object, String> WEAK_MAP = new WeakHashMap<>();\n    static void safeCache() {\n        Object key = new Object();\n        WEAK_MAP.put(key, \"metadata\");\n        System.out.println(\"Size: \" + WEAK_MAP.size()); // 1\n        key = null;\n        System.gc();\n        System.out.println(\"After GC: \" + WEAK_MAP.size()); // 0 (entry gone)\n    }\n\n    public static void main(String[] args) {\n        // Don't call leak1 in a loop — it fills heap\n        MyWidget w = new MyWidget();\n        w.destroy(); // clean deregistration\n        processInThread();\n        safeCache();\n    }\n}",
+          "explanation": "The 4 main Java memory leak patterns: (1) unbounded static collections, (2) event listeners not removed, (3) ThreadLocal not cleared in thread pools, (4) Inner classes holding implicit outer reference. WeakHashMap solves canonical caching. Always call ThreadLocal.remove() in thread pool tasks.",
+          "realWorldUse": "Spring ApplicationContext holds singleton beans permanently. Hibernate session cache (1st level) leaks if session stays open too long. SLF4J MDC (ThreadLocal) must be cleared in each request. Connection pool leaks from unclosed connections. Classloader leaks in app servers when redeploying wars."
+        }
+      ],
+      "problems": [
+        {
+          "displayOrder": 1,
+          "title": "Identify the Memory Leak",
+          "description": "Review the following code. A `Cache` class stores request data in a static HashMap. After 10,000 requests the app crashes with OutOfMemoryError. Identify the leak and fix it using a size-bounded approach (max 100 entries, evict oldest).",
+          "difficulty": "MEDIUM",
+          "pattern": "LinkedHashMap LRU, memory leak identification",
+          "hint1": "The static HashMap grows forever — it's the leak.",
+          "hint2": "Use LinkedHashMap with removeEldestEntry override for LRU eviction.",
+          "hint3": "Override removeEldestEntry to return true when size > MAX.",
+          "starterCode": "import java.util.*;\n\npublic class Q1 {\n    // BUGGY: memory leak\n    static final Map<String, byte[]> CACHE = new HashMap<>();\n    static final int MAX = 100;\n\n    static void cacheRequest(String key, byte[] data) {\n        CACHE.put(key, data);\n    }\n\n    // TODO: fix cacheRequest so cache never exceeds MAX entries\n    // Use LinkedHashMap with removeEldestEntry\n    public static void main(String[] args) {\n        for (int i = 0; i < 200; i++) cacheRequest(\"key\" + i, new byte[1024]);\n        System.out.println(\"Cache size: \" + CACHE.size()); // should be <= 100\n    }\n}",
+          "solutionCode": "import java.util.*;\n\npublic class Q1 {\n    static final int MAX = 100;\n    static final Map<String, byte[]> CACHE = new LinkedHashMap<>(MAX, 0.75f, true) {\n        @Override protected boolean removeEldestEntry(Map.Entry<String, byte[]> eldest) {\n            return size() > MAX;\n        }\n    };\n\n    static void cacheRequest(String key, byte[] data) {\n        CACHE.put(key, data);\n    }\n\n    public static void main(String[] args) {\n        for (int i = 0; i < 200; i++) cacheRequest(\"key\" + i, new byte[1024]);\n        System.out.println(\"Cache size: \" + CACHE.size()); // 100\n    }\n}",
+          "testCases": "Cache size: 100"
+        },
+        {
+          "displayOrder": 2,
+          "title": "Reference Type Hierarchy",
+          "description": "Demonstrate the difference between StrongReference, SoftReference, and WeakReference. Create one of each pointing to a byte[1024] array. Print reachability before and after setting strong reference to null and suggesting GC.",
+          "difficulty": "EASY",
+          "pattern": "Reference types",
+          "hint1": "Strong: byte[] strong = new byte[1024]; SoftReference<byte[]> soft = new SoftReference<>(...).",
+          "hint2": "After strong = null + System.gc(), weak.get() returns null.",
+          "hint3": "SoftReference is not cleared unless memory is tight.",
+          "starterCode": "import java.lang.ref.*;\n\npublic class Q2 {\n    public static void main(String[] args) throws InterruptedException {\n        byte[] data = new byte[1024];\n        SoftReference<byte[]>  soft = new SoftReference<>(data);\n        WeakReference<byte[]>  weak = new WeakReference<>(data);\n\n        System.out.println(\"Before null: soft=\" + (soft.get() != null) + \" weak=\" + (weak.get() != null));\n\n        data = null; // remove strong reference\n        System.gc();\n        Thread.sleep(100);\n\n        // TODO: print soft and weak get() null status\n    }\n}",
+          "solutionCode": "import java.lang.ref.*;\n\npublic class Q2 {\n    public static void main(String[] args) throws InterruptedException {\n        byte[] data = new byte[1024];\n        SoftReference<byte[]>  soft = new SoftReference<>(data);\n        WeakReference<byte[]>  weak = new WeakReference<>(data);\n\n        System.out.println(\"Before null: soft=\" + (soft.get() != null) + \" weak=\" + (weak.get() != null));\n\n        data = null;\n        System.gc();\n        Thread.sleep(100);\n\n        System.out.println(\"After GC:    soft=\" + (soft.get() != null) + \" weak=\" + (weak.get() != null));\n        // soft typically still alive (memory not tight), weak typically null\n    }\n}",
+          "testCases": "Before null: soft=true weak=true\nAfter GC:    soft=true weak=false"
+        },
+        {
+          "displayOrder": 3,
+          "title": "ThreadLocal Cleanup in Thread Pool",
+          "description": "A ThreadLocal<List<String>> is used to accumulate log messages per-request. In a thread-pool scenario, the ThreadLocal must be cleaned up after each task. Write a `runTask(String taskId)` method that uses the ThreadLocal, adds one log entry, then cleans up.",
+          "difficulty": "EASY",
+          "pattern": "ThreadLocal lifecycle",
+          "hint1": "ThreadLocal.withInitial(ArrayList::new) initializes lazily.",
+          "hint2": "Call TL.remove() in a finally block after the task completes.",
+          "hint3": "Without remove(), the next task in the same thread sees leftover data.",
+          "starterCode": "import java.util.*;\n\npublic class Q3 {\n    static final ThreadLocal<List<String>> TL = ThreadLocal.withInitial(ArrayList::new);\n\n    static void runTask(String taskId) {\n        // TODO: add taskId to TL, print size, then clean up\n    }\n\n    public static void main(String[] args) {\n        runTask(\"T1\");\n        runTask(\"T2\"); // should see size 1, not 2\n    }\n}",
+          "solutionCode": "import java.util.*;\n\npublic class Q3 {\n    static final ThreadLocal<List<String>> TL = ThreadLocal.withInitial(ArrayList::new);\n\n    static void runTask(String taskId) {\n        try {\n            TL.get().add(taskId);\n            System.out.println(taskId + \" log size: \" + TL.get().size()); // always 1\n        } finally {\n            TL.remove(); // critical in thread pools\n        }\n    }\n\n    public static void main(String[] args) {\n        runTask(\"T1\"); // T1 log size: 1\n        runTask(\"T2\"); // T2 log size: 1\n    }\n}",
+          "testCases": "T1 log size: 1\nT2 log size: 1"
+        }
+      ]
+    }
+  ]
+}
