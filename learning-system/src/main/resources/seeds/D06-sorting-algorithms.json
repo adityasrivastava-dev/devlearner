@@ -243,7 +243,9 @@
           "constraints": "1 ≤ arr.length ≤ 100 | 1 ≤ arr[i] ≤ arr.length | All integers in arr are unique",
           "editorial": "Pancake selection sort: O(n²) time, O(n) output. For each size from n to 2: find max in arr[0..size-1], flip it to front (if needed), flip to position size-1. At most 2 flips per iteration × n iterations = at most 2n flips total (within 10n constraint). Each flip reverses a prefix — simulated with standard two-pointer reverse."
         }
-      ]
+      ],
+      "subCategory": "Sorting Algorithms",
+      "displayOrder": 55
     }
   ]
 }

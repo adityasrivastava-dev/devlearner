@@ -77,9 +77,18 @@
           "starterCode": "import java.util.*;\npublic class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // TODO\n        return new int[]{};\n    }\n}",
           "solutionCode": "import java.util.*;\npublic class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        Map<Integer, Integer> seen = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int complement = target - nums[i];\n            if (seen.containsKey(complement)) {\n                return new int[]{seen.get(complement), i};\n            }\n            seen.put(nums[i], i);\n        }\n        return new int[]{};\n    }\n}",
           "testCases": [
-            {"input": "nums=[2,7,11,15], target=9", "output": "[0,1]"},
-            {"input": "nums=[3,2,4], target=6", "output": "[1,2]"},
-            {"input": "nums=[3,3], target=6", "output": "[0,1]"}
+            {
+              "input": "nums=[2,7,11,15], target=9",
+              "output": "[0,1]"
+            },
+            {
+              "input": "nums=[3,2,4], target=6",
+              "output": "[1,2]"
+            },
+            {
+              "input": "nums=[3,3], target=6",
+              "output": "[0,1]"
+            }
           ],
           "constraints": "2 <= nums.length <= 10^4. -10^9 <= nums[i] <= 10^9. Exactly one solution.",
           "editorial": "Classic HashMap trick: store seen values and check complement. O(n) time, O(n) space. Check before insert to handle the case where we'd use the same element twice."
@@ -96,9 +105,18 @@
           "starterCode": "public class Solution {\n    public int[] minMax(int[] nums) {\n        // TODO: single pass, return {min, max}\n        return new int[]{};\n    }\n}",
           "solutionCode": "public class Solution {\n    public int[] minMax(int[] nums) {\n        if (nums.length == 0) throw new IllegalArgumentException();\n        int min = nums[0], max = nums[0];\n        for (int i = 1; i < nums.length; i++) {\n            if (nums[i] < min) min = nums[i];\n            if (nums[i] > max) max = nums[i];\n        }\n        return new int[]{min, max};\n    }\n}",
           "testCases": [
-            {"input": "[3,1,4,1,5,9,2,6]", "output": "[1,9]"},
-            {"input": "[-5,-1,-8,-3]", "output": "[-8,-1]"},
-            {"input": "[42]", "output": "[42,42]"}
+            {
+              "input": "[3,1,4,1,5,9,2,6]",
+              "output": "[1,9]"
+            },
+            {
+              "input": "[-5,-1,-8,-3]",
+              "output": "[-8,-1]"
+            },
+            {
+              "input": "[42]",
+              "output": "[42,42]"
+            }
           ],
           "constraints": "1 <= nums.length <= 10^5. -10^9 <= nums[i] <= 10^9",
           "editorial": "Initialize min=max=nums[0], then single pass from index 1. O(n) time, O(1) space. This is the most basic array traversal pattern."
@@ -115,9 +133,18 @@
           "starterCode": "public class Solution {\n    public void rotate(int[] nums, int k) {\n        // TODO: in-place rotation\n    }\n}",
           "solutionCode": "public class Solution {\n    public void rotate(int[] nums, int k) {\n        int n = nums.length;\n        k %= n;\n        if (k == 0) return;\n        reverse(nums, 0, n - 1);\n        reverse(nums, 0, k - 1);\n        reverse(nums, k, n - 1);\n    }\n\n    private void reverse(int[] arr, int left, int right) {\n        while (left < right) {\n            int tmp = arr[left];\n            arr[left++] = arr[right];\n            arr[right--] = tmp;\n        }\n    }\n}",
           "testCases": [
-            {"input": "nums=[1,2,3,4,5,6,7], k=3", "output": "[5,6,7,1,2,3,4]"},
-            {"input": "nums=[1,2], k=1", "output": "[2,1]"},
-            {"input": "nums=[1,2,3], k=4", "output": "[3,1,2]"}
+            {
+              "input": "nums=[1,2,3,4,5,6,7], k=3",
+              "output": "[5,6,7,1,2,3,4]"
+            },
+            {
+              "input": "nums=[1,2], k=1",
+              "output": "[2,1]"
+            },
+            {
+              "input": "nums=[1,2,3], k=4",
+              "output": "[3,1,2]"
+            }
           ],
           "constraints": "1 <= nums.length <= 10^5. -2^31 <= nums[i] <= 2^31-1. 0 <= k <= 10^5.",
           "editorial": "Three-reversal algorithm: reverse all → reverse first k → reverse rest. O(n) time, O(1) space. Intuition: reversing the whole array brings the tail to the front, then fixing the two halves completes the rotation."
@@ -134,9 +161,18 @@
           "starterCode": "public class Solution {\n    public int removeDuplicates(int[] nums) {\n        // TODO: in-place, return new length\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int removeDuplicates(int[] nums) {\n        if (nums.length == 0) return 0;\n        int slow = 0;\n        for (int fast = 1; fast < nums.length; fast++) {\n            if (nums[fast] != nums[slow]) {\n                slow++;\n                nums[slow] = nums[fast];\n            }\n        }\n        return slow + 1;\n    }\n}",
           "testCases": [
-            {"input": "[1,1,2]", "output": "2"},
-            {"input": "[0,0,1,1,1,2,2,3,3,4]", "output": "5"},
-            {"input": "[1]", "output": "1"}
+            {
+              "input": "[1,1,2]",
+              "output": "2"
+            },
+            {
+              "input": "[0,0,1,1,1,2,2,3,3,4]",
+              "output": "5"
+            },
+            {
+              "input": "[1]",
+              "output": "1"
+            }
           ],
           "constraints": "1 <= nums.length <= 3*10^4. Array is sorted in non-decreasing order.",
           "editorial": "Two-pointer in-place pattern. slow marks the last unique position, fast scans forward. When a new value is found, slow advances and overwrites. O(n) time, O(1) space."
@@ -153,10 +189,22 @@
           "starterCode": "public class Solution {\n    public int secondLargest(int[] nums) {\n        // TODO\n        return -1;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int secondLargest(int[] nums) {\n        int max = Integer.MIN_VALUE;\n        int second = Integer.MIN_VALUE;\n        for (int n : nums) {\n            if (n > max) {\n                second = max;\n                max = n;\n            } else if (n > second && n != max) {\n                second = n;\n            }\n        }\n        return second == Integer.MIN_VALUE ? -1 : second;\n    }\n}",
           "testCases": [
-            {"input": "[3,1,4,1,5,9,2,6]", "output": "6"},
-            {"input": "[5,5,5]", "output": "-1"},
-            {"input": "[1,2]", "output": "1"},
-            {"input": "[10]", "output": "-1"}
+            {
+              "input": "[3,1,4,1,5,9,2,6]",
+              "output": "6"
+            },
+            {
+              "input": "[5,5,5]",
+              "output": "-1"
+            },
+            {
+              "input": "[1,2]",
+              "output": "1"
+            },
+            {
+              "input": "[10]",
+              "output": "-1"
+            }
           ],
           "constraints": "1 <= nums.length <= 10^5. -10^9 <= nums[i] <= 10^9.",
           "editorial": "Track max and second in a single pass. When n > max: second becomes old max, max becomes n. When n is between second and max: update second. Return -1 if second was never updated (all same). O(n) time, O(1) space."
@@ -173,9 +221,18 @@
           "starterCode": "import java.util.*;\npublic class Solution {\n    public List<Integer> getRow(int rowIndex) {\n        // TODO\n        return new ArrayList<>();\n    }\n}",
           "solutionCode": "import java.util.*;\npublic class Solution {\n    public List<Integer> getRow(int rowIndex) {\n        List<Integer> row = new ArrayList<>();\n        row.add(1);\n        for (int i = 1; i <= rowIndex; i++) {\n            // update from right to left to avoid overwriting\n            for (int j = row.size() - 1; j >= 1; j--) {\n                row.set(j, row.get(j) + row.get(j - 1));\n            }\n            row.add(1);\n        }\n        return row;\n    }\n}",
           "testCases": [
-            {"input": "3", "output": "[1,3,3,1]"},
-            {"input": "0", "output": "[1]"},
-            {"input": "4", "output": "[1,4,6,4,1]"}
+            {
+              "input": "3",
+              "output": "[1,3,3,1]"
+            },
+            {
+              "input": "0",
+              "output": "[1]"
+            },
+            {
+              "input": "4",
+              "output": "[1,4,6,4,1]"
+            }
           ],
           "constraints": "0 <= rowIndex <= 33",
           "editorial": "Build one row at a time, updating in-place from right to left to avoid clobbering values needed for the next computation. Time O(n²), space O(n) — only one row stored."
@@ -192,10 +249,22 @@
           "starterCode": "public class Solution {\n    public int maxProduct(int[] nums) {\n        // TODO\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int maxProduct(int[] nums) {\n        int maxProd = nums[0], minProd = nums[0], result = nums[0];\n        for (int i = 1; i < nums.length; i++) {\n            int n = nums[i];\n            int tempMax = Math.max(n, Math.max(maxProd * n, minProd * n));\n            int tempMin = Math.min(n, Math.min(maxProd * n, minProd * n));\n            maxProd = tempMax;\n            minProd = tempMin;\n            result = Math.max(result, maxProd);\n        }\n        return result;\n    }\n}",
           "testCases": [
-            {"input": "[2,3,-2,4]", "output": "6"},
-            {"input": "[-2,0,-1]", "output": "0"},
-            {"input": "[-2,3,-4]", "output": "24"},
-            {"input": "[-2]", "output": "-2"}
+            {
+              "input": "[2,3,-2,4]",
+              "output": "6"
+            },
+            {
+              "input": "[-2,0,-1]",
+              "output": "0"
+            },
+            {
+              "input": "[-2,3,-4]",
+              "output": "24"
+            },
+            {
+              "input": "[-2]",
+              "output": "-2"
+            }
           ],
           "constraints": "1 <= nums.length <= 2*10^4. -10 <= nums[i] <= 10.",
           "editorial": "Track both max and min products ending at each position. Two negatives can flip min to max. tempMax/tempMin computed from all three candidates before assignment. O(n) time, O(1) space."
@@ -212,9 +281,18 @@
           "starterCode": "public class Solution {\n    public void merge(int[] nums1, int m, int[] nums2, int n) {\n        // TODO: merge nums2 into nums1 in-place\n    }\n}",
           "solutionCode": "public class Solution {\n    public void merge(int[] nums1, int m, int[] nums2, int n) {\n        int i = m - 1, j = n - 1, k = m + n - 1;\n        while (i >= 0 && j >= 0) {\n            if (nums1[i] > nums2[j]) nums1[k--] = nums1[i--];\n            else                     nums1[k--] = nums2[j--];\n        }\n        while (j >= 0) nums1[k--] = nums2[j--];  // remaining nums2\n    }\n}",
           "testCases": [
-            {"input": "nums1=[1,2,3,0,0,0] m=3, nums2=[2,5,6] n=3", "output": "[1,2,2,3,5,6]"},
-            {"input": "nums1=[1] m=1, nums2=[] n=0", "output": "[1]"},
-            {"input": "nums1=[0] m=0, nums2=[1] n=1", "output": "[1]"}
+            {
+              "input": "nums1=[1,2,3,0,0,0] m=3, nums2=[2,5,6] n=3",
+              "output": "[1,2,2,3,5,6]"
+            },
+            {
+              "input": "nums1=[1] m=1, nums2=[] n=0",
+              "output": "[1]"
+            },
+            {
+              "input": "nums1=[0] m=0, nums2=[1] n=1",
+              "output": "[1]"
+            }
           ],
           "constraints": "nums1.length == m+n. 0 <= m, n <= 200.",
           "editorial": "Fill from back to front avoids the extra array. Compare from the largest ends of both arrays. O(m+n) time, O(1) space. The second while loop handles the case where nums2 has remaining elements (nums1 remaining are already in place)."
@@ -231,9 +309,18 @@
           "starterCode": "import java.util.*;\npublic class Solution {\n    public int subarraySum(int[] nums, int k) {\n        // TODO\n        return 0;\n    }\n}",
           "solutionCode": "import java.util.*;\npublic class Solution {\n    public int subarraySum(int[] nums, int k) {\n        Map<Integer, Integer> prefixCount = new HashMap<>();\n        prefixCount.put(0, 1);  // empty subarray\n        int count = 0, sum = 0;\n        for (int n : nums) {\n            sum += n;\n            count += prefixCount.getOrDefault(sum - k, 0);\n            prefixCount.merge(sum, 1, Integer::sum);\n        }\n        return count;\n    }\n}",
           "testCases": [
-            {"input": "nums=[1,1,1], k=2", "output": "2"},
-            {"input": "nums=[1,2,3], k=3", "output": "2"},
-            {"input": "nums=[-1,-1,1], k=0", "output": "1"}
+            {
+              "input": "nums=[1,1,1], k=2",
+              "output": "2"
+            },
+            {
+              "input": "nums=[1,2,3], k=3",
+              "output": "2"
+            },
+            {
+              "input": "nums=[-1,-1,1], k=0",
+              "output": "1"
+            }
           ],
           "constraints": "1 <= nums.length <= 2*10^4. -1000 <= nums[i] <= 1000. -10^7 <= k <= 10^7.",
           "editorial": "Prefix sum + HashMap: for each ending index j, count how many prefix sums equal currentSum - k (since if prefixSum[i] = currentSum - k, then arr[i+1..j] = k). Initialize map with {0:1} to handle subarrays starting at index 0. O(n) time and space."
@@ -250,10 +337,22 @@
           "starterCode": "public class Solution {\n    public int findDuplicate(int[] nums) {\n        // TODO: O(1) space, O(n) time\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int findDuplicate(int[] nums) {\n        int slow = nums[0], fast = nums[0];\n        // Phase 1: find meeting point\n        do {\n            slow = nums[slow];\n            fast = nums[nums[fast]];\n        } while (slow != fast);\n        // Phase 2: find cycle entry (duplicate)\n        slow = nums[0];\n        while (slow != fast) {\n            slow = nums[slow];\n            fast = nums[fast];\n        }\n        return slow;\n    }\n}",
           "testCases": [
-            {"input": "[1,3,4,2,2]", "output": "2"},
-            {"input": "[3,1,3,4,2]", "output": "3"},
-            {"input": "[1,1]", "output": "1"},
-            {"input": "[2,2,2,2,2]", "output": "2"}
+            {
+              "input": "[1,3,4,2,2]",
+              "output": "2"
+            },
+            {
+              "input": "[3,1,3,4,2]",
+              "output": "3"
+            },
+            {
+              "input": "[1,1]",
+              "output": "1"
+            },
+            {
+              "input": "[2,2,2,2,2]",
+              "output": "2"
+            }
           ],
           "constraints": "n+1 integers, each in [1,n]. Exactly one duplicate. Cannot modify the array.",
           "editorial": "Floyd's cycle detection applied to arrays: index as node, nums[i] as next pointer. The duplicate causes two nodes to point to the same index — creating a cycle. Phase 2 finds cycle entry in O(n) time, O(1) space. This is a classic interview trick question."
@@ -270,9 +369,18 @@
           "starterCode": "public class Solution {\n    public int maxArea(int[] height) {\n        // TODO\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int maxArea(int[] height) {\n        int left = 0, right = height.length - 1;\n        int maxWater = 0;\n        while (left < right) {\n            int water = Math.min(height[left], height[right]) * (right - left);\n            maxWater = Math.max(maxWater, water);\n            if (height[left] <= height[right]) left++;\n            else                               right--;\n        }\n        return maxWater;\n    }\n}",
           "testCases": [
-            {"input": "[1,8,6,2,5,4,8,3,7]", "output": "49"},
-            {"input": "[1,1]", "output": "1"},
-            {"input": "[4,3,2,1,4]", "output": "16"}
+            {
+              "input": "[1,8,6,2,5,4,8,3,7]",
+              "output": "49"
+            },
+            {
+              "input": "[1,1]",
+              "output": "1"
+            },
+            {
+              "input": "[4,3,2,1,4]",
+              "output": "16"
+            }
           ],
           "constraints": "n >= 2. 0 <= height[i] <= 10^4.",
           "editorial": "Two pointers converging. Key insight: moving the taller side can never improve the result (width decreases, height bounded by shorter). Moving the shorter side might find a taller line. O(n) time, O(1) space."
@@ -289,9 +397,18 @@
           "starterCode": "public class Solution {\n    public int trap(int[] height) {\n        // TODO\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int trap(int[] height) {\n        int left = 0, right = height.length - 1;\n        int maxLeft = 0, maxRight = 0, water = 0;\n        while (left < right) {\n            if (height[left] <= height[right]) {\n                if (height[left] >= maxLeft) maxLeft = height[left];\n                else water += maxLeft - height[left];\n                left++;\n            } else {\n                if (height[right] >= maxRight) maxRight = height[right];\n                else water += maxRight - height[right];\n                right--;\n            }\n        }\n        return water;\n    }\n}",
           "testCases": [
-            {"input": "[0,1,0,2,1,0,1,3,2,1,2,1]", "output": "6"},
-            {"input": "[4,2,0,3,2,5]", "output": "9"},
-            {"input": "[3,0,3]", "output": "3"}
+            {
+              "input": "[0,1,0,2,1,0,1,3,2,1,2,1]",
+              "output": "6"
+            },
+            {
+              "input": "[4,2,0,3,2,5]",
+              "output": "9"
+            },
+            {
+              "input": "[3,0,3]",
+              "output": "3"
+            }
           ],
           "constraints": "n >= 1. 0 <= height[i] <= 10^4.",
           "editorial": "Two-pointer O(n) O(1) solution: whichever side has the smaller max height determines the water for that side. If maxLeft <= maxRight: the right boundary is already guaranteed, so process left side. Water = maxLeft - height[left] when height[left] < maxLeft."
@@ -308,10 +425,22 @@
           "starterCode": "import java.util.*;\npublic class Solution {\n    public int largestRectangleArea(int[] heights) {\n        // TODO\n        return 0;\n    }\n}",
           "solutionCode": "import java.util.*;\npublic class Solution {\n    public int largestRectangleArea(int[] heights) {\n        Deque<Integer> stack = new ArrayDeque<>();\n        int maxArea = 0;\n        int n = heights.length;\n        for (int i = 0; i <= n; i++) {\n            int h = (i == n) ? 0 : heights[i];\n            while (!stack.isEmpty() && heights[stack.peek()] > h) {\n                int height = heights[stack.pop()];\n                int width = stack.isEmpty() ? i : i - stack.peek() - 1;\n                maxArea = Math.max(maxArea, height * width);\n            }\n            stack.push(i);\n        }\n        return maxArea;\n    }\n}",
           "testCases": [
-            {"input": "[2,1,5,6,2,3]", "output": "10"},
-            {"input": "[2,4]", "output": "4"},
-            {"input": "[1]", "output": "1"},
-            {"input": "[6,7,5,2,4,5,9,3]", "output": "16"}
+            {
+              "input": "[2,1,5,6,2,3]",
+              "output": "10"
+            },
+            {
+              "input": "[2,4]",
+              "output": "4"
+            },
+            {
+              "input": "[1]",
+              "output": "1"
+            },
+            {
+              "input": "[6,7,5,2,4,5,9,3]",
+              "output": "16"
+            }
           ],
           "constraints": "1 <= heights.length <= 10^5. 0 <= heights[i] <= 10^4.",
           "editorial": "Monotonic increasing stack stores indices. When a shorter bar is encountered, pop taller bars and compute their maximum rectangle. Width = distance to previous shorter bar (stack top) or left boundary. Append sentinel 0 at end to flush remaining stack. O(n) time — each bar is pushed/popped once."
@@ -328,9 +457,18 @@
           "starterCode": "public class Solution {\n    public double findMedianSortedArrays(int[] nums1, int[] nums2) {\n        // TODO: O(log(m+n))\n        return 0.0;\n    }\n}",
           "solutionCode": "public class Solution {\n    public double findMedianSortedArrays(int[] nums1, int[] nums2) {\n        if (nums1.length > nums2.length) return findMedianSortedArrays(nums2, nums1);\n        int m = nums1.length, n = nums2.length;\n        int lo = 0, hi = m;\n        while (lo <= hi) {\n            int p1 = (lo + hi) / 2;\n            int p2 = (m + n + 1) / 2 - p1;\n            int maxL1 = (p1 == 0) ? Integer.MIN_VALUE : nums1[p1-1];\n            int minR1 = (p1 == m) ? Integer.MAX_VALUE : nums1[p1];\n            int maxL2 = (p2 == 0) ? Integer.MIN_VALUE : nums2[p2-1];\n            int minR2 = (p2 == n) ? Integer.MAX_VALUE : nums2[p2];\n            if (maxL1 <= minR2 && maxL2 <= minR1) {\n                if ((m + n) % 2 == 1) return Math.max(maxL1, maxL2);\n                return (Math.max(maxL1, maxL2) + Math.min(minR1, minR2)) / 2.0;\n            } else if (maxL1 > minR2) hi = p1 - 1;\n            else lo = p1 + 1;\n        }\n        return 0.0;\n    }\n}",
           "testCases": [
-            {"input": "nums1=[1,3], nums2=[2]", "output": "2.0"},
-            {"input": "nums1=[1,2], nums2=[3,4]", "output": "2.5"},
-            {"input": "nums1=[], nums2=[1]", "output": "1.0"}
+            {
+              "input": "nums1=[1,3], nums2=[2]",
+              "output": "2.0"
+            },
+            {
+              "input": "nums1=[1,2], nums2=[3,4]",
+              "output": "2.5"
+            },
+            {
+              "input": "nums1=[], nums2=[1]",
+              "output": "1.0"
+            }
           ],
           "constraints": "0 <= m, n <= 1000. -10^6 <= nums[i] <= 10^6.",
           "editorial": "Binary search on partition. Ensure smaller array is nums1. p1 is partition of nums1 (number of elements in left half from nums1). p2 = (m+n+1)/2 - p1. The +1 handles odd total length. Check partition validity with 4 boundary values (use INT_MIN/MAX at edges). O(log min(m,n)) time."
@@ -347,10 +485,22 @@
           "starterCode": "public class Solution {\n    public void sortColors(int[] nums) {\n        // TODO: in-place, O(n), one pass\n    }\n}",
           "solutionCode": "public class Solution {\n    public void sortColors(int[] nums) {\n        int low = 0, mid = 0, high = nums.length - 1;\n        while (mid <= high) {\n            switch (nums[mid]) {\n                case 0 -> { swap(nums, low++, mid++); }\n                case 1 -> { mid++; }\n                case 2 -> { swap(nums, mid, high--); }\n            }\n        }\n    }\n\n    private void swap(int[] arr, int i, int j) {\n        int tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;\n    }\n}",
           "testCases": [
-            {"input": "[2,0,2,1,1,0]", "output": "[0,0,1,1,2,2]"},
-            {"input": "[2,0,1]", "output": "[0,1,2]"},
-            {"input": "[0]", "output": "[0]"},
-            {"input": "[1,2,0]", "output": "[0,1,2]"}
+            {
+              "input": "[2,0,2,1,1,0]",
+              "output": "[0,0,1,1,2,2]"
+            },
+            {
+              "input": "[2,0,1]",
+              "output": "[0,1,2]"
+            },
+            {
+              "input": "[0]",
+              "output": "[0]"
+            },
+            {
+              "input": "[1,2,0]",
+              "output": "[0,1,2]"
+            }
           ],
           "constraints": "n == nums.length. 1 <= n <= 300. nums[i] ∈ {0, 1, 2}.",
           "editorial": "Dijkstra's Dutch National Flag algorithm. Three-pointer partition in one pass. When we swap mid with low (for 0), we know low pointed to a 1 (already processed), so mid advances. When we swap mid with high (for 2), we haven't processed the swapped-in element yet, so mid doesn't advance. O(n) time, O(1) space."
@@ -367,9 +517,18 @@
           "starterCode": "public class Solution {\n    public int minSubArrayLen(int target, int[] nums) {\n        // TODO\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int minSubArrayLen(int target, int[] nums) {\n        int left = 0, sum = 0, minLen = Integer.MAX_VALUE;\n        for (int right = 0; right < nums.length; right++) {\n            sum += nums[right];\n            while (sum >= target) {\n                minLen = Math.min(minLen, right - left + 1);\n                sum -= nums[left++];\n            }\n        }\n        return minLen == Integer.MAX_VALUE ? 0 : minLen;\n    }\n}",
           "testCases": [
-            {"input": "target=7, nums=[2,3,1,2,4,3]", "output": "2"},
-            {"input": "target=4, nums=[1,4,4]", "output": "1"},
-            {"input": "target=11, nums=[1,1,1,1,1]", "output": "0"}
+            {
+              "input": "target=7, nums=[2,3,1,2,4,3]",
+              "output": "2"
+            },
+            {
+              "input": "target=4, nums=[1,4,4]",
+              "output": "1"
+            },
+            {
+              "input": "target=11, nums=[1,1,1,1,1]",
+              "output": "0"
+            }
           ],
           "constraints": "1 <= target <= 10^9. 1 <= nums.length <= 10^5. 1 <= nums[i] <= 10^5.",
           "editorial": "Variable sliding window: right pointer expands, left pointer shrinks when constraint is met. The while loop shrinks as much as possible to find minimum length. Each element is added/removed at most once → O(n) total."
@@ -386,10 +545,22 @@
           "starterCode": "public class Solution {\n    public void nextPermutation(int[] nums) {\n        // TODO: in-place O(1) space\n    }\n}",
           "solutionCode": "public class Solution {\n    public void nextPermutation(int[] nums) {\n        int n = nums.length, i = n - 2;\n        // Step 1: find rightmost ascent\n        while (i >= 0 && nums[i] >= nums[i + 1]) i--;\n        if (i >= 0) {\n            // Step 2: find smallest element > nums[i] from the right\n            int j = n - 1;\n            while (nums[j] <= nums[i]) j--;\n            swap(nums, i, j);\n        }\n        // Step 3: reverse suffix\n        reverse(nums, i + 1, n - 1);\n    }\n\n    private void swap(int[] a, int i, int j) {\n        int t = a[i]; a[i] = a[j]; a[j] = t;\n    }\n\n    private void reverse(int[] a, int l, int r) {\n        while (l < r) swap(a, l++, r--);\n    }\n}",
           "testCases": [
-            {"input": "[1,2,3]", "output": "[1,3,2]"},
-            {"input": "[3,2,1]", "output": "[1,2,3]"},
-            {"input": "[1,1,5]", "output": "[1,5,1]"},
-            {"input": "[1,3,2]", "output": "[2,1,3]"}
+            {
+              "input": "[1,2,3]",
+              "output": "[1,3,2]"
+            },
+            {
+              "input": "[3,2,1]",
+              "output": "[1,2,3]"
+            },
+            {
+              "input": "[1,1,5]",
+              "output": "[1,5,1]"
+            },
+            {
+              "input": "[1,3,2]",
+              "output": "[2,1,3]"
+            }
           ],
           "constraints": "1 <= nums.length <= 100. 0 <= nums[i] <= 100.",
           "editorial": "Three-step algorithm: (1) find pivot i where ascending order breaks from the right, (2) swap pivot with next larger element, (3) reverse the suffix. If array is fully descending (i = -1), just reverse the whole array. O(n) time, O(1) space."
@@ -406,10 +577,22 @@
           "starterCode": "public class Solution {\n    public int lengthOfLIS(int[] nums) {\n        // TODO: O(n log n)\n        return 0;\n    }\n}",
           "solutionCode": "import java.util.*;\npublic class Solution {\n    public int lengthOfLIS(int[] nums) {\n        List<Integer> tails = new ArrayList<>();\n        for (int num : nums) {\n            int lo = 0, hi = tails.size();\n            while (lo < hi) {\n                int mid = (lo + hi) / 2;\n                if (tails.get(mid) < num) lo = mid + 1;\n                else hi = mid;\n            }\n            if (lo == tails.size()) tails.add(num);\n            else tails.set(lo, num);\n        }\n        return tails.size();\n    }\n}",
           "testCases": [
-            {"input": "[10,9,2,5,3,7,101,18]", "output": "4"},
-            {"input": "[0,1,0,3,2,3]", "output": "4"},
-            {"input": "[7,7,7,7,7]", "output": "1"},
-            {"input": "[1,3,6,7,9,4,10,5,6]", "output": "6"}
+            {
+              "input": "[10,9,2,5,3,7,101,18]",
+              "output": "4"
+            },
+            {
+              "input": "[0,1,0,3,2,3]",
+              "output": "4"
+            },
+            {
+              "input": "[7,7,7,7,7]",
+              "output": "1"
+            },
+            {
+              "input": "[1,3,6,7,9,4,10,5,6]",
+              "output": "6"
+            }
           ],
           "constraints": "1 <= nums.length <= 2500. -10^4 <= nums[i] <= 10^4.",
           "editorial": "Patience sorting: 'tails' array always stays sorted. Binary search finds the correct position for each element. tails[i] is the smallest possible tail for an IS of length i+1. Size of tails = LIS length. O(n log n) due to binary search per element. Note: tails doesn't store an actual LIS — only its length."
@@ -426,10 +609,22 @@
           "starterCode": "public class Solution {\n    public int maximumGap(int[] nums) {\n        // TODO: O(n) time\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int maximumGap(int[] nums) {\n        int n = nums.length;\n        if (n < 2) return 0;\n        int min = nums[0], max = nums[0];\n        for (int x : nums) { min = Math.min(min, x); max = Math.max(max, x); }\n        if (min == max) return 0;\n        int bucketSize = Math.max(1, (max - min) / (n - 1));\n        int bucketCount = (max - min) / bucketSize + 1;\n        int[] bucketMin = new int[bucketCount];\n        int[] bucketMax = new int[bucketCount];\n        java.util.Arrays.fill(bucketMin, Integer.MAX_VALUE);\n        java.util.Arrays.fill(bucketMax, Integer.MIN_VALUE);\n        for (int x : nums) {\n            int idx = (x - min) / bucketSize;\n            bucketMin[idx] = Math.min(bucketMin[idx], x);\n            bucketMax[idx] = Math.max(bucketMax[idx], x);\n        }\n        int maxGap = 0, prevMax = bucketMax[0];\n        for (int i = 1; i < bucketCount; i++) {\n            if (bucketMin[i] == Integer.MAX_VALUE) continue;  // empty bucket\n            maxGap = Math.max(maxGap, bucketMin[i] - prevMax);\n            prevMax = bucketMax[i];\n        }\n        return maxGap;\n    }\n}",
           "testCases": [
-            {"input": "[3,6,9,1]", "output": "3"},
-            {"input": "[10]", "output": "0"},
-            {"input": "[1,10000000]", "output": "9999999"},
-            {"input": "[1,3,5,9,23]", "output": "14"}
+            {
+              "input": "[3,6,9,1]",
+              "output": "3"
+            },
+            {
+              "input": "[10]",
+              "output": "0"
+            },
+            {
+              "input": "[1,10000000]",
+              "output": "9999999"
+            },
+            {
+              "input": "[1,3,5,9,23]",
+              "output": "14"
+            }
           ],
           "constraints": "1 <= nums.length <= 10^5. 0 <= nums[i] <= 10^9.",
           "editorial": "Bucket sort via pigeonhole: with n elements and range R, max gap >= R/(n-1). Buckets of this size ensure the max gap crosses bucket boundaries. Store only bucket min/max — elements within same bucket can't create the max gap. O(n) time and space."
@@ -446,14 +641,25 @@
           "starterCode": "public class Solution {\n    public int countRangeSum(int[] nums, int lower, int upper) {\n        // TODO: O(n log n)\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    private int lower, upper;\n    private long[] temp;\n\n    public int countRangeSum(int[] nums, int lower, int upper) {\n        this.lower = lower; this.upper = upper;\n        int n = nums.length;\n        long[] prefix = new long[n + 1];\n        for (int i = 0; i < n; i++) prefix[i + 1] = prefix[i] + nums[i];\n        temp = new long[n + 1];\n        return mergeCount(prefix, 0, n + 1);\n    }\n\n    private int mergeCount(long[] arr, int lo, int hi) {\n        if (hi - lo <= 1) return 0;\n        int mid = (lo + hi) / 2;\n        int count = mergeCount(arr, lo, mid) + mergeCount(arr, mid, hi);\n        int j = mid, k = mid;\n        for (int i = lo; i < mid; i++) {\n            while (j < hi && arr[j] - arr[i] < lower) j++;\n            while (k < hi && arr[k] - arr[i] <= upper) k++;\n            count += k - j;\n        }\n        // merge step\n        int p = lo, q = mid, r = lo;\n        while (p < mid && q < hi)\n            temp[r++] = arr[p] <= arr[q] ? arr[p++] : arr[q++];\n        while (p < mid) temp[r++] = arr[p++];\n        while (q < hi)  temp[r++] = arr[q++];\n        System.arraycopy(temp, lo, arr, lo, hi - lo);\n        return count;\n    }\n}",
           "testCases": [
-            {"input": "nums=[-2,5,-1], lower=-2, upper=2", "output": "3"},
-            {"input": "nums=[0], lower=0, upper=0", "output": "1"},
-            {"input": "nums=[0,-3], lower=-4, upper=-1", "output": "2"}
+            {
+              "input": "nums=[-2,5,-1], lower=-2, upper=2",
+              "output": "3"
+            },
+            {
+              "input": "nums=[0], lower=0, upper=0",
+              "output": "1"
+            },
+            {
+              "input": "nums=[0,-3], lower=-4, upper=-1",
+              "output": "2"
+            }
           ],
           "constraints": "1 <= nums.length <= 10^5. -2^31 <= nums[i] <= 2^31-1. -10^5 <= lower <= upper <= 10^5.",
           "editorial": "Merge sort on prefix sums counts valid pairs during the merge step. After recursive sorting, for each prefix[i] in left half, find the range in right half where lower <= prefix[j] - prefix[i] <= upper using two monotonically advancing pointers. O(n log n) time. Note: use long for prefix to avoid overflow."
         }
-      ]
+      ],
+      "subCategory": "Language Basics",
+      "displayOrder": 13
     }
   ]
 }

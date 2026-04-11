@@ -518,7 +518,9 @@
           "constraints": "Must support all 7 opcodes. Stack must be LIFO. Variables stored in HashMap. Must produce correct results for both test cases.",
           "editorial": "Stack-based VM: PUSH puts value on deque, ADD pops two and pushes sum, STORE pops into variable map, LOAD pushes from map, PRINT pops and prints. This is exactly how the JVM operand stack works. Deque<Integer> as the stack with push/pop on same end gives LIFO semantics."
         }
-      ]
+      ],
+      "subCategory": "JVM Internals (Interview Critical)",
+      "displayOrder": 40
     }
   ]
 }

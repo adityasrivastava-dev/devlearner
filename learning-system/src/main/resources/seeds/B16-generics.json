@@ -617,7 +617,9 @@
           "constraints": "O(n) operations are fine. All operations return new map. Original never modified.",
           "editorial": "Hash map with array of buckets (List<Entry<K,V>>[]). put(K,V): compute bucket = key.hashCode() % buckets.length, filter out existing key from that bucket, add new entry, return new PersistentMap with updated bucket. get(K): find entry in bucket. remove(K): filter entry out, return new map. All operations return new instances."
         }
-      ]
+      ],
+      "subCategory": "Core Concepts",
+      "displayOrder": 31
     }
   ]
 }

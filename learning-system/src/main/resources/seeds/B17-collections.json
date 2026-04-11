@@ -78,8 +78,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q1 {\n    public static Map<String, Integer> frequency(String[] words) {\n        // TODO\n        return new HashMap<>();\n    }\n    public static String mostFrequent(String[] words) {\n        // TODO\n        return \"\";\n    }\n    public static void main(String[] args) {\n        String[] w = {\"cat\",\"dog\",\"cat\",\"bird\",\"dog\",\"cat\"};\n        System.out.println(frequency(w));\n        System.out.println(mostFrequent(w)); // cat\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q1 {\n    public static Map<String, Integer> frequency(String[] words) {\n        Map<String, Integer> map = new HashMap<>();\n        for (String w : words) map.merge(w, 1, Integer::sum);\n        return map;\n    }\n    public static String mostFrequent(String[] words) {\n        Map<String, Integer> map = frequency(words);\n        return Collections.max(map.entrySet(), Map.Entry.comparingByValue()).getKey();\n    }\n    public static void main(String[] args) {\n        String[] w = {\"cat\",\"dog\",\"cat\",\"bird\",\"dog\",\"cat\"};\n        System.out.println(frequency(w)); // {cat=3, dog=2, bird=1}\n        System.out.println(mostFrequent(w)); // cat\n    }\n}",
           "testCases": [
-            {"input": "[cat,dog,cat,bird,dog,cat]", "output": "cat"},
-            {"input": "[a,b,a,c,b,a,b,b]", "output": "b"}
+            {
+              "input": "[cat,dog,cat,bird,dog,cat]",
+              "output": "cat"
+            },
+            {
+              "input": "[a,b,a,c,b,a,b,b]",
+              "output": "b"
+            }
           ],
           "constraints": "At least one word. Unique most frequent word.",
           "editorial": "merge(k, 1, Integer::sum) is the most concise frequency counter. Collections.max with comparingByValue() finds the max-value entry without explicit iteration."
@@ -96,8 +102,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q2 {\n    public static List<Integer> removeDuplicates(List<Integer> list) {\n        // TODO\n        return new ArrayList<>();\n    }\n    public static void main(String[] args) {\n        System.out.println(removeDuplicates(List.of(3,1,4,1,5,9,2,6,5,3)));\n        // [3, 1, 4, 5, 9, 2, 6]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q2 {\n    public static List<Integer> removeDuplicates(List<Integer> list) {\n        return new ArrayList<>(new LinkedHashSet<>(list));\n    }\n    public static void main(String[] args) {\n        System.out.println(removeDuplicates(List.of(3,1,4,1,5,9,2,6,5,3)));\n        // [3, 1, 4, 5, 9, 2, 6]\n    }\n}",
           "testCases": [
-            {"input": "[3,1,4,1,5,9,2,6,5,3]", "output": "[3, 1, 4, 5, 9, 2, 6]"},
-            {"input": "[1,1,1]", "output": "[1]"}
+            {
+              "input": "[3,1,4,1,5,9,2,6,5,3]",
+              "output": "[3, 1, 4, 5, 9, 2, 6]"
+            },
+            {
+              "input": "[1,1,1]",
+              "output": "[1]"
+            }
           ],
           "constraints": "Must preserve original order of first occurrence.",
           "editorial": "LinkedHashSet = HashSet + doubly-linked insertion order. Wrapping the list in it deduplicates in O(n) while preserving first-occurrence order."
@@ -114,8 +126,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q3 {\n    public static List<List<String>> groupAnagrams(String[] strs) {\n        // TODO\n        return new ArrayList<>();\n    }\n    public static void main(String[] args) {\n        System.out.println(groupAnagrams(new String[]{\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"}));\n        // [[eat, tea, ate], [tan, nat], [bat]]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q3 {\n    public static List<List<String>> groupAnagrams(String[] strs) {\n        Map<String, List<String>> map = new HashMap<>();\n        for (String s : strs) {\n            char[] chars = s.toCharArray();\n            Arrays.sort(chars);\n            String key = new String(chars);\n            map.computeIfAbsent(key, k -> new ArrayList<>()).add(s);\n        }\n        return new ArrayList<>(map.values());\n    }\n    public static void main(String[] args) {\n        var groups = groupAnagrams(new String[]{\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"});\n        groups.forEach(Collections::sort);\n        groups.sort(Comparator.comparing(g -> g.get(0)));\n        System.out.println(groups); // [[ate, eat, tea], [bat], [nat, tan]]\n    }\n}",
           "testCases": [
-            {"input": "[eat,tea,tan,ate,nat,bat]", "output": "3 groups of sizes 3,1,2"},
-            {"input": "[\"\"]", "output": "[[]]"}
+            {
+              "input": "[eat,tea,tan,ate,nat,bat]",
+              "output": "3 groups of sizes 3,1,2"
+            },
+            {
+              "input": "[\"\"]",
+              "output": "[[]]"
+            }
           ],
           "constraints": "All lowercase. 1 <= strs.length <= 10^4.",
           "editorial": "Sort each word's characters to get a canonical key. All anagrams share the same sorted key. computeIfAbsent elegantly initialises the list if missing. O(n * k log k) where k = max word length."
@@ -132,8 +150,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q4 {\n    public static List<Integer> findDuplicates(int[] nums) {\n        // TODO\n        return new ArrayList<>();\n    }\n    public static void main(String[] args) {\n        System.out.println(findDuplicates(new int[]{4,3,2,7,8,2,3,1}));\n        // [2, 3]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q4 {\n    public static List<Integer> findDuplicates(int[] nums) {\n        Set<Integer> seen = new HashSet<>();\n        Set<Integer> dupes = new TreeSet<>(); // TreeSet for sorted output\n        for (int n : nums) {\n            if (!seen.add(n)) dupes.add(n);\n        }\n        return new ArrayList<>(dupes);\n    }\n    public static void main(String[] args) {\n        System.out.println(findDuplicates(new int[]{4,3,2,7,8,2,3,1})); // [2, 3]\n        System.out.println(findDuplicates(new int[]{1,1,2}));           // [1]\n    }\n}",
           "testCases": [
-            {"input": "[4,3,2,7,8,2,3,1]", "output": "[2, 3]"},
-            {"input": "[1,1,2]", "output": "[1]"}
+            {
+              "input": "[4,3,2,7,8,2,3,1]",
+              "output": "[2, 3]"
+            },
+            {
+              "input": "[1,1,2]",
+              "output": "[1]"
+            }
           ],
           "constraints": "1 <= nums[i] <= nums.length.",
           "editorial": "seen.add(n) returns false if the element was already present. A TreeSet for duplicates gives us sorted output for free. O(n) time, O(n) space."
@@ -150,7 +174,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q5 {\n    record Task(String name, int priority) {}\n\n    public static void processTasks(List<Task> tasks) {\n        PriorityQueue<Task> pq = new PriorityQueue<>(/* TODO: comparator */);\n        pq.addAll(tasks);\n        while (!pq.isEmpty()) {\n            Task t = pq.poll();\n            System.out.println(\"Processing: \" + t.name() + \" [\" + t.priority() + \"]\");\n        }\n    }\n    public static void main(String[] args) {\n        processTasks(List.of(new Task(\"Low\",1), new Task(\"High\",10), new Task(\"Med\",5)));\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q5 {\n    record Task(String name, int priority) {}\n\n    public static void processTasks(List<Task> tasks) {\n        PriorityQueue<Task> pq = new PriorityQueue<>(\n            Comparator.comparingInt(Task::priority).reversed()\n        );\n        pq.addAll(tasks);\n        while (!pq.isEmpty()) {\n            Task t = pq.poll();\n            System.out.println(\"Processing: \" + t.name() + \" [\" + t.priority() + \"]\");\n        }\n    }\n    public static void main(String[] args) {\n        processTasks(List.of(new Task(\"Low\",1), new Task(\"High\",10), new Task(\"Med\",5)));\n        // High [10], Med [5], Low [1]\n    }\n}",
           "testCases": [
-            {"input": "Low(1),High(10),Med(5)", "output": "Processing: High [10]\nProcessing: Med [5]\nProcessing: Low [1]"}
+            {
+              "input": "Low(1),High(10),Med(5)",
+              "output": "Processing: High [10]\nProcessing: Med [5]\nProcessing: Low [1]"
+            }
           ],
           "constraints": "Unique priorities.",
           "editorial": "PriorityQueue default is min-heap. reversed() or negative comparator creates a max-heap by priority. poll() always removes the highest-priority element in O(log n)."
@@ -167,8 +194,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q6 {\n    public static int[] twoSum(int[] nums, int target) {\n        // TODO: O(n) solution with HashMap\n        return new int[]{};\n    }\n    public static void main(String[] args) {\n        System.out.println(Arrays.toString(twoSum(new int[]{2,7,11,15}, 9)));  // [0, 1]\n        System.out.println(Arrays.toString(twoSum(new int[]{3,2,4}, 6)));      // [1, 2]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q6 {\n    public static int[] twoSum(int[] nums, int target) {\n        Map<Integer, Integer> seen = new HashMap<>(); // value -> index\n        for (int i = 0; i < nums.length; i++) {\n            int complement = target - nums[i];\n            if (seen.containsKey(complement))\n                return new int[]{seen.get(complement), i};\n            seen.put(nums[i], i);\n        }\n        throw new IllegalArgumentException(\"No solution\");\n    }\n    public static void main(String[] args) {\n        System.out.println(Arrays.toString(twoSum(new int[]{2,7,11,15}, 9))); // [0, 1]\n        System.out.println(Arrays.toString(twoSum(new int[]{3,2,4}, 6)));     // [1, 2]\n    }\n}",
           "testCases": [
-            {"input": "[2,7,11,15] target=9", "output": "[0, 1]"},
-            {"input": "[3,2,4] target=6",     "output": "[1, 2]"}
+            {
+              "input": "[2,7,11,15] target=9",
+              "output": "[0, 1]"
+            },
+            {
+              "input": "[3,2,4] target=6",
+              "output": "[1, 2]"
+            }
           ],
           "constraints": "Exactly one solution. 2 <= nums.length <= 10^4.",
           "editorial": "HashMap stores previously seen values. For each element, check if its complement exists in O(1). Total: O(n). Versus O(n²) brute force nested loops. Classic HashMap complement pattern."
@@ -185,8 +218,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q7 {\n    public static int[] topKFrequent(int[] nums, int k) {\n        // TODO\n        return new int[]{};\n    }\n    public static void main(String[] args) {\n        System.out.println(Arrays.toString(topKFrequent(new int[]{1,1,1,2,2,3}, 2))); // [1,2]\n        System.out.println(Arrays.toString(topKFrequent(new int[]{1}, 1)));            // [1]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q7 {\n    public static int[] topKFrequent(int[] nums, int k) {\n        // Step 1: frequency map\n        Map<Integer, Integer> freq = new HashMap<>();\n        for (int n : nums) freq.merge(n, 1, Integer::sum);\n\n        // Step 2: min-heap ordered by frequency, size <= k\n        PriorityQueue<Integer> heap = new PriorityQueue<>(\n            Comparator.comparingInt(freq::get)\n        );\n        for (int num : freq.keySet()) {\n            heap.offer(num);\n            if (heap.size() > k) heap.poll(); // evict least frequent\n        }\n\n        // Step 3: extract result\n        int[] result = new int[k];\n        for (int i = k - 1; i >= 0; i--) result[i] = heap.poll();\n        return result;\n    }\n    public static void main(String[] args) {\n        System.out.println(Arrays.toString(topKFrequent(new int[]{1,1,1,2,2,3}, 2))); // [1, 2]\n    }\n}",
           "testCases": [
-            {"input": "[1,1,1,2,2,3] k=2", "output": "[1, 2]"},
-            {"input": "[1] k=1", "output": "[1]"}
+            {
+              "input": "[1,1,1,2,2,3] k=2",
+              "output": "[1, 2]"
+            },
+            {
+              "input": "[1] k=1",
+              "output": "[1]"
+            }
           ],
           "constraints": "1 <= k <= unique elements. Answer is unique.",
           "editorial": "Min-heap of size k: always keep the k highest-frequency elements. When adding a new element, if heap exceeds k, remove the minimum-frequency element. O(n log k) time — better than O(n log n) full sort when k << n."
@@ -203,8 +242,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q8 {\n    public static int[] maxSlidingWindow(int[] nums, int k) {\n        // TODO: O(n) with ArrayDeque\n        return new int[]{};\n    }\n    public static void main(String[] args) {\n        System.out.println(Arrays.toString(maxSlidingWindow(new int[]{1,3,-1,-3,5,3,6,7}, 3)));\n        // [3, 3, 5, 5, 6, 7]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q8 {\n    public static int[] maxSlidingWindow(int[] nums, int k) {\n        int n = nums.length;\n        int[] result = new int[n - k + 1];\n        Deque<Integer> deque = new ArrayDeque<>(); // stores indices\n\n        for (int i = 0; i < n; i++) {\n            // Remove out-of-window indices from front\n            if (!deque.isEmpty() && deque.peek() <= i - k) deque.poll();\n\n            // Remove from back any index with value <= nums[i]\n            while (!deque.isEmpty() && nums[deque.peekLast()] <= nums[i])\n                deque.pollLast();\n\n            deque.offer(i);\n\n            // Record result once window is full\n            if (i >= k - 1) result[i - k + 1] = nums[deque.peek()];\n        }\n        return result;\n    }\n    public static void main(String[] args) {\n        System.out.println(Arrays.toString(maxSlidingWindow(new int[]{1,3,-1,-3,5,3,6,7}, 3)));\n        // [3, 3, 5, 5, 6, 7]\n    }\n}",
           "testCases": [
-            {"input": "[1,3,-1,-3,5,3,6,7] k=3", "output": "[3, 3, 5, 5, 6, 7]"},
-            {"input": "[1] k=1", "output": "[1]"}
+            {
+              "input": "[1,3,-1,-3,5,3,6,7] k=3",
+              "output": "[3, 3, 5, 5, 6, 7]"
+            },
+            {
+              "input": "[1] k=1",
+              "output": "[1]"
+            }
           ],
           "constraints": "1 <= k <= nums.length <= 10^5.",
           "editorial": "Monotonic deque: maintain indices in decreasing order of their values. Front = current window max (O(1) peek). Each index is added and removed at most once — O(n) total. Removes obsolete indices from front (outside window) and smaller values from back (can never be max while current element is in window)."
@@ -221,7 +266,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q9 {\n    public static Map<String, Integer> wordFrequency(String paragraph) {\n        // TODO: return TreeMap of word frequencies\n        return new TreeMap<>();\n    }\n    public static void main(String[] args) {\n        System.out.println(wordFrequency(\"To be or not to be that is the question\"));\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q9 {\n    public static Map<String, Integer> wordFrequency(String paragraph) {\n        Map<String, Integer> map = new TreeMap<>();\n        for (String word : paragraph.toLowerCase().split(\"\\\\W+\")) {\n            if (!word.isEmpty()) map.merge(word, 1, Integer::sum);\n        }\n        return map;\n    }\n    public static void main(String[] args) {\n        System.out.println(wordFrequency(\"To be or not to be that is the question\"));\n        // {be=2, is=1, not=1, or=1, question=1, that=1, the=1, to=2}\n    }\n}",
           "testCases": [
-            {"input": "To be or not to be that is the question", "output": "{be=2, is=1, not=1, or=1, question=1, that=1, the=1, to=2}"}
+            {
+              "input": "To be or not to be that is the question",
+              "output": "{be=2, is=1, not=1, or=1, question=1, that=1, the=1, to=2}"
+            }
           ],
           "constraints": "Case-insensitive. Ignore punctuation.",
           "editorial": "TreeMap sorts keys by natural order (alphabetical for strings). merge() handles both first occurrence and increments. split(\"\\\\W+\") splits on any non-word character sequence."
@@ -238,7 +286,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q10 {\n    public static List<Integer> bfs(List<List<Integer>> graph, int start) {\n        // TODO\n        return new ArrayList<>();\n    }\n    public static void main(String[] args) {\n        List<List<Integer>> g = new ArrayList<>();\n        for (int i = 0; i < 5; i++) g.add(new ArrayList<>());\n        g.get(0).addAll(List.of(1, 2));\n        g.get(1).addAll(List.of(3, 4));\n        g.get(2).add(4);\n        System.out.println(bfs(g, 0)); // [0, 1, 2, 3, 4]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q10 {\n    public static List<Integer> bfs(List<List<Integer>> graph, int start) {\n        boolean[] visited = new boolean[graph.size()];\n        List<Integer> result = new ArrayList<>();\n        Deque<Integer> queue = new ArrayDeque<>();\n        queue.offer(start);\n        visited[start] = true;\n        while (!queue.isEmpty()) {\n            int node = queue.poll();\n            result.add(node);\n            for (int neighbor : graph.get(node)) {\n                if (!visited[neighbor]) {\n                    visited[neighbor] = true;\n                    queue.offer(neighbor);\n                }\n            }\n        }\n        return result;\n    }\n    public static void main(String[] args) {\n        List<List<Integer>> g = new ArrayList<>();\n        for (int i = 0; i < 5; i++) g.add(new ArrayList<>());\n        g.get(0).addAll(List.of(1, 2));\n        g.get(1).addAll(List.of(3, 4));\n        g.get(2).add(4);\n        System.out.println(bfs(g, 0)); // [0, 1, 2, 3, 4]\n    }\n}",
           "testCases": [
-            {"input": "5-node graph from 0", "output": "[0, 1, 2, 3, 4]"}
+            {
+              "input": "5-node graph from 0",
+              "output": "[0, 1, 2, 3, 4]"
+            }
           ],
           "constraints": "Connected graph. 1 <= nodes <= 10^4.",
           "editorial": "BFS uses a FIFO queue. Mark visited before offering (not after polling) to avoid adding the same node multiple times. ArrayDeque is faster than LinkedList for queue operations."
@@ -255,7 +306,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q11 {\n    record Employee(String name, String department) {}\n\n    public static Map<String, List<String>> groupByDepartment(List<Employee> employees) {\n        // TODO: return Map of dept -> sorted list of names\n        return new TreeMap<>();\n    }\n    public static void main(String[] args) {\n        List<Employee> emps = List.of(\n            new Employee(\"Alice\", \"Eng\"),\n            new Employee(\"Bob\", \"HR\"),\n            new Employee(\"Carol\", \"Eng\"),\n            new Employee(\"Dave\", \"HR\"),\n            new Employee(\"Eve\", \"Eng\")\n        );\n        groupByDepartment(emps).forEach((dept, names) ->\n            System.out.println(dept + \": \" + names));\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q11 {\n    record Employee(String name, String department) {}\n\n    public static Map<String, List<String>> groupByDepartment(List<Employee> employees) {\n        Map<String, List<String>> map = new TreeMap<>();\n        for (Employee e : employees)\n            map.computeIfAbsent(e.department(), k -> new ArrayList<>()).add(e.name());\n        map.values().forEach(Collections::sort);\n        return map;\n    }\n    public static void main(String[] args) {\n        List<Employee> emps = List.of(\n            new Employee(\"Alice\",\"Eng\"), new Employee(\"Bob\",\"HR\"),\n            new Employee(\"Carol\",\"Eng\"), new Employee(\"Dave\",\"HR\"),\n            new Employee(\"Eve\",\"Eng\")\n        );\n        groupByDepartment(emps).forEach((dept, names) ->\n            System.out.println(dept + \": \" + names));\n        // Eng: [Alice, Carol, Eve]\n        // HR: [Bob, Dave]\n    }\n}",
           "testCases": [
-            {"input": "5 employees 2 depts", "output": "Eng: [Alice, Carol, Eve]\nHR: [Bob, Dave]"}
+            {
+              "input": "5 employees 2 depts",
+              "output": "Eng: [Alice, Carol, Eve]\nHR: [Bob, Dave]"
+            }
           ],
           "constraints": "No constraints.",
           "editorial": "computeIfAbsent handles both the first employee in a department (creates list) and subsequent ones (uses existing). TreeMap sorts departments alphabetically. Collections.sort sorts names within each group."
@@ -272,8 +326,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q12 {\n    public static int[][] merge(int[][] intervals) {\n        // TODO\n        return new int[][]{};\n    }\n    public static void main(String[] args) {\n        System.out.println(Arrays.deepToString(merge(new int[][]{{1,3},{2,6},{8,10},{15,18}})));\n        // [[1, 6], [8, 10], [15, 18]]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q12 {\n    public static int[][] merge(int[][] intervals) {\n        Arrays.sort(intervals, (a, b) -> a[0] - b[0]);\n        List<int[]> merged = new ArrayList<>();\n        for (int[] interval : intervals) {\n            if (merged.isEmpty() || merged.get(merged.size()-1)[1] < interval[0]) {\n                merged.add(interval);\n            } else {\n                merged.get(merged.size()-1)[1] = Math.max(merged.get(merged.size()-1)[1], interval[1]);\n            }\n        }\n        return merged.toArray(new int[0][]);\n    }\n    public static void main(String[] args) {\n        System.out.println(Arrays.deepToString(merge(new int[][]{{1,3},{2,6},{8,10},{15,18}})));\n        // [[1, 6], [8, 10], [15, 18]]\n    }\n}",
           "testCases": [
-            {"input": "[[1,3],[2,6],[8,10],[15,18]]", "output": "[[1, 6], [8, 10], [15, 18]]"},
-            {"input": "[[1,4],[4,5]]", "output": "[[1, 5]]"}
+            {
+              "input": "[[1,3],[2,6],[8,10],[15,18]]",
+              "output": "[[1, 6], [8, 10], [15, 18]]"
+            },
+            {
+              "input": "[[1,4],[4,5]]",
+              "output": "[[1, 5]]"
+            }
           ],
           "constraints": "1 <= intervals.length <= 10^4. intervals[i].length == 2.",
           "editorial": "Sort by start time first. Then single pass: if current interval overlaps with last merged (last.end >= curr.start), extend last.end. Otherwise add new interval. O(n log n) for sort + O(n) merge pass."
@@ -290,8 +350,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q13 {\n    static class LRUCache {\n        private final int capacity;\n        private final Map<Integer, Integer> map;\n\n        public LRUCache(int capacity) {\n            this.capacity = capacity;\n            // TODO: initialize map with access-order LinkedHashMap\n            this.map = null;\n        }\n\n        public int get(int key) {\n            return map.getOrDefault(key, -1);\n        }\n\n        public void put(int key, int value) {\n            map.put(key, value);\n        }\n    }\n\n    public static void main(String[] args) {\n        LRUCache lru = new LRUCache(2);\n        lru.put(1, 1); lru.put(2, 2);\n        System.out.println(lru.get(1)); // 1 — accesses key 1 (now MRU)\n        lru.put(3, 3); // evicts key 2 (LRU)\n        System.out.println(lru.get(2)); // -1 — evicted\n        System.out.println(lru.get(3)); // 3\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q13 {\n    static class LRUCache {\n        private final int capacity;\n        private final Map<Integer, Integer> map;\n\n        public LRUCache(int capacity) {\n            this.capacity = capacity;\n            this.map = new LinkedHashMap<>(capacity, 0.75f, true) {\n                @Override\n                protected boolean removeEldestEntry(Map.Entry<Integer,Integer> eldest) {\n                    return size() > capacity;\n                }\n            };\n        }\n\n        public int get(int key)            { return map.getOrDefault(key, -1); }\n        public void put(int key, int value) { map.put(key, value); }\n    }\n\n    public static void main(String[] args) {\n        LRUCache lru = new LRUCache(2);\n        lru.put(1, 1); lru.put(2, 2);\n        System.out.println(lru.get(1)); // 1\n        lru.put(3, 3);\n        System.out.println(lru.get(2)); // -1\n        System.out.println(lru.get(3)); // 3\n    }\n}",
           "testCases": [
-            {"input": "capacity=2, put(1,1),put(2,2),get(1),put(3,3),get(2)", "output": "1\n-1"},
-            {"input": "get(3)", "output": "3"}
+            {
+              "input": "capacity=2, put(1,1),put(2,2),get(1),put(3,3),get(2)",
+              "output": "1\n-1"
+            },
+            {
+              "input": "get(3)",
+              "output": "3"
+            }
           ],
           "constraints": "1 <= capacity <= 3000. O(1) for both get and put.",
           "editorial": "LinkedHashMap with accessOrder=true moves accessed entries to the tail (MRU). removeEldestEntry evicts the head (LRU) when size exceeds capacity. get() must use getOrDefault — NOT get() on the superclass directly, as it triggers the access-order reordering."
@@ -308,8 +374,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q14 {\n    static class HashRing {\n        private final TreeMap<Integer, String> ring = new TreeMap<>();\n\n        public void addServer(String server) {\n            // TODO: add hash position -> server\n        }\n\n        public String getServer(int key) {\n            // TODO: find responsible server\n            return null;\n        }\n\n        public void removeServer(String server) {\n            ring.values().remove(server);\n        }\n    }\n\n    public static void main(String[] args) {\n        HashRing ring = new HashRing();\n        ring.addServer(\"ServerA\");\n        ring.addServer(\"ServerB\");\n        ring.addServer(\"ServerC\");\n        System.out.println(ring.getServer(100));\n        System.out.println(ring.getServer(200));\n        System.out.println(ring.getServer(300));\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q14 {\n    static class HashRing {\n        private final TreeMap<Integer, String> ring = new TreeMap<>();\n\n        public void addServer(String server) {\n            int hash = Math.abs(server.hashCode() % 1000);\n            ring.put(hash, server);\n        }\n\n        public String getServer(int key) {\n            if (ring.isEmpty()) return null;\n            int hash = key % 1000;\n            Map.Entry<Integer, String> entry = ring.ceilingEntry(hash);\n            if (entry == null) entry = ring.firstEntry(); // wrap around\n            return entry.getValue();\n        }\n\n        public void removeServer(String server) {\n            ring.values().removeIf(v -> v.equals(server));\n        }\n    }\n\n    public static void main(String[] args) {\n        HashRing ring = new HashRing();\n        ring.addServer(\"ServerA\");\n        ring.addServer(\"ServerB\");\n        ring.addServer(\"ServerC\");\n        System.out.println(ring.getServer(100));\n        System.out.println(ring.getServer(500));\n    }\n}",
           "testCases": [
-            {"input": "3 servers, getServer(100)", "output": "some server"},
-            {"input": "wrap-around case", "output": "some server"}
+            {
+              "input": "3 servers, getServer(100)",
+              "output": "some server"
+            },
+            {
+              "input": "wrap-around case",
+              "output": "some server"
+            }
           ],
           "constraints": "At least one server in ring before getServer.",
           "editorial": "TreeMap.ceilingEntry(k) finds the smallest key >= k — this is the next clockwise server. If null (past the last server), wrap to firstEntry(). Adding/removing servers only affects nearby keys — consistent hashing minimises redistribution. Real implementations use multiple virtual nodes per server for even distribution."
@@ -326,8 +398,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q15 {\n    static class MedianFinder {\n        PriorityQueue<Integer> lower; // max-heap\n        PriorityQueue<Integer> upper; // min-heap\n\n        MedianFinder() {\n            lower = new PriorityQueue<>(Comparator.reverseOrder());\n            upper = new PriorityQueue<>();\n        }\n\n        public void addNum(int num) {\n            // TODO: add and rebalance\n        }\n\n        public double findMedian() {\n            // TODO\n            return 0;\n        }\n    }\n\n    public static void main(String[] args) {\n        MedianFinder mf = new MedianFinder();\n        mf.addNum(1); mf.addNum(2);\n        System.out.println(mf.findMedian()); // 1.5\n        mf.addNum(3);\n        System.out.println(mf.findMedian()); // 2.0\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q15 {\n    static class MedianFinder {\n        PriorityQueue<Integer> lower = new PriorityQueue<>(Comparator.reverseOrder()); // max-heap\n        PriorityQueue<Integer> upper = new PriorityQueue<>(); // min-heap\n\n        public void addNum(int num) {\n            lower.offer(num); // add to lower first\n            upper.offer(lower.poll()); // push max of lower to upper\n            if (upper.size() > lower.size()) // keep lower >= upper size\n                lower.offer(upper.poll());\n        }\n\n        public double findMedian() {\n            if (lower.size() > upper.size()) return lower.peek();\n            return (lower.peek() + upper.peek()) / 2.0;\n        }\n    }\n\n    public static void main(String[] args) {\n        MedianFinder mf = new MedianFinder();\n        mf.addNum(1); mf.addNum(2);\n        System.out.println(mf.findMedian()); // 1.5\n        mf.addNum(3);\n        System.out.println(mf.findMedian()); // 2.0\n        mf.addNum(4);\n        System.out.println(mf.findMedian()); // 2.5\n    }\n}",
           "testCases": [
-            {"input": "addNum(1,2) findMedian", "output": "1.5"},
-            {"input": "addNum(1,2,3) findMedian", "output": "2.0"}
+            {
+              "input": "addNum(1,2) findMedian",
+              "output": "1.5"
+            },
+            {
+              "input": "addNum(1,2,3) findMedian",
+              "output": "2.0"
+            }
           ],
           "constraints": "O(log n) addNum, O(1) findMedian.",
           "editorial": "Two-heap approach: lower max-heap contains the smaller half, upper min-heap contains the larger half. Invariant: lower.size() >= upper.size() and lower.peek() <= upper.peek(). Median is either lower.peek() (odd count) or average of both tops (even count). LeetCode #295."
@@ -344,8 +422,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q16 {\n    static class LFUCache {\n        int capacity, minFreq;\n        Map<Integer, Integer> values  = new HashMap<>();\n        Map<Integer, Integer> counts  = new HashMap<>();\n        Map<Integer, LinkedHashSet<Integer>> freqToKeys = new HashMap<>();\n\n        LFUCache(int capacity) { this.capacity = capacity; }\n\n        public int get(int key) {\n            if (!values.containsKey(key)) return -1;\n            increment(key);\n            return values.get(key);\n        }\n\n        public void put(int key, int value) {\n            if (capacity <= 0) return;\n            if (values.containsKey(key)) {\n                values.put(key, value);\n                increment(key);\n                return;\n            }\n            if (values.size() == capacity) evict();\n            values.put(key, value);\n            counts.put(key, 1);\n            freqToKeys.computeIfAbsent(1, k -> new LinkedHashSet<>()).add(key);\n            minFreq = 1;\n        }\n\n        private void increment(int key) {\n            // TODO: move key from count bucket to count+1 bucket\n        }\n\n        private void evict() {\n            // TODO: remove oldest key from minFreq bucket\n        }\n    }\n\n    public static void main(String[] args) {\n        LFUCache lfu = new LFUCache(2);\n        lfu.put(1, 1); lfu.put(2, 2);\n        System.out.println(lfu.get(1)); // 1 — freq[1]=2, freq[2]=1\n        lfu.put(3, 3); // evict key 2 (LFU, freq=1)\n        System.out.println(lfu.get(2)); // -1\n        System.out.println(lfu.get(3)); // 3\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q16 {\n    static class LFUCache {\n        int capacity, minFreq;\n        Map<Integer, Integer> values  = new HashMap<>();\n        Map<Integer, Integer> counts  = new HashMap<>();\n        Map<Integer, LinkedHashSet<Integer>> freqToKeys = new HashMap<>();\n\n        LFUCache(int capacity) { this.capacity = capacity; }\n\n        public int get(int key) {\n            if (!values.containsKey(key)) return -1;\n            increment(key);\n            return values.get(key);\n        }\n\n        public void put(int key, int value) {\n            if (capacity <= 0) return;\n            if (values.containsKey(key)) { values.put(key, value); increment(key); return; }\n            if (values.size() == capacity) evict();\n            values.put(key, value);\n            counts.put(key, 1);\n            freqToKeys.computeIfAbsent(1, k -> new LinkedHashSet<>()).add(key);\n            minFreq = 1;\n        }\n\n        private void increment(int key) {\n            int freq = counts.get(key);\n            counts.put(key, freq + 1);\n            freqToKeys.get(freq).remove(key);\n            if (freqToKeys.get(freq).isEmpty() && freq == minFreq) minFreq++;\n            freqToKeys.computeIfAbsent(freq + 1, k -> new LinkedHashSet<>()).add(key);\n        }\n\n        private void evict() {\n            LinkedHashSet<Integer> keys = freqToKeys.get(minFreq);\n            int lru = keys.iterator().next(); // oldest at front\n            keys.remove(lru);\n            values.remove(lru);\n            counts.remove(lru);\n        }\n    }\n\n    public static void main(String[] args) {\n        LFUCache lfu = new LFUCache(2);\n        lfu.put(1, 1); lfu.put(2, 2);\n        System.out.println(lfu.get(1)); // 1\n        lfu.put(3, 3);\n        System.out.println(lfu.get(2)); // -1\n        System.out.println(lfu.get(3)); // 3\n    }\n}",
           "testCases": [
-            {"input": "capacity=2, put(1,1),put(2,2),get(1),put(3,3),get(2)", "output": "-1"},
-            {"input": "get(3)", "output": "3"}
+            {
+              "input": "capacity=2, put(1,1),put(2,2),get(1),put(3,3),get(2)",
+              "output": "-1"
+            },
+            {
+              "input": "get(3)",
+              "output": "3"
+            }
           ],
           "constraints": "O(1) for both operations.",
           "editorial": "LFU requires tracking access frequency. Key insight: LinkedHashSet per frequency bucket maintains insertion (LRU) order within each frequency. increment() moves the key to the next frequency bucket. evict() removes the first key from minFreq bucket. minFreq resets to 1 on any new put."
@@ -362,9 +446,18 @@
           "starterCode": "import java.util.*;\n\npublic class Q17 {\n    static class TimeMap {\n        Map<String, TreeMap<Integer, String>> store = new HashMap<>();\n\n        public void set(String key, String value, int timestamp) {\n            store.computeIfAbsent(key, k -> new TreeMap<>()).put(timestamp, value);\n        }\n\n        public String get(String key, int timestamp) {\n            // TODO: use floorKey\n            return \"\";\n        }\n    }\n\n    public static void main(String[] args) {\n        TimeMap tm = new TimeMap();\n        tm.set(\"foo\", \"bar\", 1);\n        System.out.println(tm.get(\"foo\", 1));  // bar\n        System.out.println(tm.get(\"foo\", 3));  // bar (latest <= 3)\n        tm.set(\"foo\", \"bar2\", 4);\n        System.out.println(tm.get(\"foo\", 4));  // bar2\n        System.out.println(tm.get(\"foo\", 5));  // bar2\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q17 {\n    static class TimeMap {\n        Map<String, TreeMap<Integer, String>> store = new HashMap<>();\n\n        public void set(String key, String value, int timestamp) {\n            store.computeIfAbsent(key, k -> new TreeMap<>()).put(timestamp, value);\n        }\n\n        public String get(String key, int timestamp) {\n            TreeMap<Integer, String> times = store.get(key);\n            if (times == null) return \"\";\n            Integer floor = times.floorKey(timestamp);\n            return floor == null ? \"\" : times.get(floor);\n        }\n    }\n\n    public static void main(String[] args) {\n        TimeMap tm = new TimeMap();\n        tm.set(\"foo\", \"bar\", 1);\n        System.out.println(tm.get(\"foo\", 1)); // bar\n        System.out.println(tm.get(\"foo\", 3)); // bar\n        tm.set(\"foo\", \"bar2\", 4);\n        System.out.println(tm.get(\"foo\", 4)); // bar2\n        System.out.println(tm.get(\"foo\", 5)); // bar2\n        System.out.println(tm.get(\"foo\", 0)); // (empty)\n    }\n}",
           "testCases": [
-            {"input": "set(foo,bar,1) get(foo,1)", "output": "bar"},
-            {"input": "get(foo,3)", "output": "bar"},
-            {"input": "set(foo,bar2,4) get(foo,4)", "output": "bar2"}
+            {
+              "input": "set(foo,bar,1) get(foo,1)",
+              "output": "bar"
+            },
+            {
+              "input": "get(foo,3)",
+              "output": "bar"
+            },
+            {
+              "input": "set(foo,bar2,4) get(foo,4)",
+              "output": "bar2"
+            }
           ],
           "constraints": "Timestamps are strictly increasing for same key.",
           "editorial": "TreeMap<Integer,String> per key stores timestamp→value in sorted order. floorKey(t) returns the largest key <= t in O(log n). Perfect for versioned/time-series data. LeetCode #981."
@@ -381,7 +474,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q18 {\n    static class Twitter {\n        private int time = 0;\n        private Map<Integer, List<int[]>> tweets = new HashMap<>(); // userId -> [time, tweetId]\n        private Map<Integer, Set<Integer>> follows = new HashMap<>();\n\n        public void postTweet(int userId, int tweetId) {\n            tweets.computeIfAbsent(userId, k -> new ArrayList<>()).add(new int[]{time++, tweetId});\n        }\n\n        public List<Integer> getNewsFeed(int userId) {\n            // TODO: 10 most recent tweets from userId + followees\n            return new ArrayList<>();\n        }\n\n        public void follow(int followerId, int followeeId) {\n            follows.computeIfAbsent(followerId, k -> new HashSet<>()).add(followeeId);\n        }\n\n        public void unfollow(int followerId, int followeeId) {\n            if (follows.containsKey(followerId)) follows.get(followerId).remove(followeeId);\n        }\n    }\n\n    public static void main(String[] args) {\n        Twitter t = new Twitter();\n        t.postTweet(1, 5); t.postTweet(1, 3);\n        t.postTweet(2, 10);\n        t.follow(1, 2);\n        System.out.println(t.getNewsFeed(1)); // [10, 3, 5]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q18 {\n    static class Twitter {\n        private int time = 0;\n        private Map<Integer, List<int[]>> tweets = new HashMap<>();\n        private Map<Integer, Set<Integer>> follows = new HashMap<>();\n\n        public void postTweet(int userId, int tweetId) {\n            tweets.computeIfAbsent(userId, k -> new ArrayList<>()).add(new int[]{time++, tweetId});\n        }\n\n        public List<Integer> getNewsFeed(int userId) {\n            // max-heap by timestamp: [timestamp, tweetId, userIdx, listIndex]\n            PriorityQueue<int[]> heap = new PriorityQueue<>((a,b) -> b[0]-a[0]);\n\n            Set<Integer> users = new HashSet<>();\n            users.add(userId);\n            if (follows.containsKey(userId)) users.addAll(follows.get(userId));\n\n            for (int uid : users) {\n                List<int[]> list = tweets.getOrDefault(uid, List.of());\n                if (!list.isEmpty()) {\n                    int idx = list.size() - 1;\n                    int[] last = list.get(idx);\n                    heap.offer(new int[]{last[0], last[1], uid, idx - 1});\n                }\n            }\n\n            List<Integer> feed = new ArrayList<>();\n            while (!heap.isEmpty() && feed.size() < 10) {\n                int[] top = heap.poll();\n                feed.add(top[1]);\n                if (top[3] >= 0) {\n                    List<int[]> list = tweets.get(top[2]);\n                    int[] next = list.get(top[3]);\n                    heap.offer(new int[]{next[0], next[1], top[2], top[3]-1});\n                }\n            }\n            return feed;\n        }\n\n        public void follow(int followerId, int followeeId) {\n            follows.computeIfAbsent(followerId, k -> new HashSet<>()).add(followeeId);\n        }\n\n        public void unfollow(int followerId, int followeeId) {\n            if (follows.containsKey(followerId)) follows.get(followerId).remove(followeeId);\n        }\n    }\n\n    public static void main(String[] args) {\n        Twitter t = new Twitter();\n        t.postTweet(1, 5); t.postTweet(1, 3); t.postTweet(2, 10);\n        t.follow(1, 2);\n        System.out.println(t.getNewsFeed(1)); // [10, 3, 5]\n    }\n}",
           "testCases": [
-            {"input": "post(1,5),post(1,3),post(2,10),follow(1,2),getFeed(1)", "output": "[10, 3, 5]"}
+            {
+              "input": "post(1,5),post(1,3),post(2,10),follow(1,2),getFeed(1)",
+              "output": "[10, 3, 5]"
+            }
           ],
           "constraints": "At most 10 tweets in feed. Each user <= 10 posts in this test.",
           "editorial": "K-way merge with PriorityQueue: initialise heap with each relevant user's most recent tweet. On each poll, add the next tweet from that user. O(n log k) for n total tweets, k users. LeetCode #355."
@@ -398,8 +494,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q19 {\n    static class TreeNode {\n        int val; TreeNode left, right;\n        TreeNode(int v) { val = v; }\n    }\n\n    public static String serialize(TreeNode root) {\n        // TODO: preorder traversal\n        return \"\";\n    }\n\n    public static TreeNode deserialize(String data) {\n        // TODO: reconstruct BST from preorder\n        return null;\n    }\n\n    static void inorder(TreeNode root, List<Integer> result) {\n        if (root == null) return;\n        inorder(root.left, result); result.add(root.val); inorder(root.right, result);\n    }\n\n    public static void main(String[] args) {\n        TreeNode root = new TreeNode(5);\n        root.left = new TreeNode(3); root.right = new TreeNode(7);\n        root.left.left = new TreeNode(1); root.left.right = new TreeNode(4);\n        String s = serialize(root);\n        System.out.println(s);\n        TreeNode rebuilt = deserialize(s);\n        List<Integer> vals = new ArrayList<>();\n        inorder(rebuilt, vals);\n        System.out.println(vals); // [1, 3, 4, 5, 7]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q19 {\n    static class TreeNode {\n        int val; TreeNode left, right;\n        TreeNode(int v) { val = v; }\n    }\n\n    public static String serialize(TreeNode root) {\n        List<String> result = new ArrayList<>();\n        serHelper(root, result);\n        return String.join(\",\", result);\n    }\n\n    static void serHelper(TreeNode node, List<String> result) {\n        if (node == null) return;\n        result.add(String.valueOf(node.val));\n        serHelper(node.left, result);\n        serHelper(node.right, result);\n    }\n\n    public static TreeNode deserialize(String data) {\n        if (data.isEmpty()) return null;\n        Queue<Integer> queue = new ArrayDeque<>();\n        for (String s : data.split(\",\")) queue.offer(Integer.parseInt(s));\n        return desHelper(queue, Integer.MIN_VALUE, Integer.MAX_VALUE);\n    }\n\n    static TreeNode desHelper(Queue<Integer> q, int min, int max) {\n        if (q.isEmpty() || q.peek() < min || q.peek() > max) return null;\n        int val = q.poll();\n        TreeNode node = new TreeNode(val);\n        node.left  = desHelper(q, min, val);\n        node.right = desHelper(q, val, max);\n        return node;\n    }\n\n    static void inorder(TreeNode root, List<Integer> r) {\n        if (root == null) return;\n        inorder(root.left, r); r.add(root.val); inorder(root.right, r);\n    }\n\n    public static void main(String[] args) {\n        TreeNode root = new TreeNode(5);\n        root.left = new TreeNode(3); root.right = new TreeNode(7);\n        root.left.left = new TreeNode(1); root.left.right = new TreeNode(4);\n        String s = serialize(root);\n        System.out.println(s); // 5,3,1,4,7\n        TreeNode rebuilt = deserialize(s);\n        List<Integer> vals = new ArrayList<>();\n        inorder(rebuilt, vals);\n        System.out.println(vals); // [1, 3, 4, 5, 7]\n    }\n}",
           "testCases": [
-            {"input": "BST [5,3,7,1,4]", "output": "5,3,1,4,7"},
-            {"input": "deserialize inorder", "output": "[1, 3, 4, 5, 7]"}
+            {
+              "input": "BST [5,3,7,1,4]",
+              "output": "5,3,1,4,7"
+            },
+            {
+              "input": "deserialize inorder",
+              "output": "[1, 3, 4, 5, 7]"
+            }
           ],
           "constraints": "Valid BST. No duplicate values.",
           "editorial": "Preorder serialization is unique for a BST (unlike general trees). Deserialization uses BST property: each value must fall within [min, max] range derived from parent. Queue drives the preorder consumption. O(n) time and space. LeetCode #449."
@@ -416,13 +518,21 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q20 {\n    static class AutocompleteSystem {\n        private Map<String, Integer> freq = new HashMap<>();\n        private StringBuilder current = new StringBuilder();\n\n        AutocompleteSystem(String[] sentences, int[] times) {\n            for (int i = 0; i < sentences.length; i++)\n                freq.put(sentences[i], times[i]);\n        }\n\n        public List<String> input(char c) {\n            if (c == '#') {\n                String sentence = current.toString();\n                freq.merge(sentence, 1, Integer::sum);\n                current.setLength(0);\n                return new ArrayList<>();\n            }\n            current.append(c);\n            String prefix = current.toString();\n            // TODO: return top 3 matching sentences\n            return new ArrayList<>();\n        }\n    }\n\n    public static void main(String[] args) {\n        AutocompleteSystem sys = new AutocompleteSystem(\n            new String[]{\"i love you\",\"island\",\"iroman\",\"i love leetcode\"}, new int[]{5,3,2,2});\n        System.out.println(sys.input('i')); // [i love you, island, i love leetcode]\n        System.out.println(sys.input(' ')); // [i love you, i love leetcode]\n        System.out.println(sys.input('#')); // []\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q20 {\n    static class AutocompleteSystem {\n        private Map<String, Integer> freq = new HashMap<>();\n        private StringBuilder current = new StringBuilder();\n\n        AutocompleteSystem(String[] sentences, int[] times) {\n            for (int i = 0; i < sentences.length; i++)\n                freq.put(sentences[i], times[i]);\n        }\n\n        public List<String> input(char c) {\n            if (c == '#') {\n                freq.merge(current.toString(), 1, Integer::sum);\n                current.setLength(0);\n                return new ArrayList<>();\n            }\n            current.append(c);\n            String prefix = current.toString();\n            return freq.entrySet().stream()\n                .filter(e -> e.getKey().startsWith(prefix))\n                .sorted(Map.Entry.<String,Integer>comparingByValue(Comparator.reverseOrder())\n                    .thenComparing(Map.Entry.comparingByKey()))\n                .limit(3)\n                .map(Map.Entry::getKey)\n                .collect(Collectors.toList());\n        }\n    }\n\n    public static void main(String[] args) {\n        AutocompleteSystem sys = new AutocompleteSystem(\n            new String[]{\"i love you\",\"island\",\"iroman\",\"i love leetcode\"}, new int[]{5,3,2,2});\n        System.out.println(sys.input('i'));\n        System.out.println(sys.input(' '));\n        sys.input('#');\n    }\n}",
           "testCases": [
-            {"input": "input('i')", "output": "[i love you, island, i love leetcode]"},
-            {"input": "input(' ')", "output": "[i love you, i love leetcode]"}
+            {
+              "input": "input('i')",
+              "output": "[i love you, island, i love leetcode]"
+            },
+            {
+              "input": "input(' ')",
+              "output": "[i love you, i love leetcode]"
+            }
           ],
           "constraints": "At most 3 results. Ties broken lexicographically.",
           "editorial": "HashMap stores sentence frequencies. For each character, filter by prefix and sort. O(n) filter + O(n log n) sort per character — adequate for interview. Production: Trie with sorted result lists per prefix node for O(k) query where k = prefix length. LeetCode #642."
         }
-      ]
+      ],
+      "subCategory": "Collections Framework",
+      "displayOrder": 50
     }
   ]
 }

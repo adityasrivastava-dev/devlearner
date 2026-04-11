@@ -11,7 +11,15 @@
       "bruteForce": "Without Lambda: run a small EC2 t3.nano 24/7 to handle occasional events — $0.0052/hour × 8760 hours = ~$45/year even when idle. With Lambda: 1 million events/month × 100ms each × 128MB memory = ~$0.20/month. Lambda is 200× cheaper for sporadic workloads.",
       "optimizedApproach": "Minimize cold starts: use Provisioned Concurrency for latency-sensitive functions (pre-warmed instances), keep deployment packages small (tree-shaking, Layer sharing), prefer Node.js/Python for faster cold starts over Java (JVM startup). Optimize memory: Lambda CPU is proportional to memory — a 1024MB function gets 2× CPU of 512MB but costs 2×. Benchmark to find optimal memory. Reuse connections: initialise database clients and SDK clients outside the handler function (in the global scope of the module) so they survive across warm invocations — connection setup is amortized across many requests.",
       "whenToUse": "Lambda: event-driven processing (S3 uploads, DynamoDB streams, SQS messages), APIs with variable traffic (API Gateway + Lambda), scheduled tasks (cron via EventBridge), data transformation pipelines, webhooks. NOT Lambda: long-running jobs (>15 min), WebSocket-heavy workloads requiring persistent connections, workloads requiring >10GB memory or GPU, latency-critical paths where cold starts are unacceptable (use Provisioned Concurrency or EC2).",
-      "tags": ["aws", "lambda", "serverless", "faas", "cloud", "event-driven", "devops"],
+      "tags": [
+        "aws",
+        "lambda",
+        "serverless",
+        "faas",
+        "cloud",
+        "event-driven",
+        "devops"
+      ],
       "examples": [
         {
           "displayOrder": 1,
@@ -52,7 +60,11 @@
           "title": "Design a Lambda Function for Thumbnail Generation",
           "difficulty": "Easy",
           "description": "Write the pseudo-code / logic for a Lambda function triggered by S3 ObjectCreated events. It should: (1) Extract the bucket name and object key from the event, (2) Skip processing if the key already starts with 'thumbnails/' to prevent infinite loops, (3) Download the image, resize to 150x150, (4) Upload to the same bucket under 'thumbnails/' prefix.",
-          "constraints": ["event['Records'] is a list — process all records", "URL-decode the object key (spaces become '+' in S3 event keys)", "Source bucket and destination bucket can be the same if prefix differs"],
+          "constraints": [
+            "event['Records'] is a list — process all records",
+            "URL-decode the object key (spaces become '+' in S3 event keys)",
+            "Source bucket and destination bucket can be the same if prefix differs"
+          ],
           "examples": [
             {
               "input": "event.Records[0].s3.object.key = 'uploads/user/photo.jpg'",
@@ -60,13 +72,21 @@
               "explanation": "The guard clause (skip if key starts with 'thumbnails/') prevents the thumbnail upload from triggering another Lambda invocation"
             }
           ],
-          "hints": ["urllib.parse.unquote_plus() decodes the key", "Check key.startswith('thumbnails/') and return early", "Use Pillow Image.thumbnail() — it maintains aspect ratio unlike resize()"]
+          "hints": [
+            "urllib.parse.unquote_plus() decodes the key",
+            "Check key.startswith('thumbnails/') and return early",
+            "Use Pillow Image.thumbnail() — it maintains aspect ratio unlike resize()"
+          ]
         },
         {
           "title": "Lambda Cold Start Optimisation",
           "difficulty": "Medium",
           "description": "A Java Lambda function serving a REST API has a p99 latency of 1800ms and p50 of 40ms. The function uses Spring Boot and initialises a DynamoDB client on each invocation. Identify 3 specific problems with this setup and propose concrete fixes for each.",
-          "constraints": ["The function handles 500 requests/day unevenly distributed", "Peak traffic is 50 req/min for 2 hours, near-zero otherwise", "Budget allows ~$50/month extra for latency improvements"],
+          "constraints": [
+            "The function handles 500 requests/day unevenly distributed",
+            "Peak traffic is 50 req/min for 2 hours, near-zero otherwise",
+            "Budget allows ~$50/month extra for latency improvements"
+          ],
           "examples": [
             {
               "input": "p99=1800ms, p50=40ms gap indicates cold starts",
@@ -74,13 +94,21 @@
               "explanation": "The p99/p50 gap is the telltale cold start signature — most requests are fast (warm), occasional ones are very slow (cold)"
             }
           ],
-          "hints": ["Module-scope initialisation runs once per container lifecycle", "SnapStart takes a snapshot after init phase — restores from snapshot instead of reinitialising", "Scheduled Provisioned Concurrency scale-up/down with EventBridge saves cost vs always-on"]
+          "hints": [
+            "Module-scope initialisation runs once per container lifecycle",
+            "SnapStart takes a snapshot after init phase — restores from snapshot instead of reinitialising",
+            "Scheduled Provisioned Concurrency scale-up/down with EventBridge saves cost vs always-on"
+          ]
         },
         {
           "title": "SQS Dead Letter Queue Setup",
           "difficulty": "Medium",
           "description": "An order processing Lambda fails occasionally due to external payment API timeouts. Messages that fail 3 times should be moved to a Dead Letter Queue for manual review. Design the SQS queue configuration (maxReceiveCount, visibility timeout) and explain how partial batch failures work when Lambda processes 5 messages and 2 fail.",
-          "constraints": ["Payment API calls take up to 8 seconds", "Lambda batch size = 5 messages", "Visibility timeout must be greater than Lambda timeout"],
+          "constraints": [
+            "Payment API calls take up to 8 seconds",
+            "Lambda batch size = 5 messages",
+            "Visibility timeout must be greater than Lambda timeout"
+          ],
           "examples": [
             {
               "input": "Lambda timeout=30s, batch size=5, 2 messages fail processing",
@@ -88,13 +116,21 @@
               "explanation": "If visibility timeout < Lambda timeout, messages become visible mid-processing causing duplicate processing"
             }
           ],
-          "hints": ["Visibility timeout should be at least 6× the Lambda timeout for safety", "batchItemFailures response tells Lambda which messages to NOT delete", "DLQ is just another SQS queue — set it as the redrive policy target"]
+          "hints": [
+            "Visibility timeout should be at least 6× the Lambda timeout for safety",
+            "batchItemFailures response tells Lambda which messages to NOT delete",
+            "DLQ is just another SQS queue — set it as the redrive policy target"
+          ]
         },
         {
           "title": "Lambda Execution Role Permissions",
           "difficulty": "Easy",
           "description": "Write the IAM permission policy for a Lambda function that needs to: read messages from an SQS queue, write items to a DynamoDB table named 'orders', write logs to CloudWatch Logs, and read a secret from Secrets Manager named '/prod/payment-api-key'.",
-          "constraints": ["Least-privilege: only grant exactly what's needed", "CloudWatch Logs requires 3 permissions: CreateLogGroup, CreateLogStream, PutLogEvents", "SQS consumer needs: ReceiveMessage, DeleteMessage, GetQueueAttributes"],
+          "constraints": [
+            "Least-privilege: only grant exactly what's needed",
+            "CloudWatch Logs requires 3 permissions: CreateLogGroup, CreateLogStream, PutLogEvents",
+            "SQS consumer needs: ReceiveMessage, DeleteMessage, GetQueueAttributes"
+          ],
           "examples": [
             {
               "input": "Lambda processes orders: reads SQS, writes DynamoDB, logs, reads secret",
@@ -102,9 +138,15 @@
               "explanation": "Each statement targets a specific resource ARN — never use * as Resource in production Lambda policies"
             }
           ],
-          "hints": ["DynamoDB table ARN: arn:aws:dynamodb:region:account:table/orders", "Secrets Manager ARN: arn:aws:secretsmanager:region:account:secret:/prod/payment-api-key-*", "Lambda auto-creates the CloudWatch Log group if CreateLogGroup permission is present"]
+          "hints": [
+            "DynamoDB table ARN: arn:aws:dynamodb:region:account:table/orders",
+            "Secrets Manager ARN: arn:aws:secretsmanager:region:account:secret:/prod/payment-api-key-*",
+            "Lambda auto-creates the CloudWatch Log group if CreateLogGroup permission is present"
+          ]
         }
-      ]
+      ],
+      "subCategory": "Serverless & Functions",
+      "displayOrder": 20
     },
     {
       "title": "Amazon API Gateway — HTTP APIs and REST APIs",
@@ -117,7 +159,16 @@
       "bruteForce": "Without API Gateway: configure an ALB to route to Lambda — works but lacks built-in auth, throttling, API keys, usage plans, request validation, stage management, and detailed per-route metrics. Cost is similar but operationally more complex.",
       "optimizedApproach": "HTTP API for new projects (V2): simpler, cheaper, faster. Use Lambda proxy integration always — avoid VTL mapping templates (unmaintainable). Enable caching on GET endpoints with stable data (reduces Lambda invocations, lowers cost). Use Lambda authorisers for custom auth logic or Cognito JWT authorisers for standard JWT validation. Enable WAF (Web Application Firewall) integration for internet-facing APIs. Use Usage Plans + API Keys for B2B APIs to track and limit partner consumption.",
       "whenToUse": "API Gateway: any serverless REST or HTTP API, mobile/SPA backends, microservice APIs, webhook receivers. NOT API Gateway: WebRTC or persistent WebSocket (API Gateway WebSocket has 10-minute idle timeout), file uploads > 10MB (use S3 presigned URLs instead), APIs requiring < 10ms p99 latency (ALB + EC2/ECS has lower overhead).",
-      "tags": ["aws", "api-gateway", "serverless", "rest", "http", "lambda", "cloud", "devops"],
+      "tags": [
+        "aws",
+        "api-gateway",
+        "serverless",
+        "rest",
+        "http",
+        "lambda",
+        "cloud",
+        "devops"
+      ],
       "examples": [
         {
           "displayOrder": 1,
@@ -147,7 +198,11 @@
           "title": "API Gateway Timeout Debugging",
           "difficulty": "Medium",
           "description": "A Lambda function processes images and takes up to 45 seconds for large files. The API returns 504 Gateway Timeout after 29 seconds. The function itself completes successfully (you can see the result in S3). Propose two different solutions that handle this architectural constraint.",
-          "constraints": ["API Gateway hard limit: 29 seconds (cannot be changed)", "Lambda max timeout: 15 minutes", "Clients need to know when processing is complete"],
+          "constraints": [
+            "API Gateway hard limit: 29 seconds (cannot be changed)",
+            "Lambda max timeout: 15 minutes",
+            "Clients need to know when processing is complete"
+          ],
           "examples": [
             {
               "input": "POST /process-image takes 45s, API Gateway returns 504",
@@ -155,13 +210,21 @@
               "explanation": "The 29-second API Gateway limit is architectural — the solution is to not wait synchronously for long operations"
             }
           ],
-          "hints": ["202 Accepted with a polling URL is the standard async REST pattern", "POST /process-image → Lambda writes job to DynamoDB (status=PENDING) → invokes processing Lambda async → returns jobId", "Alternatively: SQS + polling or SNS + WebSocket push"]
+          "hints": [
+            "202 Accepted with a polling URL is the standard async REST pattern",
+            "POST /process-image → Lambda writes job to DynamoDB (status=PENDING) → invokes processing Lambda async → returns jobId",
+            "Alternatively: SQS + polling or SNS + WebSocket push"
+          ]
         },
         {
           "title": "Design API Gateway CORS Configuration",
           "difficulty": "Easy",
           "description": "A React SPA hosted at https://app.example.com makes API calls to API Gateway. Browsers are blocking requests with 'CORS error'. Configure the correct CORS settings for the HTTP API to allow: GET, POST, DELETE from the SPA origin, with an Authorization header, preflight cache of 10 minutes.",
-          "constraints": ["Only app.example.com should be allowed (not *)", "Authorization header must be in AllowHeaders", "MaxAge in seconds (10 minutes = 600)"],
+          "constraints": [
+            "Only app.example.com should be allowed (not *)",
+            "Authorization header must be in AllowHeaders",
+            "MaxAge in seconds (10 minutes = 600)"
+          ],
           "examples": [
             {
               "input": "SPA origin: https://app.example.com, methods: GET/POST/DELETE, headers: Authorization + Content-Type",
@@ -169,13 +232,21 @@
               "explanation": "HTTP API handles OPTIONS preflight automatically when CorsConfiguration is set — no need to create an OPTIONS route manually"
             }
           ],
-          "hints": ["OPTIONS method is handled automatically by API Gateway with CorsConfiguration set", "Without Content-Type in AllowHeaders, POST requests with JSON body will be blocked", "AllowCredentials=true required if using cookies — but then AllowOrigins cannot be *"]
+          "hints": [
+            "OPTIONS method is handled automatically by API Gateway with CorsConfiguration set",
+            "Without Content-Type in AllowHeaders, POST requests with JSON body will be blocked",
+            "AllowCredentials=true required if using cookies — but then AllowOrigins cannot be *"
+          ]
         },
         {
           "title": "Rate Limiting with Usage Plans",
           "difficulty": "Medium",
           "description": "You're building a public API with three partner tiers: Free (100 req/day, 1 RPS), Standard (10,000 req/day, 20 RPS), Enterprise (unlimited req/day, 100 RPS). Design the Usage Plan configuration for each tier and explain how you'd onboard a new Standard tier partner.",
-          "constraints": ["REST API required for Usage Plans (HTTP API V2 does not support Usage Plans)", "Each partner gets a unique API key", "RPS = requests per second (throttle rate)"],
+          "constraints": [
+            "REST API required for Usage Plans (HTTP API V2 does not support Usage Plans)",
+            "Each partner gets a unique API key",
+            "RPS = requests per second (throttle rate)"
+          ],
           "examples": [
             {
               "input": "Standard tier: 10,000/day quota, 20 RPS throttle",
@@ -183,9 +254,15 @@
               "explanation": "burstLimit is typically 2× rateLimit — allows short bursts above the steady-state rate"
             }
           ],
-          "hints": ["API key is passed in x-api-key header or as query param", "Usage Plan links an API key to a stage + throttle/quota settings", "CloudWatch metric UsageByApiKey shows per-partner consumption"]
+          "hints": [
+            "API key is passed in x-api-key header or as query param",
+            "Usage Plan links an API key to a stage + throttle/quota settings",
+            "CloudWatch metric UsageByApiKey shows per-partner consumption"
+          ]
         }
-      ]
+      ],
+      "subCategory": "Serverless & Functions",
+      "displayOrder": 21
     },
     {
       "title": "Amazon DynamoDB — NoSQL at Scale",
@@ -198,7 +275,15 @@
       "bruteForce": "Naive DynamoDB usage: one table per entity (Users, Orders, Products, Reviews), multiple GetItem calls to assemble a page. For a product detail page: 1 GetItem for product + N GetItems for reviews + 1 GetItem for seller. N+2 round trips. Correct approach: single-table design with access pattern modelling — one Query retrieves product + reviews + seller info in a single request.",
       "optimizedApproach": "Single-table design: use composite sort keys like PRODUCT#{productId}, REVIEW#{timestamp}#{reviewId} — one Query with KeyConditionExpression='PK=PRODUCT#123 AND SK BETWEEN REVIEW# AND REVIEW$' fetches all reviews sorted by time. Use sparse indexes: put a GSI attribute only on items that need it — GSI size stays small. Use DynamoDB Streams + Lambda for event-driven architectures. Use TTL (Time To Live) for automatic expiry of session data, cache entries, temporary records — no delete cost. Use DAX (DynamoDB Accelerator) for microsecond reads if milliseconds aren't fast enough (caching layer in front of DynamoDB).",
       "whenToUse": "DynamoDB: high-throughput key-value and document workloads, session stores, gaming leaderboards, IoT telemetry, shopping carts, user preferences, serverless backends. NOT DynamoDB: complex relational queries with multiple joins, ad-hoc analytics (use Athena/Redshift), full-text search (use OpenSearch), transactions spanning multiple tables with complex constraints (use RDS).",
-      "tags": ["aws", "dynamodb", "nosql", "database", "serverless", "cloud", "devops"],
+      "tags": [
+        "aws",
+        "dynamodb",
+        "nosql",
+        "database",
+        "serverless",
+        "cloud",
+        "devops"
+      ],
       "examples": [
         {
           "displayOrder": 1,
@@ -228,7 +313,11 @@
           "title": "Design DynamoDB Table for a Messaging App",
           "difficulty": "Hard",
           "description": "Design a DynamoDB table for a messaging app. Access patterns needed: (1) Get all messages in a conversation, newest first. (2) Get a specific message by ID. (3) Get all conversations for a user, ordered by most recent message. (4) Find unread messages for a user. Define the PK, SK, and any GSIs needed.",
-          "constraints": ["Single-table design preferred", "Conversation can have many messages", "A user can be in many conversations"],
+          "constraints": [
+            "Single-table design preferred",
+            "Conversation can have many messages",
+            "A user can be in many conversations"
+          ],
           "examples": [
             {
               "input": "4 access patterns: fetch conversation messages, single message, user conversations, unread count",
@@ -236,13 +325,22 @@
               "explanation": "Sparse GSI: only add the GSI key attributes to items where needed (unread messages) — keeps GSI small and cheap"
             }
           ],
-          "hints": ["Use epoch milliseconds in sort key for time-ordered queries", "User→Conversation mapping is a separate item type in the same table", "Sparse GSI: only items with the GSI PK attribute appear in the index"]
+          "hints": [
+            "Use epoch milliseconds in sort key for time-ordered queries",
+            "User→Conversation mapping is a separate item type in the same table",
+            "Sparse GSI: only items with the GSI PK attribute appear in the index"
+          ]
         },
         {
           "title": "DynamoDB Capacity Planning",
           "difficulty": "Medium",
           "description": "An e-commerce site has 100,000 daily active users. Each user loads their cart once per session (1 read, ~2KB item). Each user places 0.1 orders per day on average (1 write, ~1KB). Peak traffic is 5× average, occurring 2 hours per day. Calculate required RCUs and WCUs for both On-Demand and Provisioned capacity modes.",
-          "constraints": ["1 RCU = 1 strongly consistent read of ≤4KB (or 2 eventually consistent reads)", "1 WCU = 1 write of ≤1KB per second", "Provisioned capacity: you set a fixed number, charged 24/7", "On-Demand: charged per request, ~7× more expensive per operation"],
+          "constraints": [
+            "1 RCU = 1 strongly consistent read of ≤4KB (or 2 eventually consistent reads)",
+            "1 WCU = 1 write of ≤1KB per second",
+            "Provisioned capacity: you set a fixed number, charged 24/7",
+            "On-Demand: charged per request, ~7× more expensive per operation"
+          ],
           "examples": [
             {
               "input": "100k DAU, cart reads ~2KB, order writes ~1KB, peak 5× for 2h",
@@ -250,13 +348,21 @@
               "explanation": "On-Demand good here: traffic is bursty (peak 5× for only 2h) — Provisioned at peak wastes 22h of capacity"
             }
           ],
-          "hints": ["Distribute operations over seconds: daily_ops / 86400 = ops/second", "2KB item = 1 RCU (rounds up to 4KB boundary)", "For bursty workloads with big peak/off-peak difference, On-Demand often wins even at higher per-operation cost"]
+          "hints": [
+            "Distribute operations over seconds: daily_ops / 86400 = ops/second",
+            "2KB item = 1 RCU (rounds up to 4KB boundary)",
+            "For bursty workloads with big peak/off-peak difference, On-Demand often wins even at higher per-operation cost"
+          ]
         },
         {
           "title": "Fix a Hot Partition Problem",
           "difficulty": "Hard",
           "description": "A social media app stores posts with PK='POSTS' (all posts in one partition) and SK=postId. DynamoDB is throttling with ProvisionedThroughputExceededException during peak hours despite having 1000 WCU provisioned. Diagnose the problem and propose a fix.",
-          "constraints": ["All writes going to PK='POSTS' create a hot partition", "Users query posts by tag and by date range", "Write throughput needed: 200 writes/second"],
+          "constraints": [
+            "All writes going to PK='POSTS' create a hot partition",
+            "Users query posts by tag and by date range",
+            "Write throughput needed: 200 writes/second"
+          ],
           "examples": [
             {
               "input": "PK='POSTS' for all posts — 200 writes/second all to one partition",
@@ -264,9 +370,15 @@
               "explanation": "Actually 200 WPS on one partition key is within limits — but using PK='POSTS' for all posts still forces all reads/writes through one partition. Proper fix: PK=POST#{postId} — each post is its own partition, perfectly distributed"
             }
           ],
-          "hints": ["Each unique PK value gets its own partition — distribution is automatic if PKs are diverse", "Using a constant PK='POSTS' means everything goes to ONE partition (maximum ~1000 WCU)", "Fix: use the actual post ID as the partition key — millions of unique posts = millions of partitions = automatic distribution"]
+          "hints": [
+            "Each unique PK value gets its own partition — distribution is automatic if PKs are diverse",
+            "Using a constant PK='POSTS' means everything goes to ONE partition (maximum ~1000 WCU)",
+            "Fix: use the actual post ID as the partition key — millions of unique posts = millions of partitions = automatic distribution"
+          ]
         }
-      ]
+      ],
+      "subCategory": "Databases & Storage",
+      "displayOrder": 30
     },
     {
       "title": "Amazon SQS — Decoupled Messaging",
@@ -279,7 +391,16 @@
       "bruteForce": "Direct synchronous coupling: Order Service calls Inventory Service directly via HTTP. If Inventory Service is down: order fails. If Inventory Service is slow: order request times out. If order traffic spikes 10×: Inventory Service is overwhelmed. With SQS: Order Service writes to queue and returns success immediately. Inventory Service processes at its own rate. Inventory Service crashes: messages wait in queue and are retried automatically. Traffic spike: messages queue up, Inventory Service processes them over time.",
       "optimizedApproach": "Use Long Polling (WaitTimeSeconds=20) — reduces empty ReceiveMessage responses by 99%, cutting costs significantly. Set visibility timeout to 6× Lambda timeout (prevent double-processing). Use DLQ with CloudWatch alarm on DLQ message count — alerts when processing is broken. Use message batching (send up to 10 messages in one API call) to reduce cost. For ordering-critical workloads: FIFO queue with MessageGroupId for per-group ordering. Use SQS Extended Client Library (Java) or S3 + pointer pattern for messages > 256KB.",
       "whenToUse": "SQS: decoupling services, async job processing, handling traffic spikes, order processing queues, notification pipelines, any workflow where producer/consumer should operate independently. NOT SQS: real-time messaging between users (use WebSocket/AppSync), need for millions of subscribers (use SNS), message replay after consumer failure (use Kinesis — messages are retained and replayable), pub/sub fan-out to multiple consumers (use SNS → multiple SQS queues).",
-      "tags": ["aws", "sqs", "messaging", "queue", "serverless", "decoupling", "cloud", "devops"],
+      "tags": [
+        "aws",
+        "sqs",
+        "messaging",
+        "queue",
+        "serverless",
+        "decoupling",
+        "cloud",
+        "devops"
+      ],
       "examples": [
         {
           "displayOrder": 1,
@@ -309,7 +430,11 @@
           "title": "SQS Visibility Timeout Calculation",
           "difficulty": "Easy",
           "description": "A Lambda function processes SQS messages. The function queries an external API that can take up to 8 seconds, performs DynamoDB writes (~50ms), and the total Lambda timeout is set to 30 seconds. What should the SQS visibility timeout be set to, and why? What happens if you set it to 25 seconds instead?",
-          "constraints": ["Lambda processes up to 5 messages per batch", "Visibility timeout applies to the entire batch, not individual messages", "Recommended rule: visibility timeout ≥ 6× Lambda function timeout"],
+          "constraints": [
+            "Lambda processes up to 5 messages per batch",
+            "Visibility timeout applies to the entire batch, not individual messages",
+            "Recommended rule: visibility timeout ≥ 6× Lambda function timeout"
+          ],
           "examples": [
             {
               "input": "Lambda timeout=30s, 5 messages per batch",
@@ -317,13 +442,21 @@
               "explanation": "The 6× rule accounts for Lambda retry delays, SQS polling intervals, and safety margin — prevents duplicate processing under normal conditions"
             }
           ],
-          "hints": ["If visibility timeout < Lambda timeout, messages become visible while Lambda is still running", "Lambda reports batch success/failure atomically — individual message deletes are NOT done mid-batch", "Visibility timeout can be extended mid-processing with ChangeMessageVisibility API call"]
+          "hints": [
+            "If visibility timeout < Lambda timeout, messages become visible while Lambda is still running",
+            "Lambda reports batch success/failure atomically — individual message deletes are NOT done mid-batch",
+            "Visibility timeout can be extended mid-processing with ChangeMessageVisibility API call"
+          ]
         },
         {
           "title": "Design SNS + SQS Fan-Out for an E-Commerce Platform",
           "difficulty": "Medium",
           "description": "Design the messaging architecture for an e-commerce platform with these requirements: (1) Order placement event must trigger: inventory update, email confirmation, fraud check, and analytics recording. (2) Fraud check failures should not block other processing. (3) Inventory system is slow — order processing should not wait for it. (4) Email must only send after payment is confirmed, not just order placed.",
-          "constraints": ["No direct service-to-service HTTP calls allowed", "Each service should be independently deployable and scalable", "Failed fraud checks need to be investigated later"],
+          "constraints": [
+            "No direct service-to-service HTTP calls allowed",
+            "Each service should be independently deployable and scalable",
+            "Failed fraud checks need to be investigated later"
+          ],
           "examples": [
             {
               "input": "4 downstream systems, independent failure domains, email only after payment",
@@ -331,13 +464,21 @@
               "explanation": "SNS filter policies route events to the right consumers. DLQ on fraud queue enables forensic analysis without losing failed check data"
             }
           ],
-          "hints": ["Two SNS topics or one topic with filter policies can both work", "DLQ on the fraud SQS catches Lambda failures (3 retries) for later human review", "PAYMENT_CONFIRMED is a separate event published by the payment service after successful charge"]
+          "hints": [
+            "Two SNS topics or one topic with filter policies can both work",
+            "DLQ on the fraud SQS catches Lambda failures (3 retries) for later human review",
+            "PAYMENT_CONFIRMED is a separate event published by the payment service after successful charge"
+          ]
         },
         {
           "title": "Standard vs FIFO Queue Selection",
           "difficulty": "Easy",
           "description": "For each of the following use cases, choose Standard or FIFO queue and justify your choice: (1) Processing image thumbnails from S3 uploads. (2) Processing bank account transactions (deposits/withdrawals). (3) Sending bulk promotional emails to 1 million users. (4) Processing e-commerce order status transitions (placed → confirmed → shipped → delivered).",
-          "constraints": ["FIFO: 3000 msg/s max, exactly-once, ordered per MessageGroupId", "Standard: unlimited throughput, at-least-once, best-effort ordering", "FIFO costs ~10% more than Standard"],
+          "constraints": [
+            "FIFO: 3000 msg/s max, exactly-once, ordered per MessageGroupId",
+            "Standard: unlimited throughput, at-least-once, best-effort ordering",
+            "FIFO costs ~10% more than Standard"
+          ],
           "examples": [
             {
               "input": "Bank transactions: order matters (can't process withdrawal before deposit if account starts empty)",
@@ -345,13 +486,22 @@
               "explanation": "MessageGroupId enables per-account ordering while maintaining parallelism across accounts — best of both worlds"
             }
           ],
-          "hints": ["Image thumbnails: order doesn't matter, high throughput → Standard", "Bank transactions: order critical per account → FIFO", "Bulk emails: high volume, order irrelevant → Standard", "Order status: needs per-order ordering to prevent shipped before confirmed → FIFO"]
+          "hints": [
+            "Image thumbnails: order doesn't matter, high throughput → Standard",
+            "Bank transactions: order critical per account → FIFO",
+            "Bulk emails: high volume, order irrelevant → Standard",
+            "Order status: needs per-order ordering to prevent shipped before confirmed → FIFO"
+          ]
         },
         {
           "title": "Idempotent SQS Consumer",
           "difficulty": "Medium",
           "description": "Write pseudo-code for an idempotent SQS message processor that charges a customer's credit card. The message contains {orderId, userId, amount, paymentToken}. The processor must: (1) Avoid double-charging if the same message is delivered twice. (2) Handle the case where the charge succeeded but the DynamoDB write failed (message will be redelivered). (3) Handle a genuine retry when the previous attempt failed.",
-          "constraints": ["Payment API is not idempotent itself (each call creates a new charge)", "DynamoDB can store a processed-orders set with orderId as key", "Messages can be delivered multiple times within Lambda's batch"],
+          "constraints": [
+            "Payment API is not idempotent itself (each call creates a new charge)",
+            "DynamoDB can store a processed-orders set with orderId as key",
+            "Messages can be delivered multiple times within Lambda's batch"
+          ],
           "examples": [
             {
               "input": "orderId=O99 delivered twice (SQS at-least-once)",
@@ -359,9 +509,15 @@
               "explanation": "The correct fix: pass orderId as the payment API's idempotency key — even if called twice, the payment provider only charges once"
             }
           ],
-          "hints": ["Payment APIs (Stripe, Braintree) support idempotency keys — same key = same charge, not duplicate", "DynamoDB conditional write: attribute_not_exists(PK) ensures only one write per orderId", "Idempotency key in payment API + conditional DynamoDB write = bulletproof double-charge prevention"]
+          "hints": [
+            "Payment APIs (Stripe, Braintree) support idempotency keys — same key = same charge, not duplicate",
+            "DynamoDB conditional write: attribute_not_exists(PK) ensures only one write per orderId",
+            "Idempotency key in payment API + conditional DynamoDB write = bulletproof double-charge prevention"
+          ]
         }
-      ]
+      ],
+      "subCategory": "Serverless & Functions",
+      "displayOrder": 22
     }
   ]
 }

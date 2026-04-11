@@ -43,6 +43,18 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
             if (req.isSkipExisting() && existing.isPresent()) {
                 Topic topic = existing.get();
 
+                // ── Patch subCategory + displayOrder if not yet set ───────────
+                boolean topicDirty = false;
+                if (dto.getSubCategory() != null && (topic.getSubCategory() == null || topic.getSubCategory().isBlank())) {
+                    topic.setSubCategory(dto.getSubCategory());
+                    topicDirty = true;
+                }
+                if (dto.getDisplayOrder() != null && (topic.getDisplayOrder() == null || topic.getDisplayOrder() == 999)) {
+                    topic.setDisplayOrder(dto.getDisplayOrder());
+                    topicDirty = true;
+                }
+                if (topicDirty) topicRepo.save(topic);
+
                 // ── Seed missing examples ─────────────────────────────────────
                 long existingExampleCount = exampleRepo.countByTopicId(topic.getId());
                 if (existingExampleCount == 0 && dto.getExamples() != null && !dto.getExamples().isEmpty()) {
@@ -155,6 +167,8 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
             topic.setAnalogy(dto.getAnalogy());
             topic.setMemoryAnchor(dto.getMemoryAnchor());
             topic.setFirstPrinciples(dto.getFirstPrinciples());
+            topic.setSubCategory(dto.getSubCategory());
+            if (dto.getDisplayOrder() != null) topic.setDisplayOrder(dto.getDisplayOrder());
             topic = topicRepo.save(topic);
             seededTopics++;
 

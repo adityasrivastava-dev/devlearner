@@ -228,7 +228,9 @@
           "constraints": "1 ≤ nums.length ≤ 300 | 0 ≤ nums[i] ≤ 100",
           "editorial": "Interval DP: dp[i][j] = max coins in open interval (i,j). 'Last balloon k' reversal avoids the state explosion of 'first burst' thinking. Padding with boundary 1s handles the boundary cases cleanly. O(n³) time, O(n²) space."
         }
-      ]
+      ],
+      "subCategory": "Dynamic Programming (MOST IMPORTANT)",
+      "displayOrder": 70
     }
   ]
 }

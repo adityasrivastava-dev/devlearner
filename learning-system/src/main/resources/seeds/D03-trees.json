@@ -243,7 +243,9 @@
           "constraints": "1 ≤ number of nodes ≤ 1000 | Node.val == 0",
           "editorial": "Greedy post-order: leaves never get cameras (parent is better placement). Return states: 0=uncovered (force parent to add camera), 1=has camera, 2=covered. If root is still uncovered after DFS, add one more camera. O(n) time, O(h) space."
         }
-      ]
+      ],
+      "subCategory": "Trees",
+      "displayOrder": 40
     }
   ]
 }

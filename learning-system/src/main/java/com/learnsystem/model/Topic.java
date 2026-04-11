@@ -50,6 +50,14 @@ private String whenToUse;
 @Column(name = "starter_code", columnDefinition = "TEXT")
 private String starterCode;
 
+/** Sub-section within the category, e.g. "OOP (VERY IMPORTANT)", "Collections Framework" */
+@Column(name = "sub_category", length = 120)
+private String subCategory;
+
+/** Controls sort order within the category+subCategory group. Lower = first. */
+@Column(name = "display_order")
+private Integer displayOrder = 999;
+
 // ── Phase 1 Story-Based Learning Fields ──────────────────────────────────
 
 @Column(columnDefinition = "TEXT")

@@ -219,7 +219,9 @@
           "constraints": "1 ≤ rows ≤ 10^4",
           "editorial": "Self-join pairs duplicates: p1 and p2 share the same email, p1 has a larger id (so p1 is the duplicate to delete). DELETE p1 removes all such rows. Non-duplicate rows have no p2 match → not deleted."
         }
-      ]
+      ],
+      "subCategory": "Basics",
+      "displayOrder": 10
     }
   ]
 }

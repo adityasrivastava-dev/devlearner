@@ -77,10 +77,22 @@
           "starterCode": "public class Solution {\n    public long factorialRecursive(int n) {\n        // TODO\n        return 0;\n    }\n    public long factorialIterative(int n) {\n        // TODO\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    public long factorialRecursive(int n) {\n        if (n <= 1) return 1;\n        return n * factorialRecursive(n - 1);\n    }\n    public long factorialIterative(int n) {\n        long result = 1;\n        for (int i = 2; i <= n; i++) result *= i;\n        return result;\n    }\n}",
           "testCases": [
-            {"input": "0", "output": "1"},
-            {"input": "5", "output": "120"},
-            {"input": "10", "output": "3628800"},
-            {"input": "1", "output": "1"}
+            {
+              "input": "0",
+              "output": "1"
+            },
+            {
+              "input": "5",
+              "output": "120"
+            },
+            {
+              "input": "10",
+              "output": "3628800"
+            },
+            {
+              "input": "1",
+              "output": "1"
+            }
           ],
           "constraints": "0 <= n <= 20 (20! fits in long)",
           "editorial": "Classic recursion intro. Base case n<=1 returns 1. Recursive multiplies n by factorial(n-1). Stack depth = n. Iterative is O(1) stack space. For n > 20, use BigInteger."
@@ -97,10 +109,22 @@
           "starterCode": "public class Solution {\n    public double myPow(double x, int n) {\n        // TODO: O(log n)\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    public double myPow(double x, int n) {\n        long N = n;  // use long to handle Integer.MIN_VALUE\n        if (N < 0) { x = 1 / x; N = -N; }\n        return fastPow(x, N);\n    }\n\n    private double fastPow(double x, long n) {\n        if (n == 0) return 1.0;\n        if (n % 2 == 0) return fastPow(x * x, n / 2);\n        return x * fastPow(x, n - 1);\n    }\n}",
           "testCases": [
-            {"input": "x=2.0, n=10", "output": "1024.0"},
-            {"input": "x=2.1, n=3", "output": "9.261"},
-            {"input": "x=2.0, n=-2", "output": "0.25"},
-            {"input": "x=1.0, n=-2147483648", "output": "1.0"}
+            {
+              "input": "x=2.0, n=10",
+              "output": "1024.0"
+            },
+            {
+              "input": "x=2.1, n=3",
+              "output": "9.261"
+            },
+            {
+              "input": "x=2.0, n=-2",
+              "output": "0.25"
+            },
+            {
+              "input": "x=1.0, n=-2147483648",
+              "output": "1.0"
+            }
           ],
           "constraints": "-100.0 < x < 100.0. -2^31 <= n <= 2^31-1. x != 0 when n < 0.",
           "editorial": "Fast exponentiation halves n on each call → O(log n) multiplications. Cast n to long before negating to handle Integer.MIN_VALUE (-2^31 has no positive int counterpart). Recursion depth = O(log n)."
@@ -117,10 +141,22 @@
           "starterCode": "public class Solution {\n    public int gcd(int a, int b) {\n        // TODO: recursive Euclid\n        return 0;\n    }\n    public long lcm(int a, int b) {\n        // TODO\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int gcd(int a, int b) {\n        return b == 0 ? a : gcd(b, a % b);\n    }\n    public long lcm(int a, int b) {\n        return (long) a / gcd(a, b) * b;  // divide first to avoid overflow\n    }\n}",
           "testCases": [
-            {"input": "gcd(12,8)", "output": "4"},
-            {"input": "gcd(100,75)", "output": "25"},
-            {"input": "lcm(4,6)", "output": "12"},
-            {"input": "gcd(0,5)", "output": "5"}
+            {
+              "input": "gcd(12,8)",
+              "output": "4"
+            },
+            {
+              "input": "gcd(100,75)",
+              "output": "25"
+            },
+            {
+              "input": "lcm(4,6)",
+              "output": "12"
+            },
+            {
+              "input": "gcd(0,5)",
+              "output": "5"
+            }
           ],
           "constraints": "0 <= a, b <= 10^9",
           "editorial": "Euclid's algorithm: gcd(a,b) = gcd(b, a%b) because any divisor of a and b also divides a%b. Terminates in O(log min(a,b)) steps. LCM: divide before multiplying to avoid overflow."
@@ -137,10 +173,22 @@
           "starterCode": "public class Solution {\n    public int sumOfDigits(int n) {\n        // TODO: recursive, no loops or toString\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int sumOfDigits(int n) {\n        if (n < 10) return n;\n        return n % 10 + sumOfDigits(n / 10);\n    }\n}",
           "testCases": [
-            {"input": "12345", "output": "15"},
-            {"input": "0", "output": "0"},
-            {"input": "999", "output": "27"},
-            {"input": "7", "output": "7"}
+            {
+              "input": "12345",
+              "output": "15"
+            },
+            {
+              "input": "0",
+              "output": "0"
+            },
+            {
+              "input": "999",
+              "output": "27"
+            },
+            {
+              "input": "7",
+              "output": "7"
+            }
           ],
           "constraints": "0 <= n <= 10^9",
           "editorial": "Classic digit recursion: sum last digit + recurse on rest. Base case when n is single digit. Recursion depth = number of digits = O(log n)."
@@ -157,9 +205,18 @@
           "starterCode": "public class Calculator {\n    public int add(int a, int b) { return 0; }\n    public double add(double a, double b) { return 0; }\n    public int add(int a, int b, int c) { return 0; }\n}",
           "solutionCode": "public class Calculator {\n    public int add(int a, int b) {\n        return a + b;\n    }\n    public double add(double a, double b) {\n        return a + b;\n    }\n    public int add(int a, int b, int c) {\n        return add(a, b) + c;  // reuse two-arg version\n    }\n}",
           "testCases": [
-            {"input": "add(3, 4)", "output": "7"},
-            {"input": "add(1.5, 2.5)", "output": "4.0"},
-            {"input": "add(1, 2, 3)", "output": "6"}
+            {
+              "input": "add(3, 4)",
+              "output": "7"
+            },
+            {
+              "input": "add(1.5, 2.5)",
+              "output": "4.0"
+            },
+            {
+              "input": "add(1, 2, 3)",
+              "output": "6"
+            }
           ],
           "constraints": "Inputs fit in int/double ranges.",
           "editorial": "Demonstrates overloading: same method name, different signatures. Compiler resolves at compile time based on argument types. Three-arg version delegates to two-arg — demonstrates method reuse."
@@ -176,9 +233,18 @@
           "starterCode": "public class Solution {\n    public int sum(int... nums) {\n        // TODO\n        return 0;\n    }\n    public int sumArrays(int[]... arrays) {\n        // TODO\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int sum(int... nums) {\n        int total = 0;\n        for (int n : nums) total += n;\n        return total;\n    }\n    public int sumArrays(int[]... arrays) {\n        int total = 0;\n        for (int[] arr : arrays)\n            for (int n : arr) total += n;\n        return total;\n    }\n}",
           "testCases": [
-            {"input": "sum(1,2,3,4,5)", "output": "15"},
-            {"input": "sum()", "output": "0"},
-            {"input": "sumArrays([1,2],[3,4],[5])", "output": "15"}
+            {
+              "input": "sum(1,2,3,4,5)",
+              "output": "15"
+            },
+            {
+              "input": "sum()",
+              "output": "0"
+            },
+            {
+              "input": "sumArrays([1,2],[3,4],[5])",
+              "output": "15"
+            }
           ],
           "constraints": "All values fit in int. Max 100 arguments.",
           "editorial": "Varargs compiles to array parameter. Can pass zero arguments (empty array) or many. Can also pass an existing array directly. Varargs must be the last parameter. sumArrays uses varargs of int[] — two nested for-each loops."
@@ -195,10 +261,22 @@
           "starterCode": "public class Solution {\n    public int binarySearch(int[] arr, int target) {\n        // TODO: recursive\n        return -1;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int binarySearch(int[] arr, int target) {\n        return search(arr, target, 0, arr.length - 1);\n    }\n\n    private int search(int[] arr, int target, int lo, int hi) {\n        if (lo > hi) return -1;\n        int mid = lo + (hi - lo) / 2;\n        if (arr[mid] == target) return mid;\n        if (arr[mid] > target)  return search(arr, target, lo, mid - 1);\n        return search(arr, target, mid + 1, hi);\n    }\n}",
           "testCases": [
-            {"input": "arr=[1,3,5,7,9,11], target=7", "output": "3"},
-            {"input": "arr=[1,2,3,4,5], target=6", "output": "-1"},
-            {"input": "arr=[1], target=1", "output": "0"},
-            {"input": "arr=[2,4,6,8], target=1", "output": "-1"}
+            {
+              "input": "arr=[1,3,5,7,9,11], target=7",
+              "output": "3"
+            },
+            {
+              "input": "arr=[1,2,3,4,5], target=6",
+              "output": "-1"
+            },
+            {
+              "input": "arr=[1], target=1",
+              "output": "0"
+            },
+            {
+              "input": "arr=[2,4,6,8], target=1",
+              "output": "-1"
+            }
           ],
           "constraints": "Array is sorted. 1 <= arr.length <= 10^5. Values fit in int.",
           "editorial": "Recursive binary search: divide in half each call. Use lo + (hi-lo)/2 instead of (lo+hi)/2 to avoid integer overflow. Recursion depth = O(log n). The helper method pattern (public wrapper + private recursive) is idiomatic Java."
@@ -215,10 +293,22 @@
           "starterCode": "public class Solution {\n    public int[] mergeSort(int[] arr) {\n        // TODO\n        return arr;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int[] mergeSort(int[] arr) {\n        if (arr.length <= 1) return arr;\n        int mid = arr.length / 2;\n        int[] left  = mergeSort(java.util.Arrays.copyOfRange(arr, 0, mid));\n        int[] right = mergeSort(java.util.Arrays.copyOfRange(arr, mid, arr.length));\n        return merge(left, right);\n    }\n\n    private int[] merge(int[] left, int[] right) {\n        int[] result = new int[left.length + right.length];\n        int i = 0, j = 0, k = 0;\n        while (i < left.length && j < right.length) {\n            if (left[i] <= right[j]) result[k++] = left[i++];\n            else                     result[k++] = right[j++];\n        }\n        while (i < left.length)  result[k++] = left[i++];\n        while (j < right.length) result[k++] = right[j++];\n        return result;\n    }\n}",
           "testCases": [
-            {"input": "[5,3,8,1,9,2,7]", "output": "[1,2,3,5,7,8,9]"},
-            {"input": "[1]", "output": "[1]"},
-            {"input": "[]", "output": "[]"},
-            {"input": "[5,5,5,5]", "output": "[5,5,5,5]"}
+            {
+              "input": "[5,3,8,1,9,2,7]",
+              "output": "[1,2,3,5,7,8,9]"
+            },
+            {
+              "input": "[1]",
+              "output": "[1]"
+            },
+            {
+              "input": "[]",
+              "output": "[]"
+            },
+            {
+              "input": "[5,5,5,5]",
+              "output": "[5,5,5,5]"
+            }
           ],
           "constraints": "0 <= arr.length <= 10^5. Values fit in int.",
           "editorial": "Merge sort: O(n log n) time, O(n) space. Divide: split at midpoint. Conquer: recursive calls. Combine: merge two sorted halves. The recursion tree has O(log n) levels, each level does O(n) work. Stable sort — equal elements maintain relative order."
@@ -235,9 +325,18 @@
           "starterCode": "public class Solution {\n    public int[][] floodFill(int[][] image, int sr, int sc, int color) {\n        // TODO\n        return image;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int[][] floodFill(int[][] image, int sr, int sc, int color) {\n        int orig = image[sr][sc];\n        if (orig == color) return image;  // avoid infinite recursion\n        dfs(image, sr, sc, orig, color);\n        return image;\n    }\n\n    private void dfs(int[][] img, int r, int c, int orig, int newColor) {\n        if (r < 0 || r >= img.length || c < 0 || c >= img[0].length) return;\n        if (img[r][c] != orig) return;\n        img[r][c] = newColor;\n        dfs(img, r+1, c, orig, newColor);\n        dfs(img, r-1, c, orig, newColor);\n        dfs(img, r, c+1, orig, newColor);\n        dfs(img, r, c-1, orig, newColor);\n    }\n}",
           "testCases": [
-            {"input": "image=[[1,1,1],[1,1,0],[1,0,1]], sr=1, sc=1, color=2", "output": "[[2,2,2],[2,2,0],[2,0,1]]"},
-            {"input": "image=[[0,0,0],[0,0,0]], sr=0, sc=0, color=0", "output": "[[0,0,0],[0,0,0]]"},
-            {"input": "image=[[0,0,0],[0,1,1]], sr=1, sc=1, color=1", "output": "[[0,0,0],[0,1,1]]"}
+            {
+              "input": "image=[[1,1,1],[1,1,0],[1,0,1]], sr=1, sc=1, color=2",
+              "output": "[[2,2,2],[2,2,0],[2,0,1]]"
+            },
+            {
+              "input": "image=[[0,0,0],[0,0,0]], sr=0, sc=0, color=0",
+              "output": "[[0,0,0],[0,0,0]]"
+            },
+            {
+              "input": "image=[[0,0,0],[0,1,1]], sr=1, sc=1, color=1",
+              "output": "[[0,0,0],[0,1,1]]"
+            }
           ],
           "constraints": "m == image.length. n == image[i].length. 1 <= m, n <= 50. 0 <= image[i][j], color < 2^16.",
           "editorial": "DFS flood fill: change pixel, then recurse in 4 directions. Early return on bounds check and wrong color. Critical: check orig != color before starting to avoid marking all same-color pixels when color doesn't change. O(m*n) time."
@@ -254,9 +353,18 @@
           "starterCode": "import java.util.*;\npublic class Solution {\n    public List<List<Integer>> subsets(int[] nums) {\n        // TODO\n        return new ArrayList<>();\n    }\n}",
           "solutionCode": "import java.util.*;\npublic class Solution {\n    public List<List<Integer>> subsets(int[] nums) {\n        List<List<Integer>> result = new ArrayList<>();\n        backtrack(nums, 0, new ArrayList<>(), result);\n        return result;\n    }\n\n    private void backtrack(int[] nums, int start, List<Integer> current, List<List<Integer>> result) {\n        result.add(new ArrayList<>(current));\n        for (int i = start; i < nums.length; i++) {\n            current.add(nums[i]);\n            backtrack(nums, i + 1, current, result);\n            current.remove(current.size() - 1);\n        }\n    }\n}",
           "testCases": [
-            {"input": "[1,2,3]", "output": "[[],[1],[1,2],[1,2,3],[1,3],[2],[2,3],[3]]"},
-            {"input": "[0]", "output": "[[],[0]]"},
-            {"input": "[1,2]", "output": "[[],[1],[1,2],[2]]"}
+            {
+              "input": "[1,2,3]",
+              "output": "[[],[1],[1,2],[1,2,3],[1,3],[2],[2,3],[3]]"
+            },
+            {
+              "input": "[0]",
+              "output": "[[],[0]]"
+            },
+            {
+              "input": "[1,2]",
+              "output": "[[],[1],[1,2],[2]]"
+            }
           ],
           "constraints": "1 <= nums.length <= 10. All nums are unique.",
           "editorial": "Backtracking: add current list to result at every node (not just leaves). For loop starting at 'start' prevents duplicates. Add element, recurse, remove element (backtrack). 2^n subsets, O(n * 2^n) time to copy all lists."
@@ -273,10 +381,22 @@
           "starterCode": "public class Solution {\n    public int climbStairs(int n) {\n        // TODO: memoized\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int climbStairs(int n) {\n        int[] memo = new int[n + 1];\n        return dp(n, memo);\n    }\n\n    private int dp(int n, int[] memo) {\n        if (n <= 1) return 1;\n        if (memo[n] != 0) return memo[n];\n        memo[n] = dp(n - 1, memo) + dp(n - 2, memo);\n        return memo[n];\n    }\n}",
           "testCases": [
-            {"input": "2", "output": "2"},
-            {"input": "3", "output": "3"},
-            {"input": "10", "output": "89"},
-            {"input": "45", "output": "1836311903"}
+            {
+              "input": "2",
+              "output": "2"
+            },
+            {
+              "input": "3",
+              "output": "3"
+            },
+            {
+              "input": "10",
+              "output": "89"
+            },
+            {
+              "input": "45",
+              "output": "1836311903"
+            }
           ],
           "constraints": "1 <= n <= 45",
           "editorial": "Identical to Fibonacci recurrence. Memoized: each subproblem solved once → O(n). The memo array is passed by reference — all recursive calls share the same cache. Demonstrate the pattern: check cache → compute → store → return."
@@ -293,9 +413,18 @@
           "starterCode": "import java.util.*;\npublic class Solution {\n    public List<List<Integer>> permute(int[] nums) {\n        // TODO\n        return new ArrayList<>();\n    }\n}",
           "solutionCode": "import java.util.*;\npublic class Solution {\n    public List<List<Integer>> permute(int[] nums) {\n        List<List<Integer>> result = new ArrayList<>();\n        backtrack(nums, 0, result);\n        return result;\n    }\n\n    private void backtrack(int[] nums, int start, List<List<Integer>> result) {\n        if (start == nums.length) {\n            List<Integer> perm = new ArrayList<>();\n            for (int n : nums) perm.add(n);\n            result.add(perm);\n            return;\n        }\n        for (int i = start; i < nums.length; i++) {\n            swap(nums, start, i);\n            backtrack(nums, start + 1, result);\n            swap(nums, start, i);  // restore\n        }\n    }\n\n    private void swap(int[] a, int i, int j) {\n        int t = a[i]; a[i] = a[j]; a[j] = t;\n    }\n}",
           "testCases": [
-            {"input": "[1,2,3]", "output": "[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]"},
-            {"input": "[0,1]", "output": "[[0,1],[1,0]]"},
-            {"input": "[1]", "output": "[[1]]"}
+            {
+              "input": "[1,2,3]",
+              "output": "[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]"
+            },
+            {
+              "input": "[0,1]",
+              "output": "[[0,1],[1,0]]"
+            },
+            {
+              "input": "[1]",
+              "output": "[[1]]"
+            }
           ],
           "constraints": "1 <= nums.length <= 6. -10 <= nums[i] <= 10. All distinct.",
           "editorial": "Swap-based permutation: fix current position by swapping it with each remaining element, recurse for the next position, then swap back. Produces n! permutations. O(n * n!) time to generate all."
@@ -312,10 +441,22 @@
           "starterCode": "public class Solution {\n    public int coinChange(int[] coins, int amount) {\n        // TODO: top-down memoization\n        return -1;\n    }\n}",
           "solutionCode": "public class Solution {\n    private int[] memo;\n\n    public int coinChange(int[] coins, int amount) {\n        memo = new int[amount + 1];\n        java.util.Arrays.fill(memo, -2);  // -2 = unvisited\n        return dp(coins, amount);\n    }\n\n    private int dp(int[] coins, int amount) {\n        if (amount < 0) return -1;\n        if (amount == 0) return 0;\n        if (memo[amount] != -2) return memo[amount];\n        int min = Integer.MAX_VALUE;\n        for (int coin : coins) {\n            int sub = dp(coins, amount - coin);\n            if (sub != -1) min = Math.min(min, sub + 1);\n        }\n        memo[amount] = (min == Integer.MAX_VALUE) ? -1 : min;\n        return memo[amount];\n    }\n}",
           "testCases": [
-            {"input": "coins=[1,5,6,9], amount=11", "output": "2"},
-            {"input": "coins=[2], amount=3", "output": "-1"},
-            {"input": "coins=[1,2,5], amount=11", "output": "3"},
-            {"input": "coins=[1], amount=0", "output": "0"}
+            {
+              "input": "coins=[1,5,6,9], amount=11",
+              "output": "2"
+            },
+            {
+              "input": "coins=[2], amount=3",
+              "output": "-1"
+            },
+            {
+              "input": "coins=[1,2,5], amount=11",
+              "output": "3"
+            },
+            {
+              "input": "coins=[1], amount=0",
+              "output": "0"
+            }
           ],
           "constraints": "1 <= coins.length <= 12. 1 <= coins[i] <= 2^31-1. 0 <= amount <= 10^4.",
           "editorial": "Top-down DP: dp(amount) = 1 + min over all coins. Use -2 sentinel for unvisited (to distinguish from -1=impossible and 0=base case). For each coin, subtract and recurse. If the sub-result is -1 (impossible), skip. O(amount * |coins|) time."
@@ -332,10 +473,22 @@
           "starterCode": "public class Solution {\n    public boolean isEven(int n) {\n        // TODO: no %, no &\n        return false;\n    }\n    public boolean isOdd(int n) {\n        // TODO: mutual recursion with isEven\n        return false;\n    }\n}",
           "solutionCode": "public class Solution {\n    public boolean isEven(int n) {\n        n = Math.abs(n);\n        if (n == 0) return true;\n        return isOdd(n - 1);\n    }\n\n    public boolean isOdd(int n) {\n        n = Math.abs(n);\n        if (n == 0) return false;\n        return isEven(n - 1);\n    }\n}",
           "testCases": [
-            {"input": "isEven(4)", "output": "true"},
-            {"input": "isOdd(7)", "output": "true"},
-            {"input": "isEven(-6)", "output": "true"},
-            {"input": "isOdd(0)", "output": "false"}
+            {
+              "input": "isEven(4)",
+              "output": "true"
+            },
+            {
+              "input": "isOdd(7)",
+              "output": "true"
+            },
+            {
+              "input": "isEven(-6)",
+              "output": "true"
+            },
+            {
+              "input": "isOdd(0)",
+              "output": "false"
+            }
           ],
           "constraints": "0 <= |n| <= 100 (stack depth bounded). Demonstrate concept.",
           "editorial": "Mutual recursion: two functions call each other. isEven(n) = isOdd(n-1) because n is even iff n-1 is odd. Stack depth = n, so only works for small n in Java. Demonstrates the concept but use n%2 in practice."
@@ -352,10 +505,22 @@
           "starterCode": "public class Solution {\n    static class TreeNode {\n        int val; TreeNode left, right;\n        TreeNode(int v) { val = v; }\n    }\n    public int maxDepth(TreeNode root) {\n        // TODO\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    static class TreeNode {\n        int val; TreeNode left, right;\n        TreeNode(int v) { val = v; }\n    }\n    public int maxDepth(TreeNode root) {\n        if (root == null) return 0;\n        return 1 + Math.max(maxDepth(root.left), maxDepth(root.right));\n    }\n}",
           "testCases": [
-            {"input": "[3,9,20,null,null,15,7]", "output": "3"},
-            {"input": "[1,null,2]", "output": "2"},
-            {"input": "[]", "output": "0"},
-            {"input": "[1]", "output": "1"}
+            {
+              "input": "[3,9,20,null,null,15,7]",
+              "output": "3"
+            },
+            {
+              "input": "[1,null,2]",
+              "output": "2"
+            },
+            {
+              "input": "[]",
+              "output": "0"
+            },
+            {
+              "input": "[1]",
+              "output": "1"
+            }
           ],
           "constraints": "0 <= number of nodes <= 10^4. -100 <= Node.val <= 100.",
           "editorial": "Tree recursion: null node has depth 0. Non-null node has depth 1 + max of subtree depths. This is the most elegant recursive solution. O(n) time — each node visited once. Stack depth = tree height = O(log n) for balanced, O(n) worst case."
@@ -372,10 +537,22 @@
           "starterCode": "public class Solution {\n    public int numDecodings(String s) {\n        // TODO: memoized\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    private int[] memo;\n\n    public int numDecodings(String s) {\n        memo = new int[s.length() + 1];\n        java.util.Arrays.fill(memo, -1);\n        return dp(s, 0);\n    }\n\n    private int dp(String s, int i) {\n        if (i == s.length()) return 1;\n        if (s.charAt(i) == '0') return 0;  // leading zero: invalid\n        if (memo[i] != -1) return memo[i];\n        int ways = dp(s, i + 1);  // take 1 digit\n        if (i + 1 < s.length()) {\n            int twoDigit = Integer.parseInt(s.substring(i, i + 2));\n            if (twoDigit <= 26) ways += dp(s, i + 2);  // take 2 digits\n        }\n        memo[i] = ways;\n        return ways;\n    }\n}",
           "testCases": [
-            {"input": "12", "output": "2"},
-            {"input": "226", "output": "3"},
-            {"input": "06", "output": "0"},
-            {"input": "11106", "output": "2"}
+            {
+              "input": "12",
+              "output": "2"
+            },
+            {
+              "input": "226",
+              "output": "3"
+            },
+            {
+              "input": "06",
+              "output": "0"
+            },
+            {
+              "input": "11106",
+              "output": "2"
+            }
           ],
           "constraints": "1 <= s.length <= 100. s contains only digits.",
           "editorial": "Top-down DP: at each index, try 1-digit and 2-digit decodings. A digit starting with '0' is invalid (no A=0). Two-digit decode valid only if 10-26. Memoize to avoid re-exploring same suffix. O(n) time and space."
@@ -392,9 +569,18 @@
           "starterCode": "public class Solution {\n    public boolean solveMaze(int[][] maze) {\n        // TODO: mark path with 2, return true if solved\n        return false;\n    }\n}",
           "solutionCode": "public class Solution {\n    public boolean solveMaze(int[][] maze) {\n        return solve(maze, 0, 0);\n    }\n\n    private boolean solve(int[][] maze, int r, int c) {\n        int m = maze.length, n = maze[0].length;\n        if (r < 0 || r >= m || c < 0 || c >= n) return false;\n        if (maze[r][c] != 0) return false;  // wall or visited\n        if (r == m - 1 && c == n - 1) { maze[r][c] = 2; return true; }  // reached exit\n        maze[r][c] = 2;  // mark as path\n        if (solve(maze, r+1, c) || solve(maze, r-1, c) ||\n            solve(maze, r, c+1) || solve(maze, r, c-1)) return true;\n        maze[r][c] = 0;  // backtrack: unmark\n        return false;\n    }\n}",
           "testCases": [
-            {"input": "[[0,0,1,0],[0,0,0,0],[1,0,1,0],[0,0,0,0]]", "output": "true"},
-            {"input": "[[0,1],[1,0]]", "output": "false"},
-            {"input": "[[0]]", "output": "true"}
+            {
+              "input": "[[0,0,1,0],[0,0,0,0],[1,0,1,0],[0,0,0,0]]",
+              "output": "true"
+            },
+            {
+              "input": "[[0,1],[1,0]]",
+              "output": "false"
+            },
+            {
+              "input": "[[0]]",
+              "output": "true"
+            }
           ],
           "constraints": "1 <= m, n <= 10. maze[i][j] is 0 or 1. maze[0][0] = maze[m-1][n-1] = 0.",
           "editorial": "Backtracking: mark as part of path (2), try all directions, if successful return true. If stuck, unmark and return false. The early exit with `||` short-circuits once a path is found. O(4^(m*n)) worst case but much better in practice due to pruning."
@@ -411,9 +597,18 @@
           "starterCode": "public class Solution {\n    public int numIslands(char[][] grid) {\n        // TODO\n        return 0;\n    }\n}",
           "solutionCode": "public class Solution {\n    public int numIslands(char[][] grid) {\n        int count = 0;\n        for (int i = 0; i < grid.length; i++) {\n            for (int j = 0; j < grid[0].length; j++) {\n                if (grid[i][j] == '1') {\n                    count++;\n                    dfs(grid, i, j);\n                }\n            }\n        }\n        return count;\n    }\n\n    private void dfs(char[][] grid, int r, int c) {\n        if (r < 0 || r >= grid.length || c < 0 || c >= grid[0].length) return;\n        if (grid[r][c] != '1') return;\n        grid[r][c] = '0';  // mark visited\n        dfs(grid, r+1, c); dfs(grid, r-1, c);\n        dfs(grid, r, c+1); dfs(grid, r, c-1);\n    }\n}",
           "testCases": [
-            {"input": "[[1,1,1,1,0],[1,1,0,1,0],[1,1,0,0,0],[0,0,0,0,0]]", "output": "1"},
-            {"input": "[[1,1,0,0,0],[1,1,0,0,0],[0,0,1,0,0],[0,0,0,1,1]]", "output": "3"},
-            {"input": "[[1]]", "output": "1"}
+            {
+              "input": "[[1,1,1,1,0],[1,1,0,1,0],[1,1,0,0,0],[0,0,0,0,0]]",
+              "output": "1"
+            },
+            {
+              "input": "[[1,1,0,0,0],[1,1,0,0,0],[0,0,1,0,0],[0,0,0,1,1]]",
+              "output": "3"
+            },
+            {
+              "input": "[[1]]",
+              "output": "1"
+            }
           ],
           "constraints": "m == grid.length. n == grid[i].length. 1 <= m, n <= 300.",
           "editorial": "DFS on grid: each DFS call from an unvisited '1' explores one entire island, marking all cells visited. Count increments once per DFS root. O(m*n) time — each cell visited at most once. Modifies the grid; copy it first if preservation needed."
@@ -430,10 +625,22 @@
           "starterCode": "import java.util.function.*;\npublic class Solution {\n    public Function<Integer,Integer> compose(\n        Function<Integer,Integer> f,\n        Function<Integer,Integer> g) {\n        // TODO: return h where h(x) = f(g(x))\n        return null;\n    }\n    public int applyN(Function<Integer,Integer> f, int n, int x) {\n        // TODO: apply f n times to x\n        return 0;\n    }\n}",
           "solutionCode": "import java.util.function.*;\npublic class Solution {\n    public Function<Integer,Integer> compose(\n        Function<Integer,Integer> f,\n        Function<Integer,Integer> g) {\n        return x -> f.apply(g.apply(x));\n    }\n\n    public int applyN(Function<Integer,Integer> f, int n, int x) {\n        if (n == 0) return x;\n        return applyN(f, n - 1, f.apply(x));\n    }\n\n    public static void main(String[] args) {\n        Solution sol = new Solution();\n        Function<Integer,Integer> doubleIt = x -> x * 2;\n        Function<Integer,Integer> addOne   = x -> x + 1;\n        Function<Integer,Integer> doubleThenAdd = sol.compose(addOne, doubleIt);\n        System.out.println(doubleThenAdd.apply(5));  // addOne(doubleIt(5)) = 11\n        System.out.println(sol.applyN(doubleIt, 3, 1));  // 1→2→4→8\n    }\n}",
           "testCases": [
-            {"input": "compose(x->x+1, x->x*2).apply(5)", "output": "11"},
-            {"input": "applyN(x->x*2, 3, 1)", "output": "8"},
-            {"input": "applyN(x->x+1, 0, 5)", "output": "5"},
-            {"input": "compose(x->x*x, x->x+1).apply(3)", "output": "16"}
+            {
+              "input": "compose(x->x+1, x->x*2).apply(5)",
+              "output": "11"
+            },
+            {
+              "input": "applyN(x->x*2, 3, 1)",
+              "output": "8"
+            },
+            {
+              "input": "applyN(x->x+1, 0, 5)",
+              "output": "5"
+            },
+            {
+              "input": "compose(x->x*x, x->x+1).apply(3)",
+              "output": "16"
+            }
           ],
           "constraints": "0 <= n <= 20. Functions are well-defined for given inputs.",
           "editorial": "Function composition: lambda captures f and g. applyN: recursive with base n=0 returning identity. applyN is tail-recursive in this form (accumulates with each f.apply). Demonstrates Java's Function<T,R> interface and lambda closures."
@@ -450,15 +657,29 @@
           "starterCode": "public class Solution {\n    private int pos;\n    private String expr;\n    public boolean parseBoolExpr(String expression) {\n        // TODO: recursive descent\n        return false;\n    }\n}",
           "solutionCode": "public class Solution {\n    private int pos;\n    private String expr;\n\n    public boolean parseBoolExpr(String expression) {\n        this.expr = expression;\n        this.pos = 0;\n        return parse();\n    }\n\n    private boolean parse() {\n        char c = expr.charAt(pos++);\n        if (c == 't') return true;\n        if (c == 'f') return false;\n        if (c == '!') {\n            pos++;  // consume '('\n            boolean val = !parse();\n            pos++;  // consume ')'\n            return val;\n        }\n        // c is '&' or '|'\n        pos++;  // consume '('\n        boolean result = (c == '&');\n        while (true) {\n            boolean sub = parse();\n            result = (c == '&') ? result && sub : result || sub;\n            if (expr.charAt(pos) == ')') break;\n            pos++;  // consume ','\n        }\n        pos++;  // consume ')'\n        return result;\n    }\n}",
           "testCases": [
-            {"input": "!(f)", "output": "true"},
-            {"input": "|(f,t)", "output": "true"},
-            {"input": "&(t,f)", "output": "false"},
-            {"input": "|(&(t,f),!(f))", "output": "true"}
+            {
+              "input": "!(f)",
+              "output": "true"
+            },
+            {
+              "input": "|(f,t)",
+              "output": "true"
+            },
+            {
+              "input": "&(t,f)",
+              "output": "false"
+            },
+            {
+              "input": "|(&(t,f),!(f))",
+              "output": "true"
+            }
           ],
           "constraints": "1 <= expression.length <= 2*10^4. expression is a valid expression.",
           "editorial": "Recursive descent: parse() consumes one complete expression. For operators with multiple args, loop consuming subexpressions until ')' is reached. Short-circuit could be applied for '&' (stop at first false) and '|' (stop at first true). O(n) time — each char consumed exactly once."
         }
-      ]
+      ],
+      "subCategory": "Language Basics",
+      "displayOrder": 14
     }
   ]
 }

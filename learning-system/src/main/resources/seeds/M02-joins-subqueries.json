@@ -219,7 +219,9 @@
           "constraints": "1 ≤ rows ≤ 1000 | total weight ≤ 10^6",
           "editorial": "Self-join: for each person q1 at turn T, join all q2 with turn <= T (everyone boarding before or at the same time). SUM(q2.weight) = cumulative weight at that point. HAVING <= 1000 filters valid boarding points. ORDER BY turn DESC LIMIT 1 takes the last valid one."
         }
-      ]
+      ],
+      "subCategory": "Queries",
+      "displayOrder": 20
     }
   ]
 }

@@ -78,8 +78,14 @@
           "starterCode": "public class Q1 {\n    public static String[] predictOutput() {\n        // Return the two lines printed, in order\n        return new String[]{\"\", \"\"};\n    }\n    public static void main(String[] args) {\n        String[] out = predictOutput();\n        System.out.println(out[0]);\n        System.out.println(out[1]);\n    }\n}",
           "solutionCode": "public class Q1 {\n    public static String[] predictOutput() {\n        // Line 1: inside swap(), a=10, b=5 after swap\n        // Line 2: in main(), x=5, y=10 unchanged\n        return new String[]{\"10 5\", \"5 10\"};\n    }\n    public static void main(String[] args) {\n        String[] out = predictOutput();\n        System.out.println(out[0]); // 10 5\n        System.out.println(out[1]); // 5 10\n    }\n}",
           "testCases": [
-            {"input": "", "output": "10 5"},
-            {"input": "", "output": "5 10"}
+            {
+              "input": "",
+              "output": "10 5"
+            },
+            {
+              "input": "",
+              "output": "5 10"
+            }
           ],
           "constraints": "Conceptual — no input needed.",
           "editorial": "swap()'s local copies a and b are swapped (prints 10 5). But x and y in main() are primitives in a separate stack frame — never touched. They print 5 10 unchanged."
@@ -96,9 +102,18 @@
           "starterCode": "public class Q2 {\n    public static void swapInArray(int[] arr, int i, int j) {\n        // TODO: swap arr[i] and arr[j] in-place\n    }\n    public static void main(String[] args) {\n        int[] arr = {1, 2, 3, 4, 5};\n        swapInArray(arr, 1, 3);\n        System.out.println(java.util.Arrays.toString(arr));\n    }\n}",
           "solutionCode": "public class Q2 {\n    public static void swapInArray(int[] arr, int i, int j) {\n        int temp = arr[i];\n        arr[i] = arr[j];\n        arr[j] = temp;\n    }\n    public static void main(String[] args) {\n        int[] arr = {1, 2, 3, 4, 5};\n        swapInArray(arr, 1, 3);\n        System.out.println(java.util.Arrays.toString(arr)); // [1, 4, 3, 2, 5]\n    }\n}",
           "testCases": [
-            {"input": "arr=[1,2,3,4,5], i=1, j=3", "output": "[1, 4, 3, 2, 5]"},
-            {"input": "arr=[10,20], i=0, j=1", "output": "[20, 10]"},
-            {"input": "arr=[5], i=0, j=0", "output": "[5]"}
+            {
+              "input": "arr=[1,2,3,4,5], i=1, j=3",
+              "output": "[1, 4, 3, 2, 5]"
+            },
+            {
+              "input": "arr=[10,20], i=0, j=1",
+              "output": "[20, 10]"
+            },
+            {
+              "input": "arr=[5], i=0, j=0",
+              "output": "[5]"
+            }
           ],
           "constraints": "0 <= i, j < arr.length",
           "editorial": "Array elements are on the heap; arr is a reference. arr[i] navigates to the real heap element and modifies it. The caller's array variable still points to the same array — it sees the mutation immediately."
@@ -115,9 +130,18 @@
           "starterCode": "public class Q3 {\n    public static String appendSuffix(String s, String suffix) {\n        // Return s + suffix (cannot modify caller's variable)\n        return \"\";\n    }\n    public static void main(String[] args) {\n        String original = \"Hello\";\n        String result = appendSuffix(original, \" World\");\n        System.out.println(\"original: \" + original);\n        System.out.println(\"result: \" + result);\n    }\n}",
           "solutionCode": "public class Q3 {\n    public static String appendSuffix(String s, String suffix) {\n        return s + suffix; // new String object returned\n    }\n    public static void main(String[] args) {\n        String original = \"Hello\";\n        String result = appendSuffix(original, \" World\");\n        System.out.println(\"original: \" + original); // Hello\n        System.out.println(\"result: \" + result);     // Hello World\n    }\n}",
           "testCases": [
-            {"input": "s=Hello, suffix= World", "output": "Hello World"},
-            {"input": "s=Java, suffix= rocks", "output": "Java rocks"},
-            {"input": "s='', suffix=test", "output": "test"}
+            {
+              "input": "s=Hello, suffix= World",
+              "output": "Hello World"
+            },
+            {
+              "input": "s=Java, suffix= rocks",
+              "output": "Java rocks"
+            },
+            {
+              "input": "s='', suffix=test",
+              "output": "test"
+            }
           ],
           "constraints": "s and suffix are non-null.",
           "editorial": "Strings are immutable + passed by value. Even if you wrote s = s + suffix inside the method, that reassigns the local copy only. Returning the new String is the correct Java idiom."
@@ -134,8 +158,14 @@
           "starterCode": "import java.util.concurrent.atomic.AtomicInteger;\n\npublic class Q4 {\n    public static void increment(int[] counter) {\n        // TODO: increment counter[0]\n    }\n\n    public static void incrementAtomic(AtomicInteger counter) {\n        // TODO: increment using AtomicInteger API\n    }\n\n    public static void main(String[] args) {\n        int[] c = {0};\n        increment(c); increment(c); increment(c);\n        System.out.println(c[0]); // 3\n\n        AtomicInteger ai = new AtomicInteger(0);\n        incrementAtomic(ai); incrementAtomic(ai);\n        System.out.println(ai.get()); // 2\n    }\n}",
           "solutionCode": "import java.util.concurrent.atomic.AtomicInteger;\n\npublic class Q4 {\n    public static void increment(int[] counter) {\n        counter[0]++;\n    }\n\n    public static void incrementAtomic(AtomicInteger counter) {\n        counter.incrementAndGet();\n    }\n\n    public static void main(String[] args) {\n        int[] c = {0};\n        increment(c); increment(c); increment(c);\n        System.out.println(c[0]); // 3\n\n        AtomicInteger ai = new AtomicInteger(0);\n        incrementAtomic(ai); incrementAtomic(ai);\n        System.out.println(ai.get()); // 2\n    }\n}",
           "testCases": [
-            {"input": "increment 3 times", "output": "3"},
-            {"input": "incrementAtomic 2 times", "output": "2"}
+            {
+              "input": "increment 3 times",
+              "output": "3"
+            },
+            {
+              "input": "incrementAtomic 2 times",
+              "output": "2"
+            }
           ],
           "constraints": "No constraints.",
           "editorial": "counter[0]++ navigates through the array reference to the heap element and mutates it — visible to caller. AtomicInteger is a mutable wrapper around int with thread-safe operations. Both work because you're mutating an object, not trying to reassign a primitive parameter."
@@ -152,7 +182,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q5 {\n    public static int[] predictSizes() {\n        return new int[]{0, 0}; // TODO\n    }\n    public static void main(String[] args) {\n        int[] sizes = predictSizes();\n        System.out.println(sizes[0]); // first println\n        System.out.println(sizes[1]); // second println\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q5 {\n    public static int[] predictSizes() {\n        // a starts with [1,2,3] size=3\n        // b = a: aliasing, same object\n        // b.add(4): a now [1,2,3,4] size=4\n        // c = new ArrayList<>(a): copy of a, independent\n        // c.add(5): c=[1,2,3,4,5], a still [1,2,3,4] size=4\n        return new int[]{4, 4};\n    }\n    public static void main(String[] args) {\n        int[] sizes = predictSizes();\n        System.out.println(sizes[0]); // 4\n        System.out.println(sizes[1]); // 4\n    }\n}",
           "testCases": [
-            {"input": "", "output": "4\n4"}
+            {
+              "input": "",
+              "output": "4\n4"
+            }
           ],
           "constraints": "Conceptual — predict, don't compute.",
           "editorial": "b=a creates aliasing: both point to the same heap object. b.add(4) modifies that object — a sees size 4. new ArrayList<>(a) creates a defensive copy — c and a are now independent objects. c.add(5) only changes c."
@@ -169,10 +202,22 @@
           "starterCode": "public class Q6 {\n    public static void reverse(int[] arr) {\n        // TODO: reverse in-place\n    }\n    public static void main(String[] args) {\n        int[] arr = {1, 2, 3, 4, 5};\n        reverse(arr);\n        System.out.println(java.util.Arrays.toString(arr));\n    }\n}",
           "solutionCode": "public class Q6 {\n    public static void reverse(int[] arr) {\n        int left = 0, right = arr.length - 1;\n        while (left < right) {\n            int temp = arr[left];\n            arr[left] = arr[right];\n            arr[right] = temp;\n            left++;\n            right--;\n        }\n    }\n    public static void main(String[] args) {\n        int[] arr = {1, 2, 3, 4, 5};\n        reverse(arr);\n        System.out.println(java.util.Arrays.toString(arr)); // [5, 4, 3, 2, 1]\n    }\n}",
           "testCases": [
-            {"input": "[1,2,3,4,5]", "output": "[5, 4, 3, 2, 1]"},
-            {"input": "[1,2]", "output": "[2, 1]"},
-            {"input": "[42]", "output": "[42]"},
-            {"input": "[]", "output": "[]"}
+            {
+              "input": "[1,2,3,4,5]",
+              "output": "[5, 4, 3, 2, 1]"
+            },
+            {
+              "input": "[1,2]",
+              "output": "[2, 1]"
+            },
+            {
+              "input": "[42]",
+              "output": "[42]"
+            },
+            {
+              "input": "[]",
+              "output": "[]"
+            }
           ],
           "constraints": "0 <= arr.length <= 10^5",
           "editorial": "Two-pointer approach swaps from outside in. O(n/2) swaps, O(1) space. Works in-place because arr[i] mutations go through the reference to the real heap array."
@@ -189,8 +234,14 @@
           "starterCode": "public class Q7 {\n    public static String buildGreeting(String name, String title, int year) {\n        // Use StringBuilder to construct the greeting\n        // Format: \"Dear {title} {name}, Welcome to class of {year}!\"\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(buildGreeting(\"Smith\", \"Dr.\", 2024));\n        System.out.println(buildGreeting(\"Johnson\", \"Prof.\", 2025));\n    }\n}",
           "solutionCode": "public class Q7 {\n    public static String buildGreeting(String name, String title, int year) {\n        StringBuilder sb = new StringBuilder();\n        sb.append(\"Dear \").append(title).append(\" \").append(name)\n          .append(\", Welcome to class of \").append(year).append(\"!\");\n        return sb.toString();\n    }\n    public static void main(String[] args) {\n        System.out.println(buildGreeting(\"Smith\", \"Dr.\", 2024));\n        // Dear Dr. Smith, Welcome to class of 2024!\n        System.out.println(buildGreeting(\"Johnson\", \"Prof.\", 2025));\n        // Dear Prof. Johnson, Welcome to class of 2025!\n    }\n}",
           "testCases": [
-            {"input": "name=Smith, title=Dr., year=2024", "output": "Dear Dr. Smith, Welcome to class of 2024!"},
-            {"input": "name=Johnson, title=Prof., year=2025", "output": "Dear Prof. Johnson, Welcome to class of 2025!"}
+            {
+              "input": "name=Smith, title=Dr., year=2024",
+              "output": "Dear Dr. Smith, Welcome to class of 2024!"
+            },
+            {
+              "input": "name=Johnson, title=Prof., year=2025",
+              "output": "Dear Prof. Johnson, Welcome to class of 2025!"
+            }
           ],
           "constraints": "name and title are non-null, non-empty. year > 0.",
           "editorial": "StringBuilder is mutable — append() modifies the internal buffer. Each append() returns the same StringBuilder (fluent API), enabling chaining. Return sb.toString() creates the final immutable String. Never use String + in loops — each + creates a new String object."
@@ -207,9 +258,18 @@
           "starterCode": "public class Q8 {\n    public static void fillFibonacci(int[] arr) {\n        // Fill arr with Fibonacci numbers F(0), F(1), ..., F(n-1)\n        // TODO\n    }\n    public static void main(String[] args) {\n        int[] fib = new int[10];\n        fillFibonacci(fib);\n        System.out.println(java.util.Arrays.toString(fib));\n    }\n}",
           "solutionCode": "public class Q8 {\n    public static void fillFibonacci(int[] arr) {\n        if (arr.length == 0) return;\n        arr[0] = 0;\n        if (arr.length == 1) return;\n        arr[1] = 1;\n        for (int i = 2; i < arr.length; i++) {\n            arr[i] = arr[i-1] + arr[i-2];\n        }\n    }\n    public static void main(String[] args) {\n        int[] fib = new int[10];\n        fillFibonacci(fib);\n        System.out.println(java.util.Arrays.toString(fib));\n        // [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]\n    }\n}",
           "testCases": [
-            {"input": "n=10", "output": "[0, 1, 1, 2, 3, 5, 8, 13, 21, 34]"},
-            {"input": "n=1", "output": "[0]"},
-            {"input": "n=2", "output": "[0, 1]"}
+            {
+              "input": "n=10",
+              "output": "[0, 1, 1, 2, 3, 5, 8, 13, 21, 34]"
+            },
+            {
+              "input": "n=1",
+              "output": "[0]"
+            },
+            {
+              "input": "n=2",
+              "output": "[0, 1]"
+            }
           ],
           "constraints": "1 <= arr.length <= 45 (fits in int)",
           "editorial": "Fill in-place using the relation F(n) = F(n-1) + F(n-2). The method has no return value because it mutates through the reference — the caller's array is the same heap object."
@@ -226,8 +286,14 @@
           "starterCode": "public class Q9 {\n    public static void appendWords(StringBuilder sb, String[] words, String separator) {\n        // Append all words joined by separator to sb\n        // TODO\n    }\n    public static void main(String[] args) {\n        StringBuilder sb = new StringBuilder(\"PREFIX:\");\n        appendWords(sb, new String[]{\"apple\", \"banana\", \"cherry\"}, \", \");\n        System.out.println(sb.toString());\n    }\n}",
           "solutionCode": "public class Q9 {\n    public static void appendWords(StringBuilder sb, String[] words, String separator) {\n        for (int i = 0; i < words.length; i++) {\n            sb.append(words[i]);\n            if (i < words.length - 1) sb.append(separator);\n        }\n    }\n    public static void main(String[] args) {\n        StringBuilder sb = new StringBuilder(\"PREFIX:\");\n        appendWords(sb, new String[]{\"apple\", \"banana\", \"cherry\"}, \", \");\n        System.out.println(sb.toString()); // PREFIX:apple, banana, cherry\n    }\n}",
           "testCases": [
-            {"input": "prefix=PREFIX:, words=[apple,banana,cherry], sep=', '", "output": "PREFIX:apple, banana, cherry"},
-            {"input": "prefix='', words=[a,b], sep='-'", "output": "a-b"}
+            {
+              "input": "prefix=PREFIX:, words=[apple,banana,cherry], sep=', '",
+              "output": "PREFIX:apple, banana, cherry"
+            },
+            {
+              "input": "prefix='', words=[a,b], sep='-'",
+              "output": "a-b"
+            }
           ],
           "constraints": "words.length >= 0. separator is non-null.",
           "editorial": "sb.append() calls on the parameter work because sb is a copy of the reference pointing to the SAME StringBuilder heap object. Mutations go through the reference and affect the real object. The method is effectively 'consuming' the caller's StringBuilder — a common Java pattern for building output in recursive algorithms."
@@ -244,8 +310,14 @@
           "starterCode": "import java.util.Arrays;\n\npublic class Q10 {\n    public static int[][] shallowCopy(int[][] matrix) {\n        // TODO: outer array is new, inner arrays are shared\n        return null;\n    }\n\n    public static int[][] deepCopy(int[][] matrix) {\n        // TODO: both outer and inner arrays are independent\n        return null;\n    }\n\n    public static void main(String[] args) {\n        int[][] original = {{1, 2}, {3, 4}};\n        int[][] shallow = shallowCopy(original);\n        shallow[0][0] = 99;\n        System.out.println(original[0][0]); // ?\n\n        int[][] deep = deepCopy(original);\n        deep[0][0] = 77;\n        System.out.println(original[0][0]); // ?\n    }\n}",
           "solutionCode": "import java.util.Arrays;\n\npublic class Q10 {\n    public static int[][] shallowCopy(int[][] matrix) {\n        int[][] copy = new int[matrix.length][];\n        for (int i = 0; i < matrix.length; i++) {\n            copy[i] = matrix[i]; // shared reference to same row\n        }\n        return copy;\n    }\n\n    public static int[][] deepCopy(int[][] matrix) {\n        int[][] copy = new int[matrix.length][];\n        for (int i = 0; i < matrix.length; i++) {\n            copy[i] = Arrays.copyOf(matrix[i], matrix[i].length); // new row\n        }\n        return copy;\n    }\n\n    public static void main(String[] args) {\n        int[][] original = {{1, 2}, {3, 4}};\n\n        int[][] shallow = shallowCopy(original);\n        shallow[0][0] = 99;\n        System.out.println(original[0][0]); // 99 — shared inner array!\n\n        int[][] deep = deepCopy(original);\n        deep[0][0] = 77;\n        System.out.println(original[0][0]); // 99 — unchanged, independent copy\n    }\n}",
           "testCases": [
-            {"input": "shallow copy modification", "output": "99"},
-            {"input": "deep copy modification", "output": "99"}
+            {
+              "input": "shallow copy modification",
+              "output": "99"
+            },
+            {
+              "input": "deep copy modification",
+              "output": "99"
+            }
           ],
           "constraints": "matrix is non-null, non-jagged (all rows same length).",
           "editorial": "Shallow copy creates a new outer array but copies the row references — both outer arrays share the same inner arrays. Deep copy creates new inner arrays too — fully independent. This is the source of many bugs when 'copying' 2D arrays in Java."
@@ -262,9 +334,18 @@
           "starterCode": "public class Q11 {\n    static class Counter {\n        int value = 0;\n    }\n\n    public static void sumIntoCounter(Counter c, int[] nums) {\n        // TODO: add all nums to c.value\n    }\n\n    public static void main(String[] args) {\n        Counter c = new Counter();\n        sumIntoCounter(c, new int[]{1, 2, 3, 4, 5});\n        System.out.println(c.value); // 15\n    }\n}",
           "solutionCode": "public class Q11 {\n    static class Counter {\n        int value = 0;\n    }\n\n    public static void sumIntoCounter(Counter c, int[] nums) {\n        for (int n : nums) c.value += n;\n    }\n\n    public static void main(String[] args) {\n        Counter c = new Counter();\n        sumIntoCounter(c, new int[]{1, 2, 3, 4, 5});\n        System.out.println(c.value); // 15\n\n        // Compare: plain int would NOT work\n        // sumFails(total, nums) -- total unchanged after call\n    }\n}",
           "testCases": [
-            {"input": "nums=[1,2,3,4,5]", "output": "15"},
-            {"input": "nums=[10,20]", "output": "30"},
-            {"input": "nums=[]", "output": "0"}
+            {
+              "input": "nums=[1,2,3,4,5]",
+              "output": "15"
+            },
+            {
+              "input": "nums=[10,20]",
+              "output": "30"
+            },
+            {
+              "input": "nums=[]",
+              "output": "0"
+            }
           ],
           "constraints": "nums is non-null.",
           "editorial": "c.value += n navigates through c (a copied reference) to the real Counter object on the heap and modifies its field. This is a real mutation — visible to caller. This pattern appears in recursive tree algorithms: pass a Counter and increment it at each node."
@@ -281,8 +362,14 @@
           "starterCode": "public class Q12 {\n    public static void fillMultiplicationTable(int[][] matrix) {\n        // TODO: matrix[i][j] = (i+1)*(j+1)\n    }\n    public static void main(String[] args) {\n        int[][] m = new int[3][3];\n        fillMultiplicationTable(m);\n        for (int[] row : m) System.out.println(java.util.Arrays.toString(row));\n    }\n}",
           "solutionCode": "public class Q12 {\n    public static void fillMultiplicationTable(int[][] matrix) {\n        for (int i = 0; i < matrix.length; i++)\n            for (int j = 0; j < matrix[i].length; j++)\n                matrix[i][j] = (i + 1) * (j + 1);\n    }\n    public static void main(String[] args) {\n        int[][] m = new int[3][3];\n        fillMultiplicationTable(m);\n        for (int[] row : m) System.out.println(java.util.Arrays.toString(row));\n        // [1, 2, 3]\n        // [2, 4, 6]\n        // [3, 6, 9]\n    }\n}",
           "testCases": [
-            {"input": "3x3 matrix", "output": "[1, 2, 3]\n[2, 4, 6]\n[3, 6, 9]"},
-            {"input": "1x1 matrix", "output": "[1]"}
+            {
+              "input": "3x3 matrix",
+              "output": "[1, 2, 3]\n[2, 4, 6]\n[3, 6, 9]"
+            },
+            {
+              "input": "1x1 matrix",
+              "output": "[1]"
+            }
           ],
           "constraints": "matrix is square, 1 <= n <= 100.",
           "editorial": "matrix is a reference to the 2D array on the heap. matrix[i][j] = ... navigates through two references (outer array → row array → element) and modifies in-place. The caller's matrix variable still points to the same object and sees all changes."
@@ -299,8 +386,14 @@
           "starterCode": "public class Q13 {\n    public static int[] swapPair(int a, int b) {\n        // Return {b, a}\n        return new int[]{0, 0};\n    }\n    public static void main(String[] args) {\n        int x = 42, y = 99;\n        int[] result = swapPair(x, y);\n        x = result[0]; y = result[1];\n        System.out.println(\"x=\" + x + \" y=\" + y);\n    }\n}",
           "solutionCode": "public class Q13 {\n    public static int[] swapPair(int a, int b) {\n        return new int[]{b, a};\n    }\n    // Alternative with record (Java 14+)\n    record Pair(int first, int second) {}\n    public static Pair swapPairRecord(int a, int b) {\n        return new Pair(b, a);\n    }\n    public static void main(String[] args) {\n        int x = 42, y = 99;\n        int[] result = swapPair(x, y);\n        x = result[0]; y = result[1];\n        System.out.println(\"x=\" + x + \" y=\" + y); // x=99 y=42\n\n        Pair p = swapPairRecord(10, 20);\n        System.out.println(p.first() + \" \" + p.second()); // 20 10\n    }\n}",
           "testCases": [
-            {"input": "a=42, b=99", "output": "x=99 y=42"},
-            {"input": "a=10, b=20", "output": "x=20 y=10"}
+            {
+              "input": "a=42, b=99",
+              "output": "x=99 y=42"
+            },
+            {
+              "input": "a=10, b=20",
+              "output": "x=20 y=10"
+            }
           ],
           "constraints": "a and b fit in int.",
           "editorial": "Return the swapped pair as int[]{b, a}. The caller unpacks it manually. This is the Java equivalent of multiple return values in Python/Go. Records (Java 14+) give names to the returned values: Pair(first=b, second=a) is self-documenting."
@@ -317,8 +410,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q14 {\n    static class Person {\n        String name;\n        Person(String name) { this.name = name; }\n        public String toString() { return name; }\n    }\n\n    public static List<Person> shallowCopyList(List<Person> list) {\n        // TODO\n        return null;\n    }\n\n    public static List<Person> deepCopyList(List<Person> list) {\n        // TODO\n        return null;\n    }\n\n    public static void main(String[] args) {\n        List<Person> original = new ArrayList<>(List.of(new Person(\"Alice\"), new Person(\"Bob\")));\n        List<Person> shallow = shallowCopyList(original);\n        shallow.get(0).name = \"CHANGED\";\n        System.out.println(original.get(0).name); // CHANGED\n\n        List<Person> deep = deepCopyList(original);\n        deep.get(0).name = \"DEEP_CHANGED\";\n        System.out.println(original.get(0).name); // CHANGED (not DEEP_CHANGED)\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q14 {\n    static class Person {\n        String name;\n        Person(String name) { this.name = name; }\n        public String toString() { return name; }\n    }\n\n    public static List<Person> shallowCopyList(List<Person> list) {\n        return new ArrayList<>(list); // new list, same Person objects\n    }\n\n    public static List<Person> deepCopyList(List<Person> list) {\n        List<Person> copy = new ArrayList<>();\n        for (Person p : list) copy.add(new Person(p.name)); // new Person objects\n        return copy;\n    }\n\n    public static void main(String[] args) {\n        List<Person> original = new ArrayList<>(List.of(new Person(\"Alice\"), new Person(\"Bob\")));\n\n        List<Person> shallow = shallowCopyList(original);\n        shallow.get(0).name = \"CHANGED\";\n        System.out.println(original.get(0).name); // CHANGED — same Person object\n\n        List<Person> deep = deepCopyList(original);\n        deep.get(0).name = \"DEEP_CHANGED\";\n        System.out.println(original.get(0).name); // CHANGED — deep copy is independent\n    }\n}",
           "testCases": [
-            {"input": "shallow copy mutation", "output": "CHANGED"},
-            {"input": "deep copy mutation does not affect original", "output": "CHANGED"}
+            {
+              "input": "shallow copy mutation",
+              "output": "CHANGED"
+            },
+            {
+              "input": "deep copy mutation does not affect original",
+              "output": "CHANGED"
+            }
           ],
           "constraints": "list is non-null.",
           "editorial": "new ArrayList<>(list) creates a new ArrayList but copies the Person references — shallow copy. Mutating p.name through a shallow copy reference changes the original. Deep copy creates new Person objects — fully independent. This distinction is critical for defensive programming and immutability."
@@ -335,9 +434,18 @@
           "starterCode": "public class Q15 {\n    static class TreeNode {\n        int val;\n        TreeNode left, right;\n        TreeNode(int v) { val = v; }\n    }\n\n    public static void sumTree(TreeNode root, int[] total) {\n        // TODO: add all node values to total[0]\n    }\n\n    public static void main(String[] args) {\n        TreeNode root = new TreeNode(1);\n        root.left = new TreeNode(2);\n        root.right = new TreeNode(3);\n        root.left.left = new TreeNode(4);\n        int[] total = {0};\n        sumTree(root, total);\n        System.out.println(total[0]); // 10\n    }\n}",
           "solutionCode": "public class Q15 {\n    static class TreeNode {\n        int val;\n        TreeNode left, right;\n        TreeNode(int v) { val = v; }\n    }\n\n    public static void sumTree(TreeNode root, int[] total) {\n        if (root == null) return;\n        total[0] += root.val;\n        sumTree(root.left, total);\n        sumTree(root.right, total);\n    }\n\n    public static void main(String[] args) {\n        TreeNode root = new TreeNode(1);\n        root.left = new TreeNode(2);\n        root.right = new TreeNode(3);\n        root.left.left = new TreeNode(4);\n        int[] total = {0};\n        sumTree(root, total);\n        System.out.println(total[0]); // 10\n    }\n}",
           "testCases": [
-            {"input": "tree: 1->2->4, 1->3", "output": "10"},
-            {"input": "single node val=5", "output": "5"},
-            {"input": "null root", "output": "0"}
+            {
+              "input": "tree: 1->2->4, 1->3",
+              "output": "10"
+            },
+            {
+              "input": "single node val=5",
+              "output": "5"
+            },
+            {
+              "input": "null root",
+              "output": "0"
+            }
           ],
           "constraints": "1 <= nodes <= 10^4. Node values fit in int.",
           "editorial": "total[0] += root.val navigates through the int[] reference to the actual element. All recursive calls share the SAME int[] object on the heap — mutations accumulate correctly. Alternative: return int from the recursive method and sum up (cleaner). int[] workaround is needed in lambdas and anonymous classes where you can't return values."
@@ -354,9 +462,18 @@
           "starterCode": "public class Q16 {\n    public static void rotate(int[] nums, int k) {\n        // TODO: rotate right by k using reversal algorithm\n    }\n    static void reverse(int[] arr, int lo, int hi) {\n        // TODO\n    }\n    public static void main(String[] args) {\n        int[] a = {1,2,3,4,5,6,7};\n        rotate(a, 3);\n        System.out.println(java.util.Arrays.toString(a)); // [5,6,7,1,2,3,4]\n    }\n}",
           "solutionCode": "public class Q16 {\n    public static void rotate(int[] nums, int k) {\n        int n = nums.length;\n        k = k % n;\n        if (k == 0) return;\n        reverse(nums, 0, n - 1);\n        reverse(nums, 0, k - 1);\n        reverse(nums, k, n - 1);\n    }\n    static void reverse(int[] arr, int lo, int hi) {\n        while (lo < hi) {\n            int t = arr[lo]; arr[lo] = arr[hi]; arr[hi] = t;\n            lo++; hi--;\n        }\n    }\n    public static void main(String[] args) {\n        int[] a = {1,2,3,4,5,6,7};\n        rotate(a, 3);\n        System.out.println(java.util.Arrays.toString(a)); // [5, 6, 7, 1, 2, 3, 4]\n    }\n}",
           "testCases": [
-            {"input": "[1,2,3,4,5,6,7], k=3", "output": "[5, 6, 7, 1, 2, 3, 4]"},
-            {"input": "[1,2], k=1", "output": "[2, 1]"},
-            {"input": "[1,2,3], k=4", "output": "[3, 1, 2]"}
+            {
+              "input": "[1,2,3,4,5,6,7], k=3",
+              "output": "[5, 6, 7, 1, 2, 3, 4]"
+            },
+            {
+              "input": "[1,2], k=1",
+              "output": "[2, 1]"
+            },
+            {
+              "input": "[1,2,3], k=4",
+              "output": "[3, 1, 2]"
+            }
           ],
           "constraints": "1 <= nums.length <= 10^5. 0 <= k <= 10^5.",
           "editorial": "Reversal trick: reverse all (7654321), reverse first k=3 (5674321 → 5671234 → actually 5671234)... More precisely: [1234567] → reverse all → [7654321] → reverse [0,k-1]=[0,2] → [5674321] → reverse [k,n-1]=[3,6] → [5671234]. In-place, O(n) time, O(1) space. Classic LeetCode #189."
@@ -373,9 +490,18 @@
           "starterCode": "public class Q17 {\n    public static String longestCommonPrefix(String[] strs) {\n        if (strs == null || strs.length == 0) return \"\";\n        String[] result = {strs[0]};\n        findPrefix(strs, 1, result);\n        return result[0];\n    }\n    static void findPrefix(String[] strs, int idx, String[] result) {\n        // TODO: recursive — narrow result[0] by comparing with strs[idx]\n    }\n    public static void main(String[] args) {\n        System.out.println(longestCommonPrefix(new String[]{\"flower\",\"flow\",\"flight\"}));\n        System.out.println(longestCommonPrefix(new String[]{\"dog\",\"racecar\",\"car\"}));\n    }\n}",
           "solutionCode": "public class Q17 {\n    public static String longestCommonPrefix(String[] strs) {\n        if (strs == null || strs.length == 0) return \"\";\n        String[] result = {strs[0]};\n        findPrefix(strs, 1, result);\n        return result[0];\n    }\n    static void findPrefix(String[] strs, int idx, String[] result) {\n        if (idx >= strs.length || result[0].isEmpty()) return;\n        while (!strs[idx].startsWith(result[0])) {\n            result[0] = result[0].substring(0, result[0].length() - 1);\n            if (result[0].isEmpty()) return;\n        }\n        findPrefix(strs, idx + 1, result);\n    }\n    public static void main(String[] args) {\n        System.out.println(longestCommonPrefix(new String[]{\"flower\",\"flow\",\"flight\"})); // fl\n        System.out.println(longestCommonPrefix(new String[]{\"dog\",\"racecar\",\"car\"})); // \"\"\n    }\n}",
           "testCases": [
-            {"input": "[flower, flow, flight]", "output": "fl"},
-            {"input": "[dog, racecar, car]", "output": ""},
-            {"input": "[interview, inter, internal]", "output": "inter"}
+            {
+              "input": "[flower, flow, flight]",
+              "output": "fl"
+            },
+            {
+              "input": "[dog, racecar, car]",
+              "output": ""
+            },
+            {
+              "input": "[interview, inter, internal]",
+              "output": "inter"
+            }
           ],
           "constraints": "1 <= strs.length <= 200. 0 <= strs[i].length <= 200.",
           "editorial": "result[0] is a String reference inside a String[] holder. Each recursive call can reassign result[0] to a shorter prefix — this change is visible to all calls because they all hold a reference to the same String[] object. Pure recursion without a holder would require returning the prefix at each level."
@@ -392,8 +518,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q18 {\n    public static int dfsCount(List<List<Integer>> graph, int start) {\n        boolean[] visited = new boolean[graph.size()];\n        int[] count = {0};\n        dfs(graph, start, visited, count);\n        return count[0];\n    }\n    static void dfs(List<List<Integer>> graph, int node, boolean[] visited, int[] count) {\n        // TODO\n    }\n    public static void main(String[] args) {\n        List<List<Integer>> g = new ArrayList<>();\n        for (int i = 0; i < 5; i++) g.add(new ArrayList<>());\n        g.get(0).add(1); g.get(0).add(2);\n        g.get(1).add(3);\n        g.get(2).add(4);\n        System.out.println(dfsCount(g, 0)); // 5\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q18 {\n    public static int dfsCount(List<List<Integer>> graph, int start) {\n        boolean[] visited = new boolean[graph.size()];\n        int[] count = {0};\n        dfs(graph, start, visited, count);\n        return count[0];\n    }\n    static void dfs(List<List<Integer>> graph, int node, boolean[] visited, int[] count) {\n        visited[node] = true;\n        count[0]++;\n        for (int neighbor : graph.get(node)) {\n            if (!visited[neighbor]) dfs(graph, neighbor, visited, count);\n        }\n    }\n    public static void main(String[] args) {\n        List<List<Integer>> g = new ArrayList<>();\n        for (int i = 0; i < 5; i++) g.add(new ArrayList<>());\n        g.get(0).add(1); g.get(0).add(2);\n        g.get(1).add(3);\n        g.get(2).add(4);\n        System.out.println(dfsCount(g, 0)); // 5\n    }\n}",
           "testCases": [
-            {"input": "5-node connected graph from 0", "output": "5"},
-            {"input": "single node", "output": "1"}
+            {
+              "input": "5-node connected graph from 0",
+              "output": "5"
+            },
+            {
+              "input": "single node",
+              "output": "1"
+            }
           ],
           "constraints": "0 <= nodes <= 10^4. Graph may be disconnected.",
           "editorial": "visited[] and count[] are arrays on the heap, shared across all recursive DFS calls. visited[node] = true marks the node across all frames. count[0]++ accumulates the count. Both mutations are visible globally because all frames hold references to the same heap arrays."
@@ -410,9 +542,18 @@
           "starterCode": "import java.util.*;\n\npublic class Q19 {\n    @SuppressWarnings(\"unchecked\")\n    public static void flatten(Object input, List<Integer> result) {\n        // If Integer: add to result\n        // If List: recurse on each element\n        // TODO\n    }\n    public static void main(String[] args) {\n        // [[1,2,[3]],4,[5,[6,7]]]\n        List<Object> nested = new ArrayList<>(List.of(\n            new ArrayList<>(List.of(1, 2, new ArrayList<>(List.of(3)))),\n            4,\n            new ArrayList<>(List.of(5, new ArrayList<>(List.of(6, 7))))\n        ));\n        List<Integer> result = new ArrayList<>();\n        flatten(nested, result);\n        System.out.println(result); // [1, 2, 3, 4, 5, 6, 7]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q19 {\n    @SuppressWarnings(\"unchecked\")\n    public static void flatten(Object input, List<Integer> result) {\n        if (input instanceof Integer i) {\n            result.add(i);\n        } else if (input instanceof List<?> list) {\n            for (Object element : list) flatten(element, result);\n        }\n    }\n    public static void main(String[] args) {\n        List<Object> nested = new ArrayList<>(List.of(\n            new ArrayList<>(List.of(1, 2, new ArrayList<>(List.of(3)))),\n            4,\n            new ArrayList<>(List.of(5, new ArrayList<>(List.of(6, 7))))\n        ));\n        List<Integer> result = new ArrayList<>();\n        flatten(nested, result);\n        System.out.println(result); // [1, 2, 3, 4, 5, 6, 7]\n    }\n}",
           "testCases": [
-            {"input": "[[1,2,[3]],4,[5,[6,7]]]", "output": "[1, 2, 3, 4, 5, 6, 7]"},
-            {"input": "[1,2,3]", "output": "[1, 2, 3]"},
-            {"input": "[[[]]]", "output": "[]"}
+            {
+              "input": "[[1,2,[3]],4,[5,[6,7]]]",
+              "output": "[1, 2, 3, 4, 5, 6, 7]"
+            },
+            {
+              "input": "[1,2,3]",
+              "output": "[1, 2, 3]"
+            },
+            {
+              "input": "[[[]]]",
+              "output": "[]"
+            }
           ],
           "constraints": "Nesting depth <= 10. Values fit in int.",
           "editorial": "result is a List<Integer> on the heap, shared across all recursive calls. result.add(i) mutates the same list — all levels of recursion see each other's additions. Pattern matching instanceof (Java 16+) makes the type check clean."
@@ -429,13 +570,21 @@
           "starterCode": "import java.util.*;\n\npublic class Q20 {\n    static class ObjectPool<T> {\n        private Queue<T> pool = new LinkedList<>();\n\n        public void populate(List<T> objects) {\n            pool.addAll(objects);\n        }\n\n        public T acquire() {\n            // TODO: return next available object\n            return null;\n        }\n\n        public void release(T obj) {\n            // TODO: return to pool\n        }\n\n        public int available() { return pool.size(); }\n    }\n\n    public static void main(String[] args) {\n        ObjectPool<StringBuilder> pool = new ObjectPool<>();\n        pool.populate(List.of(new StringBuilder(), new StringBuilder()));\n        StringBuilder a = pool.acquire();\n        a.append(\"Hello\");\n        pool.release(a); // return to pool\n        StringBuilder b = pool.acquire(); // gets SAME object\n        System.out.println(b.toString()); // Hello — same reference!\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q20 {\n    static class ObjectPool<T> {\n        private Queue<T> pool = new LinkedList<>();\n\n        public void populate(List<T> objects) {\n            pool.addAll(objects);\n        }\n\n        public T acquire() {\n            return pool.poll();\n        }\n\n        public void release(T obj) {\n            pool.offer(obj);\n        }\n\n        public int available() { return pool.size(); }\n    }\n\n    public static void main(String[] args) {\n        ObjectPool<StringBuilder> pool = new ObjectPool<>();\n        pool.populate(List.of(new StringBuilder(), new StringBuilder()));\n        StringBuilder a = pool.acquire();\n        a.append(\"Hello\");\n        pool.release(a);\n        StringBuilder b = pool.acquire(); // same object from queue\n        System.out.println(b.toString()); // Hello — mutation persists!\n        System.out.println(pool.available()); // 1 (one still in pool)\n    }\n}",
           "testCases": [
-            {"input": "acquire, append, release, acquire again", "output": "Hello"},
-            {"input": "pool.available() after release", "output": "1"}
+            {
+              "input": "acquire, append, release, acquire again",
+              "output": "Hello"
+            },
+            {
+              "input": "pool.available() after release",
+              "output": "1"
+            }
           ],
           "constraints": "Pool is not thread-safe (single-threaded use).",
           "editorial": "The pool stores references to objects. acquire() returns a reference to the same heap object. a.append('Hello') mutates it. release(a) puts the reference back in the queue. b = pool.acquire() gives you that same reference — b.toString() shows 'Hello' because a and b pointed to the same object. Real object pools (like database connection pools, Netty ByteBuf pool) work exactly this way."
         }
-      ]
+      ],
+      "subCategory": "Language Basics",
+      "displayOrder": 15
     }
   ]
 }

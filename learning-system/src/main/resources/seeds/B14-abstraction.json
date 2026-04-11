@@ -78,8 +78,14 @@
           "starterCode": "public class Q1 {\n    abstract static class Vehicle {\n        String make; int year; double fuelLevel = 100;\n        Vehicle(String make, int year) { this.make=make; this.year=year; }\n\n        void refuel(double amt) { fuelLevel = Math.min(100, fuelLevel + amt); }\n        String getStatus() { return make + \"(\" + year + \") fuel=\" + String.format(\"%.1f\",fuelLevel) + \"%\"; }\n\n        abstract void drive(int km); // subclasses define fuel consumption\n    }\n    // TODO: Car, Truck\n\n    public static void main(String[] args) {\n        Vehicle c = new Car(\"Toyota\", 2020);\n        Vehicle t = new Truck(\"Volvo\", 2019);\n        c.drive(200); System.out.println(c.getStatus());\n        t.drive(200); System.out.println(t.getStatus());\n        c.refuel(50); System.out.println(c.getStatus());\n    }\n}",
           "solutionCode": "public class Q1 {\n    abstract static class Vehicle {\n        String make; int year; double fuelLevel = 100;\n        Vehicle(String make, int year) { this.make=make; this.year=year; }\n        void refuel(double amt) { fuelLevel = Math.min(100, fuelLevel + amt); }\n        String getStatus() { return make+\"(\"+year+\") fuel=\"+String.format(\"%.1f\",fuelLevel)+\"%\"; }\n        abstract void drive(int km);\n    }\n    static class Car   extends Vehicle {\n        Car(String m, int y) { super(m,y); }\n        @Override void drive(int km) { fuelLevel -= km * 0.08; }\n    }\n    static class Truck extends Vehicle {\n        Truck(String m, int y) { super(m,y); }\n        @Override void drive(int km) { fuelLevel -= km * 0.15; }\n    }\n\n    public static void main(String[] args) {\n        Vehicle c = new Car(\"Toyota\", 2020);\n        Vehicle t = new Truck(\"Volvo\", 2019);\n        c.drive(200); System.out.println(c.getStatus()); // fuel=84.0%\n        t.drive(200); System.out.println(t.getStatus()); // fuel=70.0%\n        c.refuel(50); System.out.println(c.getStatus()); // fuel=100.0% (capped)\n    }\n}",
           "testCases": [
-            {"input": "Car.drive(200)",   "output": "Toyota(2020) fuel=84.0%"},
-            {"input": "Truck.drive(200)", "output": "Volvo(2019) fuel=70.0%"}
+            {
+              "input": "Car.drive(200)",
+              "output": "Toyota(2020) fuel=84.0%"
+            },
+            {
+              "input": "Truck.drive(200)",
+              "output": "Volvo(2019) fuel=70.0%"
+            }
           ],
           "constraints": "fuelLevel cannot exceed 100.",
           "editorial": "Abstract class holds fuelLevel field and refuel() — shared by all vehicles. drive() is abstract — each subclass defines its own fuel consumption rate. Subclasses inherit refuel() for free — no duplication. This is the primary reason to choose abstract class over interface: shared mutable state."
@@ -96,8 +102,14 @@
           "starterCode": "public class Q2 {\n    interface Greetable {\n        String getName();\n        // TODO: default greet() that prints \"Hello, I am {getName()}\"\n    }\n\n    static class Student implements Greetable {\n        String name; Student(String n) { name = n; }\n        @Override public String getName() { return \"Student \" + name; }\n    }\n\n    static class Teacher implements Greetable {\n        String name; Teacher(String n) { name = n; }\n        @Override public String getName() { return \"Teacher \" + name; }\n    }\n\n    public static void main(String[] args) {\n        new Student(\"Alice\").greet();\n        new Teacher(\"Bob\").greet();\n    }\n}",
           "solutionCode": "public class Q2 {\n    interface Greetable {\n        String getName();\n        default void greet() { System.out.println(\"Hello, I am \" + getName()); }\n    }\n\n    static class Student implements Greetable {\n        String name; Student(String n) { name=n; }\n        @Override public String getName() { return \"Student \" + name; }\n    }\n\n    static class Teacher implements Greetable {\n        String name; Teacher(String n) { name=n; }\n        @Override public String getName() { return \"Teacher \" + name; }\n    }\n\n    public static void main(String[] args) {\n        new Student(\"Alice\").greet(); // Hello, I am Student Alice\n        new Teacher(\"Bob\").greet();   // Hello, I am Teacher Bob\n    }\n}",
           "testCases": [
-            {"input": "Student Alice", "output": "Hello, I am Student Alice"},
-            {"input": "Teacher Bob",   "output": "Hello, I am Teacher Bob"}
+            {
+              "input": "Student Alice",
+              "output": "Hello, I am Student Alice"
+            },
+            {
+              "input": "Teacher Bob",
+              "output": "Hello, I am Teacher Bob"
+            }
           ],
           "constraints": "greet() defined only in interface.",
           "editorial": "The default method greet() is written once in the interface and calls getName() — an abstract method. At runtime, getName() dispatches to the implementing class. Both Student and Teacher get greet() for free without code duplication."
@@ -114,8 +126,14 @@
           "starterCode": "public class Q3 {\n    abstract static class Animal {\n        abstract void sound();\n        void breathe() { System.out.println(\"breathing\"); }\n    }\n    static class Dog extends Animal {\n        @Override void sound() { System.out.println(\"Woof\"); }\n    }\n\n    public static void main(String[] args) {\n        // Animal a = new Animal(); // compile error!\n        Animal a = new Dog();    // correct\n        a.sound();\n        a.breathe();\n\n        // Anonymous subclass also works:\n        Animal anon = new Animal() {\n            @Override void sound() { System.out.println(\"Anon sound\"); }\n        };\n        anon.sound();\n    }\n}",
           "solutionCode": "public class Q3 {\n    abstract static class Animal {\n        abstract void sound();\n        void breathe() { System.out.println(\"breathing\"); }\n    }\n    static class Dog extends Animal {\n        @Override void sound() { System.out.println(\"Woof\"); }\n    }\n\n    public static void main(String[] args) {\n        Animal a = new Dog();\n        a.sound();   // Woof\n        a.breathe(); // breathing\n\n        Animal anon = new Animal() {\n            @Override void sound() { System.out.println(\"Anon sound\"); }\n        };\n        anon.sound(); // Anon sound\n    }\n}",
           "testCases": [
-            {"input": "Dog sound", "output": "Woof"},
-            {"input": "Anon sound", "output": "Anon sound"}
+            {
+              "input": "Dog sound",
+              "output": "Woof"
+            },
+            {
+              "input": "Anon sound",
+              "output": "Anon sound"
+            }
           ],
           "constraints": "Cannot instantiate abstract Animal directly.",
           "editorial": "Abstract classes cannot be instantiated directly — they represent incomplete blueprints. The JVM would not know which implementation to use for abstract methods. Concrete subclasses or anonymous subclasses (providing all abstract implementations) can be instantiated."
@@ -132,10 +150,22 @@
           "starterCode": "public class Q4 {\n    interface MathUtils {\n        // TODO: static clamp(int v, int min, int max)\n        // TODO: static lerp(double a, double b, double t)\n    }\n\n    public static void main(String[] args) {\n        System.out.println(MathUtils.clamp(15, 0, 10));  // 10\n        System.out.println(MathUtils.clamp(-5, 0, 10));  // 0\n        System.out.println(MathUtils.clamp(5, 0, 10));   // 5\n        System.out.println(MathUtils.lerp(0.0, 10.0, 0.5)); // 5.0\n        System.out.println(MathUtils.lerp(0.0, 100.0, 0.25)); // 25.0\n    }\n}",
           "solutionCode": "public class Q4 {\n    interface MathUtils {\n        static int clamp(int v, int min, int max) {\n            return Math.max(min, Math.min(max, v));\n        }\n        static double lerp(double a, double b, double t) {\n            return a + (b - a) * t;\n        }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(MathUtils.clamp(15, 0, 10));       // 10\n        System.out.println(MathUtils.clamp(-5, 0, 10));       // 0\n        System.out.println(MathUtils.clamp(5,  0, 10));       // 5\n        System.out.println(MathUtils.lerp(0.0, 10.0, 0.5));   // 5.0\n        System.out.println(MathUtils.lerp(0.0, 100.0, 0.25)); // 25.0\n    }\n}",
           "testCases": [
-            {"input": "clamp(15,0,10)",    "output": "10"},
-            {"input": "clamp(-5,0,10)",   "output": "0"},
-            {"input": "lerp(0,10,0.5)",   "output": "5.0"},
-            {"input": "lerp(0,100,0.25)", "output": "25.0"}
+            {
+              "input": "clamp(15,0,10)",
+              "output": "10"
+            },
+            {
+              "input": "clamp(-5,0,10)",
+              "output": "0"
+            },
+            {
+              "input": "lerp(0,10,0.5)",
+              "output": "5.0"
+            },
+            {
+              "input": "lerp(0,100,0.25)",
+              "output": "25.0"
+            }
           ],
           "constraints": "Must call on interface type, not on instance.",
           "editorial": "Interface static methods (Java 8+) are utility functions tightly related to the interface concept. They cannot be overridden by implementing classes (unlike default methods). Called via InterfaceName.method(). Used in Comparator.comparing(), Predicate.not(), Collections.unmodifiableList()."
@@ -152,9 +182,18 @@
           "starterCode": "public class Q5 {\n    abstract static class Validator {\n        abstract boolean isValid(String input);\n        void validate(String input) {\n            if (isValid(input)) System.out.println(\"'\" + input + \"' is valid\");\n            else                System.out.println(\"'\" + input + \"' is INVALID\");\n        }\n    }\n    // TODO: EmailValidator, PhoneValidator\n\n    public static void main(String[] args) {\n        Validator email = new EmailValidator();\n        email.validate(\"user@example.com\");\n        email.validate(\"notanemail\");\n\n        Validator phone = new PhoneValidator();\n        phone.validate(\"9876543210\");\n        phone.validate(\"12345\");\n    }\n}",
           "solutionCode": "public class Q5 {\n    abstract static class Validator {\n        abstract boolean isValid(String input);\n        void validate(String input) {\n            if (isValid(input)) System.out.println(\"'\" + input + \"' is valid\");\n            else                System.out.println(\"'\" + input + \"' is INVALID\");\n        }\n    }\n    static class EmailValidator extends Validator {\n        @Override boolean isValid(String s) { return s.contains(\"@\") && s.contains(\".\"); }\n    }\n    static class PhoneValidator extends Validator {\n        @Override boolean isValid(String s) { return s.matches(\"\\\\d{10}\"); }\n    }\n\n    public static void main(String[] args) {\n        Validator email = new EmailValidator();\n        email.validate(\"user@example.com\"); // valid\n        email.validate(\"notanemail\");       // INVALID\n\n        Validator phone = new PhoneValidator();\n        phone.validate(\"9876543210\");       // valid\n        phone.validate(\"12345\");            // INVALID\n    }\n}",
           "testCases": [
-            {"input": "EmailValidator user@example.com", "output": "'user@example.com' is valid"},
-            {"input": "EmailValidator notanemail",       "output": "'notanemail' is INVALID"},
-            {"input": "PhoneValidator 9876543210",       "output": "'9876543210' is valid"}
+            {
+              "input": "EmailValidator user@example.com",
+              "output": "'user@example.com' is valid"
+            },
+            {
+              "input": "EmailValidator notanemail",
+              "output": "'notanemail' is INVALID"
+            },
+            {
+              "input": "PhoneValidator 9876543210",
+              "output": "'9876543210' is valid"
+            }
           ],
           "constraints": "No regex for email — use contains().",
           "editorial": "Abstract method isValid() forces every concrete subclass to provide validation logic. validate() in the abstract class is the shared template — calls isValid() polymorphically. Forgetting to implement isValid() in a concrete subclass → compile error: 'class EmailValidator is not abstract and does not override abstract method isValid()'."
@@ -171,8 +210,14 @@
           "starterCode": "public class Q6 {\n    abstract static class Account {\n        String id; double balance;\n        Account(String id, double balance) { this.id=id; this.balance=balance; }\n        void deposit(double amt)  { balance += amt; }\n        boolean withdraw(double amt) {\n            if (amt > balance) return false;\n            balance -= amt; return true;\n        }\n        abstract double interestRate();\n        abstract double calculateInterest();\n        public String toString() { return id+\": $\"+String.format(\"%.2f\",balance); }\n    }\n    // TODO: SavingsAccount, CheckingAccount\n\n    public static void main(String[] args) {\n        Account sa = new SavingsAccount(\"SAV001\", 1000);\n        Account ca = new CheckingAccount(\"CHK001\", 500);\n        System.out.println(sa + \" interest=\" + String.format(\"%.2f\", sa.calculateInterest()));\n        System.out.println(ca + \" interest=\" + String.format(\"%.2f\", ca.calculateInterest()));\n    }\n}",
           "solutionCode": "public class Q6 {\n    abstract static class Account {\n        String id; double balance;\n        Account(String id, double balance) { this.id=id; this.balance=balance; }\n        void deposit(double amt)  { balance += amt; }\n        boolean withdraw(double amt) { if(amt>balance) return false; balance-=amt; return true; }\n        abstract double interestRate();\n        abstract double calculateInterest();\n        public String toString() { return id+\": $\"+String.format(\"%.2f\",balance); }\n    }\n    static class SavingsAccount extends Account {\n        SavingsAccount(String id, double b) { super(id, b); }\n        @Override double interestRate()      { return 0.05; }\n        @Override double calculateInterest() { return balance * interestRate(); }\n    }\n    static class CheckingAccount extends Account {\n        CheckingAccount(String id, double b) { super(id, b); }\n        @Override double interestRate()      { return 0.02; }\n        @Override double calculateInterest() { return balance * interestRate(); }\n    }\n\n    public static void main(String[] args) {\n        Account sa = new SavingsAccount(\"SAV001\", 1000);\n        Account ca = new CheckingAccount(\"CHK001\", 500);\n        System.out.println(sa + \" interest=\" + String.format(\"%.2f\",sa.calculateInterest()));\n        // SAV001: $1000.00 interest=50.00\n        System.out.println(ca + \" interest=\" + String.format(\"%.2f\",ca.calculateInterest()));\n        // CHK001: $500.00 interest=10.00\n    }\n}",
           "testCases": [
-            {"input": "SavingsAccount 1000", "output": "SAV001: $1000.00 interest=50.00"},
-            {"input": "CheckingAccount 500", "output": "CHK001: $500.00 interest=10.00"}
+            {
+              "input": "SavingsAccount 1000",
+              "output": "SAV001: $1000.00 interest=50.00"
+            },
+            {
+              "input": "CheckingAccount 500",
+              "output": "CHK001: $500.00 interest=10.00"
+            }
           ],
           "constraints": "super(id, balance) must be called in each subclass constructor.",
           "editorial": "Abstract classes can have constructors — called via super() from subclass constructors. This initialises shared state (id, balance) in one place. deposit() and withdraw() are shared concrete methods. interestRate() and calculateInterest() are abstract — each account type defines its own rates."
@@ -189,8 +234,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q7 {\n    static class Employee implements Comparable<Employee> {\n        String name; double salary; String dept;\n        Employee(String n, double s, String d) { name=n; salary=s; dept=d; }\n\n        @Override public int compareTo(Employee o) {\n            // TODO: descending salary\n            return 0;\n        }\n        public String toString() { return name+\"($\"+salary+\")\"; }\n    }\n\n    public static void main(String[] args) {\n        List<Employee> staff = new ArrayList<>(List.of(\n            new Employee(\"Alice\", 75000, \"Eng\"),\n            new Employee(\"Bob\", 95000, \"Mgmt\"),\n            new Employee(\"Carol\", 60000, \"HR\")\n        ));\n        Collections.sort(staff); // natural order (descending salary)\n        System.out.println(staff);\n\n        staff.sort(Comparator.comparing(e -> e.name)); // by name\n        System.out.println(staff);\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q7 {\n    static class Employee implements Comparable<Employee> {\n        String name; double salary; String dept;\n        Employee(String n, double s, String d) { name=n; salary=s; dept=d; }\n        @Override public int compareTo(Employee o) {\n            return Double.compare(o.salary, this.salary); // descending\n        }\n        public String toString() { return name+\"($\"+salary+\")\"; }\n    }\n\n    public static void main(String[] args) {\n        List<Employee> staff = new ArrayList<>(List.of(\n            new Employee(\"Alice\", 75000, \"Eng\"),\n            new Employee(\"Bob\",   95000, \"Mgmt\"),\n            new Employee(\"Carol\", 60000, \"HR\")\n        ));\n        Collections.sort(staff);\n        System.out.println(staff); // [Bob($95000.0), Alice($75000.0), Carol($60000.0)]\n\n        staff.sort(Comparator.comparing(e -> e.name));\n        System.out.println(staff); // [Alice($75000.0), Bob($95000.0), Carol($60000.0)]\n    }\n}",
           "testCases": [
-            {"input": "natural sort descending salary", "output": "[Bob($95000.0), Alice($75000.0), Carol($60000.0)]"},
-            {"input": "sort by name",                  "output": "[Alice($75000.0), Bob($95000.0), Carol($60000.0)]"}
+            {
+              "input": "natural sort descending salary",
+              "output": "[Bob($95000.0), Alice($75000.0), Carol($60000.0)]"
+            },
+            {
+              "input": "sort by name",
+              "output": "[Alice($75000.0), Bob($95000.0), Carol($60000.0)]"
+            }
           ],
           "constraints": "Comparable defines natural order.",
           "editorial": "Comparable<T> defines the natural ordering — used by Collections.sort(), Arrays.sort(), TreeSet, and TreeMap without extra arguments. Comparator provides external/alternate orderings. The contract: compareTo returns negative if this < other, 0 if equal, positive if this > other."
@@ -207,8 +258,14 @@
           "starterCode": "public class Q8 {\n    interface Button    { void render(); }\n    interface TextField { void render(); }\n\n    abstract static class UIFactory {\n        abstract Button    createButton();\n        abstract TextField createTextField();\n    }\n\n    // TODO: DarkThemeFactory, LightThemeFactory with concrete Button and TextField\n\n    static void renderUI(UIFactory factory) {\n        factory.createButton().render();\n        factory.createTextField().render();\n    }\n\n    public static void main(String[] args) {\n        renderUI(new DarkThemeFactory());\n        System.out.println(\"---\");\n        renderUI(new LightThemeFactory());\n    }\n}",
           "solutionCode": "public class Q8 {\n    interface Button    { void render(); }\n    interface TextField { void render(); }\n\n    abstract static class UIFactory {\n        abstract Button    createButton();\n        abstract TextField createTextField();\n    }\n\n    static class DarkThemeFactory extends UIFactory {\n        @Override public Button    createButton()    { return () -> System.out.println(\"[Dark Button]\"); }\n        @Override public TextField createTextField() { return () -> System.out.println(\"[Dark TextField]\"); }\n    }\n    static class LightThemeFactory extends UIFactory {\n        @Override public Button    createButton()    { return () -> System.out.println(\"[Light Button]\"); }\n        @Override public TextField createTextField() { return () -> System.out.println(\"[Light TextField]\"); }\n    }\n\n    static void renderUI(UIFactory factory) {\n        factory.createButton().render();\n        factory.createTextField().render();\n    }\n\n    public static void main(String[] args) {\n        renderUI(new DarkThemeFactory());\n        System.out.println(\"---\");\n        renderUI(new LightThemeFactory());\n    }\n}",
           "testCases": [
-            {"input": "DarkThemeFactory",  "output": "[Dark Button]\n[Dark TextField]"},
-            {"input": "LightThemeFactory", "output": "[Light Button]\n[Light TextField]"}
+            {
+              "input": "DarkThemeFactory",
+              "output": "[Dark Button]\n[Dark TextField]"
+            },
+            {
+              "input": "LightThemeFactory",
+              "output": "[Light Button]\n[Light TextField]"
+            }
           ],
           "constraints": "renderUI() must not reference DarkThemeFactory or LightThemeFactory directly.",
           "editorial": "Abstract Factory: an abstract class defining the 'factory contract' — what families of related objects to create. Concrete factories (Dark, Light) create matching sets of components. Client code depends only on UIFactory + interfaces — switching themes means swapping the factory. Used in JDBC (DriverManager creates Connection, Statement, ResultSet for each database), AWT/Swing L&F."
@@ -225,8 +282,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q9 {\n    interface Saveable  { void save(); }\n    interface Printable { void print(); }\n\n    static class Document implements Saveable, Printable {\n        String title;\n        Document(String t) { title = t; }\n        @Override public void save()  { System.out.println(\"Saving: \" + title); }\n        @Override public void print() { System.out.println(\"Printing: \" + title); }\n    }\n\n    public static void main(String[] args) {\n        Document d1 = new Document(\"Report\");\n        Document d2 = new Document(\"Invoice\");\n\n        List<Saveable>  saveables  = List.of(d1, d2);\n        List<Printable> printables = List.of(d1, d2);\n\n        saveables.forEach(Saveable::save);\n        System.out.println(\"---\");\n        printables.forEach(Printable::print);\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q9 {\n    interface Saveable  { void save(); }\n    interface Printable { void print(); }\n\n    static class Document implements Saveable, Printable {\n        String title;\n        Document(String t) { title = t; }\n        @Override public void save()  { System.out.println(\"Saving: \" + title); }\n        @Override public void print() { System.out.println(\"Printing: \" + title); }\n    }\n\n    public static void main(String[] args) {\n        Document d1 = new Document(\"Report\");\n        Document d2 = new Document(\"Invoice\");\n        List<Saveable>  saveables  = List.of(d1, d2);\n        List<Printable> printables = List.of(d1, d2);\n        saveables.forEach(Saveable::save);\n        System.out.println(\"---\");\n        printables.forEach(Printable::print);\n    }\n}",
           "testCases": [
-            {"input": "save all", "output": "Saving: Report\nSaving: Invoice"},
-            {"input": "print all","output": "Printing: Report\nPrinting: Invoice"}
+            {
+              "input": "save all",
+              "output": "Saving: Report\nSaving: Invoice"
+            },
+            {
+              "input": "print all",
+              "output": "Printing: Report\nPrinting: Invoice"
+            }
           ],
           "constraints": "The same Document objects in both lists.",
           "editorial": "One object (Document) satisfies multiple interface types. It can be stored and processed as Saveable or Printable — each list sees only the methods of its interface. The same physical objects are viewed through different lenses. This is the power of multiple interface implementation."
@@ -243,8 +306,14 @@
           "starterCode": "public class Q10 {\n    abstract static class DatabaseConnection {\n        String dbType;\n        DatabaseConnection(String dbType) { this.dbType = dbType; }\n        abstract void connect();\n        abstract void disconnect();\n        void executeQuery(String sql) {\n            if (sql == null || sql.isBlank()) throw new IllegalArgumentException(\"SQL cannot be blank\");\n            System.out.println(\"Executing on \" + dbType + \": \" + sql);\n            connect();\n        }\n    }\n    // TODO: MySQLConnection, PostgreSQLConnection\n\n    public static void main(String[] args) {\n        DatabaseConnection[] dbs = {\n            new MySQLConnection(),\n            new PostgreSQLConnection()\n        };\n        for (DatabaseConnection db : dbs)\n            db.executeQuery(\"SELECT 1\");\n    }\n}",
           "solutionCode": "public class Q10 {\n    abstract static class DatabaseConnection {\n        String dbType;\n        DatabaseConnection(String dbType) { this.dbType = dbType; }\n        abstract void connect();\n        abstract void disconnect();\n        void executeQuery(String sql) {\n            if (sql == null || sql.isBlank()) throw new IllegalArgumentException(\"SQL blank\");\n            System.out.println(\"Executing on \" + dbType + \": \" + sql);\n            connect();\n        }\n    }\n    static class MySQLConnection extends DatabaseConnection {\n        MySQLConnection() { super(\"MySQL\"); }\n        @Override void connect()    { System.out.println(\"Connected to MySQL\"); }\n        @Override void disconnect() { System.out.println(\"Disconnected from MySQL\"); }\n    }\n    static class PostgreSQLConnection extends DatabaseConnection {\n        PostgreSQLConnection() { super(\"PostgreSQL\"); }\n        @Override void connect()    { System.out.println(\"Connected to PostgreSQL\"); }\n        @Override void disconnect() { System.out.println(\"Disconnected from PostgreSQL\"); }\n    }\n\n    public static void main(String[] args) {\n        DatabaseConnection[] dbs = { new MySQLConnection(), new PostgreSQLConnection() };\n        for (DatabaseConnection db : dbs) db.executeQuery(\"SELECT 1\");\n    }\n}",
           "testCases": [
-            {"input": "MySQL SELECT 1",      "output": "Executing on MySQL: SELECT 1\nConnected to MySQL"},
-            {"input": "PostgreSQL SELECT 1", "output": "Executing on PostgreSQL: SELECT 1\nConnected to PostgreSQL"}
+            {
+              "input": "MySQL SELECT 1",
+              "output": "Executing on MySQL: SELECT 1\nConnected to MySQL"
+            },
+            {
+              "input": "PostgreSQL SELECT 1",
+              "output": "Executing on PostgreSQL: SELECT 1\nConnected to PostgreSQL"
+            }
           ],
           "constraints": "executeQuery defined only in abstract class.",
           "editorial": "executeQuery contains shared validation and logging. connect() is abstract — each database has its own connection logic. Code iterating DatabaseConnection[] works for any database without knowing the concrete type. This is how JDBC's java.sql.Connection abstraction works — application code is database-agnostic."
@@ -261,9 +330,18 @@
           "starterCode": "public class Q11 {\n    // TODO: sealed interface Shape permits Circle, Rectangle, Triangle\n    // TODO: records for each\n\n    static String describe(Shape s) {\n        // TODO: pattern matching switch — exhaustive\n        return \"\";\n    }\n\n    public static void main(String[] args) {\n        System.out.println(describe(new Circle(5)));\n        System.out.println(describe(new Rectangle(4, 6)));\n        System.out.println(describe(new Triangle(3, 4, 5)));\n    }\n}",
           "solutionCode": "public class Q11 {\n    sealed interface Shape permits Circle, Rectangle, Triangle {}\n    record Circle(double r) implements Shape {}\n    record Rectangle(double w, double h) implements Shape {}\n    record Triangle(double a, double b, double c) implements Shape {}\n\n    static String describe(Shape s) {\n        return switch (s) {\n            case Circle    c -> \"Circle radius=\" + c.r();\n            case Rectangle r -> \"Rectangle \" + r.w() + \"x\" + r.h();\n            case Triangle  t -> \"Triangle sides=\" + t.a() + \",\" + t.b() + \",\" + t.c();\n        };\n    }\n\n    public static void main(String[] args) {\n        System.out.println(describe(new Circle(5)));\n        System.out.println(describe(new Rectangle(4, 6)));\n        System.out.println(describe(new Triangle(3, 4, 5)));\n    }\n}",
           "testCases": [
-            {"input": "Circle(5)",       "output": "Circle radius=5.0"},
-            {"input": "Rectangle(4,6)", "output": "Rectangle 4.0x6.0"},
-            {"input": "Triangle(3,4,5)","output": "Triangle sides=3.0,4.0,5.0"}
+            {
+              "input": "Circle(5)",
+              "output": "Circle radius=5.0"
+            },
+            {
+              "input": "Rectangle(4,6)",
+              "output": "Rectangle 4.0x6.0"
+            },
+            {
+              "input": "Triangle(3,4,5)",
+              "output": "Triangle sides=3.0,4.0,5.0"
+            }
           ],
           "constraints": "Java 17+. No default case in switch.",
           "editorial": "Sealed interfaces restrict which classes can implement them. The compiler knows all permitted subtypes, making the switch exhaustive — no default needed (compile error if a case is missing). This combines abstraction (interface contract) with closed-world assumption (finite subtypes). Used for algebraic data types, AST nodes."
@@ -280,8 +358,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q12 {\n    record User(int id, String name) {}\n\n    interface UserRepository {\n        Optional<User> findById(int id);\n        void save(User u);\n    }\n\n    static class InMemoryUserRepository implements UserRepository {\n        Map<Integer, User> store = new HashMap<>();\n        @Override public Optional<User> findById(int id) { return Optional.ofNullable(store.get(id)); }\n        @Override public void save(User u) { store.put(u.id(), u); }\n    }\n\n    abstract static class UserService {\n        protected UserRepository repo;\n        UserService(UserRepository repo) { this.repo = repo; }\n        Optional<User> getUser(int id) {\n            Optional<User> u = repo.findById(id);\n            u.ifPresent(this::processUser);\n            return u;\n        }\n        abstract void processUser(User u);\n    }\n\n    // TODO: ReportUserService\n\n    public static void main(String[] args) {\n        InMemoryUserRepository repo = new InMemoryUserRepository();\n        repo.save(new User(1, \"Alice\"));\n        UserService svc = new ReportUserService(repo);\n        svc.getUser(1);\n        svc.getUser(999); // not found\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q12 {\n    record User(int id, String name) {}\n\n    interface UserRepository {\n        Optional<User> findById(int id);\n        void save(User u);\n    }\n\n    static class InMemoryUserRepository implements UserRepository {\n        Map<Integer, User> store = new HashMap<>();\n        @Override public Optional<User> findById(int id) { return Optional.ofNullable(store.get(id)); }\n        @Override public void save(User u) { store.put(u.id(), u); }\n    }\n\n    abstract static class UserService {\n        protected UserRepository repo;\n        UserService(UserRepository repo) { this.repo = repo; }\n        Optional<User> getUser(int id) {\n            Optional<User> u = repo.findById(id);\n            u.ifPresent(this::processUser);\n            return u;\n        }\n        abstract void processUser(User u);\n    }\n\n    static class ReportUserService extends UserService {\n        ReportUserService(UserRepository repo) { super(repo); }\n        @Override void processUser(User u) {\n            System.out.println(\"REPORT: user id=\" + u.id() + \" name=\" + u.name());\n        }\n    }\n\n    public static void main(String[] args) {\n        InMemoryUserRepository repo = new InMemoryUserRepository();\n        repo.save(new User(1, \"Alice\"));\n        UserService svc = new ReportUserService(repo);\n        svc.getUser(1);   // REPORT: user id=1 name=Alice\n        svc.getUser(999); // (not found — no output)\n    }\n}",
           "testCases": [
-            {"input": "getUser(1)",   "output": "REPORT: user id=1 name=Alice"},
-            {"input": "getUser(999)", "output": ""}
+            {
+              "input": "getUser(1)",
+              "output": "REPORT: user id=1 name=Alice"
+            },
+            {
+              "input": "getUser(999)",
+              "output": ""
+            }
           ],
           "constraints": "UserService must use UserRepository interface, not InMemoryUserRepository.",
           "editorial": "Layered abstraction: UserRepository hides storage details (in-memory, database). UserService hides business logic and depends only on the interface. ReportUserService provides the specific action. Swapping InMemoryUserRepository for a JPA repository requires no changes to UserService or ReportUserService. This is Spring's architecture pattern exactly."
@@ -298,9 +382,18 @@
           "starterCode": "public class Q13 {\n    interface Logger {\n        void log(String msg);\n        // TODO: add default logError() and logInfo() without breaking SimpleLogger\n    }\n\n    static class SimpleLogger implements Logger {\n        @Override public void log(String msg) { System.out.println(\"[LOG] \" + msg); }\n        // No changes needed — inherits default methods\n    }\n\n    static class AdvancedLogger implements Logger {\n        @Override public void log(String msg) { System.out.println(\"ADVANCED: \" + msg); }\n        // TODO: @Override logError() with different format\n    }\n\n    public static void main(String[] args) {\n        Logger simple   = new SimpleLogger();\n        Logger advanced = new AdvancedLogger();\n\n        simple.log(\"hello\");\n        simple.logError(\"something broke\");\n        simple.logInfo(\"system started\");\n        System.out.println(\"---\");\n        advanced.logError(\"critical failure\");\n    }\n}",
           "solutionCode": "public class Q13 {\n    interface Logger {\n        void log(String msg);\n        default void logError(String msg) { log(\"[ERROR] \" + msg); }\n        default void logInfo(String msg)  { log(\"[INFO] \"  + msg); }\n    }\n\n    static class SimpleLogger implements Logger {\n        @Override public void log(String msg) { System.out.println(\"[LOG] \" + msg); }\n    }\n\n    static class AdvancedLogger implements Logger {\n        @Override public void log(String msg) { System.out.println(\"ADVANCED: \" + msg); }\n        @Override public void logError(String msg) {\n            System.out.println(\"!!! CRITICAL !!! \" + msg);\n        }\n    }\n\n    public static void main(String[] args) {\n        Logger simple   = new SimpleLogger();\n        Logger advanced = new AdvancedLogger();\n\n        simple.log(\"hello\");\n        simple.logError(\"something broke\");  // [LOG] [ERROR] something broke\n        simple.logInfo(\"system started\");    // [LOG] [INFO] system started\n        System.out.println(\"---\");\n        advanced.logError(\"critical failure\"); // !!! CRITICAL !!! critical failure\n    }\n}",
           "testCases": [
-            {"input": "SimpleLogger.logError",  "output": "[LOG] [ERROR] something broke"},
-            {"input": "SimpleLogger.logInfo",   "output": "[LOG] [INFO] system started"},
-            {"input": "AdvancedLogger.logError","output": "!!! CRITICAL !!! critical failure"}
+            {
+              "input": "SimpleLogger.logError",
+              "output": "[LOG] [ERROR] something broke"
+            },
+            {
+              "input": "SimpleLogger.logInfo",
+              "output": "[LOG] [INFO] system started"
+            },
+            {
+              "input": "AdvancedLogger.logError",
+              "output": "!!! CRITICAL !!! critical failure"
+            }
           ],
           "constraints": "SimpleLogger is unchanged — no new methods added to it.",
           "editorial": "Default methods solve the interface evolution problem. Before Java 8, adding a method to an interface broke all existing implementations. Default methods provide a fallback — existing classes get the default behaviour automatically. New classes can override for custom behaviour. This is how Java added forEach() to Iterable and stream() to Collection without breaking all existing implementations."
@@ -317,9 +410,18 @@
           "starterCode": "public class Q14 {\n    abstract static class Builder<T> {\n        public final T build() {\n            validate();\n            return construct();\n        }\n        protected abstract void validate();\n        protected abstract T construct();\n    }\n\n    record Person(String name, int age) {}\n    record Car(String make, int year) {}\n\n    static class PersonBuilder extends Builder<Person> {\n        String name; int age;\n        PersonBuilder name(String n) { this.name=n; return this; }\n        PersonBuilder age(int a)    { this.age=a;  return this; }\n        @Override protected void validate() {\n            // TODO: throw if name is blank or age < 0\n        }\n        @Override protected Person construct() { return new Person(name, age); }\n    }\n\n    static class CarBuilder extends Builder<Car> {\n        String make; int year;\n        CarBuilder make(String m) { this.make=m;  return this; }\n        CarBuilder year(int y)   { this.year=y;  return this; }\n        @Override protected void validate() {\n            // TODO: throw if make blank or year < 1900\n        }\n        @Override protected Car construct() { return new Car(make, year); }\n    }\n\n    public static void main(String[] args) {\n        Person p = new PersonBuilder().name(\"Alice\").age(30).build();\n        System.out.println(p);\n        Car c = new CarBuilder().make(\"Toyota\").year(2020).build();\n        System.out.println(c);\n        try { new PersonBuilder().age(25).build(); } // missing name\n        catch (IllegalStateException e) { System.out.println(\"Error: \" + e.getMessage()); }\n    }\n}",
           "solutionCode": "public class Q14 {\n    abstract static class Builder<T> {\n        public final T build() { validate(); return construct(); }\n        protected abstract void validate();\n        protected abstract T construct();\n    }\n\n    record Person(String name, int age) {}\n    record Car(String make, int year) {}\n\n    static class PersonBuilder extends Builder<Person> {\n        String name; int age;\n        PersonBuilder name(String n) { this.name=n; return this; }\n        PersonBuilder age(int a)    { this.age=a;  return this; }\n        @Override protected void validate() {\n            if (name == null || name.isBlank()) throw new IllegalStateException(\"name required\");\n            if (age < 0) throw new IllegalStateException(\"age must be >= 0\");\n        }\n        @Override protected Person construct() { return new Person(name, age); }\n    }\n\n    static class CarBuilder extends Builder<Car> {\n        String make; int year;\n        CarBuilder make(String m) { this.make=m; return this; }\n        CarBuilder year(int y)   { this.year=y; return this; }\n        @Override protected void validate() {\n            if (make == null || make.isBlank()) throw new IllegalStateException(\"make required\");\n            if (year < 1900) throw new IllegalStateException(\"year must be >= 1900\");\n        }\n        @Override protected Car construct() { return new Car(make, year); }\n    }\n\n    public static void main(String[] args) {\n        Person p = new PersonBuilder().name(\"Alice\").age(30).build();\n        System.out.println(p);\n        Car c = new CarBuilder().make(\"Toyota\").year(2020).build();\n        System.out.println(c);\n        try { new PersonBuilder().age(25).build(); }\n        catch (IllegalStateException e) { System.out.println(\"Error: \" + e.getMessage()); }\n    }\n}",
           "testCases": [
-            {"input": "PersonBuilder with all fields", "output": "Person[name=Alice, age=30]"},
-            {"input": "CarBuilder with all fields",    "output": "Car[make=Toyota, year=2020]"},
-            {"input": "PersonBuilder missing name",   "output": "Error: name required"}
+            {
+              "input": "PersonBuilder with all fields",
+              "output": "Person[name=Alice, age=30]"
+            },
+            {
+              "input": "CarBuilder with all fields",
+              "output": "Car[make=Toyota, year=2020]"
+            },
+            {
+              "input": "PersonBuilder missing name",
+              "output": "Error: name required"
+            }
           ],
           "constraints": "build() is final in Builder — cannot be overridden.",
           "editorial": "Abstract Builder with Template Method: build() is the invariant algorithm (validate then construct). Subclasses provide the variable parts. Making build() final ensures validation always runs — no subclass can bypass it. This guarantees safety across all builder types."
@@ -336,8 +438,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q15 {\n    abstract static class AbstractIterator<T> implements Iterator<T> {\n        @Override public boolean hasNext() { return currentIndex() < totalSize(); }\n        @Override public T next() {\n            if (!hasNext()) throw new NoSuchElementException();\n            return getElement(advanceAndGet());\n        }\n        protected abstract int totalSize();\n        protected abstract int currentIndex();\n        protected abstract int advanceAndGet(); // returns index BEFORE advance\n        protected abstract T getElement(int index);\n    }\n\n    // TODO: ArrayIterator<T>, RangeIterator (Integer from start to end)\n\n    public static void main(String[] args) {\n        Iterator<String> ai = new ArrayIterator<>(new String[]{\"a\",\"b\",\"c\"});\n        while (ai.hasNext()) System.out.print(ai.next() + \" \");\n        System.out.println();\n\n        Iterator<Integer> ri = new RangeIterator(1, 5);\n        while (ri.hasNext()) System.out.print(ri.next() + \" \");\n        System.out.println();\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q15 {\n    abstract static class AbstractIterator<T> implements Iterator<T> {\n        @Override public boolean hasNext() { return currentIndex() < totalSize(); }\n        @Override public T next() {\n            if (!hasNext()) throw new NoSuchElementException();\n            return getElement(advanceAndGet());\n        }\n        protected abstract int totalSize();\n        protected abstract int currentIndex();\n        protected abstract int advanceAndGet();\n        protected abstract T getElement(int index);\n    }\n\n    static class ArrayIterator<T> extends AbstractIterator<T> {\n        T[] data; int idx = 0;\n        @SuppressWarnings(\"unchecked\")\n        ArrayIterator(T[] data) { this.data = data; }\n        @Override protected int totalSize()     { return data.length; }\n        @Override protected int currentIndex()  { return idx; }\n        @Override protected int advanceAndGet() { return idx++; }\n        @Override protected T   getElement(int i){ return data[i]; }\n    }\n\n    static class RangeIterator extends AbstractIterator<Integer> {\n        int current; int end;\n        RangeIterator(int start, int end) { this.current=start; this.end=end; }\n        @Override protected int     totalSize()    { return end - current + (current <= end ? 1 : 0); }\n        @Override protected int     currentIndex() { return current <= end ? 0 : 1; }\n        @Override protected boolean hasNext()       { return current <= end; }\n        @Override protected int     advanceAndGet() { return current++; }\n        @Override protected Integer getElement(int i){ return i; } // i is the value itself\n    }\n\n    public static void main(String[] args) {\n        Iterator<String>  ai = new ArrayIterator<>(new String[]{\"a\",\"b\",\"c\"});\n        while (ai.hasNext()) System.out.print(ai.next() + \" \");\n        System.out.println();\n        Iterator<Integer> ri = new RangeIterator(1, 5);\n        while (ri.hasNext()) System.out.print(ri.next() + \" \");\n        System.out.println();\n    }\n}",
           "testCases": [
-            {"input": "ArrayIterator a,b,c", "output": "a b c"},
-            {"input": "RangeIterator 1-5",   "output": "1 2 3 4 5"}
+            {
+              "input": "ArrayIterator a,b,c",
+              "output": "a b c"
+            },
+            {
+              "input": "RangeIterator 1-5",
+              "output": "1 2 3 4 5"
+            }
           ],
           "constraints": "AbstractIterator must not know about the concrete data source.",
           "editorial": "Abstract Iterator: hasNext() and next() are the template — subclasses provide totalSize(), currentIndex(), advanceAndGet(), getElement(). The abstract class handles the iteration contract; each subclass handles its own data source. This is how AbstractList provides iterator() for any indexed list."
@@ -354,8 +462,14 @@
           "starterCode": "public class Q16 {\n    interface A { default String hello() { return \"Hello from A\"; } }\n    interface B { default String hello() { return \"Hello from B\"; } }\n    interface C extends A, B {\n        // Does C resolve the conflict? Or must the implementor?\n        // If C overrides: C.hello() wins\n        // If C doesn't override: implementing class MUST\n    }\n\n    // This would be a compile error without @Override:\n    static class Impl implements C {\n        // TODO: resolve the conflict\n    }\n\n    public static void main(String[] args) {\n        System.out.println(new Impl().hello());\n    }\n}",
           "solutionCode": "public class Q16 {\n    interface A { default String hello() { return \"Hello from A\"; } }\n    interface B { default String hello() { return \"Hello from B\"; } }\n    interface C extends A, B {} // C does not resolve — Impl must\n\n    static class Impl implements C {\n        @Override public String hello() {\n            // Use both: explicitly call each parent's default\n            return A.super.hello() + \" and \" + B.super.hello();\n        }\n    }\n\n    static class ImplPreferA implements C {\n        @Override public String hello() { return A.super.hello(); }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(new Impl().hello());     // Hello from A and Hello from B\n        System.out.println(new ImplPreferA().hello()); // Hello from A\n    }\n}",
           "testCases": [
-            {"input": "Impl.hello()",      "output": "Hello from A and Hello from B"},
-            {"input": "ImplPreferA.hello()","output": "Hello from A"}
+            {
+              "input": "Impl.hello()",
+              "output": "Hello from A and Hello from B"
+            },
+            {
+              "input": "ImplPreferA.hello()",
+              "output": "Hello from A"
+            }
           ],
           "constraints": "C itself does not override hello().",
           "editorial": "Diamond problem: A and B both provide hello(). When Impl implements C (which extends both), the compiler cannot decide which default to use — it forces an explicit override. `A.super.hello()` explicitly calls A's default, bypassing the diamond ambiguity. This is Java 8's explicit solution: conflicts must be resolved by the class, never silently."
@@ -372,8 +486,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q17 {\n    abstract static class Repository<T, ID> {\n        abstract void           save(T entity);\n        abstract Optional<T>    findById(ID id);\n        abstract void           delete(ID id);\n        void saveAll(List<T> entities) {\n            entities.forEach(this::save); // polymorphic save!\n        }\n    }\n\n    record Product(int id, String name) {}\n    record Order(String orderId, double amount) {}\n\n    // TODO: InMemoryProductRepository extends Repository<Product, Integer>\n    // TODO: InMemoryOrderRepository extends Repository<Order, String>\n\n    public static void main(String[] args) {\n        InMemoryProductRepository pr = new InMemoryProductRepository();\n        pr.saveAll(List.of(new Product(1,\"Apple\"), new Product(2,\"Banana\")));\n        System.out.println(pr.findById(1));\n\n        InMemoryOrderRepository or = new InMemoryOrderRepository();\n        or.saveAll(List.of(new Order(\"ORD1\", 99.9), new Order(\"ORD2\", 49.5)));\n        System.out.println(or.findById(\"ORD2\"));\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q17 {\n    abstract static class Repository<T, ID> {\n        abstract void        save(T entity);\n        abstract Optional<T> findById(ID id);\n        abstract void        delete(ID id);\n        void saveAll(List<T> entities) { entities.forEach(this::save); }\n    }\n\n    record Product(int id, String name) {}\n    record Order(String orderId, double amount) {}\n\n    static class InMemoryProductRepository extends Repository<Product, Integer> {\n        Map<Integer, Product> store = new HashMap<>();\n        @Override public void save(Product p)             { store.put(p.id(), p); }\n        @Override public Optional<Product> findById(Integer id) { return Optional.ofNullable(store.get(id)); }\n        @Override public void delete(Integer id)          { store.remove(id); }\n    }\n\n    static class InMemoryOrderRepository extends Repository<Order, String> {\n        Map<String, Order> store = new HashMap<>();\n        @Override public void save(Order o)              { store.put(o.orderId(), o); }\n        @Override public Optional<Order> findById(String id) { return Optional.ofNullable(store.get(id)); }\n        @Override public void delete(String id)          { store.remove(id); }\n    }\n\n    public static void main(String[] args) {\n        InMemoryProductRepository pr = new InMemoryProductRepository();\n        pr.saveAll(List.of(new Product(1,\"Apple\"), new Product(2,\"Banana\")));\n        System.out.println(pr.findById(1)); // Optional[Product[id=1, name=Apple]]\n\n        InMemoryOrderRepository or = new InMemoryOrderRepository();\n        or.saveAll(List.of(new Order(\"ORD1\",99.9), new Order(\"ORD2\",49.5)));\n        System.out.println(or.findById(\"ORD2\")); // Optional[Order[orderId=ORD2, amount=49.5]]\n    }\n}",
           "testCases": [
-            {"input": "ProductRepository findById(1)", "output": "Optional[Product[id=1, name=Apple]]"},
-            {"input": "OrderRepository findById(ORD2)","output": "Optional[Order[orderId=ORD2, amount=49.5]]"}
+            {
+              "input": "ProductRepository findById(1)",
+              "output": "Optional[Product[id=1, name=Apple]]"
+            },
+            {
+              "input": "OrderRepository findById(ORD2)",
+              "output": "Optional[Order[orderId=ORD2, amount=49.5]]"
+            }
           ],
           "constraints": "saveAll() defined only in abstract class.",
           "editorial": "Generic abstract Repository provides saveAll() once for all repositories. Each concrete repository implements save(), findById(), delete() for its specific type. Type safety is enforced by generics — ProductRepository can never save an Order. This is Spring Data JPA's CrudRepository architecture in miniature."
@@ -390,9 +510,18 @@
           "starterCode": "import java.util.*;\n\npublic class Q18 {\n    interface Auditable { String getAuditLog(); }\n\n    abstract static class Payment {\n        double amount; String currency;\n        Payment(double amount, String currency) { this.amount=amount; this.currency=currency; }\n        String getReceipt() { return String.format(\"%s %.2f\", currency, amount); }\n        abstract void process();\n    }\n\n    // TODO: CreditCardPayment extends Payment implements Auditable\n\n    public static void main(String[] args) {\n        CreditCardPayment p = new CreditCardPayment(99.99, \"USD\", \"4111-xxxx\");\n\n        // As Payment:\n        p.process();\n        System.out.println(p.getReceipt());\n\n        // As Auditable:\n        Auditable audit = p;\n        System.out.println(audit.getAuditLog());\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q18 {\n    interface Auditable { String getAuditLog(); }\n\n    abstract static class Payment {\n        double amount; String currency;\n        Payment(double a, String c) { amount=a; currency=c; }\n        String getReceipt() { return String.format(\"%s %.2f\", currency, amount); }\n        abstract void process();\n    }\n\n    static class CreditCardPayment extends Payment implements Auditable {\n        String maskedCard;\n        CreditCardPayment(double a, String c, String card) {\n            super(a, c); maskedCard = card;\n        }\n        @Override public void   process() { System.out.println(\"Charging card \" + maskedCard + \" for \" + getReceipt()); }\n        @Override public String getAuditLog() {\n            return \"AUDIT: card=\" + maskedCard + \" amount=\" + getReceipt();\n        }\n    }\n\n    public static void main(String[] args) {\n        CreditCardPayment p = new CreditCardPayment(99.99, \"USD\", \"4111-xxxx\");\n        p.process();\n        System.out.println(p.getReceipt());\n        Auditable audit = p;\n        System.out.println(audit.getAuditLog());\n    }\n}",
           "testCases": [
-            {"input": "process()",    "output": "Charging card 4111-xxxx for USD 99.99"},
-            {"input": "getReceipt()", "output": "USD 99.99"},
-            {"input": "getAuditLog()","output": "AUDIT: card=4111-xxxx amount=USD 99.99"}
+            {
+              "input": "process()",
+              "output": "Charging card 4111-xxxx for USD 99.99"
+            },
+            {
+              "input": "getReceipt()",
+              "output": "USD 99.99"
+            },
+            {
+              "input": "getAuditLog()",
+              "output": "AUDIT: card=4111-xxxx amount=USD 99.99"
+            }
           ],
           "constraints": "Same object used as Payment and Auditable.",
           "editorial": "Combining abstract class and interface: Payment holds state (amount, currency) and shared concrete method (getReceipt). CreditCardPayment implements the abstract process() and adds the Auditable capability. The same object is usable through both types. This is how Spring's @Transactional works — a service is both a business component (extends AbstractService) and a TransactionCapable (implements the proxy interface)."
@@ -409,7 +538,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q19 {\n    abstract static class FileSystemEntry {\n        String name;\n        FileSystemEntry(String name) { this.name = name; }\n        abstract long size();\n        abstract void print(String indent);\n    }\n    // TODO: File, Directory\n\n    public static void main(String[] args) {\n        FileSystemEntry root = new Directory(\"root\",\n            new File(\"readme.txt\", 1024),\n            new Directory(\"src\",\n                new File(\"Main.java\", 4096),\n                new File(\"Utils.java\", 2048)\n            ),\n            new File(\"pom.xml\", 512)\n        );\n        root.print(\"\");\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q19 {\n    abstract static class FileSystemEntry {\n        String name;\n        FileSystemEntry(String name) { this.name = name; }\n        abstract long size();\n        abstract void print(String indent);\n    }\n\n    static class File extends FileSystemEntry {\n        long bytes;\n        File(String name, long bytes) { super(name); this.bytes=bytes; }\n        @Override public long size() { return bytes; }\n        @Override public void print(String indent) {\n            System.out.printf(\"%s%s (%d bytes)%n\", indent, name, bytes);\n        }\n    }\n\n    static class Directory extends FileSystemEntry {\n        List<FileSystemEntry> children = new ArrayList<>();\n        Directory(String name, FileSystemEntry... entries) {\n            super(name); Collections.addAll(children, entries);\n        }\n        @Override public long size() { return children.stream().mapToLong(FileSystemEntry::size).sum(); }\n        @Override public void print(String indent) {\n            System.out.printf(\"%s%s/ (%d bytes)%n\", indent, name, size());\n            for (FileSystemEntry e : children) e.print(indent + \"  \");\n        }\n    }\n\n    public static void main(String[] args) {\n        FileSystemEntry root = new Directory(\"root\",\n            new File(\"readme.txt\", 1024),\n            new Directory(\"src\", new File(\"Main.java\", 4096), new File(\"Utils.java\", 2048)),\n            new File(\"pom.xml\", 512)\n        );\n        root.print(\"\");\n    }\n}",
           "testCases": [
-            {"input": "print tree", "output": "root/ (7680 bytes)\n  readme.txt (1024 bytes)\n  src/ (6144 bytes)\n    Main.java (4096 bytes)\n    Utils.java (2048 bytes)\n  pom.xml (512 bytes)"}
+            {
+              "input": "print tree",
+              "output": "root/ (7680 bytes)\n  readme.txt (1024 bytes)\n  src/ (6144 bytes)\n    Main.java (4096 bytes)\n    Utils.java (2048 bytes)\n  pom.xml (512 bytes)"
+            }
           ],
           "constraints": "No instanceof in size() or print().",
           "editorial": "Composite pattern via abstract class: File and Directory both extend FileSystemEntry. Directory.size() recursively calls size() on children polymorphically — File returns bytes, Directory sums recursively. No instanceof needed — each type knows its own size computation. Identical to java.io.File (length() works differently for files vs dirs)."
@@ -426,13 +558,21 @@
           "starterCode": "public class Q20 {\n    record Person(String name, int age) {}\n    record Employee(String name, int age, String company) {}\n\n    @SuppressWarnings(\"unchecked\")\n    abstract static class AbstractBuilder<B extends AbstractBuilder<B,T>, T> {\n        protected abstract B self();\n        protected abstract void validate();\n        protected abstract T construct();\n        public final T build() { validate(); return construct(); }\n    }\n\n    static class PersonBuilder<B extends PersonBuilder<B>> extends AbstractBuilder<B, Person> {\n        String name; int age;\n        public B name(String n) { this.name=n; return self(); }\n        public B age(int a)    { this.age=a;  return self(); }\n        @Override protected B    self()      { return (B) this; }\n        @Override protected void validate()  { if(name==null) throw new IllegalStateException(\"name required\"); }\n        @Override protected Person construct(){ return new Person(name, age); }\n    }\n\n    static class EmployeeBuilder extends PersonBuilder<EmployeeBuilder> {\n        String company;\n        public EmployeeBuilder company(String c) { this.company=c; return self(); }\n        @Override protected Employee construct() { return new Employee(name, age, company); }\n    }\n\n    public static void main(String[] args) {\n        Person p = new PersonBuilder<>().name(\"Alice\").age(30).build();\n        System.out.println(p);\n\n        // EmployeeBuilder chain: name() and age() return EmployeeBuilder — no cast!\n        Employee e = new EmployeeBuilder().name(\"Bob\").age(25).company(\"ACME\").build();\n        System.out.println(e);\n    }\n}",
           "solutionCode": "public class Q20 {\n    record Person(String name, int age) {}\n    record Employee(String name, int age, String company) {}\n\n    @SuppressWarnings(\"unchecked\")\n    abstract static class AbstractBuilder<B extends AbstractBuilder<B,T>, T> {\n        protected abstract B self();\n        protected abstract void validate();\n        protected abstract T construct();\n        public final T build() { validate(); return construct(); }\n    }\n\n    static class PersonBuilder<B extends PersonBuilder<B>> extends AbstractBuilder<B, Person> {\n        String name; int age;\n        public B name(String n) { this.name=n; return self(); }\n        public B age(int a)    { this.age=a;  return self(); }\n        @Override protected B    self()       { return (B) this; }\n        @Override protected void validate()   { if (name==null) throw new IllegalStateException(\"name required\"); }\n        @Override protected Person construct() { return new Person(name, age); }\n    }\n\n    static class EmployeeBuilder extends PersonBuilder<EmployeeBuilder> {\n        String company;\n        public EmployeeBuilder company(String c) { this.company=c; return self(); }\n        @Override protected Employee construct() { return new Employee(name, age, company); }\n    }\n\n    public static void main(String[] args) {\n        Person p = new PersonBuilder<>().name(\"Alice\").age(30).build();\n        System.out.println(p); // Person[name=Alice, age=30]\n\n        Employee e = new EmployeeBuilder().name(\"Bob\").age(25).company(\"ACME\").build();\n        System.out.println(e); // Employee[name=Bob, age=25, company=ACME]\n    }\n}",
           "testCases": [
-            {"input": "PersonBuilder chain",   "output": "Person[name=Alice, age=30]"},
-            {"input": "EmployeeBuilder chain", "output": "Employee[name=Bob, age=25, company=ACME]"}
+            {
+              "input": "PersonBuilder chain",
+              "output": "Person[name=Alice, age=30]"
+            },
+            {
+              "input": "EmployeeBuilder chain",
+              "output": "Employee[name=Bob, age=25, company=ACME]"
+            }
           ],
           "constraints": "No casting when calling name().age() on EmployeeBuilder.",
           "editorial": "Fluent builder with self type: `B extends AbstractBuilder<B,T>` is a recursive generic bound — ensures self() returns the concrete builder type. name() and age() return B (the concrete type) — so on EmployeeBuilder they return EmployeeBuilder, enabling fluent chaining with company() without casting. Used in Lombok @Builder, Protobuf builders, and test data factories."
         }
-      ]
+      ],
+      "subCategory": "OOP (VERY IMPORTANT)",
+      "displayOrder": 24
     }
   ]
 }

@@ -550,7 +550,9 @@
           "constraints": "Must have exactly 10 questions. Must cover: overflow, autoboxing cache, string pool, casting, floating point, var. checkAnswer must be case-insensitive.",
           "editorial": "Build a quiz engine with a Map<String, Runnable> of test cases. Each test verifies a specific type behavior (overflow, autoboxing cache, float precision). Use assert or custom check() method to report pass/fail. Return a score. This consolidates all type-system edge cases into a single runnable spec."
         }
-      ]
+      ],
+      "subCategory": "Language Basics",
+      "displayOrder": 10
     }
   ]
 }

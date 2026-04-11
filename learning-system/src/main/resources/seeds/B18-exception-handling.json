@@ -78,9 +78,18 @@
           "starterCode": "import java.util.Optional;\n\npublic class Q1 {\n    public static Optional<Integer> safeParseInt(String s) {\n        // TODO\n        return Optional.empty();\n    }\n    public static void main(String[] args) {\n        System.out.println(safeParseInt(\"42\"));  // Optional[42]\n        System.out.println(safeParseInt(\"abc\")); // Optional.empty\n        System.out.println(safeParseInt(null));  // Optional.empty\n    }\n}",
           "solutionCode": "import java.util.Optional;\n\npublic class Q1 {\n    public static Optional<Integer> safeParseInt(String s) {\n        try { return Optional.of(Integer.parseInt(s)); }\n        catch (NumberFormatException | NullPointerException e) { return Optional.empty(); }\n    }\n    public static void main(String[] args) {\n        System.out.println(safeParseInt(\"42\"));  // Optional[42]\n        System.out.println(safeParseInt(\"abc\")); // Optional.empty\n        System.out.println(safeParseInt(null));  // Optional.empty\n    }\n}",
           "testCases": [
-            {"input": "\"42\"",  "output": "Optional[42]"},
-            {"input": "\"abc\"", "output": "Optional.empty"},
-            {"input": "null",   "output": "Optional.empty"}
+            {
+              "input": "\"42\"",
+              "output": "Optional[42]"
+            },
+            {
+              "input": "\"abc\"",
+              "output": "Optional.empty"
+            },
+            {
+              "input": "null",
+              "output": "Optional.empty"
+            }
           ],
           "constraints": "Never throws. Handles null.",
           "editorial": "Catching NumberFormatException converts the exception-based API to Optional. NullPointerException is also caught because Integer.parseInt(null) throws NPE. This pattern is common for parsing user input where 'invalid' is an expected state — not exceptional."
@@ -97,7 +106,10 @@
           "starterCode": "public class Q2 {\n    static class ValidationException extends RuntimeException {\n        // TODO: field, constructor, getField()\n    }\n    static void validateAge(int age) { /* TODO */ }\n\n    public static void main(String[] args) {\n        validateAge(25);\n        try { validateAge(-5); }\n        catch (ValidationException e) {\n            System.out.println(\"Field: \" + e.getField());\n            System.out.println(\"Message: \" + e.getMessage());\n        }\n    }\n}",
           "solutionCode": "public class Q2 {\n    static class ValidationException extends RuntimeException {\n        private final String field;\n        ValidationException(String field, String message) { super(message); this.field = field; }\n        public String getField() { return field; }\n    }\n    static void validateAge(int age) {\n        if (age < 0 || age > 150) throw new ValidationException(\"age\", \"must be 0-150, got: \" + age);\n    }\n    public static void main(String[] args) {\n        validateAge(25);\n        try { validateAge(-5); }\n        catch (ValidationException e) {\n            System.out.println(\"Field: \" + e.getField());\n            System.out.println(\"Message: \" + e.getMessage());\n        }\n    }\n}",
           "testCases": [
-            {"input": "validateAge(-5)", "output": "Field: age\nMessage: must be 0-150, got: -5"}
+            {
+              "input": "validateAge(-5)",
+              "output": "Field: age\nMessage: must be 0-150, got: -5"
+            }
           ],
           "constraints": "Extends RuntimeException.",
           "editorial": "Custom exceptions carry domain-specific data. The field name enables UI code to highlight the right form input. Extending RuntimeException avoids polluting call signatures."
@@ -114,7 +126,10 @@
           "starterCode": "import java.util.EmptyStackException;\n\npublic class Q3 {\n    static class SimpleStack<T> { /* TODO */ }\n    public static void main(String[] args) {\n        SimpleStack<Integer> s = new SimpleStack<>();\n        s.push(1); s.push(2);\n        System.out.println(s.pop());  // 2\n        System.out.println(s.peek()); // 1\n        System.out.println(s.pop());  // 1\n        try { s.pop(); } catch (EmptyStackException e) { System.out.println(\"Empty!\"); }\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q3 {\n    static class SimpleStack<T> {\n        private List<T> list = new ArrayList<>();\n        public void push(T item) { list.add(item); }\n        public T pop() {\n            if (isEmpty()) throw new EmptyStackException();\n            return list.remove(list.size() - 1);\n        }\n        public T peek() {\n            if (isEmpty()) throw new EmptyStackException();\n            return list.get(list.size() - 1);\n        }\n        public boolean isEmpty() { return list.isEmpty(); }\n    }\n    public static void main(String[] args) {\n        SimpleStack<Integer> s = new SimpleStack<>();\n        s.push(1); s.push(2);\n        System.out.println(s.pop());  // 2\n        System.out.println(s.peek()); // 1\n        System.out.println(s.pop());  // 1\n        try { s.pop(); } catch (EmptyStackException e) { System.out.println(\"Empty!\"); }\n    }\n}",
           "testCases": [
-            {"input": "push 1,2 pop/peek/pop/pop", "output": "2\n1\n1\nEmpty!"}
+            {
+              "input": "push 1,2 pop/peek/pop/pop",
+              "output": "2\n1\n1\nEmpty!"
+            }
           ],
           "constraints": "Use java.util.EmptyStackException.",
           "editorial": "EmptyStackException signals a precondition violation — calling pop() on an empty stack is a programming error. Unchecked because callers should check isEmpty() first."
@@ -131,8 +146,14 @@
           "starterCode": "public class Q4 {\n    static int withReturn() {\n        try   { System.out.println(\"try\"); return 1; }\n        finally { System.out.println(\"finally\"); return 2; }\n    }\n    static void withThrow() throws Exception {\n        try   { throw new Exception(\"original\"); }\n        finally { System.out.println(\"finally runs\"); }\n    }\n    public static void main(String[] args) throws Exception {\n        System.out.println(withReturn());\n        try { withThrow(); } catch (Exception e) { System.out.println(\"caught: \" + e.getMessage()); }\n    }\n}",
           "solutionCode": "public class Q4 {\n    static int withReturn() {\n        try   { System.out.println(\"try\"); return 1; }       // return 1 prepared\n        finally { System.out.println(\"finally\"); return 2; }  // overrides!\n    }\n    static void withThrow() throws Exception {\n        try   { throw new Exception(\"original\"); }\n        finally { System.out.println(\"finally runs\"); }  // runs, then exception propagates\n    }\n    public static void main(String[] args) throws Exception {\n        System.out.println(withReturn());\n        try { withThrow(); } catch (Exception e) { System.out.println(\"caught: \" + e.getMessage()); }\n    }\n}",
           "testCases": [
-            {"input": "withReturn()", "output": "try\nfinally\n2"},
-            {"input": "withThrow()",  "output": "finally runs\ncaught: original"}
+            {
+              "input": "withReturn()",
+              "output": "try\nfinally\n2"
+            },
+            {
+              "input": "withThrow()",
+              "output": "finally runs\ncaught: original"
+            }
           ],
           "constraints": "Conceptual prediction.",
           "editorial": "finally always runs before the method returns or exception propagates. A return in finally overrides the try's return — silently discarding it. Bad practice. In withThrow: finally prints but does NOT suppress the exception — original propagates."
@@ -149,8 +170,14 @@
           "starterCode": "public class Q5 {\n    static class ManagedResource implements AutoCloseable {\n        private boolean open = true;\n        public void use() { System.out.println(\"Using\"); }\n        @Override public void close() { open = false; System.out.println(\"Closed\"); }\n        public boolean isOpen() { return open; }\n    }\n    public static void main(String[] args) {\n        // Without TWR\n        ManagedResource r1 = new ManagedResource();\n        try { r1.use(); throw new RuntimeException(\"oops\"); }\n        catch (RuntimeException e) { System.out.println(\"Caught: \" + e.getMessage()); }\n        System.out.println(\"r1 open (leak?): \" + r1.isOpen());\n        System.out.println(\"---\");\n        // With TWR\n        try (ManagedResource r2 = new ManagedResource()) {\n            r2.use(); throw new RuntimeException(\"oops2\");\n        } catch (RuntimeException e) { System.out.println(\"Caught: \" + e.getMessage()); }\n        System.out.println(\"TWR always closes\");\n    }\n}",
           "solutionCode": "public class Q5 {\n    static class ManagedResource implements AutoCloseable {\n        private boolean open = true;\n        public void use() { System.out.println(\"Using\"); }\n        @Override public void close() { open = false; System.out.println(\"Closed\"); }\n        public boolean isOpen() { return open; }\n    }\n    public static void main(String[] args) {\n        ManagedResource r1 = new ManagedResource();\n        try { r1.use(); throw new RuntimeException(\"oops\"); }\n        catch (RuntimeException e) { System.out.println(\"Caught: \" + e.getMessage()); }\n        System.out.println(\"r1 open (leak?): \" + r1.isOpen()); // true = LEAK\n        System.out.println(\"---\");\n        try (ManagedResource r2 = new ManagedResource()) {\n            r2.use(); throw new RuntimeException(\"oops2\");\n        } catch (RuntimeException e) { System.out.println(\"Caught: \" + e.getMessage()); }\n        System.out.println(\"TWR always closes\");\n    }\n}",
           "testCases": [
-            {"input": "without TWR", "output": "Using\nCaught: oops\nr1 open (leak?): true"},
-            {"input": "with TWR",    "output": "Using\nClosed\nCaught: oops2\nTWR always closes"}
+            {
+              "input": "without TWR",
+              "output": "Using\nCaught: oops\nr1 open (leak?): true"
+            },
+            {
+              "input": "with TWR",
+              "output": "Using\nClosed\nCaught: oops2\nTWR always closes"
+            }
           ],
           "constraints": "Resource implements AutoCloseable.",
           "editorial": "Without TWR, an exception jumps to catch, skipping close(). With TWR, the compiler generates a finally block calling close() before the exception propagates. Every I/O resource must use TWR."
@@ -167,8 +194,14 @@
           "starterCode": "import java.util.Optional;\n\npublic class Q6 {\n    record Inner(String value) {}\n    record Middle(Inner inner) {}\n    record Outer(Middle middle) {}\n\n    static String getNested1(Outer obj) {\n        try { return obj.middle().inner().value(); }\n        catch (NullPointerException e) { return \"[null]\"; }\n    }\n    static String getNested2(Outer obj) { return \"[null]\"; /* TODO: Optional chain */ }\n\n    public static void main(String[] args) {\n        Outer full     = new Outer(new Middle(new Inner(\"found\")));\n        Outer noInner  = new Outer(new Middle(null));\n        System.out.println(getNested1(full));    // found\n        System.out.println(getNested1(noInner)); // [null]\n        System.out.println(getNested2(full));    // found\n    }\n}",
           "solutionCode": "import java.util.Optional;\n\npublic class Q6 {\n    record Inner(String value) {}\n    record Middle(Inner inner) {}\n    record Outer(Middle middle) {}\n\n    static String getNested1(Outer obj) {\n        try { return obj.middle().inner().value(); }\n        catch (NullPointerException e) { return \"[null]\"; }\n    }\n    static String getNested2(Outer obj) {\n        return Optional.ofNullable(obj)\n            .map(Outer::middle).map(Middle::inner).map(Inner::value).orElse(\"[null]\");\n    }\n    public static void main(String[] args) {\n        Outer full     = new Outer(new Middle(new Inner(\"found\")));\n        Outer noInner  = new Outer(new Middle(null));\n        System.out.println(getNested1(full));    // found\n        System.out.println(getNested1(noInner)); // [null]\n        System.out.println(getNested2(full));    // found\n        System.out.println(getNested2(new Outer(null))); // [null]\n    }\n}",
           "testCases": [
-            {"input": "full chain",    "output": "found"},
-            {"input": "null at inner", "output": "[null]"}
+            {
+              "input": "full chain",
+              "output": "found"
+            },
+            {
+              "input": "null at inner",
+              "output": "[null]"
+            }
           ],
           "constraints": "Both versions handle null at any level.",
           "editorial": "Try-catch for NPE is 'exception as flow control' — acceptable but not idiomatic. Optional chaining makes nullability explicit at each step and short-circuits on empty."
@@ -185,7 +218,10 @@
           "starterCode": "import java.util.concurrent.Callable;\nimport java.util.concurrent.atomic.AtomicInteger;\n\npublic class Q7 {\n    public static <T> T retry(Callable<T> op, int maxAttempts, long baseDelayMs) throws Exception {\n        // TODO\n        return op.call();\n    }\n    public static void main(String[] args) throws Exception {\n        AtomicInteger n = new AtomicInteger();\n        String r = retry(() -> {\n            int i = n.incrementAndGet();\n            System.out.println(\"Attempt \" + i);\n            if (i < 3) throw new RuntimeException(\"fail\");\n            return \"Success \" + i;\n        }, 5, 10);\n        System.out.println(r);\n    }\n}",
           "solutionCode": "import java.util.concurrent.Callable;\nimport java.util.concurrent.atomic.AtomicInteger;\n\npublic class Q7 {\n    public static <T> T retry(Callable<T> op, int maxAttempts, long baseDelayMs) throws Exception {\n        RuntimeException last = null;\n        for (int a = 1; a <= maxAttempts; a++) {\n            try { return op.call(); }\n            catch (RuntimeException e) {\n                last = e;\n                if (a < maxAttempts) Thread.sleep(baseDelayMs * (1L << (a - 1)));\n            }\n        }\n        throw last;\n    }\n    public static void main(String[] args) throws Exception {\n        AtomicInteger n = new AtomicInteger();\n        String r = retry(() -> {\n            int i = n.incrementAndGet();\n            System.out.println(\"Attempt \" + i);\n            if (i < 3) throw new RuntimeException(\"fail\");\n            return \"Success \" + i;\n        }, 5, 10);\n        System.out.println(r);\n    }\n}",
           "testCases": [
-            {"input": "fails 2 then succeeds", "output": "Attempt 1\nAttempt 2\nAttempt 3\nSuccess 3"}
+            {
+              "input": "fails 2 then succeeds",
+              "output": "Attempt 1\nAttempt 2\nAttempt 3\nSuccess 3"
+            }
           ],
           "constraints": "maxAttempts >= 1. Exponential delay doubles each attempt.",
           "editorial": "Retry with exponential backoff is fundamental to resilient distributed systems. Delay doubles: baseDelayMs * 2^(attempt-1) = 10ms, 20ms, 40ms. Last exception preserved and re-thrown. Add random jitter in production to avoid thundering herd."
@@ -202,7 +238,10 @@
           "starterCode": "import java.util.*;\nimport java.util.function.Predicate;\n\npublic class Q8 {\n    static class AggregateException extends RuntimeException {\n        List<String> errors;\n        AggregateException(List<String> e) { super(String.join(\"; \", e)); errors = List.copyOf(e); }\n        public List<String> getErrors() { return errors; }\n    }\n    static void validateAll(Map<String, String> fields, Map<String, Predicate<String>> rules) {\n        // TODO\n    }\n    public static void main(String[] args) {\n        var fields = Map.of(\"name\",\"\",\"age\",\"abc\",\"email\",\"valid@x.com\");\n        var rules  = Map.of(\n            \"name\",  (Predicate<String>) s -> !s.isBlank(),\n            \"age\",   (Predicate<String>) s -> s.matches(\"\\\\d+\"),\n            \"email\", (Predicate<String>) s -> s.contains(\"@\")\n        );\n        try { validateAll(fields, rules); }\n        catch (AggregateException e) { System.out.println(\"Errors: \" + e.getErrors().size()); }\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.function.Predicate;\n\npublic class Q8 {\n    static class AggregateException extends RuntimeException {\n        List<String> errors;\n        AggregateException(List<String> e) { super(String.join(\"; \", e)); errors = List.copyOf(e); }\n        public List<String> getErrors() { return errors; }\n    }\n    static void validateAll(Map<String, String> fields, Map<String, Predicate<String>> rules) {\n        List<String> errors = new ArrayList<>();\n        for (var entry : fields.entrySet()) {\n            Predicate<String> rule = rules.get(entry.getKey());\n            if (rule != null && !rule.test(entry.getValue()))\n                errors.add(\"'\" + entry.getKey() + \"' invalid\");\n        }\n        if (!errors.isEmpty()) throw new AggregateException(errors);\n    }\n    public static void main(String[] args) {\n        var fields = Map.of(\"name\",\"\",\"age\",\"abc\",\"email\",\"valid@x.com\");\n        var rules  = Map.of(\n            \"name\",  (Predicate<String>) s -> !s.isBlank(),\n            \"age\",   (Predicate<String>) s -> s.matches(\"\\\\d+\"),\n            \"email\", (Predicate<String>) s -> s.contains(\"@\")\n        );\n        try { validateAll(fields, rules); }\n        catch (AggregateException e) { System.out.println(\"Errors: \" + e.getErrors().size()); }\n    }\n}",
           "testCases": [
-            {"input": "name=blank, age=abc, email=valid", "output": "Errors: 2"}
+            {
+              "input": "name=blank, age=abc, email=valid",
+              "output": "Errors: 2"
+            }
           ],
           "constraints": "All rules checked even after first failure.",
           "editorial": "Fail-all instead of fail-fast: all rules run, all errors collected. Users get actionable feedback about every problem at once. Spring's BindingResult and Jakarta Bean Validation use this pattern."
@@ -219,8 +258,14 @@
           "starterCode": "import java.util.*;\nimport java.util.function.Function;\n\npublic class Q9 {\n    @FunctionalInterface\n    interface CheckedFunction<T, R> { R apply(T t) throws Exception; }\n\n    static <T, R> Function<T, R> sneaky(CheckedFunction<T, R> fn) {\n        return null; // TODO\n    }\n    static String process(String s) throws Exception {\n        if (s.equals(\"bad\")) throw new Exception(\"bad: \" + s);\n        return s.toUpperCase();\n    }\n    public static void main(String[] args) {\n        List.of(\"hello\",\"world\").stream().map(sneaky(Q9::process)).forEach(System.out::println);\n        try {\n            List.of(\"bad\").stream().map(sneaky(Q9::process)).forEach(System.out::println);\n        } catch (RuntimeException e) { System.out.println(\"Wrapped: \" + e.getCause().getMessage()); }\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.function.Function;\n\npublic class Q9 {\n    @FunctionalInterface\n    interface CheckedFunction<T, R> { R apply(T t) throws Exception; }\n\n    static <T, R> Function<T, R> sneaky(CheckedFunction<T, R> fn) {\n        return t -> { try { return fn.apply(t); } catch (Exception e) { throw new RuntimeException(e); } };\n    }\n    static String process(String s) throws Exception {\n        if (s.equals(\"bad\")) throw new Exception(\"bad: \" + s);\n        return s.toUpperCase();\n    }\n    public static void main(String[] args) {\n        List.of(\"hello\",\"world\").stream().map(sneaky(Q9::process)).forEach(System.out::println);\n        try {\n            List.of(\"bad\").stream().map(sneaky(Q9::process)).forEach(System.out::println);\n        } catch (RuntimeException e) { System.out.println(\"Wrapped: \" + e.getCause().getMessage()); }\n    }\n}",
           "testCases": [
-            {"input": "hello, world", "output": "HELLO\nWORLD"},
-            {"input": "bad",          "output": "Wrapped: bad: bad"}
+            {
+              "input": "hello, world",
+              "output": "HELLO\nWORLD"
+            },
+            {
+              "input": "bad",
+              "output": "Wrapped: bad: bad"
+            }
           ],
           "constraints": "Original accessible via getCause().",
           "editorial": "Java lambdas cannot throw checked exceptions. The sneaky wrapper converts checked to unchecked transparently. Vavr's CheckedFunction and Lombok's @SneakyThrows use this pattern."
@@ -237,8 +282,14 @@
           "starterCode": "public class Q10 {\n    static class Account {\n        String id; double balance;\n        Account(String id, double b) { this.id=id; balance=b; }\n        void debit(double amt) {\n            if (amt > balance) throw new IllegalStateException(\"Insufficient: \" + id);\n            balance -= amt;\n        }\n        void credit(double amt) { balance += amt; }\n    }\n    static void transfer(Account from, Account to, double amount) { /* TODO */ }\n    public static void main(String[] args) {\n        Account a = new Account(\"A\", 500), b = new Account(\"B\", 200);\n        transfer(a, b, 300);\n        System.out.println(\"A:\" + a.balance + \" B:\" + b.balance);\n        try { transfer(a, b, 400); } catch (Exception e) { System.out.println(e.getMessage()); }\n        System.out.println(\"A:\" + a.balance + \" B:\" + b.balance);\n    }\n}",
           "solutionCode": "public class Q10 {\n    static class Account {\n        String id; double balance;\n        Account(String id, double b) { this.id=id; balance=b; }\n        void debit(double amt) {\n            if (amt > balance) throw new IllegalStateException(\"Insufficient: \" + id);\n            balance -= amt;\n        }\n        void credit(double amt) { balance += amt; }\n    }\n    static void transfer(Account from, Account to, double amount) {\n        from.debit(amount);\n        try { to.credit(amount); }\n        catch (RuntimeException e) { from.credit(amount); throw e; } // rollback\n    }\n    public static void main(String[] args) {\n        Account a = new Account(\"A\", 500), b = new Account(\"B\", 200);\n        transfer(a, b, 300);\n        System.out.println(\"A:\" + a.balance + \" B:\" + b.balance); // 200.0 500.0\n        try { transfer(a, b, 400); } catch (Exception e) { System.out.println(e.getMessage()); }\n        System.out.println(\"A:\" + a.balance + \" B:\" + b.balance); // unchanged\n    }\n}",
           "testCases": [
-            {"input": "transfer 300 from A(500)", "output": "A:200.0 B:500.0"},
-            {"input": "transfer 400 insufficient", "output": "Insufficient: A\nA:200.0 B:500.0"}
+            {
+              "input": "transfer 300 from A(500)",
+              "output": "A:200.0 B:500.0"
+            },
+            {
+              "input": "transfer 400 insufficient",
+              "output": "Insufficient: A\nA:200.0 B:500.0"
+            }
           ],
           "constraints": "Account state consistent after any failure.",
           "editorial": "Exception-safe: debit first — if it throws, no state changed. If credit fails (rollback debit). Leave objects in a valid state even when exceptions occur."
@@ -255,7 +306,10 @@
           "starterCode": "public class Q11 {\n    static class DataException extends Exception { DataException(String m) { super(m); } }\n    static class ServiceException extends RuntimeException {\n        ServiceException(String m, Throwable c) { super(m, c); } }\n    interface DataRepository { String findById(int id) throws DataException; }\n    static class UserService {\n        private DataRepository repo;\n        UserService(DataRepository repo) { this.repo = repo; }\n        public String getUser(int id) { /* TODO: translate exception */ return null; }\n    }\n    public static void main(String[] args) {\n        DataRepository repo = id -> { throw new DataException(\"DB error id=\" + id); };\n        try { new UserService(repo).getUser(5); }\n        catch (ServiceException e) {\n            System.out.println(\"Service: \" + e.getMessage());\n            System.out.println(\"Root: \" + e.getCause().getMessage());\n        }\n    }\n}",
           "solutionCode": "public class Q11 {\n    static class DataException extends Exception { DataException(String m) { super(m); } }\n    static class ServiceException extends RuntimeException {\n        ServiceException(String m, Throwable c) { super(m, c); } }\n    interface DataRepository { String findById(int id) throws DataException; }\n    static class UserService {\n        private DataRepository repo;\n        UserService(DataRepository repo) { this.repo = repo; }\n        public String getUser(int id) {\n            try { return repo.findById(id); }\n            catch (DataException e) { throw new ServiceException(\"User unavailable: id=\" + id, e); }\n        }\n    }\n    public static void main(String[] args) {\n        DataRepository repo = id -> { throw new DataException(\"DB error id=\" + id); };\n        try { new UserService(repo).getUser(5); }\n        catch (ServiceException e) {\n            System.out.println(\"Service: \" + e.getMessage());\n            System.out.println(\"Root: \" + e.getCause().getMessage());\n        }\n    }\n}",
           "testCases": [
-            {"input": "getUser(5)", "output": "Service: User unavailable: id=5\nRoot: DB error id=5"}
+            {
+              "input": "getUser(5)",
+              "output": "Service: User unavailable: id=5\nRoot: DB error id=5"
+            }
           ],
           "constraints": "getCause() must return DataException.",
           "editorial": "Exception translation: each layer converts infrastructure exceptions to domain exceptions. Full chain preserved for logging. This is Spring's DataAccessException pattern."
@@ -272,7 +326,10 @@
           "starterCode": "import java.util.function.Supplier;\n\npublic class Q12 {\n    static class CircuitOpenException extends RuntimeException { CircuitOpenException(){super(\"OPEN\");} }\n    static class CircuitBreaker {\n        enum State { CLOSED, OPEN, HALF_OPEN }\n        State state = State.CLOSED; int failures=0; long openedAt=0;\n        final int threshold; final long resetMs;\n        CircuitBreaker(int t, long r){threshold=t;resetMs=r;}\n        <T> T call(Supplier<T> s) { return s.get(); /* TODO */ }\n    }\n    public static void main(String[] args) {\n        CircuitBreaker cb = new CircuitBreaker(2, 50);\n        for (int i=1;i<=4;i++) {\n            final int fi=i;\n            try { cb.call(()->{if(fi<=2) throw new RuntimeException(\"fail\"); return \"ok\";});\n                  System.out.println(\"OK\");\n            } catch(CircuitOpenException e){System.out.println(\"OPEN\");}\n              catch(RuntimeException e){System.out.println(\"Fail \"+fi);}\n        }\n    }\n}",
           "solutionCode": "import java.util.function.Supplier;\n\npublic class Q12 {\n    static class CircuitOpenException extends RuntimeException { CircuitOpenException(){super(\"OPEN\");} }\n    static class CircuitBreaker {\n        enum State { CLOSED, OPEN, HALF_OPEN }\n        State state=State.CLOSED; int failures=0; long openedAt=0;\n        final int threshold; final long resetMs;\n        CircuitBreaker(int t,long r){threshold=t;resetMs=r;}\n        <T> T call(Supplier<T> s) {\n            if (state==State.OPEN) {\n                if (System.currentTimeMillis()-openedAt>=resetMs) state=State.HALF_OPEN;\n                else throw new CircuitOpenException();\n            }\n            try {\n                T r=s.get(); failures=0; state=State.CLOSED; return r;\n            } catch(RuntimeException e) {\n                if(++failures>=threshold){state=State.OPEN;openedAt=System.currentTimeMillis();}\n                throw e;\n            }\n        }\n    }\n    public static void main(String[] args) {\n        CircuitBreaker cb=new CircuitBreaker(2,50);\n        for(int i=1;i<=4;i++){\n            final int fi=i;\n            try{cb.call(()->{if(fi<=2)throw new RuntimeException(\"fail\");return \"ok\";});\n                System.out.println(\"OK\");\n            }catch(CircuitOpenException e){System.out.println(\"OPEN\");}\n             catch(RuntimeException e){System.out.println(\"Fail \"+fi);}\n        }\n    }\n}",
           "testCases": [
-            {"input": "threshold=2, calls 1-4", "output": "Fail 1\nFail 2\nOPEN\nOK"}
+            {
+              "input": "threshold=2, calls 1-4",
+              "output": "Fail 1\nFail 2\nOPEN\nOK"
+            }
           ],
           "constraints": "Opens after exactly threshold consecutive failures.",
           "editorial": "Circuit breaker protects against cascading failures. After threshold failures it opens — failing fast. After resetMs it half-opens to test recovery. Resilience4j and Spring Cloud Circuit Breaker implement this pattern."
@@ -289,7 +346,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q13 {\n    static class ValidationContext {\n        String name;\n        List<String> errors = new ArrayList<>();\n        Map<String, ValidationContext> children = new LinkedHashMap<>();\n        ValidationContext(String name) { this.name = name; }\n        ValidationContext child(String n) { return children.computeIfAbsent(n, ValidationContext::new); }\n        void addError(String msg) { errors.add(msg); }\n        boolean hasErrors() {\n            return !errors.isEmpty() || children.values().stream().anyMatch(ValidationContext::hasErrors);\n        }\n        void print(String indent) { /* TODO */ }\n    }\n    public static void main(String[] args) {\n        ValidationContext ctx = new ValidationContext(\"order\");\n        ctx.child(\"customer\").addError(\"name is blank\");\n        ctx.child(\"customer\").child(\"address\").addError(\"street required\");\n        ctx.child(\"items\").addError(\"at least one item required\");\n        if (ctx.hasErrors()) ctx.print(\"\");\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q13 {\n    static class ValidationContext {\n        String name;\n        List<String> errors = new ArrayList<>();\n        Map<String, ValidationContext> children = new LinkedHashMap<>();\n        ValidationContext(String name) { this.name = name; }\n        ValidationContext child(String n) { return children.computeIfAbsent(n, ValidationContext::new); }\n        void addError(String msg) { errors.add(msg); }\n        boolean hasErrors() {\n            return !errors.isEmpty() || children.values().stream().anyMatch(ValidationContext::hasErrors);\n        }\n        void print(String indent) {\n            if (hasErrors()) System.out.println(indent + \"[\" + name + \"]\");\n            for (String e : errors) System.out.println(indent + \"  ERROR: \" + e);\n            for (ValidationContext c : children.values()) c.print(indent + \"  \");\n        }\n    }\n    public static void main(String[] args) {\n        ValidationContext ctx = new ValidationContext(\"order\");\n        ctx.child(\"customer\").addError(\"name is blank\");\n        ctx.child(\"customer\").child(\"address\").addError(\"street required\");\n        ctx.child(\"items\").addError(\"at least one item required\");\n        if (ctx.hasErrors()) ctx.print(\"\");\n    }\n}",
           "testCases": [
-            {"input": "nested errors", "output": "[order]\n  [customer]\n    ERROR: name is blank\n    [address]\n      ERROR: street required\n  [items]\n    ERROR: at least one item required"}
+            {
+              "input": "nested errors",
+              "output": "[order]\n  [customer]\n    ERROR: name is blank\n    [address]\n      ERROR: street required\n  [items]\n    ERROR: at least one item required"
+            }
           ],
           "constraints": "Tree preserves insertion order.",
           "editorial": "Hierarchical error collection mirrors the domain object graph. Used in Spring's BindingResult for nested objects and Jakarta Bean Validation's ConstraintViolation paths."
@@ -306,8 +366,14 @@
           "starterCode": "import java.util.*;\nimport java.util.concurrent.*;\n\npublic class Q14 {\n    static class AggregateException extends RuntimeException {\n        List<Throwable> causes;\n        AggregateException(List<Throwable> c) { super(c.size()+\" failed\"); causes=c; }\n    }\n    static List<String> runAllOrFail(List<Callable<String>> tasks) {\n        return List.of(); // TODO\n    }\n    public static void main(String[] args) {\n        try {\n            runAllOrFail(List.of(()->\"A\",()->\"B\",()->\"C\")).stream().sorted().forEach(System.out::println);\n        } catch(AggregateException e){System.out.println(\"Failed: \"+e.getMessage());}\n        try {\n            runAllOrFail(List.of(()->\"ok\",()->{throw new Exception(\"t2\");},()->{throw new Exception(\"t3\");}));\n        } catch(AggregateException e){System.out.println(e.getMessage());}\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.concurrent.*;\n\npublic class Q14 {\n    static class AggregateException extends RuntimeException {\n        List<Throwable> causes;\n        AggregateException(List<Throwable> c){super(c.size()+\" failed\");causes=c;}\n    }\n    static List<String> runAllOrFail(List<Callable<String>> tasks) {\n        List<CompletableFuture<String>> futures = new ArrayList<>();\n        for (Callable<String> t : tasks)\n            futures.add(CompletableFuture.supplyAsync(()->{\n                try{return t.call();}catch(Exception e){throw new RuntimeException(e);}}));\n        List<String> results=new ArrayList<>(); List<Throwable> fails=new ArrayList<>();\n        for (CompletableFuture<String> f : futures)\n            try{results.add(f.join());}catch(CompletionException e){fails.add(e.getCause());}\n        if (!fails.isEmpty()) throw new AggregateException(fails);\n        return results;\n    }\n    public static void main(String[] args) {\n        try {\n            runAllOrFail(List.of(()->\"A\",()->\"B\",()->\"C\")).stream().sorted().forEach(System.out::println);\n        } catch(AggregateException e){System.out.println(\"Failed: \"+e.getMessage());}\n        try {\n            runAllOrFail(List.of(()->\"ok\",()->{throw new Exception(\"t2\");},()->{throw new Exception(\"t3\");}));\n        } catch(AggregateException e){System.out.println(e.getMessage());}\n    }\n}",
           "testCases": [
-            {"input": "all succeed",  "output": "A\nB\nC"},
-            {"input": "2 tasks fail", "output": "2 failed"}
+            {
+              "input": "all succeed",
+              "output": "A\nB\nC"
+            },
+            {
+              "input": "2 tasks fail",
+              "output": "2 failed"
+            }
           ],
           "constraints": "Wait for all tasks even if some fail.",
           "editorial": "Join each future independently to collect all failures. Unlike allOf().join() which throws on first failure, this pattern gives a full picture of concurrent failures."
@@ -324,8 +390,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q15 {\n    static class BuildException extends Exception {\n        List<String> errors;\n        BuildException(List<String> e){super(String.join(\"; \",e));errors=e;}\n    }\n    static class QueryBuilder {\n        private String table; private List<String> conds=new ArrayList<>();\n        private int limit=-1; private String orderBy;\n        QueryBuilder from(String t){table=t;return this;}\n        QueryBuilder where(String c){conds.add(c);return this;}\n        QueryBuilder limit(int n){limit=n;return this;}\n        QueryBuilder orderBy(String c){orderBy=c;return this;}\n        String build() throws BuildException { return \"\"; /* TODO */ }\n    }\n    public static void main(String[] args) throws Exception {\n        System.out.println(new QueryBuilder().from(\"users\").where(\"age>18\").limit(10).orderBy(\"name\").build());\n        try { new QueryBuilder().limit(-5).build(); }\n        catch(BuildException e){System.out.println(e.errors);}\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q15 {\n    static class BuildException extends Exception {\n        List<String> errors;\n        BuildException(List<String> e){super(String.join(\"; \",e));errors=e;}\n    }\n    static class QueryBuilder {\n        private String table; private List<String> conds=new ArrayList<>();\n        private int limit=-1; private String orderBy;\n        QueryBuilder from(String t){table=t;return this;}\n        QueryBuilder where(String c){conds.add(c);return this;}\n        QueryBuilder limit(int n){limit=n;return this;}\n        QueryBuilder orderBy(String c){orderBy=c;return this;}\n        String build() throws BuildException {\n            List<String> errs=new ArrayList<>();\n            if(table==null||table.isBlank()) errs.add(\"table required\");\n            if(limit!=-1&&limit<0)           errs.add(\"limit must be >= 0\");\n            if(!errs.isEmpty()) throw new BuildException(errs);\n            StringBuilder sb=new StringBuilder(\"SELECT * FROM \"+table);\n            if(!conds.isEmpty()) sb.append(\" WHERE \").append(String.join(\" AND \",conds));\n            if(orderBy!=null)    sb.append(\" ORDER BY \").append(orderBy);\n            if(limit>=0)         sb.append(\" LIMIT \").append(limit);\n            return sb.toString();\n        }\n    }\n    public static void main(String[] args) throws Exception {\n        System.out.println(new QueryBuilder().from(\"users\").where(\"age>18\").limit(10).orderBy(\"name\").build());\n        try { new QueryBuilder().limit(-5).build(); }\n        catch(BuildException e){System.out.println(e.errors);}\n    }\n}",
           "testCases": [
-            {"input": "valid query",       "output": "SELECT * FROM users WHERE age>18 ORDER BY name LIMIT 10"},
-            {"input": "missing table, limit=-5", "output": "[table required, limit must be >= 0]"}
+            {
+              "input": "valid query",
+              "output": "SELECT * FROM users WHERE age>18 ORDER BY name LIMIT 10"
+            },
+            {
+              "input": "missing table, limit=-5",
+              "output": "[table required, limit must be >= 0]"
+            }
           ],
           "constraints": "No validation in setters.",
           "editorial": "Deferred validation: setters are data-entry only. build() validates everything atomically and reports all errors at once. Better UX than fail-fast builders."
@@ -342,7 +414,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q16 {\n    interface Step { String name(); void execute() throws Exception; void rollback(); }\n    static void executeTransaction(List<Step> steps) throws Exception { /* TODO */ }\n    public static void main(String[] args) throws Exception {\n        List<Step> steps = List.of(\n            makeStep(\"create\",false,false), makeStep(\"email\",false,false),\n            makeStep(\"charge\",true,false),  makeStep(\"ship\",false,false));\n        try { executeTransaction(steps); }\n        catch(Exception e) {\n            System.out.println(\"Primary: \"+e.getMessage());\n            for(Throwable s:e.getSuppressed()) System.out.println(\"Suppressed: \"+s.getMessage());\n        }\n    }\n    static Step makeStep(String n,boolean fe,boolean fr){\n        return new Step(){\n            public String name(){return n;}\n            public void execute() throws Exception{System.out.println(\"Exec: \"+n);if(fe)throw new Exception(n+\" failed\");}\n            public void rollback(){System.out.println(\"Rollback: \"+n);if(fr)throw new RuntimeException(n+\" rollback failed\");}\n        };\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q16 {\n    interface Step { String name(); void execute() throws Exception; void rollback(); }\n    static void executeTransaction(List<Step> steps) throws Exception {\n        Deque<Step> done = new ArrayDeque<>(); Exception primary = null;\n        for (Step s : steps) {\n            try { s.execute(); done.push(s); }\n            catch (Exception e) { primary = e; break; }\n        }\n        if (primary != null) {\n            while (!done.isEmpty()) {\n                try { done.pop().rollback(); }\n                catch (RuntimeException re) { primary.addSuppressed(re); }\n            }\n            throw primary;\n        }\n    }\n    public static void main(String[] args) throws Exception {\n        List<Step> steps = List.of(\n            makeStep(\"create\",false,false), makeStep(\"email\",false,false),\n            makeStep(\"charge\",true,false),  makeStep(\"ship\",false,false));\n        try { executeTransaction(steps); }\n        catch(Exception e) {\n            System.out.println(\"Primary: \"+e.getMessage());\n            for(Throwable s:e.getSuppressed()) System.out.println(\"Suppressed: \"+s.getMessage());\n        }\n    }\n    static Step makeStep(String n,boolean fe,boolean fr){\n        return new Step(){\n            public String name(){return n;}\n            public void execute()throws Exception{System.out.println(\"Exec: \"+n);if(fe)throw new Exception(n+\" failed\");}\n            public void rollback(){System.out.println(\"Rollback: \"+n);if(fr)throw new RuntimeException(n+\" rollback failed\");}\n        };\n    }\n}",
           "testCases": [
-            {"input": "create+email succeed, charge fails", "output": "Exec: create\nExec: email\nExec: charge\nRollback: email\nRollback: create\nPrimary: charge failed"}
+            {
+              "input": "create+email succeed, charge fails",
+              "output": "Exec: create\nExec: email\nExec: charge\nRollback: email\nRollback: create\nPrimary: charge failed"
+            }
           ],
           "constraints": "Rollback in reverse order. Rollback exceptions added as suppressed.",
           "editorial": "Saga pattern: each step has a compensating rollback. addSuppressed() preserves rollback failures without overshadowing the root cause. Used in distributed transactions and microservice choreography."
@@ -359,9 +434,18 @@
           "starterCode": "import java.util.*;\n\npublic class Q17 {\n    static class ApiException extends RuntimeException {\n        private final int status; private final String code;\n        ApiException(int s,String c,String m){super(m);status=s;code=c;}\n        public int getStatus(){return status;} public String getCode(){return code;}\n    }\n    // TODO: BadRequestException, UnauthorizedException, NotFoundException, ConflictException\n    static class ExceptionMapper {\n        static Map<String,Object> toResponse(ApiException e) { return Map.of(); /* TODO */ }\n    }\n    static String get(int id,boolean auth){\n        if(!auth)   throw new UnauthorizedException();\n        if(id<0)    throw new BadRequestException(\"id must be positive\");\n        if(id!=42)  throw new NotFoundException(\"Resource\",id);\n        return \"data_\"+id;\n    }\n    public static void main(String[] args){\n        for(int id:new int[]{-1,1,42}){\n            try{System.out.println(get(id,true));}\n            catch(ApiException e){System.out.println(ExceptionMapper.toResponse(e));}\n        }\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q17 {\n    static class ApiException extends RuntimeException {\n        private final int status; private final String code;\n        ApiException(int s,String c,String m){super(m);status=s;code=c;}\n        public int getStatus(){return status;} public String getCode(){return code;}\n    }\n    static class BadRequestException    extends ApiException{BadRequestException(String m){super(400,\"BAD_REQUEST\",m);}}\n    static class UnauthorizedException  extends ApiException{UnauthorizedException(){super(401,\"UNAUTHORIZED\",\"Auth required\");}}\n    static class NotFoundException      extends ApiException{NotFoundException(String e,Object id){super(404,\"NOT_FOUND\",e+\" not found: \"+id);}}\n    static class ConflictException      extends ApiException{ConflictException(String m){super(409,\"CONFLICT\",m);}}\n    static class ExceptionMapper {\n        static Map<String,Object> toResponse(ApiException e){\n            return Map.of(\"status\",e.getStatus(),\"code\",e.getCode(),\"message\",e.getMessage());\n        }\n    }\n    static String get(int id,boolean auth){\n        if(!auth)  throw new UnauthorizedException();\n        if(id<0)   throw new BadRequestException(\"id must be positive\");\n        if(id!=42) throw new NotFoundException(\"Resource\",id);\n        return \"data_\"+id;\n    }\n    public static void main(String[] args){\n        for(int id:new int[]{-1,1,42}){\n            try{System.out.println(get(id,true));}\n            catch(ApiException e){System.out.println(ExceptionMapper.toResponse(e));}\n        }\n    }\n}",
           "testCases": [
-            {"input": "id=-1",  "output": "{status=400, code=BAD_REQUEST, message=id must be positive}"},
-            {"input": "id=1",   "output": "{status=404, code=NOT_FOUND, message=Resource not found: 1}"},
-            {"input": "id=42",  "output": "data_42"}
+            {
+              "input": "id=-1",
+              "output": "{status=400, code=BAD_REQUEST, message=id must be positive}"
+            },
+            {
+              "input": "id=1",
+              "output": "{status=404, code=NOT_FOUND, message=Resource not found: 1}"
+            },
+            {
+              "input": "id=42",
+              "output": "data_42"
+            }
           ],
           "constraints": "Each subclass sets its own HTTP status code.",
           "editorial": "REST API exception hierarchy maps domain errors to HTTP status codes without instanceof chains. Spring's @ControllerAdvice + @ExceptionHandler does exactly this. Each exception type carries its own status."
@@ -378,7 +462,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q18 {\n    public static List<String> filteredStackTrace(Throwable t, String filter) {\n        return List.of(); // TODO\n    }\n    static void inner(){throw new RuntimeException(\"inner\");}\n    static void outer(){try{inner();}catch(RuntimeException e){throw new RuntimeException(\"outer\",e);}}\n    public static void main(String[] args){\n        try{outer();}catch(RuntimeException e){\n            filteredStackTrace(e,\"Q18\").forEach(System.out::println);\n        }\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q18 {\n    public static List<String> filteredStackTrace(Throwable t, String filter) {\n        List<String> r = new ArrayList<>();\n        r.add(t.getClass().getName()+\": \"+t.getMessage());\n        for (StackTraceElement e : t.getStackTrace())\n            if (e.getClassName().contains(filter))\n                r.add(\"  at \"+e.getClassName()+\".\"+e.getMethodName()+\"(\"+e.getFileName()+\":\"+e.getLineNumber()+\")\");\n        if (t.getCause()!=null){ r.add(\"Caused by:\"); r.addAll(filteredStackTrace(t.getCause(),filter)); }\n        return r;\n    }\n    static void inner(){throw new RuntimeException(\"inner\");}\n    static void outer(){try{inner();}catch(RuntimeException e){throw new RuntimeException(\"outer\",e);}}\n    public static void main(String[] args){\n        try{outer();}catch(RuntimeException e){\n            filteredStackTrace(e,\"Q18\").forEach(System.out::println);\n        }\n    }\n}",
           "testCases": [
-            {"input": "filter Q18", "output": "java.lang.RuntimeException: outer\n  at Q18.outer(Q18.java:4)\nCaused by:\njava.lang.RuntimeException: inner\n  at Q18.inner(Q18.java:3)"}
+            {
+              "input": "filter Q18",
+              "output": "java.lang.RuntimeException: outer\n  at Q18.outer(Q18.java:4)\nCaused by:\njava.lang.RuntimeException: inner\n  at Q18.inner(Q18.java:3)"
+            }
           ],
           "constraints": "Include cause chain recursively.",
           "editorial": "Stack trace filtering shows only application frames, hiding framework noise. t.getStackTrace() returns full array. Filter by class name. Used in Logback's package condensing to turn 30-line traces into 3 meaningful lines."
@@ -395,7 +482,10 @@
           "starterCode": "import java.io.*;\n\npublic class Q19 {\n    static class SerializableException extends Exception implements Serializable {\n        private static final long serialVersionUID = 1L;\n        private final String errorCode;\n        private final long timestamp;\n        private transient String sessionId; // NOT serialized\n        SerializableException(String code, String msg, String session){\n            super(msg); errorCode=code; timestamp=System.currentTimeMillis(); sessionId=session;\n        }\n        public String getErrorCode(){return errorCode;}\n        public long   getTimestamp(){return timestamp;}\n        public String getSessionId(){return sessionId;}\n    }\n    public static void main(String[] args) throws Exception {\n        SerializableException orig = new SerializableException(\"ERR_001\",\"test\",\"sess-123\");\n        byte[] bytes;\n        try(ByteArrayOutputStream baos=new ByteArrayOutputStream();\n            ObjectOutputStream oos=new ObjectOutputStream(baos)){oos.writeObject(orig);bytes=baos.toByteArray();}\n        SerializableException rest;\n        try(ObjectInputStream ois=new ObjectInputStream(new ByteArrayInputStream(bytes))){\n            rest=(SerializableException)ois.readObject();}\n        System.out.println(\"code: \"+rest.getErrorCode());\n        System.out.println(\"ts ok: \"+(rest.getTimestamp()>0));\n        System.out.println(\"session: \"+rest.getSessionId());\n    }\n}",
           "solutionCode": "import java.io.*;\n\npublic class Q19 {\n    static class SerializableException extends Exception implements Serializable {\n        private static final long serialVersionUID = 1L;\n        private final String errorCode;\n        private final long timestamp;\n        private transient String sessionId;\n        SerializableException(String code,String msg,String sess){\n            super(msg);errorCode=code;timestamp=System.currentTimeMillis();sessionId=sess;\n        }\n        public String getErrorCode(){return errorCode;}\n        public long   getTimestamp(){return timestamp;}\n        public String getSessionId(){return sessionId;}\n    }\n    public static void main(String[] args) throws Exception {\n        SerializableException orig = new SerializableException(\"ERR_001\",\"test\",\"sess-123\");\n        byte[] bytes;\n        try(ByteArrayOutputStream baos=new ByteArrayOutputStream();\n            ObjectOutputStream oos=new ObjectOutputStream(baos)){oos.writeObject(orig);bytes=baos.toByteArray();}\n        SerializableException rest;\n        try(ObjectInputStream ois=new ObjectInputStream(new ByteArrayInputStream(bytes))){\n            rest=(SerializableException)ois.readObject();}\n        System.out.println(\"code: \"+rest.getErrorCode());\n        System.out.println(\"ts ok: \"+(rest.getTimestamp()>0));\n        System.out.println(\"session: \"+rest.getSessionId());\n    }\n}",
           "testCases": [
-            {"input": "serialize+deserialize", "output": "code: ERR_001\nts ok: true\nsession: null"}
+            {
+              "input": "serialize+deserialize",
+              "output": "code: ERR_001\nts ok: true\nsession: null"
+            }
           ],
           "constraints": "serialVersionUID must be declared. transient field is null after round-trip.",
           "editorial": "Exception implements Serializable, so custom exceptions are serializable if fields are too. serialVersionUID prevents InvalidClassException on class changes. transient fields are not written to the stream — null after deserialization. Used when exceptions travel over the wire (Java RMI, distributed caching)."
@@ -412,14 +502,25 @@
           "starterCode": "import java.util.*;\nimport java.util.function.Function;\n\npublic class Q20 {\n    record Response(int status, String body){\n        public String toString(){return status+\": \"+body;}\n    }\n    static class GlobalExceptionHandler {\n        private final Map<Class<?>, Function<Exception, Response>> handlers = new LinkedHashMap<>();\n        <E extends Exception> void register(Class<E> type, Function<E, Response> h){\n            handlers.put(type, e -> h.apply(type.cast(e)));\n        }\n        Response handle(Exception e) {\n            return new Response(500, \"Internal error\"); // TODO: walk hierarchy\n        }\n    }\n    static class VE extends RuntimeException{String f;VE(String f,String m){super(m);this.f=f;}}\n    static class NFE extends RuntimeException{NFE(String m){super(m);}}\n    public static void main(String[] args){\n        GlobalExceptionHandler h=new GlobalExceptionHandler();\n        h.register(VE.class,  e->new Response(400,\"Invalid '\"+e.f+\"': \"+e.getMessage()));\n        h.register(NFE.class, e->new Response(404,e.getMessage()));\n        h.register(RuntimeException.class, e->new Response(500,\"Runtime: \"+e.getMessage()));\n        Exception[] exs={new VE(\"email\",\"bad format\"),new NFE(\"User not found\"),new RuntimeException(\"crash\")};\n        for(Exception ex:exs) System.out.println(h.handle(ex));\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.function.Function;\n\npublic class Q20 {\n    record Response(int status, String body){\n        public String toString(){return status+\": \"+body;}\n    }\n    static class GlobalExceptionHandler {\n        private final Map<Class<?>, Function<Exception, Response>> handlers = new LinkedHashMap<>();\n        <E extends Exception> void register(Class<E> type, Function<E, Response> h){\n            handlers.put(type, e -> h.apply(type.cast(e)));\n        }\n        Response handle(Exception e) {\n            Class<?> clazz = e.getClass();\n            while (clazz != null) {\n                Function<Exception, Response> h = handlers.get(clazz);\n                if (h != null) return h.apply(e);\n                clazz = clazz.getSuperclass();\n            }\n            return new Response(500, \"Internal error\");\n        }\n    }\n    static class VE extends RuntimeException{String f;VE(String f,String m){super(m);this.f=f;}}\n    static class NFE extends RuntimeException{NFE(String m){super(m);}}\n    public static void main(String[] args){\n        GlobalExceptionHandler h=new GlobalExceptionHandler();\n        h.register(VE.class,  e->new Response(400,\"Invalid '\"+e.f+\"': \"+e.getMessage()));\n        h.register(NFE.class, e->new Response(404,e.getMessage()));\n        h.register(RuntimeException.class, e->new Response(500,\"Runtime: \"+e.getMessage()));\n        Exception[] exs={new VE(\"email\",\"bad format\"),new NFE(\"User not found\"),new RuntimeException(\"crash\")};\n        for(Exception ex:exs) System.out.println(h.handle(ex));\n    }\n}",
           "testCases": [
-            {"input": "VE email bad format",    "output": "400: Invalid 'email': bad format"},
-            {"input": "NFE User not found",      "output": "404: User not found"},
-            {"input": "RuntimeException crash",  "output": "500: Runtime: crash"}
+            {
+              "input": "VE email bad format",
+              "output": "400: Invalid 'email': bad format"
+            },
+            {
+              "input": "NFE User not found",
+              "output": "404: User not found"
+            },
+            {
+              "input": "RuntimeException crash",
+              "output": "500: Runtime: crash"
+            }
           ],
           "constraints": "No instanceof chains in handle().",
           "editorial": "Polymorphic dispatch without instanceof: Map keyed by exception class, walking getSuperclass() up the hierarchy. Most specific match wins. This is how Spring's @ExceptionHandler resolution works — it maintains a map by exception type and resolves the most specific match."
         }
-      ]
+      ],
+      "subCategory": "Exception Handling",
+      "displayOrder": 60
     }
   ]
 }

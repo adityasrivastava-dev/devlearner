@@ -31,6 +31,8 @@ public static class TopicSeedDto {
     private String analogy;
     private String memoryAnchor;
     private String firstPrinciples;
+    private String subCategory;
+    private Integer displayOrder;
     private List<ExampleSeedDto> examples;
     private List<ProblemSeedDto> problems;
 }

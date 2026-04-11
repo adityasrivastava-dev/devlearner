@@ -24,12 +24,12 @@ private final ProblemRepository problemRepository;
 // ── Read ──────────────────────────────────────────────────────────────────
 
 public List<Topic> getAllTopics() {
-    return topicRepository.findAll();
+    return topicRepository.findAllByOrderByDisplayOrderAscTitleAsc();
 }
 
 public List<Topic> getTopicsByCategory(String category) {
     Topic.Category cat = Topic.Category.valueOf(category.toUpperCase());
-    return topicRepository.findByCategory(cat);
+    return topicRepository.findByCategoryOrderByDisplayOrderAscTitleAsc(cat);
 }
 
 public Optional<Topic> getTopicById(Long id) {
@@ -75,6 +75,9 @@ public Topic updateTopic(Long id, Topic incoming) {
     existing.setAnalogy(incoming.getAnalogy());
     existing.setMemoryAnchor(incoming.getMemoryAnchor());
     existing.setFirstPrinciples(incoming.getFirstPrinciples());
+    // Ordering / grouping
+    existing.setSubCategory(incoming.getSubCategory());
+    if (incoming.getDisplayOrder() != null) existing.setDisplayOrder(incoming.getDisplayOrder());
     return topicRepository.save(existing);
 }
 

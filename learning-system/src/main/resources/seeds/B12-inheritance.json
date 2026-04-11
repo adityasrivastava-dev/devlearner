@@ -78,8 +78,14 @@
           "starterCode": "public class ShapeHierarchy {\n\n    static class Shape {\n        String color;\n        Shape(String color) { this.color = color; }\n        double area() { return 0.0; }\n        public String toString() { return color + \" \" + getClass().getSimpleName() + \" area=\" + String.format(\"%.2f\", area()); }\n    }\n\n    // TODO: class Circle extends Shape\n    // TODO: class Square extends Shape\n\n    public static void main(String[] args) {\n        Shape c = new Circle(5.0, \"red\");\n        Shape s = new Square(4.0, \"blue\");\n        System.out.println(c); // red Circle area=78.54\n        System.out.println(s); // blue Square area=16.00\n    }\n}",
           "solutionCode": "public class ShapeHierarchy {\n\n    static class Shape {\n        String color;\n        Shape(String color) { this.color = color; }\n        double area() { return 0.0; }\n        public String toString() { return color + \" \" + getClass().getSimpleName() + \" area=\" + String.format(\"%.2f\", area()); }\n    }\n\n    static class Circle extends Shape {\n        double radius;\n        Circle(double radius, String color) { super(color); this.radius = radius; }\n        @Override double area() { return Math.PI * radius * radius; }\n    }\n\n    static class Square extends Shape {\n        double side;\n        Square(double side, String color) { super(color); this.side = side; }\n        @Override double area() { return side * side; }\n    }\n\n    public static void main(String[] args) {\n        Shape c = new Circle(5.0, \"red\");\n        Shape s = new Square(4.0, \"blue\");\n        System.out.println(c); // red Circle area=78.54\n        System.out.println(s); // blue Square area=16.00\n    }\n}",
           "testCases": [
-            {"input": "Circle(5.0, red)",  "output": "red Circle area=78.54"},
-            {"input": "Square(4.0, blue)", "output": "blue Square area=16.00"}
+            {
+              "input": "Circle(5.0, red)",
+              "output": "red Circle area=78.54"
+            },
+            {
+              "input": "Square(4.0, blue)",
+              "output": "blue Square area=16.00"
+            }
           ],
           "constraints": "radius > 0, side > 0.",
           "editorial": "super(color) forwards the color argument to Shape's constructor. @Override ensures the method signatures match. Shape.toString() calls area() — dynamic dispatch routes to the subclass override, so the printed area is correct for each concrete type."
@@ -95,7 +101,12 @@
           "hint3": "Print order: A runs first, B second, C third — deepest ancestor first.",
           "starterCode": "public class Q2 {\n    public static String[] predictOrder() {\n        // What does new C() print, line by line?\n        return new String[]{\"\", \"\", \"\"};\n    }\n    public static void main(String[] args) {\n        for (String s : predictOrder()) System.out.println(s);\n    }\n}",
           "solutionCode": "public class Q2 {\n    public static String[] predictOrder() {\n        // new C() → super() → B() → super() → A()\n        // A prints first, then B, then C\n        return new String[]{\"A\", \"B\", \"C\"};\n    }\n    public static void main(String[] args) {\n        for (String s : predictOrder()) System.out.println(s);\n    }\n}",
-          "testCases": [{"input": "new C()", "output": "A\nB\nC"}],
+          "testCases": [
+            {
+              "input": "new C()",
+              "output": "A\nB\nC"
+            }
+          ],
           "constraints": "No parameters in any constructor.",
           "editorial": "Constructors run from the TOP of the hierarchy down. super() is implicit when not written — JVM inserts it. A() runs first, then B() resumes after super() returns, then C() resumes. The deepest ancestor always initialises first."
         },
@@ -111,8 +122,14 @@
           "starterCode": "public class Q3 {\n    static class Logger {\n        void log(String msg) {\n            System.out.println(\"[LOG] \" + msg);\n        }\n    }\n\n    static class TimestampLogger extends Logger {\n        @Override\n        void log(String msg) {\n            // TODO: add timestamp prefix then call super.log()\n        }\n    }\n\n    public static void main(String[] args) {\n        TimestampLogger tl = new TimestampLogger();\n        tl.log(\"hello\"); // [LOG] [ts=NNN] hello\n    }\n}",
           "solutionCode": "public class Q3 {\n    static class Logger {\n        void log(String msg) {\n            System.out.println(\"[LOG] \" + msg);\n        }\n    }\n\n    static class TimestampLogger extends Logger {\n        private long counter = 0;\n        @Override\n        void log(String msg) {\n            String timestamped = \"[ts=\" + (++counter) + \"] \" + msg;\n            super.log(timestamped); // [LOG] [ts=1] hello\n        }\n    }\n\n    public static void main(String[] args) {\n        TimestampLogger tl = new TimestampLogger();\n        tl.log(\"hello\");   // [LOG] [ts=1] hello\n        tl.log(\"world\");   // [LOG] [ts=2] world\n    }\n}",
           "testCases": [
-            {"input": "log(hello)", "output": "[LOG] [ts=1] hello"},
-            {"input": "log(world)", "output": "[LOG] [ts=2] world"}
+            {
+              "input": "log(hello)",
+              "output": "[LOG] [ts=1] hello"
+            },
+            {
+              "input": "log(world)",
+              "output": "[LOG] [ts=2] world"
+            }
           ],
           "constraints": "Use super.log() — do not duplicate the [LOG] prefix logic.",
           "editorial": "super.log(msg) explicitly calls Logger.log() — bypassing the vtable for that one call. This is the extension pattern: add behaviour before/after the parent's implementation rather than replacing it. Used in servlet filters, Spring interceptors, AOP before/after advice."
@@ -129,9 +146,18 @@
           "starterCode": "public class Q4 {\n    static class Animal {}\n    static class Dog extends Animal {}\n    static class GoldenRetriever extends Dog {}\n\n    public static String checkInstanceOf(Object obj) {\n        StringBuilder sb = new StringBuilder();\n        // TODO: check instanceof for GoldenRetriever, Dog, Animal, Object\n        return sb.toString().trim();\n    }\n\n    public static void main(String[] args) {\n        System.out.println(checkInstanceOf(new GoldenRetriever()));\n        System.out.println(checkInstanceOf(new Dog()));\n        System.out.println(checkInstanceOf(new Animal()));\n    }\n}",
           "solutionCode": "public class Q4 {\n    static class Animal {}\n    static class Dog extends Animal {}\n    static class GoldenRetriever extends Dog {}\n\n    public static String checkInstanceOf(Object obj) {\n        StringBuilder sb = new StringBuilder();\n        if (obj instanceof GoldenRetriever) sb.append(\"GoldenRetriever \");\n        if (obj instanceof Dog)             sb.append(\"Dog \");\n        if (obj instanceof Animal)          sb.append(\"Animal \");\n        if (obj instanceof Object)          sb.append(\"Object\");\n        return sb.toString().trim();\n    }\n\n    public static void main(String[] args) {\n        System.out.println(checkInstanceOf(new GoldenRetriever()));\n        // GoldenRetriever Dog Animal Object\n        System.out.println(checkInstanceOf(new Dog()));\n        // Dog Animal Object\n        System.out.println(checkInstanceOf(new Animal()));\n        // Animal Object\n    }\n}",
           "testCases": [
-            {"input": "new GoldenRetriever()", "output": "GoldenRetriever Dog Animal Object"},
-            {"input": "new Dog()",             "output": "Dog Animal Object"},
-            {"input": "new Animal()",          "output": "Animal Object"}
+            {
+              "input": "new GoldenRetriever()",
+              "output": "GoldenRetriever Dog Animal Object"
+            },
+            {
+              "input": "new Dog()",
+              "output": "Dog Animal Object"
+            },
+            {
+              "input": "new Animal()",
+              "output": "Animal Object"
+            }
           ],
           "constraints": "No constraints.",
           "editorial": "instanceof tests the ACTUAL runtime type. A GoldenRetriever IS-A Dog, IS-A Animal, IS-A Object — all true. A Dog is NOT a GoldenRetriever — false. instanceof enables safe downcasting. Java 16+ pattern matching: `if (obj instanceof Dog d) { d.bark(); }` — no separate cast needed."
@@ -148,7 +174,10 @@
           "starterCode": "public class Q5 {\n    static class Vehicle {\n        String make;\n        Vehicle(String make) { this.make = make; }\n        @Override public String toString() { return \"Vehicle[make=\" + make + \"]\"; }\n    }\n\n    static class Car extends Vehicle {\n        int doors;\n        Car(String make, int doors) { super(make); this.doors = doors; }\n        // TODO: @Override toString() calling super.toString()\n    }\n\n    static class SportsCar extends Car {\n        boolean turbo;\n        SportsCar(String make, int doors, boolean turbo) { super(make, doors); this.turbo = turbo; }\n        // TODO: @Override toString() calling super.toString()\n    }\n\n    public static void main(String[] args) {\n        SportsCar sc = new SportsCar(\"Ferrari\", 2, true);\n        System.out.println(sc);\n        // Vehicle[make=Ferrari] Car[doors=2] Sports[turbo=true]\n    }\n}",
           "solutionCode": "public class Q5 {\n    static class Vehicle {\n        String make;\n        Vehicle(String make) { this.make = make; }\n        @Override public String toString() { return \"Vehicle[make=\" + make + \"]\"; }\n    }\n\n    static class Car extends Vehicle {\n        int doors;\n        Car(String make, int doors) { super(make); this.doors = doors; }\n        @Override public String toString() { return super.toString() + \" Car[doors=\" + doors + \"]\"; }\n    }\n\n    static class SportsCar extends Car {\n        boolean turbo;\n        SportsCar(String make, int doors, boolean turbo) { super(make, doors); this.turbo = turbo; }\n        @Override public String toString() { return super.toString() + \" Sports[turbo=\" + turbo + \"]\"; }\n    }\n\n    public static void main(String[] args) {\n        SportsCar sc = new SportsCar(\"Ferrari\", 2, true);\n        System.out.println(sc);\n        // Vehicle[make=Ferrari] Car[doors=2] Sports[turbo=true]\n    }\n}",
           "testCases": [
-            {"input": "SportsCar(Ferrari, 2, true)", "output": "Vehicle[make=Ferrari] Car[doors=2] Sports[turbo=true]"}
+            {
+              "input": "SportsCar(Ferrari, 2, true)",
+              "output": "Vehicle[make=Ferrari] Car[doors=2] Sports[turbo=true]"
+            }
           ],
           "constraints": "No constraints.",
           "editorial": "super.toString() in each level calls the parent's version first, then appends the current level's data. The final string aggregates data from all three levels. This demonstrates the 'extension' use of super.method() — each level builds on what came before rather than discarding it."
@@ -165,7 +194,10 @@
           "starterCode": "public class Q6 {\n    static class Shape {\n        double area() { return 0; }\n    }\n    static class Circle extends Shape {\n        double r; Circle(double r) { this.r=r; }\n        @Override double area() { return Math.PI*r*r; }\n    }\n    static class Triangle extends Shape {\n        double b,h; Triangle(double b,double h){this.b=b;this.h=h;}\n        @Override double area() { return 0.5*b*h; }\n    }\n\n    public static double totalArea(Shape[] shapes) {\n        // TODO: sum all areas polymorphically\n        return 0;\n    }\n\n    public static void main(String[] args) {\n        Shape[] arr = {new Circle(3), new Triangle(4,5), new Circle(1)};\n        System.out.printf(\"%.2f%n\", totalArea(arr));\n        // PI*9 + 10 + PI*1 ≈ 28.27 + 10 + 3.14 = 41.42\n    }\n}",
           "solutionCode": "public class Q6 {\n    static class Shape {\n        double area() { return 0; }\n    }\n    static class Circle extends Shape {\n        double r; Circle(double r) { this.r=r; }\n        @Override double area() { return Math.PI*r*r; }\n    }\n    static class Triangle extends Shape {\n        double b,h; Triangle(double b,double h){this.b=b;this.h=h;}\n        @Override double area() { return 0.5*b*h; }\n    }\n\n    public static double totalArea(Shape[] shapes) {\n        double sum = 0;\n        for (Shape s : shapes) sum += s.area();\n        return sum;\n    }\n\n    public static void main(String[] args) {\n        Shape[] arr = {new Circle(3), new Triangle(4,5), new Circle(1)};\n        System.out.printf(\"%.2f%n\", totalArea(arr));\n        // 28.27 + 10.00 + 3.14 = 41.42 (approx)\n    }\n}",
           "testCases": [
-            {"input": "Circle(3) + Triangle(4,5) + Circle(1)", "output": "41.42"}
+            {
+              "input": "Circle(3) + Triangle(4,5) + Circle(1)",
+              "output": "41.42"
+            }
           ],
           "constraints": "No instanceof in totalArea.",
           "editorial": "s.area() is a polymorphic call — the JVM dispatches to Circle.area() or Triangle.area() based on the actual object type, not the reference type Shape. No instanceof or casting needed. This is the power of polymorphism: totalArea works correctly for any future Shape subclass without modification."
@@ -182,9 +214,18 @@
           "starterCode": "import java.util.*;\n\npublic class Q7 {\n    static class Employee {\n        String name;\n        double baseSalary;\n        Employee(String name, double baseSalary) { this.name=name; this.baseSalary=baseSalary; }\n        double calculatePay() { return baseSalary; }\n    }\n\n    // TODO: class Manager extends Employee\n    // TODO: class Contractor extends Employee\n\n    public static void main(String[] args) {\n        List<Employee> staff = List.of(\n            new Employee(\"Alice\", 3000),\n            new Manager(\"Bob\", 4000, 1000),\n            new Contractor(\"Carol\", 50, 160)\n        );\n        for (Employee e : staff)\n            System.out.println(e.name + \": \" + e.calculatePay());\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q7 {\n    static class Employee {\n        String name; double baseSalary;\n        Employee(String n, double b) { name=n; baseSalary=b; }\n        double calculatePay() { return baseSalary; }\n    }\n\n    static class Manager extends Employee {\n        double bonus;\n        Manager(String n, double b, double bonus) { super(n, b); this.bonus=bonus; }\n        @Override double calculatePay() { return super.calculatePay() + bonus; }\n    }\n\n    static class Contractor extends Employee {\n        double hourlyRate; int hoursWorked;\n        Contractor(String n, double rate, int hours) {\n            super(n, 0); // no fixed salary\n            hourlyRate=rate; hoursWorked=hours;\n        }\n        @Override double calculatePay() { return hourlyRate * hoursWorked; }\n    }\n\n    public static void main(String[] args) {\n        List<Employee> staff = List.of(\n            new Employee(\"Alice\", 3000),\n            new Manager(\"Bob\", 4000, 1000),\n            new Contractor(\"Carol\", 50, 160)\n        );\n        for (Employee e : staff)\n            System.out.println(e.name + \": \" + e.calculatePay());\n    }\n}",
           "testCases": [
-            {"input": "Employee Alice 3000",    "output": "Alice: 3000.0"},
-            {"input": "Manager Bob 4000+1000",  "output": "Bob: 5000.0"},
-            {"input": "Contractor Carol 50*160","output": "Carol: 8000.0"}
+            {
+              "input": "Employee Alice 3000",
+              "output": "Alice: 3000.0"
+            },
+            {
+              "input": "Manager Bob 4000+1000",
+              "output": "Bob: 5000.0"
+            },
+            {
+              "input": "Contractor Carol 50*160",
+              "output": "Carol: 8000.0"
+            }
           ],
           "constraints": "hours and rates are positive.",
           "editorial": "Manager.calculatePay() uses super.calculatePay() to get base salary then adds bonus — extending, not replacing. Contractor completely overrides the formula — passes 0 to super just to satisfy the constructor. The for-each loop calls calculatePay() polymorphically — correct result for each type without any instanceof."
@@ -201,8 +242,14 @@
           "starterCode": "public class Q8 {\n    abstract static class PaymentProcessor {\n        void logTransaction(double amount) {\n            System.out.printf(\"Processing $%.2f%n\", amount);\n        }\n        abstract void processPayment(double amount);\n    }\n\n    // TODO: class CreditCardProcessor extends PaymentProcessor\n    // TODO: class PayPalProcessor extends PaymentProcessor\n\n    public static void main(String[] args) {\n        PaymentProcessor cc = new CreditCardProcessor(\"4111-1111\");\n        PaymentProcessor pp = new PayPalProcessor(\"user@pay.com\");\n        cc.processPayment(99.99);\n        pp.processPayment(49.50);\n    }\n}",
           "solutionCode": "public class Q8 {\n    abstract static class PaymentProcessor {\n        void logTransaction(double amount) {\n            System.out.printf(\"Processing $%.2f%n\", amount);\n        }\n        abstract void processPayment(double amount);\n    }\n\n    static class CreditCardProcessor extends PaymentProcessor {\n        String cardNumber;\n        CreditCardProcessor(String card) { cardNumber = card; }\n        @Override void processPayment(double amount) {\n            logTransaction(amount);\n            System.out.println(\"Charged card \" + cardNumber);\n        }\n    }\n\n    static class PayPalProcessor extends PaymentProcessor {\n        String email;\n        PayPalProcessor(String email) { this.email = email; }\n        @Override void processPayment(double amount) {\n            logTransaction(amount);\n            System.out.println(\"Sent to PayPal: \" + email);\n        }\n    }\n\n    public static void main(String[] args) {\n        PaymentProcessor cc = new CreditCardProcessor(\"4111-1111\");\n        PaymentProcessor pp = new PayPalProcessor(\"user@pay.com\");\n        cc.processPayment(99.99);\n        pp.processPayment(49.50);\n    }\n}",
           "testCases": [
-            {"input": "CreditCard processPayment(99.99)", "output": "Processing $99.99\nCharged card 4111-1111"},
-            {"input": "PayPal processPayment(49.50)",    "output": "Processing $49.50\nSent to PayPal: user@pay.com"}
+            {
+              "input": "CreditCard processPayment(99.99)",
+              "output": "Processing $99.99\nCharged card 4111-1111"
+            },
+            {
+              "input": "PayPal processPayment(49.50)",
+              "output": "Processing $49.50\nSent to PayPal: user@pay.com"
+            }
           ],
           "constraints": "No constraints.",
           "editorial": "Abstract classes can have both concrete (logTransaction) and abstract (processPayment) methods. Subclasses must implement all abstract methods. logTransaction provides shared behaviour available to all processors — a common pattern called the Template Method, where the base class defines the algorithm skeleton and subclasses fill in the steps."
@@ -219,8 +266,14 @@
           "starterCode": "import java.util.Objects;\n\npublic class Q9 {\n    static class Person {\n        String name; int age;\n        Person(String name, int age) { this.name=name; this.age=age; }\n        @Override public boolean equals(Object o) {\n            if (!(o instanceof Person p)) return false;\n            return Objects.equals(name, p.name) && age == p.age;\n        }\n        @Override public int hashCode() { return Objects.hash(name, age); }\n    }\n\n    static class Employee extends Person {\n        String employeeId;\n        Employee(String name, int age, String eid) { super(name, age); employeeId=eid; }\n        // TODO: @Override equals() and hashCode()\n    }\n\n    public static void main(String[] args) {\n        Employee e1 = new Employee(\"Alice\", 30, \"E001\");\n        Employee e2 = new Employee(\"Alice\", 30, \"E001\");\n        Employee e3 = new Employee(\"Alice\", 30, \"E002\"); // different ID\n        System.out.println(e1.equals(e2)); // true\n        System.out.println(e1.equals(e3)); // false\n    }\n}",
           "solutionCode": "import java.util.Objects;\n\npublic class Q9 {\n    static class Person {\n        String name; int age;\n        Person(String name, int age) { this.name=name; this.age=age; }\n        @Override public boolean equals(Object o) {\n            if (!(o instanceof Person p)) return false;\n            return Objects.equals(name, p.name) && age == p.age;\n        }\n        @Override public int hashCode() { return Objects.hash(name, age); }\n    }\n\n    static class Employee extends Person {\n        String employeeId;\n        Employee(String name, int age, String eid) { super(name, age); employeeId=eid; }\n        @Override public boolean equals(Object o) {\n            if (!super.equals(o)) return false;          // Person fields must match\n            if (!(o instanceof Employee e)) return false; // must be Employee\n            return Objects.equals(employeeId, e.employeeId);\n        }\n        @Override public int hashCode() {\n            return Objects.hash(super.hashCode(), employeeId);\n        }\n    }\n\n    public static void main(String[] args) {\n        Employee e1 = new Employee(\"Alice\", 30, \"E001\");\n        Employee e2 = new Employee(\"Alice\", 30, \"E001\");\n        Employee e3 = new Employee(\"Alice\", 30, \"E002\");\n        System.out.println(e1.equals(e2)); // true\n        System.out.println(e1.equals(e3)); // false\n    }\n}",
           "testCases": [
-            {"input": "same name/age/id",   "output": "true"},
-            {"input": "same name/age diff id", "output": "false"}
+            {
+              "input": "same name/age/id",
+              "output": "true"
+            },
+            {
+              "input": "same name/age diff id",
+              "output": "false"
+            }
           ],
           "constraints": "No constraints.",
           "editorial": "Extending equals in subclasses: call super.equals() first to verify parent fields match, then check the extra subclass field. Include employeeId in hashCode via Objects.hash(super.hashCode(), employeeId). Note: the symmetry problem — a Person.equals(Employee) may return true while Employee.equals(Person) returns false. Effective Java recommends using getClass() instead of instanceof for this reason in non-sealed hierarchies."
@@ -237,8 +290,14 @@
           "starterCode": "public class Q10 {\n    static class Shape {}\n    static class Circle extends Shape { double r; Circle(double r){this.r=r;} }\n    static class Triangle extends Shape { double b,h; Triangle(double b,double h){this.b=b;this.h=h;} }\n\n    public static int countCircles(Shape[] shapes) {\n        // TODO: count Circles using safe instanceof check\n        return 0;\n    }\n\n    public static void main(String[] args) {\n        Shape[] arr = {new Circle(3), new Triangle(4,5), new Circle(7), new Triangle(2,3)};\n        System.out.println(countCircles(arr)); // 2\n\n        // Unsafe downcast demo\n        try {\n            Shape s = new Triangle(1, 2);\n            Circle c = (Circle) s; // ClassCastException!\n        } catch (ClassCastException e) {\n            System.out.println(\"CCE: \" + e.getMessage());\n        }\n    }\n}",
           "solutionCode": "public class Q10 {\n    static class Shape {}\n    static class Circle extends Shape { double r; Circle(double r){this.r=r;} }\n    static class Triangle extends Shape { double b,h; Triangle(double b,double h){this.b=b;this.h=h;} }\n\n    public static int countCircles(Shape[] shapes) {\n        int count = 0;\n        for (Shape s : shapes)\n            if (s instanceof Circle) count++;\n        return count;\n    }\n\n    public static void main(String[] args) {\n        Shape[] arr = {new Circle(3), new Triangle(4,5), new Circle(7), new Triangle(2,3)};\n        System.out.println(countCircles(arr)); // 2\n\n        try {\n            Shape s = new Triangle(1, 2);\n            Circle c = (Circle) s; // runtime ClassCastException\n        } catch (ClassCastException e) {\n            System.out.println(\"CCE: \" + e.getMessage());\n        }\n    }\n}",
           "testCases": [
-            {"input": "Circle,Triangle,Circle,Triangle", "output": "2"},
-            {"input": "cast Triangle to Circle", "output": "CCE: class Q10$Triangle cannot be cast to class Q10$Circle"}
+            {
+              "input": "Circle,Triangle,Circle,Triangle",
+              "output": "2"
+            },
+            {
+              "input": "cast Triangle to Circle",
+              "output": "CCE: class Q10$Triangle cannot be cast to class Q10$Circle"
+            }
           ],
           "constraints": "Handle ClassCastException.",
           "editorial": "Upcast (Shape s = new Circle()) is always safe — no check needed. Downcast (Circle c = (Circle) s) requires the object to actually be a Circle at runtime — otherwise ClassCastException. Always use instanceof before downcasting in production code. Java 16+ pattern matching `if (s instanceof Circle c)` combines the check and cast in one step."
@@ -255,8 +314,14 @@
           "starterCode": "public class Q11 {\n    abstract static class DataProcessor {\n        // TODO: final process() calls readData, transformData, writeData\n        protected abstract void readData();\n        protected abstract void transformData();\n        protected abstract void writeData();\n    }\n\n    static class CsvProcessor extends DataProcessor {\n        @Override protected void readData()      { System.out.println(\"Reading CSV\"); }\n        @Override protected void transformData() { System.out.println(\"Parsing CSV rows\"); }\n        @Override protected void writeData()     { System.out.println(\"Writing CSV output\"); }\n    }\n\n    static class JsonProcessor extends DataProcessor {\n        @Override protected void readData()      { System.out.println(\"Reading JSON\"); }\n        @Override protected void transformData() { System.out.println(\"Parsing JSON tree\"); }\n        @Override protected void writeData()     { System.out.println(\"Writing JSON output\"); }\n    }\n\n    public static void main(String[] args) {\n        new CsvProcessor().process();\n        System.out.println(\"---\");\n        new JsonProcessor().process();\n    }\n}",
           "solutionCode": "public class Q11 {\n    abstract static class DataProcessor {\n        public final void process() {  // template: fixed order\n            readData();\n            transformData();\n            writeData();\n        }\n        protected abstract void readData();\n        protected abstract void transformData();\n        protected abstract void writeData();\n    }\n\n    static class CsvProcessor extends DataProcessor {\n        @Override protected void readData()      { System.out.println(\"Reading CSV\"); }\n        @Override protected void transformData() { System.out.println(\"Parsing CSV rows\"); }\n        @Override protected void writeData()     { System.out.println(\"Writing CSV output\"); }\n    }\n\n    static class JsonProcessor extends DataProcessor {\n        @Override protected void readData()      { System.out.println(\"Reading JSON\"); }\n        @Override protected void transformData() { System.out.println(\"Parsing JSON tree\"); }\n        @Override protected void writeData()     { System.out.println(\"Writing JSON output\"); }\n    }\n\n    public static void main(String[] args) {\n        new CsvProcessor().process();\n        System.out.println(\"---\");\n        new JsonProcessor().process();\n    }\n}",
           "testCases": [
-            {"input": "CsvProcessor.process()",  "output": "Reading CSV\nParsing CSV rows\nWriting CSV output"},
-            {"input": "JsonProcessor.process()", "output": "Reading JSON\nParsing JSON tree\nWriting JSON output"}
+            {
+              "input": "CsvProcessor.process()",
+              "output": "Reading CSV\nParsing CSV rows\nWriting CSV output"
+            },
+            {
+              "input": "JsonProcessor.process()",
+              "output": "Reading JSON\nParsing JSON tree\nWriting JSON output"
+            }
           ],
           "constraints": "process() must be final.",
           "editorial": "Template Method pattern: the parent defines the algorithm (process() — fixed order of steps) and delegates the variable parts to abstract methods. Subclasses customise the steps without changing the order. Used in JUnit (setUp → test → tearDown), HttpServlet (service → doGet/doPost), Spring Batch (open → read → process → write → close)."
@@ -273,8 +338,14 @@
           "starterCode": "public class Q12 {\n    // BAD DESIGN\n    static class Bird     { void fly() { System.out.println(\"flying\"); } }\n    static class Eagle    extends Bird { /* inherits fly — OK */ }\n    static class Penguin  extends Bird {\n        @Override void fly() { throw new UnsupportedOperationException(\"penguins can't fly!\"); }\n    }\n\n    // GOOD DESIGN — fix by redesigning the hierarchy\n    // TODO: Bird (no fly), FlyingBird extends Bird (has fly), Eagle extends FlyingBird, Penguin extends Bird\n\n    static void makeBirdFly(Bird b) { b.fly(); } // breaks for Penguin!\n\n    public static void main(String[] args) {\n        // Show bad design breaks\n        try { makeBirdFly(new Penguin()); }\n        catch (UnsupportedOperationException e) { System.out.println(\"LSP violated: \" + e.getMessage()); }\n\n        // Show good design — add your fixed classes and test\n    }\n}",
           "solutionCode": "public class Q12 {\n    // BAD\n    static class Bird     { void fly() { System.out.println(\"flying\"); } }\n    static class Eagle    extends Bird {}\n    static class Penguin  extends Bird {\n        @Override void fly() { throw new UnsupportedOperationException(\"penguins can't fly!\"); }\n    }\n\n    // GOOD — fly() moved out of Bird base\n    static class GoodBird   { void eat() { System.out.println(\"eating\"); } }\n    static class FlyingBird extends GoodBird { void fly() { System.out.println(\"flying\"); } }\n    static class GoodEagle  extends FlyingBird {}\n    static class GoodPenguin extends GoodBird { void swim() { System.out.println(\"swimming\"); } }\n\n    static void makeGoodBirdFly(FlyingBird b) { b.fly(); } // only accepts flyers!\n\n    public static void main(String[] args) {\n        try { new Penguin().fly(); }\n        catch (UnsupportedOperationException e) { System.out.println(\"LSP violated: \" + e.getMessage()); }\n\n        makeGoodBirdFly(new GoodEagle());\n        GoodPenguin p = new GoodPenguin();\n        p.eat(); p.swim();\n        // Cannot call makeGoodBirdFly(p) — compile error! Type-safe.\n    }\n}",
           "testCases": [
-            {"input": "Penguin.fly() (bad design)", "output": "LSP violated: penguins can't fly!"},
-            {"input": "GoodEagle.fly() (good design)", "output": "flying"}
+            {
+              "input": "Penguin.fly() (bad design)",
+              "output": "LSP violated: penguins can't fly!"
+            },
+            {
+              "input": "GoodEagle.fly() (good design)",
+              "output": "flying"
+            }
           ],
           "constraints": "No constraints.",
           "editorial": "LSP: subclasses must be substitutable for their superclass. If Penguin extends Bird but can't fly, any code using Bird breaks for Penguin. The fix: don't put capabilities in the base class that not all subclasses have. Move fly() to a FlyingBird subtype. The compiler then prevents passing Penguins where FlyingBirds are expected — fail fast at compile time."
@@ -291,9 +362,18 @@
           "starterCode": "public class Q13 {\n    static class Animal {\n        Animal create() { return new Animal(); }\n        public String toString() { return getClass().getSimpleName(); }\n    }\n\n    static class Dog extends Animal {\n        // TODO: @Override with covariant return type Dog\n        String breed;\n        Dog() { breed = \"Labrador\"; }\n    }\n\n    public static void main(String[] args) {\n        Animal a = new Animal();\n        System.out.println(a.create().getClass().getSimpleName()); // Animal\n\n        Dog d = new Dog();\n        Dog created = d.create(); // compile OK — return type is Dog\n        System.out.println(created.getClass().getSimpleName()); // Dog\n\n        Animal ref = new Dog();\n        Animal result = ref.create(); // polymorphic — returns Dog at runtime\n        System.out.println(result.getClass().getSimpleName()); // Dog\n    }\n}",
           "solutionCode": "public class Q13 {\n    static class Animal {\n        Animal create() { return new Animal(); }\n        public String toString() { return getClass().getSimpleName(); }\n    }\n\n    static class Dog extends Animal {\n        String breed;\n        Dog() { breed = \"Labrador\"; }\n        @Override\n        Dog create() { return new Dog(); } // covariant: Dog is narrower than Animal\n    }\n\n    public static void main(String[] args) {\n        Animal a = new Animal();\n        System.out.println(a.create().getClass().getSimpleName()); // Animal\n\n        Dog d = new Dog();\n        Dog created = d.create();\n        System.out.println(created.getClass().getSimpleName()); // Dog\n\n        Animal ref = new Dog();\n        Animal result = ref.create(); // polymorphic — Dog.create() called\n        System.out.println(result.getClass().getSimpleName()); // Dog\n    }\n}",
           "testCases": [
-            {"input": "Animal.create()", "output": "Animal"},
-            {"input": "Dog.create()",    "output": "Dog"},
-            {"input": "Animal ref=Dog, ref.create()", "output": "Dog"}
+            {
+              "input": "Animal.create()",
+              "output": "Animal"
+            },
+            {
+              "input": "Dog.create()",
+              "output": "Dog"
+            },
+            {
+              "input": "Animal ref=Dog, ref.create()",
+              "output": "Dog"
+            }
           ],
           "constraints": "No constraints.",
           "editorial": "Covariant return types (Java 5+): an overriding method may declare a return type that is a subtype of the parent's return type. Dog.create() returns Dog instead of Animal — still @Override valid. Caller using a Dog reference gets a Dog directly (no cast). Polymorphic call through Animal reference still dispatches to Dog.create() — returning a Dog at runtime."
@@ -310,9 +390,18 @@
           "starterCode": "public class Q14 {\n    // TODO: sealed class Shape permits Circle, Rectangle, Triangle\n    // Each subclass as a final record or class\n\n    public static double area(Object shape) {\n        // TODO: pattern matching switch expression\n        return 0;\n    }\n\n    public static void main(String[] args) {\n        System.out.printf(\"%.2f%n\", area(new Circle(5)));          // 78.54\n        System.out.printf(\"%.2f%n\", area(new Rectangle(4, 6)));    // 24.00\n        System.out.printf(\"%.2f%n\", area(new Triangle(3, 8)));     // 12.00\n    }\n}",
           "solutionCode": "public class Q14 {\n    sealed interface Shape permits Circle, Rectangle, Triangle {}\n    record Circle(double r) implements Shape {}\n    record Rectangle(double w, double h) implements Shape {}\n    record Triangle(double b, double h) implements Shape {}\n\n    public static double area(Shape shape) {\n        return switch (shape) {\n            case Circle c    -> Math.PI * c.r() * c.r();\n            case Rectangle r -> r.w() * r.h();\n            case Triangle t  -> 0.5 * t.b() * t.h();\n        }; // exhaustive — compiler verifies all cases covered\n    }\n\n    public static void main(String[] args) {\n        System.out.printf(\"%.2f%n\", area(new Circle(5)));       // 78.54\n        System.out.printf(\"%.2f%n\", area(new Rectangle(4, 6))); // 24.00\n        System.out.printf(\"%.2f%n\", area(new Triangle(3, 8)));  // 12.00\n    }\n}",
           "testCases": [
-            {"input": "Circle(5)",      "output": "78.54"},
-            {"input": "Rectangle(4,6)", "output": "24.00"},
-            {"input": "Triangle(3,8)",  "output": "12.00"}
+            {
+              "input": "Circle(5)",
+              "output": "78.54"
+            },
+            {
+              "input": "Rectangle(4,6)",
+              "output": "24.00"
+            },
+            {
+              "input": "Triangle(3,8)",
+              "output": "12.00"
+            }
           ],
           "constraints": "Java 17+. Use sealed + records.",
           "editorial": "Sealed classes restrict which classes can extend/implement them — the compiler knows the complete set. Pattern matching switch becomes exhaustive — no default needed because all permitted types are handled. Adding a case for a 4th shape (Hexagon) would require modifying the permits clause. Used in Java's own java.lang.constant.ConstantDesc and in Domain-Driven Design algebraic data types."
@@ -329,8 +418,14 @@
           "starterCode": "public class Q15 {\n    interface Flyable  {\n        default void fly()      { System.out.println(getClass().getSimpleName() + \" flies\"); }\n        default String describe(){ return \"I can fly\"; }\n    }\n    interface Swimmable {\n        default void swim()     { System.out.println(getClass().getSimpleName() + \" swims\"); }\n        default String describe(){ return \"I can swim\"; }\n    }\n\n    // TODO: class Duck implements Flyable, Swimmable (must resolve describe() conflict)\n    // TODO: class FlyingFish implements Flyable, Swimmable\n\n    public static void main(String[] args) {\n        Duck d = new Duck();\n        d.fly(); d.swim();\n        System.out.println(d.describe());\n\n        FlyingFish f = new FlyingFish();\n        f.fly(); f.swim();\n    }\n}",
           "solutionCode": "public class Q15 {\n    interface Flyable  {\n        default void fly()       { System.out.println(getClass().getSimpleName() + \" flies\"); }\n        default String describe() { return \"I can fly\"; }\n    }\n    interface Swimmable {\n        default void swim()      { System.out.println(getClass().getSimpleName() + \" swims\"); }\n        default String describe() { return \"I can swim\"; }\n    }\n\n    static class Duck implements Flyable, Swimmable {\n        @Override public String describe() {\n            return Flyable.super.describe() + \" and \" + Swimmable.super.describe();\n        }\n    }\n\n    static class FlyingFish implements Flyable, Swimmable {\n        @Override public String describe() { return \"I fly and swim\"; }\n    }\n\n    public static void main(String[] args) {\n        Duck d = new Duck();\n        d.fly(); d.swim();\n        System.out.println(d.describe()); // I can fly and I can swim\n\n        FlyingFish f = new FlyingFish();\n        f.fly(); f.swim();\n        System.out.println(f.describe()); // I fly and swim\n    }\n}",
           "testCases": [
-            {"input": "Duck.fly()",      "output": "Duck flies"},
-            {"input": "Duck.describe()", "output": "I can fly and I can swim"}
+            {
+              "input": "Duck.fly()",
+              "output": "Duck flies"
+            },
+            {
+              "input": "Duck.describe()",
+              "output": "I can fly and I can swim"
+            }
           ],
           "constraints": "Java 8+ default methods.",
           "editorial": "When two interfaces both provide a default method with the same signature, the implementing class MUST override it — otherwise a compile error: 'inherits unrelated defaults'. The class can delegate to a specific interface version using `Flyable.super.describe()` syntax. This is Java's solution to the diamond problem — explicit override required, no silent ambiguity."
@@ -347,8 +442,14 @@
           "starterCode": "public class Q16 {\n    static class Counter {\n        int count = 0;\n        void increment() { incrementBy(1); } // internal self-call through overridable!\n        void incrementBy(int n) { count += n; }\n    }\n\n    static class LoggingCounter extends Counter {\n        int logCount = 0;\n        @Override\n        void incrementBy(int n) {\n            logCount++;        // track how many times incrementBy called\n            super.incrementBy(n);\n        }\n    }\n\n    public static void main(String[] args) {\n        LoggingCounter lc = new LoggingCounter();\n        lc.increment();        // calls incrementBy(1) polymorphically!\n        lc.increment();\n        lc.incrementBy(5);\n        System.out.println(\"count=\" + lc.count);       // 7\n        System.out.println(\"logCount=\" + lc.logCount); // 3 (called 3 times)\n    }\n}",
           "solutionCode": "public class Q16 {\n    // BAD: overridable method calls overridable method\n    static class Counter {\n        int count = 0;\n        void increment() { incrementBy(1); } // polymorphic dispatch!\n        void incrementBy(int n) { count += n; }\n    }\n\n    static class LoggingCounter extends Counter {\n        int logCount = 0;\n        @Override void incrementBy(int n) {\n            logCount++;\n            super.incrementBy(n);\n        }\n    }\n\n    // FIXED: increment() uses private helper\n    static class SafeCounter {\n        int count = 0;\n        void increment() { addToCount(1); }   // private — not overridable\n        void incrementBy(int n) { addToCount(n); }\n        private void addToCount(int n) { count += n; }\n    }\n\n    static class SafeLoggingCounter extends SafeCounter {\n        int logCount = 0;\n        @Override void incrementBy(int n) {\n            logCount++;\n            super.incrementBy(n);\n        }\n    }\n\n    public static void main(String[] args) {\n        LoggingCounter lc = new LoggingCounter();\n        lc.increment();\n        lc.increment();\n        lc.incrementBy(5);\n        System.out.println(\"count=\" + lc.count);       // 7\n        System.out.println(\"logCount=\" + lc.logCount); // 3\n\n        SafeLoggingCounter sc = new SafeLoggingCounter();\n        sc.increment();\n        sc.increment();\n        sc.incrementBy(5);\n        System.out.println(\"safe count=\" + sc.count);       // 7\n        System.out.println(\"safe logCount=\" + sc.logCount); // 1 (only incrementBy(5) logged)\n    }\n}",
           "testCases": [
-            {"input": "LoggingCounter: increment,increment,incrementBy(5)", "output": "count=7\nlogCount=3"},
-            {"input": "SafeLoggingCounter: same", "output": "safe count=7\nsafe logCount=1"}
+            {
+              "input": "LoggingCounter: increment,increment,incrementBy(5)",
+              "output": "count=7\nlogCount=3"
+            },
+            {
+              "input": "SafeLoggingCounter: same",
+              "output": "safe count=7\nsafe logCount=1"
+            }
           ],
           "constraints": "No constraints.",
           "editorial": "Fragile base class: when Counter.increment() calls incrementBy(1) via dynamic dispatch, the subclass's incrementBy() gets called — causing logCount to track increment() calls too. Fix: increment() calls a private addToCount(1) — private methods are NOT overridable, so LoggingCounter.incrementBy() is bypassed. Effective Java Item 19: document self-use of overridable methods, or use private helpers to avoid this."
@@ -365,8 +466,14 @@
           "starterCode": "public class Q17 {\n    interface Visitor {\n        double visit(Food f);\n        double visit(Electronics e);\n    }\n\n    abstract static class Product {\n        String name; double price;\n        Product(String n, double p) { name=n; price=p; }\n        abstract double accept(Visitor v);\n    }\n\n    static class Food extends Product {\n        Food(String n, double p) { super(n, p); }\n        @Override public double accept(Visitor v) { return v.visit(this); }\n    }\n\n    static class Electronics extends Product {\n        Electronics(String n, double p) { super(n, p); }\n        @Override public double accept(Visitor v) { return v.visit(this); }\n    }\n\n    // TODO: class TaxCalculator implements Visitor\n    // Food tax = 5%, Electronics = 18%\n\n    public static void main(String[] args) {\n        Product[] cart = {new Food(\"Apple\", 2.00), new Electronics(\"Headphones\", 100.00)};\n        Visitor tax = new TaxCalculator();\n        for (Product p : cart)\n            System.out.printf(\"%s tax: $%.2f%n\", p.name, p.accept(tax));\n    }\n}",
           "solutionCode": "public class Q17 {\n    interface Visitor {\n        double visit(Food f);\n        double visit(Electronics e);\n    }\n\n    abstract static class Product {\n        String name; double price;\n        Product(String n, double p) { name=n; price=p; }\n        abstract double accept(Visitor v);\n    }\n\n    static class Food extends Product {\n        Food(String n, double p) { super(n, p); }\n        @Override public double accept(Visitor v) { return v.visit(this); }\n    }\n\n    static class Electronics extends Product {\n        Electronics(String n, double p) { super(n, p); }\n        @Override public double accept(Visitor v) { return v.visit(this); }\n    }\n\n    static class TaxCalculator implements Visitor {\n        @Override public double visit(Food f)        { return f.price * 0.05; }\n        @Override public double visit(Electronics e) { return e.price * 0.18; }\n    }\n\n    public static void main(String[] args) {\n        Product[] cart = {new Food(\"Apple\", 2.00), new Electronics(\"Headphones\", 100.00)};\n        Visitor tax = new TaxCalculator();\n        for (Product p : cart)\n            System.out.printf(\"%s tax: $%.2f%n\", p.name, p.accept(tax));\n        // Apple tax: $0.10\n        // Headphones tax: $18.00\n    }\n}",
           "testCases": [
-            {"input": "Food(Apple, 2.00) tax",         "output": "Apple tax: $0.10"},
-            {"input": "Electronics(Headphones,100) tax","output": "Headphones tax: $18.00"}
+            {
+              "input": "Food(Apple, 2.00) tax",
+              "output": "Apple tax: $0.10"
+            },
+            {
+              "input": "Electronics(Headphones,100) tax",
+              "output": "Headphones tax: $18.00"
+            }
           ],
           "constraints": "Tax rates: Food 5%, Electronics 18%.",
           "editorial": "Visitor decouples operations from the class hierarchy. Adding a new operation (DiscountCalculator) requires only a new Visitor class — no changes to Product hierarchy. The double-dispatch trick: p.accept(visitor) calls visitor.visit(this) — 'this' is the concrete type (Food or Electronics), so the correct overloaded visit() is called at runtime. Used in Java compiler AST visitors, Lombok's @VisitorPattern, Apache POI."
@@ -383,8 +490,14 @@
           "starterCode": "public class Q18 {\n    static class Parent {\n        String instanceMethod() { return \"Parent-instance\"; }\n        static String staticMethod() { return \"Parent-static\"; }\n    }\n\n    static class Child extends Parent {\n        @Override String instanceMethod() { return \"Child-instance\"; } // OVERRIDES\n        static String staticMethod()      { return \"Child-static\"; }   // HIDES (no @Override!)\n    }\n\n    public static String[] demonstrate() {\n        Parent ref = new Child();\n        // What do these return?\n        String a = ref.instanceMethod(); // TODO: predict\n        String b = ref.staticMethod();   // TODO: predict\n        return new String[]{a, b};\n    }\n\n    public static void main(String[] args) {\n        String[] r = demonstrate();\n        System.out.println(r[0]); // ?\n        System.out.println(r[1]); // ?\n    }\n}",
           "solutionCode": "public class Q18 {\n    static class Parent {\n        String instanceMethod() { return \"Parent-instance\"; }\n        static String staticMethod() { return \"Parent-static\"; }\n    }\n\n    static class Child extends Parent {\n        @Override String instanceMethod() { return \"Child-instance\"; }\n        static String staticMethod()      { return \"Child-static\"; } // NOT @Override\n    }\n\n    public static String[] demonstrate() {\n        Parent ref = new Child();\n        String a = ref.instanceMethod(); // runtime dispatch → Child-instance\n        String b = ref.staticMethod();   // compile-time ref type → Parent-static\n        return new String[]{a, b};\n    }\n\n    public static void main(String[] args) {\n        String[] r = demonstrate();\n        System.out.println(r[0]); // Child-instance\n        System.out.println(r[1]); // Parent-static\n    }\n}",
           "testCases": [
-            {"input": "instanceMethod via Parent ref", "output": "Child-instance"},
-            {"input": "staticMethod via Parent ref",   "output": "Parent-static"}
+            {
+              "input": "instanceMethod via Parent ref",
+              "output": "Child-instance"
+            },
+            {
+              "input": "staticMethod via Parent ref",
+              "output": "Parent-static"
+            }
           ],
           "constraints": "No constraints.",
           "editorial": "Instance methods: resolved at runtime based on the ACTUAL object type — polymorphism (virtual dispatch). Static methods: resolved at compile time based on the REFERENCE type — method hiding, not overriding. @Override cannot annotate a static method override. Calling ref.staticMethod() where ref is Parent always calls Parent.staticMethod() even if ref points to a Child. This is why calling static methods through object references is a code smell — use ClassName.staticMethod() instead."
@@ -401,7 +514,10 @@
           "starterCode": "public class Q19 {\n    static class Worker {\n        double baseRate; int hours;\n        Worker(double rate, int hrs) { baseRate=rate; hours=hrs; }\n        double calculatePay() { return baseRate * hours; }\n    }\n    static class PartTime extends Worker {\n        PartTime(double rate, int hrs) { super(rate, hrs); }\n        @Override double calculatePay() { /* 80% */ return 0; }\n    }\n    static class Intern extends PartTime {\n        Intern(double rate, int hrs) { super(rate, hrs); }\n        @Override double calculatePay() { /* + $100 stipend */ return 0; }\n    }\n    static class MBAIntern extends Intern {\n        MBAIntern(double rate, int hrs) { super(rate, hrs); }\n        @Override double calculatePay() { /* +20% premium */ return 0; }\n    }\n\n    public static void main(String[] args) {\n        // baseRate=20, hours=40\n        // Worker: 20*40=800\n        // PartTime: 800*0.8=640\n        // Intern: 640+100=740\n        // MBAIntern: 740*1.2=888\n        MBAIntern m = new MBAIntern(20, 40);\n        System.out.println(m.calculatePay()); // 888.0\n    }\n}",
           "solutionCode": "public class Q19 {\n    static class Worker {\n        double baseRate; int hours;\n        Worker(double r, int h) { baseRate=r; hours=h; }\n        double calculatePay() { return baseRate * hours; }\n    }\n    static class PartTime extends Worker {\n        PartTime(double r, int h) { super(r, h); }\n        @Override double calculatePay() { return super.calculatePay() * 0.8; }\n    }\n    static class Intern extends PartTime {\n        Intern(double r, int h) { super(r, h); }\n        @Override double calculatePay() { return super.calculatePay() + 100; }\n    }\n    static class MBAIntern extends Intern {\n        MBAIntern(double r, int h) { super(r, h); }\n        @Override double calculatePay() { return super.calculatePay() * 1.2; }\n    }\n\n    public static void main(String[] args) {\n        MBAIntern m = new MBAIntern(20, 40);\n        System.out.println(m.calculatePay()); // 888.0\n    }\n}",
           "testCases": [
-            {"input": "MBAIntern(20, 40)", "output": "888.0"}
+            {
+              "input": "MBAIntern(20, 40)",
+              "output": "888.0"
+            }
           ],
           "constraints": "Follow the chain: Worker → PartTime → Intern → MBAIntern.",
           "editorial": "Each super.calculatePay() call walks the chain: MBAIntern calls Intern.super, which calls PartTime.super, which calls Worker. The computation unwinds: Worker=800 → PartTime=640 → Intern=740 → MBAIntern=888. The call chain is: MBAIntern.calculatePay() → super = Intern.calculatePay() → super = PartTime.calculatePay() → super = Worker.calculatePay()."
@@ -418,13 +534,21 @@
           "starterCode": "public class Q20 {\n    // INHERITANCE approach (rigid)\n    static class Vehicle  { String type = \"Vehicle\"; }\n    static class Car extends Vehicle { Car(){type=\"Car\";} }\n    static class SportsCar extends Car { SportsCar(){type=\"SportsCar\";} }\n    static class TurboSportsCar extends SportsCar { TurboSportsCar(){type=\"TurboSportsCar\";} }\n\n    // COMPOSITION approach (flexible) — TODO\n    interface Component { String describe(); }\n    // TODO: Engine, Spoiler, TurboKit components\n    // TODO: FlexCar with List<Component> that can hold any combo\n\n    public static void main(String[] args) {\n        // Inheritance: 4 rigid classes\n        System.out.println(new TurboSportsCar().type);\n\n        // Composition: create any combo without new classes\n        // FlexCar turboSports = new FlexCar(new Engine(), new Spoiler(), new TurboKit());\n        // FlexCar ecoCommuter = new FlexCar(new Engine()); // no spoiler, no turbo\n        // System.out.println(turboSports.describe());\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q20 {\n    // INHERITANCE (rigid — need a new class for every combination)\n    static class Vehicle  { String type = \"Vehicle\"; }\n    static class Car extends Vehicle { Car(){type=\"Car\";} }\n    static class SportsCar extends Car { SportsCar(){type=\"SportsCar\";} }\n    static class TurboSportsCar extends SportsCar { TurboSportsCar(){type=\"TurboSportsCar\";} }\n\n    // COMPOSITION (flexible — mix components freely)\n    interface Component { String describe(); }\n    static class Engine   implements Component { public String describe() { return \"Engine\"; } }\n    static class Spoiler  implements Component { public String describe() { return \"Spoiler\"; } }\n    static class TurboKit implements Component { public String describe() { return \"Turbo\"; } }\n\n    static class FlexCar {\n        List<Component> components;\n        FlexCar(Component... parts) { components = Arrays.asList(parts); }\n        String describe() {\n            StringBuilder sb = new StringBuilder(\"Car[\");\n            for (Component c : components) sb.append(c.describe()).append(\" \");\n            return sb.toString().trim() + \"]\";\n        }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(new TurboSportsCar().type); // TurboSportsCar\n\n        FlexCar turboSports = new FlexCar(new Engine(), new Spoiler(), new TurboKit());\n        FlexCar ecoCommuter  = new FlexCar(new Engine());\n        FlexCar spoilerNinja = new FlexCar(new Engine(), new Spoiler());\n\n        System.out.println(turboSports.describe()); // Car[Engine Spoiler Turbo]\n        System.out.println(ecoCommuter.describe());  // Car[Engine]\n        System.out.println(spoilerNinja.describe()); // Car[Engine Spoiler]\n    }\n}",
           "testCases": [
-            {"input": "FlexCar(Engine,Spoiler,Turbo)", "output": "Car[Engine Spoiler Turbo]"},
-            {"input": "FlexCar(Engine only)",           "output": "Car[Engine]"}
+            {
+              "input": "FlexCar(Engine,Spoiler,Turbo)",
+              "output": "Car[Engine Spoiler Turbo]"
+            },
+            {
+              "input": "FlexCar(Engine only)",
+              "output": "Car[Engine]"
+            }
           ],
           "constraints": "No constraints.",
           "editorial": "Inheritance explosion: N independent features need 2^N subclass combinations. Composition: each feature is a separate object combined at construction time. FlexCar with any N components needs only 1 class. Prefer composition when: behaviour varies independently, you want runtime flexibility, or the IS-A relationship is forced. Use inheritance for genuine IS-A with shared implementation. Spring: ApplicationContext composes ResourceLoader, BeanFactory, MessageSource — not extends all three."
         }
-      ]
+      ],
+      "subCategory": "OOP (VERY IMPORTANT)",
+      "displayOrder": 22
     }
   ]
 }

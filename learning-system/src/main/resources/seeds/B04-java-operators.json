@@ -618,7 +618,9 @@
           "constraints": "O(n) time, O(1) space. Must use XOR. Two-pass: first XOR pass, then split-by-bit pass. Final check to determine which is missing vs duplicate.",
           "editorial": "XOR find missing and duplicate in array [1..n]: XOR all elements with all of 1..n. Result = missing ^ duplicate. Then use sum formula: sum(array) - sum(1..n) = duplicate - missing. Solve the two equations. O(n) time, O(1) space. No sorting, no extra storage."
         }
-      ]
+      ],
+      "subCategory": "Language Basics",
+      "displayOrder": 11
     }
   ]
 }

@@ -657,7 +657,9 @@
           "constraints": "Use getDeclaredFields/Methods. Skip static fields. Score clamped 0-100.",
           "editorial": "Use reflection: getDeclaredFields() for fields, getDeclaredMethods() for methods. Count public vs private fields. Check for 'set' prefix methods as setters. hasEquals: check if class declares equals(Object). Score formula: publicFieldCount * -10 + privateFieldCount * 10 + bonuses. Return the computed score."
         }
-      ]
+      ],
+      "subCategory": "OOP (VERY IMPORTANT)",
+      "displayOrder": 21
     }
   ]
 }

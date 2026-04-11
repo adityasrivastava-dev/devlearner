@@ -8,11 +8,12 @@ import styles from './AdminPage.module.css';
 import JsonBuilderSection from './JsonBuilderSection';
 import QuizAdminSection from './QuizAdminSection';
 import AlgorithmAdminSection from './AlgorithmAdminSection';
+import InterviewAdminSection from './InterviewAdminSection';
 
 export default function AdminPage() {
   const navigate   = useNavigate();
   const qc         = useQueryClient();
-  const [section, setSection] = useState('topics'); // topics | users | seed | build | algorithms | stats
+  const [section, setSection] = useState('topics'); // topics | users | seed | build | quiz | algorithms | interview | stats
 
   return (
     <div className={styles.adminPage}>
@@ -30,6 +31,7 @@ export default function AdminPage() {
             { key: 'build',      icon: '🛠', label: 'Build JSON' },
             { key: 'quiz',       icon: '🧠', label: 'Quiz' },
             { key: 'algorithms', icon: '⚡', label: 'Algorithms' },
+            { key: 'interview',  icon: '📋', label: 'Interview Q&A' },
             { key: 'stats',      icon: '📊', label: 'Stats' },
           ].map((item) => (
             <button
@@ -51,6 +53,7 @@ export default function AdminPage() {
         {section === 'build'      && <div className={styles.section}><div className={styles.sectionHeader}><span className={styles.sectionTitle}>JSON Builder</span></div><JsonBuilderSection /></div>}
         {section === 'quiz'       && <QuizAdminSection />}
         {section === 'algorithms' && <AlgorithmAdminSection />}
+        {section === 'interview'  && <InterviewAdminSection />}
         {section === 'stats'      && <StatsSection />}
       </div>
     </div>
@@ -164,6 +167,8 @@ function TopicEditor({ topic, onSaved }) {
   const [form, setForm] = useState({
     title:            topic?.title            || '',
     category:         topic?.category         || 'DSA',
+    subCategory:      topic?.subCategory      || '',
+    displayOrder:     topic?.displayOrder     ?? 999,
     description:      topic?.description      || '',
     timeComplexity:   topic?.timeComplexity   || '',
     spaceComplexity:  topic?.spaceComplexity  || '',
@@ -363,6 +368,8 @@ function TopicEditor({ topic, onSaved }) {
                 )}
               </select>
             </div>
+            <Field label="Sub-Category (section heading in sidebar)" value={form.subCategory} onChange={set('subCategory')} placeholder="e.g. OOP (VERY IMPORTANT)" wide />
+            <Field label="Display Order (lower = first)" value={form.displayOrder} onChange={set('displayOrder')} type="number" />
             <Field label="Description" value={form.description} onChange={set('description')} textarea rows={3} wide />
             <Field label="Time Complexity" value={form.timeComplexity} onChange={set('timeComplexity')} />
             <Field label="Space Complexity" value={form.spaceComplexity} onChange={set('spaceComplexity')} />
@@ -392,7 +399,7 @@ function TopicEditor({ topic, onSaved }) {
   );
 }
 
-function Field({ label, value, onChange, textarea, rows = 2, wide, code }) {
+function Field({ label, value, onChange, textarea, rows = 2, wide, code, type = 'text', placeholder }) {
   return (
     <div className={`${styles.fieldWrap} ${wide ? styles.wideField : ''}`}>
       <label className={styles.fieldLabel}>{label}</label>
@@ -402,10 +409,11 @@ function Field({ label, value, onChange, textarea, rows = 2, wide, code }) {
           value={value}
           onChange={onChange}
           rows={rows}
+          placeholder={placeholder}
           style={{ resize: 'vertical', fontFamily: code ? 'var(--font-code)' : undefined, fontSize: code ? 12 : undefined }}
         />
       ) : (
-        <input className="input" value={value} onChange={onChange} />
+        <input className="input" type={type} value={value} onChange={onChange} placeholder={placeholder} />
       )}
     </div>
   );

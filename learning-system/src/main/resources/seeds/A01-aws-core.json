@@ -11,7 +11,16 @@
       "bruteForce": "Without IAM: share the root account password with everyone — catastrophic security risk. Without EC2 isolation: run all workloads on one server — single point of failure. Without S3 versioning: overwrite files, lose history forever. Without VPC: resources exposed to the public internet by default — massive attack surface.",
       "optimizedApproach": "IAM least-privilege principle: grant minimum permissions needed, use roles not static keys. EC2 right-sizing: choose instance type matching actual CPU/memory needs; use Auto Scaling Groups for elastic capacity. S3: enable versioning, lifecycle policies (auto-move old objects to Glacier), presigned URLs for time-limited access. VPC best practice: public subnets for load balancers, private subnets for servers and databases, NAT Gateway for outbound internet from private subnets, Security Groups as stateful firewalls per resource.",
       "whenToUse": "IAM: always — every AWS resource interaction. EC2: stateful workloads, custom OS config, sustained compute (vs Lambda for event-driven). S3: static files, backups, data lake, hosting static websites, CDN origin. VPC: isolating environments (prod vs dev), compliance requirements, connecting on-premise via VPN/Direct Connect.",
-      "tags": ["aws", "iam", "ec2", "s3", "vpc", "cloud", "devops", "infrastructure"],
+      "tags": [
+        "aws",
+        "iam",
+        "ec2",
+        "s3",
+        "vpc",
+        "cloud",
+        "devops",
+        "infrastructure"
+      ],
       "examples": [
         {
           "displayOrder": 1,
@@ -74,7 +83,11 @@
           "title": "Design IAM Policy for S3 Read-Only Access",
           "difficulty": "Easy",
           "description": "Write an IAM policy JSON that allows a user to list all buckets in the account but only read objects from a specific bucket named 'prod-data'. The user should NOT be able to write, delete, or access any other bucket.",
-          "constraints": ["s3:ListAllMyBuckets requires Resource: '*'", "s3:ListBucket requires the bucket ARN (not the objects ARN)", "s3:GetObject requires the bucket/* ARN"],
+          "constraints": [
+            "s3:ListAllMyBuckets requires Resource: '*'",
+            "s3:ListBucket requires the bucket ARN (not the objects ARN)",
+            "s3:GetObject requires the bucket/* ARN"
+          ],
           "examples": [
             {
               "input": "User wants to: list buckets, list prod-data contents, download files from prod-data",
@@ -82,13 +95,21 @@
               "explanation": "S3 has a confusing two-level ARN: arn:aws:s3:::bucket-name for bucket operations, arn:aws:s3:::bucket-name/* for object operations"
             }
           ],
-          "hints": ["Two separate Resource entries needed for ListBucket vs GetObject", "Effect: Allow, never omit the Effect field", "Test with IAM Policy Simulator before applying to real user"]
+          "hints": [
+            "Two separate Resource entries needed for ListBucket vs GetObject",
+            "Effect: Allow, never omit the Effect field",
+            "Test with IAM Policy Simulator before applying to real user"
+          ]
         },
         {
           "title": "Calculate EC2 Cost for a Production Setup",
           "difficulty": "Medium",
           "description": "Your team needs 2 t3.large instances running 24/7 for 3 months (on-demand), plus 1 m5.xlarge for batch jobs running 8 hours/day for 30 days. t3.large = $0.0832/hr, m5.xlarge = $0.192/hr. What is the total monthly cost? What would be the savings with 1-year Reserved Instances (40% discount)?",
-          "constraints": ["On-demand: billed per second, minimum 1 minute", "3 months = 90 days = 2160 hours", "Batch: 8h/day * 30 days = 240 hours"],
+          "constraints": [
+            "On-demand: billed per second, minimum 1 minute",
+            "3 months = 90 days = 2160 hours",
+            "Batch: 8h/day * 30 days = 240 hours"
+          ],
           "examples": [
             {
               "input": "2x t3.large 24/7 for 3 months + 1x m5.xlarge 8h/day for 1 month",
@@ -96,13 +117,21 @@
               "explanation": "Reserved Instance for t3.large: $359.42 * 0.6 = $215.65 (40% discount)"
             }
           ],
-          "hints": ["On-demand hours = 24 * days * instance_count", "Batch hours = 8 * days", "Reserved savings only apply to always-on instances, not intermittent batch"]
+          "hints": [
+            "On-demand hours = 24 * days * instance_count",
+            "Batch hours = 8 * days",
+            "Reserved savings only apply to always-on instances, not intermittent batch"
+          ]
         },
         {
           "title": "S3 Lifecycle Policy Design",
           "difficulty": "Medium",
           "description": "Design an S3 lifecycle policy for a logging bucket with these rules: (1) Move logs older than 30 days to Standard-IA, (2) Move logs older than 90 days to Glacier Flexible, (3) Delete logs older than 1 year. Write the lifecycle configuration JSON.",
-          "constraints": ["Transitions must be in ascending day order", "Glacier Flexible has minimum 90-day storage charge", "Expiration must be after the last transition"],
+          "constraints": [
+            "Transitions must be in ascending day order",
+            "Glacier Flexible has minimum 90-day storage charge",
+            "Expiration must be after the last transition"
+          ],
           "examples": [
             {
               "input": "Logs in prefix 'application-logs/'",
@@ -110,13 +139,21 @@
               "explanation": "Lifecycle JSON has 'Transitions' array and 'Expiration' object under each Rule"
             }
           ],
-          "hints": ["StorageClass values: STANDARD_IA, GLACIER, DEEP_ARCHIVE", "Filter.Prefix limits rule to specific object path prefix", "Days are from object creation date"]
+          "hints": [
+            "StorageClass values: STANDARD_IA, GLACIER, DEEP_ARCHIVE",
+            "Filter.Prefix limits rule to specific object path prefix",
+            "Days are from object creation date"
+          ]
         },
         {
           "title": "VPC CIDR Planning",
           "difficulty": "Medium",
           "description": "You need to design a VPC for a 3-tier app with high availability across 2 AZs. Plan the CIDR ranges for: the VPC itself (must fit 500+ hosts), 2 public subnets (one per AZ, 50 hosts each), 2 private app subnets (one per AZ, 100 hosts each), 2 private DB subnets (one per AZ, 20 hosts each). What CIDR blocks would you use?",
-          "constraints": ["AWS reserves 5 IPs per subnet (network, broadcast, router, DNS, future)", "Subnets within a VPC cannot overlap", "/24 gives 251 usable IPs, /26 gives 59 usable IPs, /27 gives 27 usable IPs"],
+          "constraints": [
+            "AWS reserves 5 IPs per subnet (network, broadcast, router, DNS, future)",
+            "Subnets within a VPC cannot overlap",
+            "/24 gives 251 usable IPs, /26 gives 59 usable IPs, /27 gives 27 usable IPs"
+          ],
           "examples": [
             {
               "input": "VPC: 10.0.0.0/16 (65k IPs), plan 6 subnets",
@@ -124,13 +161,21 @@
               "explanation": "Leave gaps between ranges (10.0.1, 10.0.2 then jump to 10.0.10) for future expansion"
             }
           ],
-          "hints": ["Start with /16 VPC for plenty of room", "Use /24 for app and public subnets (251 usable IPs each)", "Use /27 for DB subnets (27 IPs sufficient for small DB fleets)"]
+          "hints": [
+            "Start with /16 VPC for plenty of room",
+            "Use /24 for app and public subnets (251 usable IPs each)",
+            "Use /27 for DB subnets (27 IPs sufficient for small DB fleets)"
+          ]
         },
         {
           "title": "Security Group Rule Design",
           "difficulty": "Easy",
           "description": "Design Security Group rules for a 3-tier architecture: sg-alb (internet-facing ALB), sg-app (application servers), sg-db (RDS MySQL). Each tier should only accept traffic from the tier directly above it. What inbound rules does each security group need?",
-          "constraints": ["ALB needs to accept HTTP (80) and HTTPS (443) from 0.0.0.0/0", "App servers only accept port 8080 from ALB security group", "RDS only accepts port 3306 from app security group"],
+          "constraints": [
+            "ALB needs to accept HTTP (80) and HTTPS (443) from 0.0.0.0/0",
+            "App servers only accept port 8080 from ALB security group",
+            "RDS only accepts port 3306 from app security group"
+          ],
           "examples": [
             {
               "input": "3-tier: ALB → App servers → RDS MySQL",
@@ -138,13 +183,21 @@
               "explanation": "Security groups can reference other security groups as sources — no hardcoded IPs needed"
             }
           ],
-          "hints": ["Use security group IDs as source, not IP ranges (dynamic IPs change on restart)", "Security groups are stateful — no explicit outbound rules needed for return traffic", "sg-db referencing sg-app means: allow only traffic from instances with sg-app attached"]
+          "hints": [
+            "Use security group IDs as source, not IP ranges (dynamic IPs change on restart)",
+            "Security groups are stateful — no explicit outbound rules needed for return traffic",
+            "sg-db referencing sg-app means: allow only traffic from instances with sg-app attached"
+          ]
         },
         {
           "title": "IAM Role Trust Policy for EC2",
           "difficulty": "Medium",
           "description": "Write the trust policy (assume-role-policy-document) that allows EC2 instances (the service ec2.amazonaws.com) to assume an IAM role. Then write the permission policy that allows the role to read from SSM Parameter Store and write to CloudWatch Logs.",
-          "constraints": ["Trust policy principal is the AWS service, not an account or user", "ec2.amazonaws.com is the service principal for EC2 instance profiles", "SSM read: ssm:GetParameter, ssm:GetParameters | CloudWatch Logs write: logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents"],
+          "constraints": [
+            "Trust policy principal is the AWS service, not an account or user",
+            "ec2.amazonaws.com is the service principal for EC2 instance profiles",
+            "SSM read: ssm:GetParameter, ssm:GetParameters | CloudWatch Logs write: logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents"
+          ],
           "examples": [
             {
               "input": "EC2 instance needs to read app config from SSM and write app logs to CloudWatch",
@@ -152,13 +205,21 @@
               "explanation": "Two separate JSON documents: trust policy (who can assume) and permission policy (what they can do)"
             }
           ],
-          "hints": ["Trust policy goes in the AssumeRolePolicyDocument field", "Permission policy is a separate managed or inline policy attached to the role", "Resource ARN for SSM: arn:aws:ssm:region:account:parameter/app/*"]
+          "hints": [
+            "Trust policy goes in the AssumeRolePolicyDocument field",
+            "Permission policy is a separate managed or inline policy attached to the role",
+            "Resource ARN for SSM: arn:aws:ssm:region:account:parameter/app/*"
+          ]
         },
         {
           "title": "S3 Presigned URL Use Case",
           "difficulty": "Easy",
           "description": "Your application needs to let authenticated users upload profile photos directly to S3 from their browser (not through your server). The upload should expire in 10 minutes and be limited to JPEG files under 5MB. Describe the flow and generate the presigned PUT URL using AWS CLI.",
-          "constraints": ["Presigned URL for upload uses PUT method, not POST (unless using presigned POST with conditions)", "The URL carries the signer's permissions temporarily", "Content-Type header must match what was specified when generating the URL"],
+          "constraints": [
+            "Presigned URL for upload uses PUT method, not POST (unless using presigned POST with conditions)",
+            "The URL carries the signer's permissions temporarily",
+            "Content-Type header must match what was specified when generating the URL"
+          ],
           "examples": [
             {
               "input": "User wants to upload profile.jpg to s3://user-uploads/user-42/profile.jpg",
@@ -166,13 +227,22 @@
               "explanation": "Browser PUTs directly to the presigned URL — your server never handles the file bytes, only generates the URL"
             }
           ],
-          "hints": ["Backend generates presigned URL, returns it to frontend", "Frontend uses fetch/axios to PUT directly to S3 URL with Content-Type header", "Advantages: no bandwidth cost on your servers, S3 scales infinitely"]
+          "hints": [
+            "Backend generates presigned URL, returns it to frontend",
+            "Frontend uses fetch/axios to PUT directly to S3 URL with Content-Type header",
+            "Advantages: no bandwidth cost on your servers, S3 scales infinitely"
+          ]
         },
         {
           "title": "Multi-AZ High Availability Design",
           "difficulty": "Hard",
           "description": "An AZ outage occurs in us-east-1a. Your architecture has: ALB across 1a and 1b, EC2 ASG in 1a and 1b (2 instances each), RDS primary in 1a with Multi-AZ standby in 1b, ElastiCache Redis primary in 1a. What fails, what automatically recovers, what requires manual intervention?",
-          "constraints": ["ALB: automatically stops routing to unhealthy AZ", "ASG: automatically launches replacement instances in healthy AZ", "RDS Multi-AZ: automatic failover, 60-120 second downtime", "ElastiCache Redis: only Multi-AZ clusters with auto-failover enabled will recover automatically"],
+          "constraints": [
+            "ALB: automatically stops routing to unhealthy AZ",
+            "ASG: automatically launches replacement instances in healthy AZ",
+            "RDS Multi-AZ: automatic failover, 60-120 second downtime",
+            "ElastiCache Redis: only Multi-AZ clusters with auto-failover enabled will recover automatically"
+          ],
           "examples": [
             {
               "input": "AZ us-east-1a fails completely",
@@ -180,13 +250,21 @@
               "explanation": "RDS Multi-AZ and ASG across multiple AZs are the key to surviving single-AZ failure"
             }
           ],
-          "hints": ["ALB health checks detect unhealthy instances within 30-60 seconds", "ASG desired count stays the same — it just launches in available AZs", "RDS failover changes the endpoint DNS — application must not cache the IP, use the DNS endpoint"]
+          "hints": [
+            "ALB health checks detect unhealthy instances within 30-60 seconds",
+            "ASG desired count stays the same — it just launches in available AZs",
+            "RDS failover changes the endpoint DNS — application must not cache the IP, use the DNS endpoint"
+          ]
         },
         {
           "title": "Cost Optimization: Spot Instances for Batch",
           "difficulty": "Medium",
           "description": "You run a nightly data processing job that takes 4 hours on a c5.2xlarge (8 vCPU, 16GB RAM). On-demand price: $0.34/hr. Spot price: $0.10/hr. The job is checkpointed every 30 minutes (can resume from last checkpoint if interrupted). Calculate: monthly on-demand cost, monthly spot cost, % savings. What is the maximum interruption risk you can tolerate?",
-          "constraints": ["Monthly = 30 runs * 4 hours = 120 compute-hours", "Spot interruption gives 2-minute warning before termination", "Checkpointing means you lose at most 30 min of work on interruption"],
+          "constraints": [
+            "Monthly = 30 runs * 4 hours = 120 compute-hours",
+            "Spot interruption gives 2-minute warning before termination",
+            "Checkpointing means you lose at most 30 min of work on interruption"
+          ],
           "examples": [
             {
               "input": "c5.2xlarge, 4h/night, 30 nights",
@@ -194,13 +272,21 @@
               "explanation": "With checkpointing, Spot is safe for batch jobs — interruption just adds 30min overhead"
             }
           ],
-          "hints": ["Spot savings vary by region and instance type — check AWS Spot Price History", "Use Spot Instance Advisor to see interruption frequency", "Mix On-Demand (base) + Spot (burst) in ASG for best risk/cost balance"]
+          "hints": [
+            "Spot savings vary by region and instance type — check AWS Spot Price History",
+            "Use Spot Instance Advisor to see interruption frequency",
+            "Mix On-Demand (base) + Spot (burst) in ASG for best risk/cost balance"
+          ]
         },
         {
           "title": "VPC Flow Logs Troubleshooting",
           "difficulty": "Hard",
           "description": "Your EC2 app server cannot connect to RDS on port 3306. VPC Flow Logs show the traffic as REJECT. List the 5 most likely causes in order of probability, and describe how to diagnose each one systematically.",
-          "constraints": ["REJECT in flow logs means a Network ACL or Security Group blocked the traffic", "Security Groups are stateful; NACLs are stateless (need both inbound and outbound rules)", "RDS sits in a DB subnet with its own subnet association"],
+          "constraints": [
+            "REJECT in flow logs means a Network ACL or Security Group blocked the traffic",
+            "Security Groups are stateful; NACLs are stateless (need both inbound and outbound rules)",
+            "RDS sits in a DB subnet with its own subnet association"
+          ],
           "examples": [
             {
               "input": "Flow log entry: srcaddr=10.0.2.10 dstaddr=10.0.3.50 dstport=3306 action=REJECT",
@@ -208,9 +294,15 @@
               "explanation": "Start with Security Groups (most common), then NACLs (stateless, often misconfigured), then DNS/config issues"
             }
           ],
-          "hints": ["Security Groups check first — most common cause", "NACLs are stateless: need explicit outbound rule for response traffic (ephemeral ports 1024-65535)", "Use VPC Reachability Analyzer to automatically trace the network path"]
+          "hints": [
+            "Security Groups check first — most common cause",
+            "NACLs are stateless: need explicit outbound rule for response traffic (ephemeral ports 1024-65535)",
+            "Use VPC Reachability Analyzer to automatically trace the network path"
+          ]
         }
-      ]
+      ],
+      "subCategory": "Core Services",
+      "displayOrder": 10
     }
   ]
 }

@@ -213,7 +213,9 @@
           "constraints": "1 ≤ employees.length ≤ 50 | 1 ≤ employee[i].length ≤ 50 | 0 ≤ interval.start < interval.end ≤ 10^8",
           "editorial": "Flatten + sort approach: O(total_intervals * log(total_intervals)). Heap approach: min-heap of (interval.start, employee_idx, interval_idx) — O(total_intervals * log(employees)). The gap detection logic: if next.start > current_max_end, there's a free window."
         }
-      ]
+      ],
+      "subCategory": "Heaps & Priority Queues",
+      "displayOrder": 45
     }
   ]
 }

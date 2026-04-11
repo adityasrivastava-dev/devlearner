@@ -538,7 +538,9 @@
           "constraints": "Must support: int declarations with expression RHS, print statement, variable lookup in expressions. Symbol table stored in Map<String,Integer>.",
           "editorial": "Full pipeline: source string → tokenize → parse to AST → semantic check (type validation) → generate bytecode representation (instruction list) → execute instructions on a stack machine. Each phase transforms the representation. This mirrors javac's internal phases: scan → parse → analyze → generate."
         }
-      ]
+      ],
+      "subCategory": "JVM Internals (Interview Critical)",
+      "displayOrder": 41
     }
   ]
 }

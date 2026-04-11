@@ -213,7 +213,9 @@
           "constraints": "0 ≤ n ≤ 1000 | 1 ≤ Node.val ≤ 10^5",
           "editorial": "Iterative in-place: when child found, find child's tail O(child length), splice. Total O(n) since each node visited at most twice. Stack-based approach: O(n) time, O(depth) space — push next before following child."
         }
-      ]
+      ],
+      "subCategory": "Linked List",
+      "displayOrder": 20
     }
   ]
 }

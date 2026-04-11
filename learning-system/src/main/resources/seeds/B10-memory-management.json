@@ -77,7 +77,12 @@
           "hint3": "Objects created with 'new' and String literals/objects live on the heap.",
           "starterCode": "import java.util.*;\n\npublic class Q1 {\n    static int counter = 0;\n    int instanceField = 42;\n\n    public static Map<String, String> classify() {\n        // Labels: A, B, C, D(var), E(String obj), F(var), G(array obj)\n        Map<String, String> m = new LinkedHashMap<>();\n        // TODO\n        return m;\n    }\n    public static void main(String[] args) {\n        System.out.println(classify());\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q1 {\n    static int counter = 0;\n    int instanceField = 42;\n\n    public static Map<String, String> classify() {\n        Map<String, String> m = new LinkedHashMap<>();\n        m.put(\"A_counter\",       \"method-area\");     // static field\n        m.put(\"B_instanceField\", \"heap\");            // inside object on heap\n        m.put(\"C_local\",        \"stack-primitive\"); // local int\n        m.put(\"D_msg_var\",      \"stack-ref\");       // reference variable\n        m.put(\"E_String_obj\",   \"heap\");            // String object / Pool\n        m.put(\"F_arr_var\",      \"stack-ref\");       // reference variable\n        m.put(\"G_array_obj\",    \"heap\");            // int[] object\n        return m;\n    }\n    public static void main(String[] args) {\n        System.out.println(classify());\n    }\n}",
-          "testCases": [{"input": "", "output": "{A_counter=method-area, B_instanceField=heap, C_local=stack-primitive, D_msg_var=stack-ref, E_String_obj=heap, F_arr_var=stack-ref, G_array_obj=heap}"}],
+          "testCases": [
+            {
+              "input": "",
+              "output": "{A_counter=method-area, B_instanceField=heap, C_local=stack-primitive, D_msg_var=stack-ref, E_String_obj=heap, F_arr_var=stack-ref, G_array_obj=heap}"
+            }
+          ],
           "constraints": "Conceptual classification exercise.",
           "editorial": "Static fields → Method Area (Metaspace). Instance fields → heap (stored inside the object). Local primitives → stack (directly in frame). Local reference variables → stack (hold addresses). Actual objects → heap. String literals → String Pool (subset of heap since Java 7)."
         },
@@ -92,7 +97,12 @@
           "hint3": "Bounded recursion and bounded allocation = no error.",
           "starterCode": "public class Q2 {\n    public static String[] predict() {\n        // Return outcomes for A, B, C, D\n        return new String[]{\"\", \"\", \"\", \"\"};\n    }\n    public static void main(String[] args) {\n        String[] p = predict();\n        System.out.println(\"A: \" + p[0]);\n        System.out.println(\"B: \" + p[1]);\n        System.out.println(\"C: \" + p[2]);\n        System.out.println(\"D: \" + p[3]);\n    }\n}",
           "solutionCode": "public class Q2 {\n    public static String[] predict() {\n        return new String[]{\n            \"StackOverflowError\",  // A: infinite recursion\n            \"OutOfMemoryError\",    // B: heap too small for 2GB array\n            \"Runs fine\",           // C: bounded recursion, 1000 frames OK\n            \"OutOfMemoryError\"     // D: heap fills with unbounded list\n        };\n    }\n    public static void main(String[] args) {\n        String[] p = predict();\n        System.out.println(\"A: \" + p[0]); // StackOverflowError\n        System.out.println(\"B: \" + p[1]); // OutOfMemoryError\n        System.out.println(\"C: \" + p[2]); // Runs fine\n        System.out.println(\"D: \" + p[3]); // OutOfMemoryError\n    }\n}",
-          "testCases": [{"input": "", "output": "A: StackOverflowError\nB: OutOfMemoryError\nC: Runs fine\nD: OutOfMemoryError"}],
+          "testCases": [
+            {
+              "input": "",
+              "output": "A: StackOverflowError\nB: OutOfMemoryError\nC: Runs fine\nD: OutOfMemoryError"
+            }
+          ],
           "constraints": "Conceptual — assume default JVM settings.",
           "editorial": "StackOverflowError: stack size exhausted by call frames. OutOfMemoryError: heap size exhausted by objects. C: 1000 recursion depth is well within default stack limits (~5000+). D: unbounded list growth will exhaust -Xmx heap."
         },
@@ -107,7 +117,12 @@
           "hint3": "Integer.valueOf(200) creates a new Integer (beyond cache range -128 to 127). Integer.valueOf(100) uses cached — (6) and (7) are the SAME object.",
           "starterCode": "public class Q3 {\n    public static int countHeapObjects() {\n        // Count distinct heap objects from the 7 lines\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(countHeapObjects());\n    }\n}",
           "solutionCode": "public class Q3 {\n    public static int countHeapObjects() {\n        // (1) \"hello\" literal → String Pool: 1 object\n        // (2) \"hello\" literal → SAME String Pool object: 0 new\n        // (3) new String(\"hello\") → new heap String: 1 object\n        // (4) new int[]{1,2,3} → heap array: 1 object\n        // (5) Integer.valueOf(200) → new Integer (outside cache): 1 object\n        // (6) Integer.valueOf(100) → cached Integer[-128..127]: 1 object\n        // (7) Integer.valueOf(100) → SAME cached object: 0 new\n        // Total: 1 + 0 + 1 + 1 + 1 + 1 + 0 = 5\n        return 5;\n    }\n    public static void main(String[] args) {\n        System.out.println(countHeapObjects()); // 5\n    }\n}",
-          "testCases": [{"input": "", "output": "5"}],
+          "testCases": [
+            {
+              "input": "",
+              "output": "5"
+            }
+          ],
           "constraints": "Assume standard JVM Integer cache range is -128 to 127.",
           "editorial": "String Pool deduplication means literals sharing the same content share one object. new String() always creates a new object. Integer cache (-128 to 127): Integer.valueOf() returns the same cached object for values in range, new object for values outside."
         },
@@ -123,10 +138,22 @@
           "starterCode": "public class Q4 {\n    public static long fibonacci(int n) {\n        // Iterative — O(n) time, O(1) space, no stack overflow\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(fibonacci(10));  // 55\n        System.out.println(fibonacci(50));  // 12586269025\n    }\n}",
           "solutionCode": "public class Q4 {\n    public static long fibonacci(int n) {\n        if (n <= 0) return 0;\n        if (n == 1) return 1;\n        long prev2 = 0, prev1 = 1;\n        for (int i = 2; i <= n; i++) {\n            long current = prev1 + prev2;\n            prev2 = prev1;\n            prev1 = current;\n        }\n        return prev1;\n    }\n    public static void main(String[] args) {\n        System.out.println(fibonacci(10));  // 55\n        System.out.println(fibonacci(50));  // 12586269025\n        System.out.println(fibonacci(90));  // 2880067194370816120\n    }\n}",
           "testCases": [
-            {"input": "0", "output": "0"},
-            {"input": "1", "output": "1"},
-            {"input": "10", "output": "55"},
-            {"input": "50", "output": "12586269025"}
+            {
+              "input": "0",
+              "output": "0"
+            },
+            {
+              "input": "1",
+              "output": "1"
+            },
+            {
+              "input": "10",
+              "output": "55"
+            },
+            {
+              "input": "50",
+              "output": "12586269025"
+            }
           ],
           "constraints": "0 <= n <= 90",
           "editorial": "Iterative: uses O(1) stack space (1 stack frame total). Recursive: O(n) stack depth for linear recursion, O(2^n) for naive recursive Fibonacci. For any deep recursion, consider converting to iterative or memoized form."
@@ -142,7 +169,12 @@
           "hint3": "WeakReference doesn't prevent GC — the object is eligible when only weak references remain.",
           "starterCode": "public class Q5 {\n    static Object GLOBAL = new Object();\n    public static String[] analyze() {\n        return new String[]{\"\", \"\", \"\", \"\"}; // A, B, C, D\n    }\n    public static void main(String[] args) {\n        String[] r = analyze();\n        System.out.println(\"A: \" + r[0]);\n        System.out.println(\"B: \" + r[1]);\n        System.out.println(\"C: \" + r[2]);\n        System.out.println(\"D: \" + r[3]);\n    }\n}",
           "solutionCode": "public class Q5 {\n    static Object GLOBAL = new Object();\n    public static String[] analyze() {\n        return new String[]{\n            \"GC-eligible\",     // A: a=null removes last strong ref\n            \"Not GC-eligible\", // B: list still has strong ref to object\n            \"Not GC-eligible\", // C: static field is a GC root — always reachable\n            \"GC-eligible\"      // D: d=null, only WeakReference left — GC eligible\n        };\n    }\n    public static void main(String[] args) {\n        String[] r = analyze();\n        System.out.println(\"A: \" + r[0]); // GC-eligible\n        System.out.println(\"B: \" + r[1]); // Not GC-eligible\n        System.out.println(\"C: \" + r[2]); // Not GC-eligible\n        System.out.println(\"D: \" + r[3]); // GC-eligible\n    }\n}",
-          "testCases": [{"input": "", "output": "A: GC-eligible\nB: Not GC-eligible\nC: Not GC-eligible\nD: GC-eligible"}],
+          "testCases": [
+            {
+              "input": "",
+              "output": "A: GC-eligible\nB: Not GC-eligible\nC: Not GC-eligible\nD: GC-eligible"
+            }
+          ],
           "constraints": "Conceptual.",
           "editorial": "GC traces from roots (stack, statics, JNI). A: no more references after null. B: list holds strong ref — not eligible. C: static = GC root = always reachable. D: WeakReference doesn't count as strong — when only weak refs remain, object is eligible."
         },
@@ -158,9 +190,18 @@
           "starterCode": "public class Q6 {\n    public static double power(double base, int exp) {\n        // Fix the bug — handle negative exponents correctly\n        // power(2, 3) = 8.0, power(2, -3) = 0.125, power(2, 0) = 1.0\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(power(2, 3));   // 8.0\n        System.out.println(power(2, -3));  // 0.125\n        System.out.println(power(2, 0));   // 1.0\n    }\n}",
           "solutionCode": "public class Q6 {\n    public static double power(double base, int exp) {\n        if (exp == 0) return 1.0;\n        if (exp < 0) return power(1.0 / base, -exp); // flip base, recurse with positive exp\n        // Fast power: exp & 1 checks if odd\n        if (exp % 2 == 0) {\n            double half = power(base, exp / 2);\n            return half * half;\n        }\n        return base * power(base, exp - 1);\n    }\n    public static void main(String[] args) {\n        System.out.println(power(2, 3));   // 8.0\n        System.out.println(power(2, -3));  // 0.125\n        System.out.println(power(2, 0));   // 1.0\n        System.out.println(power(2, 10));  // 1024.0\n    }\n}",
           "testCases": [
-            {"input": "base=2, exp=3", "output": "8.0"},
-            {"input": "base=2, exp=-3", "output": "0.125"},
-            {"input": "base=2, exp=0", "output": "1.0"}
+            {
+              "input": "base=2, exp=3",
+              "output": "8.0"
+            },
+            {
+              "input": "base=2, exp=-3",
+              "output": "0.125"
+            },
+            {
+              "input": "base=2, exp=0",
+              "output": "1.0"
+            }
           ],
           "constraints": "-30 <= exp <= 30. base != 0.",
           "editorial": "The fix: for negative exponents, flip the base (1/base) and recurse with positive exp. Optionally use fast exponentiation (divide exp by 2 each step) for O(log n) depth instead of O(n)."
@@ -176,7 +217,12 @@
           "hint3": "Return depth when error is caught — that's the max depth.",
           "starterCode": "public class Q7 {\n    public static int findMaxRecursionDepth() {\n        return recurse(0);\n    }\n    static int recurse(int depth) {\n        // TODO: recurse until StackOverflowError, return depth\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(\"Max depth: \" + findMaxRecursionDepth());\n    }\n}",
           "solutionCode": "public class Q7 {\n    public static int findMaxRecursionDepth() {\n        return recurse(0);\n    }\n    static int recurse(int depth) {\n        try {\n            return recurse(depth + 1);\n        } catch (StackOverflowError e) {\n            return depth;\n        }\n    }\n    public static void main(String[] args) {\n        // Typical output: 5000-20000 depending on -Xss and frame size\n        System.out.println(\"Max depth: \" + findMaxRecursionDepth());\n    }\n}",
-          "testCases": [{"input": "", "output": "Max depth: [number > 1000]"}],
+          "testCases": [
+            {
+              "input": "",
+              "output": "Max depth: [number > 1000]"
+            }
+          ],
           "constraints": "StackOverflowError is a Throwable — it can be caught.",
           "editorial": "Each recursive call adds a frame. When stack is full, JVM throws StackOverflowError. Catching it in the deepest call returns that depth. Default -Xss on most JVMs gives 5,000-20,000 frames depending on frame size. Increase with -Xss2m for deeper recursion."
         },
@@ -191,7 +237,12 @@
           "hint3": "Use System.nanoTime() before and after each method call to measure.",
           "starterCode": "public class Q8 {\n    public static String concatWithPlus(String[] parts) {\n        String result = \"\";\n        for (String p : parts) result = result + p;\n        return result;\n    }\n    public static String concatWithSB(String[] parts) {\n        // TODO: use StringBuilder\n        return \"\";\n    }\n    public static void main(String[] args) {\n        String[] parts = new String[5000];\n        for (int i = 0; i < parts.length; i++) parts[i] = \"x\";\n        long t1 = System.nanoTime();\n        concatWithPlus(parts);\n        long plusTime = System.nanoTime() - t1;\n        long t2 = System.nanoTime();\n        concatWithSB(parts);\n        long sbTime = System.nanoTime() - t2;\n        System.out.println(\"+ :  \" + plusTime/1_000_000 + \"ms\");\n        System.out.println(\"SB: \" + sbTime/1_000_000 + \"ms\");\n        System.out.println(\"SB is faster: \" + (sbTime < plusTime));\n    }\n}",
           "solutionCode": "public class Q8 {\n    public static String concatWithPlus(String[] parts) {\n        String result = \"\";\n        for (String p : parts) result = result + p;\n        return result;\n    }\n    public static String concatWithSB(String[] parts) {\n        StringBuilder sb = new StringBuilder();\n        for (String p : parts) sb.append(p);\n        return sb.toString();\n    }\n    public static void main(String[] args) {\n        String[] parts = new String[5000];\n        for (int i = 0; i < parts.length; i++) parts[i] = \"x\";\n        long t1 = System.nanoTime();\n        concatWithPlus(parts);\n        long plusTime = System.nanoTime() - t1;\n        long t2 = System.nanoTime();\n        concatWithSB(parts);\n        long sbTime = System.nanoTime() - t2;\n        System.out.println(\"+ :  \" + plusTime/1_000_000 + \"ms\");\n        System.out.println(\"SB: \" + sbTime/1_000_000 + \"ms\");\n        System.out.println(\"SB is faster: \" + (sbTime < plusTime)); // true\n    }\n}",
-          "testCases": [{"input": "5000 parts", "output": "SB is faster: true"}],
+          "testCases": [
+            {
+              "input": "5000 parts",
+              "output": "SB is faster: true"
+            }
+          ],
           "constraints": "parts.length = 5000. Each part is a short string.",
           "editorial": "String + in loop: each iteration creates and copies a new String. For n parts of avg length L: O(n²L) total byte copies. StringBuilder: internal char[] doubles on overflow (amortized O(1) per append), O(nL) total. At n=5000, the difference is dramatic: 100-1000x faster."
         },
@@ -207,7 +258,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q9 {\n    static class LRUCache<K, V> {\n        private final int capacity;\n        private final Map<K, V> map;\n\n        public LRUCache(int capacity) {\n            this.capacity = capacity;\n            // TODO: initialize map with access-order LinkedHashMap\n            this.map = null;\n        }\n\n        public V get(K key) { return map.getOrDefault(key, null); }\n        public void put(K key, V value) { map.put(key, value); }\n        public int size() { return map.size(); }\n    }\n\n    public static void main(String[] args) {\n        LRUCache<Integer, String> cache = new LRUCache<>(3);\n        cache.put(1, \"a\"); cache.put(2, \"b\"); cache.put(3, \"c\");\n        cache.get(1);    // access 1 — now 1 is MRU\n        cache.put(4, \"d\"); // evicts LRU = 2\n        System.out.println(cache.get(2)); // null\n        System.out.println(cache.get(1)); // a\n        System.out.println(cache.size()); // 3\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q9 {\n    static class LRUCache<K, V> {\n        private final int capacity;\n        private final Map<K, V> map;\n\n        public LRUCache(int capacity) {\n            this.capacity = capacity;\n            this.map = new LinkedHashMap<>(capacity, 0.75f, true) {\n                @Override\n                protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {\n                    return size() > capacity;\n                }\n            };\n        }\n\n        public V get(K key) { return map.getOrDefault(key, null); }\n        public void put(K key, V value) { map.put(key, value); }\n        public int size() { return map.size(); }\n    }\n\n    public static void main(String[] args) {\n        LRUCache<Integer, String> cache = new LRUCache<>(3);\n        cache.put(1, \"a\"); cache.put(2, \"b\"); cache.put(3, \"c\");\n        cache.get(1);       // access 1\n        cache.put(4, \"d\");  // evicts 2 (LRU)\n        System.out.println(cache.get(2)); // null\n        System.out.println(cache.get(1)); // a\n        System.out.println(cache.size()); // 3\n    }\n}",
           "testCases": [
-            {"input": "capacity=3, put 1,2,3, access 1, put 4", "output": "null\na\n3"}
+            {
+              "input": "capacity=3, put 1,2,3, access 1, put 4",
+              "output": "null\na\n3"
+            }
           ],
           "constraints": "1 <= capacity <= 1000.",
           "editorial": "LinkedHashMap with accessOrder=true maintains nodes in access order (LRU at head, MRU at tail). removeEldestEntry is called after each put() — return true to evict. This is the standard Java LRU cache pattern, O(1) get/put. LeetCode #146 uses the same approach."
@@ -224,7 +278,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q10 {\n    interface EventListener { void onEvent(String event); }\n\n    static List<EventListener> listeners = new ArrayList<>();\n\n    static void register(EventListener l) { listeners.add(l); }\n\n    static void unregister(EventListener l) {\n        // TODO: fix the memory leak\n    }\n\n    static void publish(String event) {\n        for (EventListener l : listeners) l.onEvent(event);\n    }\n\n    public static void main(String[] args) {\n        EventListener l1 = e -> System.out.println(\"L1: \" + e);\n        register(l1);\n        publish(\"start\");   // L1: start\n        unregister(l1);\n        publish(\"end\");     // (nothing — l1 unregistered)\n        System.out.println(\"Listeners: \" + listeners.size()); // 0\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q10 {\n    interface EventListener { void onEvent(String event); }\n\n    static List<EventListener> listeners = new ArrayList<>();\n\n    static void register(EventListener l) { listeners.add(l); }\n\n    static void unregister(EventListener l) {\n        listeners.remove(l); // fix: actually remove the listener\n    }\n\n    static void publish(String event) {\n        for (EventListener l : new ArrayList<>(listeners)) l.onEvent(event);\n    }\n\n    public static void main(String[] args) {\n        EventListener l1 = e -> System.out.println(\"L1: \" + e);\n        register(l1);\n        publish(\"start\");   // L1: start\n        unregister(l1);\n        publish(\"end\");     // (nothing)\n        System.out.println(\"Listeners: \" + listeners.size()); // 0\n    }\n}",
           "testCases": [
-            {"input": "register, publish(start), unregister, publish(end)", "output": "L1: start\nListeners: 0"}
+            {
+              "input": "register, publish(start), unregister, publish(end)",
+              "output": "L1: start\nListeners: 0"
+            }
           ],
           "constraints": "No thread safety needed.",
           "editorial": "The leak: static List holds strong references to listeners. Empty unregister() means listeners accumulate forever. Fix: listeners.remove(l). Also copy the list before iterating (ConcurrentModificationException prevention). In real systems, use WeakReference<EventListener> so listeners can be GC'd if not held elsewhere."
@@ -241,9 +298,18 @@
           "starterCode": "public class Q11 {\n    public static void merge(int[] nums1, int m, int[] nums2, int n) {\n        // TODO: merge nums2 into nums1 in-place from the back\n    }\n    public static void main(String[] args) {\n        int[] nums1 = {1, 2, 3, 0, 0, 0};\n        merge(nums1, 3, new int[]{2, 5, 6}, 3);\n        System.out.println(java.util.Arrays.toString(nums1));\n    }\n}",
           "solutionCode": "public class Q11 {\n    public static void merge(int[] nums1, int m, int[] nums2, int n) {\n        int p1 = m - 1, p2 = n - 1, p = m + n - 1;\n        while (p1 >= 0 && p2 >= 0) {\n            if (nums1[p1] > nums2[p2]) nums1[p--] = nums1[p1--];\n            else                        nums1[p--] = nums2[p2--];\n        }\n        while (p2 >= 0) nums1[p--] = nums2[p2--]; // remaining nums2\n    }\n    public static void main(String[] args) {\n        int[] nums1 = {1, 2, 3, 0, 0, 0};\n        merge(nums1, 3, new int[]{2, 5, 6}, 3);\n        System.out.println(java.util.Arrays.toString(nums1)); // [1, 2, 2, 3, 5, 6]\n    }\n}",
           "testCases": [
-            {"input": "nums1=[1,2,3,0,0,0] m=3, nums2=[2,5,6] n=3", "output": "[1, 2, 2, 3, 5, 6]"},
-            {"input": "nums1=[1] m=1, nums2=[] n=0", "output": "[1]"},
-            {"input": "nums1=[0] m=0, nums2=[1] n=1", "output": "[1]"}
+            {
+              "input": "nums1=[1,2,3,0,0,0] m=3, nums2=[2,5,6] n=3",
+              "output": "[1, 2, 2, 3, 5, 6]"
+            },
+            {
+              "input": "nums1=[1] m=1, nums2=[] n=0",
+              "output": "[1]"
+            },
+            {
+              "input": "nums1=[0] m=0, nums2=[1] n=1",
+              "output": "[1]"
+            }
           ],
           "constraints": "0 <= m, n <= 200. nums1.length == m+n.",
           "editorial": "Fill from right to left — largest values first. This avoids overwriting nums1's unprocessed data. O(m+n) time, O(1) extra space. LeetCode #88. The in-place mutation works because nums1 has extra capacity at the end."
@@ -260,8 +326,14 @@
           "starterCode": "public class Q12 {\n    public static int streamingMax(int[][] chunks) {\n        // O(1) extra space — process one value at a time\n        return 0;\n    }\n    public static void main(String[] args) {\n        int[][] data = {{3, 1, 4}, {1, 5, 9}, {2, 6, 5}, {3, 5}};\n        System.out.println(streamingMax(data)); // 9\n    }\n}",
           "solutionCode": "public class Q12 {\n    public static int streamingMax(int[][] chunks) {\n        int maxSoFar = Integer.MIN_VALUE;\n        for (int[] chunk : chunks)\n            for (int val : chunk)\n                if (val > maxSoFar) maxSoFar = val;\n        return maxSoFar;\n    }\n    public static void main(String[] args) {\n        int[][] data = {{3, 1, 4}, {1, 5, 9}, {2, 6, 5}, {3, 5}};\n        System.out.println(streamingMax(data)); // 9\n    }\n}",
           "testCases": [
-            {"input": "[[3,1,4],[1,5,9],[2,6,5],[3,5]]", "output": "9"},
-            {"input": "[[100],[-50,200]]", "output": "200"}
+            {
+              "input": "[[3,1,4],[1,5,9],[2,6,5],[3,5]]",
+              "output": "9"
+            },
+            {
+              "input": "[[100],[-50,200]]",
+              "output": "200"
+            }
           ],
           "constraints": "At least one chunk. Each chunk is non-empty.",
           "editorial": "Streaming processing: keep only the maximum seen so far. O(1) extra memory regardless of total data size. This pattern is essential for big data — imagine processing 1TB of data in 1MB chunks: the full dataset can't fit in heap, but a single int can."
@@ -278,8 +350,14 @@
           "starterCode": "import java.util.*;\n\npublic class Q13 {\n    public static int iterativeDFS(List<List<Integer>> graph, int start) {\n        // Use explicit Stack — no recursion — no StackOverflowError\n        return 0;\n    }\n    public static void main(String[] args) {\n        List<List<Integer>> g = new ArrayList<>();\n        for (int i = 0; i < 5; i++) g.add(new ArrayList<>());\n        g.get(0).addAll(List.of(1, 2));\n        g.get(1).add(3);\n        g.get(2).add(4);\n        System.out.println(iterativeDFS(g, 0)); // 5\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q13 {\n    public static int iterativeDFS(List<List<Integer>> graph, int start) {\n        boolean[] visited = new boolean[graph.size()];\n        Deque<Integer> stack = new ArrayDeque<>();\n        stack.push(start);\n        int count = 0;\n        while (!stack.isEmpty()) {\n            int node = stack.pop();\n            if (visited[node]) continue;\n            visited[node] = true;\n            count++;\n            for (int neighbor : graph.get(node))\n                if (!visited[neighbor]) stack.push(neighbor);\n        }\n        return count;\n    }\n    public static void main(String[] args) {\n        List<List<Integer>> g = new ArrayList<>();\n        for (int i = 0; i < 5; i++) g.add(new ArrayList<>());\n        g.get(0).addAll(List.of(1, 2));\n        g.get(1).add(3);\n        g.get(2).add(4);\n        System.out.println(iterativeDFS(g, 0)); // 5\n    }\n}",
           "testCases": [
-            {"input": "5-node graph from 0", "output": "5"},
-            {"input": "single node 0", "output": "1"}
+            {
+              "input": "5-node graph from 0",
+              "output": "5"
+            },
+            {
+              "input": "single node 0",
+              "output": "1"
+            }
           ],
           "constraints": "0 <= nodes <= 10^5. Graph may have cycles.",
           "editorial": "Explicit stack on heap can hold millions of items (bounded by heap). Call stack limited to ~5000-20000 frames. For deep trees/graphs, always prefer iterative with explicit stack. ArrayDeque is faster than Stack (Stack is synchronized)."
@@ -296,7 +374,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q14 {\n    static class StringBuilderPool {\n        private final Deque<StringBuilder> pool = new ArrayDeque<>();\n\n        public StringBuilderPool(int size) {\n            // TODO: pre-allocate 'size' StringBuilders\n        }\n\n        public StringBuilder acquire() {\n            // TODO\n            return null;\n        }\n\n        public void release(StringBuilder sb) {\n            // TODO: reset and return to pool\n        }\n\n        public int available() { return pool.size(); }\n    }\n\n    public static void main(String[] args) {\n        StringBuilderPool pool = new StringBuilderPool(3);\n        System.out.println(pool.available()); // 3\n        StringBuilder sb = pool.acquire();\n        sb.append(\"Hello\");\n        System.out.println(pool.available()); // 2\n        pool.release(sb);\n        System.out.println(pool.available()); // 3\n        System.out.println(pool.acquire().length()); // 0 — reset!\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q14 {\n    static class StringBuilderPool {\n        private final Deque<StringBuilder> pool = new ArrayDeque<>();\n\n        public StringBuilderPool(int size) {\n            for (int i = 0; i < size; i++) pool.addLast(new StringBuilder());\n        }\n\n        public StringBuilder acquire() {\n            return pool.pollFirst();\n        }\n\n        public void release(StringBuilder sb) {\n            sb.setLength(0); // reset content\n            pool.addFirst(sb);\n        }\n\n        public int available() { return pool.size(); }\n    }\n\n    public static void main(String[] args) {\n        StringBuilderPool pool = new StringBuilderPool(3);\n        System.out.println(pool.available()); // 3\n        StringBuilder sb = pool.acquire();\n        sb.append(\"Hello\");\n        System.out.println(pool.available()); // 2\n        pool.release(sb);\n        System.out.println(pool.available()); // 3\n        System.out.println(pool.acquire().length()); // 0\n    }\n}",
           "testCases": [
-            {"input": "pool size 3, acquire, release", "output": "3\n2\n3\n0"}
+            {
+              "input": "pool size 3, acquire, release",
+              "output": "3\n2\n3\n0"
+            }
           ],
           "constraints": "Single-threaded use.",
           "editorial": "Object pools reduce allocation/GC overhead by reusing objects. Key: reset the object state on release (sb.setLength(0)). Used in: Netty ByteBuf pool, database connection pools, thread pools. The heap cost is fixed (N objects), avoiding repeated GC of short-lived objects in hot paths."
@@ -313,8 +394,14 @@
           "starterCode": "import java.math.BigInteger;\nimport java.util.function.Supplier;\n\npublic class Q15 {\n    @SuppressWarnings(\"unchecked\")\n    public static Object trampoline(Supplier<Object> thunk) {\n        // Keep calling thunk until result is not a Supplier\n        Object result = thunk;\n        while (result instanceof Supplier) {\n            result = ((Supplier<Object>) result).get();\n        }\n        return result;\n    }\n\n    static Supplier<Object> factHelper(BigInteger n, BigInteger acc) {\n        // TODO: return final value or next thunk\n        return null;\n    }\n\n    public static BigInteger factorial(int n) {\n        return (BigInteger) trampoline(factHelper(BigInteger.valueOf(n), BigInteger.ONE));\n    }\n\n    public static void main(String[] args) {\n        System.out.println(factorial(10));  // 3628800\n        System.out.println(factorial(1000).toString().length() + \" digits\"); // large!\n    }\n}",
           "solutionCode": "import java.math.BigInteger;\nimport java.util.function.Supplier;\n\npublic class Q15 {\n    @SuppressWarnings(\"unchecked\")\n    public static Object trampoline(Supplier<Object> thunk) {\n        Object result = thunk;\n        while (result instanceof Supplier) {\n            result = ((Supplier<Object>) result).get();\n        }\n        return result;\n    }\n\n    static Supplier<Object> factHelper(BigInteger n, BigInteger acc) {\n        if (n.compareTo(BigInteger.ONE) <= 0) return () -> acc; // final value\n        return () -> factHelper(n.subtract(BigInteger.ONE), acc.multiply(n)); // next thunk\n    }\n\n    public static BigInteger factorial(int n) {\n        return (BigInteger) trampoline(() -> factHelper(BigInteger.valueOf(n), BigInteger.ONE));\n    }\n\n    public static void main(String[] args) {\n        System.out.println(factorial(10));   // 3628800\n        System.out.println(factorial(100).toString().length() + \" digits\"); // 158 digits\n    }\n}",
           "testCases": [
-            {"input": "10", "output": "3628800"},
-            {"input": "0", "output": "1"}
+            {
+              "input": "10",
+              "output": "3628800"
+            },
+            {
+              "input": "0",
+              "output": "1"
+            }
           ],
           "constraints": "n >= 0. Use BigInteger for large values.",
           "editorial": "Trampoline converts recursion to iteration: instead of calling the next step, return it as a lambda. The loop calls it. Only ONE stack frame used at a time — deep recursion without StackOverflow. This is how Clojure, Scala implement tail call optimization in JVM. Java doesn't natively support TCO — trampoline is the workaround."
@@ -330,7 +417,12 @@
           "hint3": "Measure using Runtime.getRuntime().totalMemory() - freeMemory() before/after.",
           "starterCode": "import java.util.*;\n\npublic class Q16 {\n    public static long shortLivedAllocation(int n) {\n        long start = usedMemory();\n        for (int i = 0; i < n; i++) {\n            String s = \"obj\" + i; // created and immediately unreachable\n        }\n        return usedMemory() - start;\n    }\n\n    public static long longLivedAllocation(int n) {\n        long start = usedMemory();\n        List<String> list = new ArrayList<>();\n        for (int i = 0; i < n; i++) list.add(\"obj\" + i); // kept alive!\n        return usedMemory() - start; // don't let list be GC'd yet\n    }\n\n    static long usedMemory() {\n        Runtime rt = Runtime.getRuntime();\n        return rt.totalMemory() - rt.freeMemory();\n    }\n\n    public static void main(String[] args) throws Exception {\n        int n = 100_000;\n        long shortUsage = shortLivedAllocation(n);\n        System.gc();\n        long longUsage = longLivedAllocation(n);\n        System.out.println(\"Short-lived retained: ~\" + shortUsage / 1024 + \" KB\");\n        System.out.println(\"Long-lived retained: ~\" + longUsage / 1024 + \" KB\");\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q16 {\n    public static long shortLivedAllocation(int n) {\n        long start = usedMemory();\n        for (int i = 0; i < n; i++) {\n            String s = new String(\"obj\" + i); // dies at end of iteration\n        }\n        System.gc();\n        return usedMemory() - start; // near 0 — GC cleaned up\n    }\n\n    public static long longLivedAllocation(int n) {\n        long start = usedMemory();\n        List<String> list = new ArrayList<>();\n        for (int i = 0; i < n; i++) list.add(new String(\"obj\" + i));\n        long used = usedMemory() - start; // significant — all objects retained\n        // list still in scope — objects alive\n        return used;\n    }\n\n    static long usedMemory() {\n        Runtime rt = Runtime.getRuntime();\n        return rt.totalMemory() - rt.freeMemory();\n    }\n\n    public static void main(String[] args) throws Exception {\n        int n = 100_000;\n        long shortUsage = shortLivedAllocation(n);\n        long longUsage = longLivedAllocation(n);\n        System.out.println(\"Short-lived (after GC): ~\" + shortUsage / 1024 + \" KB\");\n        System.out.println(\"Long-lived retained: ~\" + longUsage / 1024 + \" KB\");\n        System.out.println(\"Long-lived uses more: \" + (longUsage > shortUsage));\n    }\n}",
-          "testCases": [{"input": "n=100000", "output": "Long-lived uses more: true"}],
+          "testCases": [
+            {
+              "input": "n=100000",
+              "output": "Long-lived uses more: true"
+            }
+          ],
           "constraints": "Results vary by JVM/GC settings.",
           "editorial": "Generational hypothesis: most objects die young. Young Gen (Eden + Survivor) is small and cheap to collect — minor GC < 1ms typical. Short-lived objects never leave Young Gen. Long-lived objects promoted to Old Gen (Tenured) — Full GC = stop-the-world pause. Design principle: allocate freely in hot paths (GC handles it) but don't retain objects longer than needed."
         },
@@ -346,7 +438,10 @@
           "starterCode": "public class Q17 {\n    static class ArrayStack<T> {\n        private final Object[] data;\n        private int top = -1;\n\n        public ArrayStack(int capacity) {\n            data = new Object[capacity];\n        }\n\n        public void push(T item) { /* TODO */ }\n        public T pop()           { /* TODO */ return null; }\n        public T peek()          { /* TODO */ return null; }\n        public boolean isEmpty() { return top == -1; }\n        public boolean isFull()  { return top == data.length - 1; }\n        public int size()        { return top + 1; }\n    }\n\n    public static void main(String[] args) {\n        ArrayStack<Integer> s = new ArrayStack<>(3);\n        s.push(1); s.push(2); s.push(3);\n        System.out.println(s.isFull());  // true\n        System.out.println(s.pop());     // 3\n        System.out.println(s.peek());    // 2\n        System.out.println(s.size());    // 2\n    }\n}",
           "solutionCode": "public class Q17 {\n    static class ArrayStack<T> {\n        private final Object[] data;\n        private int top = -1;\n\n        public ArrayStack(int capacity) {\n            data = new Object[capacity];\n        }\n\n        public void push(T item) {\n            if (isFull()) throw new IllegalStateException(\"Stack overflow\");\n            data[++top] = item;\n        }\n\n        @SuppressWarnings(\"unchecked\")\n        public T pop() {\n            if (isEmpty()) throw new IllegalStateException(\"Stack underflow\");\n            T val = (T) data[top];\n            data[top--] = null; // help GC\n            return val;\n        }\n\n        @SuppressWarnings(\"unchecked\")\n        public T peek() {\n            if (isEmpty()) throw new IllegalStateException(\"Empty\");\n            return (T) data[top];\n        }\n\n        public boolean isEmpty() { return top == -1; }\n        public boolean isFull()  { return top == data.length - 1; }\n        public int size()        { return top + 1; }\n    }\n\n    public static void main(String[] args) {\n        ArrayStack<Integer> s = new ArrayStack<>(3);\n        s.push(1); s.push(2); s.push(3);\n        System.out.println(s.isFull());  // true\n        System.out.println(s.pop());     // 3\n        System.out.println(s.peek());    // 2\n        System.out.println(s.size());    // 2\n    }\n}",
           "testCases": [
-            {"input": "push 1,2,3 then pop, peek, size", "output": "true\n3\n2\n2"}
+            {
+              "input": "push 1,2,3 then pop, peek, size",
+              "output": "true\n3\n2\n2"
+            }
           ],
           "constraints": "capacity >= 1.",
           "editorial": "data[top--] = null is crucial: without it, the array holds references to popped objects — they can't be GC'd (logical leak). This is why ArrayList.remove() also sets the slot to null. Fixed-size stack guarantees O(1) amortized operations and bounded heap usage."
@@ -363,8 +458,14 @@
           "starterCode": "public class Q18 {\n    static class Point { double x, y; Point(double x, double y){this.x=x;this.y=y;} }\n\n    public static Point doesEscape(double x, double y) {\n        // TODO: return the Point — it escapes\n        return null;\n    }\n\n    public static double doesNotEscape(double x1, double y1, double x2, double y2) {\n        // TODO: create intermediate Points, compute distance, return double\n        // The Points don't escape — JIT may stack-allocate them\n        return 0;\n    }\n\n    public static void main(String[] args) {\n        Point p = doesEscape(1.0, 2.0);\n        System.out.println(p.x + \",\" + p.y);\n        System.out.println(doesNotEscape(0, 0, 3, 4)); // 5.0\n    }\n}",
           "solutionCode": "public class Q18 {\n    static class Point { double x, y; Point(double x, double y){this.x=x;this.y=y;} }\n\n    // Object ESCAPES — returned to caller — must be heap-allocated\n    public static Point doesEscape(double x, double y) {\n        return new Point(x, y); // JVM cannot stack-allocate — reference escapes\n    }\n\n    // Object does NOT escape — JIT's escape analysis may stack-allocate\n    // Enable with: -XX:+DoEscapeAnalysis (default on in Java 6+)\n    public static double doesNotEscape(double x1, double y1, double x2, double y2) {\n        Point p1 = new Point(x1, y1); // used locally only\n        Point p2 = new Point(x2, y2); // used locally only\n        double dx = p2.x - p1.x;\n        double dy = p2.y - p1.y;\n        return Math.sqrt(dx*dx + dy*dy); // only double escapes — p1 and p2 don't\n    }\n\n    public static void main(String[] args) {\n        Point p = doesEscape(1.0, 2.0);\n        System.out.println(p.x + \",\" + p.y); // 1.0,2.0\n        System.out.println(doesNotEscape(0, 0, 3, 4)); // 5.0\n    }\n}",
           "testCases": [
-            {"input": "doesEscape(1.0, 2.0)", "output": "1.0,2.0"},
-            {"input": "doesNotEscape(0,0,3,4)", "output": "5.0"}
+            {
+              "input": "doesEscape(1.0, 2.0)",
+              "output": "1.0,2.0"
+            },
+            {
+              "input": "doesNotEscape(0,0,3,4)",
+              "output": "5.0"
+            }
           ],
           "constraints": "Conceptual + functional.",
           "editorial": "Escape analysis (JVM flag -XX:+DoEscapeAnalysis, default ON) detects if objects escape the method. Non-escaping objects can be stack-allocated (fast) or have their fields scalar-replaced (no object at all). This is why small value objects (Point, Rectangle) in math-heavy code are nearly free — JIT eliminates heap allocation entirely."
@@ -381,8 +482,14 @@
           "starterCode": "public class Q19 {\n    public static void transposeInPlace(int[][] matrix) {\n        // TODO: transpose square matrix in-place\n    }\n    public static void main(String[] args) {\n        int[][] m = {{1,2,3},{4,5,6},{7,8,9}};\n        transposeInPlace(m);\n        for (int[] row : m) System.out.println(java.util.Arrays.toString(row));\n    }\n}",
           "solutionCode": "public class Q19 {\n    public static void transposeInPlace(int[][] matrix) {\n        int n = matrix.length;\n        for (int i = 0; i < n; i++)\n            for (int j = i + 1; j < n; j++) {\n                int tmp = matrix[i][j];\n                matrix[i][j] = matrix[j][i];\n                matrix[j][i] = tmp;\n            }\n    }\n    public static void main(String[] args) {\n        int[][] m = {{1,2,3},{4,5,6},{7,8,9}};\n        transposeInPlace(m);\n        for (int[] row : m) System.out.println(java.util.Arrays.toString(row));\n        // [1, 4, 7]\n        // [2, 5, 8]\n        // [3, 6, 9]\n    }\n}",
           "testCases": [
-            {"input": "[[1,2,3],[4,5,6],[7,8,9]]", "output": "[1, 4, 7]\n[2, 5, 8]\n[3, 6, 9]"},
-            {"input": "[[1]]", "output": "[1]"}
+            {
+              "input": "[[1,2,3],[4,5,6],[7,8,9]]",
+              "output": "[1, 4, 7]\n[2, 5, 8]\n[3, 6, 9]"
+            },
+            {
+              "input": "[[1]]",
+              "output": "[1]"
+            }
           ],
           "constraints": "Square matrix, n >= 1.",
           "editorial": "In-place transpose: swap upper and lower triangles. O(n²/2) swaps, O(1) extra space. Non-square transpose requires O(m*n) extra space — cannot be done truly in-place. This O(1) space principle applies broadly: prefer to mutate through existing references rather than allocating new structures."
@@ -398,11 +505,18 @@
           "hint3": "Runtime.getRuntime().maxMemory() gives -Xmx value.",
           "starterCode": "import java.util.*;\n\npublic class Q20 {\n    public static String causeOOM(int chunkSizeKB) {\n        List<byte[]> list = new ArrayList<>();\n        long allocated = 0;\n        try {\n            while (true) {\n                // TODO: allocate and track\n            }\n        } catch (OutOfMemoryError e) {\n            return String.format(\"OOM after %d MB allocated. Max heap: %d MB\",\n                allocated / (1024*1024),\n                Runtime.getRuntime().maxMemory() / (1024*1024));\n        }\n    }\n    public static void main(String[] args) {\n        System.out.println(causeOOM(10));\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q20 {\n    public static String causeOOM(int chunkSizeKB) {\n        List<byte[]> list = new ArrayList<>();\n        long allocated = 0;\n        try {\n            while (true) {\n                list.add(new byte[chunkSizeKB * 1024]);\n                allocated += chunkSizeKB * 1024L;\n            }\n        } catch (OutOfMemoryError e) {\n            long maxHeap = Runtime.getRuntime().maxMemory();\n            return String.format(\"OOM after %d MB allocated. Max heap: %d MB\",\n                allocated / (1024*1024),\n                maxHeap / (1024*1024));\n        }\n    }\n    public static void main(String[] args) {\n        // Run with -Xmx64m to see OOM quickly\n        System.out.println(causeOOM(10));\n        // e.g.: OOM after 58 MB allocated. Max heap: 64 MB\n    }\n}",
-          "testCases": [{"input": "chunkSizeKB=10", "output": "OOM after [N] MB allocated. Max heap: [M] MB"}],
+          "testCases": [
+            {
+              "input": "chunkSizeKB=10",
+              "output": "OOM after [N] MB allocated. Max heap: [M] MB"
+            }
+          ],
           "constraints": "Run with -Xmx64m for quick OOM. OutOfMemoryError is an Error — can be caught.",
           "editorial": "OutOfMemoryError is a subclass of Error (not Exception) — but can be caught. After catching OOM, the JVM may be in an unstable state — only log and exit in production. Use -XX:+HeapDumpOnOutOfMemoryError to automatically capture heap dump on OOM. Analyze with Eclipse MAT to find the largest object graph causing the leak."
         }
-      ]
+      ],
+      "subCategory": "JVM Internals (Interview Critical)",
+      "displayOrder": 42
     }
   ]
 }

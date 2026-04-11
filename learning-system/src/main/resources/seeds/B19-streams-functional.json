@@ -78,9 +78,18 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q1 {\n    public static List<Integer> filterEven(List<Integer> numbers) {\n        // TODO: return only even numbers using stream\n        return List.of();\n    }\n    public static void main(String[] args) {\n        System.out.println(filterEven(List.of(1,2,3,4,5,6))); // [2, 4, 6]\n        System.out.println(filterEven(List.of(1,3,5)));       // []\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q1 {\n    public static List<Integer> filterEven(List<Integer> numbers) {\n        return numbers.stream()\n                      .filter(n -> n % 2 == 0)\n                      .collect(Collectors.toList());\n    }\n    public static void main(String[] args) {\n        System.out.println(filterEven(List.of(1,2,3,4,5,6))); // [2, 4, 6]\n        System.out.println(filterEven(List.of(1,3,5)));       // []\n    }\n}",
           "testCases": [
-            {"input": "[1,2,3,4,5,6]", "output": "[2, 4, 6]"},
-            {"input": "[1,3,5]",        "output": "[]"},
-            {"input": "[2,4,6]",        "output": "[2, 4, 6]"}
+            {
+              "input": "[1,2,3,4,5,6]",
+              "output": "[2, 4, 6]"
+            },
+            {
+              "input": "[1,3,5]",
+              "output": "[]"
+            },
+            {
+              "input": "[2,4,6]",
+              "output": "[2, 4, 6]"
+            }
           ],
           "constraints": "Input list is non-null. May be empty.",
           "editorial": "filter() is a stateless intermediate operation — it passes each element through the predicate and drops elements that return false. n % 2 == 0 is the standard even check. The original list is never modified — streams are non-destructive."
@@ -97,8 +106,14 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q2 {\n    public static List<String> toUpperCase(List<String> names) {\n        // TODO: return names mapped to uppercase\n        return List.of();\n    }\n    public static void main(String[] args) {\n        System.out.println(toUpperCase(List.of(\"alice\", \"bob\", \"carol\")));\n        // [ALICE, BOB, CAROL]\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q2 {\n    public static List<String> toUpperCase(List<String> names) {\n        return names.stream()\n                    .map(String::toUpperCase)\n                    .collect(Collectors.toList());\n    }\n    public static void main(String[] args) {\n        System.out.println(toUpperCase(List.of(\"alice\", \"bob\", \"carol\")));\n        // [ALICE, BOB, CAROL]\n    }\n}",
           "testCases": [
-            {"input": "[alice, bob, carol]", "output": "[ALICE, BOB, CAROL]"},
-            {"input": "[]",                  "output": "[]"}
+            {
+              "input": "[alice, bob, carol]",
+              "output": "[ALICE, BOB, CAROL]"
+            },
+            {
+              "input": "[]",
+              "output": "[]"
+            }
           ],
           "constraints": "Names are non-null strings.",
           "editorial": "map() transforms each element independently — it is a stateless intermediate operation. String::toUpperCase is an instance method reference on the stream element (equivalent to s -> s.toUpperCase()). map() produces a Stream<String> → collect into List<String>."
@@ -115,9 +130,18 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q3 {\n    public static int sum(List<Integer> numbers) {\n        // TODO: use reduce\n        return 0;\n    }\n    public static long product(List<Integer> numbers) {\n        // TODO: use reduce for product\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(sum(List.of(1, 2, 3, 4, 5))); // 15\n        System.out.println(product(List.of(1, 2, 3, 4))); // 24\n        System.out.println(sum(List.of()));               // 0\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q3 {\n    public static int sum(List<Integer> numbers) {\n        return numbers.stream().reduce(0, Integer::sum);\n    }\n    public static long product(List<Integer> numbers) {\n        return numbers.stream().mapToLong(Integer::longValue).reduce(1L, (a, b) -> a * b);\n    }\n    public static void main(String[] args) {\n        System.out.println(sum(List.of(1,2,3,4,5))); // 15\n        System.out.println(product(List.of(1,2,3,4))); // 24\n        System.out.println(sum(List.of()));            // 0\n    }\n}",
           "testCases": [
-            {"input": "sum [1,2,3,4,5]",    "output": "15"},
-            {"input": "product [1,2,3,4]",  "output": "24"},
-            {"input": "sum []",              "output": "0"}
+            {
+              "input": "sum [1,2,3,4,5]",
+              "output": "15"
+            },
+            {
+              "input": "product [1,2,3,4]",
+              "output": "24"
+            },
+            {
+              "input": "sum []",
+              "output": "0"
+            }
           ],
           "constraints": "Numbers fit in int for sum, long for product.",
           "editorial": "reduce(identity, accumulator) folds the stream into a single value. The identity is the neutral element (0 for sum, 1 for product). For sum, mapToInt().sum() is more idiomatic and avoids boxing. For product use long to avoid overflow — 10 elements of value 10 already overflows int."
@@ -134,7 +158,10 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q4 {\n    record Student(String name, int score) {}\n\n    static String grade(Student s) {\n        if (s.score() >= 90) return \"A\";\n        if (s.score() >= 75) return \"B\";\n        return \"C\";\n    }\n\n    public static Map<String, List<Student>> groupByGrade(List<Student> students) {\n        // TODO: group by grade\n        return Map.of();\n    }\n\n    public static void main(String[] args) {\n        var students = List.of(\n            new Student(\"Alice\", 95), new Student(\"Bob\", 80),\n            new Student(\"Carol\", 70), new Student(\"Dave\", 92)\n        );\n        var groups = groupByGrade(students);\n        System.out.println(groups.get(\"A\").size()); // 2\n        System.out.println(groups.get(\"B\").size()); // 1\n        System.out.println(groups.get(\"C\").size()); // 1\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q4 {\n    record Student(String name, int score) {}\n\n    static String grade(Student s) {\n        if (s.score() >= 90) return \"A\";\n        if (s.score() >= 75) return \"B\";\n        return \"C\";\n    }\n\n    public static Map<String, List<Student>> groupByGrade(List<Student> students) {\n        return students.stream()\n                       .collect(Collectors.groupingBy(Q4::grade));\n    }\n\n    public static void main(String[] args) {\n        var students = List.of(\n            new Student(\"Alice\", 95), new Student(\"Bob\", 80),\n            new Student(\"Carol\", 70), new Student(\"Dave\", 92)\n        );\n        var groups = groupByGrade(students);\n        System.out.println(groups.get(\"A\").size()); // 2\n        System.out.println(groups.get(\"B\").size()); // 1\n        System.out.println(groups.get(\"C\").size()); // 1\n    }\n}",
           "testCases": [
-            {"input": "Alice 95, Bob 80, Carol 70, Dave 92", "output": "2\n1\n1"}
+            {
+              "input": "Alice 95, Bob 80, Carol 70, Dave 92",
+              "output": "2\n1\n1"
+            }
           ],
           "constraints": "Score range 0–100.",
           "editorial": "groupingBy classifies each element by a key function and accumulates elements with the same key into a List. The default downstream collector is Collectors.toList(). The result Map may be missing keys for grades with no students — use getOrDefault(key, List.of()) when accessing."
@@ -151,8 +178,14 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q5 {\n    public static Optional<String> findFirstJ(List<String> words) {\n        // TODO: find first word starting with J (case-insensitive) and length > 3\n        return Optional.empty();\n    }\n    public static void main(String[] args) {\n        System.out.println(findFirstJ(List.of(\"apple\", \"Java\", \"Joy\", \"JavaScript\")));\n        // Optional[Java]\n        System.out.println(findFirstJ(List.of(\"apple\", \"Joy\"))); // Optional.empty\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q5 {\n    public static Optional<String> findFirstJ(List<String> words) {\n        return words.stream()\n                    .filter(s -> s.toLowerCase().startsWith(\"j\") && s.length() > 3)\n                    .findFirst();\n    }\n    public static void main(String[] args) {\n        System.out.println(findFirstJ(List.of(\"apple\",\"Java\",\"Joy\",\"JavaScript\")));\n        // Optional[Java]\n        System.out.println(findFirstJ(List.of(\"apple\",\"Joy\")));\n        // Optional.empty\n    }\n}",
           "testCases": [
-            {"input": "[apple, Java, Joy, JavaScript]", "output": "Optional[Java]"},
-            {"input": "[apple, Joy]",                   "output": "Optional.empty"}
+            {
+              "input": "[apple, Java, Joy, JavaScript]",
+              "output": "Optional[Java]"
+            },
+            {
+              "input": "[apple, Joy]",
+              "output": "Optional.empty"
+            }
           ],
           "constraints": "Words are non-null. List may be empty.",
           "editorial": "findFirst() is a short-circuit terminal — it stops processing as soon as one element passes all filters. Returns Optional to force callers to handle the 'no match' case. findAny() is an alternative that works better with parallelStream() but has non-deterministic order."
@@ -169,8 +202,14 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q6 {\n    public static long countDistinctWords(String sentence) {\n        // TODO: count distinct lowercase words (ignore punctuation)\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(countDistinctWords(\"Hello world hello Java world\"));\n        // 3 (hello, world, java)\n        System.out.println(countDistinctWords(\"To be, or not to be\"));\n        // 4 (to, be, or, not)\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q6 {\n    public static long countDistinctWords(String sentence) {\n        if (sentence == null || sentence.isBlank()) return 0;\n        return Arrays.stream(sentence.split(\"\\\\s+\"))\n                     .map(w -> w.replaceAll(\"[^a-zA-Z]\", \"\").toLowerCase())\n                     .filter(w -> !w.isEmpty())\n                     .distinct()\n                     .count();\n    }\n    public static void main(String[] args) {\n        System.out.println(countDistinctWords(\"Hello world hello Java world\")); // 3\n        System.out.println(countDistinctWords(\"To be, or not to be\"));         // 4\n    }\n}",
           "testCases": [
-            {"input": "Hello world hello Java world", "output": "3"},
-            {"input": "To be, or not to be",         "output": "4"}
+            {
+              "input": "Hello world hello Java world",
+              "output": "3"
+            },
+            {
+              "input": "To be, or not to be",
+              "output": "4"
+            }
           ],
           "constraints": "Sentence is non-null. Case-insensitive distinct.",
           "editorial": "distinct() removes duplicates by calling equals() — so lowercase() must happen before distinct(). filter(!isEmpty) handles punctuation-only tokens. count() is a terminal that returns long. This pipeline shows how streams eliminate the need for a manual Set<String> accumulator."
@@ -187,7 +226,10 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q7 {\n    public static List<Integer> flatten(List<List<Integer>> nested) {\n        // TODO: flatMap to flatten\n        return List.of();\n    }\n    public static int sumFlattened(List<List<Integer>> nested) {\n        // TODO: flatten and sum\n        return 0;\n    }\n    public static void main(String[] args) {\n        var nested = List.of(List.of(1,2), List.of(3,4,5), List.of(6));\n        System.out.println(flatten(nested));      // [1, 2, 3, 4, 5, 6]\n        System.out.println(sumFlattened(nested)); // 21\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q7 {\n    public static List<Integer> flatten(List<List<Integer>> nested) {\n        return nested.stream()\n                     .flatMap(List::stream)\n                     .collect(Collectors.toList());\n    }\n    public static int sumFlattened(List<List<Integer>> nested) {\n        return nested.stream()\n                     .flatMap(List::stream)\n                     .mapToInt(Integer::intValue)\n                     .sum();\n    }\n    public static void main(String[] args) {\n        var nested = List.of(List.of(1,2), List.of(3,4,5), List.of(6));\n        System.out.println(flatten(nested));      // [1, 2, 3, 4, 5, 6]\n        System.out.println(sumFlattened(nested)); // 21\n    }\n}",
           "testCases": [
-            {"input": "[[1,2],[3,4,5],[6]]", "output": "[1, 2, 3, 4, 5, 6]\n21"}
+            {
+              "input": "[[1,2],[3,4,5],[6]]",
+              "output": "[1, 2, 3, 4, 5, 6]\n21"
+            }
           ],
           "constraints": "Inner lists may be empty.",
           "editorial": "flatMap(List::stream) is equivalent to flatMap(list -> list.stream()). It converts each inner list into a stream and concatenates all sub-streams into one. map() would give Stream<List<Integer>> (nested); flatMap gives Stream<Integer> (flat). mapToInt().sum() avoids boxing overhead compared to reduce(0, Integer::sum)."
@@ -204,7 +246,10 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q8 {\n    record Product(String name, double price) {}\n\n    public static List<Product> topN(List<Product> products, int n) {\n        // TODO: return top N most expensive\n        return List.of();\n    }\n\n    public static void main(String[] args) {\n        var products = List.of(\n            new Product(\"A\", 10.0), new Product(\"B\", 50.0),\n            new Product(\"C\", 30.0), new Product(\"D\", 80.0),\n            new Product(\"E\", 20.0)\n        );\n        topN(products, 3).forEach(p -> System.out.println(p.name() + \":\" + p.price()));\n        // D:80.0 / B:50.0 / C:30.0\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q8 {\n    record Product(String name, double price) {}\n\n    public static List<Product> topN(List<Product> products, int n) {\n        return products.stream()\n                       .sorted(Comparator.comparingDouble(Product::price).reversed())\n                       .limit(n)\n                       .collect(Collectors.toList());\n    }\n\n    public static void main(String[] args) {\n        var products = List.of(\n            new Product(\"A\",10.0),new Product(\"B\",50.0),\n            new Product(\"C\",30.0),new Product(\"D\",80.0),new Product(\"E\",20.0));\n        topN(products,3).forEach(p -> System.out.println(p.name()+\":\"+p.price()));\n        // D:80.0 / B:50.0 / C:30.0\n    }\n}",
           "testCases": [
-            {"input": "5 products, top 3", "output": "D:80.0\nB:50.0\nC:30.0"}
+            {
+              "input": "5 products, top 3",
+              "output": "D:80.0\nB:50.0\nC:30.0"
+            }
           ],
           "constraints": "n <= products.size(). Products non-null.",
           "editorial": "sorted() is a stateful intermediate operation — it must buffer all elements before outputting any. reversed() flips the natural ascending order. limit(n) is a short-circuit intermediate — it caps the output. For very large lists where you only need top-N, a PriorityQueue approach is O(n log k) vs sorted's O(n log n), but streams make the code cleaner for typical sizes."
@@ -221,7 +266,10 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\nimport java.util.function.*;\n\npublic class Q9 {\n    public static Map<String, Long> wordFrequency(List<String> words) {\n        // TODO: group by word, count occurrences\n        return Map.of();\n    }\n    public static String mostFrequent(List<String> words) {\n        // TODO: find the most frequent word\n        return \"\";\n    }\n    public static void main(String[] args) {\n        var words = List.of(\"apple\",\"banana\",\"apple\",\"cherry\",\"banana\",\"apple\");\n        System.out.println(wordFrequency(words)); // {apple=3, banana=2, cherry=1}\n        System.out.println(mostFrequent(words));  // apple\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\nimport java.util.function.*;\n\npublic class Q9 {\n    public static Map<String, Long> wordFrequency(List<String> words) {\n        return words.stream()\n                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));\n    }\n    public static String mostFrequent(List<String> words) {\n        return words.stream()\n                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))\n                    .entrySet().stream()\n                    .max(Map.Entry.comparingByValue())\n                    .map(Map.Entry::getKey)\n                    .orElse(\"\");\n    }\n    public static void main(String[] args) {\n        var words = List.of(\"apple\",\"banana\",\"apple\",\"cherry\",\"banana\",\"apple\");\n        System.out.println(wordFrequency(words));\n        System.out.println(mostFrequent(words)); // apple\n    }\n}",
           "testCases": [
-            {"input": "[apple,banana,apple,cherry,banana,apple]", "output": "apple"}
+            {
+              "input": "[apple,banana,apple,cherry,banana,apple]",
+              "output": "apple"
+            }
           ],
           "constraints": "Words non-null. At least one word.",
           "editorial": "groupingBy(identity(), counting()) counts occurrences of each unique word. Function.identity() returns the word itself as the key. To find the maximum, stream the entry set and use max(comparingByValue()) — returns Optional<Entry<String,Long>>, so .map(Entry::getKey) extracts just the word."
@@ -238,7 +286,10 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q10 {\n    record Person(String name, int age) {}\n\n    public static Map<Boolean, List<String>> partitionByAge(List<Person> persons) {\n        // TODO: partition into adults/minors, collecting names\n        return Map.of();\n    }\n    public static void main(String[] args) {\n        var persons = List.of(\n            new Person(\"Alice\",25), new Person(\"Bob\",16),\n            new Person(\"Carol\",30), new Person(\"Dave\",14)\n        );\n        var result = partitionByAge(persons);\n        System.out.println(result.get(true));  // [Alice, Carol]\n        System.out.println(result.get(false)); // [Bob, Dave]\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q10 {\n    record Person(String name, int age) {}\n\n    public static Map<Boolean, List<String>> partitionByAge(List<Person> persons) {\n        return persons.stream().collect(\n            Collectors.partitioningBy(\n                p -> p.age() >= 18,\n                Collectors.mapping(Person::name, Collectors.toList())\n            )\n        );\n    }\n    public static void main(String[] args) {\n        var persons = List.of(\n            new Person(\"Alice\",25),new Person(\"Bob\",16),\n            new Person(\"Carol\",30),new Person(\"Dave\",14));\n        var result = partitionByAge(persons);\n        System.out.println(result.get(true));  // [Alice, Carol]\n        System.out.println(result.get(false)); // [Bob, Dave]\n    }\n}",
           "testCases": [
-            {"input": "Alice 25, Bob 16, Carol 30, Dave 14", "output": "[Alice, Carol]\n[Bob, Dave]"}
+            {
+              "input": "Alice 25, Bob 16, Carol 30, Dave 14",
+              "output": "[Alice, Carol]\n[Bob, Dave]"
+            }
           ],
           "constraints": "Always produces both true and false keys (partitioningBy guarantees this).",
           "editorial": "partitioningBy always produces both keys (true and false) even if one partition is empty — unlike groupingBy which only creates keys for observed values. The downstream Collectors.mapping applies a transform before collecting — here extracting just the name. This avoids a post-processing map step."
@@ -255,8 +306,14 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q11 {\n    public static IntSummaryStatistics stats(int[] arr) {\n        // TODO: return summary statistics\n        return IntSummaryStatistics.class.cast(null);\n    }\n    public static List<Integer> range(int start, int end) {\n        // TODO: IntStream.range, boxed, collect\n        return List.of();\n    }\n    public static void main(String[] args) {\n        int[] arr = {3, 1, 4, 1, 5, 9, 2, 6};\n        var s = stats(arr);\n        System.out.println(\"sum=\" + s.getSum() + \" avg=\" + s.getAverage()\n            + \" min=\" + s.getMin() + \" max=\" + s.getMax());\n        // sum=31 avg=3.875 min=1 max=9\n        System.out.println(range(1, 6)); // [1, 2, 3, 4, 5]\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q11 {\n    public static IntSummaryStatistics stats(int[] arr) {\n        return Arrays.stream(arr).summaryStatistics();\n    }\n    public static List<Integer> range(int start, int end) {\n        return IntStream.range(start, end).boxed().collect(Collectors.toList());\n    }\n    public static void main(String[] args) {\n        int[] arr = {3,1,4,1,5,9,2,6};\n        var s = stats(arr);\n        System.out.println(\"sum=\"+s.getSum()+\" avg=\"+s.getAverage()\n            +\" min=\"+s.getMin()+\" max=\"+s.getMax());\n        System.out.println(range(1,6)); // [1,2,3,4,5]\n    }\n}",
           "testCases": [
-            {"input": "[3,1,4,1,5,9,2,6]", "output": "sum=31 avg=3.875 min=1 max=9"},
-            {"input": "range(1,6)",        "output": "[1, 2, 3, 4, 5]"}
+            {
+              "input": "[3,1,4,1,5,9,2,6]",
+              "output": "sum=31 avg=3.875 min=1 max=9"
+            },
+            {
+              "input": "range(1,6)",
+              "output": "[1, 2, 3, 4, 5]"
+            }
           ],
           "constraints": "arr non-empty for stats. range: start < end.",
           "editorial": "Primitive streams (IntStream, LongStream, DoubleStream) avoid boxing overhead. summaryStatistics() computes count, sum, min, max, average in a single pass — more efficient than five separate terminal operations. IntStream.range(a,b) is exclusive-end; rangeClosed(a,b) is inclusive. .boxed() converts IntStream to Stream<Integer> for collection into a List."
@@ -273,9 +330,18 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q12 {\n    public static String csvJoin(List<String> items) {\n        // TODO: comma separated\n        return \"\";\n    }\n    public static String bracketJoin(List<String> items) {\n        // TODO: [item1, item2, ...]\n        return \"\";\n    }\n    public static String sqlInClause(List<String> names) {\n        // TODO: WHERE name IN ('Alice','Bob')\n        return \"\";\n    }\n    public static void main(String[] args) {\n        var items = List.of(\"Alice\",\"Bob\",\"Carol\");\n        System.out.println(csvJoin(items));     // Alice, Bob, Carol\n        System.out.println(bracketJoin(items)); // [Alice, Bob, Carol]\n        System.out.println(sqlInClause(items)); // WHERE name IN ('Alice','Bob','Carol')\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q12 {\n    public static String csvJoin(List<String> items) {\n        return items.stream().collect(Collectors.joining(\", \"));\n    }\n    public static String bracketJoin(List<String> items) {\n        return items.stream().collect(Collectors.joining(\", \", \"[\", \"]\"));\n    }\n    public static String sqlInClause(List<String> names) {\n        return names.stream()\n                    .map(n -> \"'\" + n + \"'\")\n                    .collect(Collectors.joining(\", \", \"WHERE name IN (\", \")\"));\n    }\n    public static void main(String[] args) {\n        var items = List.of(\"Alice\",\"Bob\",\"Carol\");\n        System.out.println(csvJoin(items));\n        System.out.println(bracketJoin(items));\n        System.out.println(sqlInClause(items));\n    }\n}",
           "testCases": [
-            {"input": "csvJoin [Alice,Bob,Carol]",     "output": "Alice, Bob, Carol"},
-            {"input": "bracketJoin [Alice,Bob,Carol]", "output": "[Alice, Bob, Carol]"},
-            {"input": "sqlInClause [Alice,Bob,Carol]", "output": "WHERE name IN ('Alice','Bob','Carol')"}
+            {
+              "input": "csvJoin [Alice,Bob,Carol]",
+              "output": "Alice, Bob, Carol"
+            },
+            {
+              "input": "bracketJoin [Alice,Bob,Carol]",
+              "output": "[Alice, Bob, Carol]"
+            },
+            {
+              "input": "sqlInClause [Alice,Bob,Carol]",
+              "output": "WHERE name IN ('Alice','Bob','Carol')"
+            }
           ],
           "constraints": "Items are non-null strings.",
           "editorial": "Collectors.joining operates on Stream<String> — map to String first if needed. The three-argument form takes delimiter, prefix, suffix. An empty stream with prefix/suffix still produces 'prefix + suffix' (e.g., '[]'). More efficient than manual StringBuilder loops as the Collector manages internal StringJoiner."
@@ -292,7 +358,10 @@
           "starterCode": "import java.util.*;\nimport java.util.function.*;\nimport java.util.stream.*;\n\npublic class Q13 {\n    record Product(String name, String category, double price) {}\n\n    static class ProductFilter {\n        private Predicate<Product> predicate = p -> true;\n\n        public ProductFilter withMinPrice(double min) {\n            // TODO: add min price predicate\n            return this;\n        }\n        public ProductFilter withMaxPrice(double max) {\n            // TODO\n            return this;\n        }\n        public ProductFilter withCategory(String cat) {\n            // TODO\n            return this;\n        }\n        public ProductFilter withNameContains(String text) {\n            // TODO\n            return this;\n        }\n        public List<Product> apply(List<Product> products) {\n            return products.stream().filter(predicate).collect(Collectors.toList());\n        }\n    }\n\n    public static void main(String[] args) {\n        var products = List.of(\n            new Product(\"Apple\",   \"Fruit\",        1.5),\n            new Product(\"Laptop\",  \"Electronics\", 999.0),\n            new Product(\"Phone\",   \"Electronics\", 499.0),\n            new Product(\"Banana\",  \"Fruit\",        0.8)\n        );\n        var result = new ProductFilter()\n            .withCategory(\"Electronics\")\n            .withMaxPrice(600)\n            .apply(products);\n        result.forEach(p -> System.out.println(p.name())); // Phone\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.function.*;\nimport java.util.stream.*;\n\npublic class Q13 {\n    record Product(String name, String category, double price) {}\n\n    static class ProductFilter {\n        private Predicate<Product> predicate = p -> true;\n\n        public ProductFilter withMinPrice(double min) {\n            predicate = predicate.and(p -> p.price() >= min); return this;\n        }\n        public ProductFilter withMaxPrice(double max) {\n            predicate = predicate.and(p -> p.price() <= max); return this;\n        }\n        public ProductFilter withCategory(String cat) {\n            predicate = predicate.and(p -> p.category().equalsIgnoreCase(cat)); return this;\n        }\n        public ProductFilter withNameContains(String text) {\n            predicate = predicate.and(p -> p.name().toLowerCase().contains(text.toLowerCase())); return this;\n        }\n        public List<Product> apply(List<Product> products) {\n            return products.stream().filter(predicate).collect(Collectors.toList());\n        }\n    }\n\n    public static void main(String[] args) {\n        var products = List.of(\n            new Product(\"Apple\",\"Fruit\",1.5),\n            new Product(\"Laptop\",\"Electronics\",999.0),\n            new Product(\"Phone\",\"Electronics\",499.0),\n            new Product(\"Banana\",\"Fruit\",0.8));\n        new ProductFilter()\n            .withCategory(\"Electronics\")\n            .withMaxPrice(600)\n            .apply(products)\n            .forEach(p -> System.out.println(p.name())); // Phone\n    }\n}",
           "testCases": [
-            {"input": "Electronics + maxPrice 600", "output": "Phone"}
+            {
+              "input": "Electronics + maxPrice 600",
+              "output": "Phone"
+            }
           ],
           "constraints": "All filter methods are optional — calling none returns all products.",
           "editorial": "Predicate.and() short-circuits — if an early predicate fails, later ones are skipped. Starting with `p -> true` as the base identity means zero filters = all pass. This is the Specification/Criteria pattern used by Spring Data's Specification<T> for JPA query building."
@@ -309,8 +378,14 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q14 {\n    record Employee(String name, String dept, String city, double salary) {}\n\n    public static Map<String, Map<String, Double>> avgSalaryByDeptAndCity(\n            List<Employee> employees) {\n        // TODO: nested groupingBy\n        return Map.of();\n    }\n\n    public static void main(String[] args) {\n        var emps = List.of(\n            new Employee(\"A\",\"Eng\",\"Bangalore\", 90000),\n            new Employee(\"B\",\"Eng\",\"Bangalore\", 80000),\n            new Employee(\"C\",\"Eng\",\"Mumbai\",    70000),\n            new Employee(\"D\",\"HR\", \"Delhi\",     50000),\n            new Employee(\"E\",\"HR\", \"Delhi\",     60000)\n        );\n        var result = avgSalaryByDeptAndCity(emps);\n        System.out.println(result.get(\"Eng\").get(\"Bangalore\")); // 85000.0\n        System.out.println(result.get(\"HR\").get(\"Delhi\"));      // 55000.0\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q14 {\n    record Employee(String name, String dept, String city, double salary) {}\n\n    public static Map<String, Map<String, Double>> avgSalaryByDeptAndCity(\n            List<Employee> employees) {\n        return employees.stream().collect(\n            Collectors.groupingBy(Employee::dept,\n                Collectors.groupingBy(Employee::city,\n                    Collectors.averagingDouble(Employee::salary)))\n        );\n    }\n\n    public static void main(String[] args) {\n        var emps = List.of(\n            new Employee(\"A\",\"Eng\",\"Bangalore\",90000),\n            new Employee(\"B\",\"Eng\",\"Bangalore\",80000),\n            new Employee(\"C\",\"Eng\",\"Mumbai\",70000),\n            new Employee(\"D\",\"HR\",\"Delhi\",50000),\n            new Employee(\"E\",\"HR\",\"Delhi\",60000));\n        var result = avgSalaryByDeptAndCity(emps);\n        System.out.println(result.get(\"Eng\").get(\"Bangalore\")); // 85000.0\n        System.out.println(result.get(\"HR\").get(\"Delhi\"));      // 55000.0\n    }\n}",
           "testCases": [
-            {"input": "Eng/Bangalore average", "output": "85000.0"},
-            {"input": "HR/Delhi average",      "output": "55000.0"}
+            {
+              "input": "Eng/Bangalore average",
+              "output": "85000.0"
+            },
+            {
+              "input": "HR/Delhi average",
+              "output": "55000.0"
+            }
           ],
           "constraints": "All fields non-null.",
           "editorial": "Nested groupingBy: outer key partitions into departments, inner key partitions each department group into cities, downstream averagingDouble computes the average per city group. This produces a two-level Map without any explicit loops or mutation. The pattern extends to three or more levels by nesting further."
@@ -327,7 +402,10 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\nimport java.util.function.*;\n\npublic class Q15 {\n    static class RunningStats {\n        long count = 0;\n        long sum   = 0;\n        int  min   = Integer.MAX_VALUE;\n        int  max   = Integer.MIN_VALUE;\n\n        void accept(int n) {\n            count++; sum += n;\n            if (n < min) min = n;\n            if (n > max) max = n;\n        }\n        RunningStats merge(RunningStats other) {\n            count += other.count; sum += other.sum;\n            min = Math.min(min, other.min);\n            max = Math.max(max, other.max);\n            return this;\n        }\n        double average() { return count == 0 ? 0 : (double) sum / count; }\n        public String toString() {\n            return \"count=\" + count + \" sum=\" + sum + \" min=\" + min + \" max=\" + max + \" avg=\" + average();\n        }\n    }\n\n    public static Collector<Integer, RunningStats, RunningStats> statsCollector() {\n        // TODO: return a Collector.of(...)\n        return null;\n    }\n\n    public static void main(String[] args) {\n        var numbers = List.of(3, 1, 4, 1, 5, 9, 2, 6);\n        RunningStats stats = numbers.stream().collect(statsCollector());\n        System.out.println(stats);\n        // count=8 sum=31 min=1 max=9 avg=3.875\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\nimport java.util.function.*;\n\npublic class Q15 {\n    static class RunningStats {\n        long count=0, sum=0;\n        int  min=Integer.MAX_VALUE, max=Integer.MIN_VALUE;\n        void accept(int n) { count++; sum+=n; if(n<min)min=n; if(n>max)max=n; }\n        RunningStats merge(RunningStats o) {\n            count+=o.count; sum+=o.sum;\n            min=Math.min(min,o.min); max=Math.max(max,o.max); return this;\n        }\n        double average() { return count==0?0:(double)sum/count; }\n        public String toString() {\n            return \"count=\"+count+\" sum=\"+sum+\" min=\"+min+\" max=\"+max+\" avg=\"+average();\n        }\n    }\n\n    public static Collector<Integer, RunningStats, RunningStats> statsCollector() {\n        return Collector.of(\n            RunningStats::new,\n            (s, n) -> s.accept(n),\n            RunningStats::merge,\n            Function.identity(),\n            Collector.Characteristics.IDENTITY_FINISH\n        );\n    }\n\n    public static void main(String[] args) {\n        var numbers = List.of(3,1,4,1,5,9,2,6);\n        RunningStats stats = numbers.stream().collect(statsCollector());\n        System.out.println(stats);\n        // count=8 sum=31 min=1 max=9 avg=3.875\n    }\n}",
           "testCases": [
-            {"input": "[3,1,4,1,5,9,2,6]", "output": "count=8 sum=31 min=1 max=9 avg=3.875"}
+            {
+              "input": "[3,1,4,1,5,9,2,6]",
+              "output": "count=8 sum=31 min=1 max=9 avg=3.875"
+            }
           ],
           "constraints": "Non-empty list.",
           "editorial": "Collector.of(supplier, accumulator, combiner, finisher, characteristics). IDENTITY_FINISH means the finisher is the identity function — the accumulator IS the result. The combiner merges two partial accumulators for parallel correctness. This avoids five separate terminal operations (five passes) by doing everything in one pass."
@@ -344,8 +422,14 @@
           "starterCode": "import java.util.*;\nimport java.util.concurrent.ThreadLocalRandom;\nimport java.util.stream.*;\n\npublic class Q16 {\n    public static List<Long> fibonacci(int n) {\n        // TODO: first n Fibonacci numbers\n        return List.of();\n    }\n    public static List<Integer> randomAbove50(int count) {\n        // TODO: count random integers > 50\n        return List.of();\n    }\n    public static List<Integer> powersOfTwo() {\n        // TODO: powers of 2 up to 1024\n        return List.of();\n    }\n    public static void main(String[] args) {\n        System.out.println(fibonacci(8));   // [0, 1, 1, 2, 3, 5, 8, 13]\n        System.out.println(randomAbove50(3).size()); // 3\n        System.out.println(powersOfTwo());  // [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.concurrent.ThreadLocalRandom;\nimport java.util.stream.*;\n\npublic class Q16 {\n    public static List<Long> fibonacci(int n) {\n        return Stream.iterate(new long[]{0,1}, f -> new long[]{f[1], f[0]+f[1]})\n                     .limit(n)\n                     .map(f -> f[0])\n                     .collect(Collectors.toList());\n    }\n    public static List<Integer> randomAbove50(int count) {\n        return Stream.generate(() -> ThreadLocalRandom.current().nextInt(1, 101))\n                     .filter(n -> n > 50)\n                     .limit(count)\n                     .collect(Collectors.toList());\n    }\n    public static List<Integer> powersOfTwo() {\n        return Stream.iterate(1, n -> n * 2)\n                     .takeWhile(n -> n <= 1024)\n                     .collect(Collectors.toList());\n    }\n    public static void main(String[] args) {\n        System.out.println(fibonacci(8));\n        System.out.println(randomAbove50(3).size());\n        System.out.println(powersOfTwo());\n    }\n}",
           "testCases": [
-            {"input": "fibonacci(8)",   "output": "[0, 1, 1, 2, 3, 5, 8, 13]"},
-            {"input": "powersOfTwo()", "output": "[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]"}
+            {
+              "input": "fibonacci(8)",
+              "output": "[0, 1, 1, 2, 3, 5, 8, 13]"
+            },
+            {
+              "input": "powersOfTwo()",
+              "output": "[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]"
+            }
           ],
           "constraints": "Never collect an infinite stream without limit() or takeWhile().",
           "editorial": "Stream.iterate(seed, fn) generates seed, fn(seed), fn(fn(seed))... infinitely. limit(n) caps it. Stream.generate(supplier) calls the supplier repeatedly. takeWhile(predicate) stops at the first false (Java 9+) — correct for monotonically changing sequences. Always pair infinite streams with a short-circuit: limit, takeWhile, findFirst, or anyMatch."
@@ -362,8 +446,14 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q17 {\n    public static Map<String, Long> wordCount(List<String> sentences) {\n        // TODO: parallel word count using groupingByConcurrent\n        return Map.of();\n    }\n\n    public static void main(String[] args) {\n        var sentences = List.of(\n            \"To be or not to be\",\n            \"That is the question\",\n            \"To be is to exist\"\n        );\n        var counts = wordCount(sentences);\n        System.out.println(counts.get(\"to\"));  // 4\n        System.out.println(counts.get(\"be\"));  // 3\n        System.out.println(counts.get(\"is\"));  // 2\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q17 {\n    public static Map<String, Long> wordCount(List<String> sentences) {\n        return sentences.parallelStream()\n            .flatMap(s -> Arrays.stream(s.split(\"\\\\s+\")))\n            .map(w -> w.replaceAll(\"[^a-zA-Z]\", \"\").toLowerCase())\n            .filter(w -> !w.isEmpty())\n            .collect(Collectors.groupingByConcurrent(\n                w -> w, Collectors.counting()));\n    }\n\n    public static void main(String[] args) {\n        var sentences = List.of(\n            \"To be or not to be\",\n            \"That is the question\",\n            \"To be is to exist\");\n        var counts = wordCount(sentences);\n        System.out.println(counts.get(\"to\")); // 4\n        System.out.println(counts.get(\"be\")); // 3\n        System.out.println(counts.get(\"is\")); // 2\n    }\n}",
           "testCases": [
-            {"input": "count 'to'", "output": "4"},
-            {"input": "count 'be'", "output": "3"}
+            {
+              "input": "count 'to'",
+              "output": "4"
+            },
+            {
+              "input": "count 'be'",
+              "output": "3"
+            }
           ],
           "constraints": "Use groupingByConcurrent for parallel safety.",
           "editorial": "groupingBy (non-concurrent) collects into a regular HashMap which is not thread-safe for parallel streams — use groupingByConcurrent which uses a ConcurrentHashMap. flatMap expands each sentence into individual words before the parallel collector processes them. The order of words in the map is non-deterministic but counts are correct."
@@ -380,7 +470,10 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q18 {\n    record Order(int orderId, int customerId, double amount) {}\n    record Customer(int customerId, String name) {}\n\n    public static List<String> joinOrdersWithCustomers(\n            List<Order> orders, List<Customer> customers) {\n        // TODO: join and format\n        return List.of();\n    }\n\n    public static void main(String[] args) {\n        var orders = List.of(\n            new Order(1, 101, 250.0),\n            new Order(2, 102, 100.0),\n            new Order(3, 101, 500.0)\n        );\n        var customers = List.of(\n            new Customer(101, \"Alice\"),\n            new Customer(102, \"Bob\")\n        );\n        joinOrdersWithCustomers(orders, customers)\n            .forEach(System.out::println);\n        // Alice: $500.0\n        // Alice: $250.0\n        // Bob: $100.0\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q18 {\n    record Order(int orderId, int customerId, double amount) {}\n    record Customer(int customerId, String name) {}\n\n    public static List<String> joinOrdersWithCustomers(\n            List<Order> orders, List<Customer> customers) {\n        Map<Integer, String> customerMap = customers.stream()\n            .collect(Collectors.toMap(Customer::customerId, Customer::name));\n        return orders.stream()\n            .sorted(Comparator.comparingDouble(Order::amount).reversed())\n            .map(o -> customerMap.getOrDefault(o.customerId(), \"Unknown\") + \": $\" + o.amount())\n            .collect(Collectors.toList());\n    }\n\n    public static void main(String[] args) {\n        var orders = List.of(\n            new Order(1,101,250.0), new Order(2,102,100.0), new Order(3,101,500.0));\n        var customers = List.of(new Customer(101,\"Alice\"), new Customer(102,\"Bob\"));\n        joinOrdersWithCustomers(orders,customers).forEach(System.out::println);\n    }\n}",
           "testCases": [
-            {"input": "3 orders, 2 customers", "output": "Alice: $500.0\nAlice: $250.0\nBob: $100.0"}
+            {
+              "input": "3 orders, 2 customers",
+              "output": "Alice: $500.0\nAlice: $250.0\nBob: $100.0"
+            }
           ],
           "constraints": "No order references an unknown customer in this test. Handle with getOrDefault.",
           "editorial": "The efficient stream join pattern: build a Map from the smaller collection first (O(n)), then stream the larger collection doing O(1) lookups. Never nested-loop join in streams — that would be O(n²). This is exactly how SQL hash joins work — build a hash table on the smaller side, probe it for each row of the larger side."
@@ -397,8 +490,14 @@
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q19 {\n    public static void demonstrateLaziness() {\n        List<Integer> numbers = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);\n\n        System.out.println(\"--- findFirst short-circuit ---\");\n        Optional<Integer> first = numbers.stream()\n            .filter(n -> n % 3 == 0)\n            // TODO: add peek to see what's processed\n            .findFirst();\n        System.out.println(\"Found: \" + first.orElse(-1));\n\n        System.out.println(\"--- limit short-circuit ---\");\n        numbers.stream()\n            // TODO: peek + limit(3) + forEach to show only 3 processed\n            .forEach(n -> {});\n\n        System.out.println(\"--- count processes all ---\");\n        // TODO: peek + filter(even) + count — show all 10 elements visited\n    }\n\n    public static void main(String[] args) { demonstrateLaziness(); }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q19 {\n    public static void demonstrateLaziness() {\n        List<Integer> numbers = List.of(1,2,3,4,5,6,7,8,9,10);\n\n        System.out.println(\"--- findFirst short-circuit ---\");\n        Optional<Integer> first = numbers.stream()\n            .peek(n -> System.out.println(\"filter-testing: \" + n))\n            .filter(n -> n % 3 == 0)\n            .findFirst();\n        System.out.println(\"Found: \" + first.orElse(-1));\n        // Only prints 1,2,3 — stops after first match (3)\n\n        System.out.println(\"--- limit short-circuit ---\");\n        numbers.stream()\n            .peek(n -> System.out.println(\"limit-seen: \" + n))\n            .limit(3)\n            .forEach(n -> System.out.println(\"limit-consumed: \" + n));\n        // Only 1, 2, 3 processed\n\n        System.out.println(\"--- count processes all ---\");\n        long count = numbers.stream()\n            .peek(n -> System.out.println(\"count-visiting: \" + n))\n            .filter(n -> n % 2 == 0)\n            .count();\n        System.out.println(\"Even count: \" + count);\n        // All 10 elements visited by peek before filtering\n    }\n\n    public static void main(String[] args) { demonstrateLaziness(); }\n}",
           "testCases": [
-            {"input": "findFirst(divisible by 3)", "output": "Found: 3"},
-            {"input": "limit(3) count",           "output": "Even count: 5"}
+            {
+              "input": "findFirst(divisible by 3)",
+              "output": "Found: 3"
+            },
+            {
+              "input": "limit(3) count",
+              "output": "Even count: 5"
+            }
           ],
           "constraints": "Conceptual demonstration — output varies by peek() placement.",
           "editorial": "peek() is a non-interfering, stateless intermediate op for debugging — it receives each element as it flows through. findFirst() is short-circuit: only elements 1, 2, 3 are tested for divisibility by 3; elements 4–10 are never touched. count() is NOT short-circuit — even though many filtered elements are discarded, the filter must test every element to know how many pass."
@@ -415,13 +514,21 @@
           "starterCode": "import java.util.*;\nimport java.util.function.*;\nimport java.util.stream.*;\n\npublic class Q20 {\n    static class QueryBuilder<T> {\n        private Stream<T> stream;\n\n        QueryBuilder(List<T> source) { this.stream = source.stream(); }\n        private QueryBuilder(Stream<T> stream) { this.stream = stream; }\n\n        public QueryBuilder<T> filter(Predicate<T> pred) {\n            // TODO\n            return this;\n        }\n        public <R> QueryBuilder<R> map(Function<T, R> fn) {\n            // TODO\n            return new QueryBuilder<>(stream.map(fn));\n        }\n        public QueryBuilder<T> sortBy(Comparator<T> cmp) {\n            // TODO\n            return this;\n        }\n        public QueryBuilder<T> limit(int n) {\n            // TODO\n            return this;\n        }\n        public QueryBuilder<T> skip(int n) {\n            // TODO\n            return this;\n        }\n        public QueryBuilder<T> distinct() {\n            // TODO\n            return this;\n        }\n        public List<T> toList() {\n            return stream.collect(Collectors.toList());\n        }\n        public long count() { return stream.count(); }\n    }\n\n    public static void main(String[] args) {\n        var data = List.of(5,3,8,1,9,2,5,3,7,4);\n        var result = new QueryBuilder<>(data)\n            .filter(n -> n > 3)\n            .distinct()\n            .sortBy(Comparator.naturalOrder())\n            .limit(4)\n            .toList();\n        System.out.println(result); // [4, 5, 7, 8]\n\n        long count = new QueryBuilder<>(data)\n            .filter(n -> n % 2 == 0)\n            .count();\n        System.out.println(count); // 3\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.function.*;\nimport java.util.stream.*;\n\npublic class Q20 {\n    static class QueryBuilder<T> {\n        private Stream<T> stream;\n        QueryBuilder(List<T> source) { this.stream = source.stream(); }\n        private QueryBuilder(Stream<T> s) { this.stream = s; }\n\n        public QueryBuilder<T> filter(Predicate<T> pred)   { stream = stream.filter(pred);   return this; }\n        public QueryBuilder<T> sortBy(Comparator<T> cmp)   { stream = stream.sorted(cmp);    return this; }\n        public QueryBuilder<T> limit(int n)                { stream = stream.limit(n);       return this; }\n        public QueryBuilder<T> skip(int n)                 { stream = stream.skip(n);        return this; }\n        public QueryBuilder<T> distinct()                  { stream = stream.distinct();     return this; }\n        public <R> QueryBuilder<R> map(Function<T,R> fn)   { return new QueryBuilder<>(stream.map(fn)); }\n        public List<T> toList()  { return stream.collect(Collectors.toList()); }\n        public long    count()   { return stream.count(); }\n    }\n\n    public static void main(String[] args) {\n        var data = List.of(5,3,8,1,9,2,5,3,7,4);\n        System.out.println(\n            new QueryBuilder<>(data)\n                .filter(n -> n > 3).distinct()\n                .sortBy(Comparator.naturalOrder()).limit(4)\n                .toList()); // [4, 5, 7, 8]\n        System.out.println(\n            new QueryBuilder<>(data).filter(n -> n%2==0).count()); // 3\n    }\n}",
           "testCases": [
-            {"input": "filter>3, distinct, sort, limit 4", "output": "[4, 5, 7, 8]"},
-            {"input": "filter even, count",                 "output": "3"}
+            {
+              "input": "filter>3, distinct, sort, limit 4",
+              "output": "[4, 5, 7, 8]"
+            },
+            {
+              "input": "filter even, count",
+              "output": "3"
+            }
           ],
           "constraints": "A QueryBuilder can only be terminal-called once (streams are not reusable).",
           "editorial": "Storing and reassigning the Stream<T> field is valid because stream operations return new stream objects. map() must return a new QueryBuilder<R> (different type parameter) rather than reassigning this. This pattern mirrors how Spring Data's QueryDSL Predicates, jOOQ's DSL, and even Java's own Stream API itself are implemented — a fluent builder that lazily accumulates operations and executes them at the terminal call."
         }
-      ]
+      ],
+      "subCategory": "Java 8+ Features",
+      "displayOrder": 80
     }
   ]
 }

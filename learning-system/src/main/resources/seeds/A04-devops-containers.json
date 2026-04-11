@@ -11,7 +11,15 @@
       "bruteForce": "Without ECS: SSH into each EC2 instance, run docker pull, docker stop (old container), docker run (new container) — manual, error-prone, downtime during deploy, no automatic health restart. With ECS: update task definition → ECS performs rolling deploy across all instances automatically.",
       "optimizedApproach": "Fargate for new projects — no patching EC2 instances, no capacity planning for the host. Use Spot Fargate for batch workloads (up to 70% cheaper). EC2 launch type when: you need GPU, specific instance types, or cost savings at scale with Reserved Instances. Use ECS Service Auto Scaling with Application Auto Scaling — scale task count based on ALB request count or CPU. Use Secrets Manager integration in task definitions (never pass secrets as plaintext env vars). Use ECS Exec for debugging running containers without exposing SSH.",
       "whenToUse": "ECS: containerized web services, microservices, batch jobs, scheduled tasks (EventBridge → ECS task). EKS when: team already knows Kubernetes, multi-cloud portability needed, complex service mesh required. Fargate when: variable load, operations simplicity priority. EC2 launch type when: cost efficiency at scale, GPU workloads, custom AMIs.",
-      "tags": ["aws", "ecs", "docker", "containers", "fargate", "devops", "cloud"],
+      "tags": [
+        "aws",
+        "ecs",
+        "docker",
+        "containers",
+        "fargate",
+        "devops",
+        "cloud"
+      ],
       "examples": [
         {
           "displayOrder": 1,
@@ -41,7 +49,11 @@
           "title": "Debug ECS Task that Keeps Restarting",
           "difficulty": "Medium",
           "description": "An ECS Fargate task starts, runs for 20 seconds, then stops. ECS immediately restarts it (because the service's desired count is 2). It keeps cycling. List the 4 most likely causes and how to diagnose each.",
-          "constraints": ["startPeriod=0 (not configured)", "Health check: HTTP GET /health, interval=10s, retries=3", "Application is Spring Boot (JVM startup ~15s)"],
+          "constraints": [
+            "startPeriod=0 (not configured)",
+            "Health check: HTTP GET /health, interval=10s, retries=3",
+            "Application is Spring Boot (JVM startup ~15s)"
+          ],
           "examples": [
             {
               "input": "Task cycles: starts → 20s → stops → restarts",
@@ -49,13 +61,21 @@
               "explanation": "The 20s cycle matches 3 health check failures (10s interval × 2 retries) without startPeriod — the most common cause"
             }
           ],
-          "hints": ["aws ecs describe-tasks shows stopCode and stoppedReason", "CloudWatch Logs: /ecs/{task-family} group, look for exit code and error messages", "ECS console → Service → Events tab shows deployment and task stop reasons"]
+          "hints": [
+            "aws ecs describe-tasks shows stopCode and stoppedReason",
+            "CloudWatch Logs: /ecs/{task-family} group, look for exit code and error messages",
+            "ECS console → Service → Events tab shows deployment and task stop reasons"
+          ]
         },
         {
           "title": "Design ECS Architecture for Microservices",
           "difficulty": "Hard",
           "description": "Design ECS architecture for a 3-service application: UserService (read-heavy, stateless), OrderService (write-heavy, moderate traffic), NotificationService (low traffic, send emails). Each service has its own container. Requirements: independent scaling, shared ALB with path routing, secrets managed securely, nightly batch for notifications.",
-          "constraints": ["Single ALB per environment (cost)", "Each service: separate task definition, separate ECS service", "Secrets in Secrets Manager, never plaintext env vars"],
+          "constraints": [
+            "Single ALB per environment (cost)",
+            "Each service: separate task definition, separate ECS service",
+            "Secrets in Secrets Manager, never plaintext env vars"
+          ],
           "examples": [
             {
               "input": "3 services, shared ALB, independent scaling",
@@ -63,9 +83,15 @@
               "explanation": "Each ECS Service has its own auto scaling policy tuned to its traffic pattern. Shared ALB saves ~$16/month vs 3 separate ALBs"
             }
           ],
-          "hints": ["ALB listener rules with path-pattern conditions route to different target groups", "Task role least privilege: UserService only needs DynamoDB read, OrderService needs read+write", "NotificationService long-running service handles webhooks; scheduled ECS task handles bulk nightly sends"]
+          "hints": [
+            "ALB listener rules with path-pattern conditions route to different target groups",
+            "Task role least privilege: UserService only needs DynamoDB read, OrderService needs read+write",
+            "NotificationService long-running service handles webhooks; scheduled ECS task handles bulk nightly sends"
+          ]
         }
-      ]
+      ],
+      "subCategory": "DevOps & Containers",
+      "displayOrder": 40
     },
     {
       "title": "AWS CodePipeline — CI/CD on AWS",
@@ -78,7 +104,15 @@
       "bruteForce": "Without CI/CD: developer SSHes into server, runs git pull, mvn package, copies JAR, restarts service manually. Human error-prone, not reproducible, no audit trail, downtime during restart. With CodePipeline: every commit triggers the pipeline automatically, builds in a clean environment (CodeBuild), deploys with zero downtime (ECS rolling deploy), audit trail in CloudTrail.",
       "optimizedApproach": "Store pipeline definition in CloudFormation/CDK — treat the pipeline itself as code. Use CodeBuild cache (Docker layer cache, Maven .m2 cache in S3) to reduce build times. Use manual approval stages for production — require sign-off before prod deploy. Use CodePipeline notifications (SNS → Slack) for stage success/failure. Use parallel stages for independent tests (unit tests + integration tests in parallel reduces total pipeline time). Connect to GitHub via CodeStar Connections (OAuth app) — more reliable than CodeCommit webhooks.",
       "whenToUse": "CodePipeline: AWS-native CI/CD, especially when deploying to ECS/Lambda/Elastic Beanstalk/CloudFormation. GitHub Actions is often simpler for pure CI and non-AWS deployments. CodePipeline shines for multi-stage pipelines with AWS-native deploy steps (ECS blue/green, CloudFormation change sets, Lambda deploy). Use both: GitHub Actions for CI (build + test), CodePipeline for CD (deploy to AWS environments).",
-      "tags": ["aws", "codepipeline", "cicd", "devops", "codebuild", "cloud", "automation"],
+      "tags": [
+        "aws",
+        "codepipeline",
+        "cicd",
+        "devops",
+        "codebuild",
+        "cloud",
+        "automation"
+      ],
       "examples": [
         {
           "displayOrder": 1,
@@ -97,7 +131,11 @@
           "title": "Fix Failing CodeBuild Build",
           "difficulty": "Medium",
           "description": "A CodeBuild build fails at the Docker push step with 'no basic auth credentials'. The build log shows the ECR login command ran but the push still fails. Identify the two possible causes and fix each.",
-          "constraints": ["CodeBuild uses environment: PrivilegedMode=true", "ECR repo is in us-east-1, CodeBuild project is in us-east-1", "CodeBuild service role exists"],
+          "constraints": [
+            "CodeBuild uses environment: PrivilegedMode=true",
+            "ECR repo is in us-east-1, CodeBuild project is in us-east-1",
+            "CodeBuild service role exists"
+          ],
           "examples": [
             {
               "input": "docker push fails: no basic auth credentials",
@@ -105,13 +143,21 @@
               "explanation": "The old 'aws ecr get-login' returns a 'docker login ...' command to eval — the new method pipes the password to stdin. Both work but the new method is required in newer AWS CLI versions"
             }
           ],
-          "hints": ["CodeBuild IAM role needs: ecr:GetAuthorizationToken, ecr:BatchCheckLayerAvailability, ecr:InitiateLayerUpload, ecr:UploadLayerPart, ecr:CompleteLayerUpload, ecr:PutImage", "Managed policy: AmazonEC2ContainerRegistryPowerUser covers all ECR push operations", "PrivilegedMode: true is required for docker build/push — without it, Docker daemon is not available"]
+          "hints": [
+            "CodeBuild IAM role needs: ecr:GetAuthorizationToken, ecr:BatchCheckLayerAvailability, ecr:InitiateLayerUpload, ecr:UploadLayerPart, ecr:CompleteLayerUpload, ecr:PutImage",
+            "Managed policy: AmazonEC2ContainerRegistryPowerUser covers all ECR push operations",
+            "PrivilegedMode: true is required for docker build/push — without it, Docker daemon is not available"
+          ]
         },
         {
           "title": "Design a Multi-Environment Pipeline",
           "difficulty": "Hard",
           "description": "Design a CodePipeline that deploys to 3 environments: dev (auto-deploy on every push), staging (auto-deploy after tests pass), prod (manual approval required). Each environment is a separate ECS cluster. Add automated integration tests between staging and production approval.",
-          "constraints": ["Single pipeline, 5 stages minimum", "Integration tests: HTTP requests to staging API, assert 200s", "Rollback: prod should roll back automatically if post-deploy health check fails"],
+          "constraints": [
+            "Single pipeline, 5 stages minimum",
+            "Integration tests: HTTP requests to staging API, assert 200s",
+            "Rollback: prod should roll back automatically if post-deploy health check fails"
+          ],
           "examples": [
             {
               "input": "Source → Build → Deploy Dev → Integration Tests → Manual Approval → Deploy Prod",
@@ -119,9 +165,15 @@
               "explanation": "Integration tests as CodeBuild action in the pipeline: if tests fail (non-zero exit code), pipeline stops, prod never gets the bad build"
             }
           ],
-          "hints": ["Test stage: CodeBuild project that runs pytest/newman against the deployed URL, exit 1 on failure", "ECS CodeDeploy blue/green (via CodeDeploy) adds automatic rollback if post-deploy canary test fails", "Pipeline can have multiple actions in one stage running in parallel (e.g., unit tests + static analysis simultaneously)"]
+          "hints": [
+            "Test stage: CodeBuild project that runs pytest/newman against the deployed URL, exit 1 on failure",
+            "ECS CodeDeploy blue/green (via CodeDeploy) adds automatic rollback if post-deploy canary test fails",
+            "Pipeline can have multiple actions in one stage running in parallel (e.g., unit tests + static analysis simultaneously)"
+          ]
         }
-      ]
+      ],
+      "subCategory": "DevOps & Containers",
+      "displayOrder": 41
     },
     {
       "title": "CloudFormation and CloudWatch — Infrastructure as Code and Observability",
@@ -134,7 +186,16 @@
       "bruteForce": "Without CloudFormation: click through AWS console to create resources. Steps are not recorded, not reproducible, not reviewable. Someone deletes a security group by accident — you rebuild from memory. With CloudFormation: template in Git, PR review, 'aws cloudformation deploy' creates everything deterministically. Deleted resource? Delete the stack and recreate.",
       "optimizedApproach": "Organise stacks by lifecycle: network stack (VPC, subnets — rarely changes), data stack (RDS, DynamoDB — changes sometimes), app stack (ECS service, ALB — changes often). Use cross-stack references (Exports/ImportValue) to share resources between stacks. Use CloudFormation StackSets for multi-account/multi-region deployments. For CloudWatch: set log retention on all log groups (7-90 days for dev, 1-2 years for prod). Create a dashboard with your key SLIs (error rate, p99 latency, task count) as the first thing you check every morning. Use Composite Alarms to reduce alert noise — 'alert me only if BOTH error rate is high AND latency is high'.",
       "whenToUse": "CloudFormation: defining and deploying AWS infrastructure reproducibly. Terraform is an alternative (multi-cloud, larger community, HCL language). CDK (Cloud Development Kit) lets you write CloudFormation in TypeScript/Python/Java — generates CloudFormation under the hood. CloudWatch: all AWS workloads — it's the default monitoring for every AWS service. Use Datadog/Grafana for cross-cloud observability or richer dashboards.",
-      "tags": ["aws", "cloudformation", "cloudwatch", "iac", "infrastructure", "monitoring", "devops", "observability"],
+      "tags": [
+        "aws",
+        "cloudformation",
+        "cloudwatch",
+        "iac",
+        "infrastructure",
+        "monitoring",
+        "devops",
+        "observability"
+      ],
       "examples": [
         {
           "displayOrder": 1,
@@ -164,7 +225,11 @@
           "title": "CloudFormation Change Set Analysis",
           "difficulty": "Medium",
           "description": "A CloudFormation change set for a production stack update shows: (1) Modify ECSService (no interruption). (2) Replace RDSInstance (requires replacement). (3) Modify SecurityGroup (no interruption). The team wants to apply this update. What should concern them, and what should they do before applying?",
-          "constraints": ["Replace = AWS deletes the old resource and creates a new one", "RDS replacement: new instance has a new endpoint, no data migration built-in", "CloudFormation does not automatically migrate data during replacement"],
+          "constraints": [
+            "Replace = AWS deletes the old resource and creates a new one",
+            "RDS replacement: new instance has a new endpoint, no data migration built-in",
+            "CloudFormation does not automatically migrate data during replacement"
+          ],
           "examples": [
             {
               "input": "Change set: Replace RDSInstance",
@@ -172,13 +237,21 @@
               "explanation": "CloudFormation Replace is not a safe migration — for stateful resources like RDS, it means DELETE + CREATE, not in-place upgrade"
             }
           ],
-          "hints": ["aws cloudformation describe-change-set shows which properties trigger replacement", "RDS replacement triggers: changing DBInstanceClass, engine version (major), DBName, MasterUsername", "Workaround: create new RDS instance manually, migrate data, update CloudFormation to import the new instance"]
+          "hints": [
+            "aws cloudformation describe-change-set shows which properties trigger replacement",
+            "RDS replacement triggers: changing DBInstanceClass, engine version (major), DBName, MasterUsername",
+            "Workaround: create new RDS instance manually, migrate data, update CloudFormation to import the new instance"
+          ]
         },
         {
           "title": "Set Up CloudWatch Alarm for ECS Service Health",
           "difficulty": "Easy",
           "description": "Create a CloudWatch alarm that fires when the number of running ECS tasks drops below 2 (service degraded). The alarm should send to an SNS topic. Configure it so that 1 evaluation period is sufficient (don't wait for 2 consecutive breaches) since task drop is always serious.",
-          "constraints": ["Metric: ECS/RunningTaskCount, Dimensions: ClusterName + ServiceName", "EvaluationPeriods=1 for immediate response", "ComparisonOperator: LessThanThreshold"],
+          "constraints": [
+            "Metric: ECS/RunningTaskCount, Dimensions: ClusterName + ServiceName",
+            "EvaluationPeriods=1 for immediate response",
+            "ComparisonOperator: LessThanThreshold"
+          ],
           "examples": [
             {
               "input": "ECS desired count=2, alert if running tasks < 2",
@@ -186,13 +259,21 @@
               "explanation": "Period=60 (1 minute) with EvaluationPeriods=1 means the alarm fires within 1 minute of a task drop — fast enough for a critical service"
             }
           ],
-          "hints": ["ECS Container Insights must be enabled on the cluster to get RunningTaskCount metric", "Dimensions: [{Name:ClusterName,Value:my-cluster},{Name:ServiceName,Value:devlearner-api-service}]", "TreatMissingData=breaching: if no metric data, assume tasks are not running (conservative approach for critical alarms)"]
+          "hints": [
+            "ECS Container Insights must be enabled on the cluster to get RunningTaskCount metric",
+            "Dimensions: [{Name:ClusterName,Value:my-cluster},{Name:ServiceName,Value:devlearner-api-service}]",
+            "TreatMissingData=breaching: if no metric data, assume tasks are not running (conservative approach for critical alarms)"
+          ]
         },
         {
           "title": "Debug High CloudWatch Costs",
           "difficulty": "Medium",
           "description": "Your AWS bill shows $450/month for CloudWatch — much higher than expected. After investigation you find: 47 log groups with no retention policy, a Lambda function calling PutMetricData 10 times per invocation (invoked 1M times/month), and a detailed monitoring enabled on 200 EC2 instances. Identify the cost drivers and propose fixes.",
-          "constraints": ["CloudWatch Logs storage: $0.03/GB-month", "Custom metrics: $0.30/metric/month (first 10k metrics)", "Detailed EC2 monitoring: $2.10/instance/month vs $0 for basic"],
+          "constraints": [
+            "CloudWatch Logs storage: $0.03/GB-month",
+            "Custom metrics: $0.30/metric/month (first 10k metrics)",
+            "Detailed EC2 monitoring: $2.10/instance/month vs $0 for basic"
+          ],
           "examples": [
             {
               "input": "47 log groups, no retention. Lambda: 10 PutMetricData per invocation × 1M invocations. 200 EC2 detailed monitoring.",
@@ -200,9 +281,15 @@
               "explanation": "Detailed EC2 monitoring is the biggest win here: $420 → $42/mo. Log groups without retention are a slow leak — accumulate for years"
             }
           ],
-          "hints": ["aws logs describe-log-groups | jq '.logGroups[] | select(.retentionInDays == null)' finds log groups without retention", "PutMetricData: max 1000 MetricData items per call — batch to reduce API call frequency", "aws ec2 describe-instances --filters 'Name=monitoring-state,Values=enabled' finds detailed monitoring instances"]
+          "hints": [
+            "aws logs describe-log-groups | jq '.logGroups[] | select(.retentionInDays == null)' finds log groups without retention",
+            "PutMetricData: max 1000 MetricData items per call — batch to reduce API call frequency",
+            "aws ec2 describe-instances --filters 'Name=monitoring-state,Values=enabled' finds detailed monitoring instances"
+          ]
         }
-      ]
+      ],
+      "subCategory": "Monitoring",
+      "displayOrder": 50
     }
   ]
 }

@@ -78,7 +78,10 @@
           "starterCode": "public class Q1 {\n    abstract static class Shape {\n        abstract double area();\n    }\n    // TODO: Circle, Rectangle, Triangle extending Shape\n\n    public static double totalArea(Shape[] shapes) {\n        // TODO: sum all areas\n        return 0;\n    }\n\n    public static void main(String[] args) {\n        Shape[] arr = { new Circle(5), new Rectangle(4, 6), new Triangle(3, 8) };\n        System.out.printf(\"%.2f%n\", totalArea(arr));\n        // PI*25 + 24 + 12 = 78.54+24+12 = 114.54\n    }\n}",
           "solutionCode": "public class Q1 {\n    abstract static class Shape { abstract double area(); }\n\n    static class Circle    extends Shape {\n        double r; Circle(double r) { this.r=r; }\n        @Override double area() { return Math.PI*r*r; }\n    }\n    static class Rectangle extends Shape {\n        double w,h; Rectangle(double w,double h){this.w=w;this.h=h;}\n        @Override double area() { return w*h; }\n    }\n    static class Triangle  extends Shape {\n        double b,h; Triangle(double b,double h){this.b=b;this.h=h;}\n        @Override double area() { return 0.5*b*h; }\n    }\n\n    public static double totalArea(Shape[] shapes) {\n        double sum = 0;\n        for (Shape s : shapes) sum += s.area();\n        return sum;\n    }\n\n    public static void main(String[] args) {\n        Shape[] arr = { new Circle(5), new Rectangle(4,6), new Triangle(3,8) };\n        System.out.printf(\"%.2f%n\", totalArea(arr)); // 114.54\n    }\n}",
           "testCases": [
-            {"input": "Circle(5) + Rectangle(4,6) + Triangle(3,8)", "output": "114.54"}
+            {
+              "input": "Circle(5) + Rectangle(4,6) + Triangle(3,8)",
+              "output": "114.54"
+            }
           ],
           "constraints": "No instanceof in totalArea.",
           "editorial": "s.area() is a polymorphic call — the JVM dispatches to Circle.area(), Rectangle.area(), or Triangle.area() based on the actual object. totalArea never needs to know the concrete types. Adding a new shape (Pentagon) requires no changes to totalArea."
@@ -95,7 +98,10 @@
           "starterCode": "public class Q2 {\n    static void show(int x)    { System.out.println(\"int\"); }\n    static void show(double x) { System.out.println(\"double\"); }\n    static void show(String x) { System.out.println(\"String\"); }\n\n    public static String[] predict() {\n        // Predict: show(5), show(5.0), show(\"hi\"), show(5L), show('A')\n        return new String[]{\"\",\"\",\"\",\"\",\"\"};\n    }\n    public static void main(String[] args) {\n        for (String s : predict()) System.out.println(s);\n    }\n}",
           "solutionCode": "public class Q2 {\n    static void show(int x)    { System.out.println(\"int\"); }\n    static void show(double x) { System.out.println(\"double\"); }\n    static void show(String x) { System.out.println(\"String\"); }\n\n    public static String[] predict() {\n        return new String[]{\n            \"int\",    // show(5)   — int literal, exact match\n            \"double\", // show(5.0) — double literal, exact match\n            \"String\", // show(\"hi\")— String literal, exact match\n            \"double\", // show(5L)  — long, no exact match, widens to double\n            \"int\"     // show('A') — char widens to int\n        };\n    }\n    public static void main(String[] args) {\n        show(5); show(5.0); show(\"hi\"); show(5L); show('A');\n        // Actual: int / double / String / double / int\n    }\n}",
           "testCases": [
-            {"input": "show(5), show(5.0), show(hi), show(5L), show('A')", "output": "int\ndouble\nString\ndouble\nint"}
+            {
+              "input": "show(5), show(5.0), show(hi), show(5L), show('A')",
+              "output": "int\ndouble\nString\ndouble\nint"
+            }
           ],
           "constraints": "Compile-time resolution only.",
           "editorial": "5 → int (exact). 5.0 → double (exact). \"hi\" → String (exact). 5L is long — no show(long), widens to double. 'A' is char — widens to int (char→int widening is standard). Widening order: byte→short→int→long→float→double."
@@ -112,9 +118,18 @@
           "starterCode": "public class Q3 {\n    interface Playable { void play(); }\n\n    // TODO: MP3Player, VinylPlayer, StreamingPlayer\n\n    static void playSong(Playable p) { p.play(); }\n\n    public static void main(String[] args) {\n        playSong(new MP3Player());\n        playSong(new VinylPlayer());\n        playSong(new StreamingPlayer());\n    }\n}",
           "solutionCode": "public class Q3 {\n    interface Playable { void play(); }\n\n    static class MP3Player       implements Playable {\n        @Override public void play() { System.out.println(\"Playing MP3 file\"); }\n    }\n    static class VinylPlayer     implements Playable {\n        @Override public void play() { System.out.println(\"Playing vinyl record\"); }\n    }\n    static class StreamingPlayer implements Playable {\n        @Override public void play() { System.out.println(\"Streaming from cloud\"); }\n    }\n\n    static void playSong(Playable p) { p.play(); }\n\n    public static void main(String[] args) {\n        playSong(new MP3Player());\n        playSong(new VinylPlayer());\n        playSong(new StreamingPlayer());\n    }\n}",
           "testCases": [
-            {"input": "MP3Player", "output": "Playing MP3 file"},
-            {"input": "VinylPlayer", "output": "Playing vinyl record"},
-            {"input": "StreamingPlayer", "output": "Streaming from cloud"}
+            {
+              "input": "MP3Player",
+              "output": "Playing MP3 file"
+            },
+            {
+              "input": "VinylPlayer",
+              "output": "Playing vinyl record"
+            },
+            {
+              "input": "StreamingPlayer",
+              "output": "Streaming from cloud"
+            }
           ],
           "constraints": "playSong must not use instanceof.",
           "editorial": "playSong depends on the Playable interface, not any concrete class. Any class implementing Playable can be passed. This is the Dependency Inversion Principle — depend on abstractions, not concretions."
@@ -131,10 +146,22 @@
           "starterCode": "public class Q4 {\n    static class Calculator {\n        // TODO: four add() overloads\n    }\n    public static void main(String[] args) {\n        Calculator c = new Calculator();\n        System.out.println(c.add(1, 2));        // 3\n        System.out.println(c.add(1.5, 2.5));    // 4.0\n        System.out.println(c.add(1, 2, 3));     // 6\n        System.out.println(c.add(\"Hello \", \"World\")); // Hello World\n    }\n}",
           "solutionCode": "public class Q4 {\n    static class Calculator {\n        int    add(int a, int b)          { return a + b; }\n        double add(double a, double b)    { return a + b; }\n        int    add(int a, int b, int c)   { return a + b + c; }\n        String add(String a, String b)    { return a + b; }\n    }\n    public static void main(String[] args) {\n        Calculator c = new Calculator();\n        System.out.println(c.add(1, 2));           // 3\n        System.out.println(c.add(1.5, 2.5));       // 4.0\n        System.out.println(c.add(1, 2, 3));        // 6\n        System.out.println(c.add(\"Hello \", \"World\")); // Hello World\n    }\n}",
           "testCases": [
-            {"input": "add(1,2)",         "output": "3"},
-            {"input": "add(1.5,2.5)",     "output": "4.0"},
-            {"input": "add(1,2,3)",       "output": "6"},
-            {"input": "add(Hello ,World)","output": "Hello World"}
+            {
+              "input": "add(1,2)",
+              "output": "3"
+            },
+            {
+              "input": "add(1.5,2.5)",
+              "output": "4.0"
+            },
+            {
+              "input": "add(1,2,3)",
+              "output": "6"
+            },
+            {
+              "input": "add(Hello ,World)",
+              "output": "Hello World"
+            }
           ],
           "constraints": "All four overloads in the same class.",
           "editorial": "Overloading allows the same logical name for different input types. Compiler selects based on argument types and count at compile time. Each overload is an independent method in bytecode with a unique signature (name + parameter descriptor)."
@@ -151,7 +178,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q5 {\n    abstract static class Animal {\n        String name;\n        Animal(String name) { this.name = name; }\n    }\n    // TODO: Dog, Cat, Bird each overriding toString()\n\n    public static void main(String[] args) {\n        List<Animal> list = List.of(\n            new Dog(\"Rex\"),\n            new Cat(\"Whiskers\"),\n            new Bird(\"Tweety\")\n        );\n        list.forEach(System.out::println);\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q5 {\n    abstract static class Animal {\n        String name;\n        Animal(String name) { this.name = name; }\n    }\n    static class Dog  extends Animal { Dog(String n) { super(n); }\n        @Override public String toString() { return \"Dog named \" + name; } }\n    static class Cat  extends Animal { Cat(String n) { super(n); }\n        @Override public String toString() { return \"Cat named \" + name; } }\n    static class Bird extends Animal { Bird(String n) { super(n); }\n        @Override public String toString() { return \"Bird named \" + name; } }\n\n    public static void main(String[] args) {\n        List<Animal> list = List.of(new Dog(\"Rex\"), new Cat(\"Whiskers\"), new Bird(\"Tweety\"));\n        list.forEach(System.out::println);\n    }\n}",
           "testCases": [
-            {"input": "Dog Rex, Cat Whiskers, Bird Tweety", "output": "Dog named Rex\nCat named Whiskers\nBird named Tweety"}
+            {
+              "input": "Dog Rex, Cat Whiskers, Bird Tweety",
+              "output": "Dog named Rex\nCat named Whiskers\nBird named Tweety"
+            }
           ],
           "constraints": "No instanceof in the print loop.",
           "editorial": "println(obj) calls obj.toString(). Since each subclass overrides toString(), the correct version is dispatched at runtime. This is polymorphism through Object's toString() — the most common form in Java logging and debugging."
@@ -168,9 +198,18 @@
           "starterCode": "import java.util.Arrays;\n\npublic class Q6 {\n    interface Sorter { void sort(int[] arr); }\n\n    // TODO: BubbleSorter, SelectionSorter, InsertionSorter\n\n    static void sortAndPrint(int[] arr, Sorter strategy) {\n        int[] copy = arr.clone();\n        strategy.sort(copy);\n        System.out.println(Arrays.toString(copy));\n    }\n\n    public static void main(String[] args) {\n        int[] data = {5, 3, 8, 1, 9, 2};\n        sortAndPrint(data, new BubbleSorter());\n        sortAndPrint(data, new SelectionSorter());\n        sortAndPrint(data, new InsertionSorter());\n    }\n}",
           "solutionCode": "import java.util.Arrays;\n\npublic class Q6 {\n    interface Sorter { void sort(int[] arr); }\n\n    static class BubbleSorter implements Sorter {\n        @Override public void sort(int[] a) {\n            for (int i=0;i<a.length-1;i++)\n                for (int j=0;j<a.length-1-i;j++)\n                    if (a[j]>a[j+1]) { int t=a[j]; a[j]=a[j+1]; a[j+1]=t; }\n        }\n    }\n    static class SelectionSorter implements Sorter {\n        @Override public void sort(int[] a) {\n            for (int i=0;i<a.length;i++) {\n                int min=i;\n                for (int j=i+1;j<a.length;j++) if (a[j]<a[min]) min=j;\n                int t=a[i]; a[i]=a[min]; a[min]=t;\n            }\n        }\n    }\n    static class InsertionSorter implements Sorter {\n        @Override public void sort(int[] a) {\n            for (int i=1;i<a.length;i++) {\n                int key=a[i]; int j=i-1;\n                while (j>=0&&a[j]>key) { a[j+1]=a[j]; j--; }\n                a[j+1]=key;\n            }\n        }\n    }\n\n    static void sortAndPrint(int[] arr, Sorter strategy) {\n        int[] copy = arr.clone();\n        strategy.sort(copy);\n        System.out.println(Arrays.toString(copy));\n    }\n\n    public static void main(String[] args) {\n        int[] data = {5,3,8,1,9,2};\n        sortAndPrint(data, new BubbleSorter());    // [1, 2, 3, 5, 8, 9]\n        sortAndPrint(data, new SelectionSorter()); // [1, 2, 3, 5, 8, 9]\n        sortAndPrint(data, new InsertionSorter()); // [1, 2, 3, 5, 8, 9]\n    }\n}",
           "testCases": [
-            {"input": "[5,3,8,1,9,2] BubbleSorter",    "output": "[1, 2, 3, 5, 8, 9]"},
-            {"input": "[5,3,8,1,9,2] SelectionSorter", "output": "[1, 2, 3, 5, 8, 9]"},
-            {"input": "[5,3,8,1,9,2] InsertionSorter", "output": "[1, 2, 3, 5, 8, 9]"}
+            {
+              "input": "[5,3,8,1,9,2] BubbleSorter",
+              "output": "[1, 2, 3, 5, 8, 9]"
+            },
+            {
+              "input": "[5,3,8,1,9,2] SelectionSorter",
+              "output": "[1, 2, 3, 5, 8, 9]"
+            },
+            {
+              "input": "[5,3,8,1,9,2] InsertionSorter",
+              "output": "[1, 2, 3, 5, 8, 9]"
+            }
           ],
           "constraints": "Do not use Arrays.sort inside the implementations.",
           "editorial": "Strategy pattern: polymorphism allows swapping the sorting algorithm at runtime without changing sortAndPrint. This is the Open/Closed Principle — sortAndPrint is closed for modification but open for extension (new strategies). Used in Java's Comparator, Spring's TransactionManager, SLF4J's Logger implementations."
@@ -187,10 +226,22 @@
           "starterCode": "public class Q7 {\n    static int sum(int a, int b) {\n        System.out.println(\"exact 2-arg\");\n        return a + b;\n    }\n    static int sum(int... nums) {\n        System.out.println(\"varargs \" + nums.length + \" args\");\n        int t = 0; for (int n : nums) t += n; return t;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(sum());        // varargs 0\n        System.out.println(sum(5));       // varargs 1\n        System.out.println(sum(3, 4));    // exact 2-arg (beats varargs)\n        System.out.println(sum(1,2,3));   // varargs 3\n    }\n}",
           "solutionCode": "public class Q7 {\n    static int sum(int a, int b) {\n        System.out.println(\"exact 2-arg\");\n        return a + b;\n    }\n    static int sum(int... nums) {\n        System.out.println(\"varargs \" + nums.length + \" args\");\n        int t = 0; for (int n : nums) t += n; return t;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(sum());      // varargs 0 args → 0\n        System.out.println(sum(5));     // varargs 1 args → 5\n        System.out.println(sum(3, 4));  // exact 2-arg → 7 (exact beats varargs)\n        System.out.println(sum(1,2,3)); // varargs 3 args → 6\n    }\n}",
           "testCases": [
-            {"input": "sum()",     "output": "varargs 0 args\n0"},
-            {"input": "sum(5)",    "output": "varargs 1 args\n5"},
-            {"input": "sum(3,4)",  "output": "exact 2-arg\n7"},
-            {"input": "sum(1,2,3)","output": "varargs 3 args\n6"}
+            {
+              "input": "sum()",
+              "output": "varargs 0 args\n0"
+            },
+            {
+              "input": "sum(5)",
+              "output": "varargs 1 args\n5"
+            },
+            {
+              "input": "sum(3,4)",
+              "output": "exact 2-arg\n7"
+            },
+            {
+              "input": "sum(1,2,3)",
+              "output": "varargs 3 args\n6"
+            }
           ],
           "constraints": "Both overloads must exist.",
           "editorial": "Varargs is the lowest priority in overload resolution — tried only after exact match, widening, and autoboxing all fail. For two int args, sum(int, int) is an exact match and wins. For 0, 1, 3 args only sum(int...) matches."
@@ -207,9 +258,18 @@
           "starterCode": "public class Q8 {\n    interface Notification { void send(String message); }\n\n    // TODO: Email, SMS, PushNotification implementing Notification\n\n    static Notification createNotification(String type) {\n        // TODO: factory\n        return null;\n    }\n\n    public static void main(String[] args) {\n        String[] types = {\"email\", \"sms\", \"push\"};\n        for (String type : types) {\n            Notification n = createNotification(type);\n            n.send(\"Hello from \" + type);\n        }\n    }\n}",
           "solutionCode": "public class Q8 {\n    interface Notification { void send(String message); }\n\n    static class Email implements Notification {\n        @Override public void send(String msg) { System.out.println(\"Email: \" + msg); }\n    }\n    static class SMS implements Notification {\n        @Override public void send(String msg) { System.out.println(\"SMS: \" + msg); }\n    }\n    static class PushNotification implements Notification {\n        @Override public void send(String msg) { System.out.println(\"Push: \" + msg); }\n    }\n\n    static Notification createNotification(String type) {\n        return switch (type) {\n            case \"email\" -> new Email();\n            case \"sms\"   -> new SMS();\n            case \"push\"  -> new PushNotification();\n            default      -> throw new IllegalArgumentException(\"Unknown: \" + type);\n        };\n    }\n\n    public static void main(String[] args) {\n        for (String type : new String[]{\"email\",\"sms\",\"push\"}) {\n            createNotification(type).send(\"Hello from \" + type);\n        }\n    }\n}",
           "testCases": [
-            {"input": "email", "output": "Email: Hello from email"},
-            {"input": "sms",   "output": "SMS: Hello from sms"},
-            {"input": "push",  "output": "Push: Hello from push"}
+            {
+              "input": "email",
+              "output": "Email: Hello from email"
+            },
+            {
+              "input": "sms",
+              "output": "SMS: Hello from sms"
+            },
+            {
+              "input": "push",
+              "output": "Push: Hello from push"
+            }
           ],
           "constraints": "Caller code must not use instanceof.",
           "editorial": "Factory + polymorphism: the factory encapsulates object creation; the caller works through the interface. When a new channel (WhatsApp) is added, only the factory changes — all calling code stays the same. This is the Factory Method pattern and Open/Closed Principle."
@@ -226,8 +286,14 @@
           "starterCode": "public class Q9 {\n    static class A { void go(Object o) { System.out.println(\"A-Object\"); } }\n    static class B extends A {\n        @Override void go(Object o) { System.out.println(\"B-Object\"); }\n        void go(String s)           { System.out.println(\"B-String\"); }\n    }\n\n    public static String[] predict() {\n        // What does each print?\n        // A a = new B(); a.go(\"hi\");\n        // B b = new B(); b.go(\"hi\");\n        return new String[]{\"\", \"\"};\n    }\n    public static void main(String[] args) {\n        A a = new B(); a.go(\"hi\");\n        B b = new B(); b.go(\"hi\");\n    }\n}",
           "solutionCode": "public class Q9 {\n    static class A { void go(Object o) { System.out.println(\"A-Object\"); } }\n    static class B extends A {\n        @Override void go(Object o) { System.out.println(\"B-Object\"); }\n        void go(String s)           { System.out.println(\"B-String\"); }\n    }\n\n    public static String[] predict() {\n        // A a=new B(); a.go(\"hi\"):\n        //   compile: A has only go(Object) → go(Object) selected\n        //   runtime: object is B → B.go(Object) called → \"B-Object\"\n        // B b=new B(); b.go(\"hi\"):\n        //   compile: B has go(Object) AND go(String) → String exact match → go(String)\n        //   runtime: go(String) is not overridden → B.go(String) → \"B-String\"\n        return new String[]{\"B-Object\", \"B-String\"};\n    }\n    public static void main(String[] args) {\n        A a = new B(); a.go(\"hi\"); // B-Object\n        B b = new B(); b.go(\"hi\"); // B-String\n    }\n}",
           "testCases": [
-            {"input": "A ref=new B(); go(\"hi\")", "output": "B-Object"},
-            {"input": "B ref=new B(); go(\"hi\")", "output": "B-String"}
+            {
+              "input": "A ref=new B(); go(\"hi\")",
+              "output": "B-Object"
+            },
+            {
+              "input": "B ref=new B(); go(\"hi\")",
+              "output": "B-String"
+            }
           ],
           "constraints": "Conceptual prediction.",
           "editorial": "The key insight: overload resolution uses COMPILE-TIME reference type. A only knows go(Object), so that's picked at compile time — then at runtime B's override is dispatched. B knows both go(Object) and go(String); String matches go(String) exactly, so that's picked at compile time and called at runtime."
@@ -244,7 +310,10 @@
           "starterCode": "public class Q10 {\n    static class Vehicle {\n        String color;\n        int wheels;\n        Vehicle withColor(String c) { this.color = c; return this; }\n        public String toString() { return color + \" vehicle w=\" + wheels; }\n    }\n    static class Car extends Vehicle {\n        // TODO: @Override withColor returning Car (covariant)\n        // TODO: withWheels(int n) returning Car\n    }\n\n    public static void main(String[] args) {\n        Car c = new Car();\n        // Should chain without cast:\n        c.withColor(\"red\").withWheels(4);\n        System.out.println(c); // red vehicle w=4\n    }\n}",
           "solutionCode": "public class Q10 {\n    static class Vehicle {\n        String color; int wheels;\n        Vehicle withColor(String c) { this.color = c; return this; }\n        public String toString() { return color + \" vehicle w=\" + wheels; }\n    }\n    static class Car extends Vehicle {\n        @Override Car withColor(String c) { this.color = c; return this; } // covariant\n        Car withWheels(int n) { this.wheels = n; return this; }\n    }\n\n    public static void main(String[] args) {\n        Car c = new Car();\n        c.withColor(\"red\").withWheels(4); // no cast needed — withColor returns Car\n        System.out.println(c); // red vehicle w=4\n\n        // Via Vehicle ref: withColor returns Vehicle — can't chain withWheels without cast\n        Vehicle v = new Car();\n        ((Car) v.withColor(\"blue\")).withWheels(2); // needs cast\n        System.out.println(v); // blue vehicle w=2\n    }\n}",
           "testCases": [
-            {"input": "Car chain withColor+withWheels", "output": "red vehicle w=4"}
+            {
+              "input": "Car chain withColor+withWheels",
+              "output": "red vehicle w=4"
+            }
           ],
           "constraints": "No casting when using Car reference.",
           "editorial": "Covariant return: Car.withColor returns Car (a subtype of Vehicle). This lets Car references chain withWheels() without casting. Vehicle references still compile (covariant return is backwards-compatible) but you can't chain Car-specific methods without a cast."
@@ -261,7 +330,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q11 {\n    interface EventListener { void onEvent(String event); }\n\n    static class Logger  implements EventListener {\n        @Override public void onEvent(String e) { System.out.println(\"LOG: \" + e); }\n    }\n    static class Emailer  implements EventListener {\n        @Override public void onEvent(String e) { System.out.println(\"EMAIL: \" + e); }\n    }\n    static class Auditor  implements EventListener {\n        @Override public void onEvent(String e) { System.out.println(\"AUDIT: \" + e); }\n    }\n\n    static class EventBus {\n        private List<EventListener> listeners = new ArrayList<>();\n        void register(EventListener l) { listeners.add(l); }\n        void publish(String event) {\n            // TODO: notify all listeners\n        }\n    }\n\n    public static void main(String[] args) {\n        EventBus bus = new EventBus();\n        bus.register(new Logger());\n        bus.register(new Emailer());\n        bus.register(new Auditor());\n        bus.publish(\"user.login\");\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q11 {\n    interface EventListener { void onEvent(String event); }\n\n    static class Logger  implements EventListener {\n        @Override public void onEvent(String e) { System.out.println(\"LOG: \"   + e); }\n    }\n    static class Emailer  implements EventListener {\n        @Override public void onEvent(String e) { System.out.println(\"EMAIL: \" + e); }\n    }\n    static class Auditor  implements EventListener {\n        @Override public void onEvent(String e) { System.out.println(\"AUDIT: \" + e); }\n    }\n\n    static class EventBus {\n        private List<EventListener> listeners = new ArrayList<>();\n        void register(EventListener l) { listeners.add(l); }\n        void publish(String event) {\n            for (EventListener l : listeners) l.onEvent(event);\n        }\n    }\n\n    public static void main(String[] args) {\n        EventBus bus = new EventBus();\n        bus.register(new Logger()); bus.register(new Emailer()); bus.register(new Auditor());\n        bus.publish(\"user.login\");\n    }\n}",
           "testCases": [
-            {"input": "publish(user.login)", "output": "LOG: user.login\nEMAIL: user.login\nAUDIT: user.login"}
+            {
+              "input": "publish(user.login)",
+              "output": "LOG: user.login\nEMAIL: user.login\nAUDIT: user.login"
+            }
           ],
           "constraints": "No instanceof in EventBus.publish().",
           "editorial": "Observer pattern = polymorphic notification. EventBus calls onEvent() on every registered listener polymorphically. Adding a new listener type (SMSAlerter) requires only creating the class and registering it — zero changes to EventBus. This is exactly how Spring's ApplicationEventPublisher and Java's EventListener framework work."
@@ -278,7 +350,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q12 {\n    interface Command { void execute(); }\n\n    // TODO: PrintCommand, AddCommand, ClearCommand\n\n    public static void main(String[] args) {\n        List<Integer> data = new ArrayList<>();\n        List<Command> queue = List.of(\n            new AddCommand(data, 10),\n            new AddCommand(data, 20),\n            new PrintCommand(\"Before clear: \"),\n            new ClearCommand(data),\n            new PrintCommand(\"After clear: \")\n        );\n        for (Command c : queue) c.execute();\n        System.out.println(data);\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q12 {\n    interface Command { void execute(); }\n\n    static class PrintCommand implements Command {\n        String label;\n        PrintCommand(String label) { this.label = label; }\n        @Override public void execute() { System.out.println(label); }\n    }\n    static class AddCommand implements Command {\n        List<Integer> list; int val;\n        AddCommand(List<Integer> list, int val) { this.list=list; this.val=val; }\n        @Override public void execute() { list.add(val); }\n    }\n    static class ClearCommand implements Command {\n        List<Integer> list;\n        ClearCommand(List<Integer> list) { this.list = list; }\n        @Override public void execute() { list.clear(); }\n    }\n\n    public static void main(String[] args) {\n        List<Integer> data = new ArrayList<>();\n        List<Command> queue = List.of(\n            new AddCommand(data, 10),\n            new AddCommand(data, 20),\n            new PrintCommand(\"Before clear:\"),\n            new ClearCommand(data),\n            new PrintCommand(\"After clear:\")\n        );\n        for (Command c : queue) c.execute();\n        System.out.println(data); // []\n    }\n}",
           "testCases": [
-            {"input": "execute queue", "output": "Before clear:\nAfter clear:\n[]"}
+            {
+              "input": "execute queue",
+              "output": "Before clear:\nAfter clear:\n[]"
+            }
           ],
           "constraints": "No instanceof in the execution loop.",
           "editorial": "Command pattern: each command encapsulates an action as an object. The queue holds polymorphic Command references. Execute loop calls execute() on each — correct action dispatched at runtime. Used in Java's Runnable/Callable, database transaction scripts, undo-redo systems, macros."
@@ -295,9 +370,18 @@
           "starterCode": "import java.util.*;\n\npublic class Q13 {\n    static class Person {\n        String name; int age;\n        Person(String n, int a) { name=n; age=a; }\n        public String toString() { return name + \"(\" + age + \")\"; }\n    }\n\n    public static void main(String[] args) {\n        List<Person> people = new ArrayList<>(List.of(\n            new Person(\"Bob\", 30), new Person(\"Alice\", 25),\n            new Person(\"Alice\", 20), new Person(\"Charlie\", 25)\n        ));\n\n        Comparator<Person> byName       = /* TODO */null;\n        Comparator<Person> byAge        = /* TODO */null;\n        Comparator<Person> byNameThenAge= /* TODO */null;\n\n        List<Person> copy1 = new ArrayList<>(people);\n        copy1.sort(byName);\n        System.out.println(copy1);\n\n        List<Person> copy2 = new ArrayList<>(people);\n        copy2.sort(byAge);\n        System.out.println(copy2);\n\n        List<Person> copy3 = new ArrayList<>(people);\n        copy3.sort(byNameThenAge);\n        System.out.println(copy3);\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q13 {\n    static class Person {\n        String name; int age;\n        Person(String n, int a) { name=n; age=a; }\n        public String toString() { return name + \"(\" + age + \")\"; }\n    }\n\n    public static void main(String[] args) {\n        List<Person> people = new ArrayList<>(List.of(\n            new Person(\"Bob\", 30), new Person(\"Alice\", 25),\n            new Person(\"Alice\", 20), new Person(\"Charlie\", 25)\n        ));\n\n        Comparator<Person> byName        = Comparator.comparing(p -> p.name);\n        Comparator<Person> byAge         = Comparator.comparingInt(p -> p.age);\n        Comparator<Person> byNameThenAge = Comparator.comparing((Person p) -> p.name)\n                                                     .thenComparingInt(p -> p.age);\n\n        List<Person> copy1 = new ArrayList<>(people);\n        copy1.sort(byName);\n        System.out.println(copy1); // [Alice(25), Alice(20), Bob(30), Charlie(25)]\n\n        List<Person> copy2 = new ArrayList<>(people);\n        copy2.sort(byAge);\n        System.out.println(copy2); // [Alice(20), Alice(25), Charlie(25), Bob(30)]\n\n        List<Person> copy3 = new ArrayList<>(people);\n        copy3.sort(byNameThenAge);\n        System.out.println(copy3); // [Alice(20), Alice(25), Bob(30), Charlie(25)]\n    }\n}",
           "testCases": [
-            {"input": "sort by name",          "output": "[Alice(25), Alice(20), Bob(30), Charlie(25)]"},
-            {"input": "sort by age",           "output": "[Alice(20), Alice(25), Charlie(25), Bob(30)]"},
-            {"input": "sort by name then age", "output": "[Alice(20), Alice(25), Bob(30), Charlie(25)]"}
+            {
+              "input": "sort by name",
+              "output": "[Alice(25), Alice(20), Bob(30), Charlie(25)]"
+            },
+            {
+              "input": "sort by age",
+              "output": "[Alice(20), Alice(25), Charlie(25), Bob(30)]"
+            },
+            {
+              "input": "sort by name then age",
+              "output": "[Alice(20), Alice(25), Bob(30), Charlie(25)]"
+            }
           ],
           "constraints": "Use Comparator API, not manual comparison.",
           "editorial": "Comparator is a functional interface — its compare() method is polymorphically dispatched. Passing different Comparator implementations to sort() changes behaviour at runtime. Comparator.thenComparing() chains comparators. This is polymorphism through functional interface dispatch."
@@ -314,9 +398,18 @@
           "starterCode": "public class Q14 {\n    static class Animal {\n        String name;\n        Animal(String name) { this.name = name; }\n    }\n    static class BrokenCat extends Animal {\n        BrokenCat(String n) { super(n); }\n        @Override public boolean equals(Object o) {\n            if (!(o instanceof Animal a)) return false;\n            return name.equals(a.name); // BUG: doesn't check class\n        }\n    }\n    static class Dog extends Animal { Dog(String n) { super(n); } }\n\n    static class FixedCat extends Animal {\n        FixedCat(String n) { super(n); }\n        // TODO: @Override equals() using getClass() check\n    }\n\n    public static void main(String[] args) {\n        System.out.println(new BrokenCat(\"Rex\").equals(new Dog(\"Rex\"))); // true — broken!\n        System.out.println(new FixedCat(\"Rex\").equals(new Dog(\"Rex\"))); // false — fixed\n        System.out.println(new FixedCat(\"Rex\").equals(new FixedCat(\"Rex\"))); // true\n    }\n}",
           "solutionCode": "public class Q14 {\n    static class Animal { String name; Animal(String n){name=n;} }\n    static class BrokenCat extends Animal {\n        BrokenCat(String n) { super(n); }\n        @Override public boolean equals(Object o) {\n            if (!(o instanceof Animal a)) return false;\n            return name.equals(a.name); // checks name only, ignores class\n        }\n    }\n    static class Dog extends Animal { Dog(String n){super(n);} }\n    static class FixedCat extends Animal {\n        FixedCat(String n) { super(n); }\n        @Override public boolean equals(Object o) {\n            if (o == null || getClass() != o.getClass()) return false;\n            return name.equals(((Animal)o).name);\n        }\n        @Override public int hashCode() { return java.util.Objects.hash(name, getClass()); }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(new BrokenCat(\"Rex\").equals(new Dog(\"Rex\"))); // true (bug)\n        System.out.println(new FixedCat(\"Rex\").equals(new Dog(\"Rex\"))); // false\n        System.out.println(new FixedCat(\"Rex\").equals(new FixedCat(\"Rex\"))); // true\n    }\n}",
           "testCases": [
-            {"input": "BrokenCat(Rex).equals(Dog(Rex))", "output": "true"},
-            {"input": "FixedCat(Rex).equals(Dog(Rex))",  "output": "false"},
-            {"input": "FixedCat(Rex).equals(FixedCat(Rex))", "output": "true"}
+            {
+              "input": "BrokenCat(Rex).equals(Dog(Rex))",
+              "output": "true"
+            },
+            {
+              "input": "FixedCat(Rex).equals(Dog(Rex))",
+              "output": "false"
+            },
+            {
+              "input": "FixedCat(Rex).equals(FixedCat(Rex))",
+              "output": "true"
+            }
           ],
           "constraints": "No constraints.",
           "editorial": "instanceof in equals allows a subclass to equal a parent or sibling class — violates symmetry. getClass() == o.getClass() enforces strict type equality. Effective Java recommends instanceof for sealed hierarchies (where you control all subclasses) and getClass() for open hierarchies. Always override hashCode() when overriding equals()."
@@ -333,10 +426,22 @@
           "starterCode": "public class Q15 {\n    interface Formatter { String format(); }\n\n    static class PlainText implements Formatter {\n        String text;\n        PlainText(String text) { this.text = text; }\n        @Override public String format() { return text; }\n    }\n\n    // TODO: BoldDecorator, UpperCaseDecorator, PrefixDecorator\n\n    public static void main(String[] args) {\n        Formatter f1 = new PlainText(\"hello\");\n        Formatter f2 = new UpperCaseDecorator(new PlainText(\"hello\"));\n        Formatter f3 = new BoldDecorator(new UpperCaseDecorator(new PlainText(\"hello\")));\n        Formatter f4 = new PrefixDecorator(\"INFO: \", new BoldDecorator(new PlainText(\"hello\")));\n\n        System.out.println(f1.format()); // hello\n        System.out.println(f2.format()); // HELLO\n        System.out.println(f3.format()); // **HELLO**\n        System.out.println(f4.format()); // INFO: **hello**\n    }\n}",
           "solutionCode": "public class Q15 {\n    interface Formatter { String format(); }\n\n    static class PlainText implements Formatter {\n        String text; PlainText(String text) { this.text = text; }\n        @Override public String format() { return text; }\n    }\n    static class BoldDecorator implements Formatter {\n        Formatter inner; BoldDecorator(Formatter f) { inner = f; }\n        @Override public String format() { return \"**\" + inner.format() + \"**\"; }\n    }\n    static class UpperCaseDecorator implements Formatter {\n        Formatter inner; UpperCaseDecorator(Formatter f) { inner = f; }\n        @Override public String format() { return inner.format().toUpperCase(); }\n    }\n    static class PrefixDecorator implements Formatter {\n        String prefix; Formatter inner;\n        PrefixDecorator(String p, Formatter f) { prefix=p; inner=f; }\n        @Override public String format() { return prefix + inner.format(); }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(new PlainText(\"hello\").format());                                          // hello\n        System.out.println(new UpperCaseDecorator(new PlainText(\"hello\")).format());                  // HELLO\n        System.out.println(new BoldDecorator(new UpperCaseDecorator(new PlainText(\"hello\"))).format()); // **HELLO**\n        System.out.println(new PrefixDecorator(\"INFO: \", new BoldDecorator(new PlainText(\"hello\"))).format()); // INFO: **hello**\n    }\n}",
           "testCases": [
-            {"input": "PlainText(hello)",                 "output": "hello"},
-            {"input": "UpperCase(PlainText(hello))",      "output": "HELLO"},
-            {"input": "Bold(UpperCase(PlainText(hello)))", "output": "**HELLO**"},
-            {"input": "Prefix(INFO:, Bold(hello))",       "output": "INFO: **hello**"}
+            {
+              "input": "PlainText(hello)",
+              "output": "hello"
+            },
+            {
+              "input": "UpperCase(PlainText(hello))",
+              "output": "HELLO"
+            },
+            {
+              "input": "Bold(UpperCase(PlainText(hello)))",
+              "output": "**HELLO**"
+            },
+            {
+              "input": "Prefix(INFO:, Bold(hello))",
+              "output": "INFO: **hello**"
+            }
           ],
           "constraints": "Each decorator must delegate to inner.format().",
           "editorial": "Decorator pattern: each wrapper implements the same interface and delegates to an inner Formatter. Polymorphism makes the chain work — each format() calls the next, adding behaviour layer by layer. Infinitely composable without new classes. Java I/O streams (BufferedReader wraps FileReader wraps InputStream) use this exact pattern."
@@ -353,9 +458,18 @@
           "starterCode": "public class Q16 {\n    interface ShapeVisitor {\n        double visit(Circle c);\n        double visit(Square s);\n        double visit(Triangle t);\n    }\n    abstract static class Shape { abstract double accept(ShapeVisitor v); }\n    static class Circle   extends Shape { double r; Circle(double r){this.r=r;}\n        @Override public double accept(ShapeVisitor v) { return v.visit(this); } }\n    static class Square   extends Shape { double s; Square(double s){this.s=s;}\n        @Override public double accept(ShapeVisitor v) { return v.visit(this); } }\n    static class Triangle extends Shape { double s; Triangle(double s){this.s=s;}\n        @Override public double accept(ShapeVisitor v) { return v.visit(this); } }\n\n    // TODO: class PerimeterVisitor implements ShapeVisitor\n\n    public static void main(String[] args) {\n        Shape[] shapes = {new Circle(5), new Square(4), new Triangle(3)};\n        ShapeVisitor pv = new PerimeterVisitor();\n        for (Shape s : shapes)\n            System.out.printf(\"%.2f%n\", s.accept(pv));\n    }\n}",
           "solutionCode": "public class Q16 {\n    interface ShapeVisitor {\n        double visit(Circle c);\n        double visit(Square s);\n        double visit(Triangle t);\n    }\n    abstract static class Shape { abstract double accept(ShapeVisitor v); }\n    static class Circle   extends Shape { double r; Circle(double r){this.r=r;}\n        @Override public double accept(ShapeVisitor v) { return v.visit(this); } }\n    static class Square   extends Shape { double s; Square(double s){this.s=s;}\n        @Override public double accept(ShapeVisitor v) { return v.visit(this); } }\n    static class Triangle extends Shape { double s; Triangle(double s){this.s=s;}\n        @Override public double accept(ShapeVisitor v) { return v.visit(this); } }\n\n    static class PerimeterVisitor implements ShapeVisitor {\n        @Override public double visit(Circle c)   { return 2 * Math.PI * c.r; }\n        @Override public double visit(Square s)   { return 4 * s.s; }\n        @Override public double visit(Triangle t) { return 3 * t.s; } // equilateral\n    }\n\n    public static void main(String[] args) {\n        Shape[] shapes = {new Circle(5), new Square(4), new Triangle(3)};\n        ShapeVisitor pv = new PerimeterVisitor();\n        for (Shape s : shapes)\n            System.out.printf(\"%.2f%n\", s.accept(pv));\n        // 31.42 (2π*5), 16.00 (4*4), 9.00 (3*3)\n    }\n}",
           "testCases": [
-            {"input": "Circle(5) perimeter",   "output": "31.42"},
-            {"input": "Square(4) perimeter",   "output": "16.00"},
-            {"input": "Triangle(3) perimeter", "output": "9.00"}
+            {
+              "input": "Circle(5) perimeter",
+              "output": "31.42"
+            },
+            {
+              "input": "Square(4) perimeter",
+              "output": "16.00"
+            },
+            {
+              "input": "Triangle(3) perimeter",
+              "output": "9.00"
+            }
           ],
           "constraints": "No instanceof in the main loop or PerimeterVisitor.",
           "editorial": "Double dispatch: `s.accept(pv)` dispatches on the Shape type (first dispatch). Inside accept, `v.visit(this)` dispatches on the visitor's method matching the concrete type (second dispatch). No instanceof needed. Adding a new visitor (AreaVisitor) requires only a new class — shapes unchanged."
@@ -372,7 +486,10 @@
           "starterCode": "import java.util.*;\n\npublic class Q17 {\n    interface Transformer<T> { T transform(T input); }\n\n    // TODO: UpperCaseTransformer, TrimTransformer, ReplaceTransformer\n\n    static class Pipeline {\n        private List<Transformer<String>> steps = new ArrayList<>();\n        Pipeline add(Transformer<String> t) { steps.add(t); return this; }\n        String apply(String input) {\n            // TODO: apply each step in sequence\n            return input;\n        }\n    }\n\n    public static void main(String[] args) {\n        Pipeline p = new Pipeline()\n            .add(new TrimTransformer())\n            .add(new UpperCaseTransformer())\n            .add(new ReplaceTransformer(\"WORLD\", \"JAVA\"));\n        System.out.println(p.apply(\"  hello world  \")); // HELLO JAVA\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q17 {\n    interface Transformer<T> { T transform(T input); }\n\n    static class TrimTransformer       implements Transformer<String> {\n        @Override public String transform(String s) { return s.trim(); }\n    }\n    static class UpperCaseTransformer  implements Transformer<String> {\n        @Override public String transform(String s) { return s.toUpperCase(); }\n    }\n    static class ReplaceTransformer    implements Transformer<String> {\n        String from, to;\n        ReplaceTransformer(String f, String t) { from=f; to=t; }\n        @Override public String transform(String s) { return s.replace(from, to); }\n    }\n\n    static class Pipeline {\n        private List<Transformer<String>> steps = new ArrayList<>();\n        Pipeline add(Transformer<String> t) { steps.add(t); return this; }\n        String apply(String input) {\n            String s = input;\n            for (Transformer<String> t : steps) s = t.transform(s);\n            return s;\n        }\n    }\n\n    public static void main(String[] args) {\n        Pipeline p = new Pipeline()\n            .add(new TrimTransformer())\n            .add(new UpperCaseTransformer())\n            .add(new ReplaceTransformer(\"WORLD\", \"JAVA\"));\n        System.out.println(p.apply(\"  hello world  \")); // HELLO JAVA\n    }\n}",
           "testCases": [
-            {"input": "\"  hello world  \" through trim+upper+replace", "output": "HELLO JAVA"}
+            {
+              "input": "\"  hello world  \" through trim+upper+replace",
+              "output": "HELLO JAVA"
+            }
           ],
           "constraints": "Pipeline must work for any number of steps.",
           "editorial": "Each step in the pipeline is a polymorphic Transformer. apply() dispatches to each step's transform() at runtime. Adding a new step type requires only a new class — Pipeline unchanged. This is how Java's Stream API and function composition work: each intermediate operation is a polymorphic step in a pipeline."
@@ -389,9 +506,18 @@
           "starterCode": "public class Q18 {\n    static String process(String s)  { return \"String: \" + s; }\n    static String process(Integer i) { return \"Integer: \" + i; }\n    static String process(Object o)  { return \"Object: \" + o; }\n\n    public static void main(String[] args) {\n        // process(null);           // compile error — ambiguous String vs Integer\n        System.out.println(process((String) null));  // String: null\n        System.out.println(process((Integer) null)); // Integer: null\n        System.out.println(process((Object) null));  // Object: null\n        // With only String and Integer, which takes null?\n    }\n}",
           "solutionCode": "public class Q18 {\n    static String process(String s)  { return \"String: \"  + s; }\n    static String process(Integer i) { return \"Integer: \" + i; }\n    static String process(Object o)  { return \"Object: \"  + o; }\n\n    // With all three: null resolves to most specific = String or Integer (still ambiguous!)\n    // The Object overload is NOT picked when String/Integer both match null\n    // Must cast to resolve\n\n    public static void main(String[] args) {\n        System.out.println(process((String)  null)); // String: null\n        System.out.println(process((Integer) null)); // Integer: null\n        System.out.println(process((Object)  null)); // Object: null\n        // Explicit cast always resolves the ambiguity\n    }\n}",
           "testCases": [
-            {"input": "process((String) null)",  "output": "String: null"},
-            {"input": "process((Integer) null)", "output": "Integer: null"},
-            {"input": "process((Object) null)",  "output": "Object: null"}
+            {
+              "input": "process((String) null)",
+              "output": "String: null"
+            },
+            {
+              "input": "process((Integer) null)",
+              "output": "Integer: null"
+            },
+            {
+              "input": "process((Object) null)",
+              "output": "Object: null"
+            }
           ],
           "constraints": "No ambiguous calls — all must compile.",
           "editorial": "null matches any reference type. When multiple overloads match, the compiler picks the most specific (smallest in the type hierarchy). String and Integer are both subtypes of Object but neither is a subtype of the other — ambiguous. Solution: always cast null explicitly. Effective Java: avoid overloading with types that can be confused with null."
@@ -408,9 +534,18 @@
           "starterCode": "public class Q19 {\n    interface ReportFormat { String render(String content); }\n\n    static class TextFormat  implements ReportFormat {\n        @Override public String render(String c) { return \"=== REPORT ===\\n\" + c; }\n    }\n    static class HtmlFormat  implements ReportFormat {\n        @Override public String render(String c) { return \"<html><body>\" + c + \"</body></html>\"; }\n    }\n    // TODO: MarkdownFormat\n\n    static class ReportGenerator {\n        void generate(String content, ReportFormat fmt) {\n            System.out.println(fmt.render(content));\n        }\n    }\n\n    public static void main(String[] args) {\n        ReportGenerator rg = new ReportGenerator();\n        String content = \"Q1 Revenue: $1M\";\n        rg.generate(content, new TextFormat());\n        rg.generate(content, new HtmlFormat());\n        rg.generate(content, new MarkdownFormat()); // new format — zero changes to ReportGenerator\n    }\n}",
           "solutionCode": "public class Q19 {\n    interface ReportFormat { String render(String content); }\n\n    static class TextFormat     implements ReportFormat {\n        @Override public String render(String c) { return \"=== REPORT ===\\n\" + c; }\n    }\n    static class HtmlFormat     implements ReportFormat {\n        @Override public String render(String c) { return \"<html><body>\" + c + \"</body></html>\"; }\n    }\n    static class MarkdownFormat implements ReportFormat {\n        @Override public String render(String c) { return \"# Report\\n\\n\" + c; }\n    }\n\n    static class ReportGenerator {\n        void generate(String content, ReportFormat fmt) {\n            System.out.println(fmt.render(content)); // unchanged\n        }\n    }\n\n    public static void main(String[] args) {\n        ReportGenerator rg = new ReportGenerator();\n        String c = \"Q1 Revenue: $1M\";\n        rg.generate(c, new TextFormat());\n        rg.generate(c, new HtmlFormat());\n        rg.generate(c, new MarkdownFormat());\n    }\n}",
           "testCases": [
-            {"input": "TextFormat render",     "output": "=== REPORT ===\nQ1 Revenue: $1M"},
-            {"input": "HtmlFormat render",     "output": "<html><body>Q1 Revenue: $1M</body></html>"},
-            {"input": "MarkdownFormat render", "output": "# Report\n\nQ1 Revenue: $1M"}
+            {
+              "input": "TextFormat render",
+              "output": "=== REPORT ===\nQ1 Revenue: $1M"
+            },
+            {
+              "input": "HtmlFormat render",
+              "output": "<html><body>Q1 Revenue: $1M</body></html>"
+            },
+            {
+              "input": "MarkdownFormat render",
+              "output": "# Report\n\nQ1 Revenue: $1M"
+            }
           ],
           "constraints": "ReportGenerator must not be modified when adding MarkdownFormat.",
           "editorial": "Open/Closed Principle: open for extension (new ReportFormat implementations), closed for modification (ReportGenerator never changes). This is polymorphism's killer feature — systems designed around interfaces grow by addition, not modification. Used in Spring's MessageConverter, Jackson's SerializerFactory, JDBC drivers."
@@ -427,12 +562,17 @@
           "starterCode": "import java.util.*;\n\npublic class Q20 {\n    interface TreeNode { void print(String indent); }\n\n    // TODO: Leaf, Branch\n\n    public static void main(String[] args) {\n        TreeNode tree = new Branch(\"root\", List.of(\n            new Branch(\"A\", List.of(\n                new Leaf(\"A1\"),\n                new Leaf(\"A2\")\n            )),\n            new Branch(\"B\", List.of(\n                new Leaf(\"B1\")\n            )),\n            new Leaf(\"C\")\n        ));\n        tree.print(\"\");\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q20 {\n    interface TreeNode { void print(String indent); }\n\n    static class Leaf implements TreeNode {\n        String value;\n        Leaf(String value) { this.value = value; }\n        @Override public void print(String indent) {\n            System.out.println(indent + value);\n        }\n    }\n\n    static class Branch implements TreeNode {\n        String name;\n        List<TreeNode> children;\n        Branch(String name, List<TreeNode> children) { this.name=name; this.children=children; }\n        @Override public void print(String indent) {\n            System.out.println(indent + name + \"/\");\n            for (TreeNode child : children) child.print(indent + \"  \");\n        }\n    }\n\n    public static void main(String[] args) {\n        TreeNode tree = new Branch(\"root\", List.of(\n            new Branch(\"A\", List.of(new Leaf(\"A1\"), new Leaf(\"A2\"))),\n            new Branch(\"B\", List.of(new Leaf(\"B1\"))),\n            new Leaf(\"C\")\n        ));\n        tree.print(\"\");\n    }\n}",
           "testCases": [
-            {"input": "print tree", "output": "root/\n  A/\n    A1\n    A2\n  B/\n    B1\n  C"}
+            {
+              "input": "print tree",
+              "output": "root/\n  A/\n    A1\n    A2\n  B/\n    B1\n  C"
+            }
           ],
           "constraints": "No instanceof in Branch.print().",
           "editorial": "Composite pattern: Leaf and Branch both implement TreeNode. Branch.print() calls child.print() polymorphically — the JVM dispatches to Leaf.print() or Branch.print() as appropriate, enabling natural recursion. No instanceof needed — each node knows how to print itself. Used in XML/JSON parsers, file system trees, UI component hierarchies (Swing, JavaFX)."
         }
-      ]
+      ],
+      "subCategory": "OOP (VERY IMPORTANT)",
+      "displayOrder": 23
     }
   ]
 }

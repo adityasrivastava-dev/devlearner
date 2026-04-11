@@ -213,7 +213,9 @@
           "constraints": "1 ≤ n ≤ 8 (larger n may time out without Warnsdorff's heuristic) | 0 ≤ startRow, startCol < n",
           "editorial": "Backtracking with Warnsdorff's heuristic: always move to the square with the fewest onward moves. Without heuristic: O(8^(n²)) — infeasible for n>5. With heuristic: O(n²) near-linear in practice. Classic example of how a simple heuristic transforms backtracking from exponential to practical."
         }
-      ]
+      ],
+      "subCategory": "Recursion & Backtracking",
+      "displayOrder": 60
     }
   ]
 }

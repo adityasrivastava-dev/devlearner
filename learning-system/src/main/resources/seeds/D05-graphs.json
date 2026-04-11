@@ -154,7 +154,9 @@
           "constraints": "1 ≤ beginWord.length ≤ 10 | 1 ≤ wordList.length ≤ 5000 | All words same length, lowercase letters",
           "editorial": "BFS on implicit graph. Generate 26*L variants per word. O(26 * L * N) time where N = wordList size."
         }
-      ]
+      ],
+      "subCategory": "Graphs",
+      "displayOrder": 50
     }
   ]
 }

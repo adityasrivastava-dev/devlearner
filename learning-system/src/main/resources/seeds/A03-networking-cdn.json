@@ -11,7 +11,15 @@
       "bruteForce": "Without DNS: users must type IP addresses directly (1.2.3.4 instead of example.com). Without health-check-based routing: if your server IP goes down, DNS still returns that IP and users see errors until you manually update the DNS record (can take minutes to hours depending on TTL). Without latency routing: European users connect to your US server with 150ms extra RTT even though you have a European server.",
       "optimizedApproach": "Use Alias records (not CNAME) for AWS resources — free, no extra DNS hop, works at root domain (CNAME cannot be at apex). Set low TTL (60s) for records you might need to change quickly (failover, deployments); high TTL (86400s = 24h) for stable records to reduce DNS query costs. Use latency-based routing for multi-region apps — Route 53 measures AWS region latencies from the resolver's location and routes to the lowest-latency region. Combine with health checks for automatic failover (if latency-based primary fails, Route 53 falls back to other regions). Use Route 53 Resolver for hybrid DNS (on-premise ↔ AWS VPC name resolution).",
       "whenToUse": "Route 53: registering domains, hosting DNS for any AWS or non-AWS infrastructure, multi-region routing and failover, blue/green deployments (shift traffic via weighted routing), geolocation-based content serving. NOT Route 53: CDN (use CloudFront), load balancing within a region (use ALB), in-VPC service discovery (use AWS Cloud Map or ECS service discovery).",
-      "tags": ["aws", "route53", "dns", "networking", "cloud", "devops", "high-availability"],
+      "tags": [
+        "aws",
+        "route53",
+        "dns",
+        "networking",
+        "cloud",
+        "devops",
+        "high-availability"
+      ],
       "examples": [
         {
           "displayOrder": 1,
@@ -41,7 +49,11 @@
           "title": "Configure Multi-Region Failover with Health Checks",
           "difficulty": "Medium",
           "description": "Your app runs in us-east-1 (primary) and eu-west-1 (DR). Design the Route 53 configuration: (1) Primary must fail over to DR if HTTP health check to /health returns non-200 for 3 consecutive checks. (2) Recovery must be automatic when primary comes back up. (3) TTL must allow failover within 90 seconds.",
-          "constraints": ["Health check interval: 30s standard", "3 failures × 30s = 90s to declare unhealthy", "TTL must be ≤ 90s for failover to complete within 90s"],
+          "constraints": [
+            "Health check interval: 30s standard",
+            "3 failures × 30s = 90s to declare unhealthy",
+            "TTL must be ≤ 90s for failover to complete within 90s"
+          ],
           "examples": [
             {
               "input": "Primary: 54.1.2.3 (us-east-1), Secondary: 52.6.7.8 (eu-west-1)",
@@ -49,13 +61,21 @@
               "explanation": "SECONDARY has no health check — it's the last resort. If it also had a health check and was unhealthy, Route 53 would have no record to return"
             }
           ],
-          "hints": ["HealthCheckId attached to PRIMARY record only", "Failover time = (failureThreshold × requestInterval) + TTL = (3×30) + 60 = 150s worst case", "For 90s guarantee: use Fast health check (10s interval), failureThreshold=3 → 30s + TTL=60s = 90s"]
+          "hints": [
+            "HealthCheckId attached to PRIMARY record only",
+            "Failover time = (failureThreshold × requestInterval) + TTL = (3×30) + 60 = 150s worst case",
+            "For 90s guarantee: use Fast health check (10s interval), failureThreshold=3 → 30s + TTL=60s = 90s"
+          ]
         },
         {
           "title": "Canary Deployment with Route 53 Weighted Routing",
           "difficulty": "Easy",
           "description": "You're deploying a new API version to 5% of traffic. After 10 minutes if error rate < 0.1%, increase to 25%, then 50%, then 100%. What Route 53 configuration enables this, and what CloudWatch metric should trigger a rollback?",
-          "constraints": ["Two records: same Name, same Type, different SetIdentifier", "Weights are relative (90+10 = same as 9+1 = same as 900+100)", "TTL=60s so traffic shifts take effect within 1 minute"],
+          "constraints": [
+            "Two records: same Name, same Type, different SetIdentifier",
+            "Weights are relative (90+10 = same as 9+1 = same as 900+100)",
+            "TTL=60s so traffic shifts take effect within 1 minute"
+          ],
           "examples": [
             {
               "input": "v1 weight=95, v2 weight=5 (5% canary)",
@@ -63,13 +83,21 @@
               "explanation": "Weight=0 effectively removes a record from rotation — all traffic goes to v1"
             }
           ],
-          "hints": ["aws route53 change-resource-record-sets with Weight=0 to remove a record from rotation", "CloudWatch → Route 53 automated rollback: EventBridge + Lambda watches the alarm", "SetIdentifier must be unique within the same Name + Type combination"]
+          "hints": [
+            "aws route53 change-resource-record-sets with Weight=0 to remove a record from rotation",
+            "CloudWatch → Route 53 automated rollback: EventBridge + Lambda watches the alarm",
+            "SetIdentifier must be unique within the same Name + Type combination"
+          ]
         },
         {
           "title": "CNAME vs Alias Record",
           "difficulty": "Easy",
           "description": "A developer set up 'example.com CNAME my-alb.amazonaws.com' and it doesn't work. They also notice they're being charged extra DNS query fees. Explain why CNAME at root domain fails, what the correct record type is, and why it costs less.",
-          "constraints": ["Root domain = apex = the bare domain with no subdomain prefix", "RFC 1034 prohibits CNAME at apex alongside other records (SOA, NS)", "Alias record is an AWS Route 53 extension, not standard DNS"],
+          "constraints": [
+            "Root domain = apex = the bare domain with no subdomain prefix",
+            "RFC 1034 prohibits CNAME at apex alongside other records (SOA, NS)",
+            "Alias record is an AWS Route 53 extension, not standard DNS"
+          ],
           "examples": [
             {
               "input": "example.com CNAME my-alb.amazonaws.com (broken)",
@@ -77,9 +105,15 @@
               "explanation": "Alias records are resolved by Route 53 before returning to the client — no extra DNS hop, no extra billing"
             }
           ],
-          "hints": ["CNAME cannot coexist with SOA/NS records at the root — violates RFC 1034", "Alias record Type is A (or AAAA) but with an AliasTarget instead of ResourceRecords", "EvaluateTargetHealth only works with Alias records, not CNAME"]
+          "hints": [
+            "CNAME cannot coexist with SOA/NS records at the root — violates RFC 1034",
+            "Alias record Type is A (or AAAA) but with an AliasTarget instead of ResourceRecords",
+            "EvaluateTargetHealth only works with Alias records, not CNAME"
+          ]
         }
-      ]
+      ],
+      "subCategory": "Networking & CDN",
+      "displayOrder": 35
     },
     {
       "title": "Amazon CloudFront — CDN and Edge Caching",
@@ -92,7 +126,16 @@
       "bruteForce": "Without CloudFront, a static React app served from S3 in us-east-1: Tokyo user fetches 500KB bundle.js across the Pacific — 150ms RTT × multiple round trips = ~600ms total load time. With CloudFront edge in Tokyo: bundle.js cached at edge after first request → ~8ms RTT → subsequent requests < 10ms. S3 origin transfer cost: $0.09/GB. CloudFront transfer cost: $0.08/GB (edge) + $0.004/GB (origin to CloudFront) = $0.084/GB AND reduces origin requests by 95%.",
       "optimizedApproach": "Maximize cache hit ratio: keep cache key minimal (URL only), use Cache-Control headers from origin (max-age directive), separate static assets (long TTL, versioned filenames) from HTML (short TTL or no cache). Use versioned file names (bundle.abc123.js) instead of invalidations — a new deploy creates new URLs, old URLs naturally expire. Reserve invalidations for emergencies (index.html). Enable Gzip/Brotli compression at CloudFront edge — reduce transfer size by 60-80%. Use CloudFront Functions (sub-millisecond, lightweight JS) for URL rewrites, redirects, and header manipulation. Use Lambda@Edge for heavier computation at the edge (A/B testing, auth, personalisation).",
       "whenToUse": "CloudFront: static website hosting (S3 + CloudFront), API acceleration (caching GET responses), DDoS protection (absorbs traffic at edge), HTTPS termination, streaming video (HLS/DASH), software distribution. NOT CloudFront: WebSocket real-time connections (use API Gateway WebSocket or ALB), content that's highly personalised per user (low cache hit ratio → defeats the purpose), data that changes faster than TTL allows.",
-      "tags": ["aws", "cloudfront", "cdn", "caching", "networking", "cloud", "devops", "performance"],
+      "tags": [
+        "aws",
+        "cloudfront",
+        "cdn",
+        "caching",
+        "networking",
+        "cloud",
+        "devops",
+        "performance"
+      ],
       "examples": [
         {
           "displayOrder": 1,
@@ -122,7 +165,11 @@
           "title": "Debug Low Cache Hit Ratio",
           "difficulty": "Medium",
           "description": "A CloudFront distribution is serving an API at /api/* (POST requests) and a React app at /* (static files). The cache hit ratio is 12% (expected 90%+). Identify 3 likely causes of the low cache hit ratio and propose fixes for each.",
-          "constraints": ["POST requests are never cached by HTTP standard", "Query strings and cookies expand the cache key, fragmenting it", "Each unique cache key = a separate cached object"],
+          "constraints": [
+            "POST requests are never cached by HTTP standard",
+            "Query strings and cookies expand the cache key, fragmenting it",
+            "Each unique cache key = a separate cached object"
+          ],
           "examples": [
             {
               "input": "Cache hit ratio: 12%. Distribution handles both /api/* and /* paths",
@@ -130,13 +177,21 @@
               "explanation": "The /api/* misses are expected and unavoidable — use CachingDisabled. The static asset misses indicate cache key fragmentation"
             }
           ],
-          "hints": ["Check CloudFront cache behavior configurations for /api/*", "CloudFront console → Reports → Cache Statistics shows hit/miss breakdown by behavior", "aws s3 cp index.html s3://bucket/ --cache-control 'no-cache' sets the S3 object metadata"]
+          "hints": [
+            "Check CloudFront cache behavior configurations for /api/*",
+            "CloudFront console → Reports → Cache Statistics shows hit/miss breakdown by behavior",
+            "aws s3 cp index.html s3://bucket/ --cache-control 'no-cache' sets the S3 object metadata"
+          ]
         },
         {
           "title": "Set Up HTTPS with ACM Certificate",
           "difficulty": "Easy",
           "description": "Configure HTTPS for a CloudFront distribution with custom domain api.example.com. List the steps in order: certificate request, validation, CloudFront configuration, Route 53 record. What region must the ACM certificate be in, and why?",
-          "constraints": ["ACM certificates for CloudFront MUST be in us-east-1 (N. Virginia)", "CloudFront is a global service, certificates must be in the global region", "DNS validation is preferred over email validation (automated renewal)"],
+          "constraints": [
+            "ACM certificates for CloudFront MUST be in us-east-1 (N. Virginia)",
+            "CloudFront is a global service, certificates must be in the global region",
+            "DNS validation is preferred over email validation (automated renewal)"
+          ],
           "examples": [
             {
               "input": "Custom domain: api.example.com, SSL required",
@@ -144,13 +199,21 @@
               "explanation": "CloudFront is a global service managed from us-east-1 internally — certificates referenced by CloudFront must be in us-east-1 regardless of where your origin is"
             }
           ],
-          "hints": ["ACM in us-east-1 only for CloudFront (other services use regional certs)", "SslSupportMethod: sni-only (vs vip — expensive dedicated IP)", "MinimumProtocolVersion: TLSv1.2_2021 (disables insecure TLS 1.0/1.1)"]
+          "hints": [
+            "ACM in us-east-1 only for CloudFront (other services use regional certs)",
+            "SslSupportMethod: sni-only (vs vip — expensive dedicated IP)",
+            "MinimumProtocolVersion: TLSv1.2_2021 (disables insecure TLS 1.0/1.1)"
+          ]
         },
         {
           "title": "Design CloudFront for a Video Streaming Platform",
           "difficulty": "Hard",
           "description": "Design a CloudFront distribution for a video streaming platform: (1) Free preview (first 2 minutes) of every episode is publicly accessible. (2) Full episodes require an active subscription — generate a signed URL valid for 4 hours. (3) Video files are in S3 (never publicly accessible). (4) Thumbnails are publicly cacheable. What CloudFront configuration, S3 permissions, and URL signing approach would you use?",
-          "constraints": ["S3 bucket must remain private — only CloudFront can access it", "Signed URLs must not be shareable after expiry", "Thumbnails: long TTL (1 day). Videos: no cache (each request is a unique signed URL)"],
+          "constraints": [
+            "S3 bucket must remain private — only CloudFront can access it",
+            "Signed URLs must not be shareable after expiry",
+            "Thumbnails: long TTL (1 day). Videos: no cache (each request is a unique signed URL)"
+          ],
           "examples": [
             {
               "input": "Free preview: /previews/*, Full episodes: /episodes/*, Thumbnails: /thumbs/*",
@@ -158,9 +221,15 @@
               "explanation": "CachingDisabled on /episodes/* because each signed URL is unique (different for each user/time) — no point caching"
             }
           ],
-          "hints": ["Key Group replaces legacy Origin Access Identity for signed URL enforcement", "CachingDisabled policy for signed content — signed URL parameters would fragment cache", "Server-side URL signing: your backend generates the signed URL, delivers to client — private key never leaves server"]
+          "hints": [
+            "Key Group replaces legacy Origin Access Identity for signed URL enforcement",
+            "CachingDisabled policy for signed content — signed URL parameters would fragment cache",
+            "Server-side URL signing: your backend generates the signed URL, delivers to client — private key never leaves server"
+          ]
         }
-      ]
+      ],
+      "subCategory": "Networking & CDN",
+      "displayOrder": 35
     },
     {
       "title": "ALB, NLB, and VPC Peering — Load Balancing and Network Design",
@@ -173,7 +242,16 @@
       "bruteForce": "Without a load balancer: one EC2 instance handles all traffic. Single point of failure. When you deploy a new version, downtime. Without VPC Peering: services in different VPCs communicate via the public internet — adds latency, security risk, and data transfer costs (internet egress). Without content-based routing: separate load balancers for each service, each with its own cost and management overhead.",
       "optimizedApproach": "ALB listener rules: use path-based routing (/api/users/* → users service, /api/orders/* → orders service) to host multiple microservices behind one ALB — reduces cost and simplifies DNS. Use ALB's built-in sticky sessions (application-based or duration-based cookies) only when necessary — stateless backends scale better. NLB for: gRPC, raw TCP databases, custom TCP protocols, static IP requirements (ALB IPs change). VPC Peering for 1-few connections; Transit Gateway for hub-and-spoke (dozens of VPCs) — TGW is a managed regional router.",
       "whenToUse": "ALB: REST/GraphQL APIs, microservices routing, WebSocket, HTTP/2, gRPC (via HTTP/2). NLB: extreme throughput, ultra-low latency, TCP/UDP non-HTTP protocols, static IP requirement (whitelisting), PrivateLink endpoint (NLB is required). VPC Peering: connecting two VPCs (same or different account/region) for private communication. Transit Gateway: when you have 3+ VPCs needing full mesh connectivity.",
-      "tags": ["aws", "alb", "nlb", "load-balancer", "vpc-peering", "networking", "cloud", "devops"],
+      "tags": [
+        "aws",
+        "alb",
+        "nlb",
+        "load-balancer",
+        "vpc-peering",
+        "networking",
+        "cloud",
+        "devops"
+      ],
       "examples": [
         {
           "displayOrder": 1,
@@ -203,7 +281,11 @@
           "title": "ALB Rule Priority Design",
           "difficulty": "Easy",
           "description": "Design ALB listener rules for an application with these routing requirements: (1) GET /health → return 200 OK immediately without hitting backend (used by external monitoring). (2) /admin/* → forward to admin-service target group. (3) /api/* → forward to api-service target group. (4) Everything else → forward to frontend-service target group. Assign priorities correctly.",
-          "constraints": ["Lower priority number = evaluated first", "More specific rules should have lower priority numbers (evaluated first)", "Fixed-response action returns a response without hitting any backend"],
+          "constraints": [
+            "Lower priority number = evaluated first",
+            "More specific rules should have lower priority numbers (evaluated first)",
+            "Fixed-response action returns a response without hitting any backend"
+          ],
           "examples": [
             {
               "input": "4 routing rules, /health should be fastest (no backend call)",
@@ -211,13 +293,20 @@
               "explanation": "Fixed-response at priority 1 for /health: health check probes hit this 30× per minute per instance — keeping them away from the backend reduces unnecessary load"
             }
           ],
-          "hints": ["Default action (no rule) handles everything not matched by a rule", "fixed-response content-type must be specified: application/json or text/plain", "Priority gaps (1, 10, 20 instead of 1, 2, 3) leave room to insert new rules later"]
+          "hints": [
+            "Default action (no rule) handles everything not matched by a rule",
+            "fixed-response content-type must be specified: application/json or text/plain",
+            "Priority gaps (1, 10, 20 instead of 1, 2, 3) leave room to insert new rules later"
+          ]
         },
         {
           "title": "Choose ALB vs NLB",
           "difficulty": "Easy",
           "description": "For each scenario, choose ALB or NLB and give the decisive reason: (1) REST API with JWT authentication. (2) Real-time multiplayer game server using UDP. (3) gRPC microservices (HTTP/2 transport). (4) Database proxy that enterprise clients whitelist by IP. (5) WebSocket chat application.",
-          "constraints": ["ALB: HTTP/HTTPS/WebSocket, Layer 7, content-based routing, dynamic IPs", "NLB: TCP/UDP/TLS, Layer 4, static IPs, sub-millisecond latency"],
+          "constraints": [
+            "ALB: HTTP/HTTPS/WebSocket, Layer 7, content-based routing, dynamic IPs",
+            "NLB: TCP/UDP/TLS, Layer 4, static IPs, sub-millisecond latency"
+          ],
           "examples": [
             {
               "input": "Game server using UDP for position updates",
@@ -225,13 +314,21 @@
               "explanation": "ALB cannot inspect UDP packets — it's purely an HTTP-aware load balancer"
             }
           ],
-          "hints": ["If the protocol is not HTTP/HTTPS/WebSocket → NLB", "If static IP is required for firewall whitelisting → NLB", "WebSocket: ALB supports it natively (HTTP Upgrade header) → ALB is fine"]
+          "hints": [
+            "If the protocol is not HTTP/HTTPS/WebSocket → NLB",
+            "If static IP is required for firewall whitelisting → NLB",
+            "WebSocket: ALB supports it natively (HTTP Upgrade header) → ALB is fine"
+          ]
         },
         {
           "title": "Debug VPC Peering Connectivity Issue",
           "difficulty": "Medium",
           "description": "You set up VPC Peering between App VPC (10.0.0.0/16) and DB VPC (10.1.0.0/16). The peering connection is ACTIVE. EC2 in App VPC cannot reach RDS in DB VPC on port 5432. List 3 things to check in order, explaining what misconfiguration each would reveal.",
-          "constraints": ["Peering connection status ACTIVE means the connection is established", "Route tables and security groups are separate from the peering connection itself", "Security groups can reference CIDR ranges or other security group IDs"],
+          "constraints": [
+            "Peering connection status ACTIVE means the connection is established",
+            "Route tables and security groups are separate from the peering connection itself",
+            "Security groups can reference CIDR ranges or other security group IDs"
+          ],
           "examples": [
             {
               "input": "Peering ACTIVE but no connectivity. App VPC: 10.0.0.0/16, DB VPC: 10.1.0.0/16",
@@ -239,13 +336,21 @@
               "explanation": "Peering ACTIVE is just the handshake. Routes and security groups are independent layers that must also be configured"
             }
           ],
-          "hints": ["aws ec2 describe-route-tables shows all routes", "aws ec2 describe-security-groups shows inbound rules", "Use VPC Reachability Analyzer to trace the exact point of failure"]
+          "hints": [
+            "aws ec2 describe-route-tables shows all routes",
+            "aws ec2 describe-security-groups shows inbound rules",
+            "Use VPC Reachability Analyzer to trace the exact point of failure"
+          ]
         },
         {
           "title": "ALB Connection Draining for Zero-Downtime Deployments",
           "difficulty": "Medium",
           "description": "You need to deploy a new version of a service running behind an ALB without dropping any in-flight requests. Describe the deployment steps using ALB target group deregistration and connection draining. What is the deregistration_delay setting, and what happens to requests during the draining period?",
-          "constraints": ["Connection draining (deregistration_delay): 0-3600s, default 300s", "During drain: no new requests routed to deregistering target", "During drain: existing in-flight requests complete normally"],
+          "constraints": [
+            "Connection draining (deregistration_delay): 0-3600s, default 300s",
+            "During drain: no new requests routed to deregistering target",
+            "During drain: existing in-flight requests complete normally"
+          ],
           "examples": [
             {
               "input": "2 instances (v1), rolling deploy to v2",
@@ -253,9 +358,15 @@
               "explanation": "deregistration_delay=300s (default) is too long for most apps — set it to ~30s (your p99 request time) to speed up deployments without dropping requests"
             }
           ],
-          "hints": ["aws elbv2 modify-target-group-attributes --deregistration-delay.timeout-seconds 30", "During draining: ALB sends to remaining healthy targets only. If only 1 instance left: it handles 100% of traffic", "EC2 Auto Scaling respects connection draining before terminating instances"]
+          "hints": [
+            "aws elbv2 modify-target-group-attributes --deregistration-delay.timeout-seconds 30",
+            "During draining: ALB sends to remaining healthy targets only. If only 1 instance left: it handles 100% of traffic",
+            "EC2 Auto Scaling respects connection draining before terminating instances"
+          ]
         }
-      ]
+      ],
+      "subCategory": "Networking & CDN",
+      "displayOrder": 35
     }
   ]
 }

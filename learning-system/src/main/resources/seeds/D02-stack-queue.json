@@ -213,7 +213,9 @@
           "constraints": "1 ≤ x ≤ 9 | At most 100 calls | Always valid (pop/top on non-empty)",
           "editorial": "After each push, rotate queue so new element is at front. O(n) push, O(1) pop/top. Symmetric to Queue-with-2-Stacks. Rotation trick: enqueue x, then dequeue-and-reenqueue all n-1 previous elements."
         }
-      ]
+      ],
+      "subCategory": "Stack & Queue",
+      "displayOrder": 30
     }
   ]
 }

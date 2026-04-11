@@ -13,6 +13,9 @@ public interface TopicRepository extends JpaRepository<Topic, Long> {
     List<Topic>     findByCategory(Topic.Category category);
     Optional<Topic> findByTitle(String title);
 
+    List<Topic> findAllByOrderByDisplayOrderAscTitleAsc();
+    List<Topic> findByCategoryOrderByDisplayOrderAscTitleAsc(Topic.Category category);
+
 @Modifying
 @Query("DELETE FROM Topic")
 void deleteAllTopics();
