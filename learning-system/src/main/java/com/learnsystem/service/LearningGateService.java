@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -88,6 +89,47 @@ public class LearningGateService {
         progressRepo.save(progress);
 
         return getGateStatus(userId, topicId);
+    }
+
+    // ── Bulk: all stages for a user ────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public Map<Long, String> getAllGateStages(Long userId) {
+        // Theory completion per topic
+        Map<Long, Boolean> theoryDone = progressRepo.findAllByUserId(userId).stream()
+                .collect(Collectors.toMap(
+                        UserTopicProgress::getTopicId,
+                        UserTopicProgress::isTheoryCompleted));
+
+        // Solved counts per topic per difficulty — single query
+        Map<Long, Map<String, Integer>> solved = new HashMap<>();
+        for (Object[] row : submissionRepo.countSolvedByDifficultyForAllTopics(userId)) {
+            Long   topicId = ((Number) row[0]).longValue();
+            String diff    = (String) row[1];
+            int    count   = ((Number) row[2]).intValue();
+            solved.computeIfAbsent(topicId, k -> new HashMap<>()).put(diff, count);
+        }
+
+        // Merge: every topic that has theory progress or solved submissions
+        Map<Long, String> result = new HashMap<>();
+        for (Long topicId : theoryDone.keySet()) {
+            Map<String, Integer> s = solved.getOrDefault(topicId, Map.of());
+            result.put(topicId, deriveStage(
+                    theoryDone.get(topicId),
+                    s.getOrDefault("EASY", 0),
+                    s.getOrDefault("MEDIUM", 0),
+                    s.getOrDefault("HARD", 0)));
+        }
+        for (Long topicId : solved.keySet()) {
+            if (!result.containsKey(topicId)) {
+                Map<String, Integer> s = solved.get(topicId);
+                result.put(topicId, deriveStage(false,
+                        s.getOrDefault("EASY", 0),
+                        s.getOrDefault("MEDIUM", 0),
+                        s.getOrDefault("HARD", 0)));
+            }
+        }
+        return result;
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────

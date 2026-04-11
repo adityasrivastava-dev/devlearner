@@ -171,6 +171,9 @@ Quiz sets by category, per-question timer, results with grade + review accordion
 ### Revision Session (`/revision`)
 **Fully built.** Setup screen (pick categories, difficulty, duration 10/20/30 min) → timed session (reveal-and-rate each question) → scorecard with review accordion.
 
+### Topic Mastery Map (`/mastery`)
+Visual grid of every topic colored by gate stage. One request (`GET /api/gate/all`) returns `{ topicId: stage }` for all topics the user has touched — topics absent from the map are treated as THEORY. Topics grouped by category with per-category stats (mastered / in progress / not started). Progress bar across the top showing overall distribution. Clicking any card navigates to `/?topic={id}`. Backend: `GateBulkController` → `LearningGateService.getAllGateStages()` using two queries (all `UserTopicProgress` for the user + one cross-topic solved-count query).
+
 ### Complexity Analyzer (`/complexity`)
 Paste any Java code → get Big-O time and space complexity from actual static analysis (not hardcoded values). Monaco editor on left, results panel on right. Shows: complexity notation colored by grade (green O(1) → red O(2ⁿ)), confidence level (HIGH/MEDIUM/LOW with bar), detected patterns as chips (loops/recursion/sorting/etc.), time and space explanations, complexity scale with active item highlighted. Keyboard shortcut Ctrl+Shift+A. Backend: `ComplexityAnalyzer` service + `POST /api/analyze-complexity`. Frontend: `codeApi.analyzeComplexity`.
 
@@ -308,7 +311,6 @@ Format: `{ batchName, skipExisting, algorithms: [...] }`. Each algorithm needs: 
 ### High Priority
 1. **Spaced Repetition Queue UI** — `SpacedRepetitionService` exists in backend; no frontend surface. Surface "review these N topics today" on dashboard. Pure frontend + existing API.
 2. **Interview Mode** — Timed 45-min session, lock a problem, no hints, write approach first, scored at end. Uses existing problem + submission APIs.
-3. **Topic Mastery Map** — Visual grid of all topics colored by gate stage (THEORY → MASTERED). Pure frontend — gate data already returned from API.
 4. **Daily Challenge** — Same problem for all users each day (Wordle-style). Shared leaderboard, streak tie-in.
 5. **Editorial unlock improvement** — Unlock after 2 attempts OR 10+ min, not only after AC.
 

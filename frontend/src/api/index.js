@@ -351,6 +351,7 @@ export const QUERY_KEYS = {
   topicRating:   (tid)  => ['topicRating', tid],
   similarProblems:(pid) => ['similarProblems', pid],
   gateStatus:       (tid)  => ['gateStatus', tid],
+  allGateStages:           ['allGateStages'],
   interviewQuestions:      ['interviewQuestions'],
 };
 // ─── Spaced Repetition ────────────────────────────────────────────────────────
@@ -396,4 +397,8 @@ export const gateApi = {
 
   completeTheory: (topicId, note) =>
     http.post(`/api/topics/${topicId}/gate/theory`, { note }).then((r) => r.data),
+
+  // Returns { [topicId]: stage } for all topics the user has touched (single request)
+  getAllStages: () =>
+    http.get('/api/gate/all').then((r) => r.data),
 };

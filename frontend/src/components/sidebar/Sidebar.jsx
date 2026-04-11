@@ -14,6 +14,7 @@ const NAV_SECTIONS = [
     items: [
       { path: '/',            icon: '⌂',  label: 'Dashboard'      },
       { path: '/algorithms',  icon: '∑',  label: 'Algorithms'     },
+      { path: '/mastery',     icon: '◉',  label: 'Mastery Map'    },
       { path: '/roadmap',     icon: '🗺', label: 'Roadmap'        },
     ],
   },

@@ -84,4 +84,17 @@ List<Object[]> countSolvedByDifficultyForTopic(@Param("uid") Long userId, @Param
     GROUP BY p.difficulty
     """, nativeQuery = true)
 List<Object[]> countProblemsByDifficultyForTopic(@Param("topicId") Long topicId);
+
+    /**
+     * Count DISTINCT problems solved per topic per difficulty for a user — all topics in one query.
+     * Returns Object[] rows: [topic_id (Long), difficulty (String), count (Long)]
+     */
+    @Query(value = """
+        SELECT p.topic_id, p.difficulty, COUNT(DISTINCT s.problem_id) AS cnt
+        FROM submissions s
+        JOIN problems p ON p.id = s.problem_id
+        WHERE s.user_id = :uid AND s.status = 'ACCEPTED'
+        GROUP BY p.topic_id, p.difficulty
+        """, nativeQuery = true)
+    List<Object[]> countSolvedByDifficultyForAllTopics(@Param("uid") Long userId);
 }
