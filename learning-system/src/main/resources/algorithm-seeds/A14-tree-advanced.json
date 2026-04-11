@@ -1,13 +1,13 @@
 {
   "batchName": "A14 – Tree Advanced",
-  "skipExisting": true,
+  "skipExisting": false,
   "algorithms": [
     {
       "slug": "tree-height-depth",
       "name": "Tree Height and Depth",
       "category": "Trees",
       "emoji": "🌳",
-      "difficulty": "Easy",
+      "difficulty": "BEGINNER",
       "displayOrder": 320,
       "tags": "[\"trees\",\"dfs\",\"recursion\",\"bfs\"]",
       "timeComplexityBest": "O(n)",
@@ -21,16 +21,16 @@
       "howItWorks": "Height (DFS post-order):\n1. If node is null → return 0\n2. leftHeight = maxDepth(node.left)\n3. rightHeight = maxDepth(node.right)\n4. Return 1 + max(leftHeight, rightHeight)\n\nHeight (BFS level-count):\n1. Use a queue; enqueue root\n2. For each level: process all nodes at current level, enqueue children\n3. Return level count\n\nDepth of a specific node: BFS/DFS from root, track level/depth, return when target found.",
       "javaCode": "// Max depth (height) — DFS\npublic int maxDepth(TreeNode root) {\n    if (root == null) return 0;\n    return 1 + Math.max(maxDepth(root.left), maxDepth(root.right));\n}\n\n// Max depth — BFS (counts levels)\npublic int maxDepthBFS(TreeNode root) {\n    if (root == null) return 0;\n    Queue<TreeNode> queue = new LinkedList<>();\n    queue.offer(root);\n    int depth = 0;\n    while (!queue.isEmpty()) {\n        int size = queue.size();\n        for (int i = 0; i < size; i++) {\n            TreeNode node = queue.poll();\n            if (node.left != null) queue.offer(node.left);\n            if (node.right != null) queue.offer(node.right);\n        }\n        depth++;\n    }\n    return depth;\n}\n\n// Minimum depth (nearest leaf)\npublic int minDepth(TreeNode root) {\n    if (root == null) return 0;\n    if (root.left == null && root.right == null) return 1;\n    if (root.left == null) return 1 + minDepth(root.right);\n    if (root.right == null) return 1 + minDepth(root.left);\n    return 1 + Math.min(minDepth(root.left), minDepth(root.right));\n}\n\n// Check if balanced (height difference <= 1 at every node)\npublic boolean isBalanced(TreeNode root) {\n    return checkHeight(root) != -1;\n}\nprivate int checkHeight(TreeNode node) {\n    if (node == null) return 0;\n    int left = checkHeight(node.left);\n    int right = checkHeight(node.right);\n    if (left == -1 || right == -1) return -1;\n    if (Math.abs(left - right) > 1) return -1;\n    return 1 + Math.max(left, right);\n}",
       "interviewTips": "Minimum depth has a subtle edge case: if a node has only one child, it's NOT a leaf — so you can't just take the min of children. The balanced tree check using -1 as a sentinel is cleaner than computing height twice.",
-      "useCases": "[\"Maximum depth of binary tree (LeetCode 104)\",\"Minimum depth (LeetCode 111)\",\"Balanced binary tree (LeetCode 110)\",\"Level order traversal\"]",
+      "useCases": "[{\"title\":\"Maximum depth of binary tree\",\"desc\":\"Maximum depth of binary tree (LeetCode 104)\"},{\"title\":\"Minimum depth\",\"desc\":\"Minimum depth (LeetCode 111)\"},{\"title\":\"Balanced binary tree\",\"desc\":\"Balanced binary tree (LeetCode 110)\"},{\"title\":\"Level order traversal\",\"desc\":\"Level order traversal\"}]",
       "pitfalls": "[\"Minimum depth: not handling one-child nodes correctly\",\"Confusing height (bottom-up) with depth (top-down)\",\"BFS: forgetting to process all nodes at each level before incrementing depth\"]",
-      "variants": "[\"Minimum depth\",\"Count nodes in complete tree\",\"Symmetric tree\",\"Balanced binary tree check\"]"
+      "variants": "[{\"name\":\"Minimum depth\",\"desc\":\"Minimum depth\"},{\"name\":\"Count nodes in complete tree\",\"desc\":\"Count nodes in complete tree\"},{\"name\":\"Symmetric tree\",\"desc\":\"Symmetric tree\"},{\"name\":\"Balanced binary tree check\",\"desc\":\"Balanced binary tree check\"}]"
     },
     {
       "slug": "diameter-of-binary-tree",
       "name": "Diameter of Binary Tree",
       "category": "Trees",
       "emoji": "📏",
-      "difficulty": "Easy",
+      "difficulty": "BEGINNER",
       "displayOrder": 321,
       "tags": "[\"trees\",\"dfs\",\"recursion\",\"post-order\"]",
       "timeComplexityBest": "O(n)",
@@ -44,16 +44,16 @@
       "howItWorks": "1. DFS function returns height of subtree\n2. At each node:\n   - leftH = dfs(node.left)\n   - rightH = dfs(node.right)\n   - diameter_through_node = leftH + rightH\n   - Update global max diameter\n   - Return 1 + max(leftH, rightH) [for parent]\n3. Initial call: dfs(root)",
       "javaCode": "class Solution {\n    int maxDiameter = 0;\n    \n    public int diameterOfBinaryTree(TreeNode root) {\n        dfs(root);\n        return maxDiameter;\n    }\n    \n    private int dfs(TreeNode node) {\n        if (node == null) return 0;\n        int leftH = dfs(node.left);\n        int rightH = dfs(node.right);\n        maxDiameter = Math.max(maxDiameter, leftH + rightH);\n        return 1 + Math.max(leftH, rightH);\n    }\n}\n\n// Longest univalue path (same value along the path)\nclass LongestUnivaluePath {\n    int maxLen = 0;\n    \n    public int longestUnivaluePath(TreeNode root) {\n        dfs(root);\n        return maxLen;\n    }\n    \n    private int dfs(TreeNode node) {\n        if (node == null) return 0;\n        int left = dfs(node.left);\n        int right = dfs(node.right);\n        int leftPath = (node.left != null && node.left.val == node.val) ? left + 1 : 0;\n        int rightPath = (node.right != null && node.right.val == node.val) ? right + 1 : 0;\n        maxLen = Math.max(maxLen, leftPath + rightPath);\n        return Math.max(leftPath, rightPath);\n    }\n}",
       "interviewTips": "The global variable trick (or passing an int[] result) is necessary because the diameter can go through any node, not just the root. The DFS returns height but updates max with left+right — interviewers test whether you understand WHY these are different values.",
-      "useCases": "[\"Diameter of binary tree (LeetCode 543)\",\"Longest univalue path (LeetCode 687)\",\"Binary tree maximum path sum (LeetCode 124)\",\"Longest zigzag path\"]",
+      "useCases": "[{\"title\":\"Diameter of binary tree\",\"desc\":\"Diameter of binary tree (LeetCode 543)\"},{\"title\":\"Longest univalue path\",\"desc\":\"Longest univalue path (LeetCode 687)\"},{\"title\":\"Binary tree maximum path sum\",\"desc\":\"Binary tree maximum path sum (LeetCode 124)\"},{\"title\":\"Longest zigzag path\",\"desc\":\"Longest zigzag path\"}]",
       "pitfalls": "[\"Returning diameter instead of height from DFS function\",\"Forgetting nodes at -1 height for null (returning -1 vs 0)\",\"Not accounting for paths that don't pass through the root\"]",
-      "variants": "[\"Maximum path sum in binary tree\",\"Longest univalue path\",\"Diameter of N-ary tree\"]"
+      "variants": "[{\"name\":\"Maximum path sum in binary tree\",\"desc\":\"Maximum path sum in binary tree\"},{\"name\":\"Longest univalue path\",\"desc\":\"Longest univalue path\"},{\"name\":\"Diameter of N-ary tree\",\"desc\":\"Diameter of N-ary tree\"}]"
     },
     {
       "slug": "lowest-common-ancestor",
       "name": "Lowest Common Ancestor (LCA)",
       "category": "Trees",
       "emoji": "🌿",
-      "difficulty": "Medium",
+      "difficulty": "INTERMEDIATE",
       "displayOrder": 322,
       "tags": "[\"trees\",\"dfs\",\"recursion\",\"lca\"]",
       "timeComplexityBest": "O(n)",
@@ -67,16 +67,16 @@
       "howItWorks": "1. If node is null, return null\n2. If node == p OR node == q, return node\n3. left = LCA(node.left, p, q)\n4. right = LCA(node.right, p, q)\n5. If both left and right non-null → current node is LCA, return it\n6. Return whichever of left/right is non-null",
       "javaCode": "// General binary tree LCA\npublic TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {\n    if (root == null || root == p || root == q) return root;\n    TreeNode left = lowestCommonAncestor(root.left, p, q);\n    TreeNode right = lowestCommonAncestor(root.right, p, q);\n    if (left != null && right != null) return root; // root is LCA\n    return left != null ? left : right;\n}\n\n// BST version (O(h) — use BST property)\npublic TreeNode lowestCommonAncestorBST(TreeNode root, TreeNode p, TreeNode q) {\n    if (root == null) return null;\n    if (p.val < root.val && q.val < root.val)\n        return lowestCommonAncestorBST(root.left, p, q);\n    if (p.val > root.val && q.val > root.val)\n        return lowestCommonAncestorBST(root.right, p, q);\n    return root; // root is between p and q (or equals one of them)\n}\n\n// Distance between two nodes using LCA\npublic int distanceBetweenNodes(TreeNode root, int p, int q) {\n    TreeNode lca = lowestCommonAncestor(root,\n        findNode(root, p), findNode(root, q));\n    return depth(lca, p, 0) + depth(lca, q, 0);\n}\nprivate int depth(TreeNode node, int target, int d) {\n    if (node == null) return -1;\n    if (node.val == target) return d;\n    int left = depth(node.left, target, d + 1);\n    return left != -1 ? left : depth(node.right, target, d + 1);\n}",
       "interviewTips": "For BST, use the property: if both p and q are less than root, go left; both greater, go right; otherwise root is LCA. For general binary tree, the recursive approach works regardless. If nodes could not exist in the tree, you need a different approach with boolean flags.",
-      "useCases": "[\"LCA in binary tree (LeetCode 236)\",\"LCA in BST (LeetCode 235)\",\"Distance between two nodes\",\"Kth ancestor of a node\",\"All ancestors of a node\"]",
+      "useCases": "[{\"title\":\"LCA in binary tree\",\"desc\":\"LCA in binary tree (LeetCode 236)\"},{\"title\":\"LCA in BST\",\"desc\":\"LCA in BST (LeetCode 235)\"},{\"title\":\"Distance between two nodes\",\"desc\":\"Distance between two nodes\"},{\"title\":\"Kth ancestor of a node\",\"desc\":\"Kth ancestor of a node\"},{\"title\":\"All ancestors of a node\",\"desc\":\"All ancestors of a node\"}]",
       "pitfalls": "[\"For general trees: forgetting the case where root IS p or q (return root, not search further)\",\"For BST: using > instead of >= (misses when one node equals root)\",\"Not handling the case where p or q might not be in the tree\"]",
-      "variants": "[\"LCA in BST\",\"Distance between nodes\",\"All ancestors of a node\",\"LCA with parent pointers\"]"
+      "variants": "[{\"name\":\"LCA in BST\",\"desc\":\"LCA in BST\"},{\"name\":\"Distance between nodes\",\"desc\":\"Distance between nodes\"},{\"name\":\"All ancestors of a node\",\"desc\":\"All ancestors of a node\"},{\"name\":\"LCA with parent pointers\",\"desc\":\"LCA with parent pointers\"}]"
     },
     {
       "slug": "level-order-traversal",
       "name": "Level Order Traversal (BFS)",
       "category": "Trees",
       "emoji": "📊",
-      "difficulty": "Medium",
+      "difficulty": "INTERMEDIATE",
       "displayOrder": 323,
       "tags": "[\"trees\",\"bfs\",\"queue\",\"level-order\"]",
       "timeComplexityBest": "O(n)",
@@ -90,16 +90,16 @@
       "howItWorks": "1. Enqueue root\n2. While queue not empty:\n   a. levelSize = queue.size()  ← snapshot the current level count\n   b. For i in 0..levelSize-1:\n      node = queue.poll()\n      Process node\n      Enqueue node.left and node.right if not null\n   c. Store this level's result\n3. Return all levels",
       "javaCode": "public List<List<Integer>> levelOrder(TreeNode root) {\n    List<List<Integer>> result = new ArrayList<>();\n    if (root == null) return result;\n    Queue<TreeNode> queue = new LinkedList<>();\n    queue.offer(root);\n    while (!queue.isEmpty()) {\n        int size = queue.size(); // snapshot current level\n        List<Integer> level = new ArrayList<>();\n        for (int i = 0; i < size; i++) {\n            TreeNode node = queue.poll();\n            level.add(node.val);\n            if (node.left != null) queue.offer(node.left);\n            if (node.right != null) queue.offer(node.right);\n        }\n        result.add(level);\n    }\n    return result;\n}\n\n// Right side view\npublic List<Integer> rightSideView(TreeNode root) {\n    List<Integer> result = new ArrayList<>();\n    if (root == null) return result;\n    Queue<TreeNode> queue = new LinkedList<>();\n    queue.offer(root);\n    while (!queue.isEmpty()) {\n        int size = queue.size();\n        for (int i = 0; i < size; i++) {\n            TreeNode node = queue.poll();\n            if (i == size - 1) result.add(node.val); // last node = rightmost\n            if (node.left != null) queue.offer(node.left);\n            if (node.right != null) queue.offer(node.right);\n        }\n    }\n    return result;\n}\n\n// Zigzag level order\npublic List<List<Integer>> zigzagLevelOrder(TreeNode root) {\n    List<List<Integer>> result = new ArrayList<>();\n    if (root == null) return result;\n    Queue<TreeNode> queue = new LinkedList<>();\n    queue.offer(root);\n    boolean leftToRight = true;\n    while (!queue.isEmpty()) {\n        int size = queue.size();\n        LinkedList<Integer> level = new LinkedList<>();\n        for (int i = 0; i < size; i++) {\n            TreeNode node = queue.poll();\n            if (leftToRight) level.addLast(node.val);\n            else level.addFirst(node.val);\n            if (node.left != null) queue.offer(node.left);\n            if (node.right != null) queue.offer(node.right);\n        }\n        result.add(level);\n        leftToRight = !leftToRight;\n    }\n    return result;\n}",
       "interviewTips": "The `int size = queue.size()` snapshot is the key trick that separates levels. Without it, you can't tell which nodes belong to which level. Right side view = last element of each level. Zigzag = alternate using addFirst/addLast on a LinkedList.",
-      "useCases": "[\"Level order traversal (LeetCode 102)\",\"Right side view (LeetCode 199)\",\"Zigzag level order (LeetCode 103)\",\"Average of levels (LeetCode 637)\",\"Maximum width of binary tree\"]",
+      "useCases": "[{\"title\":\"Level order traversal\",\"desc\":\"Level order traversal (LeetCode 102)\"},{\"title\":\"Right side view\",\"desc\":\"Right side view (LeetCode 199)\"},{\"title\":\"Zigzag level order\",\"desc\":\"Zigzag level order (LeetCode 103)\"},{\"title\":\"Average of levels\",\"desc\":\"Average of levels (LeetCode 637)\"},{\"title\":\"Maximum width of binary tree\",\"desc\":\"Maximum width of binary tree\"}]",
       "pitfalls": "[\"Not snapshotting queue.size() before the inner loop\",\"Adding null children to queue (causes NPE on next iteration)\",\"Zigzag: using a regular list and reversing (more overhead than LinkedList addFirst)\"]",
-      "variants": "[\"Right/left side view\",\"Zigzag traversal\",\"Average of levels\",\"Maximum width\",\"Connect next right pointers\"]"
+      "variants": "[{\"name\":\"Right/left side view\",\"desc\":\"Right/left side view\"},{\"name\":\"Zigzag traversal\",\"desc\":\"Zigzag traversal\"},{\"name\":\"Average of levels\",\"desc\":\"Average of levels\"},{\"name\":\"Maximum width\",\"desc\":\"Maximum width\"},{\"name\":\"Connect next right pointers\",\"desc\":\"Connect next right pointers\"}]"
     },
     {
       "slug": "path-sum",
       "name": "Path Sum",
       "category": "Trees",
       "emoji": "➕",
-      "difficulty": "Easy",
+      "difficulty": "BEGINNER",
       "displayOrder": 324,
       "tags": "[\"trees\",\"dfs\",\"recursion\",\"path\"]",
       "timeComplexityBest": "O(n)",
@@ -113,9 +113,9 @@
       "howItWorks": "Path Sum I (exists?):\n1. If null → return false\n2. Subtract node.val from target\n3. If leaf AND target == 0 → return true\n4. Return hasPathSum(left, target) OR hasPathSum(right, target)\n\nPath Sum II (all paths):\n1. DFS with backtracking\n2. Add node.val to current path\n3. If leaf AND sum matches → save path copy to result\n4. Recurse left and right\n5. Remove node.val from path (backtrack)",
       "javaCode": "// Path Sum I: does a root-to-leaf path with given sum exist?\npublic boolean hasPathSum(TreeNode root, int targetSum) {\n    if (root == null) return false;\n    targetSum -= root.val;\n    if (root.left == null && root.right == null) return targetSum == 0;\n    return hasPathSum(root.left, targetSum) || hasPathSum(root.right, targetSum);\n}\n\n// Path Sum II: all root-to-leaf paths with given sum\npublic List<List<Integer>> pathSum(TreeNode root, int target) {\n    List<List<Integer>> result = new ArrayList<>();\n    dfs(root, target, new ArrayList<>(), result);\n    return result;\n}\nprivate void dfs(TreeNode node, int remaining, List<Integer> path,\n                 List<List<Integer>> result) {\n    if (node == null) return;\n    path.add(node.val);\n    remaining -= node.val;\n    if (node.left == null && node.right == null && remaining == 0) {\n        result.add(new ArrayList<>(path)); // save a copy!\n    }\n    dfs(node.left, remaining, path, result);\n    dfs(node.right, remaining, path, result);\n    path.remove(path.size() - 1); // backtrack\n}\n\n// Path Sum III: paths starting from any node (prefix sum trick)\npublic int pathSumIII(TreeNode root, int targetSum) {\n    Map<Long, Integer> prefixCount = new HashMap<>();\n    prefixCount.put(0L, 1);\n    return dfsIII(root, 0, targetSum, prefixCount);\n}\nprivate int dfsIII(TreeNode node, long curr, int target, Map<Long, Integer> prefix) {\n    if (node == null) return 0;\n    curr += node.val;\n    int count = prefix.getOrDefault(curr - target, 0);\n    prefix.merge(curr, 1, Integer::sum);\n    count += dfsIII(node.left, curr, target, prefix);\n    count += dfsIII(node.right, curr, target, prefix);\n    prefix.merge(curr, -1, Integer::sum); // backtrack\n    return count;\n}",
       "interviewTips": "Path Sum III (any node to any node) uses the same prefix sum trick as subarray sum equals K. The HashMap stores how many times each prefix sum occurred. Backtracking is essential — decrement the map count when returning from a subtree.",
-      "useCases": "[\"Path Sum I/II/III (LeetCode 112/113/437)\",\"Sum root to leaf numbers (LeetCode 129)\",\"Binary tree maximum path sum (LeetCode 124)\",\"Count complete tree nodes\"]",
+      "useCases": "[{\"title\":\"Path Sum I/II/III\",\"desc\":\"Path Sum I/II/III (LeetCode 112/113/437)\"},{\"title\":\"Sum root to leaf numbers\",\"desc\":\"Sum root to leaf numbers (LeetCode 129)\"},{\"title\":\"Binary tree maximum path sum\",\"desc\":\"Binary tree maximum path sum (LeetCode 124)\"},{\"title\":\"Count complete tree nodes\",\"desc\":\"Count complete tree nodes\"}]",
       "pitfalls": "[\"Path Sum II: saving path reference instead of a copy (all results end up empty)\",\"Path Sum III: forgetting to backtrack (decrement prefix count)\",\"Path Sum III: integer overflow with long running sums (use Long)\",\"Checking sum at non-leaf nodes for Path Sum I\"]",
-      "variants": "[\"Path Sum II (all paths)\",\"Path Sum III (any node to any node)\",\"Maximum path sum\",\"Sum root to leaf numbers\"]"
+      "variants": "[{\"name\":\"Path Sum II\",\"desc\":\"Path Sum II (all paths)\"},{\"name\":\"Path Sum III\",\"desc\":\"Path Sum III (any node to any node)\"},{\"name\":\"Maximum path sum\",\"desc\":\"Maximum path sum\"},{\"name\":\"Sum root to leaf numbers\",\"desc\":\"Sum root to leaf numbers\"}]"
     }
   ]
 }

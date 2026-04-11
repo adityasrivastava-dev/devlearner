@@ -1,13 +1,13 @@
 {
   "batchName": "A17 – String and Hashing Patterns",
-  "skipExisting": true,
+  "skipExisting": false,
   "algorithms": [
     {
       "slug": "kmp-pattern-matching",
       "name": "KMP Pattern Matching",
       "category": "String",
       "emoji": "🔍",
-      "difficulty": "Hard",
+      "difficulty": "ADVANCED",
       "displayOrder": 350,
       "tags": "[\"string\",\"pattern-matching\",\"kmp\",\"lps\"]",
       "timeComplexityBest": "O(n+m)",
@@ -21,16 +21,16 @@
       "howItWorks": "Phase 1 — Build LPS table:\n1. lps[0] = 0, len = 0, i = 1\n2. While i < m:\n   If pattern[i] == pattern[len]: lps[i++] = ++len\n   Else if len != 0: len = lps[len-1] (don't increment i)\n   Else: lps[i++] = 0\n\nPhase 2 — Search:\n1. i = 0 (text pointer), j = 0 (pattern pointer)\n2. While i < n:\n   If text[i] == pattern[j]: i++; j++\n   If j == m: found at index i-j; j = lps[j-1]\n   Else if i < n && text[i] != pattern[j]:\n     If j != 0: j = lps[j-1]\n     Else: i++",
       "javaCode": "public List<Integer> kmpSearch(String text, String pattern) {\n    List<Integer> matches = new ArrayList<>();\n    int n = text.length(), m = pattern.length();\n    if (m == 0) return matches;\n    \n    // Build LPS table\n    int[] lps = buildLPS(pattern);\n    \n    int i = 0, j = 0;\n    while (i < n) {\n        if (text.charAt(i) == pattern.charAt(j)) {\n            i++; j++;\n        }\n        if (j == m) {\n            matches.add(i - j); // found at index i-j\n            j = lps[j - 1];\n        } else if (i < n && text.charAt(i) != pattern.charAt(j)) {\n            if (j != 0) j = lps[j - 1];\n            else i++;\n        }\n    }\n    return matches;\n}\n\nprivate int[] buildLPS(String pattern) {\n    int m = pattern.length();\n    int[] lps = new int[m];\n    int len = 0, i = 1;\n    while (i < m) {\n        if (pattern.charAt(i) == pattern.charAt(len)) {\n            lps[i++] = ++len;\n        } else if (len != 0) {\n            len = lps[len - 1]; // don't increment i\n        } else {\n            lps[i++] = 0;\n        }\n    }\n    return lps;\n}\n\n// Check if s is a rotation of t (s+s contains t)\npublic boolean isRotation(String s, String t) {\n    if (s.length() != t.length()) return false;\n    return kmpSearch(s + s, t).size() > 0;\n}",
       "interviewTips": "Most interviews accept the built-in String.contains() or indexOf() for pattern matching — KMP is asked to test algorithm knowledge. Know the LPS build step cold. A useful application: 'shortest period of a string' = m - lps[m-1] (the length after the last LPS value).",
-      "useCases": "[\"String pattern matching\",\"Repeated substring pattern (LeetCode 459)\",\"Shortest palindrome\",\"String rotation check\",\"Find all occurrences in text\"]",
+      "useCases": "[{\"title\":\"String pattern matching\",\"desc\":\"String pattern matching\"},{\"title\":\"Repeated substring pattern\",\"desc\":\"Repeated substring pattern (LeetCode 459)\"},{\"title\":\"Shortest palindrome\",\"desc\":\"Shortest palindrome\"},{\"title\":\"String rotation check\",\"desc\":\"String rotation check\"},{\"title\":\"Find all occurrences in text\",\"desc\":\"Find all occurrences in text\"}]",
       "pitfalls": "[\"LPS build: forgetting to use lps[len-1] (not len-1) on mismatch\",\"KMP search: not handling j==m before the mismatch check\",\"Confusing KMP with Rabin-Karp (KMP uses LPS, RK uses hashing)\"]",
-      "variants": "[\"Rabin-Karp (rolling hash)\",\"Z-algorithm\",\"Boyer-Moore\",\"String rotation detection\"]"
+      "variants": "[{\"name\":\"Rabin-Karp\",\"desc\":\"Rabin-Karp (rolling hash)\"},{\"name\":\"Z-algorithm\",\"desc\":\"Z-algorithm\"},{\"name\":\"Boyer-Moore\",\"desc\":\"Boyer-Moore\"},{\"name\":\"String rotation detection\",\"desc\":\"String rotation detection\"}]"
     },
     {
       "slug": "group-anagrams",
       "name": "Group Anagrams",
       "category": "Hashing",
       "emoji": "🔤",
-      "difficulty": "Medium",
+      "difficulty": "INTERMEDIATE",
       "displayOrder": 351,
       "tags": "[\"hashing\",\"string\",\"sorting\",\"frequency-count\"]",
       "timeComplexityBest": "O(n × k log k)",
@@ -44,16 +44,16 @@
       "howItWorks": "Sort-based:\n1. For each word: sort its characters → sorted string is the key\n2. HashMap<String, List<String>>: group words by key\n3. Return all groups\n\nFrequency-based:\n1. For each word: build int[26] frequency count\n2. Convert to string key (e.g., '#1#0#0...#2')\n3. HashMap<String, List<String>>: group by key",
       "javaCode": "// Sort-based O(nk log k)\npublic List<List<String>> groupAnagrams(String[] strs) {\n    Map<String, List<String>> map = new HashMap<>();\n    for (String s : strs) {\n        char[] chars = s.toCharArray();\n        Arrays.sort(chars);\n        String key = new String(chars);\n        map.computeIfAbsent(key, k -> new ArrayList<>()).add(s);\n    }\n    return new ArrayList<>(map.values());\n}\n\n// Frequency-based O(nk)\npublic List<List<String>> groupAnagramsFreq(String[] strs) {\n    Map<String, List<String>> map = new HashMap<>();\n    for (String s : strs) {\n        int[] count = new int[26];\n        for (char c : s.toCharArray()) count[c - 'a']++;\n        // Build key: '#count[0]#count[1]...#count[25]'\n        StringBuilder sb = new StringBuilder();\n        for (int c : count) sb.append('#').append(c);\n        String key = sb.toString();\n        map.computeIfAbsent(key, k -> new ArrayList<>()).add(s);\n    }\n    return new ArrayList<>(map.values());\n}\n\n// Valid anagram check\npublic boolean isAnagram(String s, String t) {\n    if (s.length() != t.length()) return false;\n    int[] count = new int[26];\n    for (char c : s.toCharArray()) count[c - 'a']++;\n    for (char c : t.toCharArray()) count[c - 'a']--;\n    for (int c : count) if (c != 0) return false;\n    return true;\n}",
       "interviewTips": "Use `computeIfAbsent` for cleaner group-building code. The frequency array key approach is O(k) but the key creation using StringBuilder is the tricky part — use a separator character to avoid collisions (e.g., '#1#2' vs '#12').",
-      "useCases": "[\"Group Anagrams (LeetCode 49)\",\"Valid Anagram (LeetCode 242)\",\"Find All Anagrams in String (LeetCode 438)\",\"Minimum number of steps to make two strings anagrams\"]",
+      "useCases": "[{\"title\":\"Group Anagrams\",\"desc\":\"Group Anagrams (LeetCode 49)\"},{\"title\":\"Valid Anagram\",\"desc\":\"Valid Anagram (LeetCode 242)\"},{\"title\":\"Find All Anagrams in String\",\"desc\":\"Find All Anagrams in String (LeetCode 438)\"},{\"title\":\"Minimum number of steps to make two strings anagrams\",\"desc\":\"Minimum number of steps to make two strings anagrams\"}]",
       "pitfalls": "[\"Frequency key collision: '12' could mean 1+2 or 12 — use separator\",\"Forgetting that anagram requires same LENGTH\",\"Using sorted key for large alphabets — frequency approach is cleaner\"]",
-      "variants": "[\"Valid anagram\",\"Find all anagrams in string\",\"Minimum steps to make anagram\",\"Longest anagram substring\"]"
+      "variants": "[{\"name\":\"Valid anagram\",\"desc\":\"Valid anagram\"},{\"name\":\"Find all anagrams in string\",\"desc\":\"Find all anagrams in string\"},{\"name\":\"Minimum steps to make anagram\",\"desc\":\"Minimum steps to make anagram\"},{\"name\":\"Longest anagram substring\",\"desc\":\"Longest anagram substring\"}]"
     },
     {
       "slug": "two-sum-hash",
       "name": "Two Sum (Hash Table Pattern)",
       "category": "Hashing",
       "emoji": "➕",
-      "difficulty": "Easy",
+      "difficulty": "BEGINNER",
       "displayOrder": 352,
       "tags": "[\"hashing\",\"array\",\"complement\",\"two-sum\"]",
       "timeComplexityBest": "O(n)",
@@ -67,16 +67,16 @@
       "howItWorks": "One-pass HashMap:\n1. For each index i:\n   complement = target - nums[i]\n   If complement in map → return [map[complement], i]\n   Else map[nums[i]] = i\n2. No solution found",
       "javaCode": "// Two Sum\npublic int[] twoSum(int[] nums, int target) {\n    Map<Integer, Integer> map = new HashMap<>(); // value → index\n    for (int i = 0; i < nums.length; i++) {\n        int complement = target - nums[i];\n        if (map.containsKey(complement)) {\n            return new int[]{map.get(complement), i};\n        }\n        map.put(nums[i], i);\n    }\n    return new int[]{}; // no solution\n}\n\n// Three Sum (fix + two pointers or fix + hash)\npublic List<List<Integer>> threeSum(int[] nums) {\n    Arrays.sort(nums);\n    List<List<Integer>> result = new ArrayList<>();\n    for (int i = 0; i < nums.length - 2; i++) {\n        if (i > 0 && nums[i] == nums[i-1]) continue; // skip duplicates\n        int left = i + 1, right = nums.length - 1;\n        while (left < right) {\n            int sum = nums[i] + nums[left] + nums[right];\n            if (sum == 0) {\n                result.add(Arrays.asList(nums[i], nums[left], nums[right]));\n                while (left < right && nums[left] == nums[left+1]) left++;\n                while (left < right && nums[right] == nums[right-1]) right--;\n                left++; right--;\n            } else if (sum < 0) left++;\n            else right--;\n        }\n    }\n    return result;\n}\n\n// Subarray sum equals K (prefix sum + HashMap)\npublic int subarraySum(int[] nums, int k) {\n    Map<Integer, Integer> prefixCount = new HashMap<>();\n    prefixCount.put(0, 1); // empty subarray\n    int sum = 0, count = 0;\n    for (int num : nums) {\n        sum += num;\n        count += prefixCount.getOrDefault(sum - k, 0);\n        prefixCount.merge(sum, 1, Integer::sum);\n    }\n    return count;\n}",
       "interviewTips": "Put nums[i] into the map AFTER checking (not before) to handle the case where target = 2 * nums[i] — you don't want to use the same element twice. Three Sum: sort first, fix the first element, two-pointer for the rest — O(n²) is optimal. Subarray Sum K: prefix sum + HashMap is the O(n) approach.",
-      "useCases": "[\"Two Sum (LeetCode 1)\",\"Three Sum (LeetCode 15)\",\"Four Sum (LeetCode 18)\",\"Subarray Sum Equals K (LeetCode 560)\",\"Two Sum in BST (LeetCode 653)\"]",
+      "useCases": "[{\"title\":\"Two Sum\",\"desc\":\"Two Sum (LeetCode 1)\"},{\"title\":\"Three Sum\",\"desc\":\"Three Sum (LeetCode 15)\"},{\"title\":\"Four Sum\",\"desc\":\"Four Sum (LeetCode 18)\"},{\"title\":\"Subarray Sum Equals K\",\"desc\":\"Subarray Sum Equals K (LeetCode 560)\"},{\"title\":\"Two Sum in BST\",\"desc\":\"Two Sum in BST (LeetCode 653)\"}]",
       "pitfalls": "[\"Adding to map before checking complement (can use same index twice)\",\"Three Sum: not skipping duplicates properly\",\"Subarray sum: forgetting prefixCount.put(0, 1) for subarrays starting at index 0\"]",
-      "variants": "[\"Three Sum\",\"Four Sum\",\"Subarray Sum Equals K\",\"Two Sum in BST\",\"Pairs with difference K\"]"
+      "variants": "[{\"name\":\"Three Sum\",\"desc\":\"Three Sum\"},{\"name\":\"Four Sum\",\"desc\":\"Four Sum\"},{\"name\":\"Subarray Sum Equals K\",\"desc\":\"Subarray Sum Equals K\"},{\"name\":\"Two Sum in BST\",\"desc\":\"Two Sum in BST\"},{\"name\":\"Pairs with difference K\",\"desc\":\"Pairs with difference K\"}]"
     },
     {
       "slug": "sliding-window-substring",
       "name": "Minimum Window Substring",
       "category": "String",
       "emoji": "🪟",
-      "difficulty": "Hard",
+      "difficulty": "ADVANCED",
       "displayOrder": 353,
       "tags": "[\"sliding-window\",\"string\",\"hashing\",\"two-pointers\"]",
       "timeComplexityBest": "O(n+m)",
@@ -90,9 +90,9 @@
       "howItWorks": "1. Build required map from t; need = t.length()\n2. left=0, formed=0, window map = {}\n3. For right in 0..n-1:\n   Add s[right] to window map\n   If s[right] in required AND window[s[right]] == required[s[right]]:\n     formed++\n   While formed == required:\n     Update min window\n     Remove s[left] from window\n     If s[left] in required AND window[s[left]] < required[s[left]]:\n       formed--\n     left++",
       "javaCode": "public String minWindow(String s, String t) {\n    if (s.isEmpty() || t.isEmpty()) return \"\";\n    Map<Character, Integer> need = new HashMap<>();\n    for (char c : t.toCharArray()) need.merge(c, 1, Integer::sum);\n    int required = need.size(); // distinct chars needed\n    \n    Map<Character, Integer> window = new HashMap<>();\n    int formed = 0;\n    int left = 0, minLen = Integer.MAX_VALUE, minLeft = 0;\n    \n    for (int right = 0; right < s.length(); right++) {\n        char c = s.charAt(right);\n        window.merge(c, 1, Integer::sum);\n        if (need.containsKey(c) && window.get(c).equals(need.get(c))) {\n            formed++;\n        }\n        while (formed == required) {\n            if (right - left + 1 < minLen) {\n                minLen = right - left + 1;\n                minLeft = left;\n            }\n            char lc = s.charAt(left);\n            window.merge(lc, -1, Integer::sum);\n            if (need.containsKey(lc) && window.get(lc) < need.get(lc)) {\n                formed--;\n            }\n            left++;\n        }\n    }\n    return minLen == Integer.MAX_VALUE ? \"\" : s.substring(minLeft, minLeft + minLen);\n}\n\n// Permutation in string (fixed window size)\npublic boolean checkInclusion(String s1, String s2) {\n    int[] need = new int[26], window = new int[26];\n    for (char c : s1.toCharArray()) need[c - 'a']++;\n    int k = s1.length();\n    for (int i = 0; i < s2.length(); i++) {\n        window[s2.charAt(i) - 'a']++;\n        if (i >= k) window[s2.charAt(i - k) - 'a']--;\n        if (Arrays.equals(need, window)) return true;\n    }\n    return false;\n}",
       "interviewTips": "Track `required = need.size()` (distinct characters), not `t.length()`. The `formed` counter only increments when a character EXACTLY meets its required count — prevents over-counting. For fixed-size windows (like permutation check), use int[26] arrays and compare with Arrays.equals — cleaner than maps.",
-      "useCases": "[\"Minimum Window Substring (LeetCode 76)\",\"Permutation in String (LeetCode 567)\",\"Find All Anagrams (LeetCode 438)\",\"Longest Substring without Repeating Characters\"]",
+      "useCases": "[{\"title\":\"Minimum Window Substring\",\"desc\":\"Minimum Window Substring (LeetCode 76)\"},{\"title\":\"Permutation in String\",\"desc\":\"Permutation in String (LeetCode 567)\"},{\"title\":\"Find All Anagrams\",\"desc\":\"Find All Anagrams (LeetCode 438)\"},{\"title\":\"Longest Substring without Repeating Characters\",\"desc\":\"Longest Substring without Repeating Characters\"}]",
       "pitfalls": "[\"Using t.length() as required instead of need.size()\",\"Checking window[c] >= need[c] instead of == for formed (double-counts)\",\"Not updating window map when shrinking from left\"]",
-      "variants": "[\"Permutation in string\",\"Find all anagrams in string\",\"Longest substring with K distinct characters\",\"Longest substring without repeating characters\"]"
+      "variants": "[{\"name\":\"Permutation in string\",\"desc\":\"Permutation in string\"},{\"name\":\"Find all anagrams in string\",\"desc\":\"Find all anagrams in string\"},{\"name\":\"Longest substring with K distinct characters\",\"desc\":\"Longest substring with K distinct characters\"},{\"name\":\"Longest substring without repeating characters\",\"desc\":\"Longest substring without repeating characters\"}]"
     }
   ]
 }

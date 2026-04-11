@@ -17,6 +17,7 @@ import QuickWinPage    from './pages/quickwin/QuickWinPage';
 import DrillPage          from './pages/drill/DrillPage';
 import InterviewPrepPage  from './pages/interview/InterviewPrepPage';
 import RevisionPage       from './pages/interview/RevisionPage';
+import ComplexityPage     from './pages/complexity/ComplexityPage';
 
 // Apply saved theme on load
 const savedTheme = localStorage.getItem('devlearn_theme') || 'dark';
@@ -50,6 +51,7 @@ export default function App() {
             <Route path="/drill"          element={<ProtectedRoute><DrillPage /></ProtectedRoute>} />
             <Route path="/interview-prep" element={<ProtectedRoute><InterviewPrepPage /></ProtectedRoute>} />
             <Route path="/revision"       element={<ProtectedRoute><RevisionPage /></ProtectedRoute>} />
+            <Route path="/complexity"     element={<ProtectedRoute><ComplexityPage /></ProtectedRoute>} />
             <Route path="/admin"      element={<AdminRoute><AdminPage /></AdminRoute>} />
             <Route path="*"           element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
           </Routes>

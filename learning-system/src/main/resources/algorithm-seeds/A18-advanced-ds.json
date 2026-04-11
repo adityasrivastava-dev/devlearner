@@ -1,13 +1,13 @@
 {
   "batchName": "A18 – Advanced Data Structures",
-  "skipExisting": true,
+  "skipExisting": false,
   "algorithms": [
     {
       "slug": "lru-cache",
       "name": "LRU Cache",
       "category": "Design",
       "emoji": "💾",
-      "difficulty": "Medium",
+      "difficulty": "INTERMEDIATE",
       "displayOrder": 360,
       "tags": "[\"design\",\"linked-list\",\"hashmap\",\"cache\"]",
       "timeComplexityBest": "O(1)",
@@ -21,16 +21,16 @@
       "howItWorks": "Data structure: HashMap<key, Node> + doubly linked list with dummy head/tail\n- get(key): if exists, move node to front, return value; else return -1\n- put(key, val):\n  1. If key exists: update value, move to front\n  2. Else: create new node, add to front, add to map\n  3. If size > capacity: remove LRU (node before tail), remove from map",
       "javaCode": "class LRUCache {\n    private final int capacity;\n    private final Map<Integer, Node> map = new HashMap<>();\n    private final Node head = new Node(0, 0); // dummy head\n    private final Node tail = new Node(0, 0); // dummy tail\n    \n    public LRUCache(int capacity) {\n        this.capacity = capacity;\n        head.next = tail;\n        tail.prev = head;\n    }\n    \n    public int get(int key) {\n        Node node = map.get(key);\n        if (node == null) return -1;\n        moveToFront(node);\n        return node.val;\n    }\n    \n    public void put(int key, int value) {\n        Node node = map.get(key);\n        if (node != null) {\n            node.val = value;\n            moveToFront(node);\n        } else {\n            node = new Node(key, value);\n            map.put(key, node);\n            addToFront(node);\n            if (map.size() > capacity) {\n                Node lru = tail.prev; // node before dummy tail\n                removeNode(lru);\n                map.remove(lru.key);\n            }\n        }\n    }\n    \n    private void moveToFront(Node node) {\n        removeNode(node);\n        addToFront(node);\n    }\n    \n    private void removeNode(Node node) {\n        node.prev.next = node.next;\n        node.next.prev = node.prev;\n    }\n    \n    private void addToFront(Node node) {\n        node.next = head.next;\n        node.prev = head;\n        head.next.prev = node;\n        head.next = node;\n    }\n    \n    private static class Node {\n        int key, val;\n        Node prev, next;\n        Node(int k, int v) { key = k; val = v; }\n    }\n}\n\n// Java built-in: LinkedHashMap approach\nclass LRUCacheSimple extends LinkedHashMap<Integer, Integer> {\n    private final int capacity;\n    public LRUCacheSimple(int capacity) {\n        super(capacity, 0.75f, true); // accessOrder=true\n        this.capacity = capacity;\n    }\n    public int get(int key) { return super.getOrDefault(key, -1); }\n    public void put(int key, int value) { super.put(key, value); }\n    @Override\n    protected boolean removeEldestEntry(Map.Entry<Integer, Integer> eldest) {\n        return size() > capacity;\n    }\n}",
       "interviewTips": "The dummy head/tail pattern eliminates all null checks for add/remove at boundaries. Always store the KEY in the Node (needed for map.remove() during eviction). The LinkedHashMap shortcut exists but interviewers expect you to implement from scratch. LFU Cache is the harder follow-up (uses two HashMaps + one LinkedHashSet per frequency).",
-      "useCases": "[\"LRU Cache (LeetCode 146)\",\"Browser history\",\"Database buffer pool\",\"CDN cache management\",\"OS page replacement\"]",
+      "useCases": "[{\"title\":\"LRU Cache\",\"desc\":\"LRU Cache (LeetCode 146)\"},{\"title\":\"Browser history\",\"desc\":\"Browser history\"},{\"title\":\"Database buffer pool\",\"desc\":\"Database buffer pool\"},{\"title\":\"CDN cache management\",\"desc\":\"CDN cache management\"},{\"title\":\"OS page replacement\",\"desc\":\"OS page replacement\"}]",
       "pitfalls": "[\"Not storing key in Node (can't remove from map on eviction)\",\"Null pointer without dummy head/tail nodes\",\"get() forgetting to move accessed node to front\",\"put() for existing key: update value AND move to front\"]",
-      "variants": "[\"LFU Cache (LeetCode 460)\",\"All O(1) data structure\",\"First unique number\"]"
+      "variants": "[{\"name\":\"LFU Cache\",\"desc\":\"LFU Cache (LeetCode 460)\"},{\"name\":\"All O(1) data structure\",\"desc\":\"All O(1) data structure\"},{\"name\":\"First unique number\",\"desc\":\"First unique number\"}]"
     },
     {
       "slug": "trie",
       "name": "Trie (Prefix Tree)",
       "category": "Design",
       "emoji": "🌲",
-      "difficulty": "Medium",
+      "difficulty": "INTERMEDIATE",
       "displayOrder": 361,
       "tags": "[\"trie\",\"design\",\"string\",\"prefix\"]",
       "timeComplexityBest": "O(m)",
@@ -44,16 +44,16 @@
       "howItWorks": "Node: TrieNode { TrieNode[] children = new TrieNode[26]; boolean isEnd; }\n\nInsert(word):\n1. curr = root\n2. For each char c in word:\n   If curr.children[c-'a'] == null: create new TrieNode\n   curr = curr.children[c-'a']\n3. curr.isEnd = true\n\nSearch(word):\n1. curr = root\n2. For each char c: if child null → return false; curr = child\n3. Return curr.isEnd\n\nStartsWith(prefix): same as search but return true (not curr.isEnd)",
       "javaCode": "class Trie {\n    private TrieNode root = new TrieNode();\n    \n    public void insert(String word) {\n        TrieNode curr = root;\n        for (char c : word.toCharArray()) {\n            int idx = c - 'a';\n            if (curr.children[idx] == null)\n                curr.children[idx] = new TrieNode();\n            curr = curr.children[idx];\n        }\n        curr.isEnd = true;\n    }\n    \n    public boolean search(String word) {\n        TrieNode curr = root;\n        for (char c : word.toCharArray()) {\n            int idx = c - 'a';\n            if (curr.children[idx] == null) return false;\n            curr = curr.children[idx];\n        }\n        return curr.isEnd;\n    }\n    \n    public boolean startsWith(String prefix) {\n        TrieNode curr = root;\n        for (char c : prefix.toCharArray()) {\n            int idx = c - 'a';\n            if (curr.children[idx] == null) return false;\n            curr = curr.children[idx];\n        }\n        return true; // reached end of prefix without falling off\n    }\n    \n    static class TrieNode {\n        TrieNode[] children = new TrieNode[26];\n        boolean isEnd;\n    }\n}\n\n// Word search II: Trie + DFS on board\npublic List<String> findWords(char[][] board, String[] words) {\n    Trie trie = new Trie();\n    for (String w : words) trie.insert(w);\n    Set<String> result = new HashSet<>();\n    int m = board.length, n = board[0].length;\n    boolean[][] visited = new boolean[m][n];\n    for (int i = 0; i < m; i++)\n        for (int j = 0; j < n; j++)\n            dfsBoard(board, i, j, trie.root, new StringBuilder(), visited, result);\n    return new ArrayList<>(result);\n}\nprivate void dfsBoard(char[][] board, int i, int j, Trie.TrieNode node,\n                       StringBuilder path, boolean[][] visited, Set<String> result) {\n    if (i < 0 || i >= board.length || j < 0 || j >= board[0].length ||\n        visited[i][j]) return;\n    int idx = board[i][j] - 'a';\n    if (node.children[idx] == null) return; // prune\n    visited[i][j] = true;\n    path.append(board[i][j]);\n    node = node.children[idx];\n    if (node.isEnd) result.add(path.toString());\n    int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0}};\n    for (int[] d : dirs) dfsBoard(board, i+d[0], j+d[1], node, path, visited, result);\n    path.deleteCharAt(path.length() - 1);\n    visited[i][j] = false;\n}",
       "interviewTips": "The Trie + DFS on board combination (Word Search II) is a common FAANG hard problem. Using a HashMap instead of TrieNode[26] handles unicode/larger alphabets but is slower. Mark isEnd = false after finding a word to avoid duplicates in Word Search II.",
-      "useCases": "[\"Implement Trie (LeetCode 208)\",\"Word Search II (LeetCode 212)\",\"Replace Words (LeetCode 648)\",\"Autocomplete system (LeetCode 642)\",\"Longest common prefix\"]",
+      "useCases": "[{\"title\":\"Implement Trie\",\"desc\":\"Implement Trie (LeetCode 208)\"},{\"title\":\"Word Search II\",\"desc\":\"Word Search II (LeetCode 212)\"},{\"title\":\"Replace Words\",\"desc\":\"Replace Words (LeetCode 648)\"},{\"title\":\"Autocomplete system\",\"desc\":\"Autocomplete system (LeetCode 642)\"},{\"title\":\"Longest common prefix\",\"desc\":\"Longest common prefix\"}]",
       "pitfalls": "[\"Returning curr.isEnd from startsWith (should return true)\",\"Word Search II: duplicate results (mark isEnd=false after finding)\",\"Not initializing children array in TrieNode\"]",
-      "variants": "[\"Trie with wildcard search\",\"Word Search II\",\"Replace Words\",\"Autocomplete system\"]"
+      "variants": "[{\"name\":\"Trie with wildcard search\",\"desc\":\"Trie with wildcard search\"},{\"name\":\"Word Search II\",\"desc\":\"Word Search II\"},{\"name\":\"Replace Words\",\"desc\":\"Replace Words\"},{\"name\":\"Autocomplete system\",\"desc\":\"Autocomplete system\"}]"
     },
     {
       "slug": "union-find",
       "name": "Union-Find (Disjoint Set)",
       "category": "Graph",
       "emoji": "🔗",
-      "difficulty": "Medium",
+      "difficulty": "INTERMEDIATE",
       "displayOrder": 362,
       "tags": "[\"union-find\",\"graph\",\"disjoint-set\",\"connectivity\"]",
       "timeComplexityBest": "O(α(n)) amortized",
@@ -67,16 +67,16 @@
       "howItWorks": "Data: parent[] (initially parent[i]=i), rank[]\n\nfind(x): if parent[x] != x → parent[x] = find(parent[x]) [path compression]; return parent[x]\n\nunion(x, y):\n  rootX = find(x), rootY = find(y)\n  If rootX == rootY → already connected\n  If rank[rootX] < rank[rootY]: parent[rootX] = rootY\n  Else if rank[rootX] > rank[rootY]: parent[rootY] = rootX\n  Else: parent[rootY] = rootX; rank[rootX]++",
       "javaCode": "class UnionFind {\n    private int[] parent, rank;\n    private int components;\n    \n    public UnionFind(int n) {\n        parent = new int[n];\n        rank = new int[n];\n        components = n;\n        for (int i = 0; i < n; i++) parent[i] = i;\n    }\n    \n    public int find(int x) {\n        if (parent[x] != x)\n            parent[x] = find(parent[x]); // path compression\n        return parent[x];\n    }\n    \n    public boolean union(int x, int y) {\n        int rx = find(x), ry = find(y);\n        if (rx == ry) return false; // already connected\n        if (rank[rx] < rank[ry]) parent[rx] = ry;\n        else if (rank[rx] > rank[ry]) parent[ry] = rx;\n        else { parent[ry] = rx; rank[rx]++; }\n        components--;\n        return true;\n    }\n    \n    public boolean connected(int x, int y) {\n        return find(x) == find(y);\n    }\n    \n    public int getComponents() { return components; }\n}\n\n// Number of islands using Union-Find\npublic int numIslands(char[][] grid) {\n    int m = grid.length, n = grid[0].length;\n    UnionFind uf = new UnionFind(m * n);\n    int islands = 0;\n    for (int i = 0; i < m; i++) {\n        for (int j = 0; j < n; j++) {\n            if (grid[i][j] == '1') {\n                islands++;\n                // merge with adjacent '1' cells\n                if (i > 0 && grid[i-1][j] == '1') {\n                    if (uf.union(i*n+j, (i-1)*n+j)) islands--;\n                }\n                if (j > 0 && grid[i][j-1] == '1') {\n                    if (uf.union(i*n+j, i*n+j-1)) islands--;\n                }\n            }\n        }\n    }\n    return islands;\n}",
       "interviewTips": "Path compression + union by rank is the standard implementation — always use both. The components counter (decrement on successful union) is cleaner than calling getComponents() separately. Redundant Connection: detect cycle by checking if union() returns false (both already have same root).",
-      "useCases": "[\"Number of Islands (LeetCode 200)\",\"Redundant Connection (LeetCode 684)\",\"Accounts Merge (LeetCode 721)\",\"Kruskal's MST\",\"Number of Connected Components (LeetCode 323)\"]",
+      "useCases": "[{\"title\":\"Number of Islands\",\"desc\":\"Number of Islands (LeetCode 200)\"},{\"title\":\"Redundant Connection\",\"desc\":\"Redundant Connection (LeetCode 684)\"},{\"title\":\"Accounts Merge\",\"desc\":\"Accounts Merge (LeetCode 721)\"},{\"title\":\"Kruskal's MST\",\"desc\":\"Kruskal's MST\"},{\"title\":\"Number of Connected Components\",\"desc\":\"Number of Connected Components (LeetCode 323)\"}]",
       "pitfalls": "[\"Forgetting path compression — makes it O(n) per operation\",\"Union by rank without path compression or vice versa — both needed for α(n)\",\"Using size-based union incorrectly (union by rank uses tree height, not element count)\"]",
-      "variants": "[\"Union-Find with count\",\"Weighted Union-Find\",\"Offline dynamic connectivity\"]"
+      "variants": "[{\"name\":\"Union-Find with count\",\"desc\":\"Union-Find with count\"},{\"name\":\"Weighted Union-Find\",\"desc\":\"Weighted Union-Find\"},{\"name\":\"Offline dynamic connectivity\",\"desc\":\"Offline dynamic connectivity\"}]"
     },
     {
       "slug": "segment-tree",
       "name": "Segment Tree",
       "category": "Range Query",
       "emoji": "📐",
-      "difficulty": "Hard",
+      "difficulty": "ADVANCED",
       "displayOrder": 363,
       "tags": "[\"segment-tree\",\"range-query\",\"data-structure\",\"hard\"]",
       "timeComplexityBest": "O(log n)",
@@ -90,16 +90,16 @@
       "howItWorks": "Build (O(n)): bottom-up from leaves\nQuery(l, r, O(log n)):\n  If segment fully inside [l,r]: return tree[node]\n  If fully outside: return identity\n  Else: return combine(query(left), query(right))\nUpdate(i, val, O(log n)):\n  Update leaf at position i\n  Propagate up: tree[parent] = combine(tree[left], tree[right])",
       "javaCode": "class SegmentTree {\n    private int[] tree;\n    private int n;\n    \n    public SegmentTree(int[] nums) {\n        n = nums.length;\n        tree = new int[4 * n];\n        build(nums, 0, 0, n - 1);\n    }\n    \n    private void build(int[] nums, int node, int start, int end) {\n        if (start == end) {\n            tree[node] = nums[start];\n        } else {\n            int mid = (start + end) / 2;\n            build(nums, 2*node+1, start, mid);\n            build(nums, 2*node+2, mid+1, end);\n            tree[node] = tree[2*node+1] + tree[2*node+2];\n        }\n    }\n    \n    public void update(int idx, int val, int node, int start, int end) {\n        if (start == end) {\n            tree[node] = val;\n        } else {\n            int mid = (start + end) / 2;\n            if (idx <= mid) update(idx, val, 2*node+1, start, mid);\n            else update(idx, val, 2*node+2, mid+1, end);\n            tree[node] = tree[2*node+1] + tree[2*node+2];\n        }\n    }\n    \n    public int query(int l, int r, int node, int start, int end) {\n        if (r < start || end < l) return 0; // outside\n        if (l <= start && end <= r) return tree[node]; // fully inside\n        int mid = (start + end) / 2;\n        return query(l, r, 2*node+1, start, mid)\n             + query(l, r, 2*node+2, mid+1, end);\n    }\n    \n    // Public wrappers\n    public void update(int idx, int val) { update(idx, val, 0, 0, n-1); }\n    public int query(int l, int r) { return query(l, r, 0, 0, n-1); }\n}\n\n// Simpler: iterative segment tree (1-indexed, size 2n)\nclass SegmentTreeIterative {\n    private int[] tree;\n    private int n;\n    \n    public SegmentTreeIterative(int[] nums) {\n        n = nums.length;\n        tree = new int[2 * n];\n        // Load leaves\n        for (int i = 0; i < n; i++) tree[i + n] = nums[i];\n        // Build parents\n        for (int i = n - 1; i >= 1; i--) tree[i] = tree[2*i] + tree[2*i+1];\n    }\n    \n    public void update(int i, int val) {\n        i += n;\n        tree[i] = val;\n        while (i > 1) { i /= 2; tree[i] = tree[2*i] + tree[2*i+1]; }\n    }\n    \n    public int query(int l, int r) { // inclusive [l, r]\n        int res = 0;\n        for (l += n, r += n + 1; l < r; l /= 2, r /= 2) {\n            if ((l & 1) == 1) res += tree[l++];\n            if ((r & 1) == 1) res += tree[--r];\n        }\n        return res;\n    }\n}",
       "interviewTips": "The iterative version (bottom-up, 1-indexed) is often cleaner in interviews. Key insight: tree has 2n nodes for n elements. Leaves at indices [n, 2n-1]. Parent of node i is i/2. Children of node i are 2i and 2i+1. For range min/max, just replace + with Math.min/max and change the identity value.",
-      "useCases": "[\"Range Sum Query - Mutable (LeetCode 307)\",\"Count of smaller numbers (LeetCode 315)\",\"The Skyline Problem\",\"Range minimum query\",\"Count of range sum\"]",
+      "useCases": "[{\"title\":\"Range Sum Query - Mutable\",\"desc\":\"Range Sum Query - Mutable (LeetCode 307)\"},{\"title\":\"Count of smaller numbers\",\"desc\":\"Count of smaller numbers (LeetCode 315)\"},{\"title\":\"The Skyline Problem\",\"desc\":\"The Skyline Problem\"},{\"title\":\"Range minimum query\",\"desc\":\"Range minimum query\"},{\"title\":\"Count of range sum\",\"desc\":\"Count of range sum\"}]",
       "pitfalls": "[\"Tree size: 4*n for recursive, 2*n for iterative\",\"Off-by-one in query bounds\",\"Forgetting to propagate updates upward\",\"Using wrong identity for min (Integer.MAX_VALUE, not 0)\"]",
-      "variants": "[\"Segment tree with lazy propagation\",\"Persistent segment tree\",\"Fenwick tree (BIT) for prefix sums\"]"
+      "variants": "[{\"name\":\"Segment tree with lazy propagation\",\"desc\":\"Segment tree with lazy propagation\"},{\"name\":\"Persistent segment tree\",\"desc\":\"Persistent segment tree\"},{\"name\":\"Fenwick tree\",\"desc\":\"Fenwick tree (BIT) for prefix sums\"}]"
     },
     {
       "slug": "binary-indexed-tree",
       "name": "Binary Indexed Tree (Fenwick Tree)",
       "category": "Range Query",
       "emoji": "🌴",
-      "difficulty": "Medium",
+      "difficulty": "INTERMEDIATE",
       "displayOrder": 364,
       "tags": "[\"fenwick-tree\",\"bit\",\"prefix-sum\",\"range-query\"]",
       "timeComplexityBest": "O(log n)",
@@ -113,9 +113,9 @@
       "howItWorks": "1-indexed array of size n+1.\nupdate(i, delta): add delta to position i\n  While i <= n: bit[i] += delta; i += (i & -i)\n\nquery(i): sum of [1..i]\n  While i > 0: sum += bit[i]; i -= (i & -i)\n\nrangeQuery(l, r) = query(r) - query(l-1)",
       "javaCode": "class FenwickTree {\n    private int[] bit;\n    private int n;\n    \n    public FenwickTree(int n) {\n        this.n = n;\n        bit = new int[n + 1]; // 1-indexed\n    }\n    \n    public FenwickTree(int[] nums) {\n        this(nums.length);\n        for (int i = 0; i < nums.length; i++) update(i + 1, nums[i]);\n    }\n    \n    // Add delta to position i (1-indexed)\n    public void update(int i, int delta) {\n        for (; i <= n; i += (i & -i))\n            bit[i] += delta;\n    }\n    \n    // Prefix sum [1..i] (1-indexed)\n    public int query(int i) {\n        int sum = 0;\n        for (; i > 0; i -= (i & -i))\n            sum += bit[i];\n        return sum;\n    }\n    \n    // Range sum [l..r] (1-indexed, inclusive)\n    public int rangeQuery(int l, int r) {\n        return query(r) - query(l - 1);\n    }\n}\n\n// Count inversions using BIT\npublic int countInversions(int[] nums) {\n    // Coordinate compress to [1..n]\n    int n = nums.length;\n    int[] sorted = nums.clone();\n    Arrays.sort(sorted);\n    Map<Integer, Integer> rank = new HashMap<>();\n    for (int i = 0; i < n; i++) rank.put(sorted[i], i + 1);\n    \n    FenwickTree bit = new FenwickTree(n);\n    int inversions = 0;\n    for (int i = n - 1; i >= 0; i--) {\n        int r = rank.get(nums[i]);\n        inversions += bit.query(r - 1); // count elements smaller than nums[i] seen so far\n        bit.update(r, 1);\n    }\n    return inversions;\n}",
       "interviewTips": "BIT is 1-indexed — shift your 0-indexed array by +1. The two operations are symmetric: update uses i += (i & -i), query uses i -= (i & -i). These traverse different paths up the tree. Count inversions is the classic BIT application — scan right to left, for each element query how many smaller elements have already been seen.",
-      "useCases": "[\"Range Sum Query - Mutable (LeetCode 307)\",\"Count of Smaller Numbers After Self (LeetCode 315)\",\"Count inversions in array\",\"2D BIT for 2D range queries\"]",
+      "useCases": "[{\"title\":\"Range Sum Query - Mutable\",\"desc\":\"Range Sum Query - Mutable (LeetCode 307)\"},{\"title\":\"Count of Smaller Numbers After Self\",\"desc\":\"Count of Smaller Numbers After Self (LeetCode 315)\"},{\"title\":\"Count inversions in array\",\"desc\":\"Count inversions in array\"},{\"title\":\"2D BIT for 2D range queries\",\"desc\":\"2D BIT for 2D range queries\"}]",
       "pitfalls": "[\"0-indexed vs 1-indexed: BIT must be 1-indexed\",\"update goes UP (i += lowbit), query goes DOWN (i -= lowbit) — don't mix them\",\"Range query: query(r) - query(l-1), not query(l)\"]",
-      "variants": "[\"2D Fenwick Tree\",\"Fenwick Tree for range updates\",\"Order-statistic tree\"]"
+      "variants": "[{\"name\":\"2D Fenwick Tree\",\"desc\":\"2D Fenwick Tree\"},{\"name\":\"Fenwick Tree for range updates\",\"desc\":\"Fenwick Tree for range updates\"},{\"name\":\"Order-statistic tree\",\"desc\":\"Order-statistic tree\"}]"
     }
   ]
 }

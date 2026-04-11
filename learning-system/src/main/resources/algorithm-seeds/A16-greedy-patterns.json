@@ -1,13 +1,13 @@
 {
   "batchName": "A16 – Greedy Patterns",
-  "skipExisting": true,
+  "skipExisting": false,
   "algorithms": [
     {
       "slug": "activity-selection",
       "name": "Activity Selection",
       "category": "Greedy",
       "emoji": "📅",
-      "difficulty": "Medium",
+      "difficulty": "INTERMEDIATE",
       "displayOrder": 340,
       "tags": "[\"greedy\",\"intervals\",\"sorting\"]",
       "timeComplexityBest": "O(n log n)",
@@ -21,16 +21,16 @@
       "howItWorks": "1. Sort intervals by end time\n2. Select first interval (earliest end)\n3. For each subsequent interval:\n   If interval.start >= last selected interval.end:\n     Select it (update last end time)\n     Increment count\n4. Return count",
       "javaCode": "// Maximum non-overlapping intervals\npublic int maxActivities(int[][] intervals) {\n    Arrays.sort(intervals, (a, b) -> a[1] - b[1]); // sort by end time\n    int count = 1, lastEnd = intervals[0][1];\n    for (int i = 1; i < intervals.length; i++) {\n        if (intervals[i][0] >= lastEnd) { // starts after last ends\n            count++;\n            lastEnd = intervals[i][1];\n        }\n    }\n    return count;\n}\n\n// Minimum number of meeting rooms (use max-heap/counting)\npublic int minMeetingRooms(int[][] intervals) {\n    int[] starts = new int[intervals.length];\n    int[] ends = new int[intervals.length];\n    for (int i = 0; i < intervals.length; i++) {\n        starts[i] = intervals[i][0];\n        ends[i] = intervals[i][1];\n    }\n    Arrays.sort(starts);\n    Arrays.sort(ends);\n    int rooms = 0, endPtr = 0;\n    for (int start : starts) {\n        if (start < ends[endPtr]) rooms++;\n        else endPtr++;\n    }\n    return rooms;\n}\n\n// Merge overlapping intervals\npublic int[][] mergeIntervals(int[][] intervals) {\n    Arrays.sort(intervals, (a, b) -> a[0] - b[0]); // sort by start time\n    List<int[]> merged = new ArrayList<>();\n    for (int[] interval : intervals) {\n        if (merged.isEmpty() || merged.getLast()[1] < interval[0]) {\n            merged.add(interval);\n        } else {\n            merged.getLast()[1] = Math.max(merged.getLast()[1], interval[1]);\n        }\n    }\n    return merged.toArray(new int[0][]);\n}",
       "interviewTips": "Know three interval variants cold: max non-overlapping (sort by end, greedy pick), min meeting rooms (two sorted arrays + two pointers), merge intervals (sort by start, extend end). The key distinction: sort by END for counting/selection, sort by START for merging.",
-      "useCases": "[\"Meeting Rooms I/II (LeetCode 252/253)\",\"Non-overlapping Intervals (LeetCode 435)\",\"Merge Intervals (LeetCode 56)\",\"Minimum arrows to burst balloons (LeetCode 452)\"]",
+      "useCases": "[{\"title\":\"Meeting Rooms I/II\",\"desc\":\"Meeting Rooms I/II (LeetCode 252/253)\"},{\"title\":\"Non-overlapping Intervals\",\"desc\":\"Non-overlapping Intervals (LeetCode 435)\"},{\"title\":\"Merge Intervals\",\"desc\":\"Merge Intervals (LeetCode 56)\"},{\"title\":\"Minimum arrows to burst balloons\",\"desc\":\"Minimum arrows to burst balloons (LeetCode 452)\"}]",
       "pitfalls": "[\"Sorting by start instead of end for activity selection\",\"Using > instead of >= for the start/end comparison\",\"Meeting rooms: not accounting for simultaneous end/start (a[0] < ends vs a[0] <= ends)\"]",
-      "variants": "[\"Min meeting rooms\",\"Merge intervals\",\"Insert interval\",\"Minimum arrows to burst balloons\"]"
+      "variants": "[{\"name\":\"Min meeting rooms\",\"desc\":\"Min meeting rooms\"},{\"name\":\"Merge intervals\",\"desc\":\"Merge intervals\"},{\"name\":\"Insert interval\",\"desc\":\"Insert interval\"},{\"name\":\"Minimum arrows to burst balloons\",\"desc\":\"Minimum arrows to burst balloons\"}]"
     },
     {
       "slug": "jump-game",
       "name": "Jump Game",
       "category": "Greedy",
       "emoji": "🦘",
-      "difficulty": "Medium",
+      "difficulty": "INTERMEDIATE",
       "displayOrder": 341,
       "tags": "[\"greedy\",\"array\",\"reach\"]",
       "timeComplexityBest": "O(n)",
@@ -44,16 +44,16 @@
       "howItWorks": "Jump Game I (can reach end?):\n1. maxReach = 0\n2. For i = 0 to n-1:\n   If i > maxReach → return false\n   maxReach = max(maxReach, i + nums[i])\n3. Return true\n\nJump Game II (min jumps):\n1. jumps=0, currEnd=0, farthest=0\n2. For i = 0 to n-2:\n   farthest = max(farthest, i + nums[i])\n   If i == currEnd: jumps++; currEnd = farthest\n3. Return jumps",
       "javaCode": "// Jump Game I: can you reach the last index?\npublic boolean canJump(int[] nums) {\n    int maxReach = 0;\n    for (int i = 0; i < nums.length; i++) {\n        if (i > maxReach) return false;\n        maxReach = Math.max(maxReach, i + nums[i]);\n    }\n    return true;\n}\n\n// Jump Game II: minimum jumps to reach end\npublic int jump(int[] nums) {\n    int jumps = 0, currEnd = 0, farthest = 0;\n    for (int i = 0; i < nums.length - 1; i++) {\n        farthest = Math.max(farthest, i + nums[i]);\n        if (i == currEnd) { // reached end of current jump range\n            jumps++;\n            currEnd = farthest;\n        }\n    }\n    return jumps;\n}\n\n// Jump Game VI: maximum score path (DP + deque)\npublic int maxResult(int[] nums, int k) {\n    int n = nums.length;\n    int[] dp = new int[n];\n    dp[0] = nums[0];\n    Deque<Integer> deque = new ArrayDeque<>();\n    deque.offer(0);\n    for (int i = 1; i < n; i++) {\n        while (!deque.isEmpty() && deque.peek() < i - k) deque.poll();\n        dp[i] = nums[i] + dp[deque.peek()];\n        while (!deque.isEmpty() && dp[deque.peekLast()] <= dp[i]) deque.pollLast();\n        deque.offer(i);\n    }\n    return dp[n - 1];\n}",
       "interviewTips": "Jump Game II's greedy is essentially BFS levels: currEnd is the boundary of the current BFS level. When you reach it, you must jump (increment count) and extend the boundary to farthest. The loop goes to n-2 (not n-1) because you don't need to jump FROM the last position.",
-      "useCases": "[\"Jump Game I/II/VI (LeetCode 55/45/1696)\",\"Reach the last index\",\"Video stitching\",\"Minimum taps to water garden\"]",
+      "useCases": "[{\"title\":\"Jump Game I/II/VI\",\"desc\":\"Jump Game I/II/VI (LeetCode 55/45/1696)\"},{\"title\":\"Reach the last index\",\"desc\":\"Reach the last index\"},{\"title\":\"Video stitching\",\"desc\":\"Video stitching\"},{\"title\":\"Minimum taps to water garden\",\"desc\":\"Minimum taps to water garden\"}]",
       "pitfalls": "[\"Jump Game I: checking after updating maxReach (should check i > maxReach FIRST)\",\"Jump Game II: looping to n-1 instead of n-2 (double-counts last jump)\",\"Not updating farthest before checking i==currEnd\"]",
-      "variants": "[\"Jump Game II (min jumps)\",\"Jump Game III (can reach 0)\",\"Jump Game VI (max score)\",\"Video stitching\"]"
+      "variants": "[{\"name\":\"Jump Game II\",\"desc\":\"Jump Game II (min jumps)\"},{\"name\":\"Jump Game III\",\"desc\":\"Jump Game III (can reach 0)\"},{\"name\":\"Jump Game VI\",\"desc\":\"Jump Game VI (max score)\"},{\"name\":\"Video stitching\",\"desc\":\"Video stitching\"}]"
     },
     {
       "slug": "gas-station",
       "name": "Gas Station",
       "category": "Greedy",
       "emoji": "⛽",
-      "difficulty": "Medium",
+      "difficulty": "INTERMEDIATE",
       "displayOrder": 342,
       "tags": "[\"greedy\",\"array\",\"circular\"]",
       "timeComplexityBest": "O(n)",
@@ -67,16 +67,16 @@
       "howItWorks": "1. totalGas = 0, tank = 0, start = 0\n2. For i = 0 to n-1:\n   diff = gas[i] - cost[i]\n   tank += diff\n   totalGas += diff\n   If tank < 0:\n     start = i + 1  (reset start)\n     tank = 0       (reset current tank)\n3. Return totalGas >= 0 ? start : -1",
       "javaCode": "public int canCompleteCircuit(int[] gas, int[] cost) {\n    int totalGas = 0, tank = 0, start = 0;\n    for (int i = 0; i < gas.length; i++) {\n        int diff = gas[i] - cost[i];\n        totalGas += diff;\n        tank += diff;\n        if (tank < 0) {\n            start = i + 1; // can't start from old start through i\n            tank = 0;\n        }\n    }\n    return totalGas >= 0 ? start : -1;\n}",
       "interviewTips": "The correctness proof: if [0..i] has negative total, no station in that range can be the start. The candidate start keeps moving forward. At the end, if total >= 0, the last candidate start is the answer. This O(n) solution is often asked to follow up on the obvious O(n²) brute force.",
-      "useCases": "[\"Gas Station (LeetCode 134)\",\"Circular buffer feasibility\",\"Fleet scheduling\"]",
+      "useCases": "[{\"title\":\"Gas Station\",\"desc\":\"Gas Station (LeetCode 134)\"},{\"title\":\"Circular buffer feasibility\",\"desc\":\"Circular buffer feasibility\"},{\"title\":\"Fleet scheduling\",\"desc\":\"Fleet scheduling\"}]",
       "pitfalls": "[\"Forgetting to check totalGas >= 0 at the end (the candidate start may be valid locally but global sum is negative)\",\"Resetting totalGas along with tank (they track different things)\"]",
-      "variants": "[\"Minimum cost to fill gas\",\"Circular trip feasibility\"]"
+      "variants": "[{\"name\":\"Minimum cost to fill gas\",\"desc\":\"Minimum cost to fill gas\"},{\"name\":\"Circular trip feasibility\",\"desc\":\"Circular trip feasibility\"}]"
     },
     {
       "slug": "fractional-knapsack",
       "name": "Fractional Knapsack",
       "category": "Greedy",
       "emoji": "🎒",
-      "difficulty": "Medium",
+      "difficulty": "INTERMEDIATE",
       "displayOrder": 343,
       "tags": "[\"greedy\",\"sorting\",\"optimization\"]",
       "timeComplexityBest": "O(n log n)",
@@ -90,9 +90,9 @@
       "howItWorks": "1. Calculate value/weight ratio for each item\n2. Sort items by ratio descending\n3. While capacity > 0 and items remain:\n   If item.weight <= remaining capacity:\n     Take full item: value += item.value, capacity -= item.weight\n   Else:\n     Take fraction: value += item.value × (capacity/item.weight), capacity = 0\n4. Return total value",
       "javaCode": "class Item {\n    int weight, value;\n    Item(int w, int v) { weight = w; value = v; }\n}\n\npublic double fractionalKnapsack(Item[] items, int capacity) {\n    // Sort by value/weight ratio descending\n    Arrays.sort(items, (a, b) -> Double.compare(\n        (double) b.value / b.weight,\n        (double) a.value / a.weight\n    ));\n    double totalValue = 0;\n    for (Item item : items) {\n        if (capacity <= 0) break;\n        if (item.weight <= capacity) {\n            totalValue += item.value;\n            capacity -= item.weight;\n        } else {\n            totalValue += (double) item.value * capacity / item.weight;\n            capacity = 0;\n        }\n    }\n    return totalValue;\n}\n\n// Task Scheduler (similar greedy: highest frequency first)\npublic int leastInterval(char[] tasks, int n) {\n    int[] freq = new int[26];\n    for (char c : tasks) freq[c - 'A']++;\n    Arrays.sort(freq);\n    int maxFreq = freq[25];\n    int maxCount = 0;\n    for (int f : freq) if (f == maxFreq) maxCount++;\n    return Math.max(tasks.length, (maxFreq - 1) * (n + 1) + maxCount);\n}",
       "interviewTips": "Interviewers often ask about 0/1 vs fractional knapsack — key point: greedy works for fractional (exchange argument), but 0/1 needs DP because you can't take fractions. Task Scheduler is a related greedy problem often appearing together.",
-      "useCases": "[\"Fractional knapsack\",\"Task scheduler (LeetCode 621)\",\"Job scheduling with deadlines\",\"Maximum profit allocation\"]",
+      "useCases": "[{\"title\":\"Fractional knapsack\",\"desc\":\"Fractional knapsack\"},{\"title\":\"Task scheduler\",\"desc\":\"Task scheduler (LeetCode 621)\"},{\"title\":\"Job scheduling with deadlines\",\"desc\":\"Job scheduling with deadlines\"},{\"title\":\"Maximum profit allocation\",\"desc\":\"Maximum profit allocation\"}]",
       "pitfalls": "[\"Applying greedy to 0/1 knapsack — doesn't work\",\"Integer division in ratio calculation (use double cast)\",\"Taking full capacity when item.weight > remaining\"]",
-      "variants": "[\"0/1 Knapsack (DP)\",\"Task Scheduler\",\"Job scheduling with deadlines\"]"
+      "variants": "[{\"name\":\"0/1 Knapsack\",\"desc\":\"0/1 Knapsack (DP)\"},{\"name\":\"Task Scheduler\",\"desc\":\"Task Scheduler\"},{\"name\":\"Job scheduling with deadlines\",\"desc\":\"Job scheduling with deadlines\"}]"
     }
   ]
 }

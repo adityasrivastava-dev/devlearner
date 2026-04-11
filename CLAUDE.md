@@ -119,7 +119,7 @@ Frontend `CATEGORIES` array and `CATEGORY_META` in `src/utils/helpers.js` must m
 
 ---
 
-## What Is Built (Current State — 2026-04-11)
+## What Is Built (Current State — 2026-04-12)
 
 ### Auth & Users
 JWT login, Google OAuth2, email/password, multi-role (admin/user), 3-step onboarding, user profile with XP/streak/level badge.
@@ -163,7 +163,16 @@ Daily streak + pause days, XP + level system, GitHub-style heatmap, spaced repet
 Quiz sets by category, per-question timer, results with grade + review accordion.
 
 ### Algorithms Page (`/algorithms`)
-10 algorithms with 5-tab detail view (story, steps, code, complexity, real-world).
+70+ algorithms across 18 seed files (A01–A18), 5-tab detail view (story, steps, code, complexity, real-world). **VisualizationPlan** component (`VisualizationPlan.jsx`) adds a blueprint section to every algorithm: color legend, event flow, annotated pseudocode with hook badges, and pattern insight — all derived from existing fields, no new backend fields needed.
+
+### Interview Prep (`/interview-prep`)
+**Fully built.** Filter by category + difficulty, inline search, accordion Q&A with key points and code examples. Falls back to static `interviewData.js` when DB is empty. Current static bank covers: Java Core, Advanced Java, DSA, SQL, AWS. **Spring Boot and System Design Q&As not yet added.**
+
+### Revision Session (`/revision`)
+**Fully built.** Setup screen (pick categories, difficulty, duration 10/20/30 min) → timed session (reveal-and-rate each question) → scorecard with review accordion.
+
+### Complexity Analyzer (`/complexity`)
+Paste any Java code → get Big-O time and space complexity from actual static analysis (not hardcoded values). Monaco editor on left, results panel on right. Shows: complexity notation colored by grade (green O(1) → red O(2ⁿ)), confidence level (HIGH/MEDIUM/LOW with bar), detected patterns as chips (loops/recursion/sorting/etc.), time and space explanations, complexity scale with active item highlighted. Keyboard shortcut Ctrl+Shift+A. Backend: `ComplexityAnalyzer` service + `POST /api/analyze-complexity`. Frontend: `codeApi.analyzeComplexity`.
 
 ### Pattern Name Drill (`/drill`)
 Flashcard drill: see problem description, type the pattern name. Alias matching.
@@ -210,6 +219,19 @@ Format: `{ batchName, skipExisting: true, topics: [...] }`. Each topic has: `tit
 | S05 | REST API Design — HTTP methods, status codes, GlobalExceptionHandler |
 | S06 | Microservices — Feign, Circuit Breaker, API Gateway, Saga pattern |
 
+### ✅ DSA Core (D01–D09)
+| File | Topic |
+|------|-------|
+| D01 | Linked List — singly/doubly/circular, runner technique, sentinel nodes |
+| D02 | Stack & Queue — monotonic stack, deque, circular queue |
+| D03 | Trees — BST, DFS/BFS, LCA, height/diameter |
+| D04 | Heaps & Priority Queues — top-K, two-heap, merge K sorted |
+| D05 | Graphs — adjacency list, DFS/BFS, topological sort, union-find, Dijkstra |
+| D06 | Sorting Algorithms — merge/quick/counting/radix, stability, comparison |
+| D07 | Dynamic Programming — memoization, tabulation, knapsack, LCS, 1D/2D DP |
+| D08 | Recursion & Backtracking — pruning, permutations, N-queens, constraint propagation |
+| D09 | Trie & Advanced Trees — Trie insert/search/prefix, segment tree basics |
+
 ### ✅ DSA Patterns (D10–D14)
 | File | Topic |
 |------|-------|
@@ -250,42 +272,61 @@ Format: `{ batchName, skipExisting: true, topics: [...] }`. Each topic has: `tit
 |------|-------|
 | T01 | Unit Testing — JUnit 5 assertions, @ParameterizedTest, Mockito mocks/verify/captor |
 
-### ❌ Missing DSA (Core Data Structures — HIGH PRIORITY)
-These 9 files cover fundamental interview topics and must be created:
-- `D01-linked-list.json` — singly/doubly/circular, runner technique, sentinel nodes
-- `D02-stack-queue.json` — monotonic stack, deque, circular queue
-- `D03-trees.json` — BST, DFS/BFS, LCA, height/diameter
-- `D04-heaps.json` — top-K, two-heap, merge K sorted
-- `D05-graphs.json` — adjacency list, DFS/BFS, topological sort, union-find, Dijkstra
-- `D06-sorting.json` — merge/quick/counting/radix, stability, comparison
-- `D07-dynamic-programming.json` — memoization, tabulation, knapsack, LCS, 1D/2D DP
-- `D08-recursion-backtracking.json` — pruning, permutations, N-queens, constraint propagation
-- `D09-trie.json` — Trie insert/search/prefix, segment tree basics
+## Algorithm Seeds (Content)
+
+Algorithm seeds live in `learning-system/src/main/resources/algorithm-seeds/`. Load via Admin → Import JSON.
+Format: `{ batchName, skipExisting, algorithms: [...] }`. Each algorithm needs: `slug`, `name`, `category`, `emoji`, `difficulty` (`BEGINNER`/`INTERMEDIATE`/`ADVANCED` — exact enum match required), `tags` (JSON string array), complexity fields, `analogy`, `story`, `whenToUse`, `howItWorks`, `javaCode`, `interviewTips`, `useCases` (`[{"title":"...","desc":"..."}]`), `pitfalls` (`["string"]`), `variants` (`[{"name":"...","desc":"..."}]`), `displayOrder`.
+
+**CRITICAL:** `difficulty` must be `BEGINNER`/`INTERMEDIATE`/`ADVANCED`. `useCases` and `variants` must be object arrays, not string arrays — frontend renders `.title`/`.desc` and `.name`/`.desc` respectively.
+
+### ✅ Algorithm Seeds (A01–A18, 70+ algorithms)
+| File | Contents |
+|------|----------|
+| A01 | Searching (Binary Search, Linear Search) |
+| A02 | Sorting (Bubble, Selection, Insertion) |
+| A03 | Two Pointer & Sliding Window |
+| A04 | Graph (BFS, DFS, Dijkstra) |
+| A05 | Dynamic Programming (Fibonacci, Knapsack, LCS) |
+| A06 | Tree & Linked List basics |
+| A07 | Heap, Stack, Queue |
+| A08 | Backtracking & Greedy basics |
+| A09 | Sorting Extended (Merge Sort, Quick Sort, Counting Sort) |
+| A10 | DP Classic (Coin Change, Edit Distance, LIS) |
+| A11 | Graph Advanced (Topological Sort, Union-Find, Bellman-Ford, Floyd-Warshall) |
+| A12 | Linked List Patterns (Reverse, Floyd's Cycle, Merge Sorted, Find Middle, Remove Nth) |
+| A13 | Stack Patterns (Next Greater Element, Valid Parentheses, Min Stack, Largest Rectangle) |
+| A14 | Tree Advanced (Height, Diameter, LCA, Level Order, Path Sum) |
+| A15 | Backtracking Patterns (Subsets, Permutations, Combination Sum, N-Queens) |
+| A16 | Greedy Patterns (Activity Selection, Jump Game, Gas Station, Fractional Knapsack) |
+| A17 | String & Hashing (KMP, Group Anagrams, Two Sum Hash, Min Window Substring) |
+| A18 | Advanced DS (LRU Cache, Trie, Union-Find, Segment Tree, Binary Indexed Tree) |
 
 ---
 
 ## Pending Features (Priority Order)
 
 ### High Priority
-1. **DSA D01–D09 seed files** — Core data structures missing; most interview questions fall here
-2. **InterviewPrepPage** (`/interview-prep`) — Browse + study 50+ Q&A from `interviewData.js`; two-column layout (list left, detail right)
-3. **RevisionPage** (`/revision`) — 30-min timed Q&A session, score card, review
-4. **SQL Practice Engine** — H2 embedded DB, query editor, EXPLAIN plan output in-browser
+1. **Spaced Repetition Queue UI** — `SpacedRepetitionService` exists in backend; no frontend surface. Surface "review these N topics today" on dashboard. Pure frontend + existing API.
+2. **Interview Mode** — Timed 45-min session, lock a problem, no hints, write approach first, scored at end. Uses existing problem + submission APIs.
+3. **Topic Mastery Map** — Visual grid of all topics colored by gate stage (THEORY → MASTERED). Pure frontend — gate data already returned from API.
+4. **Daily Challenge** — Same problem for all users each day (Wordle-style). Shared leaderboard, streak tie-in.
+5. **Editorial unlock improvement** — Unlock after 2 attempts OR 10+ min, not only after AC.
 
 ### Medium Priority
-5. **Interview Mode** — Timed 45-min session, no hints, approach-first, scored
-6. **Daily Challenge** — Same problem for all users each day (Wordle-style)
-7. **Editorial unlock improvement** — Unlock after 2 attempts OR 10+ min, not only after AC
-8. **Cheat Sheet PDF generator** — Per-topic 1-page printable reference
-9. **Recall Drill page** (`/recall`) — Flashcard mode: see topic name, recall memory anchor
+4. **Interview Mode** — Timed 45-min session, no hints, approach-first, scored.
+5. **Cheat Sheet PDF generator** — Per-topic 1-page printable reference.
+6. **Recall Drill page** (`/recall`) — Flashcard mode: see topic name, recall memory anchor.
 
 ### Lower Priority / Phase 3+
-10. **Groups + friend challenges** — Biggest retention driver; needs Group, GroupMember tables
-11. **Pattern page** (`/patterns`) — Pattern as first-class entity with problems list
-12. **Resume upload + JD gap analyzer** — PdfImportService foundation exists
-13. **System design visual builder** — Drag-drop canvas
-14. **Weekly report card** — Backend analytics exist, frontend not built
-15. **Subscription tiers** — Free / Pro ₹199/mo / Career Pro ₹399/mo
+7. **Groups + friend challenges** — Biggest retention driver; needs Group, GroupMember tables.
+8. **Pattern page** (`/patterns`) — Pattern as first-class entity with problems list.
+9. **Resume upload + JD gap analyzer** — PdfImportService foundation exists.
+10. **System design visual builder** — Drag-drop canvas.
+11. **Weekly report card** — Backend analytics exist, frontend not built.
+12. **Subscription tiers** — Free / Pro ₹199/mo / Career Pro ₹399/mo.
+
+### Deliberately NOT doing
+- **SQL Practice Engine** (H2 embedded DB + query editor) — over-engineering; the topic seeds cover SQL theory adequately.
 
 ---
 
@@ -301,5 +342,11 @@ These 9 files cover fundamental interview topics and must be created:
 | API layer | `frontend/src/api/index.js` |
 | Topic entity | `learning-system/src/main/java/com/learnsystem/model/Topic.java` |
 | Seed batch service | `learning-system/src/main/java/com/learnsystem/service/SeedBatchService.java` |
-| Seed files | `learning-system/src/main/resources/seeds/` |
+| Topic seed files | `learning-system/src/main/resources/seeds/` |
+| Algorithm seed files | `learning-system/src/main/resources/algorithm-seeds/` |
 | Security config | `learning-system/src/main/java/com/learnsystem/config/SecurityConfig.java` |
+| Interview Q&A bank | `frontend/src/pages/interview/interviewData.js` |
+| Interview Prep page | `frontend/src/pages/interview/InterviewPrepPage.jsx` |
+| Revision page | `frontend/src/pages/interview/RevisionPage.jsx` |
+| Algorithm page | `frontend/src/pages/algorithms/AlgorithmsPage.jsx` |
+| Visualization blueprint | `frontend/src/pages/algorithms/VisualizationPlan.jsx` |

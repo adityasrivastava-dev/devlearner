@@ -1,13 +1,13 @@
 {
   "batchName": "A15 – Backtracking Patterns",
-  "skipExisting": true,
+  "skipExisting": false,
   "algorithms": [
     {
       "slug": "generate-subsets",
       "name": "Generate All Subsets",
       "category": "Backtracking",
       "emoji": "🎲",
-      "difficulty": "Medium",
+      "difficulty": "INTERMEDIATE",
       "displayOrder": 330,
       "tags": "[\"backtracking\",\"recursion\",\"subsets\",\"bitmask\"]",
       "timeComplexityBest": "O(2^n)",
@@ -21,16 +21,16 @@
       "howItWorks": "Backtracking template:\n1. Add current path to result\n2. For i from start to n-1:\n   a. Add nums[i] to path\n   b. Recurse with start = i+1\n   c. Remove nums[i] from path (backtrack)\n\nBitmask approach: for each number 0 to 2^n - 1, bit j being set means include nums[j].",
       "javaCode": "// Subsets (no duplicates in input)\npublic List<List<Integer>> subsets(int[] nums) {\n    List<List<Integer>> result = new ArrayList<>();\n    backtrack(nums, 0, new ArrayList<>(), result);\n    return result;\n}\nprivate void backtrack(int[] nums, int start, List<Integer> path,\n                        List<List<Integer>> result) {\n    result.add(new ArrayList<>(path)); // add at every node, not just leaves\n    for (int i = start; i < nums.length; i++) {\n        path.add(nums[i]);\n        backtrack(nums, i + 1, path, result);\n        path.remove(path.size() - 1); // backtrack\n    }\n}\n\n// Subsets II (input may have duplicates)\npublic List<List<Integer>> subsetsWithDup(int[] nums) {\n    Arrays.sort(nums); // sort to group duplicates\n    List<List<Integer>> result = new ArrayList<>();\n    backtrack2(nums, 0, new ArrayList<>(), result);\n    return result;\n}\nprivate void backtrack2(int[] nums, int start, List<Integer> path,\n                         List<List<Integer>> result) {\n    result.add(new ArrayList<>(path));\n    for (int i = start; i < nums.length; i++) {\n        if (i > start && nums[i] == nums[i-1]) continue; // skip duplicates\n        path.add(nums[i]);\n        backtrack2(nums, i + 1, path, result);\n        path.remove(path.size() - 1);\n    }\n}\n\n// Bitmask approach\npublic List<List<Integer>> subsetsBitmask(int[] nums) {\n    int n = nums.length;\n    List<List<Integer>> result = new ArrayList<>();\n    for (int mask = 0; mask < (1 << n); mask++) {\n        List<Integer> subset = new ArrayList<>();\n        for (int j = 0; j < n; j++) {\n            if ((mask & (1 << j)) != 0) subset.add(nums[j]);\n        }\n        result.add(subset);\n    }\n    return result;\n}",
       "interviewTips": "Add to result at EVERY recursion level (not just leaves) — that's what makes it subsets not combinations. For duplicates: sort + skip `if (i > start && nums[i] == nums[i-1])`. The `i > start` condition (not `i > 0`) is critical — it only skips duplicates at the SAME level, not across levels.",
-      "useCases": "[\"Subsets I/II (LeetCode 78/90)\",\"Power set generation\",\"All possible groupings\",\"Bitmask DP state spaces\"]",
+      "useCases": "[{\"title\":\"Subsets I/II\",\"desc\":\"Subsets I/II (LeetCode 78/90)\"},{\"title\":\"Power set generation\",\"desc\":\"Power set generation\"},{\"title\":\"All possible groupings\",\"desc\":\"All possible groupings\"},{\"title\":\"Bitmask DP state spaces\",\"desc\":\"Bitmask DP state spaces\"}]",
       "pitfalls": "[\"Using new ArrayList<>(path) when adding (otherwise all results point to same list)\",\"For Subsets II: using i>0 instead of i>start (incorrectly skips valid subsets)\",\"Forgetting to backtrack (remove last element)\"]",
-      "variants": "[\"Subsets with duplicates\",\"Combinations\",\"Combination sum\",\"Power set\"]"
+      "variants": "[{\"name\":\"Subsets with duplicates\",\"desc\":\"Subsets with duplicates\"},{\"name\":\"Combinations\",\"desc\":\"Combinations\"},{\"name\":\"Combination sum\",\"desc\":\"Combination sum\"},{\"name\":\"Power set\",\"desc\":\"Power set\"}]"
     },
     {
       "slug": "permutations",
       "name": "Permutations",
       "category": "Backtracking",
       "emoji": "🔀",
-      "difficulty": "Medium",
+      "difficulty": "INTERMEDIATE",
       "displayOrder": 331,
       "tags": "[\"backtracking\",\"recursion\",\"permutations\"]",
       "timeComplexityBest": "O(n! × n)",
@@ -44,16 +44,16 @@
       "howItWorks": "Using visited array:\n1. For each index i from 0 to n-1:\n   a. If visited[i] → skip\n   b. Mark visited[i] = true, add nums[i] to path\n   c. Recurse\n   d. Mark visited[i] = false, remove nums[i] (backtrack)\n2. If path.size() == n → add to result",
       "javaCode": "// Permutations (distinct elements)\npublic List<List<Integer>> permute(int[] nums) {\n    List<List<Integer>> result = new ArrayList<>();\n    boolean[] visited = new boolean[nums.length];\n    backtrack(nums, visited, new ArrayList<>(), result);\n    return result;\n}\nprivate void backtrack(int[] nums, boolean[] visited, List<Integer> path,\n                        List<List<Integer>> result) {\n    if (path.size() == nums.length) {\n        result.add(new ArrayList<>(path));\n        return;\n    }\n    for (int i = 0; i < nums.length; i++) {\n        if (visited[i]) continue;\n        visited[i] = true;\n        path.add(nums[i]);\n        backtrack(nums, visited, path, result);\n        path.remove(path.size() - 1);\n        visited[i] = false;\n    }\n}\n\n// Permutations II (with duplicates)\npublic List<List<Integer>> permuteUnique(int[] nums) {\n    Arrays.sort(nums);\n    List<List<Integer>> result = new ArrayList<>();\n    boolean[] visited = new boolean[nums.length];\n    backtrack2(nums, visited, new ArrayList<>(), result);\n    return result;\n}\nprivate void backtrack2(int[] nums, boolean[] visited, List<Integer> path,\n                         List<List<Integer>> result) {\n    if (path.size() == nums.length) {\n        result.add(new ArrayList<>(path));\n        return;\n    }\n    for (int i = 0; i < nums.length; i++) {\n        if (visited[i]) continue;\n        // Skip duplicate: same value, previous not visited\n        if (i > 0 && nums[i] == nums[i-1] && !visited[i-1]) continue;\n        visited[i] = true;\n        path.add(nums[i]);\n        backtrack2(nums, visited, path, result);\n        path.remove(path.size() - 1);\n        visited[i] = false;\n    }\n}",
       "interviewTips": "The duplicate-skipping condition `i > 0 && nums[i] == nums[i-1] && !visited[i-1]` is subtle. It means: skip if same value as previous AND previous wasn't used in this path (meaning we're in a new branch at the same level, not a deeper level). Internalize this or you'll get wrong answers with duplicates.",
-      "useCases": "[\"Permutations I/II (LeetCode 46/47)\",\"Letter combinations of phone number\",\"String permutations\",\"Anagram generation\"]",
+      "useCases": "[{\"title\":\"Permutations I/II\",\"desc\":\"Permutations I/II (LeetCode 46/47)\"},{\"title\":\"Letter combinations of phone number\",\"desc\":\"Letter combinations of phone number\"},{\"title\":\"String permutations\",\"desc\":\"String permutations\"},{\"title\":\"Anagram generation\",\"desc\":\"Anagram generation\"}]",
       "pitfalls": "[\"Confusing permutations (all elements, any order) with combinations (r elements, order doesn't matter)\",\"Duplicate pruning: !visited[i-1] vs visited[i-1] — direction matters\",\"Not backtracking the visited array\"]",
-      "variants": "[\"Permutations with duplicates\",\"Next permutation\",\"Kth permutation\",\"Letter combinations\"]"
+      "variants": "[{\"name\":\"Permutations with duplicates\",\"desc\":\"Permutations with duplicates\"},{\"name\":\"Next permutation\",\"desc\":\"Next permutation\"},{\"name\":\"Kth permutation\",\"desc\":\"Kth permutation\"},{\"name\":\"Letter combinations\",\"desc\":\"Letter combinations\"}]"
     },
     {
       "slug": "combination-sum",
       "name": "Combination Sum",
       "category": "Backtracking",
       "emoji": "🎯",
-      "difficulty": "Medium",
+      "difficulty": "INTERMEDIATE",
       "displayOrder": 332,
       "tags": "[\"backtracking\",\"recursion\",\"combinations\",\"sum\"]",
       "timeComplexityBest": "O(n^(T/M))",
@@ -67,16 +67,16 @@
       "howItWorks": "Combination Sum I (reuse allowed, distinct candidates):\n1. If remaining == 0 → add path to result\n2. If remaining < 0 → return (prune)\n3. For i from start to end:\n   a. Add candidates[i] to path\n   b. Recurse with start=i (NOT i+1, allows reuse)\n   c. Remove last element (backtrack)\n\nCombination Sum II (no reuse, may have duplicates):\n- Sort candidates\n- Pass start=i+1\n- Skip: if i > start && candidates[i] == candidates[i-1]",
       "javaCode": "// Combination Sum I: reuse allowed, no duplicates in candidates\npublic List<List<Integer>> combinationSum(int[] candidates, int target) {\n    List<List<Integer>> result = new ArrayList<>();\n    Arrays.sort(candidates);\n    backtrack(candidates, target, 0, new ArrayList<>(), result);\n    return result;\n}\nprivate void backtrack(int[] candidates, int remaining, int start,\n                        List<Integer> path, List<List<Integer>> result) {\n    if (remaining == 0) { result.add(new ArrayList<>(path)); return; }\n    for (int i = start; i < candidates.length; i++) {\n        if (candidates[i] > remaining) break; // pruning (sorted array)\n        path.add(candidates[i]);\n        backtrack(candidates, remaining - candidates[i], i, path, result); // i not i+1\n        path.remove(path.size() - 1);\n    }\n}\n\n// Combination Sum II: each used once, candidates may have duplicates\npublic List<List<Integer>> combinationSum2(int[] candidates, int target) {\n    Arrays.sort(candidates);\n    List<List<Integer>> result = new ArrayList<>();\n    backtrack2(candidates, target, 0, new ArrayList<>(), result);\n    return result;\n}\nprivate void backtrack2(int[] candidates, int remaining, int start,\n                         List<Integer> path, List<List<Integer>> result) {\n    if (remaining == 0) { result.add(new ArrayList<>(path)); return; }\n    for (int i = start; i < candidates.length; i++) {\n        if (candidates[i] > remaining) break;\n        if (i > start && candidates[i] == candidates[i-1]) continue; // skip duplicates\n        path.add(candidates[i]);\n        backtrack2(candidates, remaining - candidates[i], i + 1, path, result);\n        path.remove(path.size() - 1);\n    }\n}",
       "interviewTips": "The difference between Combination Sum I and II: I passes `i` (allowing reuse), II passes `i+1` (no reuse). The `break` when `candidates[i] > remaining` works because candidates are sorted — powerful early termination. For II, the duplicate skip uses `i > start` (same level) not `i > 0`.",
-      "useCases": "[\"Combination Sum I/II/III (LeetCode 39/40/216)\",\"Coin change (all combinations)\",\"Target sum with limited numbers\",\"Partition equal subset\"]",
+      "useCases": "[{\"title\":\"Combination Sum I/II/III\",\"desc\":\"Combination Sum I/II/III (LeetCode 39/40/216)\"},{\"title\":\"Coin change (all combinations)\",\"desc\":\"Coin change (all combinations)\"},{\"title\":\"Target sum with limited numbers\",\"desc\":\"Target sum with limited numbers\"},{\"title\":\"Partition equal subset\",\"desc\":\"Partition equal subset\"}]",
       "pitfalls": "[\"Passing i vs i+1 — reuse vs no-reuse\",\"Forgetting to sort for the pruning break to work\",\"Duplicate skip: i>start vs i>0\",\"Not breaking when candidates[i] > remaining\"]",
-      "variants": "[\"Combination Sum I/II/III\",\"Coin change all combinations\",\"Letter combinations\"]"
+      "variants": "[{\"name\":\"Combination Sum I/II/III\",\"desc\":\"Combination Sum I/II/III\"},{\"name\":\"Coin change all combinations\",\"desc\":\"Coin change all combinations\"},{\"name\":\"Letter combinations\",\"desc\":\"Letter combinations\"}]"
     },
     {
       "slug": "n-queens",
       "name": "N-Queens",
       "category": "Backtracking",
       "emoji": "♛",
-      "difficulty": "Hard",
+      "difficulty": "ADVANCED",
       "displayOrder": 333,
       "tags": "[\"backtracking\",\"constraint-propagation\",\"hard\"]",
       "timeComplexityBest": "O(n!)",
@@ -90,9 +90,9 @@
       "howItWorks": "1. Maintain sets: cols, diag (r-c), antiDiag (r+c)\n2. For each row (process rows in order):\n   For each column c in 0..n-1:\n     If c ∈ cols OR (row-c) ∈ diag OR (row+c) ∈ antiDiag → skip\n     Place queen: add c, row-c, row+c to sets\n     Recurse to next row\n     Remove queen: remove from sets (backtrack)\n3. If row == n → record this board configuration",
       "javaCode": "public List<List<String>> solveNQueens(int n) {\n    List<List<String>> result = new ArrayList<>();\n    int[] queens = new int[n]; // queens[row] = column\n    Arrays.fill(queens, -1);\n    Set<Integer> cols = new HashSet<>(), diag = new HashSet<>(), antiDiag = new HashSet<>();\n    backtrack(n, 0, queens, cols, diag, antiDiag, result);\n    return result;\n}\n\nprivate void backtrack(int n, int row, int[] queens,\n                        Set<Integer> cols, Set<Integer> diag, Set<Integer> antiDiag,\n                        List<List<String>> result) {\n    if (row == n) {\n        result.add(buildBoard(queens, n));\n        return;\n    }\n    for (int col = 0; col < n; col++) {\n        if (cols.contains(col) || diag.contains(row - col) || antiDiag.contains(row + col))\n            continue;\n        queens[row] = col;\n        cols.add(col); diag.add(row - col); antiDiag.add(row + col);\n        backtrack(n, row + 1, queens, cols, diag, antiDiag, result);\n        queens[row] = -1;\n        cols.remove(col); diag.remove(row - col); antiDiag.remove(row + col);\n    }\n}\n\nprivate List<String> buildBoard(int[] queens, int n) {\n    List<String> board = new ArrayList<>();\n    for (int row = 0; row < n; row++) {\n        char[] line = new char[n];\n        Arrays.fill(line, '.');\n        line[queens[row]] = 'Q';\n        board.add(new String(line));\n    }\n    return board;\n}\n\n// Count solutions only\npublic int totalNQueens(int n) {\n    int[] count = {0};\n    Set<Integer> cols = new HashSet<>(), diag = new HashSet<>(), antiDiag = new HashSet<>();\n    countBacktrack(n, 0, cols, diag, antiDiag, count);\n    return count[0];\n}\nprivate void countBacktrack(int n, int row, Set<Integer> cols,\n                              Set<Integer> diag, Set<Integer> antiDiag, int[] count) {\n    if (row == n) { count[0]++; return; }\n    for (int col = 0; col < n; col++) {\n        if (cols.contains(col) || diag.contains(row - col) || antiDiag.contains(row + col)) continue;\n        cols.add(col); diag.add(row - col); antiDiag.add(row + col);\n        countBacktrack(n, row + 1, cols, diag, antiDiag, count);\n        cols.remove(col); diag.remove(row - col); antiDiag.remove(row + col);\n    }\n}",
       "interviewTips": "The diagonal trick is the key insight: all cells on the same diagonal have the same (row-col) value; same anti-diagonal have the same (row+col) value. Memorize this. Using bit manipulation instead of HashSets can further optimize to O(1) space for tracking.",
-      "useCases": "[\"N-Queens (LeetCode 51)\",\"N-Queens II — count solutions (LeetCode 52)\",\"Sudoku solver\",\"Constraint satisfaction in scheduling\"]",
+      "useCases": "[{\"title\":\"N-Queens\",\"desc\":\"N-Queens (LeetCode 51)\"},{\"title\":\"N-Queens II\",\"desc\":\"N-Queens II — count solutions (LeetCode 52)\"},{\"title\":\"Sudoku solver\",\"desc\":\"Sudoku solver\"},{\"title\":\"Constraint satisfaction in scheduling\",\"desc\":\"Constraint satisfaction in scheduling\"}]",
       "pitfalls": "[\"Checking same row — not needed since we process one queen per row\",\"Forgetting to remove from diag and antiDiag when backtracking\",\"Using (row+col) for both diag types — they have different formulas\"]",
-      "variants": "[\"N-Queens II (count only)\",\"Sudoku solver\",\"Place knights on chessboard\"]"
+      "variants": "[{\"name\":\"N-Queens II\",\"desc\":\"N-Queens II (count only)\"},{\"name\":\"Sudoku solver\",\"desc\":\"Sudoku solver\"},{\"name\":\"Place knights on chessboard\",\"desc\":\"Place knights on chessboard\"}]"
     }
   ]
 }

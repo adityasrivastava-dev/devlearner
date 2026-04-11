@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FlowchartViewer from '../../components/editor/FlowchartViewer';
 import AlgorithmVisualizer from './AlgorithmVisualizer';
+import VisualizationPlan from './VisualizationPlan';
 import styles from './AlgorithmsPage.module.css';
 
 // ─── Category metadata (icons/labels only — counts come from DB) ──────────────
@@ -229,7 +230,10 @@ function AlgorithmDetail({ algo, onBack }) {
 
         {activeTab === 'visual' && (
           <div className={styles.section}>
+            {/* ── Interactive Step Player ── */}
             <AlgorithmVisualizer algoName={algo.name} />
+
+            {/* ── Fallback: mermaid flowchart for algorithms without a custom visualizer ── */}
             {!algo.name?.toLowerCase().match(/binary search|linear search|bubble|insertion|quick|merge|two.pointer|sliding window|bfs|breadth|dfs|depth|fibonacci|dynamic/) && (
               algo.mermaidDiagram ? (
                 <>
@@ -237,14 +241,11 @@ function AlgorithmDetail({ algo, onBack }) {
                   <p className={styles.visualHint}>Follow the flow to trace how the algorithm executes.</p>
                   <FlowchartViewer definition={algo.mermaidDiagram} />
                 </>
-              ) : (
-                <div className={styles.emptyState}>
-                  <div className={styles.emptyIcon}>📊</div>
-                  <div className={styles.emptyTitle}>No visualization yet</div>
-                  <div className={styles.emptySub}>A diagram can be added for this algorithm via the Admin Panel.</div>
-                </div>
-              )
+              ) : null
             )}
+
+            {/* ── Visualization Blueprint: always shown ── */}
+            <VisualizationPlan algo={algo} />
           </div>
         )}
 

@@ -1,0 +1,394 @@
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  outline: none;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 12px 0 8px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.toolbarLeft  { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.toolbarRight { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.backBtn {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text2);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.backBtn:hover { color: var(--text); border-color: var(--accent); }
+
+.titleWrap { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+
+.titleIcon {
+  font-size: 16px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.titleSub {
+  font-size: 11px;
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clearBtn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.clearBtn:hover { color: var(--text); background: var(--bg3); }
+
+.analyzeBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none;
+  background: var(--accent);
+  color: #0d0f12;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.analyzeBtn:hover:not(:disabled) { opacity: 0.9; }
+.analyzeBtn:active:not(:disabled) { transform: scale(0.97); }
+.analyzeBtn:disabled,
+.analyzeBtn.analyzing { opacity: 0.65; cursor: not-allowed; background: var(--accent2); }
+
+/* ── Body ────────────────────────────────────────────────────────────────── */
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Editor pane ─────────────────────────────────────────────────────────── */
+.editorPane {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 60%;
+  min-width: 0;
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.statusBar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 12px;
+  height: 24px;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  font-family: var(--font-code);
+  font-size: 11px;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+
+.shortcutHint {
+  margin-left: auto;
+  color: var(--text3);
+  opacity: 0.6;
+}
+
+/* ── Results pane ────────────────────────────────────────────────────────── */
+.resultsPane {
+  flex: 0 0 40%;
+  min-width: 300px;
+  max-width: 520px;
+  background: var(--bg2);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.emptyState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  gap: 12px;
+  text-align: center;
+}
+
+.emptyIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.emptyTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.emptyDesc {
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.6;
+  max-width: 340px;
+  margin: 0;
+}
+
+/* Scale preview in empty state */
+.scalePreview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  align-self: stretch;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: var(--bg3);
+}
+
+.scaleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.scaleNotation {
+  font-family: var(--font-code);
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 80px;
+  text-align: right;
+}
+
+.scaleLabel {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+/* ── Results ─────────────────────────────────────────────────────────────── */
+.results {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 0;
+}
+
+/* ── Complexity cards ────────────────────────────────────────────────────── */
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.complexityCard {
+  border: 1px solid;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cardLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cardNotation {
+  font-family: var(--font-code);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.cardGrade {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+/* ── Section ─────────────────────────────────────────────────────────────── */
+.section {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Confidence ──────────────────────────────────────────────────────────── */
+.confBar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg3);
+  overflow: hidden;
+}
+
+.confFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.confLabel {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.confWarning {
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.5;
+  padding: 6px 10px;
+  background: var(--bg3);
+  border-left: 2px solid var(--yellow, #fbbf24);
+  border-radius: 0 4px 4px 0;
+}
+
+/* ── Pattern chips ───────────────────────────────────────────────────────── */
+.patternChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.patternChip {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+/* ── Explanation ─────────────────────────────────────────────────────────── */
+.explanation {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Scale ───────────────────────────────────────────────────────────────── */
+.scale {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.scaleItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.scaleItemActive {
+  border-width: 1px;
+}
+
+.scaleItemN {
+  font-family: var(--font-code);
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 80px;
+  text-align: right;
+}
+
+.scaleItemLabel {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+/* ── Spinners ────────────────────────────────────────────────────────────── */
+.spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(13,15,18,0.3);
+  border-top-color: #0d0f12;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.spinnerLg {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
