@@ -1,3 +1,4 @@
+/* ── Shell ─────────────────────────────────────────────────────────────────── */
 .shell {
   min-height: 100vh;
   display: flex;
@@ -26,25 +27,257 @@
   top: -200px;
   left: 50%;
   transform: translateX(-50%);
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(99,102,241,.12) 0%, transparent 60%);
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 60%);
   pointer-events: none;
 }
 
+/* ── Two-column layout ──────────────────────────────────────────────────────── */
+.layout {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  width: 100%;
+  max-width: 1000px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Feature panel (left column) ───────────────────────────────────────────── */
+.featurePanel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 36px 32px;
+  border-radius: 20px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  box-shadow: 0 24px 64px rgba(0,0,0,.45);
+  min-height: 520px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* subtle accent glow that changes per card */
+.featurePanel::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, var(--card-accent, #6366f1) 0%, transparent 70%);
+  opacity: .07;
+  pointer-events: none;
+  transition: opacity .4s;
+}
+
+/* ── Brand line ─────────────────────────────────────────────────────────────── */
+.fpBrand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fpBrandIcon {
+  font-size: 16px;
+  font-family: var(--font-code);
+  color: var(--accent3);
+  font-weight: 700;
+}
+
+.fpBrandName {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  color: var(--text2);
+  text-transform: lowercase;
+}
+
+/* ── Card (animated slot) ───────────────────────────────────────────────────── */
+.fpCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* default visible state */
+.enterActive {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity .28s ease, transform .28s ease;
+}
+
+/* exit to left when going next */
+.exitLeft {
+  opacity: 0;
+  transform: translateX(-28px);
+  transition: opacity .28s ease, transform .28s ease;
+  pointer-events: none;
+}
+
+/* exit to right when going prev */
+.exitRight {
+  opacity: 0;
+  transform: translateX(28px);
+  transition: opacity .28s ease, transform .28s ease;
+  pointer-events: none;
+}
+
+/* ── Card inner elements ────────────────────────────────────────────────────── */
+.fpTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  border: 1px solid;
+  width: fit-content;
+}
+
+.fpIcon {
+  font-size: 36px;
+  line-height: 1;
+  font-family: var(--font-code);
+  font-weight: 700;
+}
+
+.fpTitle {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--text);
+  letter-spacing: -.3px;
+  margin: 0;
+}
+
+.fpBody {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text2);
+  margin: 0;
+  flex: 1;
+}
+
+.fpStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.fpStat {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid;
+  letter-spacing: .1px;
+}
+
+/* ── Controls row (prev · dots · next) ──────────────────────────────────────── */
+.fpControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fpArrow {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s, border-color .15s, color .15s;
+  flex-shrink: 0;
+}
+.fpArrow:hover {
+  background: var(--bg4);
+  color: var(--text);
+  border-color: var(--text3);
+}
+
+.fpDots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  justify-content: center;
+}
+
+.fpDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border2);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background .2s, transform .2s, width .2s;
+}
+
+.fpDotActive {
+  width: 18px;
+  border-radius: 3px;
+  transform: none;
+}
+
+/* ── Progress bar ───────────────────────────────────────────────────────────── */
+.fpProgress {
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+@keyframes fillProgress {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+.fpProgressFill {
+  height: 100%;
+  background: var(--fill-color, var(--accent3));
+  border-radius: 2px;
+  animation: fillProgress 5s linear forwards;
+}
+
+/* ── Auth panel (right column) ──────────────────────────────────────────────── */
+.authPanel {
+  width: 400px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Auth card ──────────────────────────────────────────────────────────────── */
 .card {
   width: 100%;
-  max-width: 420px;
   background: var(--bg2);
   border: 1px solid var(--border2);
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 24px 64px rgba(0,0,0,.5);
-  position: relative;
-  z-index: 1;
 }
 
-.logoWrap {
+/* ── Mobile logo (hidden on desktop, shown on mobile) ───────────────────────── */
+.mobileLogoWrap {
+  display: none;
   padding: 28px 28px 0;
   text-align: center;
 }
@@ -72,6 +305,7 @@
   margin-top: 4px;
 }
 
+/* ── Pills ──────────────────────────────────────────────────────────────────── */
 .pills {
   display: flex;
   flex-wrap: wrap;
@@ -91,6 +325,7 @@
   letter-spacing: .2px;
 }
 
+/* ── Tabs ───────────────────────────────────────────────────────────────────── */
 .tabs {
   display: flex;
   border-bottom: 1px solid var(--border);
@@ -115,6 +350,7 @@
 .tabBtn:hover { color: var(--text2); }
 .tabBtn.active { color: var(--accent3); border-bottom-color: var(--accent3); }
 
+/* ── Form ───────────────────────────────────────────────────────────────────── */
 .form {
   padding: 20px 28px 0;
   display: flex;
@@ -202,3 +438,45 @@
 }
 .footer a { color: var(--accent3); text-decoration: none; }
 .footer a:hover { color: var(--accent2); }
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+
+/* Narrow desktop / large tablet: compress the left panel */
+@media (max-width: 860px) {
+  .layout {
+    gap: 20px;
+  }
+  .featurePanel {
+    padding: 28px 24px;
+    min-height: 480px;
+  }
+  .fpTitle {
+    font-size: 17px;
+  }
+  .fpBody {
+    font-size: 12px;
+  }
+  .authPanel {
+    width: 360px;
+  }
+}
+
+/* Mobile: hide feature panel, show single auth card centered */
+@media (max-width: 640px) {
+  .shell {
+    padding: 16px;
+  }
+  .layout {
+    flex-direction: column;
+    max-width: 420px;
+  }
+  .featurePanel {
+    display: none;
+  }
+  .authPanel {
+    width: 100%;
+  }
+  .mobileLogoWrap {
+    display: block;
+  }
+}
