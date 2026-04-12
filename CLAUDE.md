@@ -470,9 +470,227 @@ Free / Pro ₹199/mo / Career Pro ₹399/mo. Feature gates on interview mode, an
 
 ---
 
+---
+
+## Features 21–40 + Data Changes
+
+### Tier 4 — Engagement & Depth (Features 21–30)
+
+**21. Problem Set Collections (`/problem-sets`)**
+Curated lists: "Top 50 FAANG", "Amazon Favourites", "Blind 75", "Spring Boot Interview Problems". Each set is a named ordered list of problem IDs. User can mark a set as "in progress" and see % done.
+- Backend: `ProblemSet { id, title, description, isPublic, createdBy }` + `ProblemSetItem { setId, problemId, displayOrder }` tables
+- Frontend: `/problem-sets` listing page + set detail page (problem table with progress checkmarks)
+- Admin can create public sets; users can create private sets
+- Data change: populate 3–5 seed sets (Blind 75, FAANG Top 50, DSA Essentials, Spring Coding)
+
+**22. Skill Assessment Quiz on Onboarding**
+After signup, give a 10-question MCQ diagnostic covering Java, DSA, and System Design. Score determines starting point on the learning path and pre-fills the SRS queue with weak topics.
+- Backend: endpoint that accepts diagnostic answers and writes initial `UserTopicPerformance` records
+- Frontend: step 2 of the existing 3-step onboarding replaces the blank form with the diagnostic quiz
+- Diagnostic questions live in a separate `DiagnosticQuestion` table or a hardcoded JSON file
+
+**23. Problem Discussion Thread**
+Per-problem comment section. Users post approaches, ask questions, share alternative solutions. Visible after the user has attempted the problem at least once (prevents spoilers).
+- Backend: `Discussion { id, problemId, userId, parentId, content, upvotes, createdAt }` table + CRUD endpoints
+- Frontend: "Discussion" tab in the problem view (alongside Hints / Editorial)
+- Gated: thread is locked until user has made at least one submission on the problem
+
+**24. Code Diff Viewer (Your Solution vs Editorial)**
+After accepting, show a side-by-side diff of the user's last submission vs the editorial solution. Highlights what they did differently (extra null check, different variable names, missing edge case).
+- Frontend only: `diff` the two strings using a JS diff library (e.g. `diff` npm package), render inline with green/red highlights
+- Add a "Compare with editorial" button on the submission history tab
+
+**25. Notification Centre (In-App)**
+Bell icon in the nav. Notifications for: streak about to break (evening reminder), SRS review due, daily challenge live, someone accepted your group challenge, weekly report ready.
+- Backend: `Notification { id, userId, type, message, isRead, createdAt }` table + `POST /api/notifications/mark-read`
+- Frontend: bell icon with unread badge, dropdown list, mark-all-read button
+- Push via polling (every 5 min) or server-sent events — no websocket needed for MVP
+
+**26. Learning Velocity Dashboard Card**
+"At your current pace you'll be interview-ready in 6 weeks." Shows topics mastered per week as a sparkline. If pace drops below 2 topics/week, shows a warning card.
+- Backend: derive from `UserTopicProgress.updatedAt` grouped by week — no new table
+- Frontend: new dashboard card with a 6-week sparkline and a projected readiness date
+
+**27. Category Completion Badge**
+When a user masters ALL topics in a category (all MASTERED gate stage), award a badge: "Java Core Complete ✓". Show on the profile page. Motivates finishing a category rather than cherry-picking.
+- Backend: a computed field — check if all topics in a category are MASTERED; no new table needed; add to profile endpoint response
+- Frontend: badge row on the profile page with locked/unlocked state per category
+
+**28. Topic Search (`/search`)**
+Global search across topic titles, descriptions, memory anchors, and problem titles. Results ranked by relevance. A user preparing for an interview and searching "thread safety" should land directly on the right topic.
+- Backend: `GET /api/search?q=thread+safety` — MySQL FULLTEXT search across `topics.title`, `topics.description`, `topics.memory_anchor`, `problems.title`
+- Frontend: search bar in the sidebar header; results page with grouped sections (Topics / Problems / Algorithms)
+
+**29. Pomodoro Study Timer**
+Built-in 25/5 min work-break timer visible during theory reading and problem solving. Auto-pauses on navigation away. Completed pomodoros logged as study time.
+- Frontend only: a floating timer widget (bottom-right corner), persisted in `localStorage`
+- Optional: log pomodoro count per day to `UserActivity` table for the heatmap
+
+**30. Problem Difficulty Voting**
+After solving, prompt: "Was this problem difficulty accurate? 👍 / 👎". Aggregate votes surface as "(73% agree: Hard)" next to the difficulty badge. Helps admins recalibrate mislabelled problems.
+- Backend: `ProblemDifficultyVote { problemId, userId, agrees }` table + `GET /api/problems/{id}/difficulty-vote`
+- Frontend: thumbs up/down below the difficulty badge, shown post-submission
+
+---
+
+### Tier 5 — Power User Features (Features 31–40)
+
+**31. Personalised Study Plan Generator**
+User inputs: target company, interview date, hours per week. System generates a day-by-day study calendar: "Monday: HashMap theory + 2 Easy problems. Tuesday: Review yesterday + 1 Medium." Exports to Google Calendar or PDF.
+- Backend: planning algorithm — takes weak areas from analytics, target date, available hours → generates `StudyPlan { day, topicId, problemIds[], taskType }` records
+- Frontend: `/plan` page with calendar view; "Generate Plan" button that opens a setup modal
+
+**32. Interview Question Tagger (Mark from Real Interview)**
+On any problem or Q&A question, a "I was asked this" button. Creates a personal log entry with company + date (user fills in). Aggregated anonymously to show "47 users were asked this at Amazon in the last 6 months."
+- Backend: `RealInterviewTag { problemId, userId, company, date }` + aggregate endpoint
+- Frontend: "Mark as asked in interview" button on problem cards and Q&A items
+
+**33. Concept Dependency Map (`/map`)**
+Visual graph of all topics with arrows showing dependencies (Arrays → HashMap → Two Pointers → Sliding Window). Zoom in/out. Click a node to go to that topic. Shows mastery colouring on each node.
+- Backend: `relatedTopicIds` field on `Topic` (also needed for feature #9)
+- Frontend: force-directed graph using D3.js or a lightweight alternative; nodes coloured by gate stage
+
+**34. Streak Recovery Challenge**
+When a user misses a day and their streak breaks, instead of just resetting to 0, offer a "Recovery Challenge": solve 2 Medium problems in the next 24 hours to restore the streak. One-time rescue per 30 days.
+- Backend: `StreakRecovery { userId, expiresAt, required: 2, completed: 0 }` table; `StreakService.offerRecovery()` called when streak breaks
+- Frontend: banner on the dashboard with a countdown + progress (0/2 problems solved)
+
+**35. Code Template Library (`/templates`)**
+Preloaded code templates for common patterns: BFS, DFS, Dijkstra, Binary Search, Sliding Window, Union-Find, Segment Tree. User can copy into the editor with one click or save their own modified version.
+- Backend: `CodeTemplate { id, name, pattern, code, isPublic, userId }` table; seed with 15 standard templates
+- Frontend: `/templates` page + "Insert template" button in the Monaco editor toolbar dropdown
+
+**36. Problem Tag Filtering (Multiple Tags)**
+Current `/problems` page filters by difficulty and topic. Extend to filter by: pattern tag (`HashMap`, `DFS`, `DP`), company, difficulty, solved/unsolved, bookmarked. Multi-select filters with a count badge.
+- Backend: extend `GET /api/problems` to accept `?pattern=HashMap&company=Google&solved=false`
+- Frontend: filter panel on `/problems` with multi-select chips for each dimension
+
+**37. Hint Usage Tracking + Analytics**
+Track which hint level each user used per problem (`NO_HINT`, `HINT1`, `HINT2`, `HINT3`). Surface on the analytics page: "You use Hint 3 on 60% of Hard problems — try stopping at Hint 1."
+- Backend: add `hintLevel` field to `Submission`; already sent from frontend (`hintAssisted` bool exists, extend to int 0–3)
+- Frontend: hint usage breakdown on `/analytics` — bar chart per difficulty
+
+**38. Weekly Leaderboard**
+Top 10 users by XP earned in the current week. Resets every Monday. Shows rank, name, XP this week, problems solved this week. Anonymous option (show only first name).
+- Backend: `UserActivity` table aggregated by week; leaderboard endpoint `GET /api/leaderboard/weekly`
+- Frontend: leaderboard card on dashboard (collapsed by default, expand to see top 10)
+
+**39. Spaced Repetition for Problems (not just topics)**
+Currently the SRS queue only queues topics. Extend it to also queue unsolved/weak problems: if a user rated a problem "Forgot" or "Hard" in a review, re-queue the problem itself for another attempt in N days.
+- Backend: `SpacedRepetitionEntry` already supports `itemType = PROBLEM`; add problem scheduling in `SpacedRepetitionService`
+- Frontend: `ReviewPage` already renders problem cards differently — just ensure problem SRS items navigate to the problem editor
+
+**40. Mobile PWA (Progressive Web App)**
+Add a `manifest.json` and service worker so DevLearner installs as a home-screen app on Android/iOS. Offline support for theory reading (cache topic data). Push notifications for streak reminders.
+- Frontend: `manifest.json`, `service-worker.js` (Workbox), `<meta>` tags for iOS
+- Cache strategy: cache-first for theory JSON, network-first for submissions
+- Backend: Web Push API integration for streak/review notifications (`webpush` Java library)
+
+---
+
+## Data Changes Required (Schema + Seed)
+
+This section tracks every data model change needed to support the features above. All are additive — no breaking changes to existing tables.
+
+### New Columns on Existing Tables
+
+| Table | Column | Type | Purpose | Needed by |
+|-------|--------|------|---------|-----------|
+| `problems` | `companies` | TEXT (JSON array) | Company tags `["Google","Amazon"]` | Feature 3, 36 |
+| `problems` | `hint_level_required` | INT default 0 | Min hint level unlocked (0=free) | Feature 37 |
+| `topics` | `related_topic_ids` | TEXT (JSON array) | IDs of linked topics | Feature 9, 33 |
+| `topics` | `estimated_hours` | DECIMAL(3,1) | Study time estimate for path planner | Feature 31 |
+| `quiz_questions` | `topic_tag` | VARCHAR(50) | Maps question to a topic for custom quiz | Feature 8 |
+| `submissions` | `hint_level` | INT (0–3) | Which hint level was used | Feature 37 |
+| `submissions` | `first_opened_at` | DATETIME | When Practice tab was first opened | Feature 2 |
+| `algorithms` | `related_algorithm_ids` | TEXT (JSON array) | Links between algorithms | Feature 33 |
+
+### New Tables
+
+| Table | Columns | Purpose | Needed by |
+|-------|---------|---------|-----------|
+| `daily_challenges` | `id, date, problem_id, created_at` | One row per day | Feature 1 |
+| `daily_challenge_entries` | `id, challenge_id, user_id, solve_time_secs, created_at` | Leaderboard rows | Feature 1 |
+| `problem_sets` | `id, title, description, is_public, created_by, created_at` | Curated problem lists | Feature 21 |
+| `problem_set_items` | `id, set_id, problem_id, display_order` | Items in a set | Feature 21 |
+| `discussions` | `id, problem_id, user_id, parent_id, content, upvotes, created_at` | Problem threads | Feature 23 |
+| `notifications` | `id, user_id, type, message, is_read, created_at` | In-app bell | Feature 25 |
+| `problem_difficulty_votes` | `id, problem_id, user_id, agrees, created_at` | Difficulty feedback | Feature 30 |
+| `study_plans` | `id, user_id, target_date, hours_per_week, generated_at` | Plan header | Feature 31 |
+| `study_plan_items` | `id, plan_id, scheduled_date, topic_id, problem_ids, task_type` | Day-by-day tasks | Feature 31 |
+| `real_interview_tags` | `id, problem_id, user_id, company, interview_date, created_at` | "I was asked this" | Feature 32 |
+| `code_templates` | `id, name, pattern, code, is_public, user_id, created_at` | Template library | Feature 35 |
+| `streak_recoveries` | `id, user_id, expires_at, required, completed, created_at` | Rescue challenge | Feature 34 |
+| `weekly_activity` | `id, user_id, week_start, xp_earned, problems_solved` | Leaderboard source | Feature 38 |
+| `interview_logs` | `id, user_id, company, interview_date, round_type, notes, outcome` | Real interview tracker | Feature 10 |
+
+### New Seed Files Required
+
+**Topics (theory content — these gaps must be filled before any UI is built on them):**
+
+| File | Category | Topics | Priority |
+|------|----------|--------|----------|
+| B33 | JAVA | Virtual Threads (Project Loom) — the new concurrency model | High |
+| B34 | JAVA | Records, Sealed Classes, Pattern Matching (Java 17+) | High |
+| B35 | ADVANCED_JAVA | Reactive Programming (Project Reactor, WebFlux basics) | Medium |
+| B36 | ADVANCED_JAVA | Java Memory Model — happens-before, volatile, atomic | High |
+| S07 | SPRING_BOOT | Spring Boot Testing — @SpringBootTest, @DataJpaTest, @WebMvcTest, TestContainers | High |
+| S08 | SPRING_BOOT | Spring Batch — jobs, steps, chunk processing | Medium |
+| S09 | SPRING_BOOT | Spring WebFlux — reactive endpoints, backpressure | Medium |
+| SD05 | SYSTEM_DESIGN | Real System Design Cases — design Twitter feed, WhatsApp, Uber surge | High |
+| SD06 | SYSTEM_DESIGN | Database Design Patterns — CQRS, Event Sourcing, Outbox Pattern | High |
+| T02 | TESTING | Integration Testing with TestContainers | High |
+| T03 | TESTING | Spring Boot Test Slices — @DataJpaTest, @WebMvcTest, @JsonTest | High |
+| T04 | TESTING | Contract Testing — Pact, Spring Cloud Contract | Medium |
+| M07 | MYSQL | Transactions & Locking — ACID, isolation levels, gap locks, deadlock analysis | High |
+| M08 | MYSQL | Replication & High Availability — master-replica, GTID, failover | Medium |
+
+**Algorithm seeds (A19–A25 — see Algorithm Gap table above):**
+
+| File | Contents |
+|------|----------|
+| A19 | MST — Prim's (min-heap), Kruskal's (union-find), Borůvka's |
+| A20 | Advanced String — Z-algorithm, Suffix Array, Rabin-Karp |
+| A21 | Monotonic Queue — Sliding Window Maximum, Jump Game variants |
+| A22 | Number Theory — GCD/LCM, Sieve of Eratosthenes, Modular Exponentiation |
+| A23 | Interval Problems — Merge Intervals, Insert Interval, Meeting Rooms |
+| A24 | Matrix Patterns — Spiral, Rotate 90°, Diagonal traversal, Search in 2D matrix |
+| A25 | Geometry & Misc — Convex Hull, Game Theory basics (Nim), Reservoir Sampling |
+
+**Interview Q&A additions to `interviewData.js`:**
+
+| Category | Questions to add |
+|----------|-----------------|
+| Spring Boot | DI vs IoC, @Transactional propagation levels, N+1 problem + fix, bean scopes, auto-config mechanism, circular dependency, Spring Security filter chain, JWT flow in Spring |
+| System Design | Design rate limiter, URL shortener, notification service, typeahead search, distributed cache; CAP theorem with real examples; consistent hashing with virtual nodes; leader election |
+| Advanced Java | Virtual threads vs platform threads, Java Memory Model + happens-before, CompletableFuture chaining + exception handling, ForkJoinPool, custom ClassLoader |
+| Testing | What to unit test vs integration test, Mockito spy vs mock, TestContainers setup, @DataJpaTest isolation, test pyramid |
+| Behavioural | STAR format for: debugging production incident, disagreeing with tech decision, onboarding to a large codebase, delivering under deadline |
+
+**Problem Sets to seed (for Feature 21):**
+
+| Set Name | Problems | Source |
+|----------|----------|--------|
+| Blind 75 | 75 problems covering all DSA patterns | Classic FAANG prep list |
+| Amazon Top 30 | 30 Amazon-tagged problems | Frequently reported in interviews |
+| Spring Boot Coding | 20 problems requiring Spring knowledge | Backend-specific |
+| DSA Essentials | 40 problems, 5 per core pattern | Minimum viable DSA prep |
+| SQL 20 | 20 SQL query problems (window fns, CTEs, EXPLAIN) | Backend data interviews |
+
+### Data Quality Rules (apply to all new seeds)
+
+1. **No orphan problems** — every problem must have at least 3 test cases in `testCases` JSON
+2. **No empty editorials** — if `editorial` is blank the problem is incomplete; do not import it
+3. **Starter code must compile** — every `starterCode` must have a `main()` that reads stdin and calls the solution method
+4. **Companies must be from the canonical list**: `Amazon`, `Google`, `Microsoft`, `Meta`, `Apple`, `Netflix`, `Flipkart`, `Uber`, `LinkedIn`, `Twitter` — no typos, no "FAANG" as a company name
+5. **Pattern must be canonical**: `HashMap`, `Two Pointers`, `Sliding Window`, `BFS`, `DFS`, `Dynamic Programming`, `Binary Search`, `Greedy`, `Backtracking`, `Stack`, `Heap`, `Union-Find`, `Trie`, `Math`, `Sorting`, `Divide and Conquer`, `Monotonic Stack`, `Matrix` — nothing else
+6. **Memory anchor pills** — format is always `key: value` with a colon separator; the renderer splits on `: ` to bold the key
+7. **Story must have a character** — "Imagine you are a librarian…" not "HashMap is a data structure…"
+
 ### Deliberately NOT doing
 - **SQL Practice Engine** (H2 embedded DB + query editor) — over-engineering; topic seeds cover SQL theory adequately
 - **Voice notes** — mobile-first feature, not worth building before core content is complete
+- **AI-generated hints on the fly** — latency + cost; the 3-tier static hints are good enough and faster
 
 ### ✅ Completed (2026-04-12)
 - **Spaced Repetition Review UI** (`/review`) — full session flow with SM-2 ratings
