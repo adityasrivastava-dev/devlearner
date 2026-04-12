@@ -443,6 +443,39 @@
   color: var(--text3);
 }
 
+/* ── SRS session button ───────────────────────────────────────────────── */
+.startReviewBtn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: none;
+  background: var(--accent);
+  color: #0d0f12;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.startReviewBtn:hover { opacity: 0.85; }
+
+.srsMoreBtn {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px dashed var(--border2);
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+}
+.srsMoreBtn:hover { border-color: var(--accent); background: var(--adim); }
+
 /* ── Upcoming list ────────────────────────────────────────────────────── */
 .upcomingList {
   display: flex;

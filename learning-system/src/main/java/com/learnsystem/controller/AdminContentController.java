@@ -1,5 +1,6 @@
 package com.learnsystem.controller;
 
+import com.learnsystem.model.Example;
 import com.learnsystem.model.Problem;
 import com.learnsystem.model.Topic;
 import com.learnsystem.service.TopicService;
@@ -78,6 +79,47 @@ public ResponseEntity<Map<String, Object>> deleteTopic(@PathVariable Long id) {
             })
             .orElse(ResponseEntity.notFound().build());
 }
+
+    // ── Example CRUD ─────────────────────────────────────────────────────────
+
+    @PostMapping("/api/admin/topics/{topicId}/examples")
+    public ResponseEntity<?> createExample(
+            @PathVariable Long topicId,
+            @RequestBody Example example) {
+        try {
+            Example saved = topicService.createExample(topicId, example);
+            log.info("[Admin] Created example id={} title={} topic={}", saved.getId(), saved.getTitle(), topicId);
+            return ResponseEntity.ok(saved);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/api/admin/examples/{id}")
+    public ResponseEntity<?> updateExample(@PathVariable Long id, @RequestBody Example example) {
+        try {
+            Example updated = topicService.updateExample(id, example);
+            log.info("[Admin] Updated example id={}", id);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/api/admin/examples/{id}")
+    public ResponseEntity<?> deleteExample(@PathVariable Long id) {
+        try {
+            topicService.deleteExample(id);
+            log.warn("[Admin] Deleted example id={}", id);
+            return ResponseEntity.ok(Map.of("deleted", true, "id", id));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
     // ── Problem CRUD ──────────────────────────────────────────────────────────
 

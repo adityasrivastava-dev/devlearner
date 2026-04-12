@@ -177,6 +177,15 @@ Visual grid of every topic colored by gate stage. One request (`GET /api/gate/al
 ### Complexity Analyzer (`/complexity`)
 Paste any Java code → get Big-O time and space complexity from actual static analysis (not hardcoded values). Monaco editor on left, results panel on right. Shows: complexity notation colored by grade (green O(1) → red O(2ⁿ)), confidence level (HIGH/MEDIUM/LOW with bar), detected patterns as chips (loops/recursion/sorting/etc.), time and space explanations, complexity scale with active item highlighted. Keyboard shortcut Ctrl+Shift+A. Backend: `ComplexityAnalyzer` service + `POST /api/analyze-complexity`. Frontend: `codeApi.analyzeComplexity`.
 
+### Spaced Repetition Review (`/review`) — added 2026-04-12
+Full SRS session UI. Setup screen explains SM-2 rating scale → flashcard loop (topic or problem card, tap-to-reveal) → results scorecard with rating breakdown and next-review date. Rating quality: Forgot (1) / Hard (2) / Got it (4) / Easy (5). Calls `POST /api/srs/review`. Dashboard "Due for Review" card shows "Start session →" when items are due; shows "+N more" overflow link when queue > 4.
+
+### Interview Mode (`/interview-mode`) — added 2026-04-12
+Timed interview simulation. Setup: pick difficulty (Easy 20 min / Medium 35 min / Hard 45 min). Phase 1 — Approach: see problem, write approach text (50+ chars required before coding unlocks). Phase 2 — Coding: Monaco editor, run code against stdin, countdown clock turns amber at 5 min and red at 1 min, auto-submits on timeout. Scorecard: tests passed, time used bar, approach written check, "No hints used" badge. Uses existing `problemsApi.getAll` + `topicsApi.getProblem` + `codeApi.submit`.
+
+### Performance Analytics (`/analytics`) — added 2026-04-12
+Confidence scoring dashboard. Two-column layout: Weak Areas / Strong Areas (ConfidenceCard with color-coded bar per topic). Error Breakdown horizontal bar chart (Wrong Answer / Compile Error / Runtime Error / TLE). Pattern Confusions table (detected vs correct pattern). Mistake Journal: searchable + filterable table of last 50 wrong submissions with error type, patterns, and date. Backend: `GET /api/analytics/dashboard` + `GET /api/analytics/mistakes` in `Phase2Controller`.
+
 ### Pattern Name Drill (`/drill`)
 Flashcard drill: see problem description, type the pattern name. Alias matching.
 
@@ -184,7 +193,47 @@ Flashcard drill: see problem description, type the pattern name. Alias matching.
 LeetCode-style table with difficulty pills, inline search, bookmark toggle, pagination.
 
 ### Admin Panel (`/admin`)
-Topic/example/problem management, seed file loader, user management.
+Full content management hub. Nav tabs: Topics, Users, Quick Import, Seed Files, Build JSON, Quiz, Algorithms, Interview Q&A, Stats.
+
+**Topics tab** — left/right split: topic list (filterable by category, delete button per row) + topic editor. Editor has tabs:
+- **Info** — all core fields (title, category, subCategory, displayOrder, description, complexity, brute force, optimized approach, when to use)
+- **Story** — memory anchor, story, analogy, first principles
+- **Code** — starter code
+- **Examples** *(new 2026-04-12)* — list all examples for the topic with ✏️ Edit and 🗑 Delete per row; form has Basic (title, description, explanation, real-world use) / Code / Pseudocode tabs; "+ New Example" and form-based create
+- **Problems** — list problems with ✏️ Edit and 🗑 Delete; "📋 Bulk Add" button opens a JSON-array paste panel to create many problems at once; "+ New Problem" for single-form creation
+- Seed file loader in the editor header pre-fills all fields from an existing seed file
+
+**Quick Import tab** *(new 2026-04-12)* — Universal paste/upload box. Auto-detects JSON type from structure (`topics` array → topics batch; `algorithms` array → algorithms batch; `questions` array → quiz set). Accepts file upload too. Shows detected type badge before import.
+
+**Seed Files tab** — predefined seed files in classpath; expand to preview topics; Import / Import All Pending buttons.
+
+**Build JSON tab** — JSON builder wizard.
+
+**Quiz tab** — seed files, manage sets (delete per set), build form, paste JSON, question editor (add/edit/delete questions per set).
+
+**Algorithms tab** — seed files, paste JSON (with template), create form, manage list (✏️ Edit + 🗑 Delete per algo, Delete All button).
+
+**Interview Q&A tab** — manage interview questions.
+
+**Stats tab** — DB counts by category + danger zone (Clear All Data).
+
+**Delete coverage:**
+| Entity | How to delete |
+|--------|---------------|
+| Topic | 🗑 button in topic list |
+| Example | 🗑 button in topic editor → Examples tab |
+| Problem | 🗑 button in topic editor → Problems tab |
+| Algorithm | 🗑 button in Algorithms → Manage tab |
+| MCQ set | 🗑 button in Quiz → Manage Sets tab |
+| MCQ question | 🗑 button in Quiz → Questions editor |
+
+**Bulk creation paths:**
+| Data | Path |
+|------|------|
+| Topics + examples + problems | Quick Import or Seed Files or Paste JSON in Seed Files tab |
+| Problems for one topic | Topic editor → Problems tab → 📋 Bulk Add (JSON array) |
+| Algorithms | Quick Import or Algorithms → Seed Files / Paste JSON |
+| Quiz sets | Quick Import or Quiz → JSON Files / Paste JSON / Build |
 
 ### Notes & Bookmarks
 **Backend:** 100% complete (models, repos, controllers all exist)
@@ -309,26 +358,31 @@ Format: `{ batchName, skipExisting, algorithms: [...] }`. Each algorithm needs: 
 ## Pending Features (Priority Order)
 
 ### High Priority
-1. **Spaced Repetition Queue UI** — `SpacedRepetitionService` exists in backend; no frontend surface. Surface "review these N topics today" on dashboard. Pure frontend + existing API.
-2. **Interview Mode** — Timed 45-min session, lock a problem, no hints, write approach first, scored at end. Uses existing problem + submission APIs.
-4. **Daily Challenge** — Same problem for all users each day (Wordle-style). Shared leaderboard, streak tie-in.
-5. **Editorial unlock improvement** — Unlock after 2 attempts OR 10+ min, not only after AC.
+1. **Daily Challenge** — Same problem for all users each day (Wordle-style). Shared leaderboard, streak tie-in.
+2. **Editorial unlock improvement** — Unlock after 2 attempts OR 10+ min, not only after AC.
+3. **Cheat Sheet PDF generator** — Per-topic 1-page printable reference.
 
 ### Medium Priority
-4. **Interview Mode** — Timed 45-min session, no hints, approach-first, scored.
-5. **Cheat Sheet PDF generator** — Per-topic 1-page printable reference.
-6. **Recall Drill page** (`/recall`) — Flashcard mode: see topic name, recall memory anchor.
+4. **Recall Drill page** (`/recall`) — Flashcard mode: see topic name, recall memory anchor from memory.
+5. **Groups + friend challenges** — Biggest retention driver; needs Group, GroupMember tables.
+6. **Pattern page** (`/patterns`) — Pattern as first-class entity with problems list.
 
 ### Lower Priority / Phase 3+
-7. **Groups + friend challenges** — Biggest retention driver; needs Group, GroupMember tables.
-8. **Pattern page** (`/patterns`) — Pattern as first-class entity with problems list.
-9. **Resume upload + JD gap analyzer** — PdfImportService foundation exists.
-10. **System design visual builder** — Drag-drop canvas.
-11. **Weekly report card** — Backend analytics exist, frontend not built.
-12. **Subscription tiers** — Free / Pro ₹199/mo / Career Pro ₹399/mo.
+7. **Resume upload + JD gap analyzer** — PdfImportService foundation exists.
+8. **System design visual builder** — Drag-drop canvas.
+9. **Weekly report card** — Weekly email/in-app summary; analytics data already exists.
+10. **Subscription tiers** — Free / Pro ₹199/mo / Career Pro ₹399/mo.
 
 ### Deliberately NOT doing
 - **SQL Practice Engine** (H2 embedded DB + query editor) — over-engineering; the topic seeds cover SQL theory adequately.
+
+### ✅ Completed (2026-04-12)
+- **Spaced Repetition Review UI** (`/review`) — full session flow with SM-2 ratings
+- **Interview Mode** (`/interview-mode`) — timed session, approach-first, auto-submit, scorecard
+- **Performance Analytics** (`/analytics`) — confidence scores, error breakdown, mistake journal
+- **Admin: Example CRUD** — add/edit/delete individual examples per topic
+- **Admin: Bulk Problems** — paste a JSON array to create many problems at once
+- **Admin: Quick Import** — universal paste/upload that auto-detects topics / algorithms / quiz JSON
 
 ---
 
@@ -343,7 +397,10 @@ Format: `{ batchName, skipExisting, algorithms: [...] }`. Each algorithm needs: 
 | Category metadata | `frontend/src/utils/helpers.js` |
 | API layer | `frontend/src/api/index.js` |
 | Topic entity | `learning-system/src/main/java/com/learnsystem/model/Topic.java` |
+| Example entity | `learning-system/src/main/java/com/learnsystem/model/Example.java` |
 | Seed batch service | `learning-system/src/main/java/com/learnsystem/service/SeedBatchService.java` |
+| Admin content controller | `learning-system/src/main/java/com/learnsystem/controller/AdminContentController.java` |
+| Phase 2 controller (SRS, analytics, notes, bookmarks) | `learning-system/src/main/java/com/learnsystem/controller/Phase2Controller.java` |
 | Topic seed files | `learning-system/src/main/resources/seeds/` |
 | Algorithm seed files | `learning-system/src/main/resources/algorithm-seeds/` |
 | Security config | `learning-system/src/main/java/com/learnsystem/config/SecurityConfig.java` |
@@ -352,3 +409,9 @@ Format: `{ batchName, skipExisting, algorithms: [...] }`. Each algorithm needs: 
 | Revision page | `frontend/src/pages/interview/RevisionPage.jsx` |
 | Algorithm page | `frontend/src/pages/algorithms/AlgorithmsPage.jsx` |
 | Visualization blueprint | `frontend/src/pages/algorithms/VisualizationPlan.jsx` |
+| Spaced Repetition Review | `frontend/src/pages/review/ReviewPage.jsx` |
+| Interview Mode | `frontend/src/pages/interview-mode/InterviewModePage.jsx` |
+| Performance Analytics | `frontend/src/pages/analytics/AnalyticsPage.jsx` |
+| Admin panel | `frontend/src/pages/admin/AdminPage.jsx` |
+| Algorithm admin section | `frontend/src/pages/admin/AlgorithmAdminSection.jsx` |
+| Quiz admin section | `frontend/src/pages/admin/QuizAdminSection.jsx` |

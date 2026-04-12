@@ -1,0 +1,413 @@
+/* ── Layout ───────────────────────────────────────────────────────────────── */
+.page {
+  min-height: 100vh;
+  background: var(--bg1);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.backBtn {
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+}
+.backBtn:hover { border-color: var(--accent); color: var(--accent); }
+
+.headerText { flex: 1; min-width: 0; }
+
+.heading {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 4px;
+  font-family: var(--font-ui);
+}
+
+.subheading {
+  font-size: 13px;
+  color: var(--text3);
+  margin: 0;
+}
+
+.statPills {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.statPill {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 10px 18px;
+  text-align: center;
+  min-width: 90px;
+}
+
+.statNum {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: var(--font-ui);
+}
+
+.statLabel {
+  font-size: 11px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Loading ──────────────────────────────────────────────────────────────── */
+.loadingWrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text3);
+  font-size: 14px;
+  padding: 60px 0;
+  justify-content: center;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Two-column row ───────────────────────────────────────────────────────── */
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 860px) {
+  .twoCol { grid-template-columns: 1fr; }
+}
+
+/* ── Panel ────────────────────────────────────────────────────────────────── */
+.panel {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panelFull { grid-column: 1 / -1; }
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.panelIcon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.panelTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  font-family: var(--font-ui);
+}
+
+.panelSub {
+  font-size: 12px;
+  color: var(--text3);
+  flex: 1;
+}
+
+/* ── Confidence card ──────────────────────────────────────────────────────── */
+.confCard {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.confCard:hover { border-color: var(--accent); }
+
+.confTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.confTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.confTag {
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.confMeta {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.confBarTrack {
+  height: 4px;
+  background: var(--bg1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.confBarFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.confScore {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* ── Error breakdown ─────────────────────────────────────────────────────── */
+.errorList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.errorRow {
+  display: grid;
+  grid-template-columns: 130px 1fr 36px;
+  align-items: center;
+  gap: 10px;
+}
+
+.errorLabel {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.errorBarTrack {
+  height: 6px;
+  background: var(--bg3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.errorBarFill {
+  height: 100%;
+  border-radius: 3px;
+  opacity: 0.75;
+  transition: width 0.4s ease;
+}
+
+.errorCount {
+  font-size: 12px;
+  color: var(--text3);
+  text-align: right;
+}
+
+/* ── Pattern confusions ───────────────────────────────────────────────────── */
+.confusionTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.confusionTable th {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 0 10px;
+  text-align: left;
+}
+
+.confusionTable td {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.confusionTable tr:last-child td { border-bottom: none; }
+
+.patternChip {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg3);
+  color: var(--text2);
+}
+
+.patternMismatch {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+}
+
+.confusionCount {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text2);
+  padding-left: 8px;
+}
+
+/* ── Mistake journal ─────────────────────────────────────────────────────── */
+.mistakeControls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.mistakeSearch {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  outline: none;
+  width: 180px;
+}
+.mistakeSearch:focus { border-color: var(--accent); }
+
+.filterTabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.filterTab {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text3);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filterTab:hover { border-color: var(--accent); color: var(--accent); }
+.filterTabActive {
+  background: rgba(var(--accent-rgb, 74, 222, 128), 0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.mistakeTableWrap {
+  overflow-x: auto;
+}
+
+.mistakeTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.mistakeTable th {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 12px 10px 0;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.mistakeTable td {
+  padding: 8px 12px 8px 0;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  color: var(--text2);
+}
+
+.mistakeTable tr:last-child td { border-bottom: none; }
+.mistakeTable tr:hover td { background: var(--bg3); }
+
+.mistakeProblem {
+  font-weight: 500;
+  color: var(--text) !important;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mistakeTopic {
+  color: var(--text3) !important;
+  white-space: nowrap;
+}
+
+.errorPill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.mistakeDate {
+  color: var(--text3) !important;
+  white-space: nowrap;
+}
+
+.dash { color: var(--text3); }
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+.empty {
+  font-size: 13px;
+  color: var(--text3);
+  text-align: center;
+  padding: 28px 16px;
+  border: 1px dashed var(--border2);
+  border-radius: 8px;
+}

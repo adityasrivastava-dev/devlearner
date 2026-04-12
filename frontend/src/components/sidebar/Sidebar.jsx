@@ -15,6 +15,8 @@ const NAV_SECTIONS = [
       { path: '/',            icon: '⌂',  label: 'Dashboard'      },
       { path: '/algorithms',  icon: '∑',  label: 'Algorithms'     },
       { path: '/mastery',     icon: '◉',  label: 'Mastery Map'    },
+      { path: '/review',      icon: '↻',  label: 'Review Queue'   },
+      { path: '/analytics',   icon: '▲',  label: 'Analytics'      },
       { path: '/roadmap',     icon: '🗺', label: 'Roadmap'        },
     ],
   },
@@ -31,9 +33,10 @@ const NAV_SECTIONS = [
   {
     label: 'Interview',
     items: [
-      { path: '/interview-prep', icon: '📋', label: 'Interview Q&A' },
-      { path: '/revision',       icon: '⏱', label: 'Revision'      },
-      { path: '/drill',          icon: '⚔', label: 'Pattern Drill'  },
+      { path: '/interview-mode', icon: '⏱', label: 'Interview Mode' },
+      { path: '/interview-prep', icon: '📋', label: 'Q&A Bank'       },
+      { path: '/revision',       icon: '↺',  label: 'Revision'      },
+      { path: '/drill',          icon: '⚔',  label: 'Pattern Drill'  },
     ],
   },
   {

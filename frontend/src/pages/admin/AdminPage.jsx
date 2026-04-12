@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { adminApi, topicsApi, QUERY_KEYS } from '../../api';
+import { adminApi, topicsApi, algorithmAdminApi, QUERY_KEYS } from '../../api';
 import { getCategoryMeta, getDiffMeta, CATEGORIES } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 import styles from './AdminPage.module.css';
@@ -13,7 +13,7 @@ import InterviewAdminSection from './InterviewAdminSection';
 export default function AdminPage() {
   const navigate   = useNavigate();
   const qc         = useQueryClient();
-  const [section, setSection] = useState('topics'); // topics | users | seed | build | quiz | algorithms | interview | stats
+  const [section, setSection] = useState('topics'); // topics | users | seed | build | quiz | algorithms | interview | stats | quickimport
 
   return (
     <div className={styles.adminPage}>
@@ -25,14 +25,15 @@ export default function AdminPage() {
         </div>
         <nav className={styles.nav}>
           {[
-            { key: 'topics',     icon: '📚', label: 'Topics' },
-            { key: 'users',      icon: '👥', label: 'Users' },
-            { key: 'seed',       icon: '📦', label: 'Import JSON' },
-            { key: 'build',      icon: '🛠', label: 'Build JSON' },
-            { key: 'quiz',       icon: '🧠', label: 'Quiz' },
-            { key: 'algorithms', icon: '⚡', label: 'Algorithms' },
-            { key: 'interview',  icon: '📋', label: 'Interview Q&A' },
-            { key: 'stats',      icon: '📊', label: 'Stats' },
+            { key: 'topics',      icon: '📚', label: 'Topics' },
+            { key: 'users',       icon: '👥', label: 'Users' },
+            { key: 'quickimport', icon: '⚡', label: 'Quick Import' },
+            { key: 'seed',        icon: '📦', label: 'Seed Files' },
+            { key: 'build',       icon: '🛠', label: 'Build JSON' },
+            { key: 'quiz',        icon: '🧠', label: 'Quiz' },
+            { key: 'algorithms',  icon: '∑',  label: 'Algorithms' },
+            { key: 'interview',   icon: '📋', label: 'Interview Q&A' },
+            { key: 'stats',       icon: '📊', label: 'Stats' },
           ].map((item) => (
             <button
               key={item.key}
@@ -47,14 +48,15 @@ export default function AdminPage() {
 
       {/* Content */}
       <div className={styles.content}>
-        {section === 'topics'     && <TopicsSection qc={qc} />}
-        {section === 'users'      && <UsersSection />}
-        {section === 'seed'       && <SeedSection />}
-        {section === 'build'      && <div className={styles.section}><div className={styles.sectionHeader}><span className={styles.sectionTitle}>JSON Builder</span></div><JsonBuilderSection /></div>}
-        {section === 'quiz'       && <QuizAdminSection />}
-        {section === 'algorithms' && <AlgorithmAdminSection />}
-        {section === 'interview'  && <InterviewAdminSection />}
-        {section === 'stats'      && <StatsSection />}
+        {section === 'topics'      && <TopicsSection qc={qc} />}
+        {section === 'users'       && <UsersSection />}
+        {section === 'quickimport' && <QuickImportSection />}
+        {section === 'seed'        && <SeedSection />}
+        {section === 'build'       && <div className={styles.section}><div className={styles.sectionHeader}><span className={styles.sectionTitle}>JSON Builder</span></div><JsonBuilderSection /></div>}
+        {section === 'quiz'        && <QuizAdminSection />}
+        {section === 'algorithms'  && <AlgorithmAdminSection />}
+        {section === 'interview'   && <InterviewAdminSection />}
+        {section === 'stats'       && <StatsSection />}
       </div>
     </div>
   );
@@ -349,7 +351,12 @@ function TopicEditor({ topic, onSaved }) {
 
       {/* Editor tabs */}
       <div className="tab-bar">
-        {[['info','📋 Info'],['story','📖 Story'],['code','💻 Code'], ...(!isNew ? [['problems','🎯 Problems']] : [])].map(([t,l]) => (
+        {[
+          ['info',     '📋 Info'],
+          ['story',    '📖 Story'],
+          ['code',     '💻 Code'],
+          ...(!isNew ? [['examples', '💡 Examples'], ['problems', '🎯 Problems']] : []),
+        ].map(([t,l]) => (
           <button key={t} className={`tab-btn ${activeTab === t ? 'active' : ''}`} onClick={() => setActiveTab(t)}>
             {l}
           </button>
@@ -391,6 +398,9 @@ function TopicEditor({ topic, onSaved }) {
             <Field label="Starter Code" value={form.starterCode} onChange={set('starterCode')} textarea rows={12} wide code />
           </div>
         )}
+        {activeTab === 'examples' && !isNew && (
+          <TopicExamplesPanel topicId={topic.id} />
+        )}
         {activeTab === 'problems' && !isNew && (
           <TopicProblemsPanel topicId={topic.id} />
         )}
@@ -419,10 +429,148 @@ function Field({ label, value, onChange, textarea, rows = 2, wide, code, type = 
   );
 }
 
+/* ── Topic Examples Panel ─────────────────────────────────────────────────────── */
+function TopicExamplesPanel({ topicId }) {
+  const [editing, setEditing] = useState(null); // null | {} (new) | example obj
+  const queryKey = ['admin-topic-examples', topicId];
+
+  const { data: examples = [], isLoading, refetch } = useQuery({
+    queryKey,
+    queryFn: () => topicsApi.getExamples(topicId),
+    staleTime: 0,
+  });
+
+  const createMut = useMutation({
+    mutationFn: (data) => adminApi.createExample(topicId, data),
+    onSuccess: () => { toast.success('Example created'); setEditing(null); refetch(); },
+    onError: (e) => toast.error(e?.response?.data?.error || 'Create failed'),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }) => adminApi.updateExample(id, data),
+    onSuccess: () => { toast.success('Example updated'); setEditing(null); refetch(); },
+    onError: (e) => toast.error(e?.response?.data?.error || 'Update failed'),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id) => adminApi.deleteExample(id),
+    onSuccess: () => { toast.success('Example deleted'); refetch(); },
+    onError: () => toast.error('Delete failed'),
+  });
+
+  if (editing !== null) {
+    return <ExampleForm
+      example={editing?.id ? editing : null}
+      onCancel={() => setEditing(null)}
+      onSave={(data) => editing?.id
+        ? updateMut.mutate({ id: editing.id, data })
+        : createMut.mutate(data)
+      }
+      isPending={createMut.isPending || updateMut.isPending}
+    />;
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: 12, color: 'var(--text3)' }}>{examples.length} example{examples.length !== 1 ? 's' : ''}</span>
+        <button className="btn btn-primary btn-sm" onClick={() => setEditing({})}>+ New Example</button>
+      </div>
+      {isLoading ? (
+        <div className={styles.loading}><span className="spinner" />Loading…</div>
+      ) : examples.length === 0 ? (
+        <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
+          No examples yet. Click "+ New Example" to add one.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {examples.map((ex) => (
+            <div key={ex.id} className={styles.problemRow}>
+              <span className={styles.problemTitle}>{ex.title || '(untitled)'}</span>
+              <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 8, flexShrink: 0 }}>
+                {ex.code ? 'has code' : ''}{ex.code && ex.pseudocode ? ' · ' : ''}{ex.pseudocode ? 'has pseudocode' : ''}
+              </span>
+              <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+                <button className="btn btn-ghost btn-xs" onClick={() => setEditing(ex)}>✏️ Edit</button>
+                <button className="btn btn-danger btn-xs"
+                  onClick={() => window.confirm(`Delete example "${ex.title}"?`) && deleteMut.mutate(ex.id)}
+                  disabled={deleteMut.isPending}
+                >🗑</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const BLANK_EXAMPLE = () => ({
+  title: '', description: '', code: '', explanation: '',
+  realWorldUse: '', pseudocode: '', flowchartMermaid: '', displayOrder: 0,
+});
+
+function ExampleForm({ example, onCancel, onSave, isPending }) {
+  const isNew = !example;
+  const [form, setForm] = useState(example ? {
+    title: example.title || '',
+    description: example.description || '',
+    code: example.code || '',
+    explanation: example.explanation || '',
+    realWorldUse: example.realWorldUse || '',
+    pseudocode: example.pseudocode || '',
+    flowchartMermaid: example.flowchartMermaid || '',
+    displayOrder: example.displayOrder || 0,
+  } : BLANK_EXAMPLE());
+  const [tab, setTab] = useState('basic');
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+          {isNew ? '+ New Example' : `Editing: ${example.title}`}
+        </span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className="btn btn-ghost btn-sm" onClick={onCancel}>Cancel</button>
+          <button className="btn btn-primary btn-sm" onClick={() => onSave(form)} disabled={!form.title || isPending}>
+            {isPending ? 'Saving…' : '💾 Save'}
+          </button>
+        </div>
+      </div>
+      <div className="tab-bar" style={{ marginBottom: 10 }}>
+        {[['basic','📋 Basic'],['code','💻 Code'],['pseudocode','📝 Pseudocode']].map(([t,l]) => (
+          <button key={t} className={`tab-btn ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>{l}</button>
+        ))}
+      </div>
+      {tab === 'basic' && (
+        <div className={styles.formGrid}>
+          <Field label="Title *" value={form.title} onChange={set('title')} wide />
+          <Field label="Display Order" value={String(form.displayOrder)} onChange={set('displayOrder')} type="number" />
+          <Field label="Description" value={form.description} onChange={set('description')} textarea rows={4} wide />
+          <Field label="Explanation" value={form.explanation} onChange={set('explanation')} textarea rows={3} wide />
+          <Field label="Real World Use" value={form.realWorldUse} onChange={set('realWorldUse')} textarea rows={2} wide />
+        </div>
+      )}
+      {tab === 'code' && (
+        <div className={styles.formGrid}>
+          <Field label="Java Code" value={form.code} onChange={set('code')} textarea rows={14} wide code />
+        </div>
+      )}
+      {tab === 'pseudocode' && (
+        <div className={styles.formGrid}>
+          <Field label="Pseudocode" value={form.pseudocode} onChange={set('pseudocode')} textarea rows={10} wide code />
+          <Field label="Flowchart Mermaid (optional)" value={form.flowchartMermaid} onChange={set('flowchartMermaid')} textarea rows={8} wide code />
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Topic Problems Panel ─────────────────────────────────────────────────────── */
 function TopicProblemsPanel({ topicId }) {
-  const qc = useQueryClient();
   const [editingProblem, setEditingProblem] = useState(null); // null | {} (new) | problem obj
+  const [bulkMode, setBulkMode] = useState(false);
   const queryKey = ['admin-topic-problems', topicId];
 
   const { data: problems = [], isLoading, refetch } = useQuery({
@@ -461,11 +609,21 @@ function TopicProblemsPanel({ topicId }) {
     />;
   }
 
+  if (bulkMode) {
+    return <BulkProblemsPanel
+      topicId={topicId}
+      onDone={() => { setBulkMode(false); refetch(); }}
+    />;
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <span style={{ fontSize: 12, color: 'var(--text3)' }}>{problems.length} problem{problems.length !== 1 ? 's' : ''}</span>
-        <button className="btn btn-primary btn-sm" onClick={() => setEditingProblem({})}>+ New Problem</button>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => setBulkMode(true)}>📋 Bulk Add</button>
+          <button className="btn btn-primary btn-sm" onClick={() => setEditingProblem({})}>+ New Problem</button>
+        </div>
       </div>
       {isLoading ? (
         <div className={styles.loading}><span className="spinner" />Loading…</div>
@@ -493,6 +651,101 @@ function TopicProblemsPanel({ topicId }) {
               </div>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Bulk Problems Paste ──────────────────────────────────────────────────────── */
+const BULK_PROBLEMS_TEMPLATE = JSON.stringify([
+  {
+    title: "Two Sum",
+    difficulty: "EASY",
+    description: "Given an array of integers, return indices of the two numbers that add up to a target.",
+    inputFormat: "Array of integers + target",
+    outputFormat: "Indices as array",
+    sampleInput: "[2,7,11,15]\n9",
+    sampleOutput: "[0,1]",
+    constraints: "2 <= nums.length <= 10^4",
+    hint: "Think about what complement you need.",
+    hint1: "For each number, what value do you need to reach the target?",
+    hint2: "Use a HashMap to store seen values.",
+    hint3: "Map stores value → index. Check if complement exists before adding.",
+    starterCode: "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // your code\n    }\n}",
+    testCases: JSON.stringify([
+      { input: "[2,7,11,15]\n9", expectedOutput: "[0, 1]" },
+      { input: "[3,2,4]\n6", expectedOutput: "[1, 2]" },
+    ]),
+    pattern: "HashMap",
+    editorial: "Use a HashMap to store value→index. For each element, check if target-nums[i] exists in the map.",
+    displayOrder: 1,
+  },
+], null, 2);
+
+function BulkProblemsPanel({ topicId, onDone }) {
+  const [json, setJson] = useState('');
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleImport() {
+    let arr;
+    try { arr = JSON.parse(json); }
+    catch { toast.error('Invalid JSON — must be an array of problems'); return; }
+    if (!Array.isArray(arr)) { toast.error('JSON must be an array [ {...}, {...} ]'); return; }
+
+    setLoading(true);
+    setResult(null);
+    let created = 0, errors = [];
+    for (const p of arr) {
+      try {
+        await adminApi.createProblem(topicId, p);
+        created++;
+      } catch (e) {
+        errors.push(`"${p.title || '?'}": ${e?.response?.data?.error || e.message}`);
+      }
+    }
+    setLoading(false);
+    setResult({ created, errors });
+    if (created > 0) toast.success(`${created} problem${created !== 1 ? 's' : ''} created`);
+    if (errors.length) toast.error(`${errors.length} failed`);
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>📋 Bulk Add Problems</span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => setJson(BULK_PROBLEMS_TEMPLATE)}>📄 Template</button>
+          <button className="btn btn-ghost btn-sm" onClick={onDone}>← Back</button>
+        </div>
+      </div>
+      <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8, lineHeight: 1.6 }}>
+        Paste a JSON array of problem objects. Each object should have at minimum <code style={{ background: 'var(--bg3)', padding: '1px 4px', borderRadius: 3 }}>title</code> and <code style={{ background: 'var(--bg3)', padding: '1px 4px', borderRadius: 3 }}>difficulty</code>.
+        Click <strong>Template</strong> to see the full schema.
+      </p>
+      <textarea
+        className={styles.jsonInput}
+        value={json}
+        onChange={(e) => setJson(e.target.value)}
+        placeholder={'[\n  { "title": "...", "difficulty": "EASY", ... },\n  { "title": "...", "difficulty": "MEDIUM", ... }\n]'}
+        rows={18}
+      />
+      <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+        <button className="btn btn-primary" disabled={loading || !json.trim()} onClick={handleImport}>
+          {loading ? <><span className="spinner" />Importing…</> : '📦 Import All'}
+        </button>
+        <button className="btn btn-ghost" onClick={() => { setJson(''); setResult(null); }}>Clear</button>
+        {result?.created > 0 && (
+          <button className="btn btn-ghost" onClick={onDone}>← Back to list</button>
+        )}
+      </div>
+      {result && (
+        <div className={`${styles.resultBox} ${result.errors.length === 0 ? styles.success : styles.partial}`} style={{ marginTop: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>{result.created} created · {result.errors.length} failed</div>
+          {result.errors.map((e, i) => (
+            <div key={i} style={{ fontSize: 11, color: 'var(--red)', marginTop: 2 }}>⚠ {e}</div>
+          ))}
         </div>
       )}
     </div>
@@ -662,6 +915,201 @@ function UsersSection() {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Quick Import ────────────────────────────────────────────────────────────── */
+// Detects JSON type from keys and routes to the right API
+function QuickImportSection() {
+  const qc = useQueryClient();
+  const [json, setJson] = useState('');
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [detected, setDetected] = useState(null);
+  const fileInputRef = useRef(null);
+
+  function detectType(obj) {
+    if (obj?.topics    && Array.isArray(obj.topics))     return 'topics';
+    if (obj?.algorithms && Array.isArray(obj.algorithms)) return 'algorithms';
+    if (obj?.questions && Array.isArray(obj.questions))  return 'quiz';
+    if (Array.isArray(obj) && obj[0]?.slug)              return 'algorithms';
+    if (Array.isArray(obj) && obj[0]?.questions)         return 'quiz';
+    return null;
+  }
+
+  function handleChange(text) {
+    setJson(text);
+    setResult(null);
+    setDetected(null);
+    if (!text.trim()) return;
+    try {
+      const obj = JSON.parse(text);
+      setDetected(detectType(obj));
+    } catch {
+      // ignore
+    }
+  }
+
+  function handleFileLoad(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => handleChange(ev.target.result);
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  async function handleImport() {
+    let obj;
+    try { obj = JSON.parse(json); }
+    catch { toast.error('Invalid JSON'); return; }
+
+    const type = detectType(obj);
+    if (!type) {
+      toast.error('Could not detect type. Need { topics:[...] }, { algorithms:[...] }, or { questions:[...] }');
+      return;
+    }
+
+    setLoading(true);
+    setResult(null);
+    try {
+      let res;
+      if (type === 'topics')     res = await adminApi.seedBatch(obj);
+      if (type === 'algorithms') res = await algorithmAdminApi.seedBatch(obj);
+      if (type === 'quiz') {
+        // quiz paste goes through the quiz paste endpoint via adminApi
+        const token = localStorage.getItem('devlearn_token');
+        const r = await fetch('/api/admin/quiz/paste', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: json,
+        });
+        res = await r.json();
+        if (!r.ok) throw new Error(res.error || 'Import failed');
+      }
+      setResult({ type, res });
+      qc.invalidateQueries({ queryKey: ['topics'] });
+      qc.invalidateQueries({ queryKey: ['algorithms'] });
+      qc.invalidateQueries({ queryKey: ['quiz-admin-sets'] });
+      toast.success('Import complete!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Import failed');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const TYPE_META = {
+    topics:     { icon: '📚', label: 'Topics batch', color: 'var(--accent)' },
+    algorithms: { icon: '∑',  label: 'Algorithms batch', color: 'var(--purple)' },
+    quiz:       { icon: '🧠', label: 'Quiz set', color: 'var(--yellow)' },
+  };
+
+  return (
+    <div className={styles.section}>
+      <div className={styles.sectionHeader}>
+        <div>
+          <span className={styles.sectionTitle}>⚡ Quick Import</span>
+          <span className={styles.sectionSub} style={{ marginLeft: 10 }}>
+            Paste or drop any JSON — topics, algorithms, or quiz sets. Type is auto-detected.
+          </span>
+        </div>
+        <button className="btn btn-ghost btn-sm" onClick={() => fileInputRef.current?.click()}>
+          📁 Upload File
+        </button>
+        <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileLoad} />
+      </div>
+
+      {/* Type indicator */}
+      {detected && (
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '4px 12px', borderRadius: 20, marginBottom: 10,
+          background: `${TYPE_META[detected]?.color}18`,
+          border: `1px solid ${TYPE_META[detected]?.color}44`,
+          fontSize: 12, fontWeight: 600, color: TYPE_META[detected]?.color,
+        }}>
+          {TYPE_META[detected]?.icon} Detected: {TYPE_META[detected]?.label}
+        </div>
+      )}
+      {json.trim() && !detected && (() => {
+        try { JSON.parse(json); return (
+          <div style={{ fontSize: 12, color: 'var(--yellow)', marginBottom: 8 }}>
+            ⚠ JSON is valid but type not recognized. Expected: topics/algorithms/questions arrays.
+          </div>
+        ); } catch { return (
+          <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 8 }}>
+            ✗ Invalid JSON
+          </div>
+        ); }
+      })()}
+
+      <textarea
+        className={styles.jsonInput}
+        value={json}
+        onChange={(e) => handleChange(e.target.value)}
+        placeholder={`Paste any seed JSON here — topics batch, algorithms batch, or quiz set JSON.\n\nExamples:\n  { "batchName": "...", "topics": [...] }\n  { "batchName": "...", "algorithms": [...] }\n  { "title": "...", "questions": [...] }`}
+        rows={22}
+      />
+
+      <div style={{ display: 'flex', gap: 10, marginTop: 12, alignItems: 'center' }}>
+        <button
+          className="btn btn-primary"
+          disabled={loading || !json.trim() || !detected}
+          onClick={handleImport}
+        >
+          {loading ? <><span className="spinner" />Importing…</> : `📦 Import ${detected ? TYPE_META[detected]?.label : '…'}`}
+        </button>
+        <button className="btn btn-ghost" onClick={() => { setJson(''); setResult(null); setDetected(null); }}>Clear</button>
+      </div>
+
+      {result && (
+        <div className={`${styles.resultBox} ${styles.success}`} style={{ marginTop: 12 }}>
+          {result.type === 'topics' && (
+            <div>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>Topics import complete</div>
+              <div style={{ fontSize: 12, color: 'var(--text2)' }}>
+                {result.res.topicsSeeded} topics · {result.res.examplesSeeded} examples · {result.res.problemsSeeded} problems seeded
+                {result.res.topicsSkipped > 0 && ` · ${result.res.topicsSkipped} skipped`}
+              </div>
+              {result.res.errors?.map((e, i) => (
+                <div key={i} style={{ fontSize: 11, color: 'var(--red)', marginTop: 2 }}>⚠ {e}</div>
+              ))}
+            </div>
+          )}
+          {result.type === 'algorithms' && (
+            <div>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>Algorithms import complete</div>
+              <div style={{ fontSize: 12, color: 'var(--text2)' }}>
+                {result.res.created} created · {result.res.updated} updated · {result.res.skipped} skipped
+              </div>
+              {result.res.errors?.map((e, i) => (
+                <div key={i} style={{ fontSize: 11, color: 'var(--red)', marginTop: 2 }}>⚠ {e}</div>
+              ))}
+            </div>
+          )}
+          {result.type === 'quiz' && (
+            <div>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>Quiz import complete</div>
+              <div style={{ fontSize: 12, color: 'var(--text2)' }}>
+                {result.res.questionCount ?? result.res.questions} questions imported
+                {result.res.title && ` — "${result.res.title}"`}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Format reference */}
+      <div className={styles.resultBox} style={{ marginTop: 16, background: 'var(--bg2)', borderColor: 'var(--border2)' }}>
+        <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.7 }}>
+          <strong style={{ color: 'var(--text2)' }}>Supported formats:</strong><br />
+          <code style={{ color: 'var(--accent)' }}>Topics:</code> <code>{'{ "batchName": "...", "skipExisting": true, "topics": [{...}] }'}</code><br />
+          <code style={{ color: 'var(--purple)' }}>Algorithms:</code> <code>{'{ "batchName": "...", "skipExisting": true, "algorithms": [{...}] }'}</code><br />
+          <code style={{ color: 'var(--yellow)' }}>Quiz:</code> <code>{'{ "title": "...", "category": "JAVA", "difficulty": "INTERMEDIATE", "questions": [{...}] }'}</code>
+        </div>
+      </div>
     </div>
   );
 }

@@ -336,7 +336,16 @@ export default function DashboardPage() {
                 Due for Review
                 {dueItems.length > 0 && <span className={styles.countBadge}>{dueItems.length}</span>}
               </h2>
-              <span className={styles.cardSub}>Spaced repetition queue</span>
+              {dueItems.length > 0 ? (
+                <button
+                  className={styles.startReviewBtn}
+                  onClick={() => navigate('/review')}
+                >
+                  Start session →
+                </button>
+              ) : (
+                <span className={styles.cardSub}>Spaced repetition queue</span>
+              )}
             </div>
             {srsLoading ? (
               <div className={styles.skeletonBlock} style={{ height: 80 }} />
@@ -350,9 +359,14 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className={styles.srsList}>
-                {dueItems.map((item) => (
+                {dueItems.slice(0, 4).map((item) => (
                   <SrsItem key={item.id} item={item} onNavigate={navigateToItem} />
                 ))}
+                {dueItems.length > 4 && (
+                  <button className={styles.srsMoreBtn} onClick={() => navigate('/review')}>
+                    +{dueItems.length - 4} more — start full session →
+                  </button>
+                )}
               </div>
             )}
           </div>

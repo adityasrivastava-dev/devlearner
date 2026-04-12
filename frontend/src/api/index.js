@@ -192,6 +192,16 @@ export const adminApi = {
   deleteTopic: (id) =>
     http.delete(`/api/admin/topics/${id}`).then((r) => r.data),
 
+  // Example CRUD
+  createExample: (topicId, data) =>
+    http.post(`/api/admin/topics/${topicId}/examples`, data).then((r) => r.data),
+
+  updateExample: (id, data) =>
+    http.put(`/api/admin/examples/${id}`, data).then((r) => r.data),
+
+  deleteExample: (id) =>
+    http.delete(`/api/admin/examples/${id}`).then((r) => r.data),
+
   // Problem CRUD
   createProblem: (topicId, data) =>
     http.post(`/api/admin/topics/${topicId}/problems`, data).then((r) => r.data),
@@ -353,6 +363,8 @@ export const QUERY_KEYS = {
   gateStatus:       (tid)  => ['gateStatus', tid],
   allGateStages:           ['allGateStages'],
   interviewQuestions:      ['interviewQuestions'],
+  analyticsDashboard:      ['analyticsDashboard'],
+  analyticsMistakes:       ['analyticsMistakes'],
 };
 // ─── Spaced Repetition ────────────────────────────────────────────────────────
 export const srsApi = {
