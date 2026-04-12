@@ -355,26 +355,124 @@ Format: `{ batchName, skipExisting, algorithms: [...] }`. Each algorithm needs: 
 
 ---
 
-## Pending Features (Priority Order)
+## Feature Roadmap — Next 20 (ranked by impact ÷ effort, 2026-04-12)
 
-### High Priority
-1. **Daily Challenge** — Same problem for all users each day (Wordle-style). Shared leaderboard, streak tie-in.
-2. **Editorial unlock improvement** — Unlock after 2 attempts OR 10+ min, not only after AC.
-3. **Cheat Sheet PDF generator** — Per-topic 1-page printable reference.
+### Tier 1 — High Impact, Buildable Now
 
-### Medium Priority
-4. **Recall Drill page** (`/recall`) — Flashcard mode: see topic name, recall memory anchor from memory.
-5. **Groups + friend challenges** — Biggest retention driver; needs Group, GroupMember tables.
-6. **Pattern page** (`/patterns`) — Pattern as first-class entity with problems list.
+**1. Daily Challenge (`/daily`)**
+Same problem for all users every day, Wordle-style. Countdown to next challenge. Shared leaderboard (who solved it, in how long, sorted by time). Solving the daily extends the streak.
+- Backend: `DailyChallenge { date, problemId }` table + scheduled job to pick problem + leaderboard endpoint
+- Frontend: `/daily` page with countdown clock, problem panel, shared leaderboard card
+- Tie-in: streak engine already exists; gate it so only the daily counts for streak on that day
 
-### Lower Priority / Phase 3+
-7. **Resume upload + JD gap analyzer** — PdfImportService foundation exists.
-8. **System design visual builder** — Drag-drop canvas.
-9. **Weekly report card** — Weekly email/in-app summary; analytics data already exists.
-10. **Subscription tiers** — Free / Pro ₹199/mo / Career Pro ₹399/mo.
+**2. Editorial Unlock Improvement**
+Editorials currently only unlock after `ACCEPTED`. Should also unlock after: 2 failed submissions OR 10+ minutes spent on the problem.
+- Backend: add `attemptsBeforeEditorial` check in `SubmissionController`; track `firstOpenedAt` timestamp on `UserTopicProgress` or in a new `ProblemSession` record
+- Frontend: track `startedAt = Date.now()` when Practice tab opens; pass elapsed time to the editorial unlock check
+- One condition change, no new tables needed
+
+**3. Company Tags on Problems**
+Add `companies` field (JSON string `["Google","Amazon","Microsoft"]`) to the `Problem` entity. Filter by company on `/problems` page. "What does Google ask about Trees?" is the most common pre-interview search.
+- Backend: add `companies` column to `Problem`, add `?company=Google` filter in `ProblemsController`
+- Frontend: company chips on problem cards, company filter dropdown on `/problems`
+- Data: tag existing problems in seed files; add to all new problem seeds going forward
+
+**4. Cheat Sheet View (`/cheat-sheet`)**
+One-page printable summary per topic: memory anchor pills, complexity table, 3 key code snippets, when-to-use bullets. No new backend — renders existing topic fields in a print-optimised layout.
+- Frontend: `/cheat-sheet?topic={id}` route, `@media print` CSS, `window.print()` button
+- Layout: memory anchor pills row → complexity badge → examples code blocks → when-to-use list
+
+**5. Guided Learning Path (`/path`)**
+A linear week-by-week roadmap. "Week 1 → Java Core → Week 2 → DSA Basics → Week 3 → Spring Boot". Shows % complete per week derived from gate stages + topic displayOrder. Answers "where do I start?"
+- No new backend needed — derive completion from existing gate stage data
+- Frontend: timeline UI, each node coloured by gate stage (THEORY=grey, MASTERED=green)
+
+**6. Weak Topic Auto-Suggest on Dashboard**
+A "Focus today" card showing 3 topics with lowest confidence score from `UserTopicPerformance`. One analytics API call already exists. Huge psychological impact — tells the user exactly where to go instead of browsing.
+- Frontend only: add a card to `DashboardPage` that calls `analyticsApi.getDashboard()` and surfaces the bottom-3 `weakAreas`
+
+**7. Spring Boot + System Design Interview Q&A Data**
+The static Q&A bank (`interviewData.js`) is missing the two categories senior backend interviewers ask most. This is a **data task**, not a feature build.
+- Spring Boot: DI, AOP, auto-config, Boot vs Framework, transaction management, `@Transactional` pitfalls, N+1 fix, bean scopes
+- System Design: design rate limiter, URL shortener, notification service, CAP theorem trade-offs, consistent hashing, leader election
+
+**8. Custom Quiz Builder**
+Let the user pick topics (multi-select), difficulty, and number of questions (5/10/20), then generate a quiz from the MCQ bank filtered to those topics. No new backend if MCQ questions have topic tags.
+- Backend: add `topicTag` field to `QuizQuestion`; add filter param to quiz sets endpoint
+- Frontend: setup modal on `/quiz` page before the session starts
+
+**9. Topic Concept Links (Related Topics)**
+In the theory tab show "Related Topics" chips (HashMap → Trees → Heaps). Stored as `relatedTopicIds` (JSON) on `Topic`. Frontend renders them as clickable chips below the memory anchor. Helps users see the knowledge graph.
+- Backend: add `relatedTopicIds` TEXT column to `Topic`
+- Frontend: chips in theory tab header; clicking navigates to `/?topic={id}`
+- Admin: multi-select field in topic editor Info tab
+
+**10. Interview History Log (`/my-interviews`)**
+Personal log of real interviews the user has done: company, date, round type (DSA/System Design/Behavioural), questions remembered, outcome (Passed/Failed/Pending). Helps track what real companies actually asked.
+- Backend: `InterviewLog { userId, company, date, roundType, notes, outcome }` table + CRUD endpoints
+- Frontend: `/my-interviews` page — add entry form + timeline list
+
+---
+
+### Tier 2 — High Value, Slightly More Build
+
+**11. Problem Attempt Timer + Session Stats**
+Track time-on-problem: starts when Practice tab opens, stops on submit. Show "Your fastest: 12 min" on problem card. `solveTimeSecs` already stored on `Submission`.
+- Frontend: `startedAt` ref in `TopicView` Practice tab; pass elapsed time to submit call (already accepted by API)
+- Surface on analytics page as "Avg solve time by difficulty"
+
+**12. Bookmark Collections**
+Currently bookmarks are a flat list. Let users create named collections: "Google prep", "Week 3 review".
+- Backend: `BookmarkCollection { id, userId, name }` table; add `collectionId` FK to `Bookmark`
+- Frontend: collections sidebar on a `/bookmarks` page; drag bookmarks into collections
+
+**13. Code Snippet Library (`/snippets`)**
+Personal library of reusable patterns: "Binary Search template", "BFS template". User saves from the code editor ("Save to Snippets" button) or pastes manually.
+- Backend: `CodeSnippet { id, userId, title, code, tags }` table
+- Frontend: `/snippets` page + "Save to Snippets" button in Monaco toolbar
+
+**14. User Topic Difficulty Rating**
+After reaching MASTERED on a topic, show a prompt: "How hard was this? 1–5 stars." Aggregate ratings shown on topic cards. Backend `TopicRating` already exists — just needs the trigger UI.
+- Frontend: post-mastery modal in `TopicView.jsx` when gate stage flips to MASTERED
+
+**15. Progress Export**
+Export a "Study Report" as a printable page or PDF: topics mastered, problems solved by category, streak history, estimated readiness %.
+- Frontend only: `/report` route using `@media print` CSS or `jsPDF`; data from existing analytics + gate endpoints
+
+---
+
+### Tier 3 — Strong Long-Term Value
+
+**16. Friend Challenges / Groups**
+Two users challenge each other: "Solve this problem in 30 min." The biggest engagement driver after daily streaks.
+- Backend: `Group`, `GroupMember`, `Challenge` tables; websocket or polling for live status
+- Frontend: `/groups` page, challenge invite flow
+
+**17. Pattern Relationship Map (`/patterns`)**
+Visual graph: Sliding Window → Two Pointers → Prefix Sum → Kadane's. Click a pattern → see all problems tagged with it. Pattern as a first-class entity.
+- Backend: `Pattern { name, description, parentPatternId }` table; FK on `Problem.pattern`
+- Frontend: D3 or simple CSS tree; click → filtered problems list
+
+**18. Resume Gap Analyzer**
+Upload resume PDF → extract tech mentioned → compare against mastery map → "You claim Spring Security but haven't touched it."
+- Backend: `PdfImportService` foundation already exists
+- Frontend: file upload on profile page; gap table output
+
+**19. Weekly Study Report Email**
+Every Sunday: topics studied, problems solved, streak, 3 suggested topics for next week. Cron job + JavaMailSender.
+- Backend: `@Scheduled` cron + email template; analytics data already exists
+- No frontend needed beyond an opt-in toggle in settings
+
+**20. Subscription Tiers**
+Free / Pro ₹199/mo / Career Pro ₹399/mo. Feature gates on interview mode, analytics, resume analyzer.
+- Backend: `Subscription { userId, tier, expiresAt }` table + middleware that checks tier before serving gated endpoints
+- Frontend: `/pricing` page + upgrade prompts at gate points
+
+---
 
 ### Deliberately NOT doing
-- **SQL Practice Engine** (H2 embedded DB + query editor) — over-engineering; the topic seeds cover SQL theory adequately.
+- **SQL Practice Engine** (H2 embedded DB + query editor) — over-engineering; topic seeds cover SQL theory adequately
+- **Voice notes** — mobile-first feature, not worth building before core content is complete
 
 ### ✅ Completed (2026-04-12)
 - **Spaced Repetition Review UI** (`/review`) — full session flow with SM-2 ratings
@@ -383,6 +481,149 @@ Format: `{ batchName, skipExisting, algorithms: [...] }`. Each algorithm needs: 
 - **Admin: Example CRUD** — add/edit/delete individual examples per topic
 - **Admin: Bulk Problems** — paste a JSON array to create many problems at once
 - **Admin: Quick Import** — universal paste/upload that auto-detects topics / algorithms / quiz JSON
+
+---
+
+## Data Plan — Content is the Product
+
+The platform is only as good as its content. This section defines exactly what "complete" means for each data type and the priority order for filling gaps.
+
+### Current Inventory (2026-04-12)
+
+| Category | Topics | Problems (est.) | Examples | Status |
+|----------|--------|-----------------|----------|--------|
+| Java Core (B01–B32) | 32 | Sparse (2–4/topic) | Sparse | Theory good, problems weak |
+| Spring Boot (S01–S06) | 6 | Very sparse | Sparse | Theory good, problems missing |
+| DSA Core (D01–D09) | 9 | Moderate | Moderate | Best quality currently |
+| DSA Patterns (D10–D14) | 5 | Sparse | Sparse | Theory decent |
+| MySQL (M01–M06) | 6 | Sparse | Sparse | Theory good |
+| AWS (A01–A04) | 4 | None | Sparse | Theory only |
+| System Design (SD01–SD04) | 4 | None | None | Theory only |
+| Testing (T01) | 1 | None | None | Skeleton |
+| Algorithms (A01–A18) | 70+ algos | N/A | Code only | Good, no drills |
+
+**The gap:** ~67 topics × 8 problems minimum = ~536 problems needed. Currently ~150 exist.
+
+---
+
+### Topic Theory — Completeness Checklist
+
+Every topic seed must hit all of these before it is considered complete:
+
+| Field | Requirement |
+|-------|-------------|
+| `story` | 3–4 sentences, one character, one aha moment — not a textbook definition |
+| `memoryAnchor` | 4–6 `key: value` pills — the facts that must stick in memory |
+| `analogy` | One sentence: real-world X = code Y (e.g. "HashMap = a library index card") |
+| `firstPrinciples` | 3–5 numbered sentences explaining WHY it works from scratch |
+| `examples[]` | Minimum 2, maximum 4 — see Example Schema below |
+| `problems[]` | 3 Easy + 3 Medium + 2 Hard — see Problem Schema below |
+
+**Fields currently thin across most topics:**
+- `story` — exists in DSA, weak in Java/Spring/MySQL; should NOT just restate the description
+- `memoryAnchor` — many topics only have 1–2 pills; need 4–6 distinct facts
+- `firstPrinciples` — often copied from description; must explain WHY the concept exists, not what it is
+- `examples` — most Java/Spring topics have 0–1 examples with no working code
+- `problems` — Java Core and Spring have almost no problems with test cases
+
+---
+
+### Example Schema — What a Complete Example Looks Like
+
+```json
+{
+  "title": "HashMap frequency count",
+  "displayOrder": 1,
+  "description": "Count character frequency in a string using HashMap",
+  "code": "Map<Character, Integer> freq = new HashMap<>();\nfor (char c : s.toCharArray()) {\n    freq.merge(c, 1, Integer::sum);\n}\n// freq = {'a':3, 'b':1, ...}",
+  "explanation": "merge() is cleaner than getOrDefault+put. First call sets value to 1; subsequent calls add 1 to the existing value via Integer::sum.",
+  "realWorldUse": "Used in every anagram/duplicate detection problem. Redis HINCRBY does the same thing at the cache layer.",
+  "pseudocode": "FOR each char c in string:\n    freq[c] = freq.getOrDefault(c, 0) + 1"
+}
+```
+
+**Rules for good examples:**
+- `code` must be real, runnable Java — not pseudocode (pseudocode goes in the `pseudocode` field)
+- `realWorldUse` must name a specific production system (Redis, MySQL index, Spring bean registry, etc.)
+- `explanation` must explain the non-obvious line, not just restate what the code does
+- One example should be basic ("hello world of the concept"), one should be production-grade
+
+---
+
+### Problem Schema — What a Complete Problem Looks Like
+
+```json
+{
+  "title": "Two Sum",
+  "difficulty": "EASY",
+  "displayOrder": 1,
+  "description": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. Assume exactly one solution exists.",
+  "inputFormat": "Line 1: space-separated integers. Line 2: integer target.",
+  "outputFormat": "Two space-separated indices (0-indexed), smaller index first.",
+  "sampleInput": "2 7 11 15\n9",
+  "sampleOutput": "0 1",
+  "constraints": "2 <= nums.length <= 10^4\n-10^9 <= nums[i] <= 10^9\nExactly one valid answer exists.",
+  "hint":  "What value do you need to reach target from nums[i]?",
+  "hint1": "For each element, compute target - nums[i]. Have you seen that value before?",
+  "hint2": "Use a HashMap mapping value → index. Check before inserting.",
+  "hint3": "Map<Integer,Integer> seen. For each i: if seen.containsKey(target-nums[i]) → return [seen.get(...), i]. Else seen.put(nums[i], i).",
+  "starterCode": "import java.util.*;\npublic class Solution {\n    public static int[] twoSum(int[] nums, int target) {\n        // your code here\n        return new int[]{};\n    }\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int[] nums = Arrays.stream(sc.nextLine().trim().split(\" \")).mapToInt(Integer::parseInt).toArray();\n        int target = sc.nextInt();\n        int[] res = twoSum(nums, target);\n        System.out.println(res[0] + \" \" + res[1]);\n    }\n}",
+  "testCases": "[{\"input\":\"2 7 11 15\\n9\",\"expectedOutput\":\"0 1\"},{\"input\":\"3 2 4\\n6\",\"expectedOutput\":\"1 2\"},{\"input\":\"3 3\\n6\",\"expectedOutput\":\"0 1\"}]",
+  "pattern": "HashMap",
+  "editorial": "Brute force O(n²): check every pair. Better: O(n) HashMap.\n\nKey insight: instead of 'do any two numbers sum to target?', ask 'for this number, does its complement exist?'\n\nFor each nums[i], check if (target - nums[i]) is already in the map. If yes → answer found. If no → add nums[i]→i to the map and continue.",
+  "companies": "[\"Amazon\",\"Google\",\"Microsoft\"]"
+}
+```
+
+**Rules for complete problems:**
+- `starterCode` MUST have a `main()` that reads from stdin — the executor uses stdin/stdout
+- `testCases` must have 3–5 cases: happy path + edge (empty/single/negative) + a slightly larger input
+- Three-tier hints must be strictly progressive: hint1 = direction only, hint2 = approach name, hint3 = near-pseudocode (do NOT give the answer in hint3)
+- `editorial` must explain both the brute-force AND the optimal, and name the key insight
+- `pattern` must be one of the canonical tags: `HashMap`, `Two Pointers`, `Sliding Window`, `BFS`, `DFS`, `Dynamic Programming`, `Binary Search`, `Greedy`, `Backtracking`, `Stack`, `Heap`, `Union-Find`, `Trie`, `Math`, `Sorting`
+- `companies` is a JSON string array — tag every problem you know has appeared in a real interview
+
+---
+
+### Algorithm Seed — What a Complete Algorithm Looks Like
+
+All 18 files (A01–A18) are in good shape. Remaining gaps to fill as A19–A25:
+
+| Planned File | Contents | Why important |
+|--------------|----------|---------------|
+| A19 | Minimum Spanning Tree (Prim's, Kruskal's) | Google/Amazon system design rounds |
+| A20 | Suffix Array, Z-algorithm, Rabin-Karp | String matching in senior roles |
+| A21 | Monotonic Queue (sliding window maximum) | Very common FAANG problem type |
+| A22 | Number Theory (GCD, Sieve, modular arithmetic) | Crypto roles + competitive programming |
+| A23 | Interval Scheduling (merge intervals, sweep line) | Amazon SDE1/2 favourite pattern |
+| A24 | Matrix Traversal (spiral, diagonal, rotate 90°) | Google onsite staple |
+| A25 | Game Theory basics (Nim, Sprague-Grundy) | Rare but appears at senior FAANG level |
+
+---
+
+### Data Priority Roadmap
+
+**Phase 1 — Fill DSA (highest interview ROI)**
+- Add 3 Easy + 3 Medium + 2 Hard problems to every DSA topic D01–D14 → ~112 problems
+- Add 2 working code examples to every DSA topic → ~28 examples
+- Add Spring Boot + System Design sections to `interviewData.js` (static Q&A bank)
+
+**Phase 2 — Make Java Core practisable**
+- Add problems to B11–B22 (OOP, Collections, Streams, Threads) → ~88 problems
+- Focus: design-pattern problems (Strategy, Factory, Observer, Decorator implementations)
+- Add threading/concurrency problems (producer-consumer, deadlock detection, thread-safe counter)
+
+**Phase 3 — Complete remaining categories**
+- Spring Boot: mini coding problems (implement custom filter, write JPA query, Spring Security config)
+- MySQL: SQL query problems (window functions, CTEs, EXPLAIN output interpretation)
+- Add A19–A25 algorithm seeds
+- Add T02–T04 testing seeds (integration tests, TestContainers, Spring Boot Test slice tests)
+
+**Quick wins — do via Quick Import today**
+- Add `companies` tags to all existing DSA problems in seed files
+- Backfill `editorial` on problems that have accepted solutions but empty editorial text
+- Add `relatedTopicIds` to HashMap, Trees, Heaps topics to link them
+- Promote `memoryAnchor` from 2 pills → 5 pills for every Java Core topic
 
 ---
 
