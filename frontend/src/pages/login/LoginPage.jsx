@@ -30,7 +30,7 @@ const FEATURES = [
     accent: '#f59e0b',
     tag: 'Interview Mode',
     title: 'Simulate a Real Technical Interview',
-    body: 'Pick a difficulty (20 / 35 / 45 min). Write your approach first — coding is locked until you explain your plan. No hints. Clock turns red in the last minute. Auto-submits on timeout. Scorecard shows exactly where you lost time.',
+    body: 'Pick a difficulty (20 / 35 / 45 min). Write your approach first — coding is locked until you explain your plan. No hints. Clock turns red in the last minute. Auto-submits on timeout.',
     stat: ['Approach-first', 'No hints available'],
   },
   {
@@ -46,7 +46,7 @@ const FEATURES = [
     accent: '#fb923c',
     tag: 'Performance Analytics',
     title: 'Know Exactly Where You Are Weak',
-    body: 'Confidence scores per topic derived from your actual submissions — not self-assessment. Weak areas, strong areas, error breakdown (Wrong Answer / Compile Error / TLE), and a mistake journal of every wrong submission you\'ve ever made.',
+    body: 'Confidence scores per topic derived from your actual submissions — not self-assessment. Weak areas, strong areas, error breakdown (Wrong Answer / Compile Error / TLE), and a mistake journal of every wrong submission.',
     stat: ['Real data from your submissions', null],
   },
   {
@@ -54,7 +54,7 @@ const FEATURES = [
     accent: '#38bdf8',
     tag: 'Algorithm Library',
     title: '70+ Algorithms with Story-Driven Theory',
-    body: 'Every algorithm has: a one-sentence analogy, a narrative story with a character, step-by-step walkthrough, Java code, complexity analysis, real-world use cases, common pitfalls, and a visualization blueprint. No dry definitions.',
+    body: 'Every algorithm has a one-sentence analogy, a narrative story, step-by-step walkthrough, Java code, complexity analysis, real-world use cases, common pitfalls, and a visualization blueprint. No dry definitions.',
     stat: ['18 categories', 'A01–A18 seed files'],
   },
   {
@@ -62,7 +62,7 @@ const FEATURES = [
     accent: '#f472b6',
     tag: 'Complexity Analyzer',
     title: 'Paste Java Code → Get Big-O Instantly',
-    body: 'Static analysis (not AI guessing) reads your code\'s loop structure, recursion depth, and sorting calls to give you time and space complexity with a confidence score. Green O(1) to red O(2ⁿ) — see which part of your code is the bottleneck.',
+    body: 'Static analysis reads your code\'s loop structure, recursion depth, and sorting calls to give you time and space complexity with a confidence score. Green O(1) to red O(2ⁿ) — see your bottleneck immediately.',
     stat: ['Real static analysis', 'HIGH / MEDIUM / LOW confidence'],
   },
   {
@@ -70,7 +70,7 @@ const FEATURES = [
     accent: '#f87171',
     tag: 'Habit Engine',
     title: 'Streak, XP, and Levels that Mean Something',
-    body: 'Daily streak tracks actual learning activity, not just logins. Earn pause days from long streaks to protect your count. XP flows from submissions and reviews. Level up from Beginner to Architect. GitHub-style heatmap shows your consistency.',
+    body: 'Daily streak tracks actual learning activity, not just logins. Earn pause days from long streaks to protect your count. XP flows from submissions and reviews. Level up from Beginner to Architect.',
     stat: ['Pause days protect your streak', 'Beginner → Architect levels'],
   },
   {
@@ -78,7 +78,7 @@ const FEATURES = [
     accent: '#34d399',
     tag: 'Interview Q&A',
     title: 'Curated Q&A Bank + Timed Revision',
-    body: 'Filter 500+ questions by category (Java, DSA, Spring, SQL, AWS) and difficulty. Each answer has key points and code examples. Revision Mode: pick categories, set a timer (10/20/30 min), reveal-and-rate each answer, get a scored report.',
+    body: 'Filter 500+ questions by category and difficulty. Each answer has key points and code examples. Revision Mode: pick categories, set a timer (10/20/30 min), reveal-and-rate each answer, get a scored report.',
     stat: ['Java · DSA · Spring · SQL · AWS', 'Reveal-and-rate format'],
   },
   {
@@ -86,7 +86,7 @@ const FEATURES = [
     accent: '#818cf8',
     tag: 'Mastery Map',
     title: 'See Your Entire Knowledge at a Glance',
-    body: 'A visual grid of every topic coloured by your gate stage. Grey = untouched, blue → amber → orange → green as you progress. Grouped by category with mastered/in-progress/not-started counts. One click to go directly to any topic.',
+    body: 'A visual grid of every topic coloured by your gate stage. Grey = untouched, blue → amber → orange → green as you progress. Grouped by category with per-category stats. One click to go to any topic.',
     stat: ['All topics in one view', null],
   },
 ];
@@ -95,7 +95,8 @@ const FEATURES = [
 function FeaturePanel() {
   const [active, setActive] = useState(0);
   const [animating, setAnimating] = useState(false);
-  const [direction, setDirection] = useState('next'); // 'next' | 'prev'
+  const [direction, setDirection] = useState('next');
+  const [paused, setPaused] = useState(false);
 
   const goTo = useCallback((idx, dir = 'next') => {
     if (animating) return;
@@ -110,8 +111,6 @@ function FeaturePanel() {
   const next = useCallback(() => goTo((active + 1) % FEATURES.length, 'next'), [active, goTo]);
   const prev = useCallback(() => goTo((active - 1 + FEATURES.length) % FEATURES.length, 'prev'), [active, goTo]);
 
-  // Auto-advance every 5 s, pause on hover
-  const [paused, setPaused] = useState(false);
   useEffect(() => {
     if (paused) return;
     const t = setTimeout(next, 5000);
@@ -123,65 +122,92 @@ function FeaturePanel() {
   return (
     <div
       className={styles.featurePanel}
+      style={{ '--card-accent': f.accent }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Top brand line */}
+      {/* Brand */}
       <div className={styles.fpBrand}>
         <span className={styles.fpBrandIcon}>⟨/⟩</span>
         <span className={styles.fpBrandName}>devlearn</span>
       </div>
 
-      {/* Card */}
-      <div
-        className={`${styles.fpCard} ${animating ? (direction === 'next' ? styles.exitLeft : styles.exitRight) : styles.enterActive}`}
-        style={{ '--card-accent': f.accent }}
-      >
-        <div className={styles.fpTag} style={{ color: f.accent, borderColor: f.accent + '44', background: f.accent + '12' }}>
-          {f.tag}
+      {/* Card — vertically centered */}
+      <div className={styles.fpContent}>
+        <div
+          className={`${styles.fpCard} ${
+            animating
+              ? direction === 'next' ? styles.exitLeft : styles.exitRight
+              : styles.enterActive
+          }`}
+        >
+          <div
+            className={styles.fpTag}
+            style={{ color: f.accent, borderColor: f.accent + '44', background: f.accent + '14' }}
+          >
+            {f.tag}
+          </div>
+          <div className={styles.fpIcon} style={{ color: f.accent }}>{f.icon}</div>
+          <h2 className={styles.fpTitle}>{f.title}</h2>
+          <p className={styles.fpBody}>{f.body}</p>
+          {(f.stat[0] || f.stat[1]) && (
+            <div className={styles.fpStats}>
+              {f.stat.filter(Boolean).map((s) => (
+                <span
+                  key={s}
+                  className={styles.fpStat}
+                  style={{ borderColor: f.accent + '33', color: f.accent, background: f.accent + '0e' }}
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-        <div className={styles.fpIcon} style={{ color: f.accent }}>{f.icon}</div>
-        <h2 className={styles.fpTitle}>{f.title}</h2>
-        <p className={styles.fpBody}>{f.body}</p>
-        {(f.stat[0] || f.stat[1]) && (
-          <div className={styles.fpStats}>
-            {f.stat.filter(Boolean).map((s) => (
-              <span key={s} className={styles.fpStat} style={{ borderColor: f.accent + '33', color: f.accent }}>
-                {s}
-              </span>
+      </div>
+
+      {/* Bottom: nav + progress */}
+      <div className={styles.fpFooter}>
+        <div className={styles.fpControls}>
+          <button className={styles.fpArrow} onClick={prev} aria-label="previous">‹</button>
+          <div className={styles.fpDots}>
+            {FEATURES.map((_, i) => (
+              <button
+                key={i}
+                className={`${styles.fpDot} ${i === active ? styles.fpDotActive : ''}`}
+                style={i === active ? { background: f.accent } : {}}
+                onClick={() => goTo(i, i > active ? 'next' : 'prev')}
+                aria-label={`Feature ${i + 1}`}
+              />
             ))}
+          </div>
+          <span className={styles.fpCounter}>{active + 1} / {FEATURES.length}</span>
+          <button className={styles.fpArrow} onClick={next} aria-label="next">›</button>
+        </div>
+
+        {!paused && (
+          <div className={styles.fpProgress}>
+            <div
+              key={active}
+              className={styles.fpProgressFill}
+              style={{ background: f.accent }}
+            />
           </div>
         )}
       </div>
-
-      {/* Controls */}
-      <div className={styles.fpControls}>
-        <button className={styles.fpArrow} onClick={prev} aria-label="previous">‹</button>
-        <div className={styles.fpDots}>
-          {FEATURES.map((_, i) => (
-            <button
-              key={i}
-              className={`${styles.fpDot} ${i === active ? styles.fpDotActive : ''}`}
-              style={i === active ? { background: f.accent } : {}}
-              onClick={() => goTo(i, i > active ? 'next' : 'prev')}
-              aria-label={`Go to feature ${i + 1}`}
-            />
-          ))}
-        </div>
-        <button className={styles.fpArrow} onClick={next} aria-label="next">›</button>
-      </div>
-
-      {/* Progress bar */}
-      {!paused && (
-        <div className={styles.fpProgress}>
-          <div
-            key={active}
-            className={styles.fpProgressFill}
-            style={{ '--fill-color': f.accent }}
-          />
-        </div>
-      )}
     </div>
+  );
+}
+
+// ── Google SVG ────────────────────────────────────────────────────────────────
+function GoogleSVG() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18">
+      <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+      <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"/>
+      <path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/>
+      <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/>
+    </svg>
   );
 }
 
@@ -264,124 +290,122 @@ export default function LoginPage() {
     } finally { setLoading(false); }
   }
 
-  const GoogleSVG = () => (
-    <svg width="18" height="18" viewBox="0 0 18 18">
-      <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
-      <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"/>
-      <path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/>
-      <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/>
-    </svg>
-  );
-
   return (
     <div className={styles.shell}>
-      <div className={styles.grid} />
+      {/* Left — feature showcase */}
+      <FeaturePanel />
 
-      <div className={styles.layout}>
-        {/* ── Left: feature flashcards ── */}
-        <FeaturePanel />
+      {/* Right — auth */}
+      <div className={styles.authPanel}>
+        <div className={styles.card}>
 
-        {/* ── Right: auth form ── */}
-        <div className={styles.authPanel}>
-          <div className={styles.card}>
-            {/* Logo — visible only on mobile (left panel hidden) */}
-            <div className={styles.mobileLogoWrap}>
-              <div className={styles.logoIcon}>⟨/⟩</div>
-              <div className={styles.logoText}>dev<span>learn</span></div>
-              <div className={styles.logoSub}>Master Java · DSA · System Design</div>
-            </div>
+          {/* Mobile logo — only shown when left panel is hidden */}
+          <div className={styles.mobileLogoWrap}>
+            <div className={styles.logoIcon}>⟨/⟩</div>
+            <div className={styles.logoText}>dev<span>learn</span></div>
+            <div className={styles.logoSub}>Master Java · DSA · System Design</div>
+          </div>
 
-            {/* Stats pills */}
-            <div className={styles.pills}>
-              {['300+ Topics', '1200+ Problems', 'Live Code Judge', 'SM-2 Reviews'].map((p) => (
-                <span key={p} className={styles.pill}>{p}</span>
-              ))}
-            </div>
+          {/* Auth heading */}
+          <h1 className={styles.authHeading}>
+            {tab === 'login' ? 'Welcome back' : 'Get started free'}
+          </h1>
+          <p className={styles.authSub}>
+            {tab === 'login'
+              ? 'Sign in to continue your prep'
+              : 'Create your account to start learning'}
+          </p>
 
-            {/* Tabs */}
-            <div className={styles.tabs}>
-              <button
-                className={`${styles.tabBtn} ${tab === 'login' ? styles.active : ''}`}
-                onClick={() => setTab('login')}
-              >Sign In</button>
-              <button
-                className={`${styles.tabBtn} ${tab === 'register' ? styles.active : ''}`}
-                onClick={() => setTab('register')}
-              >Create Account</button>
-            </div>
+          {/* Tabs */}
+          <div className={styles.tabs}>
+            <button
+              className={`${styles.tabBtn} ${tab === 'login' ? styles.active : ''}`}
+              onClick={() => setTab('login')}
+            >Sign In</button>
+            <button
+              className={`${styles.tabBtn} ${tab === 'register' ? styles.active : ''}`}
+              onClick={() => setTab('register')}
+            >Create Account</button>
+          </div>
 
-            {/* Login form */}
-            {tab === 'login' && (
-              <form className={styles.form} onSubmit={handleLogin}>
-                <a href={GOOGLE_OAUTH_URL} className={styles.googleBtn}>
-                  <GoogleSVG />
-                  Continue with Google
-                </a>
-                <div className={styles.divider}><span>or sign in with email</span></div>
-                <div className={styles.field}>
-                  <label>Email</label>
-                  <input type="email" className="input" placeholder="you@example.com"
-                    value={form.email} onChange={set('email')}
-                    onKeyDown={(e) => e.key === 'Enter' && handleLogin(e)}
-                    autoComplete="email" />
-                </div>
-                <div className={styles.field}>
-                  <label>Password</label>
-                  <input type="password" className="input" placeholder="Enter your password"
-                    value={form.password} onChange={set('password')}
-                    onKeyDown={(e) => e.key === 'Enter' && handleLogin(e)}
-                    autoComplete="current-password" />
-                </div>
-                <button type="submit" className={`btn btn-primary ${styles.submitBtn}`} disabled={loading}>
-                  {loading ? <><span className="spinner" />Signing in…</> : 'Sign In →'}
-                </button>
-              </form>
-            )}
+          {/* Stat pills */}
+          <div className={styles.pills}>
+            {['300+ Topics', '1200+ Problems', 'Live Code Judge', 'SM-2 Reviews'].map((p) => (
+              <span key={p} className={styles.pill}>{p}</span>
+            ))}
+          </div>
 
-            {/* Register form */}
-            {tab === 'register' && (
-              <form className={styles.form} onSubmit={handleRegister}>
-                <a href={GOOGLE_OAUTH_URL} className={styles.googleBtn}>
-                  <GoogleSVG />
-                  Sign up with Google
-                </a>
-                <div className={styles.divider}><span>or create with email</span></div>
-                <div className={styles.field}>
-                  <label>Full Name</label>
-                  <input type="text" className="input" placeholder="Your name"
-                    value={form.name} onChange={set('name')} autoComplete="name" />
-                </div>
-                <div className={styles.field}>
-                  <label>Email</label>
-                  <input type="email" className="input" placeholder="you@example.com"
-                    value={form.email} onChange={set('email')} autoComplete="email" />
-                </div>
-                <div className={styles.field}>
-                  <label>Password</label>
-                  <input type="password" className="input" placeholder="At least 6 characters"
-                    value={form.password} onChange={set('password')}
-                    autoComplete="new-password" />
-                  {form.password && (
-                    <div className={styles.strength}>
-                      <div className={styles.strengthBar} data-level={
-                        form.password.length < 6 ? 'weak'
-                        : form.password.length >= 8 && /[A-Z]/.test(form.password) && /\d/.test(form.password)
-                          ? 'strong' : 'medium'
-                      } />
-                    </div>
-                  )}
-                </div>
-                <button type="submit" className={`btn btn-primary ${styles.submitBtn}`} disabled={loading}>
-                  {loading ? <><span className="spinner" />Creating account…</> : 'Create Account →'}
-                </button>
-              </form>
-            )}
+          {/* Login form */}
+          {tab === 'login' && (
+            <form className={styles.form} onSubmit={handleLogin}>
+              <a href={GOOGLE_OAUTH_URL} className={styles.googleBtn}>
+                <GoogleSVG />
+                Continue with Google
+              </a>
+              <div className={styles.divider}><span>or sign in with email</span></div>
+              <div className={styles.field}>
+                <label>Email</label>
+                <input type="email" className="input" placeholder="you@example.com"
+                  value={form.email} onChange={set('email')}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLogin(e)}
+                  autoComplete="email" />
+              </div>
+              <div className={styles.field}>
+                <label>Password</label>
+                <input type="password" className="input" placeholder="Enter your password"
+                  value={form.password} onChange={set('password')}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLogin(e)}
+                  autoComplete="current-password" />
+              </div>
+              <button type="submit" className={`btn btn-primary ${styles.submitBtn}`} disabled={loading}>
+                {loading ? <><span className="spinner" />Signing in…</> : 'Sign In →'}
+              </button>
+            </form>
+          )}
 
-            <div className={styles.footer}>
-              <a href="/">← Back to app</a>
-              <span>·</span>
-              <span>By signing in you agree to learn a lot</span>
-            </div>
+          {/* Register form */}
+          {tab === 'register' && (
+            <form className={styles.form} onSubmit={handleRegister}>
+              <a href={GOOGLE_OAUTH_URL} className={styles.googleBtn}>
+                <GoogleSVG />
+                Sign up with Google
+              </a>
+              <div className={styles.divider}><span>or create with email</span></div>
+              <div className={styles.field}>
+                <label>Full Name</label>
+                <input type="text" className="input" placeholder="Your name"
+                  value={form.name} onChange={set('name')} autoComplete="name" />
+              </div>
+              <div className={styles.field}>
+                <label>Email</label>
+                <input type="email" className="input" placeholder="you@example.com"
+                  value={form.email} onChange={set('email')} autoComplete="email" />
+              </div>
+              <div className={styles.field}>
+                <label>Password</label>
+                <input type="password" className="input" placeholder="At least 6 characters"
+                  value={form.password} onChange={set('password')}
+                  autoComplete="new-password" />
+                {form.password && (
+                  <div className={styles.strength}>
+                    <div className={styles.strengthBar} data-level={
+                      form.password.length < 6 ? 'weak'
+                      : form.password.length >= 8 && /[A-Z]/.test(form.password) && /\d/.test(form.password)
+                        ? 'strong' : 'medium'
+                    } />
+                  </div>
+                )}
+              </div>
+              <button type="submit" className={`btn btn-primary ${styles.submitBtn}`} disabled={loading}>
+                {loading ? <><span className="spinner" />Creating account…</> : 'Create Account →'}
+              </button>
+            </form>
+          )}
+
+          <div className={styles.footer}>
+            <a href="/">← Back to app</a>
+            <span>·</span>
+            <span>No spam, ever</span>
           </div>
         </div>
       </div>
