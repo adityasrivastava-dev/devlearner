@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { algorithmsApi } from '../../api';
 import FlowchartViewer from '../../components/editor/FlowchartViewer';
 import AlgorithmVisualizer from './AlgorithmVisualizer';
 import VisualizationPlan from './VisualizationPlan';
@@ -339,20 +340,13 @@ export default function AlgorithmsPage() {
 
   // Fetch all algorithms from backend on mount
   useEffect(() => {
-    const token = localStorage.getItem('devlearn_token');
-    fetch('/api/algorithms', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
+    algorithmsApi.getAll()
       .then(data => {
         setAllAlgorithms(data);
         setLoading(false);
       })
       .catch(e => {
-        setError(e.message);
+        setError(e?.response?.data?.message || e?.message || 'Failed to load algorithms');
         setLoading(false);
       });
   }, []);
@@ -397,11 +391,7 @@ export default function AlgorithmsPage() {
 
   const handleCardClick = (summaryAlgo) => {
     setDetailLoading(true);
-    const token = localStorage.getItem('devlearn_token');
-    fetch(`/api/algorithms/${encodeURIComponent(summaryAlgo.slug)}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    algorithmsApi.getBySlug(summaryAlgo.slug)
       .then(full => { setSelected(full); setDetailLoading(false); })
       .catch(() => { setSelected(summaryAlgo); setDetailLoading(false); });
   };

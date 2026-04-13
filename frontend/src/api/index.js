@@ -262,6 +262,15 @@ export const algorithmAdminApi = {
     http.delete('/api/algorithms/admin/all').then(r => r.data),
 };
 
+// ─── Algorithms ───────────────────────────────────────────────────────────────
+export const algorithmsApi = {
+  getAll: () =>
+    http.get('/api/algorithms').then((r) => r.data),
+
+  getBySlug: (slug) =>
+    http.get(`/api/algorithms/${encodeURIComponent(slug)}`).then((r) => r.data),
+};
+
 // ─── Live Debugger ────────────────────────────────────────────────────────────
 export const debugApi = {
   // POST /api/debug — step-by-step variable trace for Java code
