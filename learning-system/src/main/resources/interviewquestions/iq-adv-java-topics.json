@@ -6,7 +6,15 @@
     "quickAnswer": "Singleton ensures only one instance exists. The simple lazy-init approach is NOT thread-safe — two threads can pass the null check simultaneously. Fix with: double-checked locking (volatile + synchronized), static inner class (Bill Pugh idiom — JVM class loading guarantees safety), or enum (Josh Bloch recommendation — simplest and serialization-safe).",
     "difficulty": "HIGH",
     "keyPoints": "Eager init: static field initialized at class load — thread-safe, no lazy\nLazy + synchronized method: safe but slow (lock every call)\nDouble-checked locking: volatile field + synchronized block — fast after init\nBill Pugh (static inner class): lazy + thread-safe with no explicit sync\nEnum Singleton: serialization-safe, reflection-safe, simplest (Effective Java rec)",
-    "codeExample": "// Bill Pugh Singleton\npublic class Singleton {\n    private Singleton() {}\n    private static class Holder {\n        static final Singleton INSTANCE = new Singleton();\n    }\n    public static Singleton getInstance() { return Holder.INSTANCE; }\n}"
+    "codeExample": "// Bill Pugh Singleton\npublic class Singleton {\n    private Singleton() {}\n    private static class Holder {\n        static final Singleton INSTANCE = new Singleton();\n    }\n    public static Singleton getInstance() { return Holder.INSTANCE; }\n}",
+    "followUpQuestions": ["How would you break a Singleton using reflection and how do you prevent it?", "What is the difference between eager and lazy Singleton initialization?", "Why does the enum Singleton solve serialization issues?", "When is Singleton an anti-pattern?"],
+    "spokenAnswer": "Singleton ensures only one instance of a class exists throughout the application lifecycle. The naive lazy implementation fails under concurrency — two threads can both see null and create separate instances. The cleanest solutions are the Bill Pugh static inner class idiom, which leverages JVM class loading guarantees, or an enum, which handles serialization and reflection attacks automatically. Double-checked locking also works if the field is marked volatile.",
+    "commonMistakes": "Not marking the field volatile in double-checked locking — CPU reordering can cause a partially initialized object to be published. Using synchronized on the entire getInstance() method — correct but creates a bottleneck on every call. Forgetting that Singleton breaks under serialization unless you implement readResolve().",
+    "companiesAskThis": ["Amazon", "Google", "Microsoft", "Meta"],
+    "seniorExpectation": "A senior candidate knows that Singleton is often an anti-pattern for testability — it creates hidden global state that's hard to mock. They'd recommend dependency injection (Spring beans are singletons by default in the IoC container) over manual Singleton implementations. They'd also discuss Singleton per ClassLoader issues in multi-module apps.",
+    "timeToAnswer": "90s",
+    "relatedTopics": ["Design Patterns in Java", "Locks & Concurrency Utilities — ReentrantLock, ReadWriteLock, Semaphore"],
+    "tags": ["singleton", "thread-safety", "design-patterns", "concurrency", "creational"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -15,7 +23,15 @@
     "quickAnswer": "Factory Method defines an interface for creating one product — subclasses decide the concrete type. Abstract Factory groups related factories: it produces families of related objects without specifying their concrete classes. Factory Method is for one product; Abstract Factory is for a family of related products (e.g., UI widgets: Button + Checkbox for Windows vs Mac).",
     "difficulty": "HIGH",
     "keyPoints": "Factory Method: one product, subclass overrides createProduct()\nAbstract Factory: family of related products, factory per platform/theme\nFactory Method uses inheritance; Abstract Factory uses composition\nExample: Abstract Factory for DB access — MySQLFactory vs PostgreSQLFactory, each creates Connection + Statement + ResultSet\nOpen-Closed: adding new product type = new Factory, no existing code change",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["How does the Factory pattern compare to dependency injection?", "Can you give a real-world example from the Java standard library?", "What is the Simple Factory and why isn't it a real GoF pattern?"],
+    "spokenAnswer": "Factory Method lets subclasses decide which class to instantiate — you call createProduct() and the subclass returns the concrete type. Abstract Factory goes one level higher: it groups factories that produce families of related objects. The classic example is a UI toolkit — you have a WindowsFactory that returns a Windows Button and Windows Checkbox, and a MacFactory returning Mac equivalents. The client code works only through the abstract factory interface and never knows the concrete types.",
+    "commonMistakes": "Confusing Factory Method (one product, subclass decides) with Simple Factory (a static method switch statement, not a GoF pattern). Not knowing that Abstract Factory uses composition — the factory is injected, not subclassed. Forgetting that both patterns follow the Open-Closed principle.",
+    "companiesAskThis": ["Amazon", "Google", "Microsoft"],
+    "seniorExpectation": "A senior candidate connects this to Spring's BeanFactory and ApplicationContext — these are applications of Abstract Factory in a DI container context. They'd also mention that DI frameworks largely replace manual factory implementations in modern Java.",
+    "timeToAnswer": "90s",
+    "relatedTopics": ["Design Patterns in Java"],
+    "tags": ["factory", "abstract-factory", "design-patterns", "creational", "open-closed"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -24,7 +40,15 @@
     "quickAnswer": "Observer (Publish-Subscribe) defines a one-to-many dependency: when the subject (publisher) changes state, all observers (subscribers) are notified. Java's EventListener, PropertyChangeListener, and Spring's ApplicationEventPublisher are implementations. Modern approach: use message queues or reactive streams for decoupled async event-driven systems.",
     "difficulty": "MEDIUM",
     "keyPoints": "Subject: maintains list of observers; notifyAll() on state change\nObserver: update() method called by subject\nLoose coupling: subject doesn't know observer types\nMemory leak risk: unregistered observers kept in list — use WeakReference\nJava built-in: java.util.Observable (deprecated) and EventListener\nModern: Spring Events (@EventListener), RxJava, Reactor",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["What is the difference between Observer and Event-driven architecture?", "How does Spring's @EventListener implement the Observer pattern?", "What memory leak can the Observer pattern cause and how do you prevent it?"],
+    "spokenAnswer": "Observer is a one-to-many relationship where multiple subscribers react to changes in a single publisher. It's the backbone of event-driven programming. In Java, it appears as EventListener, PropertyChangeListener, and Spring's @EventListener. The key benefit is loose coupling — the subject fires events without knowing who's listening. The gotcha is memory leaks: if observers aren't unregistered, the subject holds references preventing GC.",
+    "commonMistakes": "Forgetting to unregister observers — causes memory leaks as the subject keeps a strong reference. Not handling thread-safety when observers are called from multiple threads. Confusing Observer (in-process, synchronous) with message queues (cross-process, async).",
+    "companiesAskThis": ["Amazon", "Google", "Netflix"],
+    "seniorExpectation": "A senior candidate discusses reactive programming (RxJava, Project Reactor) as the modern evolution of Observer — with backpressure support and composable operators. They'd also connect it to event sourcing architecture where state changes are published as immutable events.",
+    "timeToAnswer": "60s",
+    "relatedTopics": ["Design Patterns in Java", "CompletableFuture & Async Programming"],
+    "tags": ["observer", "events", "design-patterns", "behavioral", "pub-sub"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -33,7 +57,15 @@
     "quickAnswer": "Telescoping constructors require overloads for every combination of optional parameters — unreadable and error-prone. Builder uses a fluent API to set only needed fields then call build(). Benefits: readable, optional parameters, immutable result, can validate in build(). Lombok's @Builder generates this automatically.",
     "difficulty": "MEDIUM",
     "keyPoints": "Telescoping: combinatorial constructor explosion, easy to mix up parameter order\nBuilder: fluent chain — Person.builder().name(\"A\").age(25).build()\nImmutability: build() creates final immutable object\nValidation: build() can check required fields before creating object\nLombok @Builder: annotation-generated, zero boilerplate\nRequiredArgsConstructor: for truly required fields; optional go in builder",
-    "codeExample": "User user = User.builder()\n    .username(\"aditya\")\n    .email(\"a@b.com\")\n    .role(\"ADMIN\")\n    .build();"
+    "codeExample": "User user = User.builder()\n    .username(\"aditya\")\n    .email(\"a@b.com\")\n    .role(\"ADMIN\")\n    .build();",
+    "followUpQuestions": ["How does Lombok's @Builder work under the hood?", "How do you enforce required fields in a Builder?", "When would you use Builder vs a factory method?"],
+    "spokenAnswer": "Builder solves the problem of constructors with too many parameters — especially optional ones. Instead of ten overloaded constructors, you get a fluent chain where you set only what you need and call build() at the end. The build() method is also your validation point — you can throw IllegalStateException if required fields are missing. Lombok's @Builder eliminates even the boilerplate of writing the builder class.",
+    "commonMistakes": "Making the builder fields mutable after build() — defeats the immutability purpose. Not validating in build() — allows partially-constructed objects. Confusing @Builder with @Data in Lombok — @Builder doesn't auto-generate getters/setters.",
+    "companiesAskThis": ["Amazon", "Google", "Microsoft", "Flipkart"],
+    "seniorExpectation": "A senior candidate mentions Effective Java Item 2, discusses the Step Builder pattern for enforcing required fields at compile time, and notes that Spring's ResponseEntity, UriComponentsBuilder, and RestTemplate use this pattern extensively.",
+    "timeToAnswer": "60s",
+    "relatedTopics": ["Design Patterns in Java"],
+    "tags": ["builder", "design-patterns", "lombok", "creational", "immutability"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -42,7 +74,15 @@
     "quickAnswer": "Strategy defines a family of interchangeable algorithms — the client chooses which strategy object to use at runtime (composition). Template Method defines the skeleton of an algorithm in a base class, with steps that subclasses override (inheritance). Strategy changes the whole algorithm; Template Method changes steps within an algorithm.",
     "difficulty": "HIGH",
     "keyPoints": "Strategy: composition — inject the algorithm object; swap at runtime\nTemplate Method: inheritance — subclass overrides specific steps\nStrategy: more flexible, easier to test (inject mock strategy)\nTemplate Method: tighter coupling — subclass depends on base class\nJava example: Comparator = Strategy; AbstractList = Template Method\nPrefer composition over inheritance → Strategy is often preferred",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["How does Java's Comparator interface implement the Strategy pattern?", "When would you prefer Template Method over Strategy?", "How does Strategy enable the Open-Closed Principle?"],
+    "spokenAnswer": "Strategy and Template Method both manage algorithmic variation, but they do it differently. Strategy uses composition — you inject the algorithm as an object, and can swap it at runtime. Template Method uses inheritance — the base class defines the skeleton and subclasses fill in specific steps. Strategy is more flexible and testable; Template Method can reduce code duplication. Java's Comparator is the textbook Strategy example.",
+    "commonMistakes": "Using Template Method when Strategy would give better testability — inheritance creates tight coupling. Not knowing that lambda functions in Java 8+ can replace Strategy objects — Comparator is a functional interface. Confusing Strategy (whole algorithm swappable) with Decorator (wraps and extends behavior).",
+    "companiesAskThis": ["Amazon", "Google", "Microsoft"],
+    "seniorExpectation": "A senior candidate prefers Strategy over Template Method citing 'favor composition over inheritance' (GoF principle). They'd note that Spring Security's AuthenticationManager with multiple AuthenticationProvider implementations is Strategy pattern, and that Java's sort() with Comparator is a classic example.",
+    "timeToAnswer": "90s",
+    "relatedTopics": ["Design Patterns in Java"],
+    "tags": ["strategy", "template-method", "design-patterns", "behavioral", "composition-vs-inheritance"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -51,7 +91,15 @@
     "quickAnswer": "thenApply() maps the result with a Function<T,U> — it wraps the result. If you pass a function that returns a CompletableFuture<U>, you get CompletableFuture<CompletableFuture<U>> (nested). thenCompose() is like flatMap — it unwraps the inner future, giving CompletableFuture<U>. Use thenCompose() when the next step is itself async.",
     "difficulty": "HIGH",
     "keyPoints": "thenApply: T → U (sync transformation), like Stream.map()\nthenCompose: T → CompletableFuture<U> (async chain), like Stream.flatMap()\nNested future: thenApply with async function = CompletableFuture<CompletableFuture<U>>\nthenCompose flattens: use when next step calls another async service\nthenApplyAsync: run transformation on different thread pool",
-    "codeExample": "// Chaining two async calls correctly\nCompletableFuture<Order> future = fetchUserId()\n    .thenCompose(userId -> fetchOrder(userId)); // NOT thenApply"
+    "codeExample": "// Chaining two async calls correctly\nCompletableFuture<Order> future = fetchUserId()\n    .thenCompose(userId -> fetchOrder(userId)); // NOT thenApply",
+    "followUpQuestions": ["What is the difference between thenApplyAsync and thenApply?", "How does CompletableFuture.allOf() work and what are its limitations?", "How would you implement a timeout for a CompletableFuture?"],
+    "spokenAnswer": "Think of thenApply as map and thenCompose as flatMap from streams. If your transformation returns a plain value, use thenApply. If the next step is itself an async operation — like calling another service — that function returns a CompletableFuture. Using thenApply there would give you CompletableFuture inside CompletableFuture — a nightmare. thenCompose flattens it, giving you the inner result directly.",
+    "commonMistakes": "Using thenApply when the function returns a CompletableFuture — results in nested futures that are hard to work with. Not using thenApplyAsync when the transformation is CPU-intensive — it runs on the calling thread by default. Blocking with get() or join() inside a future chain — defeats async purpose.",
+    "companiesAskThis": ["Amazon", "Google", "Netflix", "Uber"],
+    "seniorExpectation": "A senior candidate draws the parallel to Stream.map() vs Stream.flatMap() clearly. They'd discuss thread pool selection for thenApplyAsync vs thenComposeAsync, and mention that Spring's WebClient and reactive programming (Mono.map vs Mono.flatMap) follow the same pattern.",
+    "timeToAnswer": "90s",
+    "relatedTopics": ["CompletableFuture & Async Programming", "Locks & Concurrency Utilities — ReentrantLock, ReadWriteLock, Semaphore"],
+    "tags": ["completablefuture", "async", "thenCompose", "flatMap", "concurrency"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -60,7 +108,15 @@
     "quickAnswer": "Use CompletableFuture.allOf(f1, f2, f3) which returns a CompletableFuture<Void> that completes when all futures complete. To collect results, since allOf returns Void, call f.join() on each individual future after allOf completes. CompletableFuture.anyOf() completes when the FIRST one finishes.",
     "difficulty": "HIGH",
     "keyPoints": "allOf(f1, f2, ...): waits for ALL futures to complete; returns Void\nanyOf(f1, f2, ...): completes when FIRST finishes\nCollect results: allOf(...).thenApply(v -> Stream.of(f1,f2).map(CompletableFuture::join).collect(toList()))\njoin() vs get(): join wraps checked exceptions in CompletionException; get() throws checked\nTimeout: orTimeout(5, SECONDS) or completeOnTimeout(default, 5, SECONDS)",
-    "codeExample": "CompletableFuture<String> f1 = fetchA();\nCompletableFuture<String> f2 = fetchB();\nCompletableFuture.allOf(f1, f2).thenRun(() -> {\n    System.out.println(f1.join() + \" \" + f2.join());\n});"
+    "codeExample": "CompletableFuture<String> f1 = fetchA();\nCompletableFuture<String> f2 = fetchB();\nCompletableFuture.allOf(f1, f2).thenRun(() -> {\n    System.out.println(f1.join() + \" \" + f2.join());\n});",
+    "followUpQuestions": ["Why does allOf() return CompletableFuture<Void> and how do you get results?", "What is the difference between join() and get()?", "How do you handle partial failures when using allOf()?"],
+    "spokenAnswer": "allOf() fires all futures in parallel and returns a new future that completes only when all are done. The catch: it returns Void, so you can't get results from allOf itself — you call join() on each original future after allOf completes. anyOf() is the opposite — it completes as soon as the fastest future finishes. For timeouts, orTimeout() cancels the future if it doesn't complete in time.",
+    "commonMistakes": "Calling join() on individual futures before allOf() completes — that's sequential, not parallel. Forgetting that allOf() propagates the first exception — if f1 fails, allOf fails, and f2's result is ignored. Not using a custom executor — all futures share ForkJoinPool.commonPool() by default.",
+    "companiesAskThis": ["Amazon", "Google", "Netflix", "LinkedIn"],
+    "seniorExpectation": "A senior candidate handles partial failure scenarios — what if 3 of 5 futures fail? They'd use whenComplete on each to collect successes and failures separately. They'd also mention CompletableFuture's inability to cancel via interrupt and prefer Structured Concurrency (Java 21+) for cleaner cancellation semantics.",
+    "timeToAnswer": "90s",
+    "relatedTopics": ["CompletableFuture & Async Programming"],
+    "tags": ["completablefuture", "allOf", "parallel", "async", "concurrency"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -69,7 +125,15 @@
     "quickAnswer": "Use exceptionally(fn) to recover from errors — it runs only on exception, returning a fallback value. Use handle(fn) to handle both success and failure in one callback. whenComplete is similar to handle but can't change the result. Unhandled exceptions are stored in the CompletableFuture and rethrown when you call get()/join().",
     "difficulty": "HIGH",
     "keyPoints": "exceptionally(ex -> fallback): recovery — only runs on exception\nhandle((result, ex) -> ...): handles both — always runs\nwhenComplete((result, ex) -> ...): always runs, can't change result (side effect)\nException propagation: uncaught exception stored, thrown on get()/join()\nExceptionHandler chains: each stage can have its own handler\nCompletionException: wrapper for checked exceptions in join()",
-    "codeExample": "fetchData()\n    .exceptionally(ex -> \"default\")\n    .thenAccept(System.out::println);"
+    "codeExample": "fetchData()\n    .exceptionally(ex -> \"default\")\n    .thenAccept(System.out::println);",
+    "followUpQuestions": ["What is the difference between handle() and exceptionally()?", "How does exception propagation work across multiple chained stages?", "How do you propagate a custom exception type through a CompletableFuture chain?"],
+    "spokenAnswer": "Exception handling in CompletableFuture has three mechanisms. exceptionally() is for recovery — it only triggers on failure and lets you return a fallback. handle() always runs, giving you both the result and the exception — use it when you need to do different things based on success vs failure. whenComplete() is for side effects like logging — it can't modify the result. Without any handler, exceptions silently swallow until you call get() or join().",
+    "commonMistakes": "Forgetting that exceptions in a CompletableFuture stage silently disappear unless you have a terminal operation calling get() or join(). Wrapping checked exceptions in CompletionException inside exceptionally() unnecessarily. Using whenComplete() expecting to be able to change the result — it's side-effect only.",
+    "companiesAskThis": ["Amazon", "Netflix", "Uber"],
+    "seniorExpectation": "A senior candidate writes bullet-proof async chains: logging in whenComplete, recovery in exceptionally, and proper exception type preservation. They'd discuss how Spring's @Async methods wrap exceptions in ExecutionException and how to extract root causes.",
+    "timeToAnswer": "90s",
+    "relatedTopics": ["CompletableFuture & Async Programming"],
+    "tags": ["completablefuture", "exception-handling", "async", "exceptionally", "handle"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -78,7 +142,15 @@
     "quickAnswer": "CompletableFuture.supplyAsync() uses ForkJoinPool.commonPool() by default — a shared JVM-wide pool sized to CPU cores - 1. This means: all async work across the app competes for the same threads, and blocking I/O in a task can starve other tasks. For I/O-bound tasks, always supply a custom ExecutorService (e.g., newCachedThreadPool()).",
     "difficulty": "HIGH",
     "keyPoints": "Default pool: ForkJoinPool.commonPool() — shared, CPU-core sized\nCPU-bound tasks: common pool is fine\nI/O-bound tasks: blocking in common pool starves other work — use custom executor\nCustom pool: CompletableFuture.supplyAsync(task, myExecutor)\nVirtual threads (Java 21): Executors.newVirtualThreadPerTaskExecutor() for I/O-heavy async",
-    "codeExample": "ExecutorService ioPool = Executors.newCachedThreadPool();\nCompletableFuture.supplyAsync(() -> callDatabase(), ioPool);"
+    "codeExample": "ExecutorService ioPool = Executors.newCachedThreadPool();\nCompletableFuture.supplyAsync(() -> callDatabase(), ioPool);",
+    "followUpQuestions": ["What is ForkJoinPool and how does work-stealing work?", "How would you configure thread pools for a microservice with both CPU and I/O tasks?", "What are virtual threads in Java 21 and how do they change async programming?"],
+    "spokenAnswer": "By default, CompletableFuture uses ForkJoinPool.commonPool — a shared, CPU-sized pool. This is fine for CPU-bound tasks, but if you do blocking I/O in there, you can starve the pool and freeze unrelated tasks. The fix is always to provide a dedicated ExecutorService for I/O-bound operations. In Java 21, virtual threads change the game — you can block freely without pinning platform threads, making the custom executor concern mostly disappear.",
+    "commonMistakes": "Doing blocking JDBC or HTTP calls in the default ForkJoinPool — starves CPU tasks. Creating a new thread pool per request rather than sharing one. Using an unbounded cached thread pool for CPU tasks — more threads than cores creates context-switching overhead.",
+    "companiesAskThis": ["Amazon", "Google", "Netflix"],
+    "seniorExpectation": "A senior candidate discusses thread pool sizing (CPU: cores, I/O: depends on wait time), work stealing in ForkJoinPool, and how virtual threads (Project Loom) make explicit async programming less necessary for I/O-bound tasks.",
+    "timeToAnswer": "90s",
+    "relatedTopics": ["CompletableFuture & Async Programming", "Locks & Concurrency Utilities — ReentrantLock, ReadWriteLock, Semaphore"],
+    "tags": ["completablefuture", "thread-pool", "forkjoinpool", "concurrency", "virtual-threads"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -87,7 +159,15 @@
     "quickAnswer": "synchronized is simpler — automatic lock/unlock, no timeout, no fairness control, no interruptibility. ReentrantLock provides: tryLock() with timeout, interruptible lock acquisition, fair mode (prevents starvation), Condition variables for fine-grained wait/notify. ReentrantLock must be manually unlocked in finally — failure to do so causes deadlock.",
     "difficulty": "HIGH",
     "keyPoints": "synchronized: simple, JVM managed, no timeout, not interruptible\nReentrantLock: tryLock(timeout), lockInterruptibly(), fair constructor\nReentrant: same thread can acquire the lock it already holds (both)\nCondition: lock.newCondition() — finer-grained than wait/notify\nMust unlock in finally: lock.lock(); try { ... } finally { lock.unlock(); }\nFairness: new ReentrantLock(true) — threads served in order; slower",
-    "codeExample": "ReentrantLock lock = new ReentrantLock();\nlock.lock();\ntry {\n    // critical section\n} finally {\n    lock.unlock();\n}"
+    "codeExample": "ReentrantLock lock = new ReentrantLock();\nlock.lock();\ntry {\n    // critical section\n} finally {\n    lock.unlock();\n}",
+    "followUpQuestions": ["What is thread starvation and how does fair locking prevent it?", "How do Condition variables work compared to wait/notify?", "What is a reentrant lock and why does it matter?"],
+    "spokenAnswer": "synchronized is the simple option — the JVM manages locking automatically and you can't forget to unlock. ReentrantLock gives you control: tryLock with a timeout so threads don't wait forever, lockInterruptibly so you can cancel waiting threads, and fair mode to prevent starvation. The tradeoff is that you must manually unlock in a finally block — forget it once and you have a deadlock. Condition variables on ReentrantLock replace the coarse wait/notify with per-condition queues.",
+    "commonMistakes": "Not wrapping lock.unlock() in finally — any exception between lock() and unlock() leaves the lock permanently held. Using fair locking unnecessarily — it's significantly slower. Calling lock.unlock() without holding the lock — throws IllegalMonitorStateException.",
+    "companiesAskThis": ["Amazon", "Google", "Microsoft", "Netflix"],
+    "seniorExpectation": "A senior candidate discusses when to prefer synchronized (simple cases, JVM can optimize with biased locking) vs ReentrantLock (need timeout, condition variables, or fairness). They'd mention StampedLock as an even faster alternative for read-heavy scenarios with optimistic reads.",
+    "timeToAnswer": "90s",
+    "relatedTopics": ["Locks & Concurrency Utilities — ReentrantLock, ReadWriteLock, Semaphore", "CompletableFuture & Async Programming"],
+    "tags": ["reentrantlock", "synchronized", "concurrency", "locks", "thread-safety"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -96,7 +176,15 @@
     "quickAnswer": "ReadWriteLock allows multiple concurrent readers but only one writer at a time (exclusive). If no writer holds the lock, any number of readers can proceed concurrently. When a writer needs access, it waits for all readers to finish, then takes exclusive ownership. Use it for read-heavy, write-rare data structures like caches.",
     "difficulty": "HIGH",
     "keyPoints": "ReadLock: shared — multiple threads can hold simultaneously\nWriteLock: exclusive — only one thread, blocks all readers and writers\nUse case: cache with frequent reads, rare writes\nReentrantReadWriteLock: standard Java implementation\nWriter starvation: if constant readers, writer may wait forever — use fair mode\nStampedLock (Java 8): optimistic read — faster for read-heavy workloads",
-    "codeExample": "ReadWriteLock rwl = new ReentrantReadWriteLock();\n// Reading:\nrwl.readLock().lock(); try { return cache.get(k); } finally { rwl.readLock().unlock(); }\n// Writing:\nrwl.writeLock().lock(); try { cache.put(k, v); } finally { rwl.writeLock().unlock(); }"
+    "codeExample": "ReadWriteLock rwl = new ReentrantReadWriteLock();\n// Reading:\nrwl.readLock().lock(); try { return cache.get(k); } finally { rwl.readLock().unlock(); }\n// Writing:\nrwl.writeLock().lock(); try { cache.put(k, v); } finally { rwl.writeLock().unlock(); }",
+    "followUpQuestions": ["What is writer starvation and how do you prevent it in ReadWriteLock?", "How does StampedLock differ from ReadWriteLock?", "When would ConcurrentHashMap be better than ReadWriteLock on a HashMap?"],
+    "spokenAnswer": "ReadWriteLock is perfect when reads far outnumber writes. Multiple readers can proceed in parallel — none of them block each other. But when a write comes in, it waits for all readers to finish, then holds the lock exclusively. The concern is writer starvation: in a system with constant reads, the writer might never get a chance. Fair mode helps but adds overhead. For a cache that's read 100 times for every write, ReadWriteLock can significantly improve throughput.",
+    "commonMistakes": "Forgetting to unlock in finally blocks — both readLock and writeLock need their own finally. Not considering ConcurrentHashMap as a simpler alternative — it provides segment-level locking without manual management. Using ReadWriteLock for high-write scenarios — it adds overhead without benefit.",
+    "companiesAskThis": ["Amazon", "Google", "Netflix"],
+    "seniorExpectation": "A senior candidate benchmarks before choosing — ConcurrentHashMap is often faster than ReadWriteLock + HashMap due to CAS operations. They'd discuss StampedLock's optimistic reads (tryOptimisticRead + validate) for the lowest-overhead read path, and note that Java 21's virtual threads change the calculus for I/O-bound concurrent scenarios.",
+    "timeToAnswer": "90s",
+    "relatedTopics": ["Locks & Concurrency Utilities — ReentrantLock, ReadWriteLock, Semaphore"],
+    "tags": ["readwritelock", "concurrency", "locks", "cache", "performance"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -105,7 +193,15 @@
     "quickAnswer": "Semaphore maintains a count of permits. acquire() decrements the count (blocks if 0); release() increments it. Use cases: rate limiting (allow N concurrent DB connections), connection pool management, and limiting concurrent access to a resource. A binary semaphore (1 permit) behaves like a mutex but is not reentrant.",
     "difficulty": "MEDIUM",
     "keyPoints": "Semaphore(n): n permits; acquire() blocks when 0; release() adds permit\nBinary semaphore (n=1): mutex — but not reentrant unlike synchronized\nRate limiter: Semaphore(10) limits 10 concurrent threads accessing a resource\nConnection pool: semaphore guards available connections\nFair semaphore: new Semaphore(n, true) — FIFO ordering\ntryAcquire(timeout): non-blocking with timeout attempt",
-    "codeExample": "Semaphore sem = new Semaphore(3); // max 3 concurrent\nsem.acquire(); // blocks if 3 already running\ntry { callDatabase(); } finally { sem.release(); }"
+    "codeExample": "Semaphore sem = new Semaphore(3); // max 3 concurrent\nsem.acquire(); // blocks if 3 already running\ntry { callDatabase(); } finally { sem.release(); }",
+    "followUpQuestions": ["What is the difference between a binary Semaphore and a mutex?", "How would you implement a connection pool with Semaphore?", "What happens if release() is called without a matching acquire()?"],
+    "spokenAnswer": "Semaphore controls how many threads can access a resource simultaneously. You initialize it with N permits — each acquire() takes one permit, each release() returns one. When permits run out, threads block until one is released. It's perfect for connection pools or rate limiting concurrent requests. Unlike a mutex, Semaphore is not owned by any thread — one thread can acquire and another can release, which enables producer-consumer patterns.",
+    "commonMistakes": "Not releasing the permit in a finally block — a stuck thread holds a permit forever, eventually exhausting the pool. Calling release() without acquire() — this increases the permit count beyond the initial value, allowing more concurrent access than intended. Using binary Semaphore where ReentrantLock fits better — ReentrantLock is reentrant and has Condition support.",
+    "companiesAskThis": ["Amazon", "Google", "Microsoft"],
+    "seniorExpectation": "A senior candidate would use Semaphore to implement a connection pool or rate limiter, and would discuss Guava's RateLimiter or Resilience4j's RateLimiter as production-ready alternatives. They'd also explain why binary Semaphore is safer for inter-thread signaling than synchronized, which requires the same thread to lock and unlock.",
+    "timeToAnswer": "60s",
+    "relatedTopics": ["Locks & Concurrency Utilities — ReentrantLock, ReadWriteLock, Semaphore", "JDBC & Connection Pooling"],
+    "tags": ["semaphore", "concurrency", "rate-limiting", "connection-pool", "locks"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -114,7 +210,15 @@
     "quickAnswer": "CountDownLatch is a one-shot countdown: threads call countDown() and a waiting thread blocks at await() until count reaches 0. Not reusable. CyclicBarrier makes N threads wait for each other at a barrier point — when all arrive, they all proceed. Reusable. Use CountDownLatch for 'wait for services to start'; CyclicBarrier for 'all threads sync at a checkpoint'.",
     "difficulty": "HIGH",
     "keyPoints": "CountDownLatch: one-shot, count from N to 0, then all waiters released\nCyclicBarrier: N threads wait for each other; resets and reusable\nCountDownLatch: coordinator waits for workers; workers signal done\nCyclicBarrier: workers wait for each other at a merge point\nCyclicBarrier optional action: runs when all threads arrive at barrier\nPhaser (Java 7): more flexible — dynamic parties, multiple phases",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["Why is CountDownLatch not reusable and what is the alternative?", "How would you use CountDownLatch to wait for multiple services to start?", "What is Phaser and when would you use it over CyclicBarrier?"],
+    "spokenAnswer": "CountDownLatch is one-shot: you set an initial count, workers decrement it as they complete, and the coordinator waits at await() until the count hits zero. Classic use case: wait for three microservices to initialize before accepting traffic. CyclicBarrier is for mutual synchronization: all worker threads reach the barrier and wait for each other before proceeding. It resets automatically, making it suitable for iterative parallel algorithms like parallel matrix processing.",
+    "commonMistakes": "Using CountDownLatch when you need to reuse it — it can't be reset; use CyclicBarrier or Phaser instead. Not handling InterruptedException in await() — the thread silently dies if interrupted. Relying on CountDownLatch for large-scale fan-out — consider CompletableFuture.allOf() for simpler async coordination.",
+    "companiesAskThis": ["Amazon", "Google", "Microsoft"],
+    "seniorExpectation": "A senior candidate discusses Phaser as the most flexible option — it supports dynamic participant count, multiple phases, and can be used as either a CountDownLatch or CyclicBarrier. They'd also mention that for most modern async use cases, CompletableFuture.allOf() or reactive streams are cleaner than CountDownLatch.",
+    "timeToAnswer": "90s",
+    "relatedTopics": ["Locks & Concurrency Utilities — ReentrantLock, ReadWriteLock, Semaphore", "CompletableFuture & Async Programming"],
+    "tags": ["countdownlatch", "cyclicbarrier", "concurrency", "synchronization", "phaser"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -123,7 +227,15 @@
     "quickAnswer": "Creating a DB connection is expensive (~50-200ms): TCP handshake, authentication, session setup. Connection pooling maintains a pool of pre-created connections that are reused. A request borrows a connection, uses it, and returns it. Without pooling, a high-traffic app creates/destroys thousands of connections per second — crushing the database. HikariCP is the fastest and most popular pool.",
     "difficulty": "MEDIUM",
     "keyPoints": "Connection creation cost: ~50-200ms; pool reuses connections\nHikariCP: fastest pool, default in Spring Boot 2+\nPool sizing: not always bigger = better; too many connections → DB contention\nKey settings: maximumPoolSize, connectionTimeout, idleTimeout, maxLifetime\nLeak detection: connectionTimeout expiry or HikariCP leakDetectionThreshold\nPool exhaustion: all connections busy → requests queue or timeout",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["What happens when all connections in the pool are exhausted?", "How do you detect and fix connection leaks?", "What is the ideal pool size and how do you calculate it?"],
+    "spokenAnswer": "Every database connection involves a TCP handshake, authentication, and session setup — that's 50 to 200 milliseconds you're paying before a single query runs. Connection pooling eliminates this by pre-creating connections and lending them out. A request grabs a connection, runs queries, and returns it to the pool. Without a pool, a service handling 1000 RPS would create and destroy 1000 connections per second, quickly overwhelming the database.",
+    "commonMistakes": "Setting maximumPoolSize too high — the database has its own connection limit (MySQL default is 151) and too many connections cause contention. Not closing connections properly — leads to pool exhaustion as connections are never returned. Ignoring maxLifetime — stale connections get recycled by the database firewall, causing errors.",
+    "companiesAskThis": ["Amazon", "Google", "Flipkart", "Uber"],
+    "seniorExpectation": "A senior candidate knows the HikariCP formula: pool size = (core_count * 2) + effective_spindle_count, and knows that for SSDs this often means smaller pools than expected. They'd discuss connection leak detection, leakDetectionThreshold, and have opinions on why connection pool sizing matters more than most app-level tuning.",
+    "timeToAnswer": "60s",
+    "relatedTopics": ["JDBC & Connection Pooling"],
+    "tags": ["connection-pool", "hikaricp", "jdbc", "performance", "database"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -132,7 +244,15 @@
     "quickAnswer": "Statement: executes plain SQL — vulnerable to SQL injection, no pre-compilation. PreparedStatement: parameterized query compiled once, run many times — prevents SQL injection, faster for repeated execution. CallableStatement: calls stored procedures. Always use PreparedStatement for user-supplied input; never concatenate user input into SQL.",
     "difficulty": "HIGH",
     "keyPoints": "Statement: plain SQL, no params, SQL injection risk\nPreparedStatement: ? placeholders, pre-compiled, injection-safe, faster for batch\nCallableStatement: stored procedure calls via {call proc(?)}\nSQL injection: Statement + user input = critical vulnerability\nBatch inserts: ps.addBatch(); ps.executeBatch() — 10-100x faster than single inserts\nPrepared statement caching: DB caches the execution plan",
-    "codeExample": "// Safe:\nPreparedStatement ps = conn.prepareStatement(\"SELECT * FROM users WHERE id = ?\");\nps.setInt(1, userId);\nResultSet rs = ps.executeQuery();"
+    "codeExample": "// Safe:\nPreparedStatement ps = conn.prepareStatement(\"SELECT * FROM users WHERE id = ?\");\nps.setInt(1, userId);\nResultSet rs = ps.executeQuery();",
+    "followUpQuestions": ["How does PreparedStatement prevent SQL injection?", "How do you use PreparedStatement for batch inserts?", "What is statement caching and how does it improve performance?"],
+    "spokenAnswer": "Statement is the raw form — you concatenate SQL and run it. Never do this with user input: that's how SQL injection attacks happen. PreparedStatement takes parameterized queries with ? placeholders. The database compiles the query plan once, and you reuse it with different values. This prevents injection and is significantly faster for repeated executions. Batch inserts via addBatch/executeBatch can be 10 to 100 times faster than individual inserts.",
+    "commonMistakes": "Using Statement with string concatenation for user input — this is a critical security vulnerability. Not using batch operations for bulk inserts — individual insert per row is extremely slow at scale. Forgetting to close ResultSet and PreparedStatement — causes resource leaks.",
+    "companiesAskThis": ["Amazon", "Google", "Microsoft", "Flipkart"],
+    "seniorExpectation": "A senior candidate explains the full SQL injection attack vector and how parameterized queries prevent it at the DB driver level. They'd discuss execution plan caching, the difference between server-side and client-side prepared statement caching, and when stored procedures (CallableStatement) are appropriate for complex business logic.",
+    "timeToAnswer": "90s",
+    "relatedTopics": ["JDBC & Connection Pooling"],
+    "tags": ["jdbc", "preparedstatement", "sql-injection", "security", "batch-inserts"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -141,7 +261,15 @@
     "quickAnswer": "By default, JDBC is in auto-commit mode (each statement is a transaction). For multi-statement transactions, disable auto-commit: conn.setAutoCommit(false), execute statements, then conn.commit() on success or conn.rollback() on failure. Always use try-catch-finally to ensure rollback on error. Use Savepoints for partial rollbacks.",
     "difficulty": "MEDIUM",
     "keyPoints": "Auto-commit default: each statement commits immediately\nTransaction: conn.setAutoCommit(false) → execute → commit or rollback\nRollback on exception: catch in try block, rollback in catch\nSavepoint: partial rollback within a transaction\nIsolation levels: READ_UNCOMMITTED, READ_COMMITTED, REPEATABLE_READ, SERIALIZABLE\nResource cleanup: always close Connection in finally or try-with-resources",
-    "codeExample": "conn.setAutoCommit(false);\ntry {\n    ps1.executeUpdate(); ps2.executeUpdate();\n    conn.commit();\n} catch (SQLException e) {\n    conn.rollback();\n    throw e;\n}"
+    "codeExample": "conn.setAutoCommit(false);\ntry {\n    ps1.executeUpdate(); ps2.executeUpdate();\n    conn.commit();\n} catch (SQLException e) {\n    conn.rollback();\n    throw e;\n}",
+    "followUpQuestions": ["What is a Savepoint and when would you use it?", "What is the difference between isolation levels?", "How does Spring's @Transactional compare to manual JDBC transactions?"],
+    "spokenAnswer": "JDBC auto-commits every statement by default — each is its own transaction. For atomic multi-statement operations, disable auto-commit, execute all statements, and commit at the end. On any exception, rollback to keep the database consistent. Savepoints let you rollback to a specific point within a transaction without undoing everything. Spring's @Transactional wraps all of this automatically, which is why most Java developers never write raw JDBC transactions.",
+    "commonMistakes": "Forgetting to disable auto-commit — results in partial commits on failure. Not rolling back on exception — leaves the database in an inconsistent state. Not using try-with-resources — connections that aren't closed leak back to the pool in a bad state.",
+    "companiesAskThis": ["Amazon", "Google", "Flipkart"],
+    "seniorExpectation": "A senior candidate discusses isolation levels and their performance tradeoffs — SERIALIZABLE is safest but slowest, READ_COMMITTED is the MySQL default and sufficient for most apps. They'd explain dirty reads, non-repeatable reads, and phantom reads, and connect this to Spring's @Transactional(isolation=...) attribute.",
+    "timeToAnswer": "60s",
+    "relatedTopics": ["JDBC & Connection Pooling"],
+    "tags": ["jdbc", "transactions", "rollback", "isolation-levels", "acid"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -150,7 +278,15 @@
     "quickAnswer": "HikariCP is the fastest JDBC connection pool (default in Spring Boot). Critical settings: maximumPoolSize (default 10 — tune based on DB and CPU), minimumIdle, connectionTimeout (how long to wait for a connection — default 30s), idleTimeout (how long idle connections live), maxLifetime (max connection age — must be < DB/firewall timeout), and leakDetectionThreshold.",
     "difficulty": "HIGH",
     "keyPoints": "maximumPoolSize: key setting — too high = DB contention; too low = timeouts\nPool size formula: connections = (core_count * 2) + effective_spindle_count\nconnectionTimeout: time to wait for pool connection before exception\nmaxLifetime: should be less than MySQL wait_timeout to prevent stale connections\nleakDetectionThreshold: log warning if connection borrowed too long\nSpring Boot: configure via spring.datasource.hikari.* properties",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["How does HikariCP detect connection leaks?", "What happens when connectionTimeout is exceeded?", "How do you tune HikariCP for a high-traffic production service?"],
+    "spokenAnswer": "HikariCP is the default pool in Spring Boot and the fastest available. The most important setting is maximumPoolSize — it controls how many DB connections can be open simultaneously. Too low causes connection wait timeouts; too high overwhelms the database. maxLifetime must be set below the database server's own connection timeout or you'll get stale connection errors. leakDetectionThreshold helps you find code paths that acquire connections and never release them.",
+    "commonMistakes": "Setting maximumPoolSize to 100 or more without checking the database's max_connections limit. Leaving maxLifetime at the default when the database or firewall has a shorter timeout — causes 'connection is dead' errors in production. Not monitoring pool metrics — without observability you won't know you're near exhaustion until users see timeouts.",
+    "companiesAskThis": ["Amazon", "Flipkart", "Uber"],
+    "seniorExpectation": "A senior candidate monitors HikariCP metrics via Micrometer/Prometheus: hikaricp.connections.active, hikaricp.connections.pending, hikaricp.connections.timeout. They'd set appropriate pool size per service, not use one-size-fits-all defaults, and understand why minimumIdle=maximumPoolSize (fixed pool) is often better than elastic pools for consistent performance.",
+    "timeToAnswer": "90s",
+    "relatedTopics": ["JDBC & Connection Pooling"],
+    "tags": ["hikaricp", "connection-pool", "spring-boot", "performance", "configuration"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -159,7 +295,15 @@
     "quickAnswer": "Optional.map() applies a function to the value if present and wraps the result in Optional. If the function returns an Optional itself, you get Optional<Optional<T>>. Optional.flatMap() expects the function to return Optional<T> and flattens it — preventing double-nesting. Use flatMap when calling a method that itself returns Optional.",
     "difficulty": "HIGH",
     "keyPoints": "map: T → R, wraps in Optional<R> — use for non-Optional-returning functions\nflatMap: T → Optional<R>, unwraps — use when function returns Optional\nNested Optional: Optional<Optional<T>> is a code smell — use flatMap\nChaining: optional.flatMap(User::getAddress).map(Address::getCity)\nflatMap prevents: Optional<Optional<String>> which requires two gets",
-    "codeExample": "Optional<String> city = \n    userRepo.findById(id)        // Optional<User>\n           .flatMap(User::getAddress)  // Optional<Address>\n           .map(Address::getCity);     // Optional<String>"
+    "codeExample": "Optional<String> city = \n    userRepo.findById(id)        // Optional<User>\n           .flatMap(User::getAddress)  // Optional<Address>\n           .map(Address::getCity);     // Optional<String>",
+    "followUpQuestions": ["How is Optional.flatMap() similar to Stream.flatMap()?", "What is the difference between orElse() and orElseGet()?", "Should Optional be used as method parameters?"],
+    "spokenAnswer": "map and flatMap on Optional mirror the same operations on Stream. map wraps the transformation result in Optional — perfect for plain values. But if your transformation itself returns an Optional (like a repository findById), map gives you Optional<Optional<T>>. flatMap unwraps the inner Optional, keeping the chain flat. The chain reads naturally: find the user, if present get their address, if present get the city.",
+    "commonMistakes": "Using map when the mapping function returns Optional — results in Optional<Optional<T>>. Calling get() without isPresent() — throws NoSuchElementException. Using Optional as a method parameter — forces callers to wrap values unnecessarily; use null or overloading instead.",
+    "companiesAskThis": ["Amazon", "Google", "Netflix"],
+    "seniorExpectation": "A senior candidate knows when NOT to use Optional: not as entity fields (not serializable), not as method parameters, not in collections. They'd discuss orElseGet() vs orElse() — orElse evaluates eagerly even if value is present, which matters for expensive default computations.",
+    "timeToAnswer": "60s",
+    "relatedTopics": ["Optional & Parallel Streams"],
+    "tags": ["optional", "functional", "streams", "map", "flatMap"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -168,7 +312,15 @@
     "quickAnswer": "Don't: use Optional as a method parameter (forces caller to wrap in Optional), use Optional in collections (Optional is itself a container — redundant), use it as a field (not Serializable), call get() without isPresent() check (throws NoSuchElementException). Do: use Optional as a return type from methods that may return nothing; use orElse/orElseGet/orElseThrow instead of get().",
     "difficulty": "HIGH",
     "keyPoints": "Anti-patterns: Optional as parameter, in List/Map, as entity field\nNever: optional.get() without isPresent() — NoSuchElementException\nPrefer: orElse, orElseGet, orElseThrow over isPresent + get\norElse(default) vs orElseGet(() -> default): orElse evaluates eagerly\nOptional.isPresent() + get() = old Java 7 null pattern in disguise\nOptional is not Serializable — don't use in DTOs or entity fields",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["Why shouldn't Optional be used in collections?", "What is the performance overhead of Optional?", "How should you handle null in a domain model where Optional is inappropriate?"],
+    "spokenAnswer": "Optional was designed as a return type signal — 'this method might return nothing.' Using it as a method parameter pushes the wrapping responsibility to the caller unnecessarily; just use overloading or @Nullable instead. Using Optional in a List is redundant — List is already a container. As a JPA entity field, it causes serialization issues. And calling get() without checking is isPresent() is exactly the null dereference problem Optional was meant to fix — just wrapped in a different exception.",
+    "commonMistakes": "Using Optional.isPresent() followed immediately by Optional.get() — this is the old null-check pattern in disguise; use orElse() instead. Using Optional as a method parameter in a REST API DTO — causes Jackson deserialization issues. Storing Optional in a static field or collection.",
+    "companiesAskThis": ["Amazon", "Google", "Microsoft"],
+    "seniorExpectation": "A senior candidate cites Effective Java Item 55 (Return Optionals Judiciously) — Optional has allocation overhead and should be used sparingly for primitive types (use OptionalInt/Long instead). They'd advocate for @Nullable/@NotNull annotations for method parameters and constructor arguments.",
+    "timeToAnswer": "60s",
+    "relatedTopics": ["Optional & Parallel Streams"],
+    "tags": ["optional", "anti-patterns", "null-safety", "functional", "best-practices"]
   },
   {
     "category": "ADVANCED_JAVA",
@@ -177,6 +329,14 @@
     "quickAnswer": "Parallel streams use the Spliterator (Splittable Iterator) to divide work. The stream source defines a Spliterator that can split itself into halves recursively — the ForkJoinPool distributes these splits across worker threads. ArrayList splits evenly (good); LinkedList doesn't support efficient splitting (poor parallel performance). The workload per element must outweigh the splitting and merging overhead.",
     "difficulty": "HIGH",
     "keyPoints": "Spliterator: like Iterator but can trySplit() into halves\nForkJoinPool: recursively splits, each thread processes a chunk\nArrayList: excellent splitting (index-based); LinkedList: poor (must traverse)\nOverhead: splitting + thread coordination + result merging\nBreak-even: parallel faster only when N * cost_per_element >> overhead\nCharacteristics: SIZED, ORDERED, DISTINCT guide optimization",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["When should you NOT use parallel streams?", "How does the Spliterator differ from Iterator?", "What data sources have poor parallel stream performance?"],
+    "spokenAnswer": "Parallel streams split the source into chunks using Spliterator's trySplit() method, recursively halving until chunks are small enough. ForkJoinPool assigns each chunk to a worker thread, processes them, then merges results. The key insight is that parallelism pays off only when the per-element work is significant enough to outweigh the splitting, coordination, and merging overhead. ArrayList splits cleanly by index; LinkedList requires traversal to find the midpoint, making it a poor choice for parallel streams.",
+    "commonMistakes": "Using parallel streams for small collections — the overhead exceeds the benefit. Using parallel streams for operations with shared mutable state — causes race conditions. Using parallel streams with ordered streams and collect() — merging ordered results adds significant overhead. Parallel streams in a server that uses ForkJoinPool.commonPool() for other work — pool contention.",
+    "companiesAskThis": ["Amazon", "Google"],
+    "seniorExpectation": "A senior candidate benchmarks before using parallel streams with JMH and understands when sequential is faster. They'd explain that for I/O-bound work, parallel streams on ForkJoinPool are wrong (use CompletableFuture with a cached thread pool). They'd also discuss Spliterator characteristics (SIZED, SUBSIZED, IMMUTABLE) and how they enable optimizations.",
+    "timeToAnswer": "90s",
+    "relatedTopics": ["Optional & Parallel Streams", "CompletableFuture & Async Programming"],
+    "tags": ["parallel-streams", "spliterator", "forkjoinpool", "performance", "concurrency"]
   }
 ]

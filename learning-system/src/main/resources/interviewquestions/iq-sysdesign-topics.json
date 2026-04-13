@@ -6,7 +6,15 @@
     "quickAnswer": "Vertical scaling (scale up): add more resources to a single machine (bigger CPU, more RAM). Simple but has a physical limit and single point of failure. Horizontal scaling (scale out): add more machines to distribute load. No single point of failure, theoretically unlimited, but requires stateless design and adds complexity (load balancing, data consistency, distributed state).",
     "difficulty": "MEDIUM",
     "keyPoints": "Vertical: single machine, bigger specs — simple, limited, SPOF\nHorizontal: more machines — complex but no theoretical limit\nStateless requirement: horizontal scaling requires no local state (use Redis for sessions)\nAuto-scaling: horizontal scaling can be automated (AWS ASG)\nDatabase scaling: vertical easy; horizontal (sharding) very complex\nCost: vertical is linear; horizontal can be cheaper at scale with commodity hardware",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["How do you handle session state when scaling horizontally?", "What AWS services enable automatic horizontal scaling?", "When would you choose vertical over horizontal scaling for a database?"],
+    "spokenAnswer": "So vertical scaling is giving your existing server more power — more CPUs, more RAM. It's simple but it has a hard ceiling. A single EC2 instance can only get so big. Horizontal scaling means adding more servers and distributing load across them. The catch is your application has to be stateless — you can't store session data in local memory anymore, you'd put it in Redis or a database. Most large systems start vertical and then go horizontal once they hit limits.",
+    "commonMistakes": "Saying 'just add more servers' without addressing statelessness — session affinity and distributed state are the hard parts. Candidates also forget that horizontal database scaling via sharding is significantly more complex than horizontal app-tier scaling.",
+    "companiesAskThis": ["Amazon", "Google", "Microsoft", "Meta"],
+    "seniorExpectation": "Mention real limits — a single EC2 u-24tb1.metal gives 448 vCPUs and 24 TB RAM, but costs thousands per hour. Bring up CAP theorem implications of horizontal database scaling, auto-scaling group warm-up periods, and sticky sessions vs. stateless design for the app tier.",
+    "timeToAnswer": "1min",
+    "relatedTopics": ["Distributed Systems — CAP Theorem, Sharding & Replication"],
+    "tags": ["scalability", "infrastructure", "load-balancing", "stateless"]
   },
   {
     "category": "SYSTEM_DESIGN",
@@ -15,7 +23,15 @@
     "quickAnswer": "Cache-aside (lazy loading): app checks cache first, loads from DB on miss, populates cache. Cache-through: cache layer handles all DB reads/writes. Write-through: write to cache and DB synchronously — consistent but slower writes. Write-behind (write-back): write to cache first, async write to DB — fast but risk of data loss. Read-through + write-through: app only talks to cache, cache manages DB.",
     "difficulty": "HIGH",
     "keyPoints": "Cache-aside: most common — app controls cache population; cold start misses\nWrite-through: cache + DB written together — consistent, slower writes\nWrite-behind: write cache only, async DB flush — fast, risk of loss on crash\nRead-through: cache fetches from DB on miss automatically\nEviction policies: LRU, LFU, TTL-based, random\nCache invalidation: hardest problem — TTL + event-based invalidation",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["How do you handle cache invalidation when data changes in the DB?", "What is a cache stampede and how do you prevent it?", "When would you choose write-behind over write-through caching?"],
+    "spokenAnswer": "The most common pattern is cache-aside — your app checks Redis first, and if there's a miss, it fetches from the DB and stores the result in cache. Write-through keeps cache and DB always in sync but slows down writes. Write-behind is the opposite — fast writes to cache, async flush to DB, but you risk losing data on crash. Cache invalidation is the genuinely hard part — most teams use TTL combined with explicit invalidation on writes.",
+    "commonMistakes": "Forgetting about the cache stampede — when TTL expires, many requests simultaneously hit the DB. Not thinking about cache invalidation at all, just setting a long TTL. Treating cache as a source of truth rather than an optimization layer.",
+    "companiesAskThis": ["Amazon", "Google", "Meta", "Netflix"],
+    "seniorExpectation": "Discuss cache stampede prevention (probabilistic early expiry or mutex locks), Redis vs Memcached tradeoffs, multi-level caching (L1 in-process + L2 Redis), and how to handle cache warming after a deployment.",
+    "timeToAnswer": "2min",
+    "relatedTopics": ["System Design Fundamentals — Scalability, Caching & Load Balancing", "Performance Patterns — Circuit Breaker, Retry, Bulkhead & Idempotency"],
+    "tags": ["caching", "redis", "performance", "consistency"]
   },
   {
     "category": "SYSTEM_DESIGN",
@@ -24,7 +40,15 @@
     "quickAnswer": "Consistent hashing maps both servers and keys onto a virtual ring. Each key goes to the next server clockwise on the ring. When a server is added/removed, only K/N keys (where K=total keys, N=servers) are remapped — not all keys. Traditional modulo hashing remaps nearly all keys on resize. Used in: CDN (Akamai), distributed caches, load balancers, Cassandra, DynamoDB.",
     "difficulty": "HIGH",
     "keyPoints": "Problem: modulo hashing (key % n) remaps ~K*(N-1)/N keys when n changes\nConsistent hashing: ring-based, only K/N keys remapped on server add/remove\nVirtual nodes: each server has multiple positions on ring — improves balance\nHotspot prevention: virtual nodes distribute load more evenly\nUsed in: Cassandra, Redis Cluster, CDN routing, Memcached (twemproxy)\nReplication: next M servers clockwise hold replicas",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["What problem do virtual nodes solve in consistent hashing?", "How does Cassandra use consistent hashing?", "What happens to keys when a node joins the ring?"],
+    "spokenAnswer": "The problem consistent hashing solves is this: if you have 3 servers and use key mod 3 to route requests, adding a fourth server means almost every key maps to a different server — massive cache miss storm. Consistent hashing puts both servers and keys on a virtual ring. Each key routes to the nearest server clockwise. Adding or removing a server only displaces K divided by N keys — a fraction. Virtual nodes give each physical server multiple ring positions so the load stays even even with heterogeneous hardware.",
+    "commonMistakes": "Describing the ring concept without explaining WHY it's better than modulo hashing. Not mentioning virtual nodes — a ring without them causes severe load imbalance when one server is much more powerful than others.",
+    "companiesAskThis": ["Amazon", "Google", "Microsoft", "Netflix"],
+    "seniorExpectation": "Mention the actual data structures used (sorted set / TreeMap for ring), replication by walking M positions clockwise, and real implementations like Cassandra's token ring, Redis Cluster's 16384 hash slots, and how hotspot detection works in DynamoDB.",
+    "timeToAnswer": "2min",
+    "relatedTopics": ["Distributed Systems — CAP Theorem, Sharding & Replication"],
+    "tags": ["consistent-hashing", "distributed-systems", "partitioning", "scalability"]
   },
   {
     "category": "SYSTEM_DESIGN",
@@ -33,7 +57,15 @@
     "quickAnswer": "L4 load balancing (transport layer): routes based on IP + TCP/UDP port — fast, no packet inspection. L7 load balancing (application layer): routes based on HTTP content (URL path, headers, cookies) — enables path-based routing, SSL termination, session stickiness, A/B testing. AWS ALB is L7; NLB is L4. L7 adds latency but enables intelligent routing.",
     "difficulty": "HIGH",
     "keyPoints": "L4 (NLB): TCP/UDP level, IP+port routing, very fast, no content inspection\nL7 (ALB): HTTP/HTTPS, path/header-based routing, SSL termination\nPath-based: /api → API servers, /static → CDN\nSession stickiness (sticky sessions): route user to same server via cookie\nHealth checks: L7 checks HTTP 200; L4 checks TCP connection\nALB vs NLB: ALB for web apps; NLB for lowest latency, static IP, non-HTTP",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["When would you choose NLB over ALB in AWS?", "How does SSL termination work at the load balancer level?", "What are the tradeoffs of sticky sessions?"],
+    "spokenAnswer": "L4 operates at the TCP layer — it sees IP addresses and ports, routes packets very fast, but has no idea what's inside the packets. L7 opens up the HTTP layer, so it can read URLs, headers, cookies. This lets you do things like route /api requests to one target group and /images to another, or route based on user-agent for mobile vs desktop. AWS ALB is L7, NLB is L4. L7 is slower because it has to parse HTTP, but that overhead is usually acceptable.",
+    "commonMistakes": "Confusing SSL termination with end-to-end encryption — after L7 termination, traffic inside the VPC may be unencrypted. Not knowing that NLB preserves the client IP but ALB requires X-Forwarded-For header to get it.",
+    "companiesAskThis": ["Amazon", "Microsoft", "Uber", "LinkedIn"],
+    "seniorExpectation": "Discuss connection draining (deregistration delay) before removing instances, health check grace periods, cross-zone load balancing cost implications in AWS, and when WebSockets force you to reconsider sticky sessions.",
+    "timeToAnswer": "1min",
+    "relatedTopics": ["System Design Fundamentals — Scalability, Caching & Load Balancing"],
+    "tags": ["load-balancing", "networking", "aws", "infrastructure"]
   },
   {
     "category": "SYSTEM_DESIGN",
@@ -42,7 +74,15 @@
     "quickAnswer": "Session-based: server stores session data in memory/DB and sends session ID cookie. Stateful — every request needs a DB/cache lookup. JWT: client holds the token with encoded claims. Stateless — server only validates signature. JWT scales horizontally without shared session store. Tradeoff: JWTs can't be immediately revoked (until expiry), while sessions can be deleted from server instantly.",
     "difficulty": "HIGH",
     "keyPoints": "Session: server-side state (DB/Redis), cookie with session ID, easy revocation\nJWT: client-side token, no server state, scales easily, stateless\nJWT revocation problem: can't invalidate before expiry without a denylist (negates stateless benefit)\nSolution: short-lived access tokens (15min) + long-lived refresh tokens\nAccess token: JWT, stateless, short expiry\nRefresh token: opaque, stored in DB, can be revoked",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["How do you revoke a JWT before it expires?", "Where should you store a JWT on the client — localStorage or httpOnly cookie?", "What are the security implications of storing user roles in a JWT?"],
+    "spokenAnswer": "Session auth means the server keeps track of who's logged in — it stores session data server-side and gives the browser a session ID cookie. Every request, the server has to look that ID up. JWT flips this: the token itself contains the user's identity and claims, signed by the server. Any server instance can verify the signature without a DB call, so it scales beautifully. The catch is revocation — you can't 'delete' a JWT once issued. The standard solution is short-lived access tokens, like 15 minutes, paired with revocable refresh tokens.",
+    "commonMistakes": "Storing sensitive data in JWT payload — it's base64 encoded, not encrypted, so anyone can read it. Not handling JWT expiry on the client (treating a 401 as a generic error instead of triggering token refresh).",
+    "companiesAskThis": ["Google", "Microsoft", "Amazon", "LinkedIn"],
+    "seniorExpectation": "Discuss token denylist patterns (Redis set of revoked JTIs), the tradeoff between statelessness and revocability, RS256 vs HS256 (asymmetric vs symmetric signing), and JWKS endpoint for public key rotation.",
+    "timeToAnswer": "1min",
+    "relatedTopics": ["Authentication System Design — JWT, SSO & Refresh Tokens"],
+    "tags": ["jwt", "authentication", "security", "stateless"]
   },
   {
     "category": "SYSTEM_DESIGN",
@@ -51,7 +91,15 @@
     "quickAnswer": "SSO allows users to authenticate once and access multiple applications. OAuth2 is an authorization framework; OIDC (OpenID Connect) adds authentication on top. Flow: user clicks login → redirect to Identity Provider (IdP) → user authenticates → IdP issues authorization code → app exchanges code for access_token + id_token. id_token is a JWT with user identity claims.",
     "difficulty": "HIGH",
     "keyPoints": "SSO: authenticate once (IdP), access many apps (SPs)\nOAuth2: authorization (permission delegation), not authentication\nOIDC: OAuth2 + id_token (JWT) + /userinfo endpoint = authentication\nAuthorization Code flow: redirect → code → token exchange (server-side)\nPKCE: Proof Key for Code Exchange — for SPAs/mobile (no client secret)\nTokens: access_token (resource access), id_token (user identity), refresh_token (renew)",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["What is the difference between OAuth2 and OIDC?", "Why is PKCE needed for SPAs?", "How does logout work in SSO — what is back-channel logout?"],
+    "spokenAnswer": "SSO lets a user log in once and get access to multiple apps — think logging into Google and then Gmail, Drive, and YouTube all work without logging in again. OAuth2 is the plumbing for authorization — delegating permissions. OIDC sits on top of it and adds authentication by including an id_token, which is a signed JWT containing who the user is. The authorization code flow is the safe pattern: your app never sees the user's credentials, only exchanges an authorization code for tokens server-side.",
+    "commonMistakes": "Confusing OAuth2 with authentication — OAuth2 is for authorization, not identity. Implementing the implicit flow (now deprecated) for SPAs instead of authorization code + PKCE. Not handling OIDC back-channel logout, leaving sessions alive after the user logs out of the IdP.",
+    "companiesAskThis": ["Google", "Microsoft", "LinkedIn", "Meta"],
+    "seniorExpectation": "Discuss SAML vs OIDC tradeoffs (enterprise vs modern), session management across multiple SPs on logout (SLO), token introspection endpoint, and how to handle clock skew in JWT validation.",
+    "timeToAnswer": "2min",
+    "relatedTopics": ["Authentication System Design — JWT, SSO & Refresh Tokens"],
+    "tags": ["sso", "oauth2", "oidc", "authentication"]
   },
   {
     "category": "SYSTEM_DESIGN",
@@ -60,7 +108,15 @@
     "quickAnswer": "Access tokens are short-lived (15-30min) JWTs. Refresh tokens are long-lived (7-30 days), opaque (random UUID), stored in DB. On access token expiry, client sends refresh token to get a new access token. Server validates refresh token exists and is not revoked. Implement rotation: issue new refresh token on each use, invalidate the old one. Detect reuse of revoked refresh token as possible theft.",
     "difficulty": "HIGH",
     "keyPoints": "Access token: JWT, 15-30 min, stateless\nRefresh token: opaque UUID, 7-30 days, stored in DB, can be revoked\nRotation: new refresh token on each use — detect reuse of old one\nToken family: if old token reused, revoke entire family (theft signal)\nStorage: access in memory/local storage; refresh in httpOnly cookie\nRevocation: delete refresh token from DB → user must re-login\nSilent refresh: SPA silently requests new access token before expiry",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["What happens if a refresh token is stolen?", "How do you implement refresh token rotation?", "What is the difference between absolute and sliding expiry for refresh tokens?"],
+    "spokenAnswer": "The idea is short-lived access tokens — 15 minutes — paired with a long-lived refresh token stored server-side. When the access token expires, the client silently sends the refresh token to get a new one, without requiring the user to log in again. The key security feature is rotation: every time you use a refresh token, you get a new one back and the old one is invalidated. If someone tries to reuse an old refresh token, you know there's been a theft and you revoke the entire token family, forcing re-login.",
+    "commonMistakes": "Storing refresh tokens in localStorage instead of httpOnly cookies — XSS attacks can steal them. Not implementing rotation, so a stolen refresh token is valid indefinitely. Not having a maximum absolute lifetime on refresh tokens.",
+    "companiesAskThis": ["Amazon", "Google", "Microsoft", "Twitter"],
+    "seniorExpectation": "Discuss token family tracking in the DB schema (parent_id linking), absolute vs sliding expiry policies, device-specific refresh tokens for 'sign out from all devices', and rate limiting the refresh endpoint to prevent brute force.",
+    "timeToAnswer": "2min",
+    "relatedTopics": ["Authentication System Design — JWT, SSO & Refresh Tokens"],
+    "tags": ["jwt", "refresh-token", "security", "authentication"]
   },
   {
     "category": "SYSTEM_DESIGN",
@@ -69,7 +125,15 @@
     "quickAnswer": "CAP theorem: a distributed system can only guarantee two of three: Consistency (all nodes see same data simultaneously), Availability (every request gets a response, no error), Partition tolerance (system works despite network partitions). Since network partitions always happen in distributed systems, you really choose between CP (consistent under partition) and AP (available under partition). Example: Zookeeper/HBase = CP; Cassandra/DynamoDB = AP.",
     "difficulty": "HIGH",
     "keyPoints": "Consistency: all reads see the latest write\nAvailability: every request gets a non-error response (might be stale)\nPartition tolerance: system continues despite network splits\nP is always required: networks partition — pick CP or AP\nCP systems: Zookeeper, HBase, Etcd — return error on partition\nAP systems: Cassandra, CouchDB, DynamoDB — return possibly stale data\nPACELC: extends CAP — also considers latency tradeoff when no partition",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["Why can't a distributed system sacrifice partition tolerance?", "How does DynamoDB achieve eventual consistency?", "What is the PACELC theorem and how does it extend CAP?"],
+    "spokenAnswer": "CAP says in a distributed system you can only guarantee two of three properties. The catch is that partition tolerance isn't optional — network partitions happen, full stop. So the real choice is: when the network splits, do you stay consistent and reject requests (CP), or do you stay available and return potentially stale data (AP)? Zookeeper and etcd are CP — they'll return errors during a partition. Cassandra and DynamoDB are AP — they'll return possibly stale data but keep responding.",
+    "commonMistakes": "Saying a system can 'choose CA' — network partitions are unavoidable in distributed systems, so P is not optional. Confusing consistency in CAP (linearizability) with ACID consistency — they are completely different concepts.",
+    "companiesAskThis": ["Amazon", "Google", "Microsoft", "Meta"],
+    "seniorExpectation": "Mention PACELC (when no partition: latency vs consistency tradeoff), tunable consistency in Cassandra (quorum reads), and real incidents where AP vs CP choices caused production issues — like shopping carts allowing overselling during a partition.",
+    "timeToAnswer": "2min",
+    "relatedTopics": ["Distributed Systems — CAP Theorem, Sharding & Replication"],
+    "tags": ["cap-theorem", "distributed-systems", "consistency", "availability"]
   },
   {
     "category": "SYSTEM_DESIGN",
@@ -78,7 +142,15 @@
     "quickAnswer": "Sharding partitions data horizontally across multiple database servers. Each shard holds a subset of rows. Strategies: Range-based (shard by ID range — simple but hotspots possible), Hash-based (hash(key) % n — even distribution), Directory-based (lookup table maps key to shard — flexible but lookup bottleneck), Geographic (data locality for compliance). Sharding adds complexity: cross-shard queries, joins, transactions are hard.",
     "difficulty": "HIGH",
     "keyPoints": "Range sharding: shard by ID/date range — simple, hotspot risk (recent data)\nHash sharding: hash(key) % n — even distribution, resharding is expensive\nConsistent hashing: hash sharding without full reshuffle on resize\nDirectory sharding: mapping table — flexible but single point of failure\nCross-shard: JOINs across shards are very expensive (application-level join)\nSharding challenges: distributed transactions, hot shards, schema changes",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["How do you handle cross-shard queries and joins?", "What is resharding and how do you do it without downtime?", "When would you shard by geography vs by user ID hash?"],
+    "spokenAnswer": "Sharding splits your table horizontally — instead of one big users table, you have users_shard_0 through users_shard_N, each on a different server. Range sharding is simple — users 1-1M on shard 0, 1M-2M on shard 1 — but you get hotspots if new data concentrates on one shard. Hash sharding distributes evenly but makes resharding painful. The real pain with sharding comes from cross-shard queries — you can't just do a JOIN across shards, you have to do it in application code.",
+    "commonMistakes": "Underestimating the complexity of distributed transactions across shards (no native ACID). Not planning for resharding from day one. Treating sharding as the first solution when you should exhaust vertical scaling and read replicas first.",
+    "companiesAskThis": ["Amazon", "Google", "Meta", "Uber"],
+    "seniorExpectation": "Discuss resharding strategies (double-write + backfill, consistent hashing to minimize movement), global secondary indexes across shards, and alternatives like CockroachDB or Vitess that abstract sharding complexity.",
+    "timeToAnswer": "2min",
+    "relatedTopics": ["Distributed Systems — CAP Theorem, Sharding & Replication", "System Design Fundamentals — Scalability, Caching & Load Balancing"],
+    "tags": ["sharding", "database", "distributed-systems", "partitioning"]
   },
   {
     "category": "SYSTEM_DESIGN",
@@ -87,7 +159,15 @@
     "quickAnswer": "Strong consistency: reads always see the latest write — requires coordination, high latency. Eventual consistency: replicas converge to same value eventually — high availability, low latency, temporary stale reads. Causal consistency: causally related writes are seen in order by all nodes — middle ground. Most distributed databases offer eventual consistency with tunable quorum reads for stronger guarantees.",
     "difficulty": "HIGH",
     "keyPoints": "Strong (linearizability): every read returns latest write — Google Spanner, ZooKeeper\nEventual: replicas converge over time — Cassandra, DynamoDB default\nCausal: causally related operations in order — MongoDB sessions\nRead-your-writes: see your own writes immediately (session consistency)\nMonotonic reads: won't see older data than before\nTunable: Cassandra quorum (R + W > N) — adjust consistency vs availability",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["How does Cassandra tunable consistency work with quorum reads?", "What is read-your-writes consistency and when does it matter?", "How does Google Spanner achieve strong consistency at global scale?"],
+    "spokenAnswer": "Strong consistency means if I write a value, anyone who reads immediately after will see my write — like a single-server database. Eventual consistency says replicas will agree eventually, but right after a write you might read stale data from another replica. This is the default for Cassandra and DynamoDB — high availability but temporary inconsistency. Causal consistency is in between: if operation B depends on operation A, everyone sees A before B, but unrelated operations can be reordered. MongoDB sessions give you read-your-writes by default.",
+    "commonMistakes": "Confusing consistency models with ACID consistency. Thinking eventual consistency means 'inconsistent forever' — the convergence window is usually milliseconds to seconds. Not knowing that Cassandra's quorum reads (R + W > N) can give you strong consistency.",
+    "companiesAskThis": ["Amazon", "Google", "Meta", "Netflix"],
+    "seniorExpectation": "Discuss vector clocks and conflict resolution (last-write-wins vs application-level merge), Spanner's TrueTime API for global strong consistency, and when eventual consistency causes real bugs — shopping cart merges, social media counters.",
+    "timeToAnswer": "2min",
+    "relatedTopics": ["Distributed Systems — CAP Theorem, Sharding & Replication"],
+    "tags": ["consistency", "distributed-systems", "replication", "cap-theorem"]
   },
   {
     "category": "SYSTEM_DESIGN",
@@ -96,7 +176,15 @@
     "quickAnswer": "Retry pattern: automatically retry failed requests to handle transient failures. Exponential backoff: wait time doubles with each retry (1s, 2s, 4s, 8s) to reduce pressure on recovering services. Jitter: add random noise to backoff to prevent synchronized retry storms (thundering herd). Stop retrying on non-transient errors (400 Bad Request, 401 Unauthorized).",
     "difficulty": "HIGH",
     "keyPoints": "Retry: transient failures (network timeout, 503) → retry\nDon't retry: 4xx client errors (except 429 rate limit, 408 timeout)\nExponential backoff: wait = base * 2^attempt — reduces thundering herd\nJitter: wait = random(0, base * 2^attempt) — spreads retries\nMax retries: limit to 3-5 with timeout — set deadline to avoid infinite retries\nResilience4j: @Retry annotation with customizable backoff strategy",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["What is a thundering herd problem and how does jitter solve it?", "Which HTTP status codes should NOT be retried?", "How does Resilience4j implement retry with exponential backoff?"],
+    "spokenAnswer": "The retry pattern just means automatically trying again on failure. The naive version — retry immediately every second — creates a thundering herd: if a service goes down and 1000 clients all retry in sync, they hammer it as soon as it recovers. Exponential backoff fixes this by doubling the wait each time: 1 second, 2, 4, 8. Jitter adds randomness so clients don't all wake up at the same time. The other critical rule: only retry transient errors like timeouts and 503s, never 400s or 401s — those need human intervention.",
+    "commonMistakes": "Retrying 4xx errors — a 400 Bad Request will fail every time, infinite retries just waste resources. Not setting a maximum deadline — retries should stop if the total time exceeds the user's acceptable wait. Forgetting idempotency — retrying a non-idempotent operation can cause duplicate side effects.",
+    "companiesAskThis": ["Amazon", "Google", "Netflix", "Uber"],
+    "seniorExpectation": "Discuss the relationship between retry and idempotency — you must ensure the operation is safe to retry. Mention circuit breakers as the companion pattern, token bucket rate limiting on the server side, and AWS SDK's built-in retry policy configuration.",
+    "timeToAnswer": "1min",
+    "relatedTopics": ["Performance Patterns — Circuit Breaker, Retry, Bulkhead & Idempotency"],
+    "tags": ["retry", "resilience", "exponential-backoff", "fault-tolerance"]
   },
   {
     "category": "SYSTEM_DESIGN",
@@ -105,7 +193,15 @@
     "quickAnswer": "Bulkhead pattern isolates different parts of a system into separate pools/thread groups so a failure in one doesn't consume resources needed by others. Named after ship bulkheads that prevent flooding from spreading. Example: separate thread pool for each downstream service — slow payment service exhausts its own pool without starving inventory service. Prevents cascading failures via resource isolation.",
     "difficulty": "HIGH",
     "keyPoints": "Isolation: separate thread pools, connection pools, or semaphores per service\nPrevents: one slow service consuming all threads and starving others\nTypes: thread pool isolation (heavyweight), semaphore isolation (lightweight)\nResilience4j Bulkhead: @Bulkhead(name, type=SEMAPHORE) or THREADPOOL\nMicroservice: each service should have separate HTTP client thread pools\nDB connections: separate pool for read queries vs write queries",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["What is the difference between semaphore and thread pool bulkheads?", "How does Hystrix implement bulkheads compared to Resilience4j?", "When would you use a semaphore bulkhead vs a thread pool bulkhead?"],
+    "spokenAnswer": "The bulkhead pattern comes from ship design — compartments in a hull prevent one breach from sinking the whole ship. In software, if your order service calls payment, inventory, and shipping services all using the same shared thread pool, a slow payment service can exhaust all threads and your inventory calls start timing out too — cascading failure. Bulkhead says: give each downstream service its own thread pool or semaphore limit. Payment gets 20 threads, inventory gets 20, shipping gets 20. Payment grinding to a halt doesn't affect the others.",
+    "commonMistakes": "Using thread pool isolation for everything — it's expensive because it creates actual OS threads. Semaphores are lighter weight for most use cases. Not monitoring bulkhead rejection rates, so you never know when you've sized the pools wrong.",
+    "companiesAskThis": ["Netflix", "Amazon", "Microsoft", "Uber"],
+    "seniorExpectation": "Discuss sizing the bulkhead correctly (Little's Law: L = λW), when to prefer semaphore isolation (same thread, lower overhead) vs thread pool isolation (different thread, better timeout support), and observability — tracking bulkhead saturation metrics.",
+    "timeToAnswer": "1min",
+    "relatedTopics": ["Performance Patterns — Circuit Breaker, Retry, Bulkhead & Idempotency"],
+    "tags": ["bulkhead", "resilience", "fault-tolerance", "microservices"]
   },
   {
     "category": "SYSTEM_DESIGN",
@@ -114,7 +210,15 @@
     "quickAnswer": "Idempotency ensures the same request produces the same result regardless of how many times it's made. Implement with Idempotency-Key header: client generates a unique UUID per logical operation. Server stores (idempotency_key, response) in a store (Redis with TTL). On duplicate: return cached response without re-executing. Critical for payment APIs — prevents double charges on retry.",
     "difficulty": "HIGH",
     "keyPoints": "Client sends Idempotency-Key: UUID-per-operation (not per request)\nServer: check if key seen before → return cached response\nStorage: Redis with TTL (key → serialized response)\nFirst request: execute + store; subsequent: return cached\nConflict: same key but different body → 422 or 409\nHTTP GET/PUT/DELETE: naturally idempotent; POST needs explicit key\nPayment APIs: Stripe, Braintree require Idempotency-Key header",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["How do you handle the case where the first request is still in-flight when a retry arrives?", "What should the TTL be for idempotency keys in Redis?", "How does Stripe implement idempotency keys?"],
+    "spokenAnswer": "Idempotency means doing the same operation twice gives you the same result as doing it once — no double charges, no duplicate orders. You implement it with an Idempotency-Key header. The client generates a UUID for the logical operation, not the HTTP request, so retries reuse the same key. Your server checks Redis for that key. If found, return the cached response immediately. If not, execute the operation, cache the response with a TTL, and return it. The tricky part is handling in-flight requests — use a 'processing' lock to prevent two threads executing the same key simultaneously.",
+    "commonMistakes": "Generating a new idempotency key per retry instead of reusing the same key — this defeats the whole purpose. Not handling the in-flight case with a lock, causing duplicate execution when two retries arrive simultaneously. Setting the TTL too short — it should outlive the client's retry window.",
+    "companiesAskThis": ["Amazon", "Google", "Uber", "LinkedIn"],
+    "seniorExpectation": "Discuss distributed locking for the in-flight case (Redis SETNX), idempotency key schema design (user_id + operation_type + client_timestamp for natural keys), and how to handle partial failures — if the DB write succeeded but Redis update failed.",
+    "timeToAnswer": "1min",
+    "relatedTopics": ["Performance Patterns — Circuit Breaker, Retry, Bulkhead & Idempotency"],
+    "tags": ["idempotency", "api-design", "payments", "redis"]
   },
   {
     "category": "SYSTEM_DESIGN",
@@ -123,6 +227,14 @@
     "quickAnswer": "Rate limiting controls how many requests a client can make in a time window, protecting services from overload and abuse. Algorithms: Fixed Window (simple but burst at boundary), Sliding Window Log (accurate, memory-heavy), Sliding Window Counter (approximate, efficient), Token Bucket (allows bursts, smooth), Leaky Bucket (strict output rate). Redis is commonly used to store counts across distributed instances.",
     "difficulty": "HIGH",
     "keyPoints": "Fixed window: count per time slot — boundary burst problem\nSliding window log: store request timestamps — accurate, O(requests) memory\nSliding window counter: weighted previous window — good balance\nToken bucket: tokens refill at rate; burst allowed if tokens available\nLeaky bucket: queue of requests drains at constant rate — no bursts\nDistributed: use Redis INCR + EXPIRE or Redis sorted sets for sliding window",
-    "codeExample": null
+    "codeExample": null,
+    "followUpQuestions": ["How does the token bucket algorithm allow controlled bursting?", "How do you implement rate limiting across multiple service instances?", "What HTTP status code and headers should a rate limited response return?"],
+    "spokenAnswer": "Rate limiting protects your service from being overwhelmed. The simplest is fixed window — count requests in each 60-second bucket. Problem: a client can send 100 at 11:59 and 100 at 12:00, getting 200 in 2 seconds. Token bucket fixes this: you refill tokens at a steady rate, say 10 per second, up to a burst cap of 100. The client can burst, but sustained throughput is capped. For distributed systems, Redis is the standard backing store — use INCR + EXPIRE for fixed window, or a sorted set for sliding window log.",
+    "commonMistakes": "Not returning Retry-After header with 429 responses — clients need to know when to retry. Implementing rate limiting only at the API gateway and forgetting about service-to-service calls. Using a single global limit instead of per-user or per-IP limits.",
+    "companiesAskThis": ["Amazon", "Google", "Twitter", "Uber"],
+    "seniorExpectation": "Discuss Redis Lua scripts for atomic check-and-increment, the sliding window counter approximation formula (previous_window_count × overlap_fraction + current_window_count), and distributed rate limiting with a central Redis vs. local approximate counters with gossip protocol.",
+    "timeToAnswer": "2min",
+    "relatedTopics": ["Performance Patterns — Circuit Breaker, Retry, Bulkhead & Idempotency"],
+    "tags": ["rate-limiting", "api-design", "redis", "performance"]
   }
 ]

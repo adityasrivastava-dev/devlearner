@@ -1,5 +1,7 @@
 package com.learnsystem.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.learnsystem.config.StringArrayDeserializer;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -59,6 +61,42 @@ public class InterviewQuestion {
 
     @Column(name = "code_example", columnDefinition = "TEXT")
     private String codeExample;
+
+    /** JSON array of follow-up questions an interviewer typically asks next: ["Q1","Q2"] */
+    @JsonDeserialize(using = StringArrayDeserializer.class)
+    @Column(name = "follow_up_questions", columnDefinition = "TEXT")
+    private String followUpQuestions;
+
+    /** Conversational 30-second verbal script — how to say the answer out loud */
+    @Column(name = "spoken_answer", columnDefinition = "TEXT")
+    private String spokenAnswer;
+
+    /** What candidates typically get wrong on this question */
+    @Column(name = "common_mistakes", columnDefinition = "TEXT")
+    private String commonMistakes;
+
+    /** JSON array of company names that commonly ask this: ["Amazon","Google"] */
+    @JsonDeserialize(using = StringArrayDeserializer.class)
+    @Column(name = "companies_ask_this", columnDefinition = "TEXT")
+    private String companiesAskThis;
+
+    /** What a senior candidate adds beyond the basic answer */
+    @Column(name = "senior_expectation", columnDefinition = "TEXT")
+    private String seniorExpectation;
+
+    /** Expected verbal answer time, e.g. "30s", "1min" */
+    @Column(name = "time_to_answer", length = 20)
+    private String timeToAnswer;
+
+    /** JSON array of related topic titles: ["Autoboxing","Memory Management"] */
+    @JsonDeserialize(using = StringArrayDeserializer.class)
+    @Column(name = "related_topics", columnDefinition = "TEXT")
+    private String relatedTopics;
+
+    /** JSON array of concept tags: ["memory","type-system","gotcha"] */
+    @JsonDeserialize(using = StringArrayDeserializer.class)
+    @Column(name = "tags", columnDefinition = "TEXT")
+    private String tags;
 
     @Column(name = "display_order")
     @Builder.Default

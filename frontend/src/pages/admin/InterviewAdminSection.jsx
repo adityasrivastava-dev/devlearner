@@ -100,6 +100,14 @@ const BLANK = {
   quickAnswer: '',
   keyPoints: '',
   codeExample: '',
+  followUpQuestions: '',
+  spokenAnswer: '',
+  commonMistakes: '',
+  companiesAskThis: '',
+  seniorExpectation: '',
+  timeToAnswer: '',
+  relatedTopics: '',
+  tags: '',
   displayOrder: 0,
 };
 
@@ -484,23 +492,31 @@ function IQFormPanel({ question, onDone }) {
   const qc    = useQueryClient();
   const isNew = !question;
 
-  // keyPoints is stored as JSON array string in DB; convert to one-per-line for editing
-  const kpToText = (kp) => {
-    if (!kp) return '';
-    try { return JSON.parse(kp).join('\n'); } catch { return kp; }
+  // JSON array fields stored as JSON string in DB; convert to one-per-line for editing
+  const arrToText = (v) => {
+    if (!v) return '';
+    try { return JSON.parse(v).join('\n'); } catch { return v; }
   };
 
   const [form, setForm] = useState(
     isNew
       ? { ...BLANK }
       : {
-          category:     question.category,
-          difficulty:   question.difficulty,
-          question:     question.question,
-          quickAnswer:  question.quickAnswer,
-          keyPoints:    kpToText(question.keyPoints),
-          codeExample:  question.codeExample || '',
-          displayOrder: question.displayOrder ?? 0,
+          category:          question.category,
+          difficulty:        question.difficulty,
+          question:          question.question,
+          quickAnswer:       question.quickAnswer,
+          keyPoints:         arrToText(question.keyPoints),
+          codeExample:       question.codeExample || '',
+          followUpQuestions: arrToText(question.followUpQuestions),
+          spokenAnswer:      question.spokenAnswer || '',
+          commonMistakes:    question.commonMistakes || '',
+          companiesAskThis:  arrToText(question.companiesAskThis),
+          seniorExpectation: question.seniorExpectation || '',
+          timeToAnswer:      question.timeToAnswer || '',
+          relatedTopics:     arrToText(question.relatedTopics),
+          tags:              arrToText(question.tags),
+          displayOrder:      question.displayOrder ?? 0,
         }
   );
   const [saving, setSaving] = useState(false);
@@ -511,17 +527,24 @@ function IQFormPanel({ question, onDone }) {
     if (!form.question.trim())    { toast.error('Question is required');     return; }
     if (!form.quickAnswer.trim()) { toast.error('Quick Answer is required'); return; }
 
-    // Convert one-per-line keyPoints to JSON array
-    const kpArray = form.keyPoints
-      .split('\n')
-      .map(l => l.trim())
-      .filter(Boolean);
+    // Helper: convert one-per-line text to JSON array string
+    const toArr = (text) => JSON.stringify(
+      (text || '').split('\n').map(l => l.trim()).filter(Boolean)
+    );
 
     const payload = {
       ...form,
-      keyPoints:    JSON.stringify(kpArray),
-      codeExample:  form.codeExample.trim() || null,
-      displayOrder: parseInt(form.displayOrder) || 0,
+      keyPoints:         toArr(form.keyPoints),
+      followUpQuestions: toArr(form.followUpQuestions),
+      companiesAskThis:  toArr(form.companiesAskThis),
+      relatedTopics:     toArr(form.relatedTopics),
+      tags:              toArr(form.tags),
+      codeExample:       form.codeExample.trim() || null,
+      spokenAnswer:      form.spokenAnswer.trim() || null,
+      commonMistakes:    form.commonMistakes.trim() || null,
+      seniorExpectation: form.seniorExpectation.trim() || null,
+      timeToAnswer:      form.timeToAnswer.trim() || null,
+      displayOrder:      parseInt(form.displayOrder) || 0,
     };
 
     setSaving(true);
@@ -599,6 +622,83 @@ function IQFormPanel({ question, onDone }) {
         placeholder={`Map<String, Integer> hash = new HashMap<>();\nMap<String, Integer> tree = new TreeMap<>();\n\nhash.put("b", 2); hash.put("a", 1);\ntree.put("b", 2); tree.put("a", 1);\n\nSystem.out.println(hash.keySet()); // [b, a] — unordered\nSystem.out.println(tree.keySet()); // [a, b] — sorted`}
       />
 
+      <div style={{ borderTop: '1px solid var(--border2)', margin: '16px 0 8px', paddingTop: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 12 }}>
+          Interview Intelligence Fields
+        </div>
+
+        <TAField
+          label="Spoken Answer — how to say it out loud in 30–45 seconds"
+          value={form.spokenAnswer}
+          onChange={v => set('spokenAnswer', v)}
+          rows={4}
+          placeholder="So, the difference is... HashMap uses a hash table giving O(1) average lookups with no ordering guarantee, while TreeMap uses a Red-Black tree giving O(log n) with keys in sorted order. I'd pick HashMap by default unless I need sorted keys or range queries..."
+        />
+
+        <TAField
+          label="Common Mistakes — what candidates typically get wrong"
+          value={form.commonMistakes}
+          onChange={v => set('commonMistakes', v)}
+          rows={3}
+          placeholder="Confusing HashMap thread-safety with ConcurrentHashMap. Forgetting TreeMap requires Comparable keys or a Comparator — NPE with null keys."
+        />
+
+        <TAField
+          label="Follow-Up Questions — one per line, what the interviewer asks next"
+          value={form.followUpQuestions}
+          onChange={v => set('followUpQuestions', v)}
+          rows={4}
+          placeholder={"How would you make a HashMap thread-safe?\nWhat is the load factor and when would you change it?\nHow does TreeMap handle null keys?"}
+        />
+
+        <TAField
+          label="Senior Expectation — what a senior candidate adds"
+          value={form.seniorExpectation}
+          onChange={v => set('seniorExpectation', v)}
+          rows={3}
+          placeholder="Mention internal resizing (rehashing) when load factor exceeded, memory overhead of tree nodes vs bucket arrays, and when LinkedHashMap fits better than TreeMap for LRU cache patterns."
+        />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
+          <Field label="Time to Answer" hint='e.g. "30s", "1min"'>
+            <input
+              className="input"
+              value={form.timeToAnswer}
+              onChange={e => set('timeToAnswer', e.target.value)}
+              placeholder="45s"
+            />
+          </Field>
+          <Field label="Companies Ask This — one per line">
+            <textarea
+              className="input"
+              style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: 13 }}
+              rows={3}
+              value={form.companiesAskThis}
+              onChange={e => set('companiesAskThis', e.target.value)}
+              placeholder={"Amazon\nGoogle\nFlipkart"}
+            />
+          </Field>
+          <Field label="Tags — one per line">
+            <textarea
+              className="input"
+              style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: 13 }}
+              rows={3}
+              value={form.tags}
+              onChange={e => set('tags', e.target.value)}
+              placeholder={"collections\nhashing\nperformance"}
+            />
+          </Field>
+        </div>
+
+        <TAField
+          label="Related Topics — one per line (topic titles)"
+          value={form.relatedTopics}
+          onChange={v => set('relatedTopics', v)}
+          rows={3}
+          placeholder={"ConcurrentHashMap\nLinkedHashMap\nCollections Framework"}
+        />
+      </div>
+
       <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
         <button className="btn btn-primary" disabled={saving} onClick={handleSave}>
           {saving
@@ -622,7 +722,7 @@ function IQBulkUploadPanel({ onDone }) {
     const list = Array.isArray(raw) ? raw : raw?.questions;
     if (!Array.isArray(list)) throw new Error('Expected a JSON array or { questions: [...] }');
     return list.map((item, i) => {
-      const keyPoints = Array.isArray(item.keyPoints)
+      const normKeyPoints = Array.isArray(item.keyPoints)
         ? JSON.stringify(item.keyPoints.filter(Boolean))
         : (() => {
             if (typeof item.keyPoints === 'string') {
@@ -633,14 +733,32 @@ function IQBulkUploadPanel({ onDone }) {
             }
             return JSON.stringify([]);
           })();
+      const normArr = (v) => {
+        if (Array.isArray(v)) return v.length ? JSON.stringify(v.filter(Boolean)) : null;
+        if (typeof v === 'string' && v.trim()) {
+          const t = v.trim();
+          if (t.startsWith('[')) return t;
+          return JSON.stringify(t.split('\n').map(s => s.trim()).filter(Boolean));
+        }
+        return null;
+      };
       return {
-        category:     item.category,
-        difficulty:   item.difficulty || 'MEDIUM',
-        question:     item.question,
-        quickAnswer:  item.quickAnswer,
-        keyPoints,
-        codeExample:  item.codeExample || null,
-        displayOrder: Number.isFinite(Number(item.displayOrder)) ? Number(item.displayOrder) : i,
+        category:          item.category,
+        topicTitle:        item.topicTitle || null,
+        difficulty:        item.difficulty || 'MEDIUM',
+        question:          item.question,
+        quickAnswer:       item.quickAnswer,
+        keyPoints:         normKeyPoints,
+        codeExample:       item.codeExample || null,
+        followUpQuestions: normArr(item.followUpQuestions),
+        spokenAnswer:      item.spokenAnswer || null,
+        commonMistakes:    item.commonMistakes || null,
+        companiesAskThis:  normArr(item.companiesAskThis),
+        seniorExpectation: item.seniorExpectation || null,
+        timeToAnswer:      item.timeToAnswer || null,
+        relatedTopics:     normArr(item.relatedTopics),
+        tags:              normArr(item.tags),
+        displayOrder:      Number.isFinite(Number(item.displayOrder)) ? Number(item.displayOrder) : i,
       };
     });
   }
@@ -728,7 +846,7 @@ function IQBatchLibraryPanel() {
     const list = Array.isArray(raw) ? raw : raw?.questions;
     if (!Array.isArray(list)) throw new Error('Unexpected batch format');
     return list.map((item, i) => {
-      const keyPoints = Array.isArray(item.keyPoints)
+      const normKeyPoints = Array.isArray(item.keyPoints)
         ? JSON.stringify(item.keyPoints.filter(Boolean))
         : (() => {
             if (typeof item.keyPoints === 'string') {
@@ -739,14 +857,32 @@ function IQBatchLibraryPanel() {
             }
             return JSON.stringify([]);
           })();
+      const normArr = (v) => {
+        if (Array.isArray(v)) return v.length ? JSON.stringify(v.filter(Boolean)) : null;
+        if (typeof v === 'string' && v.trim()) {
+          const t = v.trim();
+          if (t.startsWith('[')) return t;
+          return JSON.stringify(t.split('\n').map(s => s.trim()).filter(Boolean));
+        }
+        return null;
+      };
       return {
-        category:     item.category,
-        difficulty:   item.difficulty || 'MEDIUM',
-        question:     item.question,
-        quickAnswer:  item.quickAnswer,
-        keyPoints,
-        codeExample:  item.codeExample || null,
-        displayOrder: Number.isFinite(Number(item.displayOrder)) ? Number(item.displayOrder) : i,
+        category:          item.category,
+        topicTitle:        item.topicTitle || null,
+        difficulty:        item.difficulty || 'MEDIUM',
+        question:          item.question,
+        quickAnswer:       item.quickAnswer,
+        keyPoints:         normKeyPoints,
+        codeExample:       item.codeExample || null,
+        followUpQuestions: normArr(item.followUpQuestions),
+        spokenAnswer:      item.spokenAnswer || null,
+        commonMistakes:    item.commonMistakes || null,
+        companiesAskThis:  normArr(item.companiesAskThis),
+        seniorExpectation: item.seniorExpectation || null,
+        timeToAnswer:      item.timeToAnswer || null,
+        relatedTopics:     normArr(item.relatedTopics),
+        tags:              normArr(item.tags),
+        displayOrder:      Number.isFinite(Number(item.displayOrder)) ? Number(item.displayOrder) : i,
       };
     });
   }

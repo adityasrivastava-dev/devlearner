@@ -672,6 +672,16 @@ function NotesPanel({ topicId }) {
   );
 }
 
+/** Parse a field that may be a JSON array string ["a","b"] or newline-separated text */
+function parseJsonOrLines(value) {
+  if (!value) return [];
+  const v = value.trim();
+  if (v.startsWith('[')) {
+    try { return JSON.parse(v).filter(Boolean); } catch { /* fall through */ }
+  }
+  return v.split('\n').map(s => s.trim()).filter(Boolean);
+}
+
 // ── Interview Q&A tab (standalone panel) ──────────────────────────────────────
 function TopicInterviewQuestions({ category, topicTitle }) {
   const [expanded, setExpanded] = useState(null);
@@ -757,12 +767,23 @@ function TopicInterviewQuestions({ category, topicTitle }) {
                       </div>
                     )}
 
+                    {/* Spoken answer */}
+                    {q.spokenAnswer && (
+                      <div className={`${styles.qaAnswerSection} ${styles.qaSpokenSection}`}>
+                        <div className={styles.qaAnswerLabel}>🗣 Say it like this</div>
+                        <div className={styles.qaSpokenText}>{q.spokenAnswer}</div>
+                        {q.timeToAnswer && (
+                          <span className={styles.qaTimeBadge}>⏱ {q.timeToAnswer}</span>
+                        )}
+                      </div>
+                    )}
+
                     {/* Key points */}
                     {q.keyPoints && (
                       <div className={styles.qaAnswerSection}>
                         <div className={styles.qaAnswerLabel}>Key Points</div>
                         <ul className={styles.qaKeyPoints}>
-                          {q.keyPoints.split('\n').filter(Boolean).map((pt, pi) => (
+                          {parseJsonOrLines(q.keyPoints).map((pt, pi) => (
                             <li key={pi} className={styles.qaKeyPoint}>
                               {pt.includes(':')
                                 ? <><strong>{pt.split(':')[0]}</strong>:{pt.split(':').slice(1).join(':')}</>
@@ -773,11 +794,68 @@ function TopicInterviewQuestions({ category, topicTitle }) {
                       </div>
                     )}
 
+                    {/* Common mistakes */}
+                    {q.commonMistakes && (
+                      <div className={`${styles.qaAnswerSection} ${styles.qaMistakesSection}`}>
+                        <div className={styles.qaAnswerLabel}>⚠ Common Mistakes</div>
+                        <div className={styles.qaMistakesText}>{q.commonMistakes}</div>
+                      </div>
+                    )}
+
+                    {/* Senior expectation */}
+                    {q.seniorExpectation && (
+                      <div className={`${styles.qaAnswerSection} ${styles.qaSeniorSection}`}>
+                        <div className={styles.qaAnswerLabel}>🎯 Senior Level Adds</div>
+                        <div className={styles.qaAnswerText}>{q.seniorExpectation}</div>
+                      </div>
+                    )}
+
                     {/* Code example */}
                     {q.codeExample && (
                       <div className={styles.qaAnswerSection}>
                         <div className={styles.qaAnswerLabel}>Example</div>
                         <pre className={styles.qaCode}><code>{q.codeExample}</code></pre>
+                      </div>
+                    )}
+
+                    {/* Follow-up questions */}
+                    {q.followUpQuestions && parseJsonOrLines(q.followUpQuestions).length > 0 && (
+                      <div className={styles.qaAnswerSection}>
+                        <div className={styles.qaAnswerLabel}>💬 Likely Follow-ups</div>
+                        <ul className={styles.qaFollowUps}>
+                          {parseJsonOrLines(q.followUpQuestions).map((fq, fi) => (
+                            <li key={fi} className={styles.qaFollowUp}>→ {fq}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Bottom row: companies + tags */}
+                    {(q.companiesAskThis || q.tags || q.relatedTopics) && (
+                      <div className={styles.qaMetaRow}>
+                        {q.companiesAskThis && parseJsonOrLines(q.companiesAskThis).length > 0 && (
+                          <div className={styles.qaMetaGroup}>
+                            <span className={styles.qaMetaLabel}>Asked by</span>
+                            {parseJsonOrLines(q.companiesAskThis).map((c, ci) => (
+                              <span key={ci} className={styles.qaCompanyBadge}>{c}</span>
+                            ))}
+                          </div>
+                        )}
+                        {q.tags && parseJsonOrLines(q.tags).length > 0 && (
+                          <div className={styles.qaMetaGroup}>
+                            {parseJsonOrLines(q.tags).map((t, ti) => (
+                              <span key={ti} className={styles.qaTag}>#{t}</span>
+                            ))}
+                          </div>
+                        )}
+                        {q.relatedTopics && parseJsonOrLines(q.relatedTopics).length > 0 && (
+                          <div className={styles.qaMetaGroup}>
+                            <span className={styles.qaMetaLabel}>See also</span>
+                            {parseJsonOrLines(q.relatedTopics).map((rt, ri) => (
+                              <span key={ri} className={styles.qaRelatedTopic}>{rt}</span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

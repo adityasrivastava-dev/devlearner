@@ -102,6 +102,14 @@ public class InterviewQuestionController {
             existing.setQuickAnswer(q.getQuickAnswer());
             existing.setKeyPoints(q.getKeyPoints());
             existing.setCodeExample(q.getCodeExample());
+            existing.setFollowUpQuestions(q.getFollowUpQuestions());
+            existing.setSpokenAnswer(q.getSpokenAnswer());
+            existing.setCommonMistakes(q.getCommonMistakes());
+            existing.setCompaniesAskThis(q.getCompaniesAskThis());
+            existing.setSeniorExpectation(q.getSeniorExpectation());
+            existing.setTimeToAnswer(q.getTimeToAnswer());
+            existing.setRelatedTopics(q.getRelatedTopics());
+            existing.setTags(q.getTags());
             existing.setDisplayOrder(q.getDisplayOrder());
             return ResponseEntity.ok(repo.save(existing));
         }).orElse(ResponseEntity.notFound().build());
