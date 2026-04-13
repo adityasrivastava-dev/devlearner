@@ -1,0 +1,254 @@
+[
+  {
+    "category": "AWS",
+    "topicTitle": "AWS Core Services — IAM, EC2, S3 & VPC",
+    "question": "What is the difference between IAM roles, users, groups, and policies?",
+    "quickAnswer": "IAM User: represents a person or service with long-term credentials (access key + secret). IAM Group: collection of users sharing policies. IAM Role: identity with permissions but no credentials — assumed by services, EC2 instances, Lambda, or cross-account. IAM Policy: JSON document defining permissions, attached to users/groups/roles. Best practice: use roles (not users with keys) for services; grant least privilege.",
+    "difficulty": "HIGH",
+    "keyPoints": "User: long-term credentials (access key), for humans or CI/CD\nGroup: apply same policies to multiple users\nRole: no credentials, assumed temporarily (STS AssumeRole)\nPolicy: JSON permission document — Allow/Deny on actions+resources\nEC2 instance role: EC2 assumes role → no hardcoded credentials in code\nCross-account: Role in account B trusted by account A — assume role for access\nLeast privilege: start with deny all, grant minimum needed",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "AWS Core Services — IAM, EC2, S3 & VPC",
+    "question": "What is the difference between S3 storage classes?",
+    "quickAnswer": "S3 Standard: frequent access, low latency, high availability — most expensive per-GB. S3 Intelligent-Tiering: auto-moves objects between tiers based on access patterns. S3 Standard-IA: infrequent access, cheaper storage but per-retrieval cost. S3 Glacier Instant/Flexible/Deep Archive: archival (minutes to hours/days retrieval). Choose based on access frequency and retrieval time tolerance.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Standard: frequent access, 99.99% availability, 11 9's durability\nIntelligent-Tiering: auto-moves objects, no retrieval fees, monitoring cost\nStandard-IA: cheap storage, retrieval fee — accessed monthly or less\nGlacier Instant Retrieval: milliseconds — cold data still needs fast access\nGlacier Flexible: 1min-12hr — backups, DR\nGlacier Deep Archive: 12hr+ — compliance archives, 7-10yr retention\nLifecycle rules: auto-transition objects between classes based on age",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "AWS Core Services — IAM, EC2, S3 & VPC",
+    "question": "What is a VPC and what are the key networking components?",
+    "quickAnswer": "VPC (Virtual Private Cloud) is a logically isolated network in AWS where you deploy resources. Key components: Subnets (public: has internet gateway route; private: no direct internet), Internet Gateway (IGW: connects VPC to internet), NAT Gateway (private subnet → internet, not vice versa), Security Groups (stateful firewall per instance), NACLs (stateless firewall per subnet).",
+    "difficulty": "HIGH",
+    "keyPoints": "VPC CIDR: IP range for your private network (e.g., 10.0.0.0/16)\nPublic subnet: route to IGW — accessible from internet\nPrivate subnet: no IGW route — use NAT Gateway for outbound internet\nSecurity Group: stateful (return traffic auto-allowed), per instance\nNACL: stateless (must explicitly allow inbound AND outbound), per subnet\nBastion host: jump server in public subnet to SSH into private instances\nVPC Peering: connect two VPCs — non-transitive",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "AWS Core Services — IAM, EC2, S3 & VPC",
+    "question": "What is the difference between security groups and NACLs in AWS?",
+    "quickAnswer": "Security Groups: stateful (return traffic automatically allowed), attached to instances/ENIs, only allow rules (no explicit deny). NACLs (Network ACLs): stateless (must allow both inbound and outbound), attached to subnets, support both allow and deny rules, evaluated in rule number order. Use SG for instance-level control; NACL for subnet-level blocking (e.g., block known bad IPs).",
+    "difficulty": "HIGH",
+    "keyPoints": "Security Group: stateful — allow return traffic automatically; no deny rules\nNACL: stateless — allow both directions explicitly; supports deny\nSG scope: instance/ENI level\nNACL scope: subnet level — applies to all instances in subnet\nSG evaluation: all rules checked, most permissive wins\nNACL evaluation: rules in order by number, first match applied\nDefault NACL: allows all traffic; custom NACL: denies all by default",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "AWS Lambda — Serverless Compute",
+    "question": "What is a cold start in Lambda and how do you minimize it?",
+    "quickAnswer": "Cold start: when Lambda hasn't run recently (or new instance needed), AWS must download the code package, start a container, and initialize the runtime — adds 100ms to several seconds of latency. Mitigations: Provisioned Concurrency (keep instances warm), minimize package size (less download time), use lighter runtimes (Python/Node faster than Java), avoid VPC if possible (VPC adds ENI creation latency).",
+    "difficulty": "HIGH",
+    "keyPoints": "Cold start: container init + runtime init + function init — first invocation is slow\nWarm start: reuse existing container — much faster (no init)\nProvisioned Concurrency: keep N instances warm — eliminates cold starts, costs more\nReduce cold starts: smaller package, lighter runtime, lazy initialization\nJava cold starts: much worse than Node.js/Python — use GraalVM native or Lambda SnapStart\nVPC cold start: NAT, ENI attachment adds latency — avoid VPC unless needed",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "AWS Lambda — Serverless Compute",
+    "question": "How does Lambda handle concurrency and what is the default limit?",
+    "quickAnswer": "Lambda scales by creating new instances per concurrent request — effectively unlimited concurrency with AWS managing instances. Default account concurrency limit is 1000 concurrent executions (soft limit, can be increased). Reserved concurrency: guarantee N units for a function, prevents it from consuming shared pool. Throttled requests get 429 (TooManyRequests) — client must retry.",
+    "difficulty": "HIGH",
+    "keyPoints": "Concurrency = number of simultaneous executions\nDefault account limit: 1000 concurrent (soft limit, increase via support)\nReserved concurrency: N units guaranteed to this function; caps max\nUnreserved concurrency: shared pool among all functions\nThrottling: 429 error when no capacity; SQS/Kinesis retry automatically\nBurst concurrency: Lambda can burst to 3000 initially, then +500/min\nMonitor: CloudWatch ConcurrentExecutions, Throttles metrics",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "AWS Lambda — Serverless Compute",
+    "question": "What are common Lambda event sources and their invocation models?",
+    "quickAnswer": "Synchronous: API Gateway, ALB, Lambda URL — caller waits for response; must handle errors explicitly. Asynchronous: SNS, S3 events, EventBridge — Lambda gets event, no response to caller; failures go to DLQ after retries. Polling: SQS, Kinesis, DynamoDB Streams — Lambda polls the source; processes batches; on failure Lambda retries the whole batch (configure maxBatchingWindow, bisect-on-error).",
+    "difficulty": "HIGH",
+    "keyPoints": "Synchronous: API GW, ALB — caller waits; Lambda must respond correctly\nAsync: SNS, S3, EventBridge — fire-and-forget; Lambda retries 2x; then DLQ\nPolling: SQS, Kinesis, DynamoDB Streams — Lambda managed polling\nSQS Lambda: Lambda scales out (one Lambda per message batch)\nKinesis: one Lambda per shard — ordered processing\nDLQ/Failure destination: route failed async invocations for debugging",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "Amazon API Gateway — HTTP APIs and REST APIs",
+    "question": "What is the difference between REST API and HTTP API in API Gateway?",
+    "quickAnswer": "HTTP API: newer, faster (lower latency), cheaper — supports OIDC/JWT auth, Lambda proxy, and route-based routing. Fewer features than REST API. REST API: full-featured — request/response transformations, resource policies, usage plans, API keys, caching, X-Ray tracing, WAF integration. Use HTTP API for simple Lambda APIs; REST API for full API management features.",
+    "difficulty": "HIGH",
+    "keyPoints": "HTTP API: 70% cheaper, lower latency — simpler, modern\nREST API: full features — throttling, usage plans, caching, WAF, transforms\nAuthorization: both support Lambda authorizers; HTTP API natively supports JWT/OIDC\nCaching: only REST API has built-in response caching\nWebSocket: both types support WebSocket APIs\nIntegration types: REST API = Lambda proxy, HTTP, AWS service, VPC link",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "Amazon API Gateway — HTTP APIs and REST APIs",
+    "question": "How does API Gateway throttling and usage plans work?",
+    "quickAnswer": "API Gateway throttles requests at two levels: account-level (10,000 RPS default, 5,000 burst) and per-method/stage. Usage Plans combine API keys with quotas and throttle limits — used for billing customers different API tiers (free, basic, premium). API Keys must be sent in x-api-key header. Rate limit exceeded returns 429 Too Many Requests.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Account limit: 10,000 RPS steady, 5,000 burst (increase via support)\nPer-stage/method throttling: override for specific APIs\nUsage plan: quota (requests per day/month) + rate limit (RPS)\nAPI key: sent in x-api-key header; linked to usage plan\nThrottled response: 429 Too Many Requests\nCaching: REST API stage-level cache (TTL 0-3600s) — reduces backend calls",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "Amazon DynamoDB — NoSQL at Scale",
+    "question": "What is the difference between partition key and sort key in DynamoDB?",
+    "quickAnswer": "Partition key (hash key): determines which partition stores the item. Must be unique if used alone as primary key. Sort key (range key): combined with partition key forms a composite primary key — multiple items can share the same partition key with different sort keys. Partition key is for grouping; sort key enables range queries within a partition.",
+    "difficulty": "HIGH",
+    "keyPoints": "Partition key alone: primary key must be unique per item\nComposite key (PK + SK): PK groups related items; SK differentiates them\nData access: can query all items with same PK and filter by SK range\nPartition distribution: DynamoDB distributes items by hash(PK) across partitions\nHot partition: one PK receiving all writes → bottleneck; add randomness or use sharding\nDesign principle: model access patterns first; denormalize for single-table design",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "Amazon DynamoDB — NoSQL at Scale",
+    "question": "What is the difference between GSI and LSI in DynamoDB?",
+    "quickAnswer": "LSI (Local Secondary Index): same partition key as base table, different sort key — must be defined at table creation, limited to 10GB per partition. GSI (Global Secondary Index): different partition key and sort key — can be added after table creation, scans across all partitions. GSIs can have different read/write capacity. Most use cases need GSIs; LSIs are rare.",
+    "difficulty": "HIGH",
+    "keyPoints": "LSI: same PK, different SK — local to partition; 10GB limit; at creation time only\nGSI: different PK and SK — global; can add anytime; separate capacity\nGSI eventual consistency: replication lag from base table\nGSI for alternate access patterns: query by email when table is keyed by userId\nGSI sparse indexes: only items with the GSI attribute are indexed (efficient for rare attributes)\nGSI projection: choose which attributes to project (KEYS_ONLY, INCLUDE, ALL)",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "Amazon DynamoDB — NoSQL at Scale",
+    "question": "What is single-table design in DynamoDB?",
+    "quickAnswer": "Single-table design puts multiple entity types in one DynamoDB table, using generic PK/SK naming (PK='USER#123', SK='PROFILE') and type discrimination. This minimizes round trips by co-locating related data (user + their orders). Required because DynamoDB doesn't support JOINs. Design is driven by access patterns first — know your queries before designing the table.",
+    "difficulty": "HIGH",
+    "keyPoints": "Multiple entity types in one table — avoids JOINs\nGeneric PK/SK: PK='USER#id', SK='ORDER#orderId' — type prefixes\nAdjacent entity pattern: query PK='USER#123' returns user + all orders\nType attribute: add 'type' attribute to differentiate entities in queries\nContra: complex to understand, hard to evolve, must know access patterns upfront\nAWS recommendation: single-table for most DynamoDB workloads",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "Amazon SQS — Decoupled Messaging",
+    "question": "What is the difference between SQS Standard and FIFO queues?",
+    "quickAnswer": "Standard queue: unlimited throughput, at-least-once delivery (duplicate possible), best-effort ordering — use when throughput matters and duplicates are tolerable. FIFO queue: exactly-once processing, strict ordering within a message group, limited to 300 TPS (3000 with batching) — use for orders, financial transactions where order and deduplication matter.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Standard: at-least-once (duplicates possible), best-effort order, unlimited TPS\nFIFO: exactly-once, strict FIFO within message group, 300-3000 TPS\nMessage group ID: FIFO parallelism via groups — one consumer per group\nDeduplication ID: FIFO deduplicates within 5-minute window\nConsumer idempotency: still needed for standard queues (duplicate messages)\nUse case: standard for logs/analytics; FIFO for payments/orders",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "Amazon SQS — Decoupled Messaging",
+    "question": "What is the visibility timeout in SQS and what happens when it expires?",
+    "quickAnswer": "When a consumer receives a message, it becomes invisible for the visibility timeout period (default 30s). The consumer must delete the message before timeout expires. If not deleted (consumer crashes/fails), the message becomes visible again and another consumer can pick it up. Set visibility timeout slightly longer than your processing time. Use ChangeMessageVisibility for long-running tasks.",
+    "difficulty": "HIGH",
+    "keyPoints": "Visibility timeout: message hidden from other consumers during processing\nDefault: 30 seconds; max: 12 hours\nConsumer must: process + DeleteMessage before timeout\nTimeout expired: message reappears — picked up by another consumer\nApproximate receive count: tracks how many times message delivered\nDLQ: after maxReceiveCount deliveries, route to Dead Letter Queue\nChangeMessageVisibility: extend timeout for long-running jobs",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "Amazon SQS — Decoupled Messaging",
+    "question": "What is long polling in SQS and why should you use it?",
+    "quickAnswer": "Short polling (default): SQS samples a subset of servers and returns immediately — returns empty if no messages. Long polling: waits up to 20 seconds for messages to arrive — reduces empty responses, saves cost (fewer API calls), and has lower latency. Set ReceiveMessageWaitTimeSeconds=20 on the queue or per API call. Almost always prefer long polling in production.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Short polling: immediate response, may return empty, samples subset of servers\nLong polling: wait up to 20s — fewer empty responses, lower cost, lower latency\nWaitTimeSeconds=20: maximum long poll duration\nCost savings: fewer ReceiveMessage API calls → lower bill\nEmission latency: long poll reduces average time to receive messages\nQueue attribute: ReceiveMessageWaitTimeSeconds on queue (vs per-call)",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "Amazon Route 53 — DNS and Traffic Routing",
+    "question": "What are the Route 53 routing policies?",
+    "quickAnswer": "Simple: single resource, no health checks. Weighted: split traffic by weight (A/B testing, canary). Latency: route to lowest-latency region for the user. Failover: active-passive; routes to secondary on primary failure. Geolocation: route by user's country/continent. Geoproximity: route by distance to resource (with bias). Multivalue Answer: return multiple healthy IPs (not a real LB).",
+    "difficulty": "HIGH",
+    "keyPoints": "Simple: no logic, no health checks, single resource\nWeighted: percentage-based split — canary deployments, A/B tests\nLatency: fastest region for user based on network latency\nFailover: primary/secondary — health check triggers failover\nGeolocation: based on user's country/continent — compliance, localization\nGeoproximity: bias shifts traffic toward/away from regions\nMultivalue: up to 8 healthy records — NOT a substitute for load balancer",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "Amazon Route 53 — DNS and Traffic Routing",
+    "question": "What is the difference between Route 53 alias records and CNAME records?",
+    "quickAnswer": "CNAME maps one hostname to another — cannot be used for the apex/root domain (example.com). Alias record (Route 53 proprietary): maps hostname to AWS resources (ALB, CloudFront, S3 bucket) — can be used for apex domain, no extra DNS lookup, free within Route 53. Use alias for AWS resources; CNAME for external hosts and non-apex subdomains.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "CNAME: hostname → hostname; NOT allowed at apex (zone root)\nAlias: hostname → AWS resource endpoint; allowed at apex\nAlias advantages: no additional DNS lookup, free queries, auto-updates IP\nAlias targets: ALB, NLB, CloudFront, S3 website, API Gateway, Elastic Beanstalk\nCNAME cost: each CNAME lookup charged; Alias resolves at Route 53 (free)\nApex domain: example.com cannot have CNAME; use Alias record instead",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "Amazon CloudFront — CDN and Edge Caching",
+    "question": "How does CloudFront caching work and how do you invalidate cache?",
+    "quickAnswer": "CloudFront caches responses at edge locations worldwide. Cache behavior configured by path pattern (/*.jpg → long TTL; /api/* → no cache). TTL controlled by Cache-Control: max-age headers from origin. Cache invalidation: create an invalidation request for specific paths (e.g., /images/*) — invalidations cost money ($0.005 per invalidation path). Versioning files (image-v2.jpg) is cheaper than invalidating.",
+    "difficulty": "HIGH",
+    "keyPoints": "Edge locations: 400+ globally — cache content near users\nCache key: URL + selected headers/query strings/cookies\nTTL: from origin's Cache-Control header; override in behavior settings\nInvalidation: /* to clear all, /path/specific.js for specific — cost per path\nOrigin failover: primary + secondary origin — fallback on 5xx\nSigned URLs/cookies: restrict access to authenticated content\nVersioning: better than invalidation — cache-busted by changing filename",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "Amazon CloudFront — CDN and Edge Caching",
+    "question": "What are CloudFront behaviors and how do you configure different caching for different paths?",
+    "quickAnswer": "CloudFront behaviors define caching rules per path pattern. Default behavior (*) is the fallback. Add behaviors for specific patterns: /api/* → no cache (TTL=0), forward all headers/cookies; /static/* → long cache (TTL=86400), no cookies; /*.html → medium TTL. Behaviors are evaluated in order; most specific match wins. Each behavior can point to a different origin.",
+    "difficulty": "HIGH",
+    "keyPoints": "Behaviors: path pattern → caching config + origin\nEvaluation order: most specific pattern first; default (*) is last\nAPI caching: TTL=0, forward all headers — or bypass cache entirely\nStatic assets: long TTL, no cookies, compress (Gzip/Brotli)\nOrigin per behavior: /api/* → ALB; /static/* → S3 bucket\nCustom headers: add security headers (X-Frame-Options, CSP) in CloudFront behaviors",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "ALB, NLB, and VPC Peering — Load Balancing and Network Design",
+    "question": "What is the difference between ALB, NLB, and CLB in AWS?",
+    "quickAnswer": "CLB (Classic): legacy, avoid. ALB (Application LB): Layer 7 — HTTP/HTTPS/WebSocket, path/header/host-based routing, redirects, fixed response, WAF integration, Lambda targets. NLB (Network LB): Layer 4 — TCP/UDP/TLS, static IP, ultra-low latency, millions of RPS, Elastic IP support, preserves source IP. Use ALB for web apps; NLB for extreme performance, static IPs, or non-HTTP.",
+    "difficulty": "HIGH",
+    "keyPoints": "ALB: Layer 7, content-based routing, WAF, SSL termination, Lambda targets\nNLB: Layer 4, static IP, low latency, TCP/UDP, preserves client IP\nCLB: deprecated — avoid for new workloads\nTarget types: EC2 instances, IP addresses, Lambda (ALB only), ECS tasks\nALB path routing: /api → API target group; /static → CDN target group\nNLB use case: gaming, IoT, financial (microsecond latency), VPN, PrivateLink",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "ALB, NLB, and VPC Peering — Load Balancing and Network Design",
+    "question": "What is VPC Peering vs AWS Transit Gateway?",
+    "quickAnswer": "VPC Peering: direct 1-to-1 connection between two VPCs — non-transitive (if A-B and B-C peered, A can't reach C via B). Doesn't support overlapping CIDRs. Transit Gateway: hub-and-spoke model connecting many VPCs and on-premises — transitive routing, centralized, supports thousands of VPCs. Use peering for a few VPCs; Transit Gateway for large-scale or complex topologies.",
+    "difficulty": "HIGH",
+    "keyPoints": "VPC Peering: 1-to-1, non-transitive, no CIDR overlap, cross-account/region\nTransit Gateway: hub-and-spoke, transitive, scales to thousands of VPCs\nCost: Peering is free (data transfer charged); TGW has attachment + data fee\nTransit Gateway attachments: VPCs, VPNs, Direct Connect, peering connections\nRoute tables: TGW has its own route tables — granular control\nUse case: VPC Peering for dev/prod isolation (two VPCs); TGW for enterprise multi-VPC",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "Amazon ECS — Containers Without the Cluster Headache",
+    "question": "What is the difference between ECS with EC2 launch type and Fargate?",
+    "quickAnswer": "EC2 launch type: you manage the EC2 instances in the cluster — control over instance type, can use reserved instances/spot for cost savings, but must handle patching, scaling, and capacity planning. Fargate: serverless — AWS manages the underlying infrastructure, you define only CPU/memory per task. Fargate is simpler and ideal for variable workloads; EC2 is better for steady high-volume workloads needing cost optimization.",
+    "difficulty": "HIGH",
+    "keyPoints": "EC2: you manage EC2 instances — patching, capacity, instance types\nFargate: serverless — no cluster infrastructure to manage\nFargate pricing: per-second vCPU + memory for task duration\nEC2 pricing: pay for instances regardless of utilization\nSpot with EC2: significant cost savings (up to 70%)\nFargate Spot: also available — interruptible tasks\nChoose EC2: high throughput steady workloads; Fargate: simplicity, variable load",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "Amazon ECS — Containers Without the Cluster Headache",
+    "question": "How does ECS service auto-scaling work?",
+    "quickAnswer": "ECS Service Auto Scaling adjusts the number of running tasks based on CloudWatch metrics. Target tracking: maintain a metric at a target value (e.g., CPU utilization=70%). Step scaling: scale by N tasks based on alarm thresholds. Scheduled scaling: for predictable load. Application Auto Scaling manages ECS tasks; for EC2 launch type, also need EC2 ASG for cluster capacity.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Target tracking: simplest — 'keep ALB request count per target at 1000'\nStep scaling: CloudWatch alarm → add/remove N tasks based on breach size\nScheduled: predefined schedule — scale up before known traffic spike\nCooldown: min time between scaling events to prevent thrashing\nEC2 cluster scaling: Cluster Auto Scaling (CAS) or ASG — scales EC2 instances\nFargate: no cluster capacity concern — tasks just launch\nMetrics: CPU, memory (task-level), ALB request count, custom metrics",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "AWS CodePipeline — CI/CD on AWS",
+    "question": "What are the deployment strategies in AWS CodeDeploy?",
+    "quickAnswer": "All-at-once: deploy to all instances simultaneously — fast, causes downtime. Rolling: deploy to a batch of instances at a time — reduced risk, slower. Rolling with additional batch: launch extra instances first — no capacity reduction during deploy. Blue/Green: new environment (Green) deployed, traffic shifted from Blue, rollback by switching back. Canary: shift small % of traffic to new version first, then all.",
+    "difficulty": "HIGH",
+    "keyPoints": "All-at-once: fastest, full downtime during deploy\nRolling: partial availability during deploy — some instances on old version\nRolling + additional batch: full capacity maintained during rollout\nBlue/Green: zero downtime, instant rollback, double cost during deploy\nCanary: shift 10% → validate → shift 100% — minimize blast radius\nLinear: gradually increase traffic (10% → 20% → ... → 100%) at intervals\nCodeDeploy integrates: EC2, ECS, Lambda deployments",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "AWS CodePipeline — CI/CD on AWS",
+    "question": "What are the stages of a typical AWS CodePipeline?",
+    "quickAnswer": "CodePipeline orchestrates CI/CD. Typical stages: Source (CodeCommit/GitHub/S3 trigger), Build (CodeBuild: compile, test, package, push artifact to S3/ECR), Test (integration tests in CodeBuild or testing services), Deploy (CodeDeploy to EC2/ECS, or CloudFormation for infrastructure). Stages execute sequentially; actions within a stage can be parallel. Manual approval actions can be added between stages.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Source: CodeCommit, GitHub, S3, ECR (container image changes)\nBuild: CodeBuild — buildspec.yml defines build steps\nTest: CodeBuild (integration tests), Device Farm, third-party test tools\nDeploy: CodeDeploy (EC2/Lambda), ECS Deploy, CloudFormation, S3, Beanstalk\nManual approval: email SNS notification, human approves before prod deploy\nArtifact store: S3 bucket stores pipeline artifacts between stages",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "CloudFormation and CloudWatch — Infrastructure as Code and Observability",
+    "question": "What is CloudFormation drift and how do you detect it?",
+    "quickAnswer": "Drift occurs when actual resource configuration differs from the CloudFormation template (someone manually changed a security group in the console, for example). Detect drift via CloudFormation's drift detection — compares template with live AWS resources. Drifted resources must be manually corrected or the template updated. Prevent drift by enforcing IaC-only changes via SCPs or least-privilege IAM.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Drift: manual changes to resources not reflected in template\nDetection: CloudFormation console → 'Detect drift' on stack\nDrifted status: shows which properties differ and the expected vs actual values\nFix: update template to match reality, or revert manual change\nPrevention: SCPs to deny direct resource modification; use IaC pipelines only\nAlternatives: Terraform with state — same drift problem but terraform plan shows it",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "CloudFormation and CloudWatch — Infrastructure as Code and Observability",
+    "question": "What is the difference between CloudWatch Metrics, Logs, and Alarms?",
+    "quickAnswer": "Metrics: time-series numerical data (CPU utilization, request count) — retained for 15 months. Logs: text records from services (Lambda output, application logs, VPC flow logs) — query with CloudWatch Logs Insights. Alarms: watch a metric and trigger actions (SNS notification, Auto Scaling, Lambda) when threshold breached. Composite alarms: combine multiple alarms for complex conditions.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Metrics: numeric time-series, 1-60s granularity, 15-month retention\nLogs: structured/unstructured text, log groups → log streams → events\nLogs Insights: SQL-like query language for log analysis\nAlarms: metric threshold → OK/ALARM/INSUFFICIENT_DATA states\nAlarm actions: SNS notification, EC2 action, Auto Scaling policy\nCustom metrics: push app metrics via CloudWatch PutMetricData API\nEMF (Embedded Metric Format): structured logs automatically become metrics",
+    "codeExample": null
+  },
+  {
+    "category": "AWS",
+    "topicTitle": "CloudFormation and CloudWatch — Infrastructure as Code and Observability",
+    "question": "How do you use CloudFormation stacks and change sets?",
+    "quickAnswer": "A CloudFormation stack is a collection of AWS resources managed together. Change sets preview what will happen before executing (like git diff before git push) — shows resources to be added, modified (with replacement indicator), or deleted. Always use change sets for production updates to avoid unexpected replacements. Nested stacks: compose large templates from smaller modular ones.",
+    "difficulty": "HIGH",
+    "keyPoints": "Stack: unit of deployment — create/update/delete resources together\nChange set: preview of changes before execution — shows add/modify/delete/replace\nReplacement: some property changes force replacement (new resource + delete old)\nStack outputs: export values (VPC ID, ALB ARN) for use by other stacks\nNested stacks: stack within stack — modular IaC\nStackSets: deploy stacks across multiple accounts and regions\nRollback: on failure, CloudFormation rolls back to last known good state",
+    "codeExample": null
+  }
+]
