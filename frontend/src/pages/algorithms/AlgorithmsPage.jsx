@@ -335,6 +335,7 @@ export default function AlgorithmsPage() {
   const [category, setCategory]           = useState('ALL');
   const [search, setSearch]               = useState('');
   const [selected, setSelected]           = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   // Fetch all algorithms from backend on mount
   useEffect(() => {
@@ -393,6 +394,25 @@ export default function AlgorithmsPage() {
       return u.role === 'ADMIN';
     } catch { return false; }
   })();
+
+  const handleCardClick = (summaryAlgo) => {
+    setDetailLoading(true);
+    const token = localStorage.getItem('devlearn_token');
+    fetch(`/api/algorithms/${encodeURIComponent(summaryAlgo.slug)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(full => { setSelected(full); setDetailLoading(false); })
+      .catch(() => { setSelected(summaryAlgo); setDetailLoading(false); });
+  };
+
+  if (detailLoading) {
+    return (
+      <div className={styles.page} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <span style={{ color: 'var(--text2)' }}>Loading…</span>
+      </div>
+    );
+  }
 
   if (selected) {
     return <AlgorithmDetail algo={selected} onBack={() => setSelected(null)} />;
@@ -485,7 +505,7 @@ export default function AlgorithmsPage() {
                 </div>
                 <div className={styles.grid}>
                   {filtered.map(algo => (
-                    <AlgorithmCard key={algo.id} algo={algo} onClick={setSelected} />
+                    <AlgorithmCard key={algo.id} algo={algo} onClick={handleCardClick} />
                   ))}
                 </div>
               </>

@@ -23,13 +23,13 @@ private final ProblemRepository problemRepository;
 
 // ── Read ──────────────────────────────────────────────────────────────────
 
-public List<Topic> getAllTopics() {
-    return topicRepository.findAllByOrderByDisplayOrderAscTitleAsc();
+public List<TopicRepository.TopicSummary> getAllTopics() {
+    return topicRepository.findAllSummaries();
 }
 
-public List<Topic> getTopicsByCategory(String category) {
+public List<TopicRepository.TopicSummary> getTopicsByCategory(String category) {
     Topic.Category cat = Topic.Category.valueOf(category.toUpperCase());
-    return topicRepository.findByCategoryOrderByDisplayOrderAscTitleAsc(cat);
+    return topicRepository.findSummariesByCategory(cat);
 }
 
 public Optional<Topic> getTopicById(Long id) {

@@ -3,6 +3,7 @@ package com.learnsystem.controller;
 import com.learnsystem.model.InterviewQuestion;
 import com.learnsystem.repository.InterviewQuestionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -20,22 +21,27 @@ public class InterviewQuestionController {
 
     /**
      * GET /api/interview-questions
-     * Optional filters: ?category=JAVA&difficulty=HIGH
+     * Optional filters: ?category=JAVA&difficulty=HIGH&size=300
+     * Default cap: 300. Caller can request up to 500.
      */
     @GetMapping("/api/interview-questions")
     public ResponseEntity<List<InterviewQuestion>> getAll(
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String difficulty) {
+            @RequestParam(required = false)       String category,
+            @RequestParam(required = false)       String difficulty,
+            @RequestParam(defaultValue = "300") int    size) {
+
+        size = Math.min(size, 500);
+        var pageable = PageRequest.of(0, size);
 
         List<InterviewQuestion> result;
         if (category != null && difficulty != null) {
-            result = repo.findByCategoryAndDifficultyOrderByDisplayOrderAscCreatedAtAsc(category, difficulty);
+            result = repo.findByCategoryAndDifficultyPaged(category, difficulty, pageable);
         } else if (category != null) {
-            result = repo.findByCategoryOrderByDisplayOrderAscCreatedAtAsc(category);
+            result = repo.findByCategoryPaged(category, pageable);
         } else if (difficulty != null) {
-            result = repo.findByDifficultyOrderByDisplayOrderAscCreatedAtAsc(difficulty);
+            result = repo.findByDifficultyPaged(difficulty, pageable);
         } else {
-            result = repo.findAllByOrderByDisplayOrderAscCreatedAtAsc();
+            result = repo.findAllPaged(pageable);
         }
         return ResponseEntity.ok(result);
     }

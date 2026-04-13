@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.PageRequest;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -168,18 +169,23 @@ public ResponseEntity<Map<String, Object>> submitAndPersist(
 	return ResponseEntity.ok(response);
 }
 
-// ── GET /api/submissions?problemId=X ─────────────────────────────────────
+// ── GET /api/submissions?problemId=X&size=N ───────────────────────────────
+// Default cap: 50 rows. Caller can request up to 200.
 @GetMapping
 public ResponseEntity<List<Map<String, Object>>> getHistory(
-		@RequestParam(required = false) Long problemId,
+		@RequestParam(required = false) Long   problemId,
+		@RequestParam(defaultValue = "50") int size,
 		HttpServletRequest httpReq) {
 
 	Long userId = resolveUserId(httpReq);
 	if (userId == null) return ResponseEntity.ok(List.of());
 
+	size = Math.min(size, 200);
+	var pageable = PageRequest.of(0, size);
+
 	List<Submission> subs = problemId != null
-			? submissionRepo.findByUserIdAndProblemIdOrderByCreatedAtDesc(userId, problemId)
-			: submissionRepo.findByUserIdOrderByCreatedAtDesc(userId);
+			? submissionRepo.findRecentByUserIdAndProblemId(userId, problemId, pageable)
+			: submissionRepo.findRecentByUserId(userId, pageable);
 
 	List<Map<String, Object>> out = subs.stream().map(s -> {
 		Map<String, Object> m = new LinkedHashMap<>();

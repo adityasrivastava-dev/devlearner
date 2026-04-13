@@ -3,6 +3,7 @@ package com.learnsystem.controller;
 import com.learnsystem.model.Example;
 import com.learnsystem.model.Problem;
 import com.learnsystem.model.Topic;
+import com.learnsystem.repository.TopicRepository;
 import com.learnsystem.service.TopicService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,11 +19,13 @@ public class TopicController {
     private final TopicService topicService;
 
     // GET /api/topics  OR  GET /api/topics?category=DSA
+    // Returns lightweight summary (no heavy TEXT content fields).
+    // Full topic content is available via GET /api/topics/{id}.
     @GetMapping
-    public ResponseEntity<List<Topic>> getTopics(
+    public ResponseEntity<List<TopicRepository.TopicSummary>> getTopics(
             @RequestParam(required = false) String category) {
 
-        List<Topic> topics = category != null
+        List<TopicRepository.TopicSummary> topics = category != null
                 ? topicService.getTopicsByCategory(category)
                 : topicService.getAllTopics();
         return ResponseEntity.ok(topics);

@@ -1,6 +1,7 @@
 package com.learnsystem.repository;
 
 import com.learnsystem.model.Submission;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,6 +17,13 @@ List<Submission> findByUserIdAndProblemIdOrderByCreatedAtDesc(Long userId, Long 
 
 /** All submissions for a user, newest first */
 List<Submission> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+/** Paginated — used by GET /api/submissions to cap response size */
+@Query("SELECT s FROM Submission s WHERE s.userId = :userId AND s.problemId = :problemId ORDER BY s.createdAt DESC")
+List<Submission> findRecentByUserIdAndProblemId(@Param("userId") Long userId, @Param("problemId") Long problemId, Pageable pageable);
+
+@Query("SELECT s FROM Submission s WHERE s.userId = :userId ORDER BY s.createdAt DESC")
+List<Submission> findRecentByUserId(@Param("userId") Long userId, Pageable pageable);
 
 /** Accepted submissions for a problem — used for percentile */
 @Query("SELECT s FROM Submission s WHERE s.problemId = :pid AND s.status = 'ACCEPTED'")

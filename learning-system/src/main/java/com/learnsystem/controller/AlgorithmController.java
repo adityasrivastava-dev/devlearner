@@ -49,20 +49,19 @@ private final ResourcePatternResolver   resourcePatternResolver;
 // ─────────────────────────────────────────────────────────────────────────
 
 @GetMapping
-public ResponseEntity<List<Algorithm>> getAll(
+public ResponseEntity<List<AlgorithmRepository.AlgorithmSummary>> getAll(
 		@RequestParam(required = false) String category) {
 
-	List<Algorithm> result = category != null && !category.isBlank()
-			? algorithmRepo.findByCategoryOrderByDisplayOrderAscNameAsc(category)
-			: algorithmRepo.findAllByOrderByDisplayOrderAscNameAsc();
+	List<AlgorithmRepository.AlgorithmSummary> result = category != null && !category.isBlank()
+			? algorithmRepo.findSummariesByCategory(category)
+			: algorithmRepo.findAllSummaries();
 	return ResponseEntity.ok(result);
 }
 
 @GetMapping("/categories")
 public ResponseEntity<List<String>> getCategories() {
-	List<Algorithm> all = algorithmRepo.findAllByOrderByDisplayOrderAscNameAsc();
-	List<String> cats = all.stream()
-			.map(Algorithm::getCategory)
+	List<String> cats = algorithmRepo.findAllSummaries().stream()
+			.map(AlgorithmRepository.AlgorithmSummary::getCategory)
 			.distinct()
 			.sorted()
 			.toList();

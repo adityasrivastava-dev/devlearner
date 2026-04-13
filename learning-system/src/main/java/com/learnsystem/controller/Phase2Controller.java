@@ -7,6 +7,7 @@ import com.learnsystem.service.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -162,12 +163,15 @@ public ResponseEntity<?> topicPerformance(
 
 @GetMapping("/api/notes")
 public ResponseEntity<?> getNotes(
-		@RequestParam(required = false) Long topicId,
+		@RequestParam(required = false)      Long topicId,
+		@RequestParam(defaultValue = "200") int  size,
 		@AuthenticationPrincipal User user) {
 	if (user == null) return ResponseEntity.status(401).build();
+	size = Math.min(size, 500);
+	var pageable = PageRequest.of(0, size);
 	var notes = topicId != null
-			? noteRepo.findByUserIdAndTopicIdOrderByUpdatedAtDesc(user.getId(), topicId)
-			: noteRepo.findByUserIdOrderByUpdatedAtDesc(user.getId());
+			? noteRepo.findRecentByUserIdAndTopicId(user.getId(), topicId, pageable)
+			: noteRepo.findRecentByUserId(user.getId(), pageable);
 	return ResponseEntity.ok(notes.stream().map(n -> Map.of(
 			"id",        n.getId(),
 			"topicId",   n.getTopicId() != null ? n.getTopicId() : 0,
@@ -233,7 +237,9 @@ public ResponseEntity<?> deleteNote(
 @GetMapping("/api/bookmarks")
 public ResponseEntity<?> getBookmarks(@AuthenticationPrincipal User user) {
 	if (user == null) return ResponseEntity.status(401).build();
-	return ResponseEntity.ok(bookmarkRepo.findByUserIdOrderByCreatedAtDesc(user.getId())
+	// Cap at 500 — bookmarks are small rows but query must be bounded
+	var pageable = PageRequest.of(0, 500);
+	return ResponseEntity.ok(bookmarkRepo.findRecentByUserId(user.getId(), pageable)
 			.stream().map(b -> Map.of(
 					"id",        b.getId(),
 					"itemType",  b.getItemType(),

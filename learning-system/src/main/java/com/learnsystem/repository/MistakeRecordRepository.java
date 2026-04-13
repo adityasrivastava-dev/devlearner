@@ -1,6 +1,7 @@
 package com.learnsystem.repository;
 
 import com.learnsystem.model.MistakeRecord;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +13,10 @@ import java.util.List;
 public interface MistakeRecordRepository extends JpaRepository<MistakeRecord, Long> {
 
 List<MistakeRecord> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+/** DB-level cap — avoids loading thousands of mistake rows into heap */
+@Query("SELECT m FROM MistakeRecord m WHERE m.userId = :userId ORDER BY m.createdAt DESC")
+List<MistakeRecord> findRecentByUserId(@Param("userId") Long userId, Pageable pageable);
 
 List<MistakeRecord> findByUserIdAndTopicIdOrderByCreatedAtDesc(Long userId, Long topicId);
 

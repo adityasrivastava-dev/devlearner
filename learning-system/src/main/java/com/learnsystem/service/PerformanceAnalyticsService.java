@@ -4,6 +4,7 @@ import com.learnsystem.model.*;
 import com.learnsystem.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -177,8 +178,9 @@ public Map<String, Object> getDashboard(Long userId) {
 }
 
 public List<Map<String, Object>> getMistakeJournal(Long userId) {
-	return mistakeRepo.findByUserIdOrderByCreatedAtDesc(userId)
-			.stream().limit(50).map(m -> {
+	// Fetch at most 50 rows at the DB level — avoids loading unbounded history into heap
+	return mistakeRepo.findRecentByUserId(userId, PageRequest.of(0, 50))
+			.stream().map(m -> {
 				Map<String, Object> map = new LinkedHashMap<>();
 				map.put("id",               m.getId());
 				map.put("problemId",        m.getProblemId());
