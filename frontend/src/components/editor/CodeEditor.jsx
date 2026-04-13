@@ -101,8 +101,7 @@ const completionCache = {};
 async function fetchCompletions(version) {
   const key = version || '17';
   if (!completionCache[key]) {
-    completionCache[key] = fetch(`/api/java/completions?version=${key}`)
-      .then((r) => r.json())
+    completionCache[key] = codeApi.getJavaCompletions(key)
       .then((d) => d.items || [])
       .catch(() => []);
   }

@@ -978,15 +978,7 @@ function QuickImportSection() {
       if (type === 'topics')     res = await adminApi.seedBatch(obj);
       if (type === 'algorithms') res = await algorithmAdminApi.seedBatch(obj);
       if (type === 'quiz') {
-        // quiz paste goes through the quiz paste endpoint via adminApi
-        const token = localStorage.getItem('devlearn_token');
-        const r = await fetch('/api/admin/quiz/paste', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: json,
-        });
-        res = await r.json();
-        if (!r.ok) throw new Error(res.error || 'Import failed');
+        res = await adminApi.pasteQuizSet(obj);
       }
       setResult({ type, res });
       qc.invalidateQueries({ queryKey: ['topics'] });

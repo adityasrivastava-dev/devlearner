@@ -94,6 +94,9 @@ export const codeApi = {
   syntaxCheck: (code, javaVersion = '17') =>
     http.post('/api/syntax-check', { code, javaVersion }).then((r) => r.data),
 
+  getJavaCompletions: (javaVersion = '17') =>
+    http.get('/api/java/completions', { params: { version: javaVersion } }).then((r) => r.data),
+
   analyzeComplexity: (code) =>
     http.post('/api/analyze-complexity', { code }).then((r) => r.data),
 };
@@ -212,6 +215,18 @@ export const adminApi = {
     http.delete(`/api/admin/problems/${id}`).then((r) => r.data),
 
   // Quiz admin CRUD
+  getQuizFiles: () =>
+    http.get('/api/admin/quiz/files').then((r) => r.data),
+
+  importQuizFile: (filename) =>
+    http.post(`/api/admin/quiz/files/${encodeURIComponent(filename)}`).then((r) => r.data),
+
+  previewQuizFile: (filename) =>
+    http.get(`/api/admin/quiz/files/${encodeURIComponent(filename)}/preview`).then((r) => r.data),
+
+  pasteQuizSet: (payload) =>
+    http.post('/api/admin/quiz/paste', payload).then((r) => r.data),
+
   getQuizSets: () =>
     http.get('/api/admin/quiz/sets').then((r) => r.data),
 

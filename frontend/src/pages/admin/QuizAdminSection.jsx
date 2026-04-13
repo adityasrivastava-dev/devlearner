@@ -8,39 +8,27 @@ import qStyles from './QuizAdmin.module.css';
 
 // ── internal admin API calls ─────────────────────────────────────────────────
 async function adminGetQuizFiles() {
-  const token = localStorage.getItem('devlearn_token');
-  const r = await fetch('/api/admin/quiz/files', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return r.json();
+  return adminApi.getQuizFiles();
 }
 
 async function adminImportQuizFile(filename) {
-  const token = localStorage.getItem('devlearn_token');
-  const r = await fetch(`/api/admin/quiz/files/${encodeURIComponent(filename)}`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!r.ok) throw new Error((await r.json()).error || 'Import failed');
-  return r.json();
+  try {
+    return await adminApi.importQuizFile(filename);
+  } catch (e) {
+    throw new Error(e?.response?.data?.error || e?.response?.data?.message || e?.message || 'Import failed');
+  }
 }
 
 async function adminListQuizSets() {
-  const token = localStorage.getItem('devlearn_token');
-  const r = await fetch('/api/admin/quiz/sets', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return r.json();
+  return adminApi.getQuizSets();
 }
 
 async function adminDeleteQuizSet(id) {
-  const token = localStorage.getItem('devlearn_token');
-  const r = await fetch(`/api/admin/quiz/sets/${id}`, {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!r.ok) throw new Error('Delete failed');
-  return r.json();
+  try {
+    return await adminApi.deleteQuizSet(id);
+  } catch (e) {
+    throw new Error(e?.response?.data?.error || e?.response?.data?.message || e?.message || 'Delete failed');
+  }
 }
 
 // ── root component ────────────────────────────────────────────────────────────
@@ -548,14 +536,10 @@ function QuizBrowsePanel({ onBack, onLoad }) {
     try {
       // Load the file directly via the import-file endpoint in preview mode
       // We fetch raw file data from the listing, then use a dedicated preview
-      const token = localStorage.getItem('devlearn_token');
-      const r = await fetch(`/api/admin/quiz/files/${encodeURIComponent(filename)}/preview`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (r.ok) {
-        const data = await r.json();
+      try {
+        const data = await adminApi.previewQuizFile(filename);
         setSets(data.questions ? [data] : data); // single set or array
-      } else {
+      } catch {
         // Fallback: just show the file info we already have
         const fileInfo = files.find((f) => f.filename === filename);
         if (fileInfo) setSets([fileInfo]);
