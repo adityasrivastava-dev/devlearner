@@ -8,7 +8,7 @@ import SqlTableVisualizer from '../sql/SqlTableVisualizer';
 import styles from './TopicView.module.css';
 import ReadOnlyCodeViewer from './ReadOnlyCodeViewer';
 
-export default function TopicView({ topic, onProblemOpen, onBack, theme = 'dark' }) {
+export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext, theme = 'dark' }) {
   const [tab, setTab]               = useState('theory');
   const [activeExample, setActiveExample] = useState(null);
   const [diffFilter, setDiffFilter] = useState('ALL');
@@ -126,6 +126,22 @@ export default function TopicView({ topic, onProblemOpen, onBack, theme = 'dark'
             <button className={styles.backBtn} onClick={onBack} title="Back to Dashboard">
               ← Home
             </button>
+          )}
+          {(onPrev || onNext) && (
+            <div className={styles.topicNav}>
+              <button
+                className={styles.topicNavBtn}
+                onClick={onPrev}
+                disabled={!onPrev}
+                title="Previous topic"
+              >‹ Prev</button>
+              <button
+                className={styles.topicNavBtn}
+                onClick={onNext}
+                disabled={!onNext}
+                title="Next topic"
+              >Next ›</button>
+            </div>
           )}
           <span className={`badge ${catMeta.cls}`}>{catMeta.label}</span>
           <h1 className={styles.title}>{topic.title}</h1>

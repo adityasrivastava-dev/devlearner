@@ -27,6 +27,20 @@ export default function HomePage() {
   const openProblemId    = (() => { const v = searchParams.get('openProblem'); const n = parseInt(v, 10); return v && !isNaN(n) ? n : null; })();
   const fromParam        = searchParams.get('from');
 
+  // Fetch topic list for the current category (used for prev/next nav)
+  const { data: topicList = [] } = useQuery({
+    queryKey: QUERY_KEYS.topics(selectedCategory || 'ALL'),
+    queryFn:  () => topicsApi.getAll(selectedCategory || 'ALL'),
+    staleTime: 5 * 60 * 1000,
+    enabled:  !!selectedTopicId,
+  });
+
+  // Compute adjacent topic IDs
+  const currentTopicIndex = topicList.findIndex((t) => t.id === selectedTopicId);
+  const prevTopicId = currentTopicIndex > 0 ? topicList[currentTopicIndex - 1].id : null;
+  const nextTopicId = currentTopicIndex >= 0 && currentTopicIndex < topicList.length - 1
+    ? topicList[currentTopicIndex + 1].id : null;
+
   // Fetch full topic when a topic is selected
   const { data: currentTopic } = useQuery({
     queryKey: QUERY_KEYS.topic(selectedTopicId),
@@ -135,6 +149,8 @@ export default function HomePage() {
         fontSize={fontSize}
         onProblemOpen={openProblem}
         onBack={goBackFromTopic}
+        onPrev={prevTopicId ? () => selectTopic(prevTopicId) : null}
+        onNext={nextTopicId ? () => selectTopic(nextTopicId) : null}
       />
     ) : <TopicSkeleton />;
   } else if (selectedCategory) {
