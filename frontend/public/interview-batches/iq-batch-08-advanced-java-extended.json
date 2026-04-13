@@ -1,0 +1,295 @@
+{
+  "batchName": "iq-batch-08-advanced-java-extended",
+  "questions": [
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What are virtual threads (Project Loom)? How do they differ from platform threads?",
+      "quickAnswer": "Virtual threads (Java 21) are lightweight threads managed by the JVM, not the OS. A platform thread is a 1:1 wrapper around an OS thread (~1MB stack, limited to ~thousands). Virtual threads are very cheap (~a few hundred bytes each) and you can have millions. When a virtual thread blocks (I/O, sleep), the JVM parks it and the carrier OS thread is freed to run another virtual thread.",
+      "keyPoints": [
+        "Platform thread: OS thread, expensive (~1MB stack), limited pool",
+        "Virtual thread: JVM-managed, cheap (~few hundred bytes), millions possible",
+        "Thread.ofVirtual().start(task) or Executors.newVirtualThreadPerTaskExecutor()",
+        "Blocking I/O: virtual thread is parked; carrier platform thread unblocked — no thread starvation",
+        "Don't pool virtual threads — create one per task; they're disposable",
+        "Pinning: synchronized blocks prevent unmounting — use ReentrantLock instead in virtual thread code"
+      ],
+      "codeExample": "// Traditional: limited by thread pool size\nExecutorService pool = Executors.newFixedThreadPool(200);\n\n// Virtual threads: one per task, scales to thousands\nExecutorService vtp = Executors.newVirtualThreadPerTaskExecutor();\nvtp.submit(() -> {\n    // blocking I/O here doesn't block an OS thread\n    String result = httpClient.get(url);\n});",
+      "displayOrder": 0
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What are Java records? What are their limitations?",
+      "quickAnswer": "Records (Java 16+) are compact immutable data carriers. The compiler auto-generates a canonical constructor, getters (named after fields, not getX()), equals(), hashCode(), and toString(). Limitations: cannot extend another class (implicitly extends Record), all fields are final (immutable), cannot add mutable state.",
+      "keyPoints": [
+        "record Point(int x, int y) {} — generates constructor, x(), y(), equals, hashCode, toString",
+        "Compact constructor: record Point(int x, int y) { if (x < 0) throw new IAE(); } — no assignment needed",
+        "Cannot extend: records implicitly extend java.lang.Record, no inheritance from other classes",
+        "All fields are final — cannot be mutable",
+        "Can implement interfaces",
+        "Perfect for DTOs, value objects, immutable data transfers"
+      ],
+      "codeExample": "record User(Long id, String name, String email) {\n    // Compact constructor — validation runs; fields assigned automatically\n    User {\n        Objects.requireNonNull(name, \"name required\");\n        email = email.toLowerCase().trim(); // can normalize\n    }\n}\n\nUser u = new User(1L, \"Alice\", \"alice@example.com\");\nSystem.out.println(u.name()); // Alice — note: name(), not getName()\nSystem.out.println(u);        // User[id=1, name=Alice, email=alice@example.com]",
+      "displayOrder": 1
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What are sealed classes in Java 17?",
+      "quickAnswer": "Sealed classes restrict which classes can extend or implement them. You explicitly list the permitted subclasses with 'permits'. This enables exhaustive pattern matching in switch expressions — the compiler can verify all cases are covered. Sealed interfaces are the foundation of algebraic data types in Java.",
+      "keyPoints": [
+        "sealed class Shape permits Circle, Rectangle, Triangle {}",
+        "Each permitted subclass must be final, sealed, or non-sealed",
+        "Exhaustiveness: switch over a sealed type can warn if a case is missing",
+        "Non-sealed: a permitted subclass that opens itself to arbitrary extension",
+        "Works with records for concise sealed hierarchies: sealed interface Result permits Success, Failure"
+      ],
+      "codeExample": "sealed interface Result<T> permits Success, Failure {}\nrecord Success<T>(T value) implements Result<T> {}\nrecord Failure<T>(String error) implements Result<T> {}\n\n// Exhaustive switch — compiler verifies all cases covered\nString message = switch (result) {\n    case Success<String> s -> \"Got: \" + s.value();\n    case Failure<String> f -> \"Error: \" + f.error();\n};",
+      "displayOrder": 2
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is pattern matching in Java? Explain instanceof and switch pattern matching.",
+      "quickAnswer": "Pattern matching eliminates boilerplate casts. instanceof pattern matching (Java 16) lets you test and bind in one expression: if (obj instanceof String s). Switch pattern matching (Java 21) extends this to switch — you match on type patterns, guarded patterns, and deconstruct records.",
+      "keyPoints": [
+        "instanceof: if (obj instanceof String s && s.length() > 5) — binds s in scope",
+        "Switch type pattern: case String s -> s.toUpperCase()",
+        "Guarded pattern: case Integer i when i > 0 -> \"positive\"",
+        "Record deconstruction: case Point(int x, int y) -> x + y",
+        "Null handling in switch: case null -> ... prevents NPE from unhandled null"
+      ],
+      "codeExample": "// instanceof pattern (Java 16)\nif (shape instanceof Circle c) {\n    return Math.PI * c.radius() * c.radius();\n}\n\n// Switch pattern (Java 21)\ndouble area = switch (shape) {\n    case Circle c    -> Math.PI * c.radius() * c.radius();\n    case Rectangle r -> (double) r.width() * r.height();\n    case Triangle t  -> 0.5 * t.base() * t.height();\n};",
+      "displayOrder": 3
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What are the advantages of ReentrantLock over synchronized?",
+      "quickAnswer": "ReentrantLock provides tryLock() (non-blocking acquire with timeout), lockInterruptibly() (allows cancellation), and fairness policy (threads acquire in order). synchronized is simpler and preferred when these features aren't needed. Both are reentrant — the same thread can acquire multiple times.",
+      "keyPoints": [
+        "tryLock(): attempt to acquire without blocking — returns false immediately if unavailable",
+        "tryLock(timeout, unit): wait up to timeout — avoids deadlock with timeout",
+        "lockInterruptibly(): can be interrupted while waiting — responsive to Thread.interrupt()",
+        "fair=true: threads acquire in FIFO order — prevents starvation but slower",
+        "MUST unlock in finally block — synchronized releases automatically",
+        "Condition: reentrantLock.newCondition() replaces wait()/notify() with more control"
+      ],
+      "codeExample": "ReentrantLock lock = new ReentrantLock();\n\nvoid transfer(Account from, Account to, BigDecimal amount) {\n    lock.lock();\n    try {\n        from.debit(amount);\n        to.credit(amount);\n    } finally {\n        lock.unlock(); // always in finally!\n    }\n}\n\n// Non-blocking try:\nif (lock.tryLock(500, TimeUnit.MILLISECONDS)) {\n    try { /* ... */ } finally { lock.unlock(); }\n} else {\n    // couldn't acquire — handle gracefully\n}",
+      "displayOrder": 4
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is ReadWriteLock? What is StampedLock and how is it different?",
+      "quickAnswer": "ReadWriteLock allows concurrent reads (any number) but exclusive writes (one at a time). Good for read-heavy data structures. StampedLock (Java 8) adds optimistic reads — try a lock-free read first, validate the stamp, and only fall back to a real read lock if the data changed. StampedLock is not reentrant.",
+      "keyPoints": [
+        "ReadWriteLock: many readers OR one writer — read lock shared, write lock exclusive",
+        "ReentrantReadWriteLock: reentrant version; readers can starve if writes are frequent",
+        "StampedLock optimistic read: tryOptimisticRead() → read data → validate(stamp) → if invalid, get real lock",
+        "StampedLock is NOT reentrant — same thread cannot acquire write lock twice",
+        "StampedLock.asReadLock() / .asWriteLock() expose Lock interface for interop"
+      ],
+      "displayOrder": 5
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is ForkJoinPool and work stealing? When do you use it over a fixed thread pool?",
+      "quickAnswer": "ForkJoinPool is a thread pool that uses work-stealing — idle threads steal tasks from busy threads' queues, maximizing CPU utilization for recursive divide-and-conquer tasks. It's used by Stream.parallel() and CompletableFuture (via commonPool). Use it for recursive algorithms that split into subtasks; use fixed thread pools for I/O-bound work.",
+      "keyPoints": [
+        "Work-stealing: idle threads dequeue tasks from the back of busy threads' deques",
+        "RecursiveTask<V>.compute(): fork subtasks, join results — divide and conquer",
+        "ForkJoinPool.commonPool(): shared JVM-wide pool; default for parallel streams",
+        "Use ForkJoinPool for CPU-bound recursive tasks; fixed pool for I/O tasks",
+        "ForkJoinPool(parallelism=N): N ≈ CPU cores for CPU-bound tasks"
+      ],
+      "displayOrder": 6
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is JDK dynamic proxy vs CGLIB proxy? When is each used?",
+      "quickAnswer": "JDK dynamic proxy creates a proxy that implements the same interfaces as the target — the target must implement at least one interface. CGLIB creates a proxy by subclassing the target class at runtime — works even without interfaces but cannot proxy final classes or methods. Spring AOP uses JDK proxy when interfaces exist, CGLIB otherwise.",
+      "keyPoints": [
+        "JDK proxy: requires interface; Proxy.newProxyInstance() + InvocationHandler",
+        "CGLIB: subclasses the concrete class using bytecode generation — no interface needed",
+        "Spring: spring.aop.proxy-target-class=true forces CGLIB even when interfaces exist",
+        "Final class/method: CGLIB can't subclass — Spring throws BeanCreationException",
+        "@Transactional, @Async, @Cacheable: all implemented via proxy interception"
+      ],
+      "displayOrder": 7
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is Java NIO? How do channels and selectors differ from traditional I/O?",
+      "quickAnswer": "Traditional I/O (java.io) is blocking — one thread per connection. NIO (java.nio) introduces non-blocking I/O with Channels (bidirectional, non-blocking), Buffers (data containers), and Selectors (multiplex many channels on one thread). A single thread with a Selector can handle thousands of connections — this is how Netty and similar frameworks achieve high throughput.",
+      "keyPoints": [
+        "Channel: bidirectional (read and write); non-blocking when configured",
+        "Buffer: data flows through buffers; ByteBuffer.allocate() / allocateDirect()",
+        "Selector: monitors multiple channels for readiness (read/write/connect/accept)",
+        "select(): blocks until at least one channel is ready — one thread handles many connections",
+        "NIO2 (Java 7): AsynchronousSocketChannel — fully async with callbacks or Futures"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is Project Reactor? What is the difference between Mono and Flux?",
+      "quickAnswer": "Project Reactor is the reactive library used by Spring WebFlux. Mono<T> represents 0 or 1 result. Flux<T> represents 0 to N results as a stream. Both are lazy — nothing happens until you subscribe(). Operators (map, filter, flatMap) are composable pipeline steps.",
+      "keyPoints": [
+        "Mono<T>: 0 or 1 element — like a reactive Optional or Future",
+        "Flux<T>: 0 to N elements — like a reactive Stream or List",
+        "Lazy: no work done until subscribe() is called",
+        "flatMap(): maps each element to a publisher and merges — non-blocking composition",
+        "subscribeOn(Schedulers.boundedElastic()): move blocking work to a separate thread pool"
+      ],
+      "codeExample": "// Mono: single async result\nMono<User> user = userRepository.findById(1L);\n\n// Flux: stream of results\nFlux<Order> orders = orderRepository.findByUserId(1L);\n\n// Composing\nMono<String> result = userRepository.findById(id)\n    .map(u -> u.getName().toUpperCase())\n    .switchIfEmpty(Mono.error(new NotFoundException()));",
+      "displayOrder": 9
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is backpressure in reactive programming?",
+      "quickAnswer": "Backpressure is a signal from a slow subscriber to a fast publisher to slow down. Without it, the subscriber's buffer overflows (OOM or dropped items). Reactive Streams (and Reactor) standardize this with the request(n) protocol — the subscriber says how many items it's ready to process, and the publisher respects that limit.",
+      "keyPoints": [
+        "Publisher emits; Subscriber consumes — publisher can be faster than subscriber",
+        "Subscription.request(n): subscriber asks for exactly n items",
+        "Overflow strategies: DROP (discard), BUFFER (queue), LATEST (keep newest), ERROR",
+        "Flux.onBackpressureDrop(): silently discard items the subscriber isn't ready for",
+        "WebFlux handles backpressure automatically across the HTTP/DB boundary"
+      ],
+      "displayOrder": 10
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is WeakHashMap and when do you use it?",
+      "quickAnswer": "WeakHashMap stores keys as weak references — the GC can collect a key even while the map holds it. When a key is collected, its entry is automatically removed from the map. Use it for caches where the lifecycle of the cached value should follow the lifecycle of the key object.",
+      "keyPoints": [
+        "Keys are WeakReferences — collected by GC when no strong references remain",
+        "Entry is removed when key is collected (on next map access or GC cycle)",
+        "Use case: class-keyed cache that should not prevent GC of the key class",
+        "Values are strongly referenced — don't store values that hold the key back (cycle)",
+        "Not thread-safe — use Collections.synchronizedMap(new WeakHashMap<>()) for concurrency"
+      ],
+      "displayOrder": 11
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between scheduleAtFixedRate and scheduleWithFixedDelay in ScheduledExecutorService?",
+      "quickAnswer": "scheduleAtFixedRate fires every N ms from the task's start time — if the task takes longer than N ms, the next execution starts immediately after. scheduleWithFixedDelay waits N ms after the previous execution completes — guarantees a gap between executions. Use fixedDelay when you don't want overlap.",
+      "keyPoints": [
+        "scheduleAtFixedRate: start + N, start + 2N, start + 3N — fixed clock tick",
+        "scheduleWithFixedDelay: end + N — gap between end of one and start of next",
+        "If task takes > period (in fixedRate): next task runs immediately — no overlap within single-thread executor",
+        "ScheduledExecutorService.scheduleAtFixedRate(task, initialDelay, period, TimeUnit.SECONDS)",
+        "Uncaught exception in a scheduled task silently stops future executions — wrap in try/catch"
+      ],
+      "displayOrder": 12
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "How do you handle exceptions in CompletableFuture chains?",
+      "quickAnswer": "Exceptions in CompletableFuture propagate through the chain and skip normal stages. Use exceptionally() to recover with a fallback value, handle() to inspect both result and exception and always produce a value, or whenComplete() to observe without transforming. Any unhandled exception wraps in ExecutionException on get().",
+      "keyPoints": [
+        "exceptionally(fn): recovery — fn receives Throwable, returns fallback T",
+        "handle(fn): always runs — BiFunction<T, Throwable, U>; handles both success and failure",
+        "whenComplete(consumer): observe without transforming — like a finally block",
+        "thenApply after exceptionally: runs on the recovered value",
+        "CompletableFuture.get(): throws ExecutionException wrapping the original exception"
+      ],
+      "codeExample": "CompletableFuture.supplyAsync(() -> fetchUser(id))\n    .thenApply(user -> transform(user))\n    .exceptionally(ex -> {\n        log.error(\"Failed to fetch user\", ex);\n        return defaultUser(); // fallback\n    })\n    .thenAccept(result -> sendResponse(result));",
+      "displayOrder": 13
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is Phaser? How is it more flexible than CountDownLatch and CyclicBarrier?",
+      "quickAnswer": "Phaser is a reusable, flexible barrier that supports dynamic registration of parties. Unlike CountDownLatch (fixed count, single-use) or CyclicBarrier (fixed parties, reusable), Phaser allows parties to register and deregister dynamically, supports multiple phases, and allows threads to arrive and optionally wait.",
+      "keyPoints": [
+        "Dynamic registration: register()/bulkRegister() to add parties; arriveAndDeregister() to remove",
+        "arrive(): signal arrival without waiting",
+        "arriveAndAwaitAdvance(): signal arrival AND wait for all parties",
+        "Multiple phases: phaseNumber increments each time all parties arrive",
+        "onAdvance(): override to run logic between phases or terminate"
+      ],
+      "displayOrder": 14
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the Java SPI (ServiceLoader) pattern? How does it work?",
+      "quickAnswer": "SPI (Service Provider Interface) lets you define a service interface and discover implementations at runtime from the classpath without compile-time coupling. The JDK discovers implementations via files in META-INF/services/ (Java 8) or module-info.java provides declarations (Java 9+). Spring Boot's auto-configuration is built on a similar mechanism.",
+      "keyPoints": [
+        "Define interface; each JAR provides implementations listed in META-INF/services/com.example.ServiceInterface",
+        "ServiceLoader.load(MyService.class): discovers and instantiates all registered providers",
+        "Implementations must have a no-arg constructor",
+        "Examples: java.sql.Driver, javax.persistence.spi.PersistenceProvider, JDBC driver loading",
+        "Java 9+: module system uses 'provides MyService with MyImpl' in module-info.java"
+      ],
+      "displayOrder": 15
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between Object.clone() and a copy constructor? What are deep vs shallow copy?",
+      "quickAnswer": "Shallow copy copies field values — reference fields share the same underlying objects. Deep copy copies the object graph recursively so the copy is completely independent. Object.clone() is shallow by default and requires implementing Cloneable (a marker interface with no methods). Copy constructors are clearer and preferred.",
+      "keyPoints": [
+        "Shallow: field-by-field copy; collections and objects are shared (not duplicated)",
+        "Deep: recursive copy — all referenced objects are also copied",
+        "Cloneable marker interface: empty interface; clone() throws CloneNotSupportedException without it",
+        "Object.clone(): protected — must override as public; returns a shallow copy",
+        "Copy constructor preferred: User copy = new User(original) — explicit, no casting, easier to deep copy"
+      ],
+      "displayOrder": 16
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "When do you use String.format, StringBuilder, String.join, and String.formatted?",
+      "quickAnswer": "String.format() (or the new String.formatted() instance method) is for human-readable formatted strings with placeholders. StringBuilder is for efficient concatenation in loops. String.join() is for joining a list with a delimiter. String + in a loop creates O(n²) garbage — always use StringBuilder or streams for loop concatenation.",
+      "keyPoints": [
+        "String + in a loop: new String object per iteration — O(n²) — avoid",
+        "StringBuilder: O(1) amortized append — use in loops",
+        "String.format(\"%s has %d items\", name, count): format string with args",
+        "String.formatted() (Java 15): \"Hello %s\".formatted(name) — instance method equivalent",
+        "String.join(\", \", list): join with delimiter — simpler than stream collect(joining)"
+      ],
+      "displayOrder": 17
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the diamond problem with default methods in interfaces? How does Java resolve it?",
+      "quickAnswer": "When a class implements two interfaces that both provide a default method with the same signature, the compiler requires the class to explicitly override the method to resolve the ambiguity. The class can call either interface's default via InterfaceName.super.method().",
+      "keyPoints": [
+        "Class beats interface: if a superclass defines a method, it wins over interface default",
+        "Interface specificity: a more specific interface's default beats a less specific one",
+        "Explicit override required: if two sibling interfaces provide the same default — must override in class",
+        "InterfaceA.super.method(): call a specific interface's default from the overriding class",
+        "Java does not support multiple inheritance of state (fields) — only default method inheritance"
+      ],
+      "displayOrder": 18
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What qualifies as a @FunctionalInterface? Give examples beyond the built-ins.",
+      "quickAnswer": "@FunctionalInterface marks an interface that has exactly one abstract method — it can have any number of default and static methods. The annotation is optional (just documentation), but causes a compile error if the interface has more than one abstract method. Any such interface can be implemented with a lambda or method reference.",
+      "keyPoints": [
+        "Exactly one abstract method (SAM — Single Abstract Method)",
+        "@FunctionalInterface annotation: optional but enforced by compiler",
+        "Can have multiple default methods, static methods, and Object methods (equals, toString)",
+        "Built-ins: Runnable, Callable, Comparator, Predicate, Function, Consumer, Supplier",
+        "Custom: @FunctionalInterface interface TriFunction<A,B,C,R> { R apply(A a, B b, C c); }"
+      ],
+      "displayOrder": 19
+    }
+  ]
+}

@@ -1,0 +1,292 @@
+{
+  "batchName": "iq-batch-05-spring-boot-fundamentals",
+  "questions": [
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is Spring IoC container and Dependency Injection?",
+      "quickAnswer": "IoC (Inversion of Control) means the Spring container creates and manages objects (beans) instead of you using 'new'. Dependency Injection is the mechanism — your class declares what it needs, and Spring wires it in. Constructor injection is preferred: dependencies are final, NPE-safe, and explicit.",
+      "keyPoints": [
+        "IoC: control of object creation is inverted — Spring owns the lifecycle, not your code",
+        "DI types: constructor (preferred), setter, field (@Autowired on field)",
+        "ApplicationContext is the full IoC container; BeanFactory is its leaner parent",
+        "Constructor injection: allows final fields, fails fast at startup if bean missing",
+        "Field injection (@Autowired on field): convenient but untestable without Spring"
+      ],
+      "codeExample": "@Service\npublic class OrderService {\n    private final UserRepository userRepo; // final = immutable\n\n    // Spring autowires by type; no @Autowired needed with single constructor\n    public OrderService(UserRepository userRepo) {\n        this.userRepo = userRepo;\n    }\n}",
+      "displayOrder": 0
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What does @SpringBootApplication do?",
+      "quickAnswer": "@SpringBootApplication is a convenience annotation that combines @Configuration (marks the class as a bean source), @EnableAutoConfiguration (triggers Spring Boot's auto-config mechanism), and @ComponentScan (scans the current package and subpackages for beans). Removing it and adding all three individually produces the same result.",
+      "keyPoints": [
+        "@Configuration: marks the class as a bean definition source",
+        "@EnableAutoConfiguration: tells Spring Boot to auto-configure based on classpath",
+        "@ComponentScan: scans for @Component, @Service, @Repository, @Controller in the same package and below",
+        "Place it on the main class in the root package so component scan covers the whole app",
+        "Use scanBasePackages to override the scan root if needed"
+      ],
+      "codeExample": "@SpringBootApplication\npublic class DevLearnerApp {\n    public static void main(String[] args) {\n        SpringApplication.run(DevLearnerApp.class, args);\n    }\n}\n\n// Equivalent explicit form:\n// @Configuration\n// @EnableAutoConfiguration\n// @ComponentScan(\"com.example\")",
+      "displayOrder": 1
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "How does Spring Boot auto-configuration work?",
+      "quickAnswer": "Spring Boot scans classpath JARs for META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports (pre-Boot 3: spring.factories). Each listed class is a @Configuration annotated with @Conditional guards — they only activate if specific classes are on the classpath or properties are set. For example, DataSourceAutoConfiguration activates when a JDBC driver is on the classpath.",
+      "keyPoints": [
+        "Auto-config classes live in spring-boot-autoconfigure JAR, activated via imports file",
+        "@ConditionalOnClass: only configure if a class exists on classpath (e.g. DataSource)",
+        "@ConditionalOnMissingBean: back off if you've already defined your own bean",
+        "@ConditionalOnProperty: activate based on an application.properties value",
+        "debug=true in application.properties prints the conditions evaluation report"
+      ],
+      "displayOrder": 2
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between @Component, @Service, @Repository, and @Controller?",
+      "quickAnswer": "All four register a bean in the Spring container — functionally equivalent at the DI level. They differ only in semantic intent and in one runtime behaviour: @Repository activates Spring's persistence exception translation (converts vendor-specific SQL exceptions to Spring's DataAccessException hierarchy).",
+      "keyPoints": [
+        "@Component: generic stereotype — use when the class doesn't fit a specific role",
+        "@Service: marks business logic layer; no extra Spring behaviour over @Component",
+        "@Repository: marks persistence layer; enables exception translation via PersistenceExceptionTranslationPostProcessor",
+        "@Controller: marks MVC controller; scanned by DispatcherServlet",
+        "@RestController = @Controller + @ResponseBody on every method"
+      ],
+      "displayOrder": 3
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What are bean scopes in Spring? When would you use prototype?",
+      "quickAnswer": "The default scope is singleton — one shared instance per ApplicationContext. Prototype creates a new instance every time the bean is requested. Request and Session scopes are only available in web contexts. Singleton is right for stateless services; prototype is for stateful helper objects where each caller needs its own copy.",
+      "keyPoints": [
+        "Singleton (default): one instance per container; shared across all users — must be thread-safe",
+        "Prototype: new instance on every getBean() call; Spring does NOT manage its destroy lifecycle",
+        "Request: new instance per HTTP request (web apps only)",
+        "Session: new instance per HTTP session (web apps only)",
+        "Injecting a prototype into a singleton doesn't work without @Lookup or ObjectProvider"
+      ],
+      "codeExample": "@Bean\n@Scope(\"prototype\")\npublic ReportBuilder reportBuilder() {\n    return new ReportBuilder(); // new instance each time\n}\n\n// In a singleton service — inject via ObjectProvider to get fresh instances:\n@Autowired\nObjectProvider<ReportBuilder> builderProvider;\n\nvoid generate() {\n    ReportBuilder b = builderProvider.getObject(); // new prototype each call\n}",
+      "displayOrder": 4
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "How does @Autowired work? What happens when multiple beans of the same type exist?",
+      "quickAnswer": "@Autowired tells Spring to inject a dependency by type. If exactly one bean of that type exists, it's injected. If multiple candidates exist, Spring tries to match by name (field name or parameter name). If that fails, it throws NoUniqueBeanDefinitionException unless you use @Qualifier or @Primary to break the tie.",
+      "keyPoints": [
+        "Primary resolution: by type → by name (field/param name matches bean name) → fail",
+        "@Primary on a bean makes it the default when there are multiple candidates",
+        "@Qualifier(\"beanName\") on the injection site explicitly picks one bean",
+        "required = false: @Autowired(required = false) — skips injection if no bean found",
+        "Since Spring 4.3, a single constructor is autowired automatically without @Autowired"
+      ],
+      "codeExample": "@Service\npublic class PaymentService {\n    private final PaymentGateway gateway;\n\n    // When two beans implement PaymentGateway:\n    public PaymentService(@Qualifier(\"stripeGateway\") PaymentGateway gateway) {\n        this.gateway = gateway;\n    }\n}",
+      "displayOrder": 5
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is @Qualifier and when do you use it?",
+      "quickAnswer": "@Qualifier is used alongside @Autowired to disambiguate when multiple beans of the same type exist. You put @Qualifier(\"beanName\") on the injection point and it tells Spring exactly which bean to inject. It's the standard alternative to @Primary when you need context-specific selection.",
+      "keyPoints": [
+        "Use when you have multiple implementations of an interface and need a specific one",
+        "@Qualifier on a @Bean method sets its qualifier name (defaults to method name)",
+        "Can create custom qualifier annotations for cleaner code",
+        "@Primary is a global preference; @Qualifier is a per-injection-site preference",
+        "Works on constructor params, setter params, and fields"
+      ],
+      "displayOrder": 6
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between @Value and @ConfigurationProperties?",
+      "quickAnswer": "@Value(\"${key}\") injects a single property directly into a field. @ConfigurationProperties binds a whole prefix group of properties to a POJO, with validation support and type safety. Use @Value for one-off values; use @ConfigurationProperties when you have a group of related config values.",
+      "keyPoints": [
+        "@Value: \"${prop.key}\" or \"#{SpEL expression}\" — single value injection",
+        "@ConfigurationProperties(prefix = \"app.mail\"): binds app.mail.host, app.mail.port etc. to a class",
+        "@ConfigurationProperties supports nested objects, collections, and @Validated",
+        "@EnableConfigurationProperties or @ConfigurationPropertiesScan needed to register the class",
+        "IDE auto-complete for @ConfigurationProperties requires spring-boot-configuration-processor dependency"
+      ],
+      "codeExample": "// @Value — single property\n@Value(\"${app.mail.host}\")\nprivate String mailHost;\n\n// @ConfigurationProperties — grouped\n@ConfigurationProperties(prefix = \"app.mail\")\n@Validated\npublic class MailProperties {\n    @NotBlank private String host;\n    private int port = 587;\n    private boolean ssl = true;\n    // getters + setters\n}",
+      "displayOrder": 7
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What are Spring Boot profiles? How do you activate them?",
+      "quickAnswer": "Profiles let you have environment-specific configuration. You create application-{profile}.properties (or .yml) files and annotate beans with @Profile(\"prod\") to include/exclude them. The active profile is set via spring.profiles.active property, the SPRING_PROFILES_ACTIVE env var, or -Dspring.profiles.active=prod JVM arg.",
+      "keyPoints": [
+        "application-dev.properties overrides application.properties when the 'dev' profile is active",
+        "@Profile(\"!prod\"): bean is active when 'prod' profile is NOT active",
+        "Multiple profiles can be active simultaneously: spring.profiles.active=dev,local",
+        "spring.profiles.default sets the fallback profile if none is specified",
+        "Profiles can also activate other profiles via spring.profiles.include"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is Spring Boot Actuator and how do you secure it?",
+      "quickAnswer": "Actuator exposes operational endpoints — health, metrics, env, beans, loggers, etc. — over HTTP (and JMX). By default /actuator/health is public; all others require authentication. You secure it by restricting /actuator/** in Spring Security config. In production, expose only what's needed via management.endpoints.web.exposure.include.",
+      "keyPoints": [
+        "Add dependency: spring-boot-starter-actuator",
+        "management.endpoints.web.exposure.include=health,metrics,info — whitelist endpoints",
+        "/actuator/health: shows app UP/DOWN, integrates with readiness/liveness probes",
+        "/actuator/metrics: Micrometer metrics (JVM, HTTP requests, custom counters)",
+        "Secure: map /actuator/** to ROLE_ADMIN in SecurityConfig or use a separate management port"
+      ],
+      "displayOrder": 9
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between @Controller and @RestController?",
+      "quickAnswer": "@Controller is a Spring MVC controller that returns view names by default — the return value is resolved by a ViewResolver to render HTML. @RestController = @Controller + @ResponseBody, so every method's return value is serialized directly to the HTTP response body (as JSON by default). Use @RestController for REST APIs.",
+      "keyPoints": [
+        "@Controller: return value → ViewResolver → template (Thymeleaf, JSP)",
+        "@RestController: return value → MessageConverter → JSON/XML response body",
+        "@ResponseBody on a method in a @Controller gives per-method REST behaviour",
+        "ModelAndView in a @RestController method would be JSON-serialized, not rendered",
+        "@RequestMapping at class level sets the base URL path for all methods"
+      ],
+      "displayOrder": 10
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is @RequestMapping and what are its HTTP method shortcuts?",
+      "quickAnswer": "@RequestMapping can handle any HTTP method and maps a URL path to a handler method. The shortcuts @GetMapping, @PostMapping, @PutMapping, @DeleteMapping, @PatchMapping combine @RequestMapping with the method constraint. They are preferred in modern Spring code for readability.",
+      "keyPoints": [
+        "@GetMapping(\"/users\"): equivalent to @RequestMapping(path=\"/users\", method=GET)",
+        "Supports path variables, params, headers, consumes, and produces constraints",
+        "At class level: sets base path for all methods in the controller",
+        "Can combine class-level and method-level: class @RequestMapping(\"/api\") + method @GetMapping(\"/users\") → /api/users",
+        "produces = \"application/json\" restricts endpoint to JSON-accepting clients"
+      ],
+      "displayOrder": 11
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between @PathVariable and @RequestParam?",
+      "quickAnswer": "@PathVariable extracts a value from the URL path itself (e.g. /users/{id}). @RequestParam extracts a value from the query string or form data (e.g. /users?role=admin). Path variables are mandatory by their nature; request params can be made optional with required = false and have a defaultValue.",
+      "keyPoints": [
+        "@PathVariable Long id → from /users/{id}/orders",
+        "@RequestParam(required=false, defaultValue=\"10\") int page → from ?page=2",
+        "Multiple @RequestParam can also be bound to a Map<String,String>",
+        "@PathVariable name defaults to the method param name (requires -parameters compiler flag or explicit name)",
+        "Use @PathVariable for resource identity; @RequestParam for filtering/sorting/pagination"
+      ],
+      "displayOrder": 12
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is @RequestBody and @ResponseBody?",
+      "quickAnswer": "@RequestBody reads the HTTP request body and deserializes it into a Java object using Jackson (for JSON). @ResponseBody serializes the return value into the response body. In @RestController, @ResponseBody is implicit. You can add @Valid to @RequestBody to trigger Bean Validation.",
+      "keyPoints": [
+        "@RequestBody: maps JSON/XML body → Java object via HttpMessageConverter",
+        "@ResponseBody: maps Java object → JSON/XML response body",
+        "@Valid @RequestBody triggers @NotNull/@Size etc. on the DTO; MethodArgumentNotValidException on failure",
+        "Content-Type: application/json header must be set by the client for @RequestBody to work",
+        "@RequestBody is not suitable for multipart/form-data — use @RequestPart for file uploads"
+      ],
+      "displayOrder": 13
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is ResponseEntity and why use it over returning a plain POJO?",
+      "quickAnswer": "ResponseEntity wraps the response body, HTTP status code, and headers in one return type. It gives you full control over what gets sent to the client. Return a plain POJO when 200 OK is always correct; use ResponseEntity when you need to set the status (201 Created, 404 Not Found), add headers (Location), or return an empty body.",
+      "keyPoints": [
+        "ResponseEntity<T> = T body + HttpStatus + HttpHeaders",
+        "ResponseEntity.ok(body): 200 OK",
+        "ResponseEntity.created(uri).body(dto): 201 Created with Location header",
+        "ResponseEntity.notFound().build(): 404 with empty body",
+        "ResponseEntity.noContent().build(): 204 No Content (for DELETE/PUT with no body)"
+      ],
+      "codeExample": "@PostMapping(\"/users\")\nResponseEntity<UserDto> create(@Valid @RequestBody CreateUserRequest req) {\n    UserDto created = userService.create(req);\n    URI location = URI.create(\"/users/\" + created.id());\n    return ResponseEntity.created(location).body(created); // 201 + Location header\n}",
+      "displayOrder": 14
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is @ExceptionHandler and @ControllerAdvice? How do you build a global error handler?",
+      "quickAnswer": "@ExceptionHandler on a method inside a controller handles exceptions thrown from that controller. @RestControllerAdvice (= @ControllerAdvice + @ResponseBody) is a global exception handler — its @ExceptionHandler methods intercept exceptions from any controller. It's the standard place to map exceptions to HTTP error responses.",
+      "keyPoints": [
+        "@ExceptionHandler(ResourceNotFoundException.class): handles that exception type",
+        "@RestControllerAdvice: applies to all @Controller/@RestController globally",
+        "Return ProblemDetail (RFC 9457) or a custom ErrorResponse DTO",
+        "Order matters: most specific exception class wins; hierarchy is walked upward",
+        "Spring Boot's default /error endpoint handles unhandled exceptions via BasicErrorController"
+      ],
+      "codeExample": "@RestControllerAdvice\npublic class GlobalExceptionHandler {\n\n    @ExceptionHandler(ResourceNotFoundException.class)\n    @ResponseStatus(HttpStatus.NOT_FOUND)\n    ProblemDetail handleNotFound(ResourceNotFoundException ex) {\n        ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);\n        pd.setDetail(ex.getMessage());\n        return pd;\n    }\n\n    @ExceptionHandler(MethodArgumentNotValidException.class)\n    @ResponseStatus(HttpStatus.BAD_REQUEST)\n    ProblemDetail handleValidation(MethodArgumentNotValidException ex) {\n        ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);\n        pd.setDetail(ex.getBindingResult().getFieldErrors().stream()\n            .map(e -> e.getField() + \" \" + e.getDefaultMessage())\n            .collect(Collectors.joining(\", \")));\n        return pd;\n    }\n}",
+      "displayOrder": 15
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "How does Spring Boot's embedded server work? How do you customize it?",
+      "quickAnswer": "Spring Boot packages Tomcat (default), Jetty, or Undertow as an embedded server inside the JAR. On startup, EmbeddedWebServerFactoryCustomizerAutoConfiguration creates and starts the server programmatically — no WAR deployment needed. You customize it via application.properties (server.port, server.compression.*) or by declaring a WebServerFactoryCustomizer bean.",
+      "keyPoints": [
+        "Default: Tomcat embedded via spring-boot-starter-web",
+        "Switch to Jetty: exclude tomcat starter, add spring-boot-starter-jetty",
+        "server.port=8080, server.servlet.context-path=/api",
+        "server.compression.enabled=true: gzip compression",
+        "WebServerFactoryCustomizer<TomcatServletWebServerFactory> for low-level Tomcat tuning"
+      ],
+      "displayOrder": 16
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is CommandLineRunner and ApplicationRunner? When do you use them?",
+      "quickAnswer": "Both are functional interfaces that run code after the ApplicationContext is fully started but before the application begins serving requests. CommandLineRunner receives the raw String[] args from main(); ApplicationRunner receives a typed ApplicationArguments object. Use them for data seeding, cache warmup, or startup validation.",
+      "keyPoints": [
+        "CommandLineRunner: void run(String... args) — raw command-line arguments",
+        "ApplicationRunner: void run(ApplicationArguments args) — typed option/non-option args",
+        "Multiple runners can coexist; @Order controls execution sequence",
+        "Exceptions thrown from run() abort startup with a non-zero exit code",
+        "Common uses: DB seeding, Elasticsearch index creation, cache warmup"
+      ],
+      "displayOrder": 17
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "How does Spring Boot handle CORS?",
+      "quickAnswer": "CORS can be configured per-endpoint with @CrossOrigin, globally via WebMvcConfigurer.addCorsMappings(), or via Spring Security's CorsConfigurationSource. The global WebMvcConfigurer approach is cleanest for REST APIs. Spring Security must also be aware of CORS — configure it with http.cors() otherwise preflight OPTIONS requests get rejected.",
+      "keyPoints": [
+        "@CrossOrigin(origins = \"http://localhost:3000\"): per-controller or per-method",
+        "WebMvcConfigurer.addCorsMappings(): global configuration for all endpoints",
+        "Spring Security: call http.cors(Customizer.withDefaults()) to delegate to MVC CORS config",
+        "Preflight: browser sends OPTIONS with Access-Control-Request-Method before the real request",
+        "allowedOriginPatterns instead of allowedOrigins when allowCredentials = true"
+      ],
+      "displayOrder": 18
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What are @Conditional annotations in Spring Boot? Give examples.",
+      "quickAnswer": "@Conditional annotations guard auto-configuration classes and @Bean methods so they only activate when specific conditions are true. This is the core mechanism that makes Spring Boot's auto-configuration non-invasive — it backs off automatically when you provide your own beans.",
+      "keyPoints": [
+        "@ConditionalOnClass(DataSource.class): activates only if DataSource is on classpath",
+        "@ConditionalOnMissingBean(DataSource.class): activates only if you haven't defined your own",
+        "@ConditionalOnProperty(name=\"feature.x\", havingValue=\"true\"): config-flag guard",
+        "@ConditionalOnWebApplication: only in a web application context",
+        "@ConditionalOnExpression: SpEL expression guard for complex conditions"
+      ],
+      "displayOrder": 19
+    }
+  ]
+}

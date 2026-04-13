@@ -1,0 +1,249 @@
+{
+  "batchName": "iq-batch-11-aws-extended",
+  "questions": [
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "What are the different EC2 Auto Scaling policy types and when do you use each?",
+      "quickAnswer": "Target Tracking scales to maintain a metric at a target value (simplest); Step Scaling responds to CloudWatch alarms with pre-defined step adjustments; Scheduled Scaling adds/removes capacity at known times; Predictive Scaling uses ML to forecast load and scale proactively.",
+      "keyPoints": [
+        "Target Tracking: define target (e.g. CPU=60%) — ASG automatically adds/removes instances. Best for most use cases",
+        "Step Scaling: define alarm thresholds with different step sizes (CPU 70%→+1 instance, CPU 90%→+3 instances). Useful for non-linear load patterns",
+        "Scheduled Scaling: predictable load (e.g., business hours) — scale up at 8am, scale down at 8pm",
+        "Predictive Scaling: uses ML on historical metrics to scale before load arrives — prevents cold-start latency",
+        "Cooldown period: prevents scale-in/out thrashing — default 300s. Warmup period for scale-out events",
+        "Lifecycle hooks: pause instance before In Service (scale-out) or Terminating (scale-in) to run scripts"
+      ],
+      "codeExample": "# Target Tracking Policy (CloudFormation)\nScalingPolicy:\n  Type: AWS::AutoScaling::ScalingPolicy\n  Properties:\n    AutoScalingGroupName: !Ref MyASG\n    PolicyType: TargetTrackingScaling\n    TargetTrackingConfiguration:\n      PredefinedMetricSpecification:\n        PredefinedMetricType: ASGAverageCPUUtilization\n      TargetValue: 60.0\n      DisableScaleIn: false",
+      "displayOrder": 0
+    },
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between Application Load Balancer (ALB) and Network Load Balancer (NLB)?",
+      "quickAnswer": "ALB operates at Layer 7 (HTTP/HTTPS) and routes based on URL path, headers, or host. NLB operates at Layer 4 (TCP/UDP) and routes by IP + port with ultra-low latency and static IP support. Use ALB for microservices; NLB for high-throughput or non-HTTP protocols.",
+      "keyPoints": [
+        "ALB: Layer 7, content-based routing (path /api/* → target group A, /static/* → target group B), WebSocket support, sticky sessions via cookies, WAF integration",
+        "NLB: Layer 4, routes TCP/UDP/TLS traffic, preserves source IP, supports static/Elastic IPs, handles millions of requests/sec with ~100ms latency",
+        "NLB can be assigned a static IP per AZ — required for IP allowlisting by clients",
+        "ALB terminates TLS and re-encrypts to backend; NLB can do TLS passthrough (end-to-end encryption)",
+        "ALB has ~400ms latency overhead from HTTP parsing; NLB is single-digit milliseconds",
+        "Classic Load Balancer (CLB): legacy, avoid for new workloads"
+      ],
+      "codeExample": "# ALB listener rule (path-based routing)\nListenerRule:\n  Conditions:\n    - Field: path-pattern\n      Values: ['/api/*']\n  Actions:\n    - Type: forward\n      TargetGroupArn: !Ref ApiTargetGroup\n\n# NLB use case: gaming server requiring static IP\n# Client allowlists NLB's static Elastic IP\n# NLB routes TCP:3000 → EC2 fleet",
+      "displayOrder": 0
+    },
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between ElastiCache Redis and Memcached?",
+      "quickAnswer": "Redis is a feature-rich in-memory data structure store supporting persistence, replication, pub/sub, Lua scripting, and complex data types. Memcached is a simpler distributed memory cache — faster for pure key-value caching, supports multi-threading natively.",
+      "keyPoints": [
+        "Redis: supports Strings, Lists, Sets, Sorted Sets, Hashes, Streams — not just simple key-value",
+        "Redis: optional persistence (RDB snapshots, AOF append-only file), survives restart",
+        "Redis Cluster: automatic sharding across 6 nodes (3 primary + 3 replica), no single point of failure",
+        "Memcached: pure key-value only, multi-threaded (uses all CPU cores), no persistence, no replication",
+        "Redis pub/sub: messaging pattern; Memcached has no pub/sub",
+        "Use Memcached for: simple session cache, horizontal scaling with no persistence needed",
+        "Use Redis for: leaderboards (Sorted Sets), distributed locks, rate limiting, job queues, session store with TTL"
+      ],
+      "codeExample": "// Redis sorted set for leaderboard\nredis.zadd('leaderboard', score, userId);\nredis.zrange('leaderboard', 0, 9, 'WITHSCORES', 'REV'); // top 10\n\n// Redis distributed lock (Redisson library)\nRLock lock = redisson.getLock('resource:123');\nlock.lock(10, TimeUnit.SECONDS); // auto-expire after 10s\ntry {\n    // critical section\n} finally {\n    lock.unlock();\n}",
+      "displayOrder": 0
+    },
+    {
+      "category": "AWS",
+      "difficulty": "HIGH",
+      "question": "What is the difference between RDS Multi-AZ and Read Replicas?",
+      "quickAnswer": "Multi-AZ is a high availability feature — a synchronous standby instance in another AZ automatically takes over on failure. Read Replicas are for read scaling — asynchronous copies that serve read traffic but cannot automatically failover as primary.",
+      "keyPoints": [
+        "Multi-AZ: synchronous replication, automatic failover (60–120 seconds), standby is not readable, same region, increases availability not performance",
+        "Read Replica: asynchronous replication, manual promotion required, readable (offload SELECT queries), can be in different regions (cross-region RR)",
+        "Multi-AZ failover triggers on: AZ outage, DB instance failure, OS patching, DB instance type change",
+        "Read Replica replication lag: typically milliseconds to seconds — not suitable for strongly consistent reads",
+        "Can have up to 15 Read Replicas (Aurora) or 5 (standard RDS)",
+        "Cross-region Read Replicas: DR strategy — lower RPO than restoring from snapshot"
+      ],
+      "codeExample": "# Architecture for high-traffic app:\n# - RDS Primary (Multi-AZ enabled) → handles all writes\n# - 2x Read Replicas in same region → handle read traffic from app\n# - 1x Cross-region Read Replica (us-west-2) → DR standby\n#\n# Spring datasource config with read/write routing:\n# spring.datasource.write.url=jdbc:mysql://primary.endpoint/db\n# spring.datasource.read.url=jdbc:mysql://replica.endpoint/db\n# Use @Transactional(readOnly=true) → route to read replica",
+      "displayOrder": 0
+    },
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "What is AWS CloudFormation and how does it compare to Terraform?",
+      "quickAnswer": "CloudFormation is AWS's native Infrastructure-as-Code service — define AWS resources in JSON/YAML templates and CloudFormation provisions and manages them as a stack. Terraform is a multi-cloud IaC tool using HCL. CloudFormation has deeper AWS integration; Terraform supports multiple cloud providers.",
+      "keyPoints": [
+        "CloudFormation: AWS-native, free (pay only for resources created), deep integration with all AWS services including newer services first",
+        "Stacks: a collection of AWS resources managed as a unit — create/update/delete all together",
+        "Change sets: preview what changes will happen before applying — like terraform plan",
+        "Stack drift detection: identifies manual changes made outside CloudFormation",
+        "Terraform: multi-cloud, state file stored in S3+DynamoDB (for locking), plan/apply workflow, larger ecosystem of providers",
+        "CDK (Cloud Development Kit): write CloudFormation in TypeScript/Python/Java — generates CloudFormation templates"
+      ],
+      "codeExample": "# CloudFormation template (YAML)\nResources:\n  MyS3Bucket:\n    Type: AWS::S3::Bucket\n    Properties:\n      BucketName: my-app-bucket\n      VersioningConfiguration:\n        Status: Enabled\n\n  MyRDSInstance:\n    Type: AWS::RDS::DBInstance\n    Properties:\n      DBInstanceClass: db.t3.medium\n      Engine: mysql\n      MasterUsername: !Sub '{{resolve:secretsmanager:MyDBSecret:SecretString:username}}'",
+      "displayOrder": 0
+    },
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between ECS Task Definition and ECS Service?",
+      "quickAnswer": "A Task Definition is a blueprint describing how to run a container (Docker image, CPU, memory, env vars, port mappings). A Service is a long-running deployment manager that ensures a specified number of task instances are running at all times, integrates with load balancers, and handles rolling updates.",
+      "keyPoints": [
+        "Task Definition: immutable versioned document (JSON) — specifies image, CPU/memory, IAM role, logging, networking mode, environment variables",
+        "ECS Task: a running instance of a task definition — like a pod in Kubernetes",
+        "ECS Service: manages desired count of tasks, restarts failed tasks, integrates with ALB, supports deployment strategies",
+        "Service deployment strategies: Rolling update (default), Blue/Green (via CodeDeploy), External (custom)",
+        "Fargate: serverless compute — no EC2 to manage; tasks get their own ENI",
+        "EC2 launch type: you manage the EC2 cluster; more control, lower cost at scale"
+      ],
+      "codeExample": "# Task Definition snippet\n{\n  \"family\": \"my-app\",\n  \"containerDefinitions\": [{\n    \"name\": \"api\",\n    \"image\": \"123.dkr.ecr.us-east-1.amazonaws.com/my-app:latest\",\n    \"cpu\": 512,\n    \"memory\": 1024,\n    \"portMappings\": [{\"containerPort\": 8080}],\n    \"environment\": [{\"name\": \"SPRING_PROFILES_ACTIVE\", \"value\": \"prod\"}]\n  }]\n}\n\n# Service: keeps 3 tasks running, integrates with ALB\naws ecs create-service \\\n  --cluster prod \\\n  --service-name my-app-svc \\\n  --task-definition my-app:5 \\\n  --desired-count 3 \\\n  --load-balancers targetGroupArn=...",
+      "displayOrder": 0
+    },
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "How does API Gateway + Lambda work and what are its limitations?",
+      "quickAnswer": "API Gateway acts as the HTTP front door — it receives requests, authorizes them, and triggers Lambda functions. Lambda executes the business logic and returns a response. Limitations include cold starts, 15-minute max execution, 6MB payload limit, and stateless execution.",
+      "keyPoints": [
+        "Request flow: Client → API Gateway (auth, rate limiting, mapping) → Lambda (executes code) → response",
+        "Cold start: Lambda initializes a new execution environment when no warm instance is available — adds 100ms–2s latency. Use Provisioned Concurrency to keep instances warm",
+        "Concurrency: Lambda scales instantly to handle concurrent requests (default 1000 per region)",
+        "Execution limit: 15 minutes max — not suitable for long-running jobs",
+        "Payload: 6MB request/response for synchronous, 256KB for async invocations",
+        "API Gateway types: REST API (full features), HTTP API (cheaper, lower latency), WebSocket API"
+      ],
+      "codeExample": "// Lambda handler (Java)\npublic class ApiHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {\n    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent event, Context ctx) {\n        String body = event.getBody();\n        // process request\n        return new APIGatewayProxyResponseEvent()\n            .withStatusCode(200)\n            .withBody(\"{ \\\"result\\\": \\\"ok\\\" }\");\n    }\n}\n\n// Cold start mitigation: use Provisioned Concurrency\n// Or use SnapStart (Java) — snapshots JVM state after init",
+      "displayOrder": 0
+    },
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "What is Amazon Cognito and how does it integrate with a Spring Boot backend?",
+      "quickAnswer": "Cognito is a managed user identity service providing User Pools (authentication — sign-up, sign-in, MFA, JWT tokens) and Identity Pools (authorization — exchange tokens for temporary AWS credentials). Spring Boot validates Cognito JWTs using the JWKS endpoint.",
+      "keyPoints": [
+        "User Pool: handles user directory, sign-up/sign-in, OAuth2/OIDC flows, issues access + ID + refresh tokens (JWT)",
+        "Identity Pool: exchanges User Pool JWT for temporary IAM credentials to access AWS services directly (S3, DynamoDB)",
+        "Tokens: ID token (user attributes), Access token (API authorization), Refresh token (7–365 days)",
+        "Spring Boot integration: configure spring-security-oauth2-resource-server with Cognito's JWKS URI",
+        "JWKS URI format: https://cognito-idp.{region}.amazonaws.com/{userPoolId}/.well-known/jwks.json",
+        "Hosted UI: Cognito provides a pre-built login page — zero frontend auth code needed"
+      ],
+      "codeExample": "# Spring Boot application.properties\nspring.security.oauth2.resourceserver.jwt.jwk-set-uri=\n  https://cognito-idp.us-east-1.amazonaws.com/us-east-1_ABC123/.well-known/jwks.json\n\n# SecurityConfig\n@Bean\nSecurityFilterChain chain(HttpSecurity http) throws Exception {\n    http\n        .authorizeHttpRequests(auth -> auth\n            .requestMatchers(\"/public/**\").permitAll()\n            .anyRequest().authenticated())\n        .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));\n    return http.build();\n}",
+      "displayOrder": 0
+    },
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "How does Amazon CloudFront work and when should you use it?",
+      "quickAnswer": "CloudFront is a CDN (Content Delivery Network) that caches content at 400+ edge locations globally. Requests are served from the nearest edge, reducing latency. Use it to serve static assets (S3), accelerate dynamic APIs, and protect origins with DDoS mitigation via AWS Shield.",
+      "keyPoints": [
+        "Edge locations: 400+ worldwide — users connect to the nearest PoP (point of presence)",
+        "Cache behavior: TTL-based, configurable per path pattern (/static/* cached 24h, /api/* not cached)",
+        "Origins: S3, ALB, EC2, API Gateway, or any HTTP server. Supports multiple origins with path-based routing",
+        "HTTPS: CloudFront handles TLS termination; free SSL certificate via ACM (Certificate Manager)",
+        "Lambda@Edge / CloudFront Functions: run code at the edge (URL rewriting, auth headers, A/B testing)",
+        "Cache invalidation: invalidate specific paths after deployments (first 1000/month free)",
+        "Security: WAF integration, AWS Shield Standard (free DDoS), signed URLs/cookies for private content"
+      ],
+      "codeExample": "# CloudFormation: S3 + CloudFront for SPA\nDistribution:\n  Type: AWS::CloudFront::Distribution\n  Properties:\n    DistributionConfig:\n      Origins:\n        - DomainName: !GetAtt MyBucket.RegionalDomainName\n          Id: S3Origin\n          S3OriginConfig:\n            OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${OAI}'\n      DefaultCacheBehavior:\n        ViewerProtocolPolicy: redirect-to-https\n        CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized\n      CustomErrorResponses:\n        - ErrorCode: 404\n          ResponseCode: 200\n          ResponsePagePath: /index.html # SPA routing",
+      "displayOrder": 0
+    },
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between a NAT Gateway and an Internet Gateway?",
+      "quickAnswer": "An Internet Gateway connects a VPC to the internet bidirectionally — it allows resources with public IPs to send and receive traffic from the internet. A NAT Gateway allows private subnet resources (no public IP) to initiate outbound internet connections but blocks inbound connections from the internet.",
+      "keyPoints": [
+        "Internet Gateway (IGW): attached to VPC, enables bidirectional internet access for resources with public or Elastic IPs",
+        "NAT Gateway: deployed in a public subnet, used by private subnet resources to access the internet one-way (outbound only)",
+        "Without NAT: private EC2 instances can't download updates, pull Docker images, or call external APIs",
+        "NAT Gateway: AWS-managed, highly available within an AZ, costs ~$0.045/hour + data transfer",
+        "NAT Instance: older, self-managed EC2 with NAT AMI — cheaper but single point of failure, you manage patching",
+        "Route table: private subnet routes 0.0.0.0/0 → NAT Gateway; public subnet routes 0.0.0.0/0 → IGW"
+      ],
+      "codeExample": "# VPC routing summary:\n# Public subnet route table:\n#   0.0.0.0/0 → igw-xxx (Internet Gateway)\n# Private subnet route table:\n#   0.0.0.0/0 → nat-xxx (NAT Gateway in public subnet)\n#\n# Flow: Private EC2 → NAT GW (public subnet) → IGW → Internet\n# Return: Internet → IGW → NAT GW → Private EC2\n# Inbound from internet to private EC2: BLOCKED (NAT is one-way)\n\n# Cost optimization: one NAT GW per AZ (cross-AZ data transfer costs money)",
+      "displayOrder": 0
+    },
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between AWS Secrets Manager and Parameter Store?",
+      "quickAnswer": "Secrets Manager is purpose-built for sensitive credentials — it supports automatic rotation for RDS/Redshift/DocumentDB, charges per secret per month. Parameter Store is a general configuration store — free tier available, no auto-rotation, simpler for non-secret config values.",
+      "keyPoints": [
+        "Secrets Manager: $0.40/secret/month + $0.05/10K API calls, auto-rotation via Lambda, cross-account access, automatic RDS password rotation",
+        "Parameter Store: free for Standard tier (10K params, 4KB max), SecureString params use KMS encryption",
+        "Parameter Store Advanced: $0.05/parameter/month — larger values (8KB), parameter policies (expiration, notifications)",
+        "Both integrate with Spring Boot via AWS SDK or spring-cloud-aws",
+        "Both accessible via IAM policies — attach to EC2/Lambda IAM roles for zero-credential access",
+        "Use Secrets Manager for: DB passwords, API keys, anything needing rotation. Use Parameter Store for: feature flags, app config, non-secret environment values"
+      ],
+      "codeExample": "// Spring Boot + AWS Secrets Manager (spring-cloud-aws)\n// application.yml\nspring:\n  cloud:\n    aws:\n      secretsmanager:\n        enabled: true\n\n// Inject secret\n@Value(\"${/prod/myapp/db-password}\")\nprivate String dbPassword;\n\n// Direct SDK\nSecretsManagerClient client = SecretsManagerClient.create();\nGetSecretValueResponse resp = client.getSecretValue(\n    r -> r.secretId(\"/prod/myapp/db-password\")\n);\nString secret = resp.secretString();",
+      "displayOrder": 0
+    },
+    {
+      "category": "AWS",
+      "difficulty": "HIGH",
+      "question": "How do you design a highly available architecture on AWS?",
+      "quickAnswer": "HA on AWS requires eliminating single points of failure across compute, data, and networking. Use Multi-AZ deployments, Auto Scaling, load balancers, and managed services. Target 99.99% (four nines) availability by distributing across at least 2 AZs with automated failover.",
+      "keyPoints": [
+        "Multi-AZ for stateless compute: ASG spanning 2–3 AZs behind ALB — instance failure triggers replacement",
+        "Multi-AZ RDS: synchronous standby, automatic failover in 60–120s",
+        "ElastiCache Multi-AZ with automatic failover (Redis with cluster mode)",
+        "S3: 99.999999999% durability, 99.99% availability built-in — no configuration needed",
+        "Route 53 health checks + DNS failover: route traffic to healthy regions on failure",
+        "Multi-region: active-active (both regions serve traffic, data synced) vs active-passive (secondary on standby)",
+        "RTO (Recovery Time Objective) vs RPO (Recovery Point Objective): Multi-AZ minimizes both; cross-region RR reduces RPO"
+      ],
+      "codeExample": "# Reference HA architecture:\n# [Users]\n#    ↓\n# Route 53 (health checks, latency routing)\n#    ↓\n# CloudFront (CDN + DDoS)\n#    ↓\n# ALB (multi-AZ)\n#    ↓\n# ECS Fargate (tasks across us-east-1a, 1b, 1c)\n#    ↓\n# RDS MySQL Multi-AZ (primary us-east-1a, standby us-east-1b)\n# + Read Replica (cross-region us-west-2 for DR)\n#    ↓\n# ElastiCache Redis (cluster mode, 3 shards × 2 replicas)\n# S3 (static assets, cross-region replication enabled)",
+      "displayOrder": 0
+    },
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "What is an SQS Dead Letter Queue (DLQ) and when should you use it?",
+      "quickAnswer": "A DLQ is a secondary SQS queue that receives messages that failed processing after the maximum number of retries. It prevents poison-pill messages from blocking the main queue indefinitely and gives you a place to inspect and replay failed messages.",
+      "keyPoints": [
+        "Configure maxReceiveCount on the main queue's redrive policy — after N failed receives, message moves to DLQ",
+        "Both SQS Standard and FIFO queues support DLQ",
+        "DLQ must be the same type as the source queue (FIFO → FIFO DLQ, Standard → Standard DLQ)",
+        "Message retention: up to 14 days in DLQ (gives time to investigate and fix the consumer)",
+        "Dead-letter queue redrive: SQS console supports replaying DLQ messages back to the source queue after fixing the bug",
+        "CloudWatch alarm on DLQ depth: alert when messages accumulate — indicates a broken consumer"
+      ],
+      "codeExample": "# SQS Queue with DLQ (CloudFormation)\nMyDLQ:\n  Type: AWS::SQS::Queue\n  Properties:\n    QueueName: my-app-dlq\n    MessageRetentionPeriod: 1209600  # 14 days\n\nMyQueue:\n  Type: AWS::SQS::Queue\n  Properties:\n    QueueName: my-app-queue\n    VisibilityTimeout: 30\n    RedrivePolicy:\n      deadLetterTargetArn: !GetAtt MyDLQ.Arn\n      maxReceiveCount: 3  # Move to DLQ after 3 failed attempts\n\n# CloudWatch alarm\nDLQAlarm:\n  Type: AWS::CloudWatch::Alarm\n  Properties:\n    MetricName: ApproximateNumberOfMessagesVisible\n    Dimensions:\n      - Name: QueueName\n        Value: my-app-dlq\n    Threshold: 1\n    ComparisonOperator: GreaterThanOrEqualToThreshold",
+      "displayOrder": 0
+    },
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "What is AWS Step Functions and when should you use it over SQS/Lambda chaining?",
+      "quickAnswer": "Step Functions is a serverless workflow orchestrator — it manages state, retries, branching, parallel execution, and error handling across multiple Lambda functions or services. Use it when your workflow has complex branching, needs state tracking, or requires reliable coordination of 3+ steps.",
+      "keyPoints": [
+        "State machine: JSON/YAML definition of states (Task, Choice, Parallel, Wait, Pass, Succeed, Fail)",
+        "Express Workflows: for high-volume, short-duration (< 5 min) async/sync workflows — $0.00001/state transition",
+        "Standard Workflows: for long-duration (up to 1 year), exactly-once, durable — $0.025/1000 transitions",
+        "Built-in retry with exponential backoff and jitter per state — no custom retry code needed",
+        "Visual workflow console: see execution progress, identify failed states, inspect input/output at each step",
+        "vs SQS chaining: SQS chains Lambda but has no visibility into the overall workflow state, no built-in branching, no error compensation",
+        "vs direct Lambda-to-Lambda: synchronous calls block, hard to implement retries, fan-out, or timeout handling"
+      ],
+      "codeExample": "# Step Functions use case: order processing workflow\n# States: ValidateOrder → ChargePayment → UpdateInventory → SendConfirmation\n{\n  \"StartAt\": \"ValidateOrder\",\n  \"States\": {\n    \"ValidateOrder\": {\n      \"Type\": \"Task\",\n      \"Resource\": \"arn:aws:lambda:...:ValidateOrderFunction\",\n      \"Retry\": [{ \"ErrorEquals\": [\"States.ALL\"], \"MaxAttempts\": 2 }],\n      \"Catch\": [{ \"ErrorEquals\": [\"ValidationError\"], \"Next\": \"OrderFailed\" }],\n      \"Next\": \"ChargePayment\"\n    },\n    \"ChargePayment\": { \"Type\": \"Task\", ... }\n  }\n}",
+      "displayOrder": 0
+    },
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "How do S3 versioning and lifecycle policies work?",
+      "quickAnswer": "Versioning keeps every version of an object when it is overwritten or deleted — the object is not permanently deleted, just marked with a delete marker. Lifecycle policies automate transitioning objects to cheaper storage classes (Glacier) or expiring them after a set period.",
+      "keyPoints": [
+        "Versioning: once enabled, cannot be disabled (only suspended). Every PUT creates a new version. DELETE adds a delete marker (old versions still exist)",
+        "Version ID: unique string per version — use to restore old versions or permanently delete a specific version",
+        "MFA Delete: require MFA to permanently delete versions — protection against accidental/malicious deletion",
+        "Lifecycle transitions: Standard → Standard-IA (30+ days) → Glacier Instant Retrieval → Glacier Flexible Retrieval → Glacier Deep Archive",
+        "Lifecycle expiration: auto-delete objects (or old versions) after N days",
+        "Replication: Cross-Region Replication (CRR) for DR; Same-Region Replication (SRR) for compliance. Versioning must be enabled on both buckets"
+      ],
+      "codeExample": "# S3 Lifecycle policy (CloudFormation)\nLifecycleConfiguration:\n  Rules:\n    - Id: archive-old-logs\n      Status: Enabled\n      Prefix: logs/\n      Transitions:\n        - TransitionInDays: 30\n          StorageClass: STANDARD_IA\n        - TransitionInDays: 90\n          StorageClass: GLACIER\n      Expiration:\n        Days: 365\n    - Id: clean-old-versions\n      Status: Enabled\n      NoncurrentVersionExpiration:\n        NoncurrentDays: 90  # Delete non-current versions after 90 days",
+      "displayOrder": 0
+    }
+  ]
+}

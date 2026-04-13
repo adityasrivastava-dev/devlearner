@@ -1,0 +1,363 @@
+{
+  "batchName": "iq-batch-09-dsa-extended",
+  "questions": [
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is a monotonic stack and what problems does it solve?",
+      "quickAnswer": "A monotonic stack maintains elements in either strictly increasing or strictly decreasing order. When a new element breaks the monotonicity, elements are popped until the invariant is restored. This gives O(n) solutions to problems that would otherwise require O(n²) nested loops — like Next Greater Element, Largest Rectangle in Histogram, and Daily Temperatures.",
+      "keyPoints": [
+        "Monotonic increasing: pop when new element is smaller — useful for Next Smaller Element",
+        "Monotonic decreasing: pop when new element is larger — useful for Next Greater Element",
+        "Every element is pushed and popped at most once → O(n) total time",
+        "Classic problems: Next Greater Element, Daily Temperatures, Largest Rectangle in Histogram, Trapping Rain Water",
+        "Store indices, not values — you often need position, not just the value"
+      ],
+      "codeExample": "// Next Greater Element — O(n) with monotonic stack\nint[] nextGreater(int[] nums) {\n    int n = nums.length;\n    int[] result = new int[n];\n    Arrays.fill(result, -1);\n    Deque<Integer> stack = new ArrayDeque<>(); // stores indices\n\n    for (int i = 0; i < n; i++) {\n        // pop all elements smaller than nums[i]\n        while (!stack.isEmpty() && nums[stack.peek()] < nums[i]) {\n            result[stack.pop()] = nums[i];\n        }\n        stack.push(i);\n    }\n    return result;\n}",
+      "displayOrder": 0
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is Union-Find (Disjoint Set Union)? Explain path compression and union by rank.",
+      "quickAnswer": "Union-Find manages a collection of disjoint sets with near-O(1) find() and union() operations. find() returns the root (representative) of a set. union() merges two sets. Path compression flattens the tree during find(). Union by rank attaches the shorter tree under the taller. Together they achieve O(α(n)) — effectively O(1) for all practical purposes.",
+      "keyPoints": [
+        "find(x): return root of x's set; path compression makes all nodes point directly to root",
+        "union(a, b): connect the root of a to the root of b",
+        "Union by rank: attach shorter tree under taller — keeps tree flat",
+        "O(α(n)) per operation — inverse Ackermann function, essentially constant",
+        "Applications: Kruskal's MST, detecting cycle in undirected graph, connected components"
+      ],
+      "codeExample": "class UnionFind {\n    int[] parent, rank;\n\n    UnionFind(int n) {\n        parent = new int[n];\n        rank   = new int[n];\n        for (int i = 0; i < n; i++) parent[i] = i;\n    }\n\n    int find(int x) { // path compression\n        if (parent[x] != x) parent[x] = find(parent[x]);\n        return parent[x];\n    }\n\n    boolean union(int a, int b) { // union by rank\n        int ra = find(a), rb = find(b);\n        if (ra == rb) return false; // already same set (cycle!)\n        if (rank[ra] < rank[rb]) parent[ra] = rb;\n        else if (rank[ra] > rank[rb]) parent[rb] = ra;\n        else { parent[rb] = ra; rank[ra]++; }\n        return true;\n    }\n}",
+      "displayOrder": 1
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is topological sort? When is a topological ordering impossible?",
+      "quickAnswer": "Topological sort produces a linear ordering of vertices in a DAG (Directed Acyclic Graph) such that for every edge u→v, u comes before v. It's used for task scheduling, build order, course prerequisites. It's impossible when the graph has a cycle — topological sort only works on DAGs.",
+      "keyPoints": [
+        "Only possible on DAGs — a cycle means no valid ordering exists",
+        "Kahn's algorithm (BFS): track in-degree; start from nodes with in-degree 0",
+        "DFS-based: post-order DFS pushes to a stack; reverse stack = topological order",
+        "Cycle detection: Kahn's produces fewer than n nodes → cycle exists",
+        "Applications: build systems, course scheduling, dependency resolution"
+      ],
+      "codeExample": "// Kahn's Algorithm (BFS-based)\nList<Integer> topoSort(int n, int[][] edges) {\n    int[] inDegree = new int[n];\n    List<List<Integer>> adj = new ArrayList<>();\n    for (int i = 0; i < n; i++) adj.add(new ArrayList<>());\n    for (int[] e : edges) { adj.get(e[0]).add(e[1]); inDegree[e[1]]++; }\n\n    Queue<Integer> q = new LinkedList<>();\n    for (int i = 0; i < n; i++) if (inDegree[i] == 0) q.add(i);\n\n    List<Integer> order = new ArrayList<>();\n    while (!q.isEmpty()) {\n        int node = q.poll();\n        order.add(node);\n        for (int nei : adj.get(node))\n            if (--inDegree[nei] == 0) q.add(nei);\n    }\n    return order.size() == n ? order : List.of(); // empty = cycle\n}",
+      "displayOrder": 2
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "How does Dijkstra's algorithm work? Why does it fail with negative edge weights?",
+      "quickAnswer": "Dijkstra's finds the shortest path from a source to all nodes using a min-heap. It greedily picks the unvisited node with the smallest known distance, relaxes its neighbors, and marks it visited. It fails with negative edges because once a node is finalized, a later negative edge could provide a shorter path that Dijkstra already missed.",
+      "keyPoints": [
+        "Min-heap (priority queue) extracts the node with smallest tentative distance",
+        "Relax: if dist[u] + w(u,v) < dist[v], update dist[v]",
+        "Time: O((V + E) log V) with a binary heap",
+        "Fails with negative edges: a 'finalized' node may later receive a cheaper path via a negative edge",
+        "Use Bellman-Ford for negative edges; Dijkstra only for non-negative weights"
+      ],
+      "displayOrder": 3
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "How does Bellman-Ford work? What does it detect that Dijkstra cannot?",
+      "quickAnswer": "Bellman-Ford relaxes ALL edges V-1 times (where V is the number of vertices). This correctly handles negative edge weights. A V-th relaxation pass that still finds improvements reveals a negative-weight cycle — something Dijkstra cannot detect at all.",
+      "keyPoints": [
+        "Relax all edges V-1 times — guaranteed shortest path found if no negative cycle",
+        "V-th iteration: if any distance improves → negative cycle exists",
+        "Time: O(V × E) — slower than Dijkstra but handles negatives",
+        "Application: OSPF routing protocol, currency arbitrage detection",
+        "Can be used on directed graphs with negative edges, unlike Dijkstra"
+      ],
+      "displayOrder": 4
+    },
+    {
+      "category": "DSA",
+      "difficulty": "MEDIUM",
+      "question": "What is Floyd-Warshall and when do you use it over Dijkstra?",
+      "quickAnswer": "Floyd-Warshall computes shortest paths between ALL pairs of vertices in O(V³) using dynamic programming. Dijkstra runs per source in O((V+E) log V). Use Floyd-Warshall when you need all-pairs shortest paths on dense graphs or graphs with negative edges (but no negative cycles).",
+      "keyPoints": [
+        "All-pairs shortest path: produces a V×V distance matrix",
+        "DP recurrence: dp[i][j] = min(dp[i][j], dp[i][k] + dp[k][j]) for each intermediate k",
+        "Time O(V³), Space O(V²)",
+        "Handles negative edge weights (not negative cycles)",
+        "Use Dijkstra from each node for sparse graphs; Floyd-Warshall for dense graphs or when all-pairs is needed"
+      ],
+      "displayOrder": 5
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is a Trie? When is it better than a HashMap for string lookup?",
+      "quickAnswer": "A Trie (prefix tree) stores strings character by character — each node represents one character and each root-to-leaf path is a string. It supports O(L) insert/search/delete (L = string length), plus prefix search in O(prefix length). A HashMap can look up exact strings in O(L) but cannot answer 'how many strings start with X?' efficiently.",
+      "keyPoints": [
+        "O(L) insert, search, delete — L is string length; independent of number of strings",
+        "Prefix queries: count words with prefix 'ca' — impossible efficiently with HashMap",
+        "Space: O(alphabet × nodes) — can be large for large alphabets",
+        "Applications: autocomplete, spell check, IP routing (compressed trie), word search",
+        "Use HashMap<String, Integer> for exact frequency count; Trie for prefix/autocomplete"
+      ],
+      "codeExample": "class TrieNode {\n    TrieNode[] children = new TrieNode[26];\n    boolean isEnd;\n}\n\nclass Trie {\n    TrieNode root = new TrieNode();\n\n    void insert(String word) {\n        TrieNode cur = root;\n        for (char c : word.toCharArray()) {\n            int i = c - 'a';\n            if (cur.children[i] == null) cur.children[i] = new TrieNode();\n            cur = cur.children[i];\n        }\n        cur.isEnd = true;\n    }\n\n    boolean startsWith(String prefix) {\n        TrieNode cur = root;\n        for (char c : prefix.toCharArray()) {\n            int i = c - 'a';\n            if (cur.children[i] == null) return false;\n            cur = cur.children[i];\n        }\n        return true; // prefix exists\n    }\n}",
+      "displayOrder": 6
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is a segment tree and what operations does it support?",
+      "quickAnswer": "A segment tree is a binary tree where each node stores information about a range of an array (e.g. sum, min, max). It supports range queries (sum of elements [l, r]) and point updates in O(log n). It's faster than prefix sums for arrays with frequent updates and queries.",
+      "keyPoints": [
+        "Build: O(n); query O(log n); point update O(log n)",
+        "Each leaf = one element; internal node = aggregation of its children's range",
+        "Lazy propagation: defer range updates — range update in O(log n) instead of O(n)",
+        "Applications: range sum, range min/max, range GCD, interval problems",
+        "Space: 4*n array is sufficient for a complete segment tree"
+      ],
+      "displayOrder": 7
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is a Binary Indexed Tree (Fenwick Tree)?",
+      "quickAnswer": "A Fenwick Tree supports prefix sum queries and point updates in O(log n) time with O(n) space — simpler and faster in practice than a segment tree for this specific use case. It exploits the binary representation of indices to update and query in O(log n) using bitwise operations.",
+      "keyPoints": [
+        "update(i, delta): adds delta to position i in O(log n)",
+        "query(i): returns prefix sum [1..i] in O(log n)",
+        "rangeSumQuery(l, r) = query(r) - query(l-1)",
+        "1-indexed: index 0 is unused; tree[i] covers a range defined by i's lowest set bit",
+        "Simpler code than segment tree when only point updates + prefix sums are needed"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is Kadane's algorithm? What problem does it solve?",
+      "quickAnswer": "Kadane's algorithm finds the maximum sum contiguous subarray in O(n) time and O(1) space. It maintains a running sum: extend the current subarray if adding the next element helps, or start fresh. The global max tracks the best seen.",
+      "keyPoints": [
+        "maxSoFar = max(nums[i], maxSoFar + nums[i]) — extend or restart",
+        "globalMax = max(globalMax, maxSoFar)",
+        "All negative: the single largest element is the answer",
+        "Circular variant: answer is max(kadane(normal), totalSum - kadane(negated)) ",
+        "Time O(n), Space O(1)"
+      ],
+      "codeExample": "int maxSubArray(int[] nums) {\n    int maxSoFar = nums[0], globalMax = nums[0];\n    for (int i = 1; i < nums.length; i++) {\n        maxSoFar = Math.max(nums[i], maxSoFar + nums[i]);\n        globalMax = Math.max(globalMax, maxSoFar);\n    }\n    return globalMax;\n}",
+      "displayOrder": 9
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is the prefix sum technique? What problems does it solve?",
+      "quickAnswer": "A prefix sum array stores cumulative sums — prefix[i] = sum of elements [0..i]. Range sum [l, r] = prefix[r] - prefix[l-1] in O(1) after O(n) preprocessing. It turns repeated range sum queries from O(n) each to O(1) each. A prefix sum with a HashMap enables O(n) solutions to subarray sum = k problems.",
+      "keyPoints": [
+        "prefix[i] = prefix[i-1] + nums[i]",
+        "rangeSum(l, r) = prefix[r] - prefix[l-1] — O(1)",
+        "Subarray sum = k: if prefix[j] - prefix[i] = k → prefix[i] = prefix[j] - k; use HashMap to count",
+        "2D prefix sums: extend to rectangular region queries",
+        "Applications: range average, count of subarrays with given sum, image processing"
+      ],
+      "displayOrder": 10
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is binary search on the answer (parametric binary search)?",
+      "quickAnswer": "Instead of searching a sorted array for a value, you binary search over the answer space. If the predicate 'can we achieve X?' is monotone (true for all X ≤ threshold, false above), you binary search on X to find the threshold. This converts optimization problems into decision problems.",
+      "keyPoints": [
+        "Identify: is the answer space sorted/monotone? (e.g. smaller capacity always worse)",
+        "Define a feasibility check: canSolve(mid) — O(n) check",
+        "Binary search over the answer space: [lo, hi] where lo and hi bracket the answer",
+        "Examples: Koko Eating Bananas, Split Array Largest Sum, Minimum Capacity to Ship Packages",
+        "Pattern: minimize the maximum OR maximize the minimum"
+      ],
+      "displayOrder": 11
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "How do you detect a cycle in a directed vs undirected graph?",
+      "quickAnswer": "For directed graphs, use DFS with three states: unvisited, in-current-path, done. A back edge (visiting an in-path node) means a cycle. For undirected graphs, use DFS tracking the parent — if you visit an already-visited node that isn't your parent, there's a cycle. Union-Find can also detect cycles in undirected graphs.",
+      "keyPoints": [
+        "Directed: DFS with WHITE/GRAY/BLACK coloring; GRAY node revisited → back edge → cycle",
+        "Undirected: DFS; if visited[v] && v != parent → cycle",
+        "Union-Find (undirected): union(u, v) → if find(u) == find(v) → cycle detected",
+        "Kahn's topological sort (directed): if result size < V → cycle exists",
+        "Detect negative cycle: Bellman-Ford V-th relaxation still improves → negative cycle"
+      ],
+      "displayOrder": 12
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "How do you implement an LRU cache? What data structures do you use?",
+      "quickAnswer": "An LRU cache supports get() and put() in O(1). Use a HashMap for O(1) lookup by key and a doubly-linked list to track access order — the most recently used node is at the head, least recently used at the tail. On every get/put, move the accessed node to the head. On capacity overflow, evict the tail node.",
+      "keyPoints": [
+        "HashMap<key, DLinkedNode>: O(1) key lookup",
+        "Doubly linked list: O(1) node removal and insertion at head",
+        "get(key): if exists, move to head, return value; else return -1",
+        "put(key, val): if exists, update + move to head; if new, add to head; if full, remove tail",
+        "Java: LinkedHashMap with accessOrder=true implements LRU with 3 lines"
+      ],
+      "codeExample": "class LRUCache {\n    int capacity;\n    LinkedHashMap<Integer, Integer> cache;\n\n    LRUCache(int capacity) {\n        this.capacity = capacity;\n        // accessOrder=true: move accessed entries to the end\n        cache = new LinkedHashMap<>(16, 0.75f, true) {\n            protected boolean removeEldestEntry(Map.Entry eldest) {\n                return size() > capacity; // auto-evict LRU\n            }\n        };\n    }\n\n    int get(int key) { return cache.getOrDefault(key, -1); }\n    void put(int key, int value) { cache.put(key, value); }\n}",
+      "displayOrder": 13
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is Floyd's cycle detection algorithm (tortoise and hare)?",
+      "quickAnswer": "Use two pointers: slow moves 1 step, fast moves 2 steps. If there's a cycle, they meet inside the cycle. To find the cycle start: reset slow to head; move both slow and fast 1 step at a time — they meet at the cycle entry. This works because of the mathematical property of cycle lengths.",
+      "keyPoints": [
+        "Phase 1: slow=1 step, fast=2 steps — they meet if a cycle exists",
+        "Phase 2: reset slow to head; both move 1 step — they meet at cycle start",
+        "O(n) time, O(1) space — no Set needed unlike hash-based approach",
+        "Works for linked lists, arrays as implicit linked lists, and function iteration",
+        "LC 142 (Linked List Cycle II), LC 287 (Find Duplicate Number)"
+      ],
+      "codeExample": "// Find start of cycle in linked list\nListNode detectCycleStart(ListNode head) {\n    ListNode slow = head, fast = head;\n    // Phase 1: find meeting point\n    while (fast != null && fast.next != null) {\n        slow = slow.next;\n        fast = fast.next.next;\n        if (slow == fast) break; // cycle found\n    }\n    if (fast == null || fast.next == null) return null; // no cycle\n    // Phase 2: find cycle entry\n    slow = head;\n    while (slow != fast) { slow = slow.next; fast = fast.next; }\n    return slow; // cycle start\n}",
+      "displayOrder": 14
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is a monotonic deque? How does it solve sliding window maximum in O(n)?",
+      "quickAnswer": "A monotonic deque maintains a decreasing order of indices. For a sliding window maximum, the front of the deque always holds the index of the maximum. When a new element arrives, remove all indices from the back whose values are smaller. Remove indices from the front that are out of the window. The front is always the window maximum.",
+      "keyPoints": [
+        "Deque (double-ended): add to back, read from front, remove from both ends",
+        "Maintain: deque stores indices in decreasing value order",
+        "Add right: pop from back while nums[back] <= nums[i]; add i to back",
+        "Remove left: if deque.front() <= i - k, pop from front",
+        "Answer: nums[deque.front()] — front is always the window max",
+        "Time O(n): each element added and removed at most once"
+      ],
+      "displayOrder": 15
+    },
+    {
+      "category": "DSA",
+      "difficulty": "MEDIUM",
+      "question": "Why is merge sort preferred over quicksort for linked lists?",
+      "quickAnswer": "Linked lists don't support O(1) random access, making quicksort's partition step O(n) per recursion level instead of O(1) for arrays. Merge sort only needs sequential access and is naturally suited to linked lists — finding the midpoint with slow/fast pointers and merging two sorted lists are both O(n) and O(1) extra space (for linked lists). Merge sort is also stable.",
+      "keyPoints": [
+        "Quicksort: needs random index access for partitioning — O(n) for linked list",
+        "Merge sort: sequential access only — natural for linked lists",
+        "Finding midpoint: slow/fast pointer — O(n) in-place",
+        "Merging two sorted lists: pointer manipulation — O(n), O(1) space",
+        "Merge sort on linked lists: O(n log n) time, O(log n) recursive stack space"
+      ],
+      "displayOrder": 16
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is QuickSort's average vs worst case? How do you avoid worst-case behavior?",
+      "quickAnswer": "QuickSort averages O(n log n) when pivots split the array near the middle. Worst case is O(n²) when the pivot is always the min or max — happens with sorted arrays if you pick the first element as pivot. Mitigate with: random pivot selection, median-of-three, or 3-way partition for many duplicate keys.",
+      "keyPoints": [
+        "Average: O(n log n) — pivot splits array roughly in half each time",
+        "Worst: O(n²) — sorted input with first/last element as pivot",
+        "Random pivot: shuffle array first or pick random index — makes worst case extremely unlikely",
+        "Median-of-three: pivot = median(first, mid, last) — good for nearly sorted arrays",
+        "3-way partition (Dutch flag): O(n log n) even with many duplicates; O(n) when all same"
+      ],
+      "displayOrder": 17
+    },
+    {
+      "category": "DSA",
+      "difficulty": "MEDIUM",
+      "question": "What is counting sort? When is it O(n)?",
+      "quickAnswer": "Counting sort counts occurrences of each distinct value, then uses prefix sums to place elements in sorted order. It is O(n + k) where k is the range of input values. It's O(n) when k = O(n). It's only practical for integer values with a small, known range — not for arbitrary comparisons.",
+      "keyPoints": [
+        "O(n + k) time and space where k is the value range",
+        "Stable: elements with equal keys appear in original order",
+        "Only works for discrete, bounded-range integers",
+        "Radix sort: applies counting sort digit by digit — O(d*(n+k)) where d is digit count",
+        "Not comparison-based — bypasses the O(n log n) comparison lower bound"
+      ],
+      "displayOrder": 18
+    },
+    {
+      "category": "DSA",
+      "difficulty": "MEDIUM",
+      "question": "What is the time and space complexity of BFS and DFS on a graph with V vertices and E edges?",
+      "quickAnswer": "Both BFS and DFS visit every vertex and every edge exactly once. Time complexity is O(V + E). Space complexity is O(V) for the visited set/color array plus O(V) for the queue (BFS) or recursion stack (DFS). For dense graphs where E = O(V²), this is O(V²).",
+      "keyPoints": [
+        "Time: O(V + E) — each vertex visited once, each edge traversed once",
+        "BFS space: O(V) for the queue — worst case all vertices enqueued",
+        "DFS space: O(V) for recursion stack — worst case a path through all vertices",
+        "Adjacency list: O(V + E) space; adjacency matrix: O(V²) space",
+        "Grid problems (m×n): treat as graph with V = m*n, E ≤ 4*m*n — O(m*n)"
+      ],
+      "displayOrder": 19
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is the Knapsack problem? Compare 0/1 vs unbounded vs fractional variants.",
+      "quickAnswer": "0/1 Knapsack: each item can be taken once — DP O(n*W). Unbounded Knapsack: each item can be taken any number of times — DP O(n*W) but iterating forward in the weight dimension. Fractional Knapsack: items can be split — greedy (sort by value/weight ratio) O(n log n). Only 0/1 and unbounded require DP; fractional is greedy.",
+      "keyPoints": [
+        "0/1: dp[i][w] = max(dp[i-1][w], dp[i-1][w-wi]+vi) — iterate weight backward for 1D",
+        "Unbounded: dp[w] = max(dp[w], dp[w-wi]+vi) — iterate weight forward",
+        "Fractional: greedy — sort items by value/weight descending; take as much as fits",
+        "0/1 1D optimization: iterate w from W down to wi to prevent reuse",
+        "Unbounded 1D: iterate w from wi up to W to allow reuse"
+      ],
+      "displayOrder": 20
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is Longest Common Subsequence (LCS)? How do you optimize space?",
+      "quickAnswer": "LCS finds the longest subsequence present in both strings (elements need not be contiguous). DP recurrence: if s1[i]==s2[j], dp[i][j]=dp[i-1][j-1]+1; else dp[i][j]=max(dp[i-1][j], dp[i][j-1]). Space can be reduced from O(m*n) to O(min(m,n)) by only keeping two rows.",
+      "keyPoints": [
+        "DP: O(m*n) time and space for strings of length m and n",
+        "Recurrence: match → dp[i-1][j-1]+1; no match → max(dp[i-1][j], dp[i][j-1])",
+        "Space optimization: only two rows needed — current and previous",
+        "LCS vs LIS: LCS is 2D (two sequences); LIS is 1D (one sequence)",
+        "Applications: diff tool, DNA sequence alignment, plagiarism detection"
+      ],
+      "displayOrder": 21
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is the Coin Change problem? Solve it with DP.",
+      "quickAnswer": "Find the minimum number of coins to make an amount. DP: dp[amount] = min coins. For each coin, dp[w] = min(dp[w], dp[w-coin]+1). Initialize dp[0]=0, rest=Infinity. Answer is dp[amount] if reachable, else -1. This is unbounded knapsack (coins can be reused).",
+      "keyPoints": [
+        "dp[0] = 0; dp[w] = MIN_VALUE for all w > 0 initially",
+        "For each coin: for w from coin to amount: dp[w] = min(dp[w], dp[w-coin]+1)",
+        "Inner loop forward (unlike 0/1 knapsack backward) — coins reusable",
+        "Time O(n*amount), Space O(amount)",
+        "Variant: count number of ways — use + instead of min"
+      ],
+      "displayOrder": 22
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is the Two Pointer technique? Give examples across problem types.",
+      "quickAnswer": "Two pointers maintain two indices that move toward each other (converging) or in the same direction (fast/slow). Converging pointers on a sorted array can find pair sums in O(n). Same-direction slow/fast pointers can detect cycles, find the middle of a linked list, or remove duplicates in-place.",
+      "keyPoints": [
+        "Converging (sorted array): left starts at 0, right at end — sum too small: left++; too large: right--",
+        "Same-direction: fast explores, slow marks valid position — remove duplicates, remove nth node",
+        "Reduces O(n²) brute force to O(n) for many pair/window problems",
+        "Three sum: fix one element, two-pointer for the remaining pair",
+        "Requires sorting for converging approach; works on unsorted for same-direction"
+      ],
+      "displayOrder": 23
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What are the Stock Buy and Sell problem variants?",
+      "quickAnswer": "The variants increase in complexity: (1) one transaction — find max profit by tracking min price seen; (2) unlimited transactions — greedy, sum all upward segments; (3) at most k transactions — DP O(k*n); (4) with cooldown — DP with state machine; (5) with transaction fee — greedy/DP.",
+      "keyPoints": [
+        "1 transaction: maxProfit = max(price - minSoFar) — O(n), O(1)",
+        "Unlimited: profit += max(0, price[i] - price[i-1]) — O(n), O(1)",
+        "At most 2: track 4 states (hold1, sold1, hold2, sold2) — O(n), O(1)",
+        "At most k: dp[i][j][0/1] — hold or not — O(k*n), O(k)",
+        "Cooldown: sold → cooldown → rest → buy; state machine DP"
+      ],
+      "displayOrder": 24
+    }
+  ]
+}

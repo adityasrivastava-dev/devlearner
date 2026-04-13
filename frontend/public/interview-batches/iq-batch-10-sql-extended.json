@@ -1,0 +1,244 @@
+{
+  "batchName": "iq-batch-10-sql-extended",
+  "questions": [
+    {
+      "category": "SQL",
+      "difficulty": "LOW",
+      "question": "What is the difference between DELETE, TRUNCATE, and DROP?",
+      "quickAnswer": "DELETE removes rows one at a time with WHERE clause support and is logged; TRUNCATE removes all rows instantly and resets identity columns but cannot be filtered; DROP removes the entire table structure and data permanently.",
+      "keyPoints": [
+        "DELETE: DML, rows removed one by one, WHERE clause allowed, can be rolled back in a transaction, triggers fire, does NOT reset AUTO_INCREMENT",
+        "TRUNCATE: DDL, removes all rows in a single operation, no WHERE clause, resets AUTO_INCREMENT, much faster, triggers do NOT fire, implicit commit in MySQL",
+        "DROP: DDL, removes table definition + all data + indexes + constraints permanently, cannot be rolled back in MySQL",
+        "In MySQL, TRUNCATE causes an implicit commit — it cannot be rolled back even inside a transaction",
+        "DELETE is the only option when you need to selectively remove rows or maintain audit logs via triggers"
+      ],
+      "codeExample": "-- DELETE (filterable, transactional)\nDELETE FROM orders WHERE status = 'CANCELLED';\n\n-- TRUNCATE (all rows, fast)\nTRUNCATE TABLE temp_data;\n\n-- DROP (removes table entirely)\nDROP TABLE IF EXISTS old_table;",
+      "displayOrder": 0
+    },
+    {
+      "category": "SQL",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between a stored procedure, function, and view in MySQL?",
+      "quickAnswer": "A stored procedure is a named block of SQL that can perform DML/DDL and returns zero or more result sets; a function returns exactly one value and can be used inside SELECT; a view is a saved SELECT query that acts like a virtual table.",
+      "keyPoints": [
+        "Stored procedure: called with CALL, can have IN/OUT/INOUT params, can include transactions and DML, cannot be used inside SELECT",
+        "Function: called inside expressions (SELECT, WHERE), must return a scalar value, cannot perform DML in MySQL without special config",
+        "View: a saved SELECT query, no stored logic, can be queried like a table, updatable views have restrictions",
+        "Materialized view: MySQL does not natively support these — simulated with a physical table + scheduled refresh job",
+        "Use procedures for complex business logic; use functions for reusable computed values; use views for simplifying complex joins"
+      ],
+      "codeExample": "-- Function\nCREATE FUNCTION get_discount(price DECIMAL) RETURNS DECIMAL\nDETERMINISTIC\nRETURN price * 0.9;\n\n-- Stored procedure\nCREATE PROCEDURE update_stock(IN product_id INT, IN qty INT)\nBEGIN\n  UPDATE products SET stock = stock - qty WHERE id = product_id;\nEND;\n\n-- View\nCREATE VIEW active_users AS\n  SELECT id, name, email FROM users WHERE active = 1;",
+      "displayOrder": 0
+    },
+    {
+      "category": "SQL",
+      "difficulty": "HIGH",
+      "question": "How does InnoDB implement MVCC (Multi-Version Concurrency Control)?",
+      "quickAnswer": "InnoDB maintains multiple versions of each row using hidden system columns (trx_id, roll_pointer) and undo logs. A read transaction sees the snapshot of data as it was at the start of its transaction, without blocking writers.",
+      "keyPoints": [
+        "Every row has two hidden columns: DB_TRX_ID (last transaction that modified the row) and DB_ROLL_PTR (pointer to undo log entry)",
+        "When a row is updated, the old version is written to the undo log; the new version is written in place with the new trx_id",
+        "A SELECT reads a 'read view' — it ignores rows whose trx_id is newer than the view's snapshot",
+        "REPEATABLE READ (default): read view is created at first read in transaction → consistent snapshot throughout",
+        "READ COMMITTED: read view is created at each statement → sees committed changes from other transactions",
+        "Undo log is purged when no active transaction needs the old version (purge thread)"
+      ],
+      "codeExample": "-- Session A (REPEATABLE READ)\nSTART TRANSACTION;\nSELECT balance FROM accounts WHERE id = 1; -- sees 1000\n\n-- Session B commits: UPDATE accounts SET balance=900 WHERE id=1;\n\n-- Session A still sees 1000 (snapshot from start of txn)\nSELECT balance FROM accounts WHERE id = 1; -- still 1000\nCOMMIT;",
+      "displayOrder": 0
+    },
+    {
+      "category": "SQL",
+      "difficulty": "HIGH",
+      "question": "What are phantom reads and how does InnoDB prevent them?",
+      "quickAnswer": "A phantom read occurs when a transaction re-executes a range query and sees new rows inserted by another committed transaction. InnoDB prevents phantoms in REPEATABLE READ using next-key locks (gap locks + record locks).",
+      "keyPoints": [
+        "Phantom read: T1 reads rows WHERE salary > 50000 (gets 3 rows), T2 inserts a new row with salary 60000 and commits, T1 re-reads and gets 4 rows",
+        "InnoDB REPEATABLE READ prevents phantoms for consistent reads (snapshots via MVCC)",
+        "For locking reads (SELECT FOR UPDATE / SELECT LOCK IN SHARE MODE), InnoDB uses next-key locks to lock the gap between existing rows",
+        "Gap lock: locks the gap between two index values to prevent inserts in that range",
+        "Next-key lock = record lock + gap lock on the preceding gap",
+        "READ COMMITTED does NOT prevent phantom reads — each statement gets a fresh snapshot"
+      ],
+      "codeExample": "-- Phantom read scenario\n-- T1:\nSTART TRANSACTION;\nSELECT * FROM employees WHERE dept_id = 5 FOR UPDATE;\n-- InnoDB places next-key lock: prevents any INSERT into dept_id=5 gap\n\n-- T2 (concurrent):\nINSERT INTO employees (name, dept_id) VALUES ('Alice', 5);\n-- BLOCKED until T1 commits",
+      "displayOrder": 0
+    },
+    {
+      "category": "SQL",
+      "difficulty": "HIGH",
+      "question": "How does MySQL detect and resolve deadlocks?",
+      "quickAnswer": "InnoDB continuously detects deadlocks using a wait-for graph. When a cycle is detected, it automatically rolls back the transaction with the smallest undo log (least work done) and returns error 1213 to the application.",
+      "keyPoints": [
+        "InnoDB maintains a wait-for graph of which transactions are waiting for which locks",
+        "Deadlock detected when a cycle exists in the graph (T1 waits for T2, T2 waits for T1)",
+        "InnoDB rolls back the 'victim' — typically the transaction with the least undo data (fewest rows modified)",
+        "Application must handle error 1213 (ER_LOCK_DEADLOCK) by retrying the transaction",
+        "Prevention strategies: always acquire locks in the same order, keep transactions short, use SELECT FOR UPDATE to lock rows early",
+        "SHOW ENGINE INNODB STATUS shows the last deadlock details"
+      ],
+      "codeExample": "-- Deadlock-prone pattern (acquire locks in different order)\n-- T1: UPDATE accounts SET bal=bal-100 WHERE id=1; then UPDATE ... WHERE id=2\n-- T2: UPDATE accounts SET bal=bal-100 WHERE id=2; then UPDATE ... WHERE id=1\n\n-- Prevention: enforce consistent lock order\n-- Always UPDATE WHERE id = MIN(id1,id2) first, then MAX(id1,id2)\n\n-- Check last deadlock\nSHOW ENGINE INNODB STATUS\\G",
+      "displayOrder": 0
+    },
+    {
+      "category": "SQL",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between clustered and non-clustered indexes in MySQL?",
+      "quickAnswer": "A clustered index determines the physical order of rows on disk — InnoDB always clusters data by the primary key. A non-clustered (secondary) index stores a copy of the indexed columns plus the primary key, requiring a second lookup to fetch the full row.",
+      "keyPoints": [
+        "InnoDB: every table has exactly one clustered index (the PRIMARY KEY). Rows are stored in B+ tree leaf nodes ordered by PK",
+        "If no PK is defined, InnoDB uses the first UNIQUE NOT NULL column; otherwise creates a hidden 6-byte rowid",
+        "Secondary index leaf nodes store: indexed columns + primary key value (NOT row pointer) — allows PK changes without rebuilding all secondary indexes",
+        "Lookup via secondary index: B+ tree search on secondary index → get PK → B+ tree search on clustered index (this double lookup is called 'row lookup' or 'bookmark lookup')",
+        "Covering index avoids the row lookup — if all needed columns are in the index",
+        "Choose PK carefully: UUID PKs cause fragmentation; sequential integer PKs give optimal insert performance"
+      ],
+      "codeExample": "-- PK = clustered index\nCREATE TABLE orders (\n  id INT PRIMARY KEY,      -- clustered\n  user_id INT,\n  status VARCHAR(20),\n  INDEX idx_user (user_id) -- secondary (non-clustered)\n);\n\n-- Secondary index lookup for: SELECT id, user_id FROM orders WHERE user_id=5\n-- 1. Search idx_user B+tree for user_id=5 → get id values\n-- 2. For each id, fetch full row from clustered index (row lookup)\n\n-- Covering index: no row lookup needed\nINDEX idx_user_id_covering (user_id, id) -- covers SELECT id WHERE user_id=5",
+      "displayOrder": 0
+    },
+    {
+      "category": "SQL",
+      "difficulty": "MEDIUM",
+      "question": "What is a covering index and when should you use it?",
+      "quickAnswer": "A covering index includes all columns needed to satisfy a query — MySQL can answer it entirely from the index without accessing the table rows. It eliminates the row-lookup step and dramatically reduces I/O for read-heavy queries.",
+      "keyPoints": [
+        "An index 'covers' a query when all SELECTed columns + WHERE/ORDER BY columns exist in the index",
+        "EXPLAIN shows 'Using index' in the Extra column when a covering index is used",
+        "No heap/clustered index access needed → fewer disk reads, better cache utilization",
+        "Composite index column order matters: (a, b, c) covers WHERE a=1 AND b=2, but NOT WHERE b=2 alone",
+        "Trade-off: wider indexes consume more disk space and slow down INSERT/UPDATE",
+        "Common pattern: add frequently SELECTed columns as trailing columns in an existing WHERE-column index"
+      ],
+      "codeExample": "-- Query: SELECT user_id, status FROM orders WHERE created_at > '2024-01-01'\n\n-- Without covering index:\nCREATE INDEX idx_created ON orders (created_at);\n-- → finds rows via index, then fetches user_id+status from table (row lookup)\n\n-- With covering index:\nCREATE INDEX idx_created_covering ON orders (created_at, user_id, status);\n-- → all columns served from index, no table access\n-- EXPLAIN Extra: 'Using index'\n\nEXPLAIN SELECT user_id, status FROM orders WHERE created_at > '2024-01-01';",
+      "displayOrder": 0
+    },
+    {
+      "category": "SQL",
+      "difficulty": "HIGH",
+      "question": "How do you read and interpret an EXPLAIN plan in MySQL?",
+      "quickAnswer": "EXPLAIN shows how MySQL executes a query: the access method (ALL=full scan, ref=index lookup), which index is used, estimated rows scanned, and extra details like Using filesort or Using temporary. Optimize for low rows and good access type.",
+      "keyPoints": [
+        "type column (best to worst): system → const → eq_ref → ref → range → index → ALL",
+        "ALL = full table scan — usually bad for large tables",
+        "key column: which index MySQL chose; key_len: how much of the index is used",
+        "rows column: estimated rows examined (not returned) — lower is better",
+        "Extra column warnings: 'Using filesort' = needs sort pass, 'Using temporary' = temp table created, 'Using index' = covering index (good)",
+        "EXPLAIN ANALYZE (MySQL 8.0+) shows actual row counts and timing, not just estimates"
+      ],
+      "codeExample": "EXPLAIN SELECT o.id, u.name\nFROM orders o JOIN users u ON o.user_id = u.id\nWHERE o.status = 'PENDING'\nORDER BY o.created_at DESC\\G\n\n-- Look for:\n-- type: ref or range (good) vs ALL (bad)\n-- key: index name being used\n-- rows: 10 (good) vs 100000 (bad)\n-- Extra: 'Using filesort' → add index on (status, created_at)\n\n-- Fix: composite index\nCREATE INDEX idx_orders_status_date ON orders (status, created_at DESC);",
+      "displayOrder": 0
+    },
+    {
+      "category": "SQL",
+      "difficulty": "HIGH",
+      "question": "What is table partitioning in MySQL and when should you use it?",
+      "quickAnswer": "Partitioning divides a table's rows into multiple physical partitions based on a partition key. MySQL routes queries to only relevant partitions (partition pruning), reducing I/O for large tables. Use for time-series data where old partitions can be archived or dropped.",
+      "keyPoints": [
+        "Types: RANGE (by value range), LIST (by discrete values), HASH (even distribution), KEY (similar to HASH but uses MySQL's hashing)",
+        "Partition pruning: MySQL reads only partitions that match the WHERE clause — avoids full table scan",
+        "Dropping a partition is instant (O(1)) vs DELETE which is O(rows) — huge benefit for log/event tables",
+        "Every unique/primary key must include the partition column",
+        "Not a replacement for indexing — still need indexes within partitions",
+        "RANGE COLUMNS allows multiple columns and non-integer types"
+      ],
+      "codeExample": "CREATE TABLE events (\n  id BIGINT,\n  created_at DATE,\n  event_type VARCHAR(50),\n  PRIMARY KEY (id, created_at)\n)\nPARTITION BY RANGE (YEAR(created_at)) (\n  PARTITION p2022 VALUES LESS THAN (2023),\n  PARTITION p2023 VALUES LESS THAN (2024),\n  PARTITION p2024 VALUES LESS THAN (2025),\n  PARTITION pmax  VALUES LESS THAN MAXVALUE\n);\n\n-- Drop old data instantly:\nALTER TABLE events DROP PARTITION p2022;\n\n-- Pruning in action:\nSELECT * FROM events WHERE created_at BETWEEN '2024-01-01' AND '2024-12-31';\n-- Only reads p2024 partition",
+      "displayOrder": 0
+    },
+    {
+      "category": "SQL",
+      "difficulty": "HIGH",
+      "question": "What is the difference between sharding and partitioning?",
+      "quickAnswer": "Partitioning splits a table's data across multiple physical locations within a single database server. Sharding splits data across multiple independent database servers (nodes), each owning a subset of the data — it's horizontal scaling at the infrastructure level.",
+      "keyPoints": [
+        "Partitioning: one server, one database, one logical table — MySQL manages routing internally",
+        "Sharding: multiple servers (shards), each server has its own database instance — application/proxy manages routing",
+        "Shard key determines which shard a row belongs to (e.g., user_id % 4)",
+        "Sharding challenges: cross-shard joins are expensive or impossible, distributed transactions, rebalancing data when adding shards",
+        "Consistent hashing minimizes rebalancing when adding/removing shards",
+        "Most applications should exhaust vertical scaling + read replicas + partitioning before considering sharding"
+      ],
+      "codeExample": "-- Sharding concept (application-level routing)\nint shardId = userId % NUM_SHARDS; // e.g., userId=123, shards=4 → shard 3\nDataSource ds = shardPool.get(shardId);\n\n-- Partition (database-level, single server)\nPARTITION BY HASH(user_id) PARTITIONS 8;\n-- MySQL automatically routes rows to the right partition",
+      "displayOrder": 0
+    },
+    {
+      "category": "SQL",
+      "difficulty": "LOW",
+      "question": "What is the difference between UNION and UNION ALL?",
+      "quickAnswer": "UNION combines results from two queries and removes duplicate rows using an implicit DISTINCT operation. UNION ALL combines results and keeps all rows including duplicates — it is faster because it skips the deduplication step.",
+      "keyPoints": [
+        "UNION: internally sorts or hashes both result sets to identify duplicates — O(n log n) cost",
+        "UNION ALL: simply concatenates the two result sets — O(n) cost, always faster",
+        "Both require the same number of columns with compatible data types in each SELECT",
+        "Use UNION ALL when you know results are distinct (e.g., different tables, disjoint WHERE clauses) or when duplicates are acceptable",
+        "Window functions like RANK() work on the final combined result set after UNION",
+        "ORDER BY and LIMIT apply to the entire result — put them at the end, not inside individual SELECTs"
+      ],
+      "codeExample": "-- UNION (deduplicates)\nSELECT email FROM customers\nUNION\nSELECT email FROM newsletter_subscribers;\n-- If same email appears in both tables, appears once\n\n-- UNION ALL (keeps all rows)\nSELECT 'sale' AS type, amount FROM sales_2023\nUNION ALL\nSELECT 'sale' AS type, amount FROM sales_2024;\n-- No dedup needed — different year tables, no overlap\n\n-- Performance: UNION ALL is always preferred when duplicates are OK",
+      "displayOrder": 0
+    },
+    {
+      "category": "SQL",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between a correlated and non-correlated subquery?",
+      "quickAnswer": "A non-correlated subquery executes once and its result is used by the outer query. A correlated subquery references columns from the outer query and re-executes for each row processed by the outer query — making it potentially very slow.",
+      "keyPoints": [
+        "Non-correlated: inner query has no reference to outer query; MySQL executes it once and caches the result",
+        "Correlated: inner query references outer.column; re-runs for every row in the outer query — O(n×m) complexity",
+        "Correlated subqueries are often rewritable as JOINs or window functions, which are faster",
+        "EXISTS with a correlated subquery short-circuits on first match — more efficient than IN for large result sets",
+        "IN with a non-correlated subquery: MySQL may convert to a semi-join internally (optimizer)",
+        "Use EXPLAIN to verify whether MySQL materializes or re-executes the subquery"
+      ],
+      "codeExample": "-- Non-correlated (runs once)\nSELECT name FROM employees\nWHERE dept_id IN (SELECT id FROM departments WHERE budget > 1000000);\n\n-- Correlated (runs once per employee row — slow)\nSELECT name, salary FROM employees e\nWHERE salary > (\n  SELECT AVG(salary) FROM employees WHERE dept_id = e.dept_id -- references e.dept_id\n);\n\n-- Rewritten as JOIN (faster)\nSELECT e.name, e.salary\nFROM employees e\nJOIN (SELECT dept_id, AVG(salary) avg_sal FROM employees GROUP BY dept_id) d\n  ON e.dept_id = d.dept_id\nWHERE e.salary > d.avg_sal;",
+      "displayOrder": 0
+    },
+    {
+      "category": "SQL",
+      "difficulty": "LOW",
+      "question": "How does NULL behave in SQL comparisons and aggregations?",
+      "quickAnswer": "NULL represents an unknown value. Any comparison with NULL (=, !=, >, <) returns NULL (not TRUE or FALSE), which evaluates as false in WHERE clauses. Use IS NULL / IS NOT NULL to check for NULL. Aggregate functions like SUM/COUNT/AVG ignore NULL values.",
+      "keyPoints": [
+        "NULL = NULL evaluates to NULL (unknown), not TRUE — use IS NULL instead",
+        "NULL != 'value' also evaluates to NULL — rows with NULL in the column are excluded from WHERE clauses",
+        "COUNT(*) counts all rows; COUNT(column) ignores NULLs in that column",
+        "SUM, AVG, MIN, MAX all ignore NULL values — AVG(1, NULL, 3) = 2 (not 1.33)",
+        "COALESCE(col, default) returns the first non-NULL value — use to substitute defaults",
+        "NULL in GROUP BY: MySQL groups all NULLs together into one group"
+      ],
+      "codeExample": "-- These return 0 rows even if NULL exists:\nSELECT * FROM users WHERE age = NULL;    -- WRONG\nSELECT * FROM users WHERE age != NULL;   -- WRONG\n\n-- Correct:\nSELECT * FROM users WHERE age IS NULL;\nSELECT * FROM users WHERE age IS NOT NULL;\n\n-- NULL in aggregation\nSELECT COUNT(*), COUNT(age), AVG(age) FROM users;\n-- COUNT(*) = 5, COUNT(age) = 3 (if 2 are NULL), AVG = avg of 3 non-null values\n\n-- COALESCE\nSELECT name, COALESCE(phone, 'N/A') AS contact FROM users;",
+      "displayOrder": 0
+    },
+    {
+      "category": "SQL",
+      "difficulty": "HIGH",
+      "question": "What are window functions in SQL and how do they differ from GROUP BY?",
+      "quickAnswer": "Window functions compute a value across a set of rows related to the current row (a 'window') without collapsing rows like GROUP BY does. Each row retains its identity while gaining access to aggregated or ranking information.",
+      "keyPoints": [
+        "GROUP BY collapses rows into groups — you lose individual rows",
+        "Window functions keep all rows and add a computed column based on a partition/ordering",
+        "PARTITION BY: defines the group/window (like GROUP BY but per-row)",
+        "ORDER BY inside OVER(): defines the ordering within the window",
+        "Aggregate window functions: SUM(), AVG(), COUNT(), MIN(), MAX() with OVER()",
+        "Ranking functions: ROW_NUMBER(), RANK(), DENSE_RANK(), NTILE()",
+        "Offset functions: LAG(), LEAD(), FIRST_VALUE(), LAST_VALUE()"
+      ],
+      "codeExample": "-- Running total per department\nSELECT\n  name,\n  dept_id,\n  salary,\n  SUM(salary) OVER (PARTITION BY dept_id ORDER BY salary) AS running_total,\n  RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) AS dept_rank,\n  LAG(salary, 1) OVER (PARTITION BY dept_id ORDER BY salary) AS prev_salary\nFROM employees;\n\n-- Top N per group (no GROUP BY needed)\nSELECT * FROM (\n  SELECT *, DENSE_RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) AS rnk\n  FROM employees\n) ranked WHERE rnk <= 3;",
+      "displayOrder": 0
+    },
+    {
+      "category": "SQL",
+      "difficulty": "MEDIUM",
+      "question": "What are CTEs (Common Table Expressions) and when should you use them over subqueries?",
+      "quickAnswer": "A CTE is a named temporary result set defined with the WITH clause, valid only for the duration of the query. CTEs improve readability for complex queries and enable recursive queries. Unlike subqueries, a CTE can be referenced multiple times in the same query.",
+      "keyPoints": [
+        "Syntax: WITH cte_name AS (SELECT ...) SELECT ... FROM cte_name",
+        "Multiple CTEs: WITH cte1 AS (...), cte2 AS (...) SELECT ... — cte2 can reference cte1",
+        "Recursive CTE: WITH RECURSIVE cte AS (base UNION ALL recursive_step) — used for hierarchical data (org charts, file trees)",
+        "MySQL 8.0+ supports CTEs; MySQL 5.x does not",
+        "CTEs may or may not be materialized by the optimizer — no guaranteed performance benefit over subqueries",
+        "Use CTEs for: multi-step transformations, recursive queries, self-joins, or wherever a meaningful name improves clarity"
+      ],
+      "codeExample": "-- Simple CTE\nWITH dept_avg AS (\n  SELECT dept_id, AVG(salary) AS avg_sal\n  FROM employees GROUP BY dept_id\n)\nSELECT e.name, e.salary, d.avg_sal\nFROM employees e\nJOIN dept_avg d ON e.dept_id = d.dept_id\nWHERE e.salary > d.avg_sal;\n\n-- Recursive CTE: org hierarchy\nWITH RECURSIVE org AS (\n  SELECT id, name, manager_id, 0 AS depth FROM employees WHERE manager_id IS NULL\n  UNION ALL\n  SELECT e.id, e.name, e.manager_id, o.depth + 1\n  FROM employees e JOIN org o ON e.manager_id = o.id\n)\nSELECT * FROM org ORDER BY depth;",
+      "displayOrder": 0
+    }
+  ]
+}

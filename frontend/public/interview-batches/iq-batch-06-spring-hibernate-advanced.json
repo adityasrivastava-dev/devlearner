@@ -1,0 +1,581 @@
+{
+  "batchName": "iq-batch-06-spring-hibernate-advanced",
+  "questions": [
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "How does @Transactional work internally in Spring?",
+      "quickAnswer": "@Transactional works through Spring AOP proxies. When you call a @Transactional method, you're actually calling a proxy that wraps the call in a transaction. The proxy opens a transaction before the method, commits on normal return, and rolls back on RuntimeException (by default). This means self-invocation (calling a @Transactional method from within the same class) bypasses the proxy and the annotation has no effect.",
+      "keyPoints": [
+        "Proxy-based: only works on public methods called from outside the bean",
+        "Self-invocation pitfall: this.method() skips the proxy — no transaction",
+        "Default rollback: unchecked exceptions (RuntimeException); checked exceptions do NOT rollback",
+        "rollbackFor = Exception.class: add to rollback on checked exceptions too",
+        "noRollbackFor: exclude specific exceptions from causing rollback"
+      ],
+      "codeExample": "@Service\npublic class OrderService {\n\n    @Transactional // works — called through proxy from controller\n    public void placeOrder(Order order) {\n        save(order);\n        sendEmail(order); // if this throws, transaction rolls back\n    }\n\n    @Transactional // BROKEN — self-invocation, proxy is bypassed\n    public void internalSave(Order order) { ... }\n\n    public void save(Order order) {\n        internalSave(order); // this.internalSave = no proxy = no transaction!\n    }\n}",
+      "displayOrder": 0
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What are @Transactional propagation types? When do you use REQUIRES_NEW?",
+      "quickAnswer": "Propagation controls what happens when a @Transactional method is called from within an existing transaction. REQUIRED (default) joins the existing transaction or creates one. REQUIRES_NEW always suspends the outer transaction and starts a fresh one — useful for audit logging that must commit even if the outer transaction rolls back.",
+      "keyPoints": [
+        "REQUIRED (default): join existing transaction or create a new one",
+        "REQUIRES_NEW: suspend outer transaction, create independent new one — always commits/rolls back independently",
+        "NESTED: savepoint within the outer transaction — rollback only reverts to savepoint",
+        "SUPPORTS: use existing transaction if present; run non-transactionally if not",
+        "NOT_SUPPORTED: suspend any existing transaction and run non-transactionally",
+        "NEVER: throw exception if called within an active transaction",
+        "MANDATORY: throw exception if NO active transaction exists"
+      ],
+      "displayOrder": 1
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What are @Transactional isolation levels? What is the default?",
+      "quickAnswer": "Isolation level controls how much concurrent transactions can see each other's uncommitted data. The default is DEFAULT, which uses the database's native isolation (REPEATABLE READ for MySQL InnoDB). Higher isolation prevents more anomalies (dirty read, non-repeatable read, phantom read) but increases lock contention.",
+      "keyPoints": [
+        "READ_UNCOMMITTED: can read uncommitted data — dirty reads possible",
+        "READ_COMMITTED: only read committed data — no dirty reads, non-repeatable reads possible",
+        "REPEATABLE_READ: snapshot of data at transaction start — no non-repeatable reads; phantoms possible (MySQL prevents these with gap locks)",
+        "SERIALIZABLE: full isolation — phantom reads impossible; highest lock contention",
+        "DEFAULT: delegates to the database default (REPEATABLE READ in MySQL InnoDB)"
+      ],
+      "displayOrder": 2
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What are common @Transactional pitfalls?",
+      "quickAnswer": "The three most common pitfalls are: (1) self-invocation bypassing the proxy, (2) applying @Transactional to private or package-private methods (no proxy wrapping), and (3) catching exceptions and not rethrowing — Spring sees no exception, so it commits instead of rolling back.",
+      "keyPoints": [
+        "Self-invocation: this.method() skips proxy — transaction never starts",
+        "Non-public method: proxy only wraps public methods",
+        "Swallowed exception: catch without rethrow = Spring commits the (potentially corrupt) transaction",
+        "Checked exceptions: don't rollback by default — use rollbackFor = Exception.class",
+        "Lazy loading outside transaction: LazyInitializationException when accessing a lazy collection after the session is closed"
+      ],
+      "displayOrder": 3
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is Spring AOP and how does it work?",
+      "quickAnswer": "AOP (Aspect-Oriented Programming) separates cross-cutting concerns (logging, security, transactions) from business logic. Spring AOP uses JDK dynamic proxies (for interfaces) or CGLIB subclass proxies (for concrete classes) to intercept method calls. @Transactional, @Cacheable, and @Async are all implemented as AOP aspects.",
+      "keyPoints": [
+        "Proxy-based: Spring wraps your bean in a proxy that intercepts calls",
+        "JDK proxy: used when the bean implements an interface",
+        "CGLIB: used when no interface — subclasses the concrete class at runtime",
+        "Only works for Spring-managed beans called through the proxy (not this.method())",
+        "AspectJ compile-time weaving bypasses proxy limitations but requires the AspectJ compiler"
+      ],
+      "displayOrder": 4
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What are @Aspect, @Before, @After, @Around, @AfterReturning, @AfterThrowing?",
+      "quickAnswer": "These annotations define where advice (intercepting code) runs relative to a matched method. @Around is the most powerful — it controls whether the target method executes at all and can modify return values. @Before and @After are simpler hooks for logging and cleanup.",
+      "keyPoints": [
+        "@Aspect: marks a class as containing AOP advice",
+        "@Before: runs before the method; cannot prevent execution (use @Around for that)",
+        "@After: runs after the method, regardless of outcome (like finally)",
+        "@AfterReturning: runs only on successful return; can access return value",
+        "@AfterThrowing: runs only when an exception is thrown; can access exception",
+        "@Around: wraps the entire method; must call ProceedingJoinPoint.proceed()"
+      ],
+      "codeExample": "@Aspect\n@Component\npublic class LoggingAspect {\n\n    @Around(\"@annotation(com.example.Timed)\")\n    public Object timeMethod(ProceedingJoinPoint pjp) throws Throwable {\n        long start = System.currentTimeMillis();\n        try {\n            return pjp.proceed(); // call the real method\n        } finally {\n            long ms = System.currentTimeMillis() - start;\n            log.info(\"{} took {}ms\", pjp.getSignature().getName(), ms);\n        }\n    }\n}",
+      "displayOrder": 5
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "How do you write a pointcut expression? Give examples.",
+      "quickAnswer": "A pointcut expression selects which join points (method executions) the advice should apply to. The most common designators are execution() for method signatures and @annotation() for methods carrying a specific annotation. Expressions can be combined with &&, ||, !.",
+      "keyPoints": [
+        "execution(* com.example.service.*.*(..)) — all methods in service package",
+        "execution(public * *(..)) — all public methods anywhere",
+        "@annotation(org.springframework.transaction.annotation.Transactional) — @Transactional methods",
+        "within(com.example..*) — all join points in the package and subpackages",
+        "@within(org.springframework.stereotype.Service) — all methods in @Service classes"
+      ],
+      "displayOrder": 6
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is @Async in Spring? What are the caveats?",
+      "quickAnswer": "@Async marks a method to run in a separate thread from a configured Executor. The call returns immediately; the method runs in the background. Key caveats: self-invocation bypasses the proxy (same as @Transactional), and exceptions from @Async methods are swallowed unless the return type is Future or CompletableFuture.",
+      "keyPoints": [
+        "Enable with @EnableAsync on a @Configuration class",
+        "Returns void or Future<T> / CompletableFuture<T>",
+        "Self-invocation pitfall: this.asyncMethod() runs synchronously",
+        "Exceptions in void methods are passed to AsyncUncaughtExceptionHandler",
+        "Default executor: SimpleAsyncTaskExecutor — configure ThreadPoolTaskExecutor for production"
+      ],
+      "displayOrder": 7
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is @Scheduled in Spring Boot? Difference between fixedDelay and fixedRate?",
+      "quickAnswer": "@Scheduled marks a method to run on a schedule. fixedDelay waits N ms after the last execution completes before starting the next — prevents overlap. fixedRate starts every N ms regardless of how long the method takes — can overlap if the method is slow. cron = \"0 0 * * * *\" is the most flexible option.",
+      "keyPoints": [
+        "Enable with @EnableScheduling on a @Configuration class",
+        "fixedDelay = 5000: 5 seconds after previous execution ENDS",
+        "fixedRate = 5000: every 5 seconds from previous execution START",
+        "cron = \"0 0 8 * * MON-FRI\": at 8am every weekday",
+        "initialDelay = 10000: wait 10s before first execution",
+        "Runs in a single-threaded executor by default — no overlap possible unless you add @Async"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "How does Spring Security's filter chain work?",
+      "quickAnswer": "Spring Security inserts a DelegatingFilterProxy into the Servlet filter chain. This delegates to a chain of SecurityFilter beans. Each request passes through filters like CorsFilter, CsrfFilter, UsernamePasswordAuthenticationFilter, and BasicAuthenticationFilter. The last filter (FilterSecurityInterceptor) checks if the request has the required authority.",
+      "keyPoints": [
+        "DelegatingFilterProxy bridges Servlet and Spring bean worlds",
+        "SecurityFilterChain bean defines the filter chain via HttpSecurity DSL",
+        "Key filters: CorsFilter → CsrfFilter → UsernamePasswordAuthFilter → JwtAuthFilter (custom) → ExceptionTranslationFilter → AuthorizationFilter",
+        "Request hits the first matching filter chain based on request matcher",
+        "Multiple SecurityFilterChain beans can coexist for different URL patterns"
+      ],
+      "displayOrder": 9
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between @PreAuthorize, @Secured, and @RolesAllowed?",
+      "quickAnswer": "@PreAuthorize accepts SpEL expressions (most powerful). @Secured and @RolesAllowed accept role names only. @PreAuthorize is the standard in modern Spring Security. Enable method security with @EnableMethodSecurity (Boot 3) or @EnableGlobalMethodSecurity (Boot 2).",
+      "keyPoints": [
+        "@PreAuthorize(\"hasRole('ADMIN')\") — evaluated before method invocation",
+        "@PostAuthorize(\"returnObject.owner == authentication.name\") — evaluated after, can see return value",
+        "@Secured({\"ROLE_ADMIN\", \"ROLE_MANAGER\"}) — simple role list, no SpEL",
+        "@RolesAllowed: JSR-250 standard annotation, same as @Secured",
+        "@EnableMethodSecurity: enables @PreAuthorize/@PostAuthorize; replaces @EnableGlobalMethodSecurity"
+      ],
+      "displayOrder": 10
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is the difference between @SpringBootTest, @WebMvcTest, and @DataJpaTest?",
+      "quickAnswer": "They are test slice annotations that load different subsets of the application context. @SpringBootTest loads the full context (slow, for integration tests). @WebMvcTest loads only the web layer (controllers, filters, security). @DataJpaTest loads only the JPA layer with an in-memory database. Slices run faster because they load only what they need.",
+      "keyPoints": [
+        "@SpringBootTest: full context + real HTTP if webEnvironment=RANDOM_PORT, or MockMvc if MOCK",
+        "@WebMvcTest(UserController.class): loads web layer only; @Service/@Repository beans must be @MockBean",
+        "@DataJpaTest: configures in-memory H2, JPA repositories, entity manager — no web layer",
+        "@MockBean: replaces a real Spring bean with a Mockito mock in the context",
+        "@TestConfiguration: add extra beans to a slice context without loading the full app"
+      ],
+      "displayOrder": 11
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is the difference between @MockBean and @Mock?",
+      "quickAnswer": "@Mock (Mockito) creates a mock outside of Spring context — used in pure unit tests with @ExtendWith(MockitoExtension.class). @MockBean creates a Mockito mock AND registers it as a bean in the Spring ApplicationContext — used in slice tests (@WebMvcTest, @DataJpaTest) where you need to replace a real Spring bean with a mock.",
+      "keyPoints": [
+        "@Mock: pure Mockito, no Spring involved — fast unit tests",
+        "@MockBean: Mockito mock registered in Spring context — for Spring slice/integration tests",
+        "Using @Mock in a @WebMvcTest won't replace the Spring bean — use @MockBean",
+        "@InjectMocks: Mockito injects @Mock fields into the target class — no Spring needed",
+        "@SpyBean: wraps a real Spring bean with a Mockito spy (partial mocking)"
+      ],
+      "displayOrder": 12
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "How do you write a MockMvc test for a Spring controller?",
+      "quickAnswer": "MockMvc simulates HTTP requests against controllers without starting a real server. Use @WebMvcTest to load only the web layer, @MockBean for service dependencies, and mockMvc.perform() to send requests and verify responses.",
+      "keyPoints": [
+        "@AutoConfigureMockMvc in @SpringBootTest also sets up MockMvc with full context",
+        "mockMvc.perform(get(\"/users/1\")).andExpect(status().isOk())",
+        "jsonPath(\"$.name\").value(\"Alice\"): verify JSON response body",
+        "MockMvcRequestBuilders: get, post, put, delete, multipart",
+        "ResultActions.andDo(print()): prints request and response for debugging"
+      ],
+      "codeExample": "@WebMvcTest(UserController.class)\nclass UserControllerTest {\n    @Autowired MockMvc mockMvc;\n    @MockBean  UserService userService;\n\n    @Test\n    void getUser_returnsOk() throws Exception {\n        given(userService.findById(1L)).willReturn(new UserDto(1L, \"Alice\"));\n\n        mockMvc.perform(get(\"/api/users/1\"))\n               .andExpect(status().isOk())\n               .andExpect(jsonPath(\"$.name\").value(\"Alice\"));\n    }\n}",
+      "displayOrder": 13
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is the configuration property priority order in Spring Boot?",
+      "quickAnswer": "Spring Boot loads properties from many sources in a specific priority order. Later sources override earlier ones. The most important rule: environment variables and command-line args override application.properties, so you can override any property without rebuilding.",
+      "keyPoints": [
+        "1 (highest): Command-line args: --server.port=9090",
+        "2: SPRING_APPLICATION_JSON env var (inline JSON)",
+        "3: OS environment variables (SPRING_DATASOURCE_URL)",
+        "4: application-{profile}.properties in external config dir",
+        "5: application.properties inside the JAR (classpath)",
+        "6 (lowest): @PropertySource annotations"
+      ],
+      "displayOrder": 14
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is a circular dependency in Spring? How do you fix it?",
+      "quickAnswer": "A circular dependency occurs when Bean A depends on Bean B which depends on Bean A — Spring can't decide which to create first. Constructor injection always fails with circular dependencies. The clean fix is to redesign — extract a third bean or use an event. Quick fixes: use setter injection or @Lazy on one of the dependencies.",
+      "keyPoints": [
+        "Constructor circular dep: BeanCurrentlyInCreationException at startup",
+        "Setter/field injection can hide circular deps: Spring resolves them using a proxy, but it's fragile",
+        "@Lazy on one constructor param: defers creation, breaks the cycle",
+        "Best fix: redesign — circular deps usually indicate a cohesion problem",
+        "Spring Boot 2.6+: circular deps are disabled by default; set spring.main.allow-circular-references=true to re-enable (not recommended)"
+      ],
+      "displayOrder": 15
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is the difference between BeanPostProcessor and BeanFactoryPostProcessor?",
+      "quickAnswer": "BeanFactoryPostProcessor runs before any beans are created — it can modify bean definitions (e.g. PropertyPlaceholderConfigurer resolves ${...}). BeanPostProcessor runs after each bean is instantiated but before it's returned — it can wrap beans with proxies (this is how AOP and @Transactional work).",
+      "keyPoints": [
+        "BeanFactoryPostProcessor: modify BeanDefinitions before instantiation — affects all beans",
+        "BeanPostProcessor: postProcessBeforeInitialization and postProcessAfterInitialization hooks",
+        "@Transactional proxy, @Async proxy, @Cacheable proxy all created by BeanPostProcessors",
+        "Must declare BeanPostProcessor/BeanFactoryPostProcessor beans as static @Bean methods to avoid lifecycle issues",
+        "Order of execution: BeanFactoryPostProcessor → bean instantiation → BeanPostProcessor"
+      ],
+      "displayOrder": 16
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is @Lazy in Spring and when should you use it?",
+      "quickAnswer": "@Lazy on a @Bean or @Component defers the bean's creation until it's first needed instead of at application startup. Use it to speed up startup time for beans that are rarely used, or to break circular dependencies. Don't use it broadly — it hides startup configuration errors.",
+      "keyPoints": [
+        "Default: eager initialization — all singleton beans created at startup",
+        "@Lazy on a @Bean definition: created on first getBean() or first injection",
+        "@Lazy on an @Autowired injection: injects a lazy proxy instead of the real bean",
+        "Breaks circular constructor dependencies by deferring one side",
+        "spring.main.lazy-initialization=true: makes all beans lazy globally (hides startup errors)"
+      ],
+      "displayOrder": 17
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What are ApplicationContext events? How do you use @EventListener?",
+      "quickAnswer": "Spring publishes built-in events (ContextRefreshedEvent, ApplicationStartedEvent, ApplicationReadyEvent) during startup. You can publish custom events via ApplicationEventPublisher and listen with @EventListener. This decouples components — the publisher doesn't know who handles the event.",
+      "keyPoints": [
+        "@EventListener: marks a method to handle a specific event type",
+        "ApplicationEventPublisher: inject and call publishEvent(new MyEvent(data))",
+        "ApplicationReadyEvent: fires when the app is fully started and ready to serve",
+        "@TransactionalEventListener: runs the listener in a transaction phase (AFTER_COMMIT etc.)",
+        "Async events: @EventListener + @Async — runs in a separate thread"
+      ],
+      "displayOrder": 18
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is Spring Boot DevTools and what does it provide?",
+      "quickAnswer": "DevTools is a development-time library that adds automatic restart (when classpath files change), live reload (browser auto-refresh), and sensible development-mode defaults (disabled caching, verbose logging). It is not included in production JARs because it's scoped to development.",
+      "keyPoints": [
+        "Automatic restart: detects classpath changes and restarts app in ~1s (uses two classloaders)",
+        "LiveReload server: triggers browser refresh on static resource changes",
+        "Development defaults: Thymeleaf caching off, H2 console enabled",
+        "Remote DevTools: supports live reload on a remote server (rare use case)",
+        "Excluded from production: excluded when running as a packaged JAR"
+      ],
+      "displayOrder": 19
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "HIGH",
+      "question": "What is the difference between JPA and Hibernate?",
+      "quickAnswer": "JPA (Jakarta Persistence API) is a specification — a set of interfaces and annotations (like @Entity, EntityManager, JPQL). Hibernate is an implementation of JPA. Spring Data JPA wraps JPA (backed by Hibernate by default) to add repository abstractions. You can swap Hibernate for EclipseLink without changing JPA code.",
+      "keyPoints": [
+        "JPA: specification (javax.persistence / jakarta.persistence packages)",
+        "Hibernate: the most popular JPA implementation; adds HQL, Criteria API, second-level cache",
+        "Spring Data JPA: repository abstraction on top of JPA — JpaRepository, @Query",
+        "EntityManager (JPA) vs Session (Hibernate native) — same underlying object",
+        "Hibernate-specific features: @BatchSize, @Cache, @SelectBeforeUpdate, @NaturalId"
+      ],
+      "displayOrder": 20
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "MEDIUM",
+      "question": "What do @Entity, @Table, @Column, and @Id do in JPA?",
+      "quickAnswer": "@Entity marks a class as a JPA entity (mapped to a database table). @Table customizes the table name. @Column maps a field to a column with custom constraints. @Id marks the primary key field. Without @Table the class name is used as the table name; without @Column the field name is used.",
+      "keyPoints": [
+        "@Entity: required — tells JPA to manage this class as a persistent entity",
+        "@Table(name=\"users\", uniqueConstraints=...): overrides table name, adds DDL constraints",
+        "@Column(name=\"first_name\", nullable=false, length=50): column metadata",
+        "@Id: marks the primary key field — every entity must have one",
+        "@Transient: marks a field to be ignored by JPA (not persisted)"
+      ],
+      "displayOrder": 21
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "HIGH",
+      "question": "What are the @GeneratedValue strategies in JPA?",
+      "quickAnswer": "GenerationType.IDENTITY lets the DB generate the ID (AUTO_INCREMENT) — most common for MySQL. SEQUENCE uses a DB sequence object — more efficient because Hibernate can pre-allocate IDs in batches (allocationSize). TABLE uses a DB table to simulate a sequence — portable but slow. AUTO lets Hibernate choose.",
+      "keyPoints": [
+        "IDENTITY: relies on DB AUTO_INCREMENT; Hibernate must execute INSERT to know the ID — disables batch inserts",
+        "SEQUENCE: Hibernate pre-fetches a range of IDs (allocationSize) — enables batch inserts; requires DB sequence support",
+        "TABLE: uses a table as a sequence — portable but slow due to locking",
+        "AUTO: Hibernate picks based on DB dialect (often SEQUENCE for PostgreSQL, IDENTITY for MySQL)",
+        "MySQL IDENTITY disables Hibernate batch inserts — use PostgreSQL SEQUENCE for high-throughput writes"
+      ],
+      "codeExample": "// MySQL — IDENTITY (most common)\n@Id\n@GeneratedValue(strategy = GenerationType.IDENTITY)\nprivate Long id;\n\n// PostgreSQL — SEQUENCE with batch pre-allocation\n@Id\n@GeneratedValue(strategy = GenerationType.SEQUENCE,\n                generator = \"user_seq\")\n@SequenceGenerator(name=\"user_seq\", sequenceName=\"users_id_seq\", allocationSize=50)\nprivate Long id;",
+      "displayOrder": 22
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "HIGH",
+      "question": "How do you map @OneToMany, @ManyToOne, @ManyToMany, and @OneToOne?",
+      "quickAnswer": "@OneToMany and @ManyToOne are the most common — they map a parent-child relationship. The @ManyToOne side (child) owns the foreign key column. @OneToMany is usually the inverse side and should be mapped with mappedBy. @ManyToMany uses a join table and should be bidirectional only when navigation from both sides is needed.",
+      "keyPoints": [
+        "@ManyToOne: owns the FK column; always on the 'many' side (e.g. Order has @ManyToOne User)",
+        "@OneToMany(mappedBy=\"user\"): inverse side; mappedBy references the @ManyToOne field name",
+        "@JoinColumn(name=\"user_id\"): explicit FK column name on @ManyToOne or @OneToOne owner",
+        "@ManyToMany: uses @JoinTable with joinColumns + inverseJoinColumns",
+        "Prefer unidirectional @ManyToOne (skip @OneToMany) to avoid N+1 and accidental eager loading"
+      ],
+      "codeExample": "@Entity\npublic class Order {\n    @Id @GeneratedValue(strategy=IDENTITY) Long id;\n\n    @ManyToOne(fetch=FetchType.LAZY)   // owns FK column order.user_id\n    @JoinColumn(name=\"user_id\")\n    private User user;\n\n    @OneToMany(mappedBy=\"order\", cascade=CascadeType.ALL, orphanRemoval=true)\n    private List<OrderItem> items = new ArrayList<>();\n}",
+      "displayOrder": 23
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "HIGH",
+      "question": "What is FetchType.LAZY vs EAGER? Which is the default?",
+      "quickAnswer": "LAZY loads related entities only when the field is accessed — the SQL is deferred. EAGER loads related entities immediately in the same query (or an extra query). LAZY is the default for @OneToMany and @ManyToMany (collections); EAGER is the default for @ManyToOne and @OneToOne (single references). EAGER on collections is a common performance anti-pattern.",
+      "keyPoints": [
+        "@OneToMany default: LAZY — collection not loaded until accessed",
+        "@ManyToOne default: EAGER — reference loaded immediately (can cause N+1 with collections of parents)",
+        "EAGER on @OneToMany: loads ALL child rows for every parent — catastrophic for large collections",
+        "LazyInitializationException: accessing a lazy field after the Session/transaction is closed",
+        "Fix LazyInitializationException: use JOIN FETCH, @EntityGraph, or open-session-in-view (avoid in production)"
+      ],
+      "displayOrder": 24
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "HIGH",
+      "question": "What is Hibernate's first-level cache?",
+      "quickAnswer": "The first-level cache is the Hibernate Session (or JPA EntityManager) cache. Within a single transaction/session, Hibernate caches every loaded entity by its ID. If you call findById(1L) twice in the same transaction, the second call returns the cached object without hitting the database. The cache is cleared when the session closes.",
+      "keyPoints": [
+        "Scope: single Session/EntityManager — per transaction",
+        "Always enabled — cannot be disabled",
+        "findById twice in same session → second call uses cache, no SQL",
+        "Session.evict(entity): remove one entity from cache",
+        "Session.clear(): evict all entities from cache (use before bulk operations)"
+      ],
+      "displayOrder": 25
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "HIGH",
+      "question": "What is Hibernate's second-level cache? How do you enable it?",
+      "quickAnswer": "The second-level cache is a shared cache across all Sessions — it persists beyond individual transactions. It caches entities, collections, and query results. Enable it with a provider (Ehcache, Caffeine/JCache) and annotate entities with @Cache. Use it for reference data that is read frequently and rarely changes.",
+      "keyPoints": [
+        "Scope: shared across all Sessions for the same SessionFactory",
+        "Add dependency: spring-boot-starter-cache + ehcache or caffeine + hibernate-jcache",
+        "spring.jpa.properties.hibernate.cache.use_second_level_cache=true",
+        "@Cache(usage=CacheConcurrencyStrategy.READ_WRITE) on the entity",
+        "Query cache: @QueryHints({@QueryHint(name=HINT_CACHEABLE, value=\"true\")}) on repository method"
+      ],
+      "displayOrder": 26
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "HIGH",
+      "question": "What are entity lifecycle states in Hibernate?",
+      "quickAnswer": "Hibernate tracks entities in four states: Transient (new, unknown to Hibernate), Persistent (associated with an open Session — changes are auto-synced to DB on flush), Detached (was persistent, Session closed), and Removed (scheduled for DELETE on flush).",
+      "keyPoints": [
+        "Transient: new entity, no DB row, Hibernate unaware — save it to make persistent",
+        "Persistent: associated with open Session; dirty checking auto-flushes changes to DB",
+        "Detached: Session closed; entity is a stale snapshot; use merge() to re-attach",
+        "Removed: delete() called; DELETE SQL on flush/commit",
+        "merge(detached) → creates new persistent copy of the detached entity's state"
+      ],
+      "codeExample": "// Transient\nUser user = new User(\"Alice\");\n\n// Persistent — Hibernate tracks changes\nentityManager.persist(user); // INSERT on flush\nuser.setEmail(\"alice@example.com\"); // auto-flushed as UPDATE\n\n// Detached — Session closed\nentityManager.detach(user);\nuser.setEmail(\"new@example.com\"); // ignored by Hibernate\n\n// Merge detached entity back\nUser managed = entityManager.merge(user); // SELECT + UPDATE",
+      "displayOrder": 27
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "HIGH",
+      "question": "What is @Version and optimistic locking in Hibernate?",
+      "quickAnswer": "@Version on an integer/timestamp field enables optimistic locking. On every UPDATE, Hibernate appends a WHERE version = ? clause. If another transaction committed first, the row's version won't match and Hibernate throws OptimisticLockException. Use optimistic locking when concurrent updates are rare — no lock held between read and write.",
+      "keyPoints": [
+        "@Version field: integer (auto-incremented) or Instant/LocalDateTime (timestamp)",
+        "Hibernate adds WHERE id=? AND version=? to every UPDATE",
+        "If 0 rows updated → OptimisticLockException (someone else committed first)",
+        "No DB lock held between read and write — high concurrency, low contention",
+        "Contrast with pessimistic locking: @Lock(LockModeType.PESSIMISTIC_WRITE) holds a DB row lock"
+      ],
+      "codeExample": "@Entity\npublic class Product {\n    @Id Long id;\n    String name;\n    int stock;\n\n    @Version\n    int version; // Hibernate manages this automatically\n}\n\n// Hibernate generates:\n// UPDATE product SET stock=?, version=2 WHERE id=? AND version=1\n// → 0 rows updated = OptimisticLockException",
+      "displayOrder": 28
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "HIGH",
+      "question": "How do you use @Query in Spring Data JPA? When do you use native SQL?",
+      "quickAnswer": "@Query defines custom JPQL or native SQL queries on a Spring Data repository method. JPQL operates on entity objects and is database-portable. Native SQL (nativeQuery = true) is required for DB-specific features (stored procedures, window functions, UPSERT). @Modifying is required for UPDATE/DELETE queries.",
+      "keyPoints": [
+        "@Query(\"SELECT u FROM User u WHERE u.email = :email\"): JPQL — uses entity field names",
+        "@Query(value=\"SELECT * FROM users WHERE email = :email\", nativeQuery=true): raw SQL",
+        "@Modifying + @Transactional: required for UPDATE/DELETE @Query methods",
+        "@Modifying(clearAutomatically=true): clears first-level cache after bulk update",
+        "Spring Data derived queries (findByEmail) are simpler for common patterns — use @Query for complex joins or aggregations"
+      ],
+      "codeExample": "public interface UserRepository extends JpaRepository<User, Long> {\n\n    // JPQL — entity field names, not column names\n    @Query(\"SELECT u FROM User u WHERE u.role = :role ORDER BY u.createdAt DESC\")\n    List<User> findByRoleOrdered(@Param(\"role\") String role);\n\n    // Modifying JPQL\n    @Modifying\n    @Transactional\n    @Query(\"UPDATE User u SET u.lastLogin = :now WHERE u.id = :id\")\n    int updateLastLogin(@Param(\"id\") Long id, @Param(\"now\") Instant now);\n}",
+      "displayOrder": 29
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between JPQL, HQL, and Criteria API?",
+      "quickAnswer": "JPQL (Jakarta Persistence Query Language) is the JPA standard query language — operates on entity names and field names, not table/column names. HQL (Hibernate Query Language) is Hibernate's superset of JPQL with additional features. Criteria API builds queries programmatically in Java — type-safe and suitable for dynamic queries.",
+      "keyPoints": [
+        "JPQL/HQL: string-based, familiar SQL syntax, validated at build time with static analysis",
+        "Criteria API: type-safe, dynamic — build WHERE clauses programmatically without string concatenation",
+        "JPA Metamodel (@StaticMetamodel): generated classes for type-safe Criteria queries",
+        "Native SQL (@Query nativeQuery=true): for DB-specific features or complex queries",
+        "Use @Query (JPQL) for complex joins; Criteria API for dynamic search filters"
+      ],
+      "displayOrder": 30
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "HIGH",
+      "question": "What are JPA cascade types and when do you use CascadeType.ALL?",
+      "quickAnswer": "Cascade propagates operations from the parent entity to related entities. PERSIST cascades save, REMOVE cascades delete, MERGE cascades re-attach. CascadeType.ALL covers all operations. Use CascadeType.ALL with orphanRemoval on owned collections (like Order→OrderItems). Never use CASCADE.REMOVE on the many side of a shared reference.",
+      "keyPoints": [
+        "PERSIST: saving parent saves children",
+        "MERGE: merging parent merges children",
+        "REMOVE: deleting parent deletes children — dangerous on shared entities",
+        "REFRESH: refreshing parent refreshes children from DB",
+        "CascadeType.ALL: all of the above; safe only for exclusive ownership",
+        "orphanRemoval=true: deletes children removed from the collection (REMOVE + unlinked)"
+      ],
+      "displayOrder": 31
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "HIGH",
+      "question": "What is the difference between orphanRemoval and CascadeType.REMOVE?",
+      "quickAnswer": "CascadeType.REMOVE deletes children when the parent is deleted. orphanRemoval deletes a child when it is removed from the parent's collection (unlinked) — even if the parent is not deleted. Use orphanRemoval for exclusive-ownership collections where removing an item from the list should delete it from the DB.",
+      "keyPoints": [
+        "CascadeType.REMOVE: fires on parent.delete() — deletes all children",
+        "orphanRemoval: fires when an entity is removed from a collection — even without deleting parent",
+        "Example: order.getItems().remove(item) → DELETE FROM order_items WHERE id=? (with orphanRemoval)",
+        "Without orphanRemoval: item just loses its FK reference; row stays in DB",
+        "orphanRemoval=true implies CascadeType.REMOVE automatically"
+      ],
+      "displayOrder": 32
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "HIGH",
+      "question": "How do you diagnose and fix the Hibernate N+1 problem?",
+      "quickAnswer": "N+1 occurs when you load N parent entities then Hibernate fires 1 extra query per parent to load a lazy collection or association — total N+1 queries. Diagnose with spring.jpa.show-sql=true or Hibernate Statistics. Fix with JOIN FETCH in JPQL, @EntityGraph, or @BatchSize to load children in batches instead of one by one.",
+      "keyPoints": [
+        "Symptom: hundreds of near-identical SELECT queries in the log",
+        "Enable logging: spring.jpa.show-sql=true + spring.jpa.properties.hibernate.format_sql=true",
+        "JOIN FETCH: @Query(\"SELECT o FROM Order o JOIN FETCH o.items\") — one query",
+        "@EntityGraph(attributePaths=\"items\"): declarative alternative to JOIN FETCH",
+        "@BatchSize(size=30) on the collection: loads items in batches of 30 — N+1 → N/30+1",
+        "Avoid EAGER on @OneToMany — it hides N+1 behind one massive Cartesian JOIN"
+      ],
+      "codeExample": "// N+1: loads 100 orders then fires 100 queries for items\nList<Order> orders = orderRepo.findAll();\norders.forEach(o -> o.getItems().size()); // 100 extra queries!\n\n// Fix with JOIN FETCH\n@Query(\"SELECT DISTINCT o FROM Order o JOIN FETCH o.items\")\nList<Order> findAllWithItems();\n\n// Or EntityGraph\n@EntityGraph(attributePaths = {\"items\"})\nList<Order> findAll();",
+      "displayOrder": 33
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "MEDIUM",
+      "question": "What is @Transient in JPA?",
+      "quickAnswer": "@Transient marks a field or method that should NOT be persisted to the database. Hibernate/JPA ignores it completely. Use it for computed properties, UI-only fields, or temporary values you calculate after loading.",
+      "keyPoints": [
+        "JPA @Transient ≠ Java transient keyword (Java's transient is for Java serialization)",
+        "Commonly used for derived/computed fields: @Transient int totalPrice = items.stream().mapToInt(Item::price).sum()",
+        "Can also be used on methods (getter) to exclude a calculated property",
+        "Does not participate in dirty checking — changes to @Transient fields never trigger UPDATE"
+      ],
+      "displayOrder": 34
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "HIGH",
+      "question": "How does JPA handle entity inheritance? Compare SINGLE_TABLE, JOINED, and TABLE_PER_CLASS.",
+      "quickAnswer": "SINGLE_TABLE stores all subclasses in one table with a discriminator column — best performance (no JOINs) but many nullable columns. JOINED stores each subclass in its own table joined to the parent — cleaner schema but requires JOINs. TABLE_PER_CLASS gives each subclass its own complete table — no JOINs for concrete queries but polymorphic queries need UNION ALL.",
+      "keyPoints": [
+        "SINGLE_TABLE (default): one table, one row per entity, discriminator column differentiates types; fast reads",
+        "JOINED: parent table + child table, joined on PK; cleaner, enforces NOT NULL, but JOIN cost",
+        "TABLE_PER_CLASS: fully independent tables; polymorphic queries use UNION ALL — slow",
+        "@DiscriminatorColumn + @DiscriminatorValue: configure SINGLE_TABLE discriminator",
+        "SINGLE_TABLE best for small hierarchies; JOINED for large hierarchies with many non-null child fields"
+      ],
+      "displayOrder": 35
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between @EmbeddedId and @IdClass for composite primary keys?",
+      "quickAnswer": "@EmbeddedId uses an @Embeddable class as the PK — the PK object is a field in the entity. @IdClass declares the composite PK as separate fields on the entity with a companion @IdClass annotation. @EmbeddedId is more OOP (PK is a first-class object); @IdClass is simpler for derived identifier scenarios.",
+      "keyPoints": [
+        "@Embeddable + @EmbeddedId: PK is a nested object (entity.id.userId, entity.id.courseId)",
+        "@IdClass: PK fields declared directly on entity; companion class mirrors the PK fields",
+        "Both require the PK class to be Serializable, have equals/hashCode",
+        "@EmbeddedId is preferred in modern Spring Data JPA",
+        "Spring Data JPA repositories: use the PK class as the ID type in JpaRepository<Entity, PKClass>"
+      ],
+      "displayOrder": 36
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "HIGH",
+      "question": "What is the difference between findById(), getById(), and getReferenceById() in Spring Data JPA?",
+      "quickAnswer": "findById() executes a SELECT immediately and returns Optional<T> — the entity is fully loaded. getReferenceById() (formerly getById()) returns a Hibernate proxy without hitting the DB — useful as a performance trick when you only need to set a FK without loading the entity. The proxy throws EntityNotFoundException when its fields are accessed if the entity doesn't exist.",
+      "keyPoints": [
+        "findById(id): SELECT now; returns Optional.empty() if not found",
+        "getReferenceById(id): returns a Hibernate proxy; SELECT deferred until fields are accessed",
+        "getReferenceById use case: set an FK association without loading the parent entity",
+        "Proxy access outside transaction → LazyInitializationException",
+        "EntityNotFoundException: thrown when you access a proxy field for a non-existent ID"
+      ],
+      "codeExample": "// findById: hits DB immediately\nUser user = userRepo.findById(1L).orElseThrow();\n\n// getReferenceById: no SELECT — just creates proxy with the ID\n// Use when you need to set a @ManyToOne without loading the full parent\nOrder order = new Order();\norder.setUser(userRepo.getReferenceById(userId)); // no DB hit\norderRepo.save(order); // only the ORDER INSERT is executed",
+      "displayOrder": 37
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "MEDIUM",
+      "question": "How does Spring Data JPA Auditing work? (@CreatedDate, @LastModifiedDate)",
+      "quickAnswer": "Spring Data JPA Auditing automatically populates audit fields when entities are created or updated. Enable it with @EnableJpaAuditing, annotate the entity with @EntityListeners(AuditingEntityListener.class), and use @CreatedDate, @LastModifiedDate, @CreatedBy, @LastModifiedBy on the fields.",
+      "keyPoints": [
+        "@EnableJpaAuditing on a @Configuration class activates the feature",
+        "@EntityListeners(AuditingEntityListener.class) on the entity",
+        "@CreatedDate Instant createdAt: set once on first persist",
+        "@LastModifiedDate Instant updatedAt: updated on every merge/flush",
+        "@CreatedBy / @LastModifiedBy: require an AuditorAware<String> bean to provide the current user"
+      ],
+      "displayOrder": 38
+    },
+    {
+      "category": "HIBERNATE",
+      "difficulty": "HIGH",
+      "question": "What is dirty checking in Hibernate and how does automatic flush work?",
+      "quickAnswer": "Hibernate's dirty checking mechanism compares the current state of persistent entities with their snapshot (taken at load time). Before a query or transaction commit, Hibernate flushes — it diffs each entity and issues UPDATEs for any that changed. This means you never have to explicitly call save() on a loaded entity — just modify it.",
+      "keyPoints": [
+        "Every loaded entity's state is snapshotted in memory",
+        "On flush (before query / on commit): Hibernate diffs current vs snapshot → generates UPDATEs",
+        "FlushMode.AUTO (default): flush before any JPQL query that might be affected by pending changes",
+        "FlushMode.COMMIT: flush only on transaction commit — can cause stale reads within the transaction",
+        "session.evict(entity): remove from session → no dirty checking; changes are lost"
+      ],
+      "displayOrder": 39
+    }
+  ]
+}

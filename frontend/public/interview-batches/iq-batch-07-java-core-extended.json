@@ -1,0 +1,293 @@
+{
+  "batchName": "iq-batch-07-java-core-extended",
+  "questions": [
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "How does the Java String pool work? When does == work for Strings?",
+      "quickAnswer": "The String pool is a special heap region where String literals are interned — if the same string already exists, the literal reuses the existing object. == compares references, so two literals with the same content share a reference and == returns true. new String(\"x\") always creates a new heap object outside the pool, so == with a literal returns false.",
+      "keyPoints": [
+        "String literals: \"abc\" — automatically interned in the pool at class loading",
+        "String.intern(): manually adds a runtime string to the pool",
+        "new String(\"abc\"): creates a new object outside the pool — == is false",
+        "\"abc\" == \"abc\" → true (same pool reference); new String(\"abc\") == \"abc\" → false",
+        "Always use .equals() for string comparison — never ==",
+        "Pool moved from PermGen to Heap in Java 7 — collected by GC when unreachable"
+      ],
+      "displayOrder": 0
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What are strong, soft, weak, and phantom references in Java?",
+      "quickAnswer": "Reference strength controls when the GC can collect an object. Strong (normal) references prevent GC. Soft references are collected only under memory pressure — good for caches. Weak references are collected eagerly at the next GC cycle — used in WeakHashMap. Phantom references are for cleanup actions before the object memory is reclaimed.",
+      "keyPoints": [
+        "Strong: normal variable reference — object never collected while the reference exists",
+        "SoftReference<T>: GC collects only when memory is low — in-memory cache use case",
+        "WeakReference<T>: collected at next GC — WeakHashMap uses these for keys",
+        "PhantomReference<T>: always returns null from get(); used with ReferenceQueue for post-mortem cleanup",
+        "Java 9+ Cleaner: preferred over PhantomReference for resource cleanup"
+      ],
+      "displayOrder": 1
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the ClassLoader hierarchy in Java? What is the parent delegation model?",
+      "quickAnswer": "Java has three built-in classloaders: Bootstrap (loads rt.jar/core JDK), Platform/Extension (loads ext directory), and Application (loads classpath). When a class is requested, the classloader delegates to its parent first. Only if the parent can't load it does the child try. This prevents user code from overriding JDK classes.",
+      "keyPoints": [
+        "Bootstrap ClassLoader: loads java.lang, java.util — written in native code, no Java parent",
+        "Platform ClassLoader (Java 9+) / Extension ClassLoader (Java 8): loads javax.*, ext/ JARs",
+        "Application ClassLoader: loads your classpath and app JARs",
+        "Parent delegation: child asks parent first — prevents java.lang.String from being replaced",
+        "Custom ClassLoader: override loadClass() or findClass() — used by frameworks (Spring, OSGi, Tomcat)"
+      ],
+      "displayOrder": 2
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is Java Reflection and when would you use it?",
+      "quickAnswer": "Reflection allows code to inspect and manipulate classes, methods, and fields at runtime — even private ones. Frameworks like Spring (for @Autowired injection), Jackson (for JSON serialization), and JUnit (for test discovery) rely heavily on reflection. It is slower than direct calls and bypasses compile-time safety, so use it only in framework code or tooling.",
+      "keyPoints": [
+        "Class.forName(\"com.example.MyClass\"): load a class by name at runtime",
+        "clazz.getDeclaredFields(): get all fields including private",
+        "field.setAccessible(true): bypass private visibility (requires module permission in Java 9+)",
+        "method.invoke(obj, args): call a method dynamically",
+        "Performance: ~10-100x slower than direct calls; use MethodHandles for performance-sensitive code"
+      ],
+      "displayOrder": 3
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the Strategy design pattern? Give a Java example.",
+      "quickAnswer": "Strategy defines a family of algorithms, encapsulates each one, and makes them interchangeable. The context holds a reference to a strategy interface and delegates work to it. This lets you swap algorithms (sorting, payment, discounting) at runtime without changing the context. In Java, lambdas are often used as lightweight strategies.",
+      "keyPoints": [
+        "Context: holds a Strategy reference; calls strategy.execute()",
+        "Strategy interface: defines the algorithm contract",
+        "ConcreteStrategy: implements the algorithm — can be swapped at runtime",
+        "Open/Closed Principle: add new strategies without modifying the context",
+        "Java 8+: functional interfaces + lambdas replace simple one-method strategy classes"
+      ],
+      "codeExample": "interface SortStrategy { void sort(int[] arr); }\n\nclass QuickSort implements SortStrategy {\n    public void sort(int[] arr) { /* quicksort impl */ }\n}\n\nclass Sorter {\n    private SortStrategy strategy;\n    public Sorter(SortStrategy s) { this.strategy = s; }\n    public void sort(int[] arr) { strategy.sort(arr); }\n}\n\n// Usage\nSorter s = new Sorter(new QuickSort());\ns.sort(data);\n// Or with lambda:\nSorter s2 = new Sorter(arr -> Arrays.sort(arr));",
+      "displayOrder": 4
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the Observer design pattern? How does Java support it?",
+      "quickAnswer": "Observer defines a one-to-many dependency: when a Subject changes state, all registered Observers are notified. Java's EventListener mechanism, Spring's ApplicationEvent, and reactive streams are all Observer pattern variants. The subject maintains a list of observers and calls notify on them.",
+      "keyPoints": [
+        "Subject/Publisher: maintains observer list; calls update() on each observer on state change",
+        "Observer/Listener: implements a callback interface (update, onEvent, etc.)",
+        "Java deprecated Observable class: use custom interfaces or Spring events instead",
+        "GUI: ActionListener on buttons is the Observer pattern",
+        "Spring: ApplicationEventPublisher + @EventListener — loose coupling via events"
+      ],
+      "displayOrder": 5
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the Decorator design pattern? How is it different from subclassing?",
+      "quickAnswer": "Decorator wraps an object to add behavior dynamically without subclassing. Multiple decorators can be stacked. Subclassing adds behavior statically at compile time and causes a class explosion when you have multiple independent dimensions of variation. Java I/O streams (BufferedInputStream wrapping FileInputStream) are the classic example.",
+      "keyPoints": [
+        "Decorator wraps the same interface and delegates to the wrapped object, then adds behavior",
+        "Stackable: BufferedInputStream(GZIPInputStream(FileInputStream(file)))",
+        "No class explosion: 3 features × 3 types = 9 subclasses vs 3+3 decorators",
+        "Open/Closed: add new behaviors by creating new decorator classes",
+        "Java I/O: InputStream, Reader, Writer are all Decorator pattern hierarchies"
+      ],
+      "displayOrder": 6
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the Template Method design pattern?",
+      "quickAnswer": "Template Method defines the skeleton of an algorithm in a base class and lets subclasses override specific steps without changing the algorithm's structure. The base class calls abstract hook methods that each subclass implements differently.",
+      "keyPoints": [
+        "Abstract base class: implements the algorithm skeleton; calls abstract hook methods",
+        "Concrete subclass: implements only the hooks — can't change the order of steps",
+        "Hollywood Principle: 'Don't call us, we'll call you' — base calls subclass, not the reverse",
+        "Examples: JUnit's TestCase (setUp/tearDown hooks), AbstractList (get/size), Spring's JdbcTemplate",
+        "Template Method uses inheritance; Strategy uses composition — prefer composition"
+      ],
+      "displayOrder": 7
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the difference between Factory Method and Abstract Factory patterns?",
+      "quickAnswer": "Factory Method defines a method for creating objects in a base class; subclasses override it to choose the concrete type. Abstract Factory provides an interface for creating families of related objects — you switch the entire factory to switch the product family. Abstract Factory is Factory Method applied to a whole product suite.",
+      "keyPoints": [
+        "Factory Method: one product, subclass decides the type; uses inheritance",
+        "Abstract Factory: multiple related products; uses composition — client holds a factory reference",
+        "Example: Factory Method — Logger.getLogger(); Abstract Factory — UI toolkit creating Button + Checkbox + Dialog for a platform",
+        "Both decouple creation from usage",
+        "Static factory method (e.g. Optional.of(), List.of()) is a simpler variant, not a design pattern"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "How does ConcurrentHashMap achieve thread safety without a global lock?",
+      "quickAnswer": "ConcurrentHashMap uses segment-level locking (Java 7) and CAS + synchronized on individual bucket heads (Java 8+). Reads are lock-free. Writes lock only the affected bucket. This allows multiple threads to read and write concurrently to different buckets, making it dramatically faster than Collections.synchronizedMap() under contention.",
+      "keyPoints": [
+        "Java 8: bucket-level synchronized + CAS for lock-free updates",
+        "Reads: fully lock-free — uses volatile reads on bucket array",
+        "Writes: lock only the specific bucket (linked list head) being modified",
+        "computeIfAbsent(), merge(), compute(): atomic compound operations",
+        "size() is approximate; mappingCount() returns long — prefer it for large maps",
+        "Does NOT allow null keys or values (unlike HashMap)"
+      ],
+      "displayOrder": 9
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is CopyOnWriteArrayList and when do you use it?",
+      "quickAnswer": "CopyOnWriteArrayList creates a fresh copy of the underlying array on every write operation. Reads are lock-free and iterate over a stable snapshot. Writes are expensive (O(n) copy). Use it when reads dominate and writes are rare — event listener lists, observer registries. Never use it for write-heavy concurrent lists.",
+      "keyPoints": [
+        "Write (add/remove/set): copies entire array, modifies copy, swaps in atomically",
+        "Read (get/iterator): lock-free, sees the snapshot at iterator creation time",
+        "Iterators never throw ConcurrentModificationException",
+        "Memory: two copies of array during write — memory-intensive for large lists",
+        "Use case: read-heavy, rarely-modified lists — Spring's EventListenerRegistry"
+      ],
+      "displayOrder": 10
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is BlockingQueue? Name its main implementations and use cases.",
+      "quickAnswer": "BlockingQueue is a thread-safe queue that blocks the producer when full and blocks the consumer when empty. It's the backbone of the producer-consumer pattern. ArrayBlockingQueue is bounded (fixed capacity). LinkedBlockingQueue can be bounded or unbounded. PriorityBlockingQueue orders by priority. They are used internally by ExecutorService task queues.",
+      "keyPoints": [
+        "put(): blocks if full; take(): blocks if empty",
+        "offer(e, timeout): non-blocking try with timeout",
+        "ArrayBlockingQueue: bounded FIFO backed by array — low GC pressure",
+        "LinkedBlockingQueue: bounded or unbounded FIFO — higher throughput than ArrayBlockingQueue",
+        "PriorityBlockingQueue: priority-ordered, unbounded",
+        "SynchronousQueue: zero-capacity — direct handoff between producer and consumer"
+      ],
+      "displayOrder": 11
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is a Semaphore? How is it different from a mutex or ReentrantLock?",
+      "quickAnswer": "A Semaphore controls access to a shared resource by maintaining a count of available permits. A thread acquires a permit before accessing the resource and releases it after. A mutex (or ReentrantLock) is a binary semaphore — only one thread at a time. A counting semaphore allows N threads simultaneously — useful for connection pools.",
+      "keyPoints": [
+        "Semaphore(1): binary semaphore — equivalent to a mutex",
+        "Semaphore(10): allows 10 concurrent threads — connection pool throttle",
+        "acquire(): blocks until a permit is available; release(): returns a permit",
+        "tryAcquire(timeout): non-blocking attempt",
+        "ReentrantLock: reentrant (same thread can acquire multiple times); Semaphore is not reentrant by default",
+        "Use case: limit concurrent DB connections, rate limiting"
+      ],
+      "displayOrder": 12
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is CountDownLatch? How is it different from CyclicBarrier?",
+      "quickAnswer": "CountDownLatch counts down from N to 0 — threads call await() to wait until the latch reaches 0, and other threads call countDown() to decrement it. It cannot be reset. CyclicBarrier has N parties — all parties call await() and are all released together when all arrive. It can be reset and reused for repeated phases.",
+      "keyPoints": [
+        "CountDownLatch: one-time wait; one or more threads wait for N events to happen",
+        "CyclicBarrier: N threads all wait for each other at the barrier; all released together",
+        "CountDownLatch.countDown() can be called by any thread any number of times",
+        "CyclicBarrier.await() must be called by exactly N distinct threads to release",
+        "CyclicBarrier is reusable (reset between phases); CountDownLatch is single-use",
+        "Use CountDownLatch for 'wait for dependencies to start'; CyclicBarrier for 'synchronize parallel workers at phase end'"
+      ],
+      "displayOrder": 13
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "How does try-with-resources work? What is AutoCloseable?",
+      "quickAnswer": "Try-with-resources (Java 7+) automatically calls close() on resources declared in the try(...) header when the block exits — regardless of whether it exits normally or via an exception. The resource class must implement AutoCloseable (which has a single close() method). Multiple resources are closed in reverse declaration order.",
+      "keyPoints": [
+        "Resources declared in try(): closed in reverse order on exit",
+        "AutoCloseable.close() called even if an exception is thrown",
+        "Suppressed exceptions: if close() throws while an exception is already propagating, it's suppressed",
+        "Works with any AutoCloseable: connections, streams, locks",
+        "Multiple resources: try (A a = new A(); B b = new B()) — b.close() then a.close()"
+      ],
+      "codeExample": "// Both connection and statement are auto-closed\ntry (Connection conn = dataSource.getConnection();\n     PreparedStatement ps = conn.prepareStatement(sql)) {\n    ps.setLong(1, userId);\n    ResultSet rs = ps.executeQuery();\n    // process rs\n} // conn.close() and ps.close() called automatically",
+      "displayOrder": 14
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What causes a deadlock in Java? How do you detect and prevent it?",
+      "quickAnswer": "A deadlock occurs when Thread A holds Lock 1 and waits for Lock 2, while Thread B holds Lock 2 and waits for Lock 1 — both wait forever. Detect with jstack or VisualVM (shows 'deadlock' in thread dump). Prevent by always acquiring locks in a consistent order, using tryLock() with timeout, or using higher-level concurrent utilities.",
+      "keyPoints": [
+        "Four conditions: mutual exclusion, hold-and-wait, no preemption, circular wait",
+        "Prevention: consistent lock ordering — always lock A before B everywhere",
+        "tryLock(timeout): attempt to acquire lock; give up and retry if not available",
+        "Avoid holding locks while calling external code (callbacks, network calls)",
+        "java.lang.management.ThreadMXBean.findDeadlockedThreads(): detect programmatically"
+      ],
+      "displayOrder": 15
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the Java Memory Model (JMM) and the happens-before relationship?",
+      "quickAnswer": "The JMM defines how threads interact through memory and what values they can read from shared variables. Happens-before is a guarantee: if action A happens-before B, then A's writes are visible to B. Key rules: entering a synchronized block happens-before acquiring the lock; a thread's actions happen-before Thread.join().",
+      "keyPoints": [
+        "Happens-before: if A hb B, then writes of A are guaranteed visible to B",
+        "Monitor unlock happens-before the next monitor lock on the same monitor",
+        "volatile write happens-before volatile read of the same variable",
+        "Thread.start() happens-before the new thread's first action",
+        "Thread's last action happens-before Thread.join() returns",
+        "Without happens-before: CPU caches and reordering can cause threads to see stale values"
+      ],
+      "displayOrder": 16
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is ThreadLocal? What are its use cases and memory leak risk?",
+      "quickAnswer": "ThreadLocal gives each thread its own isolated copy of a variable. Common uses: holding the current HTTP request, database connection, user session, or transaction context per thread. The memory leak risk: in thread pool environments, threads are reused. If you don't call remove() after use, the ThreadLocal value persists in the pooled thread indefinitely.",
+      "keyPoints": [
+        "Each thread has its own value; threads don't share the variable",
+        "get(), set(value), remove() — always call remove() in a finally block in thread pools",
+        "Memory leak: thread pool thread → ThreadLocalMap holds a reference → object never collected",
+        "Spring uses ThreadLocal internally for transactional context, SecurityContextHolder",
+        "InheritableThreadLocal: child threads inherit parent's value (risk: child overwrites parent's value)"
+      ],
+      "displayOrder": 17
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between Runnable and Callable?",
+      "quickAnswer": "Runnable has a void run() method — it cannot return a value or throw a checked exception. Callable<V> has V call() — it returns a value and can throw checked exceptions. Use Callable with ExecutorService.submit() to get a Future<V> for the result.",
+      "keyPoints": [
+        "Runnable: @FunctionalInterface, void run() — no return, no checked exception",
+        "Callable<V>: @FunctionalInterface, V call() throws Exception — returns value, can throw",
+        "ExecutorService.submit(Callable): returns Future<V>",
+        "ExecutorService.submit(Runnable): returns Future<?> with null result",
+        "Future.get(): blocks until result is available; throws ExecutionException wrapping any exception"
+      ],
+      "displayOrder": 18
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between Iterable and Iterator? How do you implement a custom iterator?",
+      "quickAnswer": "Iterable<T> is a container that can produce an Iterator. Iterator<T> is the cursor that walks through the container — it has hasNext() and next(). Implementing Iterable<T> on your collection allows it to be used in for-each loops. The iterator's remove() method is the only safe way to remove an element during iteration.",
+      "keyPoints": [
+        "Iterable: has iterator() method — enables for-each (enhanced for loop)",
+        "Iterator: hasNext(), next(), optional remove() — stateful cursor",
+        "Fail-fast: ArrayList/HashMap iterators throw ConcurrentModificationException if modified outside iterator",
+        "iterator.remove(): safe removal during iteration",
+        "Custom collection: implement Iterable<T> and return an anonymous Iterator — enables for-each"
+      ],
+      "displayOrder": 19
+    }
+  ]
+}
