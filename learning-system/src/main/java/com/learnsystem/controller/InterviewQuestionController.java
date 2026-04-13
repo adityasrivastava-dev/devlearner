@@ -3,6 +3,7 @@ package com.learnsystem.controller;
 import com.learnsystem.model.InterviewQuestion;
 import com.learnsystem.repository.InterviewQuestionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
+@Slf4j
 @RequiredArgsConstructor
 public class InterviewQuestionController {
 
@@ -30,20 +32,25 @@ public class InterviewQuestionController {
             @RequestParam(required = false)       String difficulty,
             @RequestParam(defaultValue = "300") int    size) {
 
-        size = Math.min(size, 500);
-        var pageable = PageRequest.of(0, size);
+        try {
+            size = Math.min(size, 500);
+            var pageable = PageRequest.of(0, size);
 
-        List<InterviewQuestion> result;
-        if (category != null && difficulty != null) {
-            result = repo.findByCategoryAndDifficultyPaged(category, difficulty, pageable);
-        } else if (category != null) {
-            result = repo.findByCategoryPaged(category, pageable);
-        } else if (difficulty != null) {
-            result = repo.findByDifficultyPaged(difficulty, pageable);
-        } else {
-            result = repo.findAllPaged(pageable);
+            List<InterviewQuestion> result;
+            if (category != null && difficulty != null) {
+                result = repo.findByCategoryAndDifficultyPaged(category, difficulty, pageable);
+            } else if (category != null) {
+                result = repo.findByCategoryPaged(category, pageable);
+            } else if (difficulty != null) {
+                result = repo.findByDifficultyPaged(difficulty, pageable);
+            } else {
+                result = repo.findAllPaged(pageable);
+            }
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Failed to load interview questions. category={}, difficulty={}, size={}", category, difficulty, size, e);
+            return ResponseEntity.ok(List.of());
         }
-        return ResponseEntity.ok(result);
     }
 
     // ── Admin: CRUD endpoints ──────────────────────────────────────────────────
