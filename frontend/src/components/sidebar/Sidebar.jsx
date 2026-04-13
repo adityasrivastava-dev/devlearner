@@ -1,9 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { topicsApi, QUERY_KEYS } from '../../api';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { CATEGORIES, getCategoryMeta } from '../../utils/helpers';
+import { CATEGORIES, CATEGORY_META } from '../../utils/helpers';
 import UserBar from './UserBar';
 import styles from './Sidebar.module.css';
 
@@ -47,7 +45,18 @@ const NAV_SECTIONS = [
   },
 ];
 
-// Which nav section label contains a given path?
+// Category display config (icon + color)
+const CAT_CONFIG = {
+  JAVA:          { icon: '☕', color: '#fbbf24' },
+  ADVANCED_JAVA: { icon: '⚡', color: '#a78bfa' },
+  MYSQL:         { icon: '🗄', color: '#fbbf24' },
+  DSA:           { icon: '🎯', color: '#60a5fa' },
+  SPRING_BOOT:   { icon: '🍃', color: '#4ade80' },
+  AWS:           { icon: '☁', color: '#fb923c'  },
+  SYSTEM_DESIGN: { icon: '🏗', color: '#f472b6'  },
+  TESTING:       { icon: '🧪', color: '#34d399'  },
+};
+
 function sectionForPath(pathname) {
   for (const s of NAV_SECTIONS) {
     if (s.items.some((i) => i.path === pathname || (i.path !== '/' && pathname.startsWith(i.path)))) {
@@ -57,20 +66,19 @@ function sectionForPath(pathname) {
   return null;
 }
 
-export default function Sidebar({ selectedTopicId, onTopicSelect, isOpen, onClose }) {
-  const [category, setCategory] = useState('ALL');
-  const [search, setSearch]     = useState('');
+export default function Sidebar({ isOpen, onClose }) {
   const navigate  = useNavigate();
   const location  = useLocation();
+  const [searchParams] = useSearchParams();
   const { isAdmin } = useAuth();
 
-  // Accordion: only the section containing the active route starts open
+  const activeCategory = searchParams.get('category');
+
   const [openSections, setOpenSections] = useState(() => {
     const active = sectionForPath(location.pathname);
     return active ? new Set([active]) : new Set();
   });
 
-  // When route changes, auto-open that section
   useEffect(() => {
     const active = sectionForPath(location.pathname);
     if (active) setOpenSections((prev) => new Set([...prev, active]));
@@ -85,57 +93,20 @@ export default function Sidebar({ selectedTopicId, onTopicSelect, isOpen, onClos
     });
   }
 
-  const { data: topics = [], isLoading } = useQuery({
-    queryKey: QUERY_KEYS.topics(category),
-    queryFn:  () => topicsApi.getAll(category),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const filtered = useMemo(() => {
-    if (!search.trim()) return topics;
-    const q = search.toLowerCase();
-    return topics.filter((t) => t.title.toLowerCase().includes(q));
-  }, [topics, search]);
-
-  // Group topics for display.
-  // searching → flat list, no headers
-  // ALL tab   → group by category (Java, DSA, SQL …)
-  // specific  → group by subCategory (OOP, Collections …)
-  const grouped = useMemo(() => {
-    if (search.trim()) {
-      return [{ sectionName: null, sectionColor: null, topics: filtered }];
-    }
-    if (category === 'ALL') {
-      const map = new Map();
-      for (const t of filtered) {
-        const cat = t.category || 'OTHER';
-        if (!map.has(cat)) map.set(cat, []);
-        map.get(cat).push(t);
-      }
-      return Array.from(map.entries()).map(([cat, catTopics]) => {
-        const meta = getCategoryMeta(cat);
-        return { sectionName: meta.label, sectionColor: meta.color, topics: catTopics };
-      });
-    }
-    const map = new Map();
-    for (const t of filtered) {
-      const sec = t.subCategory || '';
-      if (!map.has(sec)) map.set(sec, []);
-      map.get(sec).push(t);
-    }
-    return Array.from(map.entries()).map(([sectionName, secTopics]) => ({
-      sectionName: sectionName || null,
-      sectionColor: null,
-      topics: secTopics,
-    }));
-  }, [filtered, search, category]);
-
   const isActive = (path) => {
-    if (path === '/') return location.pathname === '/' && !selectedTopicId;
+    if (path === '/') return location.pathname === '/' && !searchParams.get('topic') && !searchParams.get('category');
     return location.pathname === path;
   };
 
   function navTo(path) { navigate(path); onClose?.(); }
+
+  function selectCategory(key) {
+    navigate(`/?category=${key}`);
+    onClose?.();
+  }
+
+  // Categories excluding ALL
+  const browseCategories = CATEGORIES.filter((c) => c.key !== 'ALL');
 
   return (
     <>
@@ -145,7 +116,7 @@ export default function Sidebar({ selectedTopicId, onTopicSelect, isOpen, onClos
 
         {/* ── Logo ──────────────────────────────────────────────────────── */}
         <div className={styles.header}>
-          <button className={styles.logoBtn} onClick={() => { navTo('/'); onTopicSelect?.(null); }} title="Dashboard">
+          <button className={styles.logoBtn} onClick={() => navTo('/')} title="Dashboard">
             <span className={styles.logo}>⟨dev<span>learn</span>⟩</span>
           </button>
           <button className={`${styles.iconBtn} ${styles.closeBtn}`} onClick={onClose} title="Close">✕</button>
@@ -195,59 +166,31 @@ export default function Sidebar({ selectedTopicId, onTopicSelect, isOpen, onClos
           )}
         </nav>
 
+        {/* ── Topic Categories ──────────────────────────────────────────── */}
+        <div className={styles.catSection}>
+          <div className={styles.catSectionHeader}>Topics</div>
+          <div className={styles.catGrid}>
+            {browseCategories.map((cat) => {
+              const cfg = CAT_CONFIG[cat.key] || { icon: '📚', color: '#94a3b8' };
+              const isActiveCat = activeCategory === cat.key;
+              return (
+                <button
+                  key={cat.key}
+                  className={`${styles.catPill} ${isActiveCat ? styles.catPillActive : ''}`}
+                  style={isActiveCat ? { borderColor: cfg.color + '66', background: cfg.color + '18', color: cfg.color } : {}}
+                  onClick={() => selectCategory(cat.key)}
+                  title={cat.label}
+                >
+                  <span className={styles.catPillIcon}>{cfg.icon}</span>
+                  <span className={styles.catPillLabel}>{cat.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* ── User bar ──────────────────────────────────────────────────── */}
         <UserBar />
-
-        {/* ── Topics ────────────────────────────────────────────────────── */}
-        <div className={styles.topicsArea}>
-          <div className={styles.catTabs}>
-            {CATEGORIES.map((cat) => (
-              <button key={cat.key}
-                className={`${styles.catBtn} ${category === cat.key ? styles.active : ''}`}
-                onClick={() => { setCategory(cat.key); setSearch(''); }}>
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          <div className={styles.searchBox}>
-            <input className={styles.searchInput} type="text" placeholder="Search topics…"
-              value={search} onChange={(e) => setSearch(e.target.value)} />
-          </div>
-
-          <ul className={styles.topicList}>
-            {isLoading ? (
-              Array.from({ length: 6 }).map((_, i) => <li key={i} className={styles.skeleton} />)
-            ) : filtered.length === 0 ? (
-              <li className={styles.empty}>
-                {search ? 'No topics match' : 'No topics in this category'}
-              </li>
-            ) : (
-              grouped.map(({ sectionName, sectionColor, topics: sectionTopics }) => (
-                <li key={sectionName || '__ungrouped'} className={styles.topicGroup}>
-                  {sectionName && (
-                    <div
-                      className={styles.topicGroupLabel}
-                      style={sectionColor ? { color: sectionColor, opacity: 1 } : undefined}
-                    >
-                      {sectionName}
-                    </div>
-                  )}
-                  <ul className={styles.topicGroupList}>
-                    {sectionTopics.map((topic) => (
-                      <li key={topic.id}
-                        className={`${styles.topicItem} ${selectedTopicId === topic.id ? styles.selected : ''}`}
-                        onClick={() => { onTopicSelect(topic.id); onClose?.(); }}>
-                        <span className={styles.topicDot} />
-                        <span className={styles.topicName}>{topic.title}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
 
       </aside>
     </>

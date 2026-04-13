@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { topicsApi, submissionsApi, bookmarksApi, notesApi, ratingsApi, gateApi, QUERY_KEYS } from '../../api';
+import { topicsApi, submissionsApi, bookmarksApi, notesApi, ratingsApi, gateApi, interviewApi, QUERY_KEYS } from '../../api';
 import { getCategoryMeta, getDiffMeta } from '../../utils/helpers';
 import TracerPlayer from './TracerPlayer';
 import FlowchartViewer from './FlowchartViewer';
@@ -406,7 +406,13 @@ export default function TopicView({ topic, onProblemOpen, onBack, theme = 'dark'
         )}
 
         {/* NOTES */}
-        {tab === 'notes' && <NotesPanel key={topic.id} topicId={topic.id} />}
+        {tab === 'notes' && (
+          <div className={styles.notesTabWrap}>
+            <NotesPanel key={topic.id} topicId={topic.id} />
+            <TopicInterviewQuestions category={topic.category} topicTitle={topic.title} />
+            {topic.youtubeUrls && <YoutubeVideosCard raw={topic.youtubeUrls} />}
+          </div>
+        )}
 
       </div>
     </div>
@@ -636,6 +642,70 @@ function NotesPanel({ topicId }) {
                     </div>
                   </div>
                 </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Most-Asked Interview Questions for this topic's category ─────────────────
+function TopicInterviewQuestions({ category, topicTitle }) {
+  const [expanded, setExpanded] = useState(null);
+
+  const { data: questions = [], isLoading } = useQuery({
+    queryKey: ['interviewQ', category, topicTitle],
+    queryFn:  () => interviewApi.getAll({ category, topicTitle, size: 8 }),
+    staleTime: 10 * 60 * 1000,
+    enabled:  !!category,
+  });
+
+  if (!isLoading && questions.length === 0) return null;
+
+  const diffColor = { EASY: '#4ade80', MEDIUM: '#fbbf24', HARD: '#f87171', HIGH: '#f87171', LOW: '#4ade80' };
+
+  return (
+    <div className={styles.iqSection}>
+      <div className={styles.iqHeader}>
+        <span className={styles.iqIcon}>🎯</span>
+        <div>
+          <div className={styles.iqTitle}>Most Asked Interview Questions</div>
+          <div className={styles.iqSub}>
+            {questions.length > 0 && questions[0]?.topicTitle === topicTitle
+              ? `Specific to "${topicTitle}"`
+              : `${category?.replace(/_/g, ' ')} category questions`}
+          </div>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className={styles.iqSkeleton}>
+          {[1,2,3].map(i => <div key={i} className={styles.iqSkeletonItem} />)}
+        </div>
+      ) : (
+        <div className={styles.iqList}>
+          {questions.map((q, i) => (
+            <div key={q.id ?? i} className={styles.iqItem}>
+              <button
+                className={`${styles.iqQuestion} ${expanded === i ? styles.iqQuestionOpen : ''}`}
+                onClick={() => setExpanded(expanded === i ? null : i)}
+              >
+                <span className={styles.iqNum}>{i + 1}</span>
+                <span className={styles.iqText}>{q.question}</span>
+                <span
+                  className={styles.iqDiff}
+                  style={{ color: diffColor[q.difficulty] || '#94a3b8' }}
+                >
+                  {q.difficulty?.toLowerCase()}
+                </span>
+                <span className={`${styles.iqChevron} ${expanded === i ? styles.iqChevronOpen : ''}`}>›</span>
+              </button>
+              {expanded === i && q.answer && (
+                <div className={styles.iqAnswer}>
+                  {q.answer}
+                </div>
               )}
             </div>
           ))}

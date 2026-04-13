@@ -32,4 +32,12 @@ public interface InterviewQuestionRepository extends JpaRepository<InterviewQues
 
     @Query("SELECT q FROM InterviewQuestion q WHERE q.category = :category AND q.difficulty = :difficulty ORDER BY q.displayOrder ASC, q.createdAt ASC")
     List<InterviewQuestion> findByCategoryAndDifficultyPaged(@Param("category") String category, @Param("difficulty") String difficulty, Pageable pageable);
+
+    /** Topic-specific questions (exact title match) */
+    @Query("SELECT q FROM InterviewQuestion q WHERE q.category = :category AND q.topicTitle = :topicTitle ORDER BY q.displayOrder ASC, q.createdAt ASC")
+    List<InterviewQuestion> findByCategoryAndTopicTitlePaged(@Param("category") String category, @Param("topicTitle") String topicTitle, Pageable pageable);
+
+    /** Category-level questions (topicTitle IS NULL) */
+    @Query("SELECT q FROM InterviewQuestion q WHERE q.category = :category AND q.topicTitle IS NULL ORDER BY q.displayOrder ASC, q.createdAt ASC")
+    List<InterviewQuestion> findCategoryLevelPaged(@Param("category") String category, Pageable pageable);
 }

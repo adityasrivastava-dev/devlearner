@@ -12,15 +12,18 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class SeedBatchService {
 
-private final TopicRepository   topicRepo;
-private final ExampleRepository exampleRepo;
-private final ProblemRepository problemRepo;
+private final TopicRepository              topicRepo;
+private final ExampleRepository            exampleRepo;
+private final ProblemRepository            problemRepo;
+private final InterviewQuestionRepository  iqRepo;
 
 @PersistenceContext
 private EntityManager em;
@@ -244,6 +247,30 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
                 }
             }
 
+            // ── Seed topic-specific interview questions ──────────────────────
+            if (dto.getInterviewQuestions() != null && !dto.getInterviewQuestions().isEmpty()) {
+                // Build a set of existing question texts for this category to skip duplicates
+                Set<String> existingQuestions = new HashSet<>();
+                iqRepo.findByCategoryOrderByDisplayOrderAscCreatedAtAsc(topic.getCategory().name())
+                      .forEach(q -> existingQuestions.add(q.getQuestion().toLowerCase().trim()));
+
+                for (SeedBatchRequest.InterviewQuestionSeedDto iqdto : dto.getInterviewQuestions()) {
+                    if (iqdto.getQuestion() == null || iqdto.getQuestion().isBlank()) continue;
+                    if (existingQuestions.contains(iqdto.getQuestion().toLowerCase().trim())) continue;
+
+                    InterviewQuestion iq = new InterviewQuestion();
+                    iq.setCategory(topic.getCategory().name());
+                    iq.setTopicTitle(topic.getTitle());   // tag to specific topic
+                    iq.setQuestion(iqdto.getQuestion().trim());
+                    iq.setQuickAnswer(iqdto.getAnswer() != null ? iqdto.getAnswer().trim() : "");
+                    iq.setDifficulty(normaliseDifficulty(iqdto.getDifficulty()));
+                    iq.setCodeExample(iqdto.getCodeExample());
+                    iq.setKeyPoints(iqdto.getKeyPoints());
+                    iqRepo.save(iq);
+                    existingQuestions.add(iqdto.getQuestion().toLowerCase().trim());
+                }
+            }
+
             log.info("Seeded topic: {} ({} examples, {} problems)",
                     topic.getTitle(),
                     dto.getExamples() != null ? dto.getExamples().size() : 0,
@@ -284,6 +311,16 @@ public void clearAll() {
 // ── helpers ───────────────────────────────────────────────────────────────
 private boolean isBlank(String s) { return s == null || s.isBlank(); }
 private boolean notBlank(String s) { return s != null && !s.isBlank(); }
+
+/** Map EASY/HARD seed values to the HIGH|MEDIUM scale used by InterviewQuestion */
+private String normaliseDifficulty(String d) {
+    if (d == null) return "MEDIUM";
+    return switch (d.toUpperCase().trim()) {
+        case "HARD", "HIGH"  -> "HIGH";
+        case "EASY", "LOW"   -> "MEDIUM";
+        default              -> "MEDIUM";
+    };
+}
 
 /**
  * Promotes a seed DTO's "hints" list (used in newer seed files) into the

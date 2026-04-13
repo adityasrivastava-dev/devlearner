@@ -1,0 +1,330 @@
+/* ─── Root — scroll container (flex child of .main which is overflow:hidden) ── */
+.root {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;         /* required for flex children to scroll */
+}
+
+/* ─── Inner — centred content column ──────────────────────────────────────── */
+.inner {
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px 32px 48px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* ─── Header ──────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.headerIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.headerText {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 4px;
+  letter-spacing: -.4px;
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--text3);
+  margin: 0;
+}
+
+.masteredNote {
+  color: #a78bfa;
+  font-weight: 600;
+}
+
+/* Progress bar — right side of header */
+.progressWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.progressBar {
+  width: 100px;
+  height: 6px;
+  background: var(--bg3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width .4s ease;
+}
+
+.progressLabel {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-code);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ─── Search row ──────────────────────────────────────────────────────────── */
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 0 12px;
+  transition: border-color .15s;
+}
+.searchRow:focus-within {
+  border-color: var(--accent);
+}
+
+.searchIcon {
+  font-size: 14px;
+  flex-shrink: 0;
+  opacity: .5;
+}
+
+.search {
+  flex: 1;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 14px;
+  font-family: var(--font-ui);
+  outline: none;
+}
+.search::placeholder { color: var(--text3); }
+
+.clearBtn {
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color .15s;
+}
+.clearBtn:hover { color: var(--text2); }
+
+.countBadge {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text3);
+  font-family: var(--font-code);
+  flex-shrink: 0;
+}
+
+/* ─── Groups + grid ───────────────────────────────────────────────────────── */
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.groupLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: var(--text3);
+}
+
+.groupLine {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+/* ─── Topic card ──────────────────────────────────────────────────────────── */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 16px 13px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-ui);
+  transition: border-color .15s, background .12s, transform .12s, box-shadow .15s;
+  min-height: 90px;
+}
+.card:hover {
+  border-color: var(--border2);
+  background: var(--bg3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+}
+.card:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.cardMastered {
+  background: rgba(167, 139, 250, 0.05);
+}
+
+/* Gate progress dot — top-right */
+.gateDot {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cardBody {
+  flex: 1;
+  padding-right: 16px; /* avoid overlap with dot */
+}
+
+.cardTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.cardSub {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+/* ─── Card footer ─────────────────────────────────────────────────────────── */
+.cardFooter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gateLabel {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+}
+
+.arrow {
+  margin-left: auto;
+  font-size: 14px;
+  color: var(--text3);
+  transition: color .15s, transform .15s;
+}
+.card:hover .arrow {
+  color: var(--accent3);
+  transform: translateX(3px);
+}
+
+/* ─── Skeleton ────────────────────────────────────────────────────────────── */
+.skeletonCard {
+  height: 96px;
+  border-radius: 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  animation: pulse 1.5s ease infinite;
+}
+@keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
+
+/* ─── Empty state ─────────────────────────────────────────────────────────── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 72px 24px;
+  color: var(--text3);
+}
+
+.emptyIcon { font-size: 36px; }
+
+.emptyText {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+.emptyReset {
+  padding: 6px 16px;
+  border-radius: 8px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  font-size: 13px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  margin-top: 4px;
+  transition: background .15s;
+}
+.emptyReset:hover { color: var(--text); }
+
+/* ─── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .root {
+    padding: 20px 16px 40px;
+    gap: 18px;
+  }
+  .title { font-size: 20px; }
+  .headerIcon { width: 46px; height: 46px; }
+  .progressWrap { display: none; }
+  .grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 420px) {
+  .grid { grid-template-columns: 1fr; }
+}

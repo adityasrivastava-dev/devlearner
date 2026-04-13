@@ -35,6 +35,14 @@ public class InterviewQuestion {
     @Column(nullable = false, length = 30)
     private String category;
 
+    /**
+     * Optional: the exact topic title this question belongs to.
+     * NULL = applies to all topics in the category (category-level).
+     * Non-null = shown only for that specific topic; falls back to category if empty.
+     */
+    @Column(name = "topic_title", length = 255)
+    private String topicTitle;
+
     /** HIGH | MEDIUM */
     @Column(nullable = false, length = 10)
     private String difficulty;

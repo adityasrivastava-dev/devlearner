@@ -621,3 +621,82 @@
   border-radius: 6px; font-size: 12px;
 }
 .problemTitle { flex: 1; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+
+/* ── Topic Q&A Panel ────────────────────────────────────────────────────── */
+.qaPanel {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.qaPanelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.qaPanelTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.qaPanelSub {
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.5;
+}
+
+.qaList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.qaPair {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.qaPairNum {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text3);
+  font-family: var(--font-code);
+  min-width: 18px;
+  padding-top: 8px;
+  text-align: center;
+}
+
+.qaPairFields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.qaPairRemove {
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color .15s, background .15s;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.qaPairRemove:hover:not(:disabled) { background: rgba(248,113,113,.15); color: #f87171; }
+.qaPairRemove:disabled { opacity: .3; cursor: default; }

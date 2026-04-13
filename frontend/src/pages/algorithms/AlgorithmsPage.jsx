@@ -4,6 +4,7 @@ import { algorithmsApi } from '../../api';
 import FlowchartViewer from '../../components/editor/FlowchartViewer';
 import AlgorithmVisualizer from './AlgorithmVisualizer';
 import VisualizationPlan from './VisualizationPlan';
+import ComplexityVisualizer from './ComplexityVisualizer';
 import styles from './AlgorithmsPage.module.css';
 
 // ─── Category metadata (icons/labels only — counts come from DB) ──────────────
@@ -107,13 +108,14 @@ function AlgorithmDetail({ algo, onBack }) {
   const variants    = parseJSON(algo.variants, []);
 
   const tabs = [
-    { key: 'overview',   label: '📖 Overview'      },
-    { key: 'howitworks', label: '⚙️ How It Works'   },
-    { key: 'visual',     label: '📊 Visual'         },
-    { key: 'code',       label: '💻 Java Code'      },
-    { key: 'usecases',   label: '🌍 Use Cases'      },
-    { key: 'pitfalls',   label: '⚠️ Pitfalls'       },
-    { key: 'interview',  label: '🎤 Interview Tips'  },
+    { key: 'overview',    label: '📖 Overview'      },
+    { key: 'howitworks',  label: '⚙️ How It Works'   },
+    { key: 'complexity',  label: '🔢 Complexity'     },
+    { key: 'visual',      label: '📊 Visual'         },
+    { key: 'code',        label: '💻 Java Code'      },
+    { key: 'usecases',    label: '🌍 Use Cases'      },
+    { key: 'pitfalls',    label: '⚠️ Pitfalls'       },
+    { key: 'interview',   label: '🎤 Interview Tips'  },
   ];
 
   const handleCopy = () => {
@@ -227,6 +229,10 @@ function AlgorithmDetail({ algo, onBack }) {
               {renderLines(algo.howItWorks)}
             </div>
           </div>
+        )}
+
+        {activeTab === 'complexity' && (
+          <ComplexityVisualizer algo={algo} />
         )}
 
         {activeTab === 'visual' && (

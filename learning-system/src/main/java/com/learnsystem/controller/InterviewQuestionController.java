@@ -26,9 +26,19 @@ public class InterviewQuestionController {
      * Optional filters: ?category=JAVA&difficulty=HIGH&size=300
      * Default cap: 300. Caller can request up to 500.
      */
+    /**
+     * GET /api/interview-questions
+     * Optional filters: ?category=JAVA&topicTitle=HashMap&difficulty=HIGH&size=300
+     *
+     * When topicTitle is provided:
+     *   1. Return topic-specific questions (category + topicTitle match).
+     *   2. If none found, fall back to category-level questions (topicTitle IS NULL).
+     * This gives per-topic accuracy while gracefully degrading to category questions.
+     */
     @GetMapping("/api/interview-questions")
     public ResponseEntity<List<InterviewQuestion>> getAll(
             @RequestParam(required = false)       String category,
+            @RequestParam(required = false)       String topicTitle,
             @RequestParam(required = false)       String difficulty,
             @RequestParam(defaultValue = "300") int    size) {
 
@@ -37,7 +47,15 @@ public class InterviewQuestionController {
             var pageable = PageRequest.of(0, size);
 
             List<InterviewQuestion> result;
-            if (category != null && difficulty != null) {
+
+            if (category != null && topicTitle != null) {
+                // Try topic-specific first
+                result = repo.findByCategoryAndTopicTitlePaged(category, topicTitle, pageable);
+                // Fall back to category-level if no topic-specific questions exist
+                if (result.isEmpty()) {
+                    result = repo.findCategoryLevelPaged(category, pageable);
+                }
+            } else if (category != null && difficulty != null) {
                 result = repo.findByCategoryAndDifficultyPaged(category, difficulty, pageable);
             } else if (category != null) {
                 result = repo.findByCategoryPaged(category, pageable);
@@ -48,7 +66,7 @@ public class InterviewQuestionController {
             }
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            log.error("Failed to load interview questions. category={}, difficulty={}, size={}", category, difficulty, size, e);
+            log.error("Failed to load interview questions. category={}, topicTitle={}, difficulty={}, size={}", category, topicTitle, difficulty, size, e);
             return ResponseEntity.ok(List.of());
         }
     }
@@ -72,6 +90,7 @@ public class InterviewQuestionController {
 
         return repo.findById(id).map(existing -> {
             existing.setCategory(q.getCategory());
+            existing.setTopicTitle(q.getTopicTitle());
             existing.setDifficulty(q.getDifficulty());
             existing.setQuestion(q.getQuestion());
             existing.setQuickAnswer(q.getQuickAnswer());

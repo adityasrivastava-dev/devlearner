@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import Sidebar from '../../components/sidebar/Sidebar';
 import TopicView from '../../components/editor/TopicView';
+import TopicBrowser from './TopicBrowser';
 import ProblemSolveView from '../../components/editor/ProblemSolveView';
 import DashboardPage from '../dashboard/DashboardPage';
 import OnboardingFlow from '../onboarding/OnboardingFlow';
@@ -13,8 +14,6 @@ import styles from './HomePage.module.css';
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [selectedTopicId, setSelectedTopicId] = useState(null);
-  const [openProblemId,   setOpenProblemId]   = useState(null);
   const [theme,    setTheme]    = useState(() => localStorage.getItem('devlearn_theme')    || 'dark');
   const [fontSize, setFontSize] = useState(() => parseInt(localStorage.getItem('devlearn_fontsize') || '14'));
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -22,27 +21,23 @@ export default function HomePage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Sync state from URL
-  const fromParam = searchParams.get('from'); // 'problems' when opened from /problems
-  useEffect(() => {
-    const t = searchParams.get('topic');
-    const p = searchParams.get('openProblem');
-    const topicId   = t ? parseInt(t, 10)   : null;
-    const problemId = p ? parseInt(p, 10)   : null;
-    setSelectedTopicId(!topicId   || isNaN(topicId)   ? null : topicId);
-    setOpenProblemId( !problemId  || isNaN(problemId) ? null : problemId);
-  }, [searchParams]);
+  // Read state from URL params
+  const selectedTopicId  = (() => { const v = searchParams.get('topic');    const n = parseInt(v, 10); return v && !isNaN(n) ? n : null; })();
+  const selectedCategory = searchParams.get('category') || null;
+  const openProblemId    = (() => { const v = searchParams.get('openProblem'); const n = parseInt(v, 10); return v && !isNaN(n) ? n : null; })();
+  const fromParam        = searchParams.get('from');
 
-  // Fetch current topic (uses list cache as initialData)
+  // Fetch full topic when a topic is selected
   const { data: currentTopic } = useQuery({
     queryKey: QUERY_KEYS.topic(selectedTopicId),
     queryFn:  () => topicsApi.getById(selectedTopicId),
     enabled:  !!selectedTopicId,
     staleTime: 15 * 60 * 1000,
     initialData: () => {
-      const cats = ['ALL','DSA','JAVA','ADVANCED_JAVA','SPRING_BOOT','SPRING',
-                    'SPRING_MVC','SPRING_SECURITY','HIBERNATE','SPRING_DATA',
-                    'MICROSERVICES','MYSQL','AWS','JAVASCRIPT'];
+      const cats = ['ALL', 'DSA', 'JAVA', 'ADVANCED_JAVA', 'SPRING_BOOT', 'SPRING',
+                    'SPRING_MVC', 'SPRING_SECURITY', 'HIBERNATE', 'SPRING_DATA',
+                    'MICROSERVICES', 'MYSQL', 'AWS', 'JAVASCRIPT',
+                    'SYSTEM_DESIGN', 'TESTING'];
       for (const cat of cats) {
         const list = queryClient.getQueryData(QUERY_KEYS.topics(cat));
         if (Array.isArray(list)) {
@@ -52,10 +47,8 @@ export default function HomePage() {
       }
       return undefined;
     },
-    initialDataUpdatedAt: () => {
-      const state = queryClient.getQueryState(QUERY_KEYS.topics('ALL'));
-      return state?.dataUpdatedAt ?? 0;
-    },
+    // Always treat list-cache data as stale so getById always fires for full content
+    initialDataUpdatedAt: () => 0,
   });
 
   // ── Is this a brand-new user? ────────────────────────────────────────────
@@ -63,22 +56,37 @@ export default function HomePage() {
 
   // ── Navigation helpers ───────────────────────────────────────────────────
   function selectTopic(id) {
-    setSelectedTopicId(id);
-    setOpenProblemId(null);
-    setSearchParams(id ? { topic: id } : {});
+    if (selectedCategory) {
+      setSearchParams({ category: selectedCategory, topic: id });
+    } else {
+      setSearchParams({ topic: id });
+    }
   }
+
   function openProblem(id) {
-    setOpenProblemId(id);
-    if (selectedTopicId) setSearchParams({ topic: selectedTopicId, openProblem: id });
+    const params = { openProblem: id };
+    if (selectedTopicId) params.topic = selectedTopicId;
+    if (selectedCategory) params.category = selectedCategory;
+    setSearchParams(params);
     window.history.replaceState({ from: 'topic' }, '');
   }
+
   function closeProblem() {
     if (fromParam === 'problems') {
       navigate('/problems');
     } else {
-      setOpenProblemId(null);
-      if (selectedTopicId) setSearchParams({ topic: selectedTopicId });
-      else setSearchParams({});
+      const params = {};
+      if (selectedTopicId) params.topic = selectedTopicId;
+      if (selectedCategory) params.category = selectedCategory;
+      setSearchParams(params);
+    }
+  }
+
+  function goBackFromTopic() {
+    if (selectedCategory) {
+      setSearchParams({ category: selectedCategory });
+    } else {
+      setSearchParams({});
     }
   }
 
@@ -97,11 +105,8 @@ export default function HomePage() {
     localStorage.setItem('devlearn_fontsize', String(next));
   }
 
-  const inProblemView = !!openProblemId;
-  const showTopicView = !inProblemView && !!selectedTopicId;
-
-  // ── Fullscreen problem view — no sidebar, like LeetCode ─────────────────
-  if (inProblemView) {
+  // ── Fullscreen problem view ──────────────────────────────────────────────
+  if (openProblemId) {
     return (
       <div style={{ height: '100vh', overflow: 'hidden', background: 'var(--bg)' }} data-theme={theme}>
         <ProblemSolveView
@@ -111,7 +116,7 @@ export default function HomePage() {
           theme={theme}
           fontSize={fontSize}
           onBack={closeProblem}
-          onStudyTopic={() => setOpenProblemId(null)}
+          onStudyTopic={() => setSearchParams(selectedTopicId ? { topic: selectedTopicId } : {})}
           onFontChange={adjustFont}
           onThemeToggle={toggleTheme}
           currentTheme={theme}
@@ -122,16 +127,23 @@ export default function HomePage() {
 
   // ── Decide main content ──────────────────────────────────────────────────
   let mainContent;
-  if (showTopicView) {
+  if (selectedTopicId) {
     mainContent = currentTopic ? (
       <TopicView
         topic={currentTopic}
         theme={theme}
         fontSize={fontSize}
         onProblemOpen={openProblem}
-        onBack={() => selectTopic(null)}
+        onBack={goBackFromTopic}
       />
     ) : <TopicSkeleton />;
+  } else if (selectedCategory) {
+    mainContent = (
+      <TopicBrowser
+        category={selectedCategory}
+        onTopicSelect={selectTopic}
+      />
+    );
   } else if (isNewUser) {
     mainContent = <OnboardingFlow onComplete={() => setOnboarded(true)} />;
   } else {
@@ -152,26 +164,22 @@ export default function HomePage() {
         </button>
       </div>
 
-      {/* Sidebar — passes mobile props */}
+      {/* Sidebar */}
       <Sidebar
-        selectedTopicId={selectedTopicId}
-        onTopicSelect={selectTopic}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
       {/* Main area */}
       <main className={styles.main}>
-        {/* Desktop theme/font controls — only in topic/dashboard view */}
-        {!inProblemView && (
-          <div className={`${styles.floatingControls} desktop-only`}>
-            <button className={styles.ctrlBtn} onClick={toggleTheme} title="Toggle theme">
-              {theme === 'dark' ? '☀️' : '🌙'}
-            </button>
-            <button className={styles.ctrlBtn} onClick={() => adjustFont(-1)} title="Decrease font size">A−</button>
-            <button className={styles.ctrlBtn} onClick={() => adjustFont(1)}  title="Increase font size">A+</button>
-          </div>
-        )}
+        {/* Desktop theme/font controls */}
+        <div className={`${styles.floatingControls} desktop-only`}>
+          <button className={styles.ctrlBtn} onClick={toggleTheme} title="Toggle theme">
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+          <button className={styles.ctrlBtn} onClick={() => adjustFont(-1)} title="Decrease font size">A−</button>
+          <button className={styles.ctrlBtn} onClick={() => adjustFont(1)}  title="Increase font size">A+</button>
+        </div>
 
         {mainContent}
       </main>

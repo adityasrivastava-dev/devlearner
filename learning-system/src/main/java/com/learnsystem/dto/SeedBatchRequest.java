@@ -37,6 +37,18 @@ public static class TopicSeedDto {
     private String youtubeUrls;
     private List<ExampleSeedDto> examples;
     private List<ProblemSeedDto> problems;
+    /** Topic-specific interview Q&A — imported to interview_questions table on seed */
+    private List<InterviewQuestionSeedDto> interviewQuestions;
+}
+
+@Data
+public static class InterviewQuestionSeedDto {
+    private String question;
+    private String answer;        // maps to quickAnswer
+    /** HIGH | MEDIUM — or EASY/MEDIUM/HARD (HARD→HIGH, EASY→MEDIUM) */
+    private String difficulty;
+    private String codeExample;   // optional code snippet
+    private String keyPoints;     // optional JSON array string
 }
 
 @Data

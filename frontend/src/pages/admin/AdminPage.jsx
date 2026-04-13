@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { adminApi, topicsApi, algorithmAdminApi, QUERY_KEYS } from '../../api';
+import { adminApi, topicsApi, algorithmAdminApi, interviewApi, QUERY_KEYS } from '../../api';
 import { getCategoryMeta, getDiffMeta, CATEGORIES } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 import styles from './AdminPage.module.css';
@@ -354,9 +354,10 @@ function TopicEditor({ topic, onSaved }) {
       {/* Editor tabs */}
       <div className="tab-bar">
         {[
-          ['info',     '📋 Info'],
-          ['story',    '📖 Story'],
-          ['code',     '💻 Code'],
+          ['info',      '📋 Info'],
+          ['story',     '📖 Story'],
+          ['code',      '💻 Code'],
+          ['questions', '🎯 Q&A'],
           ...(!isNew ? [['examples', '💡 Examples'], ['problems', '🎯 Problems']] : []),
         ].map(([t,l]) => (
           <button key={t} className={`tab-btn ${activeTab === t ? 'active' : ''}`} onClick={() => setActiveTab(t)}>
@@ -409,12 +410,124 @@ function TopicEditor({ topic, onSaved }) {
             <Field label="Starter Code" value={form.starterCode} onChange={set('starterCode')} textarea rows={12} wide code />
           </div>
         )}
+        {activeTab === 'questions' && (
+          <TopicQAPanel category={form.category} topicTitle={form.title} />
+        )}
         {activeTab === 'examples' && !isNew && (
           <TopicExamplesPanel topicId={topic.id} />
         )}
         {activeTab === 'problems' && !isNew && (
           <TopicProblemsPanel topicId={topic.id} />
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── Topic Q&A Panel ───────────────────────────────────────────────────────────
+function TopicQAPanel({ category, topicTitle }) {
+  const EMPTY = { question: '', answer: '', difficulty: 'MEDIUM', codeExample: '' };
+  const [pairs, setPairs] = useState([{ ...EMPTY }]);
+  const [importing, setImporting] = useState(false);
+
+  function updatePair(i, field, value) {
+    setPairs(p => p.map((item, idx) => idx === i ? { ...item, [field]: value } : item));
+  }
+  function addPair()      { setPairs(p => [...p, { ...EMPTY }]); }
+  function removePair(i)  { setPairs(p => p.filter((_, idx) => idx !== i)); }
+
+  async function handleImport() {
+    const valid = pairs.filter(p => p.question.trim() && p.answer.trim());
+    if (!valid.length) return toast.error('Add at least one question + answer');
+    if (!category)     return toast.error('Save the topic category first');
+
+    const payload = valid.map((p, i) => ({
+      category,
+      topicTitle:  topicTitle || null,
+      question:    p.question.trim(),
+      quickAnswer: p.answer.trim(),
+      difficulty:  p.difficulty || 'MEDIUM',
+      codeExample: p.codeExample?.trim() || null,
+      displayOrder: i,
+    }));
+
+    setImporting(true);
+    try {
+      const res = await interviewApi.bulkImport(payload);
+      toast.success(`Imported ${res.imported ?? valid.length} question(s) for ${category}`);
+      setPairs([{ ...EMPTY }]);
+    } catch {
+      toast.error('Import failed');
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  return (
+    <div className={styles.qaPanel}>
+      <div className={styles.qaPanelHeader}>
+        <div>
+          <div className={styles.qaPanelTitle}>Interview Q&amp;A for <strong>{topicTitle || 'this topic'}</strong></div>
+          <div className={styles.qaPanelSub}>
+            Saved as <strong>{category}</strong> → <strong>{topicTitle || '(save topic first)'}</strong>.
+            Shown only on this topic's Notes tab. Falls back to category questions if none exist.
+            Duplicates are skipped automatically.
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+          <button className="btn btn-ghost btn-sm" onClick={addPair}>+ Add Row</button>
+          <button className="btn btn-primary btn-sm" disabled={importing} onClick={handleImport}>
+            {importing ? <><span className="spinner" />Importing…</> : '⬆ Import Questions'}
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.qaList}>
+        {pairs.map((pair, i) => (
+          <div key={i} className={styles.qaPair}>
+            <div className={styles.qaPairNum}>{i + 1}</div>
+            <div className={styles.qaPairFields}>
+              <input
+                className="input"
+                placeholder="Question — e.g. What is the difference between == and equals()?"
+                value={pair.question}
+                onChange={e => updatePair(i, 'question', e.target.value)}
+              />
+              <textarea
+                className="input"
+                placeholder="Answer / Quick explanation…"
+                value={pair.answer}
+                onChange={e => updatePair(i, 'answer', e.target.value)}
+                rows={3}
+                style={{ resize: 'vertical' }}
+              />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <select
+                  className="input"
+                  value={pair.difficulty}
+                  onChange={e => updatePair(i, 'difficulty', e.target.value)}
+                  style={{ flex: '0 0 120px' }}
+                >
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                </select>
+                <input
+                  className="input"
+                  placeholder="Code example (optional)"
+                  value={pair.codeExample}
+                  onChange={e => updatePair(i, 'codeExample', e.target.value)}
+                  style={{ flex: 1, fontFamily: 'var(--font-code)', fontSize: 12 }}
+                />
+              </div>
+            </div>
+            <button
+              className={styles.qaPairRemove}
+              onClick={() => removePair(i)}
+              title="Remove"
+              disabled={pairs.length === 1}
+            >✕</button>
+          </div>
+        ))}
       </div>
     </div>
   );

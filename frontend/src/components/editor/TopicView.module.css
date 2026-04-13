@@ -1308,3 +1308,132 @@
   color: var(--text3);
   margin-left: auto;
 }
+
+/* ═══ Notes tab wrapper ══════════════════════════════════════════════════════ */
+.notesTabWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ═══ Interview Questions in Notes tab ═══════════════════════════════════════ */
+.iqSection {
+  padding: 20px 24px 24px;
+  border-top: 1px solid var(--border);
+  max-width: 700px;
+}
+
+.iqHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.iqIcon {
+  font-size: 20px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.iqTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.iqSub {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+/* Skeleton */
+.iqSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.iqSkeletonItem {
+  height: 42px;
+  border-radius: 8px;
+  background: var(--bg3);
+  animation: iqPulse 1.5s ease infinite;
+}
+@keyframes iqPulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
+
+/* Accordion list */
+.iqList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.iqItem {
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: var(--bg2);
+}
+
+.iqQuestion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  text-align: left;
+  transition: background .12s;
+}
+.iqQuestion:hover { background: var(--bg3); }
+.iqQuestionOpen { background: var(--bg3); }
+
+.iqNum {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text3);
+  font-family: var(--font-code);
+  min-width: 18px;
+  flex-shrink: 0;
+}
+
+.iqText {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.iqDiff {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  flex-shrink: 0;
+}
+
+.iqChevron {
+  font-size: 16px;
+  color: var(--text3);
+  transition: transform .2s ease;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.iqChevronOpen {
+  transform: rotate(90deg);
+}
+
+.iqAnswer {
+  padding: 12px 14px 14px 42px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text2);
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  white-space: pre-wrap;
+}
