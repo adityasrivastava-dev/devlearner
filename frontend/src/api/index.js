@@ -2,8 +2,7 @@ import axios from 'axios';
 
 // ─── Axios instance ──────────────────────────────────────────────────────────
 const http = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '',
-  timeout: 30000,
+  baseURL: import.meta.env.VITE_API_URL || ''
 });
 
 // Attach JWT on every request
