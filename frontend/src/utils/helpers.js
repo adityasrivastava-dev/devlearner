@@ -19,15 +19,14 @@ export const CATEGORY_META = {
 
 export const CATEGORIES = [
   { key: 'ALL',             label: 'All' },
-  { key: 'DSA',             label: 'DSA' },
-  { key: 'JAVA',            label: 'Java' },
+  { key: 'JAVA',            label: 'Java Core' },
   { key: 'ADVANCED_JAVA',   label: 'Adv Java' },
-  { key: 'SPRING_BOOT',     label: 'Spring' },
   { key: 'MYSQL',           label: 'SQL' },
+  { key: 'DSA',             label: 'DSA' },
+  { key: 'SPRING_BOOT',     label: 'Spring Boot' },
   { key: 'AWS',             label: 'AWS' },
-  { key: 'SYSTEM_DESIGN',   label: 'Sys Design' },
+  { key: 'SYSTEM_DESIGN',   label: 'System Design' },
   { key: 'TESTING',         label: 'Testing' },
-  { key: 'JAVASCRIPT',      label: 'JS' },
 ];
 
 export function getCategoryMeta(cat) {

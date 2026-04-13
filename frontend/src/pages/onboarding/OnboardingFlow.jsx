@@ -56,16 +56,17 @@ export default function OnboardingFlow({ onComplete }) {
       const allTopics = await topicsApi.getAll('ALL');
       const topicMap  = Object.fromEntries(allTopics.map((t) => [t.title, t.id]));
 
-      // 3. Add matching topics to the roadmap (best-effort, skip missing)
+      // 3. Add matching topics to the roadmap one-by-one (best-effort, skip missing)
       const topicIds = goalDef.topics
         .map((title) => topicMap[title])
         .filter(Boolean);
 
-      if (topicIds.length > 0) {
-        await roadmapsApi.update(roadmap.id, {
-          name: goalDef.roadmapName,
-          topicIds,
-        });
+      for (let i = 0; i < topicIds.length; i++) {
+        try {
+          await roadmapsApi.addTopic(roadmap.id, topicIds[i], i);
+        } catch {
+          // skip if this topic already exists or fails
+        }
       }
 
       return { roadmapId: roadmap.id, firstTopicId: topicIds[0] ?? null };

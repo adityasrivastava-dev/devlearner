@@ -192,6 +192,23 @@ export default function TopicView({ topic, onProblemOpen, onBack, theme = 'dark'
         {/* THEORY */}
         {tab === 'theory' && (
           <div className={styles.theoryPanel}>
+            {/* Overview — always show description as lead-in */}
+            {topic.description && (
+              <div className={`${styles.theoryCard} ${styles.overviewCard}`}>
+                <div className={styles.cardTitle}>💡 Overview</div>
+                <div className={styles.cardBody}>{topic.description}</div>
+                {(topic.timeComplexity || topic.spaceComplexity) && (
+                  <div className={styles.complexityRow}>
+                    {topic.timeComplexity && (
+                      <span className={styles.complexityBadge}>⏱ Time: {topic.timeComplexity}</span>
+                    )}
+                    {topic.spaceComplexity && (
+                      <span className={styles.complexityBadge}>💾 Space: {topic.spaceComplexity}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             {topic.memoryAnchor && (
               <MemoryAnchorCard text={topic.memoryAnchor} />
             )}
@@ -204,13 +221,19 @@ export default function TopicView({ topic, onProblemOpen, onBack, theme = 'dark'
             {topic.firstPrinciples && (
               <PrinciplesCard text={topic.firstPrinciples} />
             )}
+            {topic.whenToUse && (
+              <div className={`${styles.theoryCard} ${styles.whenToUseCard}`}>
+                <div className={styles.cardTitle}>🎯 When to Use</div>
+                <div className={styles.cardBody}>{topic.whenToUse}</div>
+              </div>
+            )}
             {topic.starterCode && (
               <div className={styles.theoryCard}>
                 <div className={styles.cardTitle}>🧩 Starter Template</div>
                 <pre className={styles.codeBlock}>{topic.starterCode}</pre>
               </div>
             )}
-            {!topic.memoryAnchor && !topic.story && !topic.analogy && !topic.firstPrinciples && !topic.starterCode && (
+            {!topic.description && !topic.memoryAnchor && !topic.story && !topic.analogy && !topic.firstPrinciples && !topic.starterCode && (
               <div className={styles.emptyState}>
                 <span>✍️</span>
                 <p>Theory content not yet written.</p>

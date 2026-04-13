@@ -331,6 +331,9 @@ export const roadmapsApi = {
   update: (id, data) =>
     http.put(`/api/roadmaps/${id}`, data).then((r) => r.data),
 
+  addTopic: (id, topicId, orderIndex = 999) =>
+    http.post(`/api/roadmaps/${id}/topics/${topicId}`, { orderIndex }).then((r) => r.data),
+
   delete: (id) =>
     http.delete(`/api/roadmaps/${id}`).then((r) => r.data),
 };
