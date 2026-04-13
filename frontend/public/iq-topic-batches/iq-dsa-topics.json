@@ -1,0 +1,380 @@
+[
+  {
+    "category": "DSA",
+    "topicTitle": "Linked List",
+    "question": "How do you detect a cycle in a linked list?",
+    "quickAnswer": "Use Floyd's cycle detection (slow/fast pointers): slow moves 1 step, fast moves 2 steps. If they meet, there's a cycle. If fast reaches null, no cycle. This is O(n) time, O(1) space. To find the cycle start: reset slow to head when they meet, advance both one step at a time — they'll meet at the cycle entry node.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Floyd's algorithm: slow=1 step, fast=2 steps\nCycle detection: they meet inside cycle\nCycle start: reset slow to head, advance both by 1 — meet at entry\nTime: O(n); Space: O(1)\nHashSet approach: O(n) space but simpler to reason about",
+    "codeExample": "ListNode slow = head, fast = head;\nwhile (fast != null && fast.next != null) {\n    slow = slow.next;\n    fast = fast.next.next;\n    if (slow == fast) return true;\n}\nreturn false;"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Linked List",
+    "question": "How do you reverse a linked list in-place?",
+    "quickAnswer": "Use three pointers: prev (null), curr (head), next. In each iteration: save curr.next, set curr.next = prev, advance prev = curr, curr = next. When curr is null, prev is the new head. This is O(n) time O(1) space. Recursive approach uses O(n) call stack space.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Three pointers: prev, curr, next\nIn-place: O(1) extra space, O(n) time\nKey step: curr.next = prev (flip the arrow)\nReturn prev (last node becomes head)\nRecursive: elegant but O(n) stack space",
+    "codeExample": "ListNode prev = null, curr = head;\nwhile (curr != null) {\n    ListNode next = curr.next;\n    curr.next = prev;\n    prev = curr;\n    curr = next;\n}\nreturn prev; // new head"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Linked List",
+    "question": "How do you find the middle of a linked list?",
+    "quickAnswer": "Use slow/fast pointers: slow moves 1 step, fast moves 2 steps. When fast reaches the end, slow is at the middle. For even length lists, slow lands on the second middle node (preferred for splitting). This is O(n) time, O(1) space — better than counting length then traversing again.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Slow=1 step, fast=2 steps — when fast == null, slow = middle\nEven list [1,2,3,4]: slow lands on node 3 (second middle)\nUsed in: merge sort on linked list, palindrome check\nO(n) time, O(1) space\nAlternative: count n, traverse n/2 — two passes",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Linked List",
+    "question": "How do you merge two sorted linked lists?",
+    "quickAnswer": "Use a dummy head node and a pointer. Compare the heads of both lists; append the smaller to the result; advance that list's pointer. When one list is exhausted, append the remaining of the other. Return dummy.next. This is O(m+n) time, O(1) space.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Dummy head: simplifies edge cases (empty list, first element)\nCompare heads: take smaller, advance that pointer\nWhen one ends: append remaining of other\nO(m+n) time, O(1) extra space\nRecursive: elegant but O(m+n) stack space",
+    "codeExample": "ListNode dummy = new ListNode(0), cur = dummy;\nwhile (l1 != null && l2 != null) {\n    if (l1.val <= l2.val) { cur.next = l1; l1 = l1.next; }\n    else { cur.next = l2; l2 = l2.next; }\n    cur = cur.next;\n}\ncur.next = (l1 != null) ? l1 : l2;\nreturn dummy.next;"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Stack & Queue",
+    "question": "How do you implement a queue using two stacks?",
+    "quickAnswer": "Use two stacks: inbox (for enqueue) and outbox (for dequeue). Enqueue: push to inbox. Dequeue: if outbox is empty, pop all items from inbox into outbox (reversing order), then pop from outbox. Amortized O(1) per operation — each element is pushed/popped twice total.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Two stacks: inbox (push) and outbox (pop)\nTransfer: only when outbox is empty — lazy transfer\nAmortized O(1): each element moves once from inbox to outbox\nEnqueue: O(1); Dequeue: amortized O(1), worst O(n)\nUsed in: BFS with stack-based queue simulation, interview classic",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Stack & Queue",
+    "question": "What is a monotonic stack and when do you use it?",
+    "quickAnswer": "A monotonic stack maintains elements in increasing or decreasing order. When a new element violates the monotonic property, pop elements until the property is restored. Use for: next greater element, previous smaller element, largest rectangle in histogram, and trapping rain water. These problems have O(n) solutions using monotonic stack vs O(n²) brute force.",
+    "difficulty": "HIGH",
+    "keyPoints": "Increasing stack: each element smaller than next → pop when new > top\nDecreasing stack: each element larger than next → pop when new < top\nNext greater element: use decreasing stack — pop when larger found\nLargest rectangle in histogram: monotonic increasing stack of indices\nTrapping rain water: decreasing stack or two-pointer\nPattern: pop condition = the trigger event for recording the answer",
+    "codeExample": "// Next Greater Element\nint[] nge = new int[n];\nArrays.fill(nge, -1);\nDeque<Integer> stack = new ArrayDeque<>();\nfor (int i = 0; i < n; i++) {\n    while (!stack.isEmpty() && arr[stack.peek()] < arr[i])\n        nge[stack.pop()] = arr[i];\n    stack.push(i);\n}"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Stack & Queue",
+    "question": "How would you design a stack that supports getMin() in O(1)?",
+    "quickAnswer": "Maintain an auxiliary minStack alongside the main stack. On push: if new element <= current min, also push it to minStack. On pop: if popped element equals minStack's top, also pop from minStack. getMin() returns minStack's top. This is O(1) time for all operations and O(n) space.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Auxiliary minStack tracks running minimums\nPush to minStack only when new value <= current min\nPop from minStack when main pop equals minStack top\ngetMin(): peek minStack — O(1)\nAlternative: store (value, currentMin) pairs — uses more space but simpler logic",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Binary Trees & BST",
+    "question": "What is the difference between BFS and DFS for tree traversal?",
+    "quickAnswer": "BFS (level-order): uses a Queue, visits nodes level by level — good for finding shortest path in unweighted graphs, level-order printing. DFS uses recursion (or Stack): preorder (root-left-right), inorder (left-root-right), postorder (left-right-root). Inorder of BST gives sorted sequence. DFS uses O(h) space (height); BFS uses O(w) space (max width).",
+    "difficulty": "MEDIUM",
+    "keyPoints": "BFS: Queue, level by level, O(w) space — good for level-order, shortest path\nDFS preorder: root first — good for copying/serializing tree\nDFS inorder: BST → sorted order; validate BST\nDFS postorder: process children first — good for delete, size computation\nDFS space: O(h) — O(log n) balanced, O(n) skewed\nBFS space: O(n) worst case (wide tree, full binary tree last level)",
+    "codeExample": "// BFS level order\nQueue<TreeNode> q = new LinkedList<>();\nq.add(root);\nwhile (!q.isEmpty()) {\n    int size = q.size();\n    for (int i = 0; i < size; i++) {\n        TreeNode node = q.poll();\n        if (node.left != null) q.add(node.left);\n        if (node.right != null) q.add(node.right);\n    }\n}"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Binary Trees & BST",
+    "question": "How do you find the Lowest Common Ancestor (LCA) of two nodes in a BST?",
+    "quickAnswer": "In a BST, LCA is the first node where p and q are on different sides (one ≤ node, one ≥ node). If both p and q are smaller than current node, go left. If both are larger, go right. Otherwise, current node is the LCA. O(h) time, O(1) space iteratively. For a general binary tree, use recursive DFS.",
+    "difficulty": "HIGH",
+    "keyPoints": "BST LCA: exploit BST property — O(h) time, O(1) space iteratively\nGeneral tree LCA: return node when found in left+right subtrees\nLCA in BST: if both < node → go left; both > node → go right; else → LCA\nGeneral binary tree: postorder DFS — if left and right both non-null → LCA\nDepth: LCA depth can be found with parent pointers or level tracking",
+    "codeExample": "// BST LCA\nTreeNode lca(TreeNode root, TreeNode p, TreeNode q) {\n    while (root != null) {\n        if (p.val < root.val && q.val < root.val) root = root.left;\n        else if (p.val > root.val && q.val > root.val) root = root.right;\n        else return root;\n    }\n    return null;\n}"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Binary Trees & BST",
+    "question": "How do you check if a binary tree is balanced?",
+    "quickAnswer": "A balanced tree has height difference ≤ 1 for every node's subtrees. Bottom-up approach: compute height recursively; if any subtree is unbalanced, propagate -1 as a sentinel. Top-down approach (O(n log n)) computes height separately for each node. The bottom-up approach is O(n) since each node is visited once.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Balanced: |left height - right height| <= 1 for every node\nNaive top-down: O(n log n) — recomputes height at every node\nOptimal bottom-up: O(n) — return -1 sentinel if subtree unbalanced\nHeight returns: actual height on balance, -1 on imbalance\nAVL tree: always balanced by rotation on insert/delete",
+    "codeExample": "int checkHeight(TreeNode node) {\n    if (node == null) return 0;\n    int left = checkHeight(node.left);\n    int right = checkHeight(node.right);\n    if (left == -1 || right == -1 || Math.abs(left-right) > 1) return -1;\n    return Math.max(left, right) + 1;\n}"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Heaps & Priority Queues",
+    "question": "How does a min-heap work and what are its time complexities?",
+    "quickAnswer": "A min-heap is a complete binary tree where every parent ≤ its children. Stored as array: parent at i, children at 2i+1 and 2i+2. Insert: add at end, sift up O(log n). Delete min: swap root with last, remove last, sift down O(log n). Peek: O(1). Build heap from array: O(n) using bottom-up heapify.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Complete binary tree: fills left to right, stored in array\nParent at index i: children at 2i+1 (left) and 2i+2 (right)\nInsert (sift up): add at end, compare with parent, swap if smaller\nExtract min (sift down): remove root, put last element at root, sift down\nBuild heap: O(n) — start from last internal node (n/2-1) and sift down\nJava: PriorityQueue is a min-heap by default",
+    "codeExample": "PriorityQueue<Integer> minHeap = new PriorityQueue<>();\nPriorityQueue<Integer> maxHeap = new PriorityQueue<>(Collections.reverseOrder());"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Heaps & Priority Queues",
+    "question": "How do you find the K largest elements in an array using a heap?",
+    "quickAnswer": "Use a min-heap of size K: iterate the array, push each element; if heap size > K, pop the minimum. After processing all elements, the heap contains the K largest. This is O(n log K) time and O(K) space — better than O(n log n) sorting for small K. To get the Kth largest specifically, just peek the min-heap's top.",
+    "difficulty": "HIGH",
+    "keyPoints": "Min-heap of size K: maintains K largest seen so far\nIf heap size > K: pop min (smallest of the K+1 gets evicted)\nKth largest: top of the min-heap\nTime: O(n log K); Space: O(K)\nAlternative: QuickSelect — O(n) average, O(n²) worst, O(1) space\nJava: PriorityQueue<Integer> with reverseOrder for max-heap",
+    "codeExample": "PriorityQueue<Integer> pq = new PriorityQueue<>();\nfor (int num : nums) {\n    pq.offer(num);\n    if (pq.size() > k) pq.poll();\n}\nreturn pq.peek(); // Kth largest"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Heaps & Priority Queues",
+    "question": "How do you find the median of a data stream?",
+    "quickAnswer": "Maintain two heaps: a max-heap for the lower half and a min-heap for the upper half. Keep them balanced (size difference ≤ 1). Each insert: push to max-heap, move max-heap's top to min-heap, rebalance if needed. Median: if sizes equal → average of both tops; if unequal → top of larger heap. O(log n) insert, O(1) getMedian.",
+    "difficulty": "HIGH",
+    "keyPoints": "Lower half: max-heap (gives largest of lower half)\nUpper half: min-heap (gives smallest of upper half)\nBalance: |maxHeap.size - minHeap.size| <= 1\nMedian: even size → (maxHeap.top + minHeap.top)/2.0; odd → larger heap top\nRebalance: after each insert, possibly move top from one heap to other\nO(log n) insert, O(1) median",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Graphs",
+    "question": "What is the difference between BFS and DFS for graphs and when do you use each?",
+    "quickAnswer": "BFS explores level by level using a Queue — guarantees shortest path (unweighted), good for level-order, nearest neighbor. DFS explores as deep as possible using recursion/stack — good for cycle detection, topological sort, connected components, maze solving. BFS uses O(V) space for the queue; DFS uses O(V) space for call stack.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "BFS: Queue, shortest path in unweighted graph, level-order\nDFS: Stack/recursion, cycle detection, topological sort, spanning tree\nBFS guarantees shortest path; DFS doesn't\nVisited set needed for both to avoid revisiting in cyclic graphs\nBFS space: O(V) queue; DFS space: O(V) stack (recursion depth)\nTopological sort: DFS-based (reverse post-order) or BFS-based (Kahn's algorithm)",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Graphs",
+    "question": "How does Dijkstra's algorithm work and what are its limitations?",
+    "quickAnswer": "Dijkstra finds shortest paths from a source to all vertices in a weighted graph. Uses a min-heap priority queue. Process node with minimum distance, relax its neighbors, add to PQ if shorter path found. Repeat until PQ empty. Time: O((V+E) log V). Limitation: doesn't work with negative edge weights (use Bellman-Ford instead).",
+    "difficulty": "HIGH",
+    "keyPoints": "Greedy: always process closest unvisited vertex\nRelaxation: if dist[u] + w < dist[v] → update dist[v], add to PQ\nMin-heap: O((V+E) log V) with binary heap\nNo negative weights: once a node is processed, its distance is final (not valid with negatives)\nBellman-Ford: handles negatives, O(VE)\nDijkstra use case: GPS routing, network shortest path",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Graphs",
+    "question": "How do you detect a cycle in a directed graph?",
+    "quickAnswer": "Use DFS with three states: WHITE (unvisited), GRAY (in current DFS path), BLACK (fully processed). If you reach a GRAY node, there's a back edge → cycle exists. This is the basis of topological sort failure detection. For undirected graphs: DFS cycle = reaching a visited node that isn't the direct parent.",
+    "difficulty": "HIGH",
+    "keyPoints": "Directed graph: 3-color DFS — WHITE, GRAY (in stack), BLACK (done)\nBack edge to GRAY node = cycle\nTopological sort: impossible if cycle exists\nKahn's algorithm: if not all nodes processed → cycle\nUndirected graph: visited + parent tracking\nTime: O(V+E); Space: O(V)",
+    "codeExample": "// 3-color cycle detection\nboolean dfs(int node, int[] color) {\n    color[node] = 1; // GRAY\n    for (int nbr : adj.get(node)) {\n        if (color[nbr] == 1) return true; // cycle\n        if (color[nbr] == 0 && dfs(nbr, color)) return true;\n    }\n    color[node] = 2; // BLACK\n    return false;\n}"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Graphs",
+    "question": "How does Union-Find (Disjoint Set Union) work?",
+    "quickAnswer": "Union-Find maintains sets of elements efficiently. find(x) returns x's root; union(x,y) merges their sets. Optimizations: path compression (flatten tree on find), union by rank (attach smaller tree under larger). With both optimizations, operations are nearly O(1) amortized (inverse Ackermann — practically constant). Used for: cycle detection, Kruskal's MST, connected components.",
+    "difficulty": "HIGH",
+    "keyPoints": "find(x): traverse parent pointers to root; path compression flattens\nunion(x,y): link roots together; union by rank keeps tree shallow\nPath compression: point directly to root after find\nUnion by rank: always attach shorter tree under taller\nAmortized complexity: O(α(n)) ≈ O(1) with both optimizations\nApplications: Kruskal's MST, cycle detection in undirected graphs",
+    "codeExample": "int find(int x) {\n    if (parent[x] != x) parent[x] = find(parent[x]); // path compression\n    return parent[x];\n}\nvoid union(int x, int y) {\n    int rx = find(x), ry = find(y);\n    if (rank[rx] < rank[ry]) parent[rx] = ry;\n    else if (rank[rx] > rank[ry]) parent[ry] = rx;\n    else { parent[ry] = rx; rank[rx]++; }\n}"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Sorting Algorithms",
+    "question": "What is the time and space complexity of the main sorting algorithms?",
+    "quickAnswer": "QuickSort: O(n log n) avg, O(n²) worst, O(log n) space. MergeSort: O(n log n) always, O(n) space. HeapSort: O(n log n) always, O(1) space. TimSort (Java Arrays.sort for objects): O(n log n) worst, O(n) space, stable. Counting/Radix/Bucket Sort: O(n) for restricted input types. Java uses Dual-Pivot QuickSort for primitive arrays.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "QuickSort: in-place, cache-friendly, O(n²) worst on sorted input\nMergeSort: stable, O(n) extra space, guaranteed O(n log n)\nHeapSort: in-place, not stable, O(n log n) guaranteed\nJava primitives: Dual-Pivot QuickSort — O(n log n) avg\nJava objects: TimSort (Merge + Insertion hybrid) — stable, O(n log n)\nWhen to use: small data → insertion sort; general → quicksort/mergesort",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Sorting Algorithms",
+    "question": "How does QuickSort work and why is pivot selection important?",
+    "quickAnswer": "QuickSort: pick a pivot, partition array so elements < pivot are left, > pivot are right, then recursively sort both halves. O(n log n) average. With a bad pivot (always min or max), degrades to O(n²). Solutions: random pivot, median-of-three pivot, or Dual-Pivot (Java's implementation). Partition is the key operation — Lomuto or Hoare scheme.",
+    "difficulty": "HIGH",
+    "keyPoints": "Partition: rearrange elements around pivot (< pivot | pivot | > pivot)\nLomuto partition: simpler code; Hoare: fewer swaps\nBad pivot: already sorted input with first-element pivot → O(n²)\nRandom pivot: probabilistically avoids worst case\nMedian-of-three: pick median of first, middle, last element\nDual-Pivot (Java): two pivots → 3-way partition → better in practice",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Sorting Algorithms",
+    "question": "What is merge sort and when is it preferred over quicksort?",
+    "quickAnswer": "Merge sort divides the array in half recursively until single elements, then merges sorted halves. Guaranteed O(n log n) in all cases; stable sort. Preferred over quicksort when: stability is required (preserving equal elements' original order), sorting linked lists (no random access needed for merge), or when O(n²) worst case is unacceptable. Downside: O(n) extra space.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Divide: split in half until single elements\nConquer: merge two sorted halves with two-pointer technique\nGuaranteed O(n log n): no worst-case degradation\nStable: equal elements maintain relative order\nO(n) extra space: needs auxiliary array for merging\nLinked list sorting: merge sort is optimal (no random access needed)",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Dynamic Programming",
+    "question": "What is the difference between memoization and tabulation in dynamic programming?",
+    "quickAnswer": "Memoization (top-down): recursive solution with caching — compute only needed subproblems, natural to derive from recursion. Tabulation (bottom-up): iterative, fills a table in dependency order — usually faster (no call stack overhead), easier to optimize space. For tree DP, top-down is natural; for sequence DP (LCS, knapsack), bottom-up is standard.",
+    "difficulty": "HIGH",
+    "keyPoints": "Memoization: top-down recursion + cache (HashMap or array)\nTabulation: bottom-up loops, fill in order of dependency\nMemoization pros: only computes needed states, natural from recursion\nTabulation pros: no stack overflow risk, often faster, space-optimizable\nSpace optimization: tabulation often reduces to O(1) or O(n) from O(n²)\nOverlapping subproblems + optimal substructure = DP applicable",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Dynamic Programming",
+    "question": "How do you solve the 0/1 Knapsack problem?",
+    "quickAnswer": "0/1 Knapsack: for each item (weight w, value v), either include or exclude. dp[i][j] = max value using first i items with capacity j. Recurrence: dp[i][j] = max(dp[i-1][j], dp[i-1][j-w[i]] + v[i]) if w[i] <= j. O(n*W) time, O(n*W) space. Space optimize to O(W) by processing capacity in reverse order.",
+    "difficulty": "HIGH",
+    "keyPoints": "State: dp[i][j] = max value with i items and capacity j\nRecurrence: include (dp[i-1][j-w]+v) vs exclude (dp[i-1][j])\nBase case: dp[0][j] = 0 (no items)\nSpace optimization: 1D dp array, iterate capacity right-to-left\nRight-to-left critical: prevents using same item twice\nUnbounded knapsack: iterate left-to-right (item reuse allowed)",
+    "codeExample": "// Space optimized 1D\nint[] dp = new int[W+1];\nfor (int i = 0; i < n; i++)\n    for (int j = W; j >= weights[i]; j--)\n        dp[j] = Math.max(dp[j], dp[j-weights[i]] + values[i]);"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Dynamic Programming",
+    "question": "How do you find the Longest Common Subsequence (LCS)?",
+    "quickAnswer": "LCS of strings X and Y: dp[i][j] = length of LCS of X[0..i-1] and Y[0..j-1]. If X[i-1] == Y[j-1]: dp[i][j] = dp[i-1][j-1] + 1. Else: dp[i][j] = max(dp[i-1][j], dp[i][j-1]). O(mn) time and space. Space can be reduced to O(min(m,n)) using two rows.",
+    "difficulty": "HIGH",
+    "keyPoints": "LCS ≠ LCS substring (subsequence allows gaps; substring must be contiguous)\nState: dp[i][j] = LCS length of first i chars of X, first j chars of Y\nMatch: chars equal → diagonal + 1\nNo match: max of top (dp[i-1][j]) or left (dp[i][j-1])\nReconstructing the sequence: backtrack through dp table\nSpace optimize: only need previous row — O(n) space",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Dynamic Programming",
+    "question": "What is the coin change problem and what is its DP solution?",
+    "quickAnswer": "Minimum coins to make amount: dp[i] = minimum coins to make amount i. For each coin c, dp[i] = min(dp[i], dp[i-c]+1) if i >= c. Initialize dp[0]=0, rest=infinity. Answer is dp[amount] or -1 if still infinity. Greedy fails for arbitrary coin systems (only works for standard denominations). This is O(amount * coins) time, O(amount) space.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Unbounded knapsack variant: can use each coin multiple times\ndp[0] = 0; dp[i] = min over all coins c: dp[i-c] + 1\nGreedy fails: coins=[1,3,4], amount=6 → greedy gives 4+1+1=3 coins; DP gives 3+3=2 coins\nTime: O(amount * coins); Space: O(amount)\nVariant: count ways to make change (addition instead of min)",
+    "codeExample": "int[] dp = new int[amount+1];\nArrays.fill(dp, amount+1);\ndp[0] = 0;\nfor (int i = 1; i <= amount; i++)\n    for (int c : coins)\n        if (i >= c) dp[i] = Math.min(dp[i], dp[i-c]+1);\nreturn dp[amount] > amount ? -1 : dp[amount];"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Recursion & Backtracking",
+    "question": "What is backtracking and how does it differ from brute force?",
+    "quickAnswer": "Backtracking is a refined brute force that prunes invalid branches early — when a partial solution can't possibly lead to a valid complete solution, abandon it immediately. DFS explores the search space; pruning cuts branches. Without pruning it's brute force. Backtracking is used for: permutations, combinations, N-Queens, Sudoku, subset sum.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Backtracking = DFS + pruning\nChoose: make a choice at each step\nExplore: recurse\nUnchoose: undo the choice (backtrack)\nPruning: check constraints before recursing deeper\nTime: varies — often exponential, but pruning reduces practical runtime significantly",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Recursion & Backtracking",
+    "question": "How do you generate all permutations of an array?",
+    "quickAnswer": "Use backtracking: swap current index element with each element at or after it, recurse with next index, then swap back (restore). For distinct elements this generates all n! permutations. Alternative: use a boolean[] used array and a temp list. Time O(n * n!), space O(n) recursion depth.",
+    "difficulty": "HIGH",
+    "keyPoints": "Swap approach: swap(arr, i, j) → recurse(i+1) → swap back\nUsed array approach: mark used, add to temp, recurse, unmark\nBase case: index == arr.length → add current permutation to result\nTime: O(n * n!) — n! permutations, each takes O(n) to copy\nDuplicates: sort first, skip same value if previous identical element unused",
+    "codeExample": "void permute(int[] nums, int start, List<List<Integer>> res) {\n    if (start == nums.length) { res.add(toList(nums)); return; }\n    for (int i = start; i < nums.length; i++) {\n        swap(nums, start, i);\n        permute(nums, start+1, res);\n        swap(nums, start, i); // backtrack\n    }\n}"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Trie & Advanced Data Structures",
+    "question": "What is a Trie and when should you use it?",
+    "quickAnswer": "A Trie (prefix tree) is a tree where each path from root to a node represents a prefix. Each node has children for each character and an isEnd flag. Insert, search, and startsWith are all O(L) where L is the word length — faster than HashMap for prefix queries. Use for: autocomplete, spell check, IP routing, word search.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Each node: children[26] (or HashMap), boolean isEnd\nInsert: walk character by character, create nodes as needed\nSearch: walk characters, return isEnd at last char\nstartsWith: walk characters, return true if path exists\nO(L) for all operations; O(ALPHABET_SIZE * N * L) space\nAlternative: HashMap<String, Set<String>> for simple prefix lookup",
+    "codeExample": "class TrieNode {\n    TrieNode[] children = new TrieNode[26];\n    boolean isEnd;\n}\nvoid insert(String word) {\n    TrieNode cur = root;\n    for (char c : word.toCharArray()) {\n        if (cur.children[c-'a'] == null)\n            cur.children[c-'a'] = new TrieNode();\n        cur = cur.children[c-'a'];\n    }\n    cur.isEnd = true;\n}"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Trie & Advanced Data Structures",
+    "question": "What is a Segment Tree and when do you use it?",
+    "quickAnswer": "Segment Tree supports range queries (sum, min, max) and point updates in O(log n). The tree has n leaves (one per element) and n internal nodes. Built bottom-up. Query [l, r]: traverse relevant segments. Point update: update leaf and propagate up. Used when you need both efficient range queries AND updates — unlike prefix sums (O(1) query, O(n) update).",
+    "difficulty": "HIGH",
+    "keyPoints": "Segment tree: O(log n) range query AND O(log n) point update\nPrefix sum: O(1) query, O(n) update — no updates → use prefix sum\nBinary Indexed Tree (Fenwick): simpler code, same complexity, only additive queries\nLazy propagation: range updates in O(log n) instead of O(n log n)\nSize: 4*n array (safe upper bound)\nApplications: range min/max/sum queries with updates, competitive programming",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Big-O Complexity Analysis",
+    "question": "What is the difference between time complexity and space complexity?",
+    "quickAnswer": "Time complexity measures how the number of operations scales with input size. Space complexity measures how much extra memory is needed. Both use Big-O notation. For recursive algorithms, the call stack counts as space (O(n) for linear recursion, O(log n) for binary recursion). In-place algorithms aim for O(1) extra space. Often there's a time-space tradeoff.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Big-O: upper bound on growth rate (worst case typically)\nTime: count fundamental operations as function of n\nSpace: count extra memory used (not including input itself)\nRecursion stack: O(h) where h = max recursion depth\nAuxiliary space vs total space: usually report auxiliary (extra beyond input)\nTime-space tradeoff: memoization uses O(n) space to avoid recomputation",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Big-O Complexity Analysis",
+    "question": "What is amortized complexity and give an example?",
+    "quickAnswer": "Amortized analysis accounts for the average cost per operation over a sequence, even if some individual operations are expensive. Example: ArrayList.add() is O(1) amortized — most adds are O(1) but every doubling resize is O(n). However, doubling ensures each element is copied at most O(log n) times total across all adds, giving O(1) amortized per add.",
+    "difficulty": "HIGH",
+    "keyPoints": "Amortized: average cost per operation over all operations (not per single op)\nArrayList resize: O(n) occasionally but O(1) amortized across all adds\nWhy 1.5-2x growth: linear growth (add 1 each time) → O(n²) total copies\nStack push/pop (queue via 2 stacks): each element crosses at most twice → O(1) amortized\nAccounting method: assign credits to cheap ops to 'pay' for expensive ones\nNot the same as average case: amortized is worst sequence / count",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Big-O Complexity Analysis",
+    "question": "What is the time complexity of common data structure operations?",
+    "quickAnswer": "Array: O(1) access, O(n) insert/delete. ArrayList: O(1) amortized add, O(n) insert/remove. LinkedList: O(n) access, O(1) insert/delete at known node. HashMap: O(1) avg get/put, O(n) worst. BST: O(log n) all ops (balanced). Heap: O(log n) insert/delete, O(1) peek. Stack/Queue: O(1) push/pop.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Array/ArrayList: O(1) random access; O(n) insert middle\nHashMap/HashSet: O(1) avg; O(n) worst (all same bucket)\nBalanced BST (TreeMap): O(log n) guaranteed\nHeap (PriorityQueue): O(log n) offer/poll; O(1) peek\nDeque (ArrayDeque): O(1) both ends\nLinkedList: O(n) search; O(1) insert/delete with iterator",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Array Patterns — Sliding Window, Two Pointers & Prefix Sum",
+    "question": "What is the sliding window pattern and when do you use it?",
+    "quickAnswer": "Sliding window maintains a window [left, right] over an array/string. Expand right to include new elements, contract left when a constraint is violated. This converts O(n²) brute force to O(n). Use when: finding max/min subarray of fixed size, longest subarray satisfying a condition, or counting subarrays with constraints.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Fixed window: maintain window of size k, slide one step at a time\nVariable window: expand right, shrink left when constraint violated\nTemplate: right++ (expand), while (invalid) left++ (shrink)\nKeep track: window state (sum, count, freq map)\nO(n): each element enters and exits window at most once\nApplications: max sum subarray of size k, longest substring without repeat",
+    "codeExample": "int left = 0, maxLen = 0;\nMap<Character, Integer> freq = new HashMap<>();\nfor (int right = 0; right < s.length(); right++) {\n    freq.merge(s.charAt(right), 1, Integer::sum);\n    while (freq.size() > k) {\n        freq.merge(s.charAt(left), -1, Integer::sum);\n        if (freq.get(s.charAt(left)) == 0) freq.remove(s.charAt(left));\n        left++;\n    }\n    maxLen = Math.max(maxLen, right - left + 1);\n}"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Array Patterns — Sliding Window, Two Pointers & Prefix Sum",
+    "question": "What is the prefix sum technique and what problems does it solve?",
+    "quickAnswer": "Prefix sum: precompute prefix[i] = sum of arr[0..i-1]. Range sum query [l, r] = prefix[r+1] - prefix[l]. O(n) to build, O(1) per query. Without prefix sum, each range query is O(n). Use for: range sum queries, count subarrays with given sum (using HashMap of prefix sums), subarray equal to target.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "prefix[i] = arr[0] + arr[1] + ... + arr[i-1]\nRange sum [l,r] = prefix[r+1] - prefix[l] → O(1)\nSubarray sum = target: use HashMap to find if (currentSum - target) was seen before\n2D prefix sum: dp[i][j] = sum of rectangle from (0,0) to (i,j)\nNegative numbers: prefix sum works fine\nVariant: product prefix (watch for zeros), XOR prefix",
+    "codeExample": "Map<Integer, Integer> seen = new HashMap<>();\nseen.put(0, 1);\nint sum = 0, count = 0;\nfor (int num : arr) {\n    sum += num;\n    count += seen.getOrDefault(sum - target, 0);\n    seen.merge(sum, 1, Integer::sum);\n}"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Array Patterns — Sliding Window, Two Pointers & Prefix Sum",
+    "question": "How does the two-pointer technique work for finding pairs in a sorted array?",
+    "quickAnswer": "Two pointers start at opposite ends (left=0, right=n-1). Compare arr[left] + arr[right] with target. If sum too small: left++. If too large: right--. If equal: found. This avoids the O(n²) brute force nested loop. Works for: pair sum, three sum (fix one, two pointers for rest), container with most water, trapping rain water.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Sorted array required for classic two-pointer pair sum\nMove left pointer when sum < target; right pointer when sum > target\nO(n) time, O(1) space\nThree sum: sort, fix i, two pointers for rest — O(n²)\nNot sorted: use HashMap for O(n) two-sum\nVariant: fast/slow pointers for cycle detection, mid-point finding",
+    "codeExample": "int left = 0, right = nums.length - 1;\nwhile (left < right) {\n    int sum = nums[left] + nums[right];\n    if (sum == target) return new int[]{left, right};\n    else if (sum < target) left++;\n    else right--;\n}"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "String Algorithms — Sliding Window, Two Pointers & Anagram Patterns",
+    "question": "How do you check if two strings are anagrams?",
+    "quickAnswer": "Method 1: sort both strings and compare — O(n log n). Method 2: count character frequencies with an int[26] array — O(n). Increment for one string, decrement for the other. If all counts are 0, they're anagrams. For sliding window anagram search (find all anagram substrings), use a frequency count with a match counter.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Sort approach: O(n log n), simple\nFrequency array: O(n), O(1) space for lowercase English\nFor sliding window anagram in string: maintain window freq and compare with pattern freq\nmatch variable: count chars where freq matches → when match == 26, found anagram\nUnicode: use HashMap<Character, Integer> instead of int[26]\nAnagram groups: sort each word as key, group by key",
+    "codeExample": "boolean isAnagram(String s, String t) {\n    if (s.length() != t.length()) return false;\n    int[] count = new int[26];\n    for (char c : s.toCharArray()) count[c-'a']++;\n    for (char c : t.toCharArray()) if (--count[c-'a'] < 0) return false;\n    return true;\n}"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "String Algorithms — Sliding Window, Two Pointers & Anagram Patterns",
+    "question": "How does the KMP string matching algorithm work?",
+    "quickAnswer": "KMP (Knuth-Morris-Pratt) finds a pattern in a text in O(n+m) instead of O(nm). It precomputes a failure function (LPS array) for the pattern — lps[i] = length of longest proper prefix of pattern[0..i] that is also a suffix. When mismatch occurs, use lps to skip redundant comparisons instead of starting over.",
+    "difficulty": "HIGH",
+    "keyPoints": "Naive: O(nm) — restart from i+1 on mismatch\nKMP: O(n+m) — use LPS array to skip known comparisons\nLPS (Longest Proper Prefix = Suffix) array: precomputed in O(m)\nOn mismatch at pattern[j]: reset j = lps[j-1] (not 0)\nLPS array construction: two-pointer approach on pattern itself\nApplications: text search, detecting repeated substrings",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "String Algorithms — Sliding Window, Two Pointers & Anagram Patterns",
+    "question": "How do you find the longest substring without repeating characters?",
+    "quickAnswer": "Sliding window with a HashSet or HashMap. Expand right, adding characters. When duplicate found, shrink from left until the duplicate is removed. Track max window size. O(n) time, O(min(n, charset)) space. Using HashMap<char, lastIndex> can jump left pointer directly to skip characters.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Sliding window: expand right, shrink left on duplicate\nHashSet: remove chars from left until no duplicate\nHashMap<char, index>: jump left pointer to max(left, lastIndex+1) — O(1) per step\nWindow size: right - left + 1; track max\nO(n) time: each char enters and exits window once\nEdge cases: empty string, all same chars, all unique",
+    "codeExample": "Map<Character, Integer> map = new HashMap<>();\nint max = 0, left = 0;\nfor (int right = 0; right < s.length(); right++) {\n    char c = s.charAt(right);\n    if (map.containsKey(c)) left = Math.max(left, map.get(c)+1);\n    map.put(c, right);\n    max = Math.max(max, right - left + 1);\n}"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Bit Manipulation",
+    "question": "What are the essential bit manipulation tricks for interviews?",
+    "quickAnswer": "Key tricks: check bit i: (n >> i) & 1. Set bit i: n | (1 << i). Clear bit i: n & ~(1 << i). Toggle bit i: n ^ (1 << i). Check power of 2: n > 0 && (n & (n-1)) == 0. Count set bits: n & (n-1) removes lowest set bit. XOR of a with itself = 0; XOR with 0 = a. Used in: find single number, missing number, sum without addition.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "n & (n-1): clears lowest set bit (count set bits, check power of 2)\nXOR properties: a^a=0, a^0=a, XOR is commutative/associative\nn & (-n): isolates lowest set bit\n>> arithmetic shift (sign-preserving); >>> logical shift (zero-fill)\nSingle number: XOR all elements — pairs cancel, single survives\nMissing number: XOR all indices and values — missing cancels out",
+    "codeExample": "// Single number in array where all others appear twice\nint single = 0;\nfor (int n : nums) single ^= n;\nreturn single;"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Bit Manipulation",
+    "question": "How do you count the number of set bits (1s) in an integer?",
+    "quickAnswer": "Brian Kernighan's algorithm: while n != 0, do n = n & (n-1) and increment count. n & (n-1) removes the lowest set bit each time. This is O(number of set bits) — faster than checking each of 32 bits when count is small. Java's Integer.bitCount() is the standard library method. Full loop with n >>> 1 is O(32) = O(1).",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Brian Kernighan: n & (n-1) removes lowest set bit, O(k) where k = set bit count\nNaive: loop 32 times, check each bit with n & 1, n >>>= 1\nInteger.bitCount(n): JDK method using Hamming weight algorithm\nLookup table: O(1) with precomputed table for nibbles or bytes\nApplications: Hamming distance, count bits for 0 to n (DP using dp[i] = dp[i>>1] + (i&1))",
+    "codeExample": "int countBits(int n) {\n    int count = 0;\n    while (n != 0) { n &= (n-1); count++; }\n    return count;\n}"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Greedy Algorithms",
+    "question": "What makes a problem solvable by a greedy algorithm?",
+    "quickAnswer": "A problem is solvable by greedy if it has: (1) Greedy choice property — a locally optimal choice leads to a globally optimal solution. (2) Optimal substructure — optimal solution contains optimal solutions to subproblems. Proving greedy requires showing the exchange argument: swapping a non-greedy choice with the greedy one doesn't improve the solution.",
+    "difficulty": "HIGH",
+    "keyPoints": "Greedy choice property: local optimum leads to global optimum\nOptimal substructure: optimal solution built from optimal sub-solutions\nExchange argument: proof technique — show swapping in greedy choice doesn't improve\nWhen greedy fails: 0/1 Knapsack (use DP); coin change with arbitrary coins\nGreedy examples: Activity Selection, Huffman Coding, Prim's/Kruskal's MST, Dijkstra\nFractional knapsack: greedy works (take highest value/weight ratio first)",
+    "codeExample": null
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Greedy Algorithms",
+    "question": "How do you solve the interval scheduling / activity selection problem?",
+    "quickAnswer": "Sort intervals by end time. Greedily select the interval with earliest end that doesn't overlap the previously selected one. This gives the maximum number of non-overlapping intervals. Time O(n log n) for sort, O(n) for selection. The greedy choice of earliest end time is optimal — proven by exchange argument.",
+    "difficulty": "HIGH",
+    "keyPoints": "Sort by end time: key insight\nGreedy: always pick earliest-finishing non-overlapping activity\nCorrectness: choosing earliest end leaves maximum room for future activities\nVariant: merge overlapping intervals — sort by start, merge if start <= prevEnd\nMin platforms/rooms: sort starts and ends separately, two-pointer\nInterval DP: different beast — for problems like matrix chain multiplication",
+    "codeExample": "Arrays.sort(intervals, (a,b) -> a[1] - b[1]); // sort by end\nint count = 1, end = intervals[0][1];\nfor (int i = 1; i < intervals.length; i++) {\n    if (intervals[i][0] >= end) { count++; end = intervals[i][1]; }\n}"
+  },
+  {
+    "category": "DSA",
+    "topicTitle": "Greedy Algorithms",
+    "question": "What is Huffman coding and why is it a greedy algorithm?",
+    "quickAnswer": "Huffman coding builds an optimal prefix-free code for data compression. Greedy strategy: always merge the two smallest-frequency nodes. Use a min-heap, extract two minimums, merge into a parent with combined frequency, push back. Characters with higher frequency get shorter codes. Greedy works because merging least frequent nodes minimizes the total cost (weighted path length).",
+    "difficulty": "HIGH",
+    "keyPoints": "Min-heap: always pick two smallest frequency nodes\nMerge: create parent with sum frequency, push back\nPrefix-free: no code is a prefix of another (Huffman guarantees this)\nOptimality: greedy → minimum average code length\nApplications: DEFLATE (ZIP), PNG, HTTP/2 header compression (HPACK)\nTime: O(n log n) for building tree",
+    "codeExample": null
+  }
+]

@@ -1,0 +1,668 @@
+[
+  {
+    "category": "JAVA",
+    "topicTitle": "JVM / JRE / JDK Architecture",
+    "question": "What is the difference between JVM, JRE, and JDK?",
+    "quickAnswer": "JDK is the full development kit (compiler + JRE). JRE is the runtime environment (JVM + standard libraries). JVM is the virtual machine that executes bytecode. JDK ⊃ JRE ⊃ JVM.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "JDK = JRE + javac + tools (jar, javadoc)\nJRE = JVM + standard class libraries (rt.jar)\nJVM = class loader + runtime data areas + execution engine\nJVM is platform-specific; bytecode is platform-neutral",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "JVM / JRE / JDK Architecture",
+    "question": "Describe the JVM architecture — what are its main components?",
+    "quickAnswer": "JVM has a Class Loader subsystem, Runtime Data Areas (heap, stack, method area, PC registers, native method stack), an Execution Engine (interpreter + JIT compiler), and a Garbage Collector. The class loader loads .class files; the execution engine runs bytecode.",
+    "difficulty": "HIGH",
+    "keyPoints": "Class Loader: Bootstrap → Extension → Application (delegation model)\nRuntime Data Areas: Heap (shared), Stack (per-thread), Method Area/Metaspace, PC Register, Native Stack\nExecution Engine: Interpreter for startup; JIT compiles hot code to native\nGarbage Collector lives in heap management",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "JVM / JRE / JDK Architecture",
+    "question": "What is the JIT compiler and why does it matter for performance?",
+    "quickAnswer": "JIT (Just-In-Time) compiles frequently executed bytecode into native machine code at runtime. This eliminates interpretation overhead for hot paths. The JVM profiles which methods are 'hot' (invoked many times) and compiles those, giving performance close to native code after warm-up.",
+    "difficulty": "HIGH",
+    "keyPoints": "Interpreter is slow; JIT converts hot bytecode to native code\nThreshold: C1 (client) compiles at ~1500 invocations, C2 (server) at ~10000\nTiered compilation (Java 7+): C1 → C2 pipeline\nWarm-up period: app starts slow, then accelerates",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "JVM / JRE / JDK Architecture",
+    "question": "What is the difference between stack memory and heap memory in the JVM?",
+    "quickAnswer": "Stack stores method frames, local variables, and references — one stack per thread, LIFO structure. Heap stores all object instances and class-level data — shared across threads. Stack is faster but limited in size (StackOverflowError); heap is larger but GC managed (OutOfMemoryError).",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Stack: per-thread, holds frames (local vars + operand stack + return address)\nHeap: shared, holds new'd objects; subject to GC\nPrimitive variables stored on stack; objects always on heap\nStackOverflowError = stack exhausted; OutOfMemoryError = heap exhausted",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java Compilation & Execution Flow",
+    "question": "Walk through what happens from writing Java code to running it.",
+    "quickAnswer": "1. javac compiles .java → .class (bytecode). 2. JVM's class loader loads .class. 3. Bytecode verifier checks safety. 4. Interpreter or JIT executes bytecode. The 'write once, run anywhere' promise comes from the bytecode being platform-neutral; only the JVM is platform-specific.",
+    "difficulty": "MEDIUM",
+    "keyPoints": ".java → javac → .class (bytecode, not machine code)\nClass loader: load → link (verify/prepare/resolve) → initialize\nBytecode verifier: ensures no illegal memory access\nExecution: interpreter first, JIT for hot methods",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java Compilation & Execution Flow",
+    "question": "What does the class loader do, and what is the parent delegation model?",
+    "quickAnswer": "Class loaders load .class files into the JVM. They follow parent delegation: a class loader asks its parent first; only loads the class itself if the parent can't find it. The hierarchy is Bootstrap → Extension (Platform) → Application. This prevents malicious classes from shadowing core Java classes.",
+    "difficulty": "HIGH",
+    "keyPoints": "Bootstrap CL: loads core Java (java.lang, java.util) from rt.jar / jrt:/\nExtension/Platform CL: loads JDK extensions\nApplication CL: loads classpath classes\nDelegation prevents spoofing — you can't shadow java.lang.String",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java Compilation & Execution Flow",
+    "question": "What is the difference between compile-time and runtime errors in Java?",
+    "quickAnswer": "Compile-time errors are caught by javac (syntax errors, type mismatches, missing methods). Runtime errors occur during execution (NullPointerException, ArrayIndexOutOfBoundsException, ClassCastException). Static analysis tools and generics help catch some runtime errors at compile time.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Compile-time: syntax errors, incompatible types, missing returns\nRuntime: NPE, ClassCastException, StackOverflowError\nChecked exceptions: declared in signature — caught at compile time\nUnchecked exceptions (RuntimeException subclasses): not forced at compile time",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Data Types & Variables",
+    "question": "What are the 8 primitive types in Java and their sizes?",
+    "quickAnswer": "byte(1), short(2), int(4), long(8), float(4), double(8), char(2), boolean(1 bit, JVM-dependent). Unlike objects, primitives are stored by value on the stack and have no methods. Use wrapper classes (Integer, Double, etc.) when an object is needed.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Only 8: byte, short, int, long, float, double, char, boolean\nlong literals need L suffix: 9_000_000_000L\nfloat literals need f suffix: 3.14f\nchar is UTF-16, range 0–65535\nboolean size is undefined by JLS (JVM-dependent)",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Data Types & Variables",
+    "question": "What is the difference between == and .equals() in Java?",
+    "quickAnswer": "== compares references (memory addresses) for objects, and values for primitives. .equals() compares logical content. For String literals, == may work due to string interning, but new String(\"a\") == new String(\"a\") is false. Always use .equals() to compare object content.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "== on primitives: value comparison\n== on objects: reference (address) comparison\n.equals() default (Object): same as ==; override to compare content\nString pool: literals are interned, so same-content literals share reference\nCommon trap: Integer == Integer works only for -128 to 127 (cache)",
+    "codeExample": "String a = new String(\"hello\");\nString b = new String(\"hello\");\nSystem.out.println(a == b);       // false\nSystem.out.println(a.equals(b));  // true"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Data Types & Variables",
+    "question": "What is integer overflow in Java and how does it behave?",
+    "quickAnswer": "Java integers wrap silently on overflow — no exception. int max is 2^31-1 = 2,147,483,647; adding 1 wraps to Integer.MIN_VALUE (-2,147,483,648). Use long or BigInteger when values may exceed int range. Math.addExact() throws ArithmeticException on overflow.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "int: -2^31 to 2^31-1; wraps on overflow (no exception)\nUse long for large values; BigInteger for arbitrary precision\nMath.addExact(), Math.multiplyExact() throw on overflow\nCommon bug: looping i++ past Integer.MAX_VALUE creates infinite loop",
+    "codeExample": "System.out.println(Integer.MAX_VALUE + 1); // -2147483648 (wraps)"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Data Types & Variables",
+    "question": "What is type casting in Java and what is the difference between widening and narrowing?",
+    "quickAnswer": "Widening conversion (byte→int→long→double) is automatic and safe — no data loss. Narrowing (double→int) is explicit (cast required) and may lose precision or truncate. Casting between unrelated types throws ClassCastException at runtime.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Widening: implicit, no cast needed, no data loss\nNarrowing: explicit cast required, may lose data (double 9.9 → int 9)\nPrimitive widening order: byte < short < int < long < float < double\nObject casting: must be actual type at runtime or ClassCastException",
+    "codeExample": "double d = 9.99;\nint i = (int) d; // i = 9, truncated"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java Operators",
+    "question": "What is the difference between >> and >>> in Java?",
+    "quickAnswer": ">> is arithmetic right shift — preserves the sign bit (fills with 1 for negative numbers). >>> is logical right shift — always fills with 0s. For positive numbers they behave identically. >>> is useful for treating a value as unsigned (e.g., computing mid = (lo + hi) >>> 1 safely).",
+    "difficulty": "HIGH",
+    "keyPoints": ">> arithmetic shift: sign bit preserved (negative stays negative)\n>>> logical shift: always pads with 0 bits\n-8 >> 1 = -4; -8 >>> 1 = 2147483644\nSafe mid calculation: (lo + hi) >>> 1 avoids overflow vs (lo + hi) / 2",
+    "codeExample": "System.out.println(-8 >> 1);   // -4\nSystem.out.println(-8 >>> 1);  // 2147483644"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java Operators",
+    "question": "What is short-circuit evaluation in Java logical operators?",
+    "quickAnswer": "&& and || use short-circuit evaluation: if the left operand determines the result, the right operand is not evaluated. obj != null && obj.doSomething() is safe because if obj is null, the right side is skipped. & and | always evaluate both sides (bitwise operators, no short-circuit).",
+    "difficulty": "MEDIUM",
+    "keyPoints": "&& short-circuits on false left side\n|| short-circuits on true left side\n& and | evaluate both sides (no short-circuit)\nUse && for null-safe guards: if(list != null && !list.isEmpty())\nSide effects in right operand may not execute with &&/||",
+    "codeExample": "// Safe null check\nif (obj != null && obj.isValid()) { ... }\n// obj.isValid() never called if obj == null"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java Operators",
+    "question": "What is the difference between i++ and ++i?",
+    "quickAnswer": "i++ is post-increment: returns the current value then increments. ++i is pre-increment: increments first then returns the new value. In standalone statements (just i++) they're identical. The difference matters in expressions: int x = i++ gives x the old value; int x = ++i gives x the new value.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "i++ (post): use value, then increment\n++i (pre): increment, then use value\nIn for loops: both are equivalent (i++ preferred by convention)\nAlways the same final value; difference is the expression result\nNot thread-safe — use AtomicInteger for concurrency",
+    "codeExample": "int i = 5;\nint a = i++; // a=5, i=6\nint b = ++i; // b=7, i=7"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Control Flow in Java",
+    "question": "What is the difference between break and continue in loops?",
+    "quickAnswer": "break exits the loop entirely and continues after the loop. continue skips the rest of the current iteration and jumps to the next iteration check. Both support labeled versions for nested loops: break outerLoop exits the outer loop, continue outerLoop skips to the outer loop's next iteration.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "break: terminates the loop (or switch)\ncontinue: skips current iteration, goes to next check\nLabeled break/continue for nested loops: break outerLabel;\nbreak can also exit switch statements\nAvoid excessive use — prefer early returns in methods",
+    "codeExample": "outer:\nfor (int i=0; i<3; i++) {\n    for (int j=0; j<3; j++) {\n        if (j==1) break outer; // exits both loops\n    }\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Control Flow in Java",
+    "question": "How does a switch statement differ from a chain of if-else if statements?",
+    "quickAnswer": "switch compiles to a jump table (O(1) dispatch) for dense int values, making it potentially faster than if-else chains (O(n)). switch requires a compile-time constant expression; supports int, char, String (Java 7+), and enums. Switch expressions (Java 14+) are more concise and can return a value with ->.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "switch: O(1) with jump table for integers (dense values)\nif-else: O(n) sequential evaluation\nswitch supports: int/Integer, char, String, Enum — not long, float\nFall-through: case without break continues to next case\nSwitch expression (Java 14+): case x -> value; (no fall-through, can return)",
+    "codeExample": "// Modern switch expression\nString result = switch (day) {\n    case MONDAY, TUESDAY -> \"Weekday\";\n    case SATURDAY, SUNDAY -> \"Weekend\";\n    default -> \"Unknown\";\n};"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Arrays in Java",
+    "question": "What is the difference between an array and an ArrayList in Java?",
+    "quickAnswer": "Arrays are fixed-size, can hold primitives, and have better performance (no boxing). ArrayList is dynamic (resizes automatically), holds only objects (autoboxes primitives), provides more utility methods (add, remove, contains), and implements List interface. Use arrays for fixed-size primitive data; ArrayList for dynamic collections.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Array: fixed size, primitives OK, O(1) access, contiguous memory\nArrayList: dynamic (grows 1.5x on resize), objects only, more methods\nArrayList backed by an Object[] array internally\nConversion: Arrays.asList() → fixed-size list; new ArrayList<>(Arrays.asList(...)) → mutable\nPerformance: array access slightly faster; ArrayList has boxing overhead",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Arrays in Java",
+    "question": "How do you find duplicates in an array efficiently?",
+    "quickAnswer": "Use a HashSet: iterate the array, try to add each element; if add() returns false, it's a duplicate. This is O(n) time and O(n) space. For integer arrays in range [0, n-1], use the array itself as a hash — negate visited indices (O(n) time, O(1) space).",
+    "difficulty": "HIGH",
+    "keyPoints": "HashSet approach: O(n) time, O(n) space — general purpose\nSorting approach: O(n log n) — adjacent duplicates easy to spot\nIn-place marking: negate arr[arr[i]] if integers in [0, n-1]\nBitset approach: O(n/64) space for known range\nStreams: Arrays.stream(arr).boxed().collect(groupingBy(..., counting()))",
+    "codeExample": "Set<Integer> seen = new HashSet<>();\nfor (int x : arr) {\n    if (!seen.add(x)) System.out.println(\"Dup: \" + x);\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Arrays in Java",
+    "question": "What is a 2D array in Java and how is it stored in memory?",
+    "quickAnswer": "A Java 2D array (int[][]) is an array of arrays — each row is a separate heap object. Rows can have different lengths (jagged arrays). It's not stored as a contiguous block like C 2D arrays. Access is arr[row][col]; declaring int[3][4] creates 1 outer array + 3 inner arrays.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "int[][] arr = new int[3][4]: one array of 3 references + 3 arrays of 4 ints\nRows are separate heap objects — not contiguous\nJagged arrays allowed: arr[0] = new int[2]; arr[1] = new int[5];\nColumn-major access (arr[i][j] vs arr[j][i]) matters for cache performance\nArrays.deepToString() for printing 2D arrays",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Strings & StringBuilder in Java",
+    "question": "Why is String immutable in Java and what are the benefits?",
+    "quickAnswer": "String is immutable because its char[] (or byte[]) field is final and not exposed. Benefits: thread safety (no synchronization needed), string pool (reuse via interning), safe as HashMap key (hashCode won't change), and security (class names, file paths can't be mutated after validation).",
+    "difficulty": "HIGH",
+    "keyPoints": "Immutability = value never changes after creation\nString pool (intern pool): same literal → same object\nThread-safe: multiple threads can read the same String safely\nHashMap key safety: hash won't change mid-use\nConcatenation creates new objects: use StringBuilder in loops",
+    "codeExample": "// Bad: O(n²) in a loop\nString s = \"\";\nfor (int i=0; i<1000; i++) s += i; // creates 1000 objects\n\n// Good: O(n)\nStringBuilder sb = new StringBuilder();\nfor (int i=0; i<1000; i++) sb.append(i);\nString s = sb.toString();"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Strings & StringBuilder in Java",
+    "question": "What is the difference between String, StringBuilder, and StringBuffer?",
+    "quickAnswer": "String is immutable; every operation creates a new object. StringBuilder is mutable and not thread-safe — use it in single-threaded code. StringBuffer is mutable and thread-safe (synchronized methods) — use when shared across threads, but it's slower than StringBuilder. In practice, StringBuilder is the go-to for building strings in loops.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "String: immutable, thread-safe, good for constants\nStringBuilder: mutable, NOT thread-safe, fastest for local use\nStringBuffer: mutable, thread-safe (synchronized), slower\nJava 8 compile optimization: String + literal → StringBuilder in non-loop code\nCapacity: StringBuilder default capacity 16; grows 2x+2 on overflow",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Strings & StringBuilder in Java",
+    "question": "How does the Java String pool (intern pool) work?",
+    "quickAnswer": "String literals are automatically placed in the string pool (PermGen pre-Java 8, Metaspace/heap Java 8+). When you write String s = \"hello\", the JVM checks the pool first; if \"hello\" exists, it reuses the reference. String.intern() manually adds a string to the pool. new String(\"hello\") always creates a new heap object bypassing the pool.",
+    "difficulty": "HIGH",
+    "keyPoints": "String pool = set of interned strings, stored in heap (Java 8+)\nLiterals are automatically interned at class load time\nnew String(\"x\"): creates new object on heap, NOT in pool\ns.intern(): adds to pool if absent, returns pooled reference\nComparison: s1 == s2 is true only if both from pool for same value",
+    "codeExample": "String a = \"hello\";\nString b = \"hello\";\nString c = new String(\"hello\");\nSystem.out.println(a == b); // true (pool)\nSystem.out.println(a == c); // false (new object)\nSystem.out.println(a == c.intern()); // true"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Strings & StringBuilder in Java",
+    "question": "How would you reverse a String in Java? What about checking if it's a palindrome?",
+    "quickAnswer": "Reverse: new StringBuilder(str).reverse().toString(). Palindrome: compare str with its reverse, or use two-pointer approach (compare chars from both ends). Two-pointer is O(n) time O(1) space; StringBuilder reverse is O(n) time O(n) space.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "StringBuilder.reverse() is simplest\nTwo-pointer: i=0, j=len-1, compare while i<j, i++, j--\nCase-insensitive palindrome: str.toLowerCase() first\nIgnore spaces/punctuation: filter non-alphanumeric first\nCodePoints for Unicode: use codePoints() for emoji-safe reversal",
+    "codeExample": "boolean isPalindrome(String s) {\n    int i = 0, j = s.length() - 1;\n    while (i < j) {\n        if (s.charAt(i++) != s.charAt(j--)) return false;\n    }\n    return true;\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Methods, Recursion & Pass-by-Value in Java",
+    "question": "Is Java pass-by-value or pass-by-reference? Explain with an example.",
+    "quickAnswer": "Java is always pass-by-value. For primitives, a copy of the value is passed. For objects, a copy of the reference (memory address) is passed — not the object itself. You can mutate the object's fields through the copied reference, but reassigning the parameter inside the method doesn't affect the caller's variable.",
+    "difficulty": "HIGH",
+    "keyPoints": "Primitives: copy of value — modifications don't affect caller\nObjects: copy of reference — can mutate fields, but not reassign caller's variable\nConfusion: passing an object feels like pass-by-reference because mutations are visible\nTest: swap(a, b) via method won't actually swap caller's variables\nTo swap: use a wrapper object or return an array",
+    "codeExample": "void modify(int x) { x = 99; } // caller unchanged\nvoid addItem(List<String> list) { list.add(\"x\"); } // caller's list IS modified\nvoid reassign(List<String> list) { list = new ArrayList<>(); } // caller unchanged"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Methods, Recursion & Pass-by-Value in Java",
+    "question": "What is recursion and what is a stack overflow? How do you prevent it?",
+    "quickAnswer": "Recursion is when a method calls itself. Each call adds a new frame to the call stack. Stack overflow (StackOverflowError) occurs when the stack runs out — usually from missing or never-reached base case. Prevent it by ensuring a clear base case, or convert deep recursion to iterative using an explicit stack or tail recursion optimization (Java doesn't natively optimize tail calls).",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Every recursive call: new stack frame (local vars + return address)\nBase case: the termination condition; missing it → infinite recursion\nStackOverflowError: default JVM stack ~512KB–1MB depending on JVM\nTail recursion: Java doesn't optimize it; long chains still blow stack\nFix: iterative with explicit Stack<>, or trampolining pattern",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Pass by Value in Java",
+    "question": "Why does modifying an object inside a method affect the caller, but reassigning it doesn't?",
+    "quickAnswer": "When you pass an object, the method receives a copy of the reference (pointer). Calling methods or modifying fields via that reference changes the same object — visible to the caller. But assigning the parameter to a new object just changes the local copy of the reference; the caller's variable still points to the original object.",
+    "difficulty": "HIGH",
+    "keyPoints": "Object parameter = copy of address (reference value)\nMutation via reference: visible to caller (same object in heap)\nReassignment of parameter: changes local copy only, caller unaffected\nStrings appear immutable by reference: str = \"new\" inside method → caller unchanged\nTo 'return' a new value: use method return value, not parameter mutation",
+    "codeExample": "void test(StringBuilder sb) {\n    sb.append(\" world\"); // affects caller\n    sb = new StringBuilder(\"reset\"); // does NOT affect caller\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Memory Management — Stack vs Heap",
+    "question": "What is stored on the stack vs the heap in Java?",
+    "quickAnswer": "Stack holds method frames: local primitive variables, object references, and method call metadata. Each thread has its own stack. Heap holds all object instances (created with new) and arrays — shared across threads. When a method exits, its stack frame is instantly reclaimed. Heap memory is reclaimed by GC.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Stack: primitives, references (not the objects), method frames — per-thread\nHeap: all objects (new Foo()), all arrays — shared across threads\nInstance variables (inside objects) live on the heap with the object\nStack allocation/deallocation: O(1) pointer move — very fast\nHeap: requires GC — slower but much larger",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Memory Management — Stack vs Heap",
+    "question": "What causes a memory leak in Java despite having a garbage collector?",
+    "quickAnswer": "GC only collects objects with no live references. Memory leaks happen when you unintentionally hold references to objects you no longer need: static collections that grow indefinitely, event listeners not removed, inner classes holding outer class references, ThreadLocal variables not cleaned up, or caches without eviction.",
+    "difficulty": "HIGH",
+    "keyPoints": "Static List/Map fields that keep growing (most common)\nEvent listeners: adding listeners without removing them\nNon-static inner classes: hold implicit reference to outer class\nThreadLocal in thread pools: values survive thread reuse\nCaches without size bounds or TTL (use WeakHashMap or Guava Cache)\nTool: VisualVM, Eclipse MAT, or Java Flight Recorder to detect",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Memory Management — Stack vs Heap",
+    "question": "What is escape analysis in the JVM?",
+    "quickAnswer": "Escape analysis determines if an object created inside a method can 'escape' to outside code (returned, stored in a field, passed to another thread). If an object doesn't escape, the JVM can allocate it on the stack instead of the heap (stack allocation), or eliminate the allocation entirely (scalar replacement), reducing GC pressure.",
+    "difficulty": "HIGH",
+    "keyPoints": "JIT performs escape analysis at runtime\nStack allocation: non-escaping objects put on stack → freed instantly on method exit\nScalar replacement: object fields treated as separate stack variables (no object created)\nSynchronization elision: locks on non-escaping objects can be removed\nEnabled by default in JVM; can observe with -XX:+PrintEscapeAnalysis",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Class & Object in Java",
+    "question": "What is the difference between a class and an object in Java?",
+    "quickAnswer": "A class is a blueprint/template defining fields and methods. An object is an instance — a concrete allocation in memory created with new. A single class can have millions of instances. The class itself exists once in the method area; each object exists on the heap with its own copy of instance fields.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Class: compile-time blueprint, loaded once per ClassLoader\nObject: runtime instance, heap-allocated, has its own field state\nstatic fields/methods: belong to class (shared by all instances)\nInstance fields/methods: belong to each object\nClass object: Class<T> metadata accessible via .getClass() or Foo.class",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Class & Object in Java",
+    "question": "What is the difference between deep copy and shallow copy?",
+    "quickAnswer": "Shallow copy copies the object's field values, but nested object references are shared — both copies point to the same inner objects. Deep copy recursively copies all nested objects so the two copies are completely independent. Object.clone() is a shallow copy by default; deep copy requires manual implementation or serialization trick.",
+    "difficulty": "HIGH",
+    "keyPoints": "Shallow: copies references to nested objects — mutations in one affect the other\nDeep: new instances of all nested objects — fully independent\nObject.clone(): shallow by default; override for deep copy\nAlternatives: copy constructor, serialization/deserialization, Jackson ObjectMapper\nRecord types (Java 16+): immutable, so no copy needed",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Class & Object in Java",
+    "question": "What happens if you don't override equals() and hashCode() and use objects as HashMap keys?",
+    "quickAnswer": "The default equals() checks reference equality (==), and hashCode() uses the object's identity hash. Two logically equal objects with different references will be treated as different keys. To use objects correctly as keys, override both: hashCode() must return the same value for objects where equals() is true, and equals() must be consistent.",
+    "difficulty": "HIGH",
+    "keyPoints": "Default equals(): reference comparison (==)\nDefault hashCode(): memory address-based\nMap/Set contract: if a.equals(b) → a.hashCode() == b.hashCode()\nViolation: two 'equal' objects go to different buckets → can't find stored value\nIntelliJ/Lombok can generate correct equals+hashCode pairs\nImmutable fields only in hashCode() — mutable keys can lose entries",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Inheritance in Java",
+    "question": "What is the difference between extends and implements in Java?",
+    "quickAnswer": "extends is used for class-to-class or interface-to-interface inheritance — a class can extend only one class (single inheritance). implements is used when a class adopts an interface contract — a class can implement multiple interfaces. Java disallows multiple class inheritance to avoid the diamond problem.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "extends: class inherits from one class (or interface extends interface)\nimplements: class fulfills interface contract — multiple allowed\nSingle class inheritance prevents diamond problem\nInterface default methods (Java 8+): can have implementation, causing diamond — resolved by overriding\nAbstract class: can extend + implement; provides partial implementation",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Inheritance in Java",
+    "question": "What is method overriding? What are the rules?",
+    "quickAnswer": "Overriding provides a subclass-specific implementation of a method defined in the parent. Rules: same method signature (name + params), same or covariant return type, access modifier same or wider, checked exceptions same or narrower. Use @Override annotation — it catches signature mismatches at compile time.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Same name + same parameter list (not just same name)\nReturn type: same OR covariant (subclass type) in Java 5+\nAccess: can widen (protected → public) but not narrow (public → private)\nChecked exceptions: can declare fewer or narrower, not wider\n@Override: compiler error if no matching parent method (catches typos)\nfinal methods cannot be overridden",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Inheritance in Java",
+    "question": "What is the difference between method overloading and method overriding?",
+    "quickAnswer": "Overloading (compile-time polymorphism): same method name, different parameter types/count — resolved at compile time. Overriding (runtime polymorphism): subclass replaces parent's method with same signature — resolved at runtime via vtable dispatch. Overloading is in the same class (or superclass); overriding is across parent-child classes.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Overloading: same class, different params, compile-time binding (static dispatch)\nOverriding: parent-child, same signature, runtime binding (dynamic dispatch)\nOverloading resolved by declared type; overriding resolved by actual type\nCannot overload by return type alone\nStatic methods: can't be overridden (hidden instead), resolved at compile time",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Polymorphism in Java",
+    "question": "What is runtime polymorphism (dynamic dispatch) in Java?",
+    "quickAnswer": "When you call an overridden method on a reference variable, Java resolves which implementation to call based on the actual runtime type of the object, not the declared type of the reference. This is achieved via virtual method tables (vtable). It enables 'programming to an interface' — code that works for all subtypes.",
+    "difficulty": "HIGH",
+    "keyPoints": "Declared type (compile-time): determines which methods are accessible\nActual type (runtime): determines which override is called\nVtable: per-class table of method pointers updated by overrides\nStatic, private, and final methods: NOT polymorphic (resolved at compile time)\nInstanceof + casting is a code smell — prefer polymorphism instead",
+    "codeExample": "Animal a = new Dog();\na.speak(); // calls Dog.speak(), not Animal.speak()"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Polymorphism in Java",
+    "question": "What is the difference between compile-time and runtime polymorphism?",
+    "quickAnswer": "Compile-time polymorphism (static binding) is method overloading — the compiler picks the right method based on argument types. Runtime polymorphism (dynamic binding) is method overriding — the JVM picks the right method at runtime based on the actual object type. Runtime polymorphism is the core OOP mechanism for extensibility.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Compile-time (static): overloading — resolved by javac\nRuntime (dynamic): overriding — resolved at runtime via vtable\nStatic methods are statically bound (resolved by reference type, not object type)\nFields are not polymorphic — always resolved by reference type\nAbstract methods force subclasses to override (no default implementation)",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Abstraction in Java",
+    "question": "What is the difference between an abstract class and an interface in Java?",
+    "quickAnswer": "Abstract class: can have state (fields), constructors, concrete methods, and abstract methods. A class can extend only one abstract class. Interface: all fields are public static final, all methods are public (default/static allowed since Java 8). A class can implement multiple interfaces. Use abstract class for 'is-a' with shared state; interface for 'can-do' capability.",
+    "difficulty": "HIGH",
+    "keyPoints": "Abstract class: state + partial impl + constructors; single inheritance only\nInterface: no state (constants only), pure API contract; multiple allowed\nJava 8 interfaces: default and static methods added\nJava 9 interfaces: private methods for code reuse in defaults\nWhen to use: Template Method pattern → abstract class; Strategy/Plugin → interface",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Abstraction in Java",
+    "question": "When would you choose an abstract class over an interface?",
+    "quickAnswer": "Choose abstract class when: you need shared state (fields), you want a constructor, you have non-public methods to share, or you want to provide a default implementation using those shared fields (Template Method pattern). Choose interface when you want to define a capability that unrelated classes can implement.",
+    "difficulty": "HIGH",
+    "keyPoints": "Abstract class: shared state, constructors, protected helpers, single hierarchy\nInterface: capability contract, multiple inheritance, loose coupling\nTemplate Method: abstract class fits perfectly (protected abstract steps)\nMixin behavior: interfaces fit (Serializable, Comparable, Runnable)\nModern Java: interfaces are preferred due to default methods; abstract class for framework base classes",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Encapsulation & Access Modifiers in Java",
+    "question": "What are the four access modifiers in Java and what do they control?",
+    "quickAnswer": "private: visible only within the class. default (package-private, no keyword): visible within the same package. protected: visible to the package + subclasses. public: visible everywhere. Best practice: use the most restrictive access level that still works — typically make fields private and expose via getters/setters.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "private: class only — tightest\npackage-private (no modifier): package only\nprotected: package + subclasses (even in different package)\npublic: everywhere\nOrder (least to most): private < package < protected < public\nInner classes can access outer class private members",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Encapsulation & Access Modifiers in Java",
+    "question": "What is encapsulation and why is it important?",
+    "quickAnswer": "Encapsulation bundles data (fields) and the methods that operate on it, hiding internal implementation details. It enforces invariants (e.g., age can't be negative), allows changing implementation without breaking callers, and reduces coupling. Achieved via private fields + public getters/setters or immutable classes.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Hide internal state: private fields\nControl access: getter/setter with validation logic\nChange implementation freely: callers use API, not internals\nInvariants: setter can reject invalid values\nImmutability: no setters → strongest encapsulation (no state change possible)",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Generics in Java",
+    "question": "What is type erasure in Java generics and what are its limitations?",
+    "quickAnswer": "At compile time, generic type parameters are erased and replaced with Object (or the upper bound). So List<String> and List<Integer> are the same class at runtime — there's only one .class file. Limitations: can't use instanceof with generics, can't create arrays of generic types, can't catch generic exceptions, and can't use primitives as type parameters.",
+    "difficulty": "HIGH",
+    "keyPoints": "Type erasure: generic info removed at compile time, replaced with bounds\nList<String> and List<Integer>: same raw type at runtime (List)\nCannot do: new T[], obj instanceof List<String>, catch(MyException<T>)\nCannot use primitives: List<int> invalid — use List<Integer>\nReified generics: arrays ARE reified (String[] knows its type); generics are not\nHeap pollution: unchecked casts can corrupt a generic collection",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Generics in Java",
+    "question": "What is the difference between <? extends T> and <? super T> in Java generics?",
+    "quickAnswer": "? extends T (upper bound) means 'T or any subtype' — use for reading (producer). ? super T (lower bound) means 'T or any supertype' — use for writing (consumer). The PECS mnemonic: Producer Extends, Consumer Super. List<? extends Number> is read-only (you don't know the exact type); List<? super Integer> accepts Integer writes.",
+    "difficulty": "HIGH",
+    "keyPoints": "PECS: Producer Extends, Consumer Super\n? extends T: can read T; can't add (type unknown)\n? super T: can add T; read returns Object\nCollections.copy(dest, src): dest is List<? super T>, src is List<? extends T>\nUnbounded <?>: read-only, accepts any type\nComparable<? super T>: common in sort methods to accept parent comparators",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java Collections Framework",
+    "question": "What is the difference between ArrayList and LinkedList?",
+    "quickAnswer": "ArrayList: backed by array — O(1) random access, O(n) insert/delete in the middle (shifts elements). LinkedList: doubly-linked list — O(n) random access, O(1) insert/delete at a known node. In practice ArrayList is faster for most use cases due to better cache locality. LinkedList is only faster for frequent insertions at both ends (use ArrayDeque instead).",
+    "difficulty": "MEDIUM",
+    "keyPoints": "ArrayList: O(1) get, O(n) add/remove in middle, 1.5x resize\nLinkedList: O(n) get, O(1) add/remove at ends — but needs pointer traversal\nCache locality: ArrayList contiguous memory → faster in practice\nLinkedList: 2x memory overhead (prev/next pointers per node)\nPrefer ArrayDeque over LinkedList for queue/deque operations",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java Collections Framework",
+    "question": "What is the difference between HashMap and TreeMap and LinkedHashMap?",
+    "quickAnswer": "HashMap: unordered, O(1) average operations, null keys allowed. TreeMap: sorted by key (natural order or comparator), O(log n) operations, no null keys. LinkedHashMap: insertion-order maintained (or access-order for LRU), O(1) operations. Choose based on ordering needs.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "HashMap: hash table, unordered, O(1) avg, allows null key/value\nTreeMap: Red-Black tree, sorted keys, O(log n), no null key\nLinkedHashMap: HashMap + doubly-linked list for order, O(1)\nLRU cache: LinkedHashMap(cap, 0.75f, true) — removeEldestEntry\nTreeMap use cases: range queries, floor/ceiling/subMap operations",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java Collections Framework",
+    "question": "What is the difference between HashSet and TreeSet and how does a HashSet work?",
+    "quickAnswer": "HashSet is backed by a HashMap (keys are elements, values are a dummy object) — O(1) add/contains/remove, no duplicates, no order. TreeSet is backed by a TreeMap — O(log n), sorted, no duplicates. HashSet's performance depends on correct hashCode() and equals() implementation.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "HashSet = HashMap where keys are the set elements\nO(1) contains: hashCode() → bucket → equals() check\nTreeSet = TreeMap — sorted, O(log n) all operations\nLinkedHashSet: insertion order, O(1)\nDuplication check: equals() + hashCode() must be consistent\nNull: HashSet allows one null; TreeSet doesn't (comparison needed)",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java Collections Framework",
+    "question": "What is the fail-fast behavior of Java collections?",
+    "quickAnswer": "Most standard collections (ArrayList, HashMap, etc.) are fail-fast: if the collection is structurally modified while iterating (add/remove outside the iterator), a ConcurrentModificationException is thrown. The collection maintains a modCount counter; the iterator checks it each step. To safely modify while iterating, use iterator.remove() or CopyOnWriteArrayList.",
+    "difficulty": "HIGH",
+    "keyPoints": "Fail-fast: throws ConcurrentModificationException on concurrent structural modification\nModCount: counter incremented on structural changes; iterator snapshot\nSafe removal: use Iterator.remove() during iteration\nFail-safe alternatives: CopyOnWriteArrayList, ConcurrentHashMap.entrySet()\nConcurrentModificationException can happen in single-thread too (modifying inside for-each)",
+    "codeExample": "// Wrong: ConcurrentModificationException\nfor (String s : list) { if (s.isEmpty()) list.remove(s); }\n\n// Right: use iterator\nIterator<String> it = list.iterator();\nwhile (it.hasNext()) { if (it.next().isEmpty()) it.remove(); }"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Exception Handling in Java",
+    "question": "What is the difference between checked and unchecked exceptions?",
+    "quickAnswer": "Checked exceptions extend Exception (not RuntimeException) — the compiler forces you to handle or declare them (throws). They represent recoverable conditions (IOException, SQLException). Unchecked exceptions extend RuntimeException — no compile-time enforcement. They represent programming errors (NPE, ArrayIndexOutOfBoundsException) or unrecoverable conditions.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Checked: extends Exception, must catch or throws — IOException, SQLException\nUnchecked: extends RuntimeException — NPE, IllegalArgumentException, ClassCastException\nError: extends Error — OutOfMemoryError, StackOverflowError — don't catch\nChecked = recoverable scenario; Unchecked = programming bug\nModern practice: many frameworks use unchecked to avoid forced catch blocks",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Exception Handling in Java",
+    "question": "What happens in a try-catch-finally block? When does finally NOT execute?",
+    "quickAnswer": "finally always executes after try/catch, whether or not an exception was thrown. It executes even if there's a return in try or catch. It does NOT execute if: System.exit() is called, the JVM crashes, or the thread is killed. If finally also throws an exception, it masks the original exception.",
+    "difficulty": "HIGH",
+    "keyPoints": "finally: always runs — even on return, break, continue\nSystem.exit() or JVM crash: skips finally\nfinally exception: masks original exception from try/catch\nReturn value: if try returns x and finally returns y, y wins\ntry-with-resources (Java 7+): automatically calls close() — preferred over finally for resources",
+    "codeExample": "try {\n    return 1;\n} finally {\n    return 2; // returns 2, original return 1 is lost!\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Exception Handling in Java",
+    "question": "What is try-with-resources and how does it work?",
+    "quickAnswer": "try-with-resources (Java 7+) automatically closes resources that implement AutoCloseable. The resource's close() method is called at the end of the try block, even if an exception is thrown. Multiple resources are closed in reverse order. It replaces the try-finally idiom for resource cleanup and properly handles 'suppressed exceptions'.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Resource must implement AutoCloseable (or Closeable)\nClose called automatically in reverse order of declaration\nSuppressed exceptions: if close() throws and try throws, close exception is suppressed (accessible via getSuppressed())\nOld way: try { ... } finally { rs.close(); } — buggy if close throws\nJava 9+: can use effectively-final variables declared outside",
+    "codeExample": "try (Connection c = ds.getConnection();\n     PreparedStatement ps = c.prepareStatement(sql)) {\n    // use ps\n} // ps and c closed automatically, reverse order"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Streams API & Functional Interfaces",
+    "question": "What is the difference between map() and flatMap() in Java Streams?",
+    "quickAnswer": "map() transforms each element to one output element — 1-to-1 mapping. flatMap() transforms each element to a Stream of elements and then flattens them — 1-to-many. Use flatMap when each element contains a collection you want to unwrap into the main stream.",
+    "difficulty": "HIGH",
+    "keyPoints": "map: Stream<T> → Stream<R>, one element in → one element out\nflatMap: Stream<T> → Stream<R>, one element in → zero-to-many elements out (flattened)\nCommon use: list of lists → flat stream; Optional chaining\nflatMap(Collection::stream): flatten a list of lists\nDifference from mapToObj: flatMap takes T → Stream<R>",
+    "codeExample": "List<List<Integer>> nested = List.of(List.of(1,2), List.of(3,4));\nnested.stream()\n      .flatMap(Collection::stream)\n      .forEach(System.out::println); // 1 2 3 4"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Streams API & Functional Interfaces",
+    "question": "What is the difference between intermediate and terminal operations in Java Streams?",
+    "quickAnswer": "Intermediate operations (filter, map, sorted, limit) return a new Stream and are lazy — they don't execute until a terminal operation is reached. Terminal operations (collect, forEach, count, reduce, findFirst) trigger the pipeline and produce a result or side effect. A stream can be consumed by only one terminal operation.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Lazy evaluation: intermediate ops build a pipeline, no work done yet\nTerminal ops: trigger the pipeline, produce a result\nLaziness benefit: short-circuit — findFirst stops after first match\nCommon intermediate: filter, map, flatMap, distinct, sorted, limit, skip\nCommon terminal: collect, forEach, count, reduce, findFirst, anyMatch, toList\nStreams are single-use: terminal op exhausts the stream",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Streams API & Functional Interfaces",
+    "question": "What are the four main functional interfaces in Java?",
+    "quickAnswer": "Function<T,R>: takes T, returns R (T → R). Predicate<T>: takes T, returns boolean. Consumer<T>: takes T, returns void (side effect). Supplier<T>: takes nothing, returns T. They all live in java.util.function and are used throughout Streams, Optional, and lambda-based APIs.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Function<T,R>: apply() — transform — used in map()\nPredicate<T>: test() — filter condition — used in filter()\nConsumer<T>: accept() — side effect — used in forEach()\nSupplier<T>: get() — factory — used in Optional.orElseGet()\nBiFunction<T,U,R>: two inputs; BiConsumer, BiPredicate similarly\nUnaryOperator<T>: Function<T,T> specialization; BinaryOperator<T>: BiFunction<T,T,T>",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Streams API & Functional Interfaces",
+    "question": "What is the difference between Comparator.comparing() and natural ordering?",
+    "quickAnswer": "Natural ordering uses the Comparable interface (compareTo method) — objects define their own order. Comparator provides external ordering without modifying the class. Comparator.comparing(Person::getName) creates a comparator by key extractor. You can chain with .thenComparing() for multi-field sorts and .reversed() to flip order.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Comparable: natural order, single order per class, compareTo()\nComparator: external order, multiple orderings possible, compare()\nComparator.comparing(keyExtractor): concise lambda-friendly factory\n.thenComparing(): chain for secondary sort\n.reversed(): flip order\nCollections.sort(list, comparator) or list.sort(comparator)",
+    "codeExample": "list.sort(Comparator.comparing(Person::getLastName)\n                   .thenComparing(Person::getFirstName)\n                   .reversed());"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java I/O & NIO",
+    "question": "What is the difference between Java IO and Java NIO?",
+    "quickAnswer": "Java IO (java.io) is stream-based, blocking — one thread per connection. Java NIO (java.nio) is buffer/channel-based with a Selector — one thread can handle many connections (non-blocking). NIO is better for high-concurrency servers; IO is simpler for simple file/stream operations. NIO.2 (Java 7) added the modern Path/Files API.",
+    "difficulty": "HIGH",
+    "keyPoints": "IO: stream-based, blocking, one thread per connection\nNIO: buffer + channel + selector, non-blocking, multiplexing\nChannel: bidirectional; Stream: unidirectional\nByteBuffer: direct (native memory) vs heap\nSelector: single thread monitors multiple channels for readiness\nNIO.2 (Java 7): java.nio.file — Path, Files, WatchService",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java I/O & NIO",
+    "question": "How do you read a file efficiently in Java (modern approach)?",
+    "quickAnswer": "For small files: Files.readString(path) or Files.readAllLines(path) in one shot. For large files: Files.lines(path) returns a lazy Stream<String> — process line by line without loading all into memory. Always specify charset explicitly. Use try-with-resources for all readers/streams. BufferedReader wrapping FileReader is the classic approach.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Files.readString(path): entire file as String (Java 11+)\nFiles.readAllLines(path): all lines as List<String>\nFiles.lines(path): lazy Stream<String>, good for large files\nBufferedReader: classic approach, buffered for efficiency\nAlways specify Charset: StandardCharsets.UTF_8\ntry-with-resources: ensures stream/reader is closed",
+    "codeExample": "// Modern: lazy stream for large files\ntry (Stream<String> lines = Files.lines(Path.of(\"data.txt\"))) {\n    lines.filter(l -> l.contains(\"ERROR\"))\n         .forEach(System.out::println);\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Concurrency & Threads in Java",
+    "question": "What is the difference between a Thread and a Runnable in Java?",
+    "quickAnswer": "Thread is a class that represents a thread of execution. Runnable is a functional interface (run() method) representing the task. Prefer Runnable/Callable over extending Thread — it separates the task from the execution mechanism, and Java doesn't allow multiple inheritance, so extending Thread blocks other inheritance.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Thread: heavyweight — one OS thread per Java thread\nRunnable: just the task (no return value); Callable: task with return value + exception\nPrefer Runnable/Callable with ExecutorService over raw Thread\nnew Thread(runnable).start() vs executorService.submit(callable)\nVirtual threads (Java 21): lightweight threads on carrier threads — 'cheap' Runnable execution",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Concurrency & Threads in Java",
+    "question": "What is the volatile keyword in Java?",
+    "quickAnswer": "volatile ensures that reads and writes to a variable go directly to main memory — not a CPU cache. This guarantees visibility: all threads see the most recent write. However, volatile does NOT guarantee atomicity (i++ on a volatile int is still not thread-safe — it's read-modify-write). Use AtomicInteger for atomic compound operations.",
+    "difficulty": "HIGH",
+    "keyPoints": "volatile: visibility guarantee — flushes to main memory on write, reads from main memory\nDoes NOT guarantee atomicity: i++ is 3 operations (read, add, write)\nNo memory reordering past volatile read/write (happens-before)\nUse case: flags (volatile boolean running = true), double-checked locking\nAtomicInteger: CAS-based (compare-and-swap) — volatile + atomic operations",
+    "codeExample": "private volatile boolean running = true;\n// Thread 1:\nvoid stop() { running = false; }\n// Thread 2:\nvoid run() { while (running) { ... } }"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Concurrency & Threads in Java",
+    "question": "What is a deadlock and how do you prevent it?",
+    "quickAnswer": "Deadlock occurs when two or more threads each hold a lock the other needs — they wait forever. The four Coffman conditions must all hold: mutual exclusion, hold-and-wait, no preemption, circular wait. Prevention: always acquire locks in the same order (lock ordering), use tryLock with timeout, or avoid nested locks.",
+    "difficulty": "HIGH",
+    "keyPoints": "Coffman conditions: mutual exclusion, hold-and-wait, no preemption, circular wait\nPrevention: consistent lock ordering across all threads\ntryLock(timeout): back off if can't acquire\nDetection: thread dumps (jstack) show BLOCKED threads with cycle\nJava deadlock example: Thread A locks X then Y; Thread B locks Y then X\nAvoidance: minimize lock scope; prefer higher-level concurrent utilities",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Concurrency & Threads in Java",
+    "question": "What is the ExecutorService and why should you use it instead of raw threads?",
+    "quickAnswer": "ExecutorService manages a pool of reusable threads. Benefits: avoids thread creation overhead per task, controls max thread count, provides Future for results, handles exception propagation, and supports clean shutdown. Executors.newFixedThreadPool(n), newCachedThreadPool(), and newSingleThreadExecutor() are common factories.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Thread pools: reuse threads, avoid creation/destruction cost\nsubmit(Callable): returns Future<T> to get result later\nexecute(Runnable): fire-and-forget (no result)\nshutdown(): graceful (finish queued tasks); shutdownNow(): interrupt running tasks\nnewCachedThreadPool(): unbounded — risky under load\nnewFixedThreadPool(n): bounded, predictable resource usage",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Wrapper Classes & Autoboxing",
+    "question": "What is autoboxing and unboxing in Java, and what are the performance pitfalls?",
+    "quickAnswer": "Autoboxing automatically converts primitives to their wrapper class (int → Integer). Unboxing converts back (Integer → int). Pitfall: autoboxing in tight loops creates many short-lived objects, increasing GC pressure. The worst trap is using Long instead of long in a sum loop — can create millions of Long objects.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Autoboxing: int → Integer, done by compiler via Integer.valueOf()\nInteger.valueOf() caches -128 to 127 (Integer cache)\nUnboxing null Integer → NullPointerException!\nPerformance trap: boxing in loops — prefer primitive arrays/streams (IntStream)\nLong sum vs long sum: Long version creates objects; long is 10-100x faster",
+    "codeExample": "Long sum = 0L;\nfor (long i = 0; i < 1_000_000; i++) sum += i; // BAD: 10^6 Long objects\n\nlong sum = 0L; // GOOD: pure primitive"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Wrapper Classes & Autoboxing",
+    "question": "Why does Integer == Integer return true for small values but false for large values?",
+    "quickAnswer": "Integer.valueOf() caches Integer objects for values -128 to 127. Autoboxed integers in this range share cached instances, so == returns true. Outside this range, new objects are created, so == returns false. Always use .equals() to compare Integer values — never rely on == for wrapper types.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Integer cache: -128 to 127 — Integer.valueOf(127) always returns same object\nOutside cache range: new Integer object each time\nInteger a = 128; Integer b = 128; a == b → false\nThis applies to Byte, Short, Integer, Long (-128 to 127), Character (0 to 127)\nBoolean: Boolean.TRUE and FALSE are singletons\nAlways use .equals() for semantic equality of wrappers",
+    "codeExample": "Integer a = 127, b = 127;\nSystem.out.println(a == b);  // true (cached)\nInteger c = 128, d = 128;\nSystem.out.println(c == d);  // false (new objects)"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Date & Time API (java.time)",
+    "question": "What is wrong with java.util.Date and Calendar, and how does java.time fix it?",
+    "quickAnswer": "java.util.Date is mutable, not thread-safe, month indices start at 0 (confusing), and has poor API design. Calendar is clunky and still mutable. java.time (Java 8, inspired by Joda-Time) provides immutable, thread-safe classes: LocalDate, LocalTime, LocalDateTime, ZonedDateTime, Instant, Duration, Period.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Date problems: mutable, not thread-safe, months 0-indexed, confusing setters\nCalendar: verbose, still mutable, timezone handling poor\nLocalDate/LocalTime/LocalDateTime: no timezone, immutable\nZonedDateTime: full timezone-aware datetime\nInstant: UTC epoch timestamp for machine time\nDuration: time-based amount; Period: date-based amount",
+    "codeExample": "LocalDate today = LocalDate.now();\nLocalDate nextWeek = today.plusWeeks(1); // today unchanged (immutable)\nDateTimeFormatter fmt = DateTimeFormatter.ofPattern(\"dd-MMM-yyyy\");\nString s = today.format(fmt);"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Date & Time API (java.time)",
+    "question": "What is the difference between LocalDateTime and ZonedDateTime?",
+    "quickAnswer": "LocalDateTime has no timezone info — it's a calendar date and time like '2024-01-15T10:30'. It means different things in different timezones. ZonedDateTime includes a timezone (e.g., '2024-01-15T10:30+05:30[Asia/Kolkata]') — it represents an unambiguous moment. Use ZonedDateTime for scheduling across timezones; use Instant for machine timestamps.",
+    "difficulty": "HIGH",
+    "keyPoints": "LocalDateTime: no timezone — ambiguous across regions\nZonedDateTime: LocalDateTime + ZoneId — specific moment in time\nInstant: UTC milliseconds since epoch — use for logging, storage\nZoneId vs ZoneOffset: ZoneId handles DST; ZoneOffset is a fixed offset\nConversion: instant.atZone(ZoneId.of(\"Asia/Kolkata\")) → ZonedDateTime",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Garbage Collection & Memory Leaks",
+    "question": "How does Java garbage collection work? What are the different GC algorithms?",
+    "quickAnswer": "GC reclaims heap memory from objects with no live references. The heap is divided into Young Gen (Eden + Survivors) and Old Gen (Tenured). Most objects die young — Minor GC quickly cleans Eden. Long-lived objects are promoted to Old Gen, cleaned by Major/Full GC. Major GCs are expensive (stop-the-world). JVM offers: Serial, Parallel, G1 (default since Java 9), ZGC, Shenandoah.",
+    "difficulty": "HIGH",
+    "keyPoints": "Young Gen (Eden + S0 + S1): Minor GC — fast, frequent\nOld Gen: Major GC — slow, infrequent — stop-the-world for Serial/Parallel\nG1 GC: region-based, predictable pause time, default in Java 9+\nZGC / Shenandoah: low-latency (<1ms pauses), concurrent marking\nGC roots: stack vars, static fields, JNI refs — reachable from these = alive\nSoftReference, WeakReference: for caches; cleared by GC under pressure",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Garbage Collection & Memory Leaks",
+    "question": "What is the difference between Minor GC and Full GC? Which is more expensive?",
+    "quickAnswer": "Minor GC collects only the Young Generation (Eden + Survivor spaces) — fast (milliseconds), happens frequently. Full GC collects the entire heap (Young + Old + Metaspace) and compacts memory — slow (seconds), causes stop-the-world pause for most collectors. Frequent Full GCs indicate that objects are living too long or memory is under-provisioned.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Minor GC: Young Gen only — fast, triggers when Eden full\nFull GC: entire heap — slow, stop-the-world (Serial/Parallel/G1)\nPromotion failure: triggers Full GC if Old Gen can't accept Young Gen survivors\nG1 mixed collection: collects Young + some Old regions to avoid Full GC\nMonitor: -verbose:gc or GC logs; high Full GC frequency = problem",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Collections Internal Working — HashMap, Comparators & Iterators",
+    "question": "How does HashMap work internally in Java? How does it handle collisions?",
+    "quickAnswer": "HashMap uses an array of buckets. put(k,v): computes hashCode(k), applies a spread function, indexes into the array. Collisions (two keys hash to the same bucket) are handled by chaining: a linked list at that bucket. In Java 8+, buckets with 8+ entries convert to a balanced tree (TreeNode) for O(log n) worst case instead of O(n).",
+    "difficulty": "HIGH",
+    "keyPoints": "Array of Node[] (buckets), default capacity 16, load factor 0.75\nhashCode() → spread (XOR with shifted high bits) → index = hash & (n-1)\nCollision: chaining via linked list at bucket\nJava 8 treeification: linked list → red-black tree when bucket size ≥ 8\nResize (rehash): when size > capacity * loadFactor → new array double size, re-insert all\nnull key: always bucket 0",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Collections Internal Working — HashMap, Comparators & Iterators",
+    "question": "What is the contract between hashCode() and equals() and why must it be respected?",
+    "quickAnswer": "The contract: if a.equals(b) is true, then a.hashCode() == b.hashCode() must be true. The reverse is NOT required (hash collisions are allowed). Breaking this contract means equal objects may be stored in different buckets, making HashMap/HashSet unable to find them — get() returns null for keys that 'exist'.",
+    "difficulty": "HIGH",
+    "keyPoints": "equals → same hashCode (required)\nsame hashCode does NOT imply equals (collision is fine)\nBreaking contract: HashMap.get() won't find 'equal' key in different bucket\nCommon mistake: override equals without hashCode (IDE will warn)\nLombok @EqualsAndHashCode, Objects.hash() for convenience\nIf hashCode uses mutable fields: changing the field after putting in map loses the entry",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Reflection API & Annotations",
+    "question": "What is the Java Reflection API and what can it do?",
+    "quickAnswer": "Reflection allows inspecting and manipulating classes, methods, fields, and constructors at runtime, regardless of access modifiers. It can: instantiate classes by name, invoke private methods, read private fields, get annotations, and dynamically proxy interfaces. Used heavily in frameworks (Spring, JUnit, Hibernate) but is slow and breaks encapsulation — avoid in normal application code.",
+    "difficulty": "HIGH",
+    "keyPoints": "Class.forName(): load class by string name\ngetDeclaredMethod/Field(): access private members\nsetAccessible(true): bypasses access checks\nInvocation cost: ~10-100x slower than direct calls\nSecurity: SecurityManager (deprecated Java 17+) could restrict\nUse cases: DI frameworks, ORM, test frameworks, serialization libraries",
+    "codeExample": "Method m = obj.getClass().getDeclaredMethod(\"privateMethod\");\nm.setAccessible(true);\nObject result = m.invoke(obj);"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Reflection API & Annotations",
+    "question": "What are Java annotations and what are retention policies?",
+    "quickAnswer": "Annotations are metadata markers on code (@Override, @Autowired). Retention policy controls when annotation info is available: SOURCE (discarded after compile — @Override, @SuppressWarnings), CLASS (in .class file, not at runtime — default), RUNTIME (visible via reflection at runtime — @Autowired, @Entity). Most framework annotations need RUNTIME retention.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "RetentionPolicy.SOURCE: compile-time only (javac reads, then discards)\nRetentionPolicy.CLASS: .class file, NOT available at runtime (default)\nRetentionPolicy.RUNTIME: available via reflection — needed for frameworks\n@Target: restricts where annotation can be used (TYPE, METHOD, FIELD, etc.)\nAnnotation processing (APT): generate code at compile time (@Lombok)",
+    "codeExample": "@Retention(RetentionPolicy.RUNTIME)\n@Target(ElementType.METHOD)\npublic @interface Cacheable {\n    int ttlSeconds() default 60;\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java Serialization & Externalization",
+    "question": "What is Java serialization and what are its problems?",
+    "quickAnswer": "Serialization converts an object to a byte stream (for storage/network). Implement Serializable (marker interface) and Java does the rest. Problems: performance overhead, brittle across class changes (serialVersionUID must match), security risks (deserialization gadget chains can execute arbitrary code), and creates tight coupling. Prefer JSON/Protobuf/Avro in modern systems.",
+    "difficulty": "HIGH",
+    "keyPoints": "Serializable: marker interface — ObjectOutputStream/ObjectInputStream handle it\nserialVersionUID: class version — mismatch causes InvalidClassException\ntransient: exclude fields from serialization\nSecurity risk: deserialization of untrusted data → remote code execution\nExternalizable: write/readExternal() for custom control\nModern alternatives: Jackson (JSON), Protobuf, Kryo, Avro",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java Serialization & Externalization",
+    "question": "What is the difference between Serializable and Externalizable?",
+    "quickAnswer": "Serializable is a marker interface — Java handles serialization automatically using reflection. Externalizable provides full control: you implement writeExternal() and readExternal() manually. Externalizable is faster (no reflection), uses less space, but requires more code. With Externalizable, you must also provide a no-arg constructor.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Serializable: automatic (reflection-based), easy, slower, bigger\nExternalizable: manual (writeExternal/readExternal), faster, more code, smaller output\nExternalizable needs public no-arg constructor (used during deserialization)\nCustomization with Serializable: writeObject/readObject callbacks\nExternalizable: complete control — choose which fields and format",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Optional & Parallel Streams",
+    "question": "What is Optional in Java and when should you use it?",
+    "quickAnswer": "Optional<T> is a container that may or may not hold a non-null value — it explicitly models the possibility of absence. It prevents NPE by forcing callers to handle the absent case. Use it as return type for methods that may have no result. Don't use it as method parameter, in collections/fields, or in constructors.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Optional.empty(): no value; Optional.of(x): non-null value; Optional.ofNullable(x): nullable\norElse(default): get value or default\norElseGet(supplier): lazy default (preferred for expensive defaults)\norElseThrow(): throw if empty — asserting presence\nmap/flatMap: transform if present\nDon't: use in collections (List<Optional<T>>), as fields, as method params",
+    "codeExample": "Optional<User> user = userRepo.findById(id);\nString name = user.map(User::getName)\n                  .orElse(\"Unknown\");"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Optional & Parallel Streams",
+    "question": "When should you use parallelStream() and what are its pitfalls?",
+    "quickAnswer": "parallelStream() splits work across the ForkJoinPool common pool. Use when: the operation is CPU-bound, the data set is large (>10K elements), the operation per element is expensive, and the reduction is associative/commutative. Pitfalls: thread safety of shared state, incorrect results from non-associative operations, high overhead for small data, I/O-bound work shouldn't be parallel.",
+    "difficulty": "HIGH",
+    "keyPoints": "Uses ForkJoinPool.commonPool() — shared across the JVM\nGood for: CPU-bound, large data, no shared mutable state\nBad for: small data (overhead > gain), I/O, non-associative reduce, shared state\nOrder: parallelStream + sorted = expensive (forced sequential merge)\nCustom pool: submit(() -> stream.parallel()...) inside ForkJoinPool\nNever mutate shared collections inside parallel operations",
+    "codeExample": null
+  }
+]

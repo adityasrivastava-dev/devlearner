@@ -1,0 +1,182 @@
+[
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "Design Patterns in Java",
+    "question": "What is the Singleton pattern and what are its thread-safety pitfalls?",
+    "quickAnswer": "Singleton ensures only one instance exists. The simple lazy-init approach is NOT thread-safe — two threads can pass the null check simultaneously. Fix with: double-checked locking (volatile + synchronized), static inner class (Bill Pugh idiom — JVM class loading guarantees safety), or enum (Josh Bloch recommendation — simplest and serialization-safe).",
+    "difficulty": "HIGH",
+    "keyPoints": "Eager init: static field initialized at class load — thread-safe, no lazy\nLazy + synchronized method: safe but slow (lock every call)\nDouble-checked locking: volatile field + synchronized block — fast after init\nBill Pugh (static inner class): lazy + thread-safe with no explicit sync\nEnum Singleton: serialization-safe, reflection-safe, simplest (Effective Java rec)",
+    "codeExample": "// Bill Pugh Singleton\npublic class Singleton {\n    private Singleton() {}\n    private static class Holder {\n        static final Singleton INSTANCE = new Singleton();\n    }\n    public static Singleton getInstance() { return Holder.INSTANCE; }\n}"
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "Design Patterns in Java",
+    "question": "What is the difference between Factory Method and Abstract Factory patterns?",
+    "quickAnswer": "Factory Method defines an interface for creating one product — subclasses decide the concrete type. Abstract Factory groups related factories: it produces families of related objects without specifying their concrete classes. Factory Method is for one product; Abstract Factory is for a family of related products (e.g., UI widgets: Button + Checkbox for Windows vs Mac).",
+    "difficulty": "HIGH",
+    "keyPoints": "Factory Method: one product, subclass overrides createProduct()\nAbstract Factory: family of related products, factory per platform/theme\nFactory Method uses inheritance; Abstract Factory uses composition\nExample: Abstract Factory for DB access — MySQLFactory vs PostgreSQLFactory, each creates Connection + Statement + ResultSet\nOpen-Closed: adding new product type = new Factory, no existing code change",
+    "codeExample": null
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "Design Patterns in Java",
+    "question": "What is the Observer pattern and how is it related to Java's event system?",
+    "quickAnswer": "Observer (Publish-Subscribe) defines a one-to-many dependency: when the subject (publisher) changes state, all observers (subscribers) are notified. Java's EventListener, PropertyChangeListener, and Spring's ApplicationEventPublisher are implementations. Modern approach: use message queues or reactive streams for decoupled async event-driven systems.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Subject: maintains list of observers; notifyAll() on state change\nObserver: update() method called by subject\nLoose coupling: subject doesn't know observer types\nMemory leak risk: unregistered observers kept in list — use WeakReference\nJava built-in: java.util.Observable (deprecated) and EventListener\nModern: Spring Events (@EventListener), RxJava, Reactor",
+    "codeExample": null
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "Design Patterns in Java",
+    "question": "What is the Builder pattern and why is it better than telescoping constructors?",
+    "quickAnswer": "Telescoping constructors require overloads for every combination of optional parameters — unreadable and error-prone. Builder uses a fluent API to set only needed fields then call build(). Benefits: readable, optional parameters, immutable result, can validate in build(). Lombok's @Builder generates this automatically.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Telescoping: combinatorial constructor explosion, easy to mix up parameter order\nBuilder: fluent chain — Person.builder().name(\"A\").age(25).build()\nImmutability: build() creates final immutable object\nValidation: build() can check required fields before creating object\nLombok @Builder: annotation-generated, zero boilerplate\nRequiredArgsConstructor: for truly required fields; optional go in builder",
+    "codeExample": "User user = User.builder()\n    .username(\"aditya\")\n    .email(\"a@b.com\")\n    .role(\"ADMIN\")\n    .build();"
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "Design Patterns in Java",
+    "question": "What is the Strategy pattern and how does it differ from the Template Method pattern?",
+    "quickAnswer": "Strategy defines a family of interchangeable algorithms — the client chooses which strategy object to use at runtime (composition). Template Method defines the skeleton of an algorithm in a base class, with steps that subclasses override (inheritance). Strategy changes the whole algorithm; Template Method changes steps within an algorithm.",
+    "difficulty": "HIGH",
+    "keyPoints": "Strategy: composition — inject the algorithm object; swap at runtime\nTemplate Method: inheritance — subclass overrides specific steps\nStrategy: more flexible, easier to test (inject mock strategy)\nTemplate Method: tighter coupling — subclass depends on base class\nJava example: Comparator = Strategy; AbstractList = Template Method\nPrefer composition over inheritance → Strategy is often preferred",
+    "codeExample": null
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "CompletableFuture & Async Programming",
+    "question": "What is the difference between thenApply() and thenCompose() in CompletableFuture?",
+    "quickAnswer": "thenApply() maps the result with a Function<T,U> — it wraps the result. If you pass a function that returns a CompletableFuture<U>, you get CompletableFuture<CompletableFuture<U>> (nested). thenCompose() is like flatMap — it unwraps the inner future, giving CompletableFuture<U>. Use thenCompose() when the next step is itself async.",
+    "difficulty": "HIGH",
+    "keyPoints": "thenApply: T → U (sync transformation), like Stream.map()\nthenCompose: T → CompletableFuture<U> (async chain), like Stream.flatMap()\nNested future: thenApply with async function = CompletableFuture<CompletableFuture<U>>\nthenCompose flattens: use when next step calls another async service\nthenApplyAsync: run transformation on different thread pool",
+    "codeExample": "// Chaining two async calls correctly\nCompletableFuture<Order> future = fetchUserId()\n    .thenCompose(userId -> fetchOrder(userId)); // NOT thenApply"
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "CompletableFuture & Async Programming",
+    "question": "How do you run multiple CompletableFutures in parallel and wait for all of them?",
+    "quickAnswer": "Use CompletableFuture.allOf(f1, f2, f3) which returns a CompletableFuture<Void> that completes when all futures complete. To collect results, since allOf returns Void, call f.join() on each individual future after allOf completes. CompletableFuture.anyOf() completes when the FIRST one finishes.",
+    "difficulty": "HIGH",
+    "keyPoints": "allOf(f1, f2, ...): waits for ALL futures to complete; returns Void\nanyOf(f1, f2, ...): completes when FIRST finishes\nCollect results: allOf(...).thenApply(v -> Stream.of(f1,f2).map(CompletableFuture::join).collect(toList()))\njoin() vs get(): join wraps checked exceptions in CompletionException; get() throws checked\nTimeout: orTimeout(5, SECONDS) or completeOnTimeout(default, 5, SECONDS)",
+    "codeExample": "CompletableFuture<String> f1 = fetchA();\nCompletableFuture<String> f2 = fetchB();\nCompletableFuture.allOf(f1, f2).thenRun(() -> {\n    System.out.println(f1.join() + \" \" + f2.join());\n});"
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "CompletableFuture & Async Programming",
+    "question": "How do you handle exceptions in CompletableFuture chains?",
+    "quickAnswer": "Use exceptionally(fn) to recover from errors — it runs only on exception, returning a fallback value. Use handle(fn) to handle both success and failure in one callback. whenComplete is similar to handle but can't change the result. Unhandled exceptions are stored in the CompletableFuture and rethrown when you call get()/join().",
+    "difficulty": "HIGH",
+    "keyPoints": "exceptionally(ex -> fallback): recovery — only runs on exception\nhandle((result, ex) -> ...): handles both — always runs\nwhenComplete((result, ex) -> ...): always runs, can't change result (side effect)\nException propagation: uncaught exception stored, thrown on get()/join()\nExceptionHandler chains: each stage can have its own handler\nCompletionException: wrapper for checked exceptions in join()",
+    "codeExample": "fetchData()\n    .exceptionally(ex -> \"default\")\n    .thenAccept(System.out::println);"
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "CompletableFuture & Async Programming",
+    "question": "What thread pool does CompletableFuture use by default and why does it matter?",
+    "quickAnswer": "CompletableFuture.supplyAsync() uses ForkJoinPool.commonPool() by default — a shared JVM-wide pool sized to CPU cores - 1. This means: all async work across the app competes for the same threads, and blocking I/O in a task can starve other tasks. For I/O-bound tasks, always supply a custom ExecutorService (e.g., newCachedThreadPool()).",
+    "difficulty": "HIGH",
+    "keyPoints": "Default pool: ForkJoinPool.commonPool() — shared, CPU-core sized\nCPU-bound tasks: common pool is fine\nI/O-bound tasks: blocking in common pool starves other work — use custom executor\nCustom pool: CompletableFuture.supplyAsync(task, myExecutor)\nVirtual threads (Java 21): Executors.newVirtualThreadPerTaskExecutor() for I/O-heavy async",
+    "codeExample": "ExecutorService ioPool = Executors.newCachedThreadPool();\nCompletableFuture.supplyAsync(() -> callDatabase(), ioPool);"
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "Locks & Concurrency Utilities — ReentrantLock, ReadWriteLock, Semaphore",
+    "question": "What is the difference between synchronized and ReentrantLock?",
+    "quickAnswer": "synchronized is simpler — automatic lock/unlock, no timeout, no fairness control, no interruptibility. ReentrantLock provides: tryLock() with timeout, interruptible lock acquisition, fair mode (prevents starvation), Condition variables for fine-grained wait/notify. ReentrantLock must be manually unlocked in finally — failure to do so causes deadlock.",
+    "difficulty": "HIGH",
+    "keyPoints": "synchronized: simple, JVM managed, no timeout, not interruptible\nReentrantLock: tryLock(timeout), lockInterruptibly(), fair constructor\nReentrant: same thread can acquire the lock it already holds (both)\nCondition: lock.newCondition() — finer-grained than wait/notify\nMust unlock in finally: lock.lock(); try { ... } finally { lock.unlock(); }\nFairness: new ReentrantLock(true) — threads served in order; slower",
+    "codeExample": "ReentrantLock lock = new ReentrantLock();\nlock.lock();\ntry {\n    // critical section\n} finally {\n    lock.unlock();\n}"
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "Locks & Concurrency Utilities — ReentrantLock, ReadWriteLock, Semaphore",
+    "question": "When would you use ReadWriteLock and how does it work?",
+    "quickAnswer": "ReadWriteLock allows multiple concurrent readers but only one writer at a time (exclusive). If no writer holds the lock, any number of readers can proceed concurrently. When a writer needs access, it waits for all readers to finish, then takes exclusive ownership. Use it for read-heavy, write-rare data structures like caches.",
+    "difficulty": "HIGH",
+    "keyPoints": "ReadLock: shared — multiple threads can hold simultaneously\nWriteLock: exclusive — only one thread, blocks all readers and writers\nUse case: cache with frequent reads, rare writes\nReentrantReadWriteLock: standard Java implementation\nWriter starvation: if constant readers, writer may wait forever — use fair mode\nStampedLock (Java 8): optimistic read — faster for read-heavy workloads",
+    "codeExample": "ReadWriteLock rwl = new ReentrantReadWriteLock();\n// Reading:\nrwl.readLock().lock(); try { return cache.get(k); } finally { rwl.readLock().unlock(); }\n// Writing:\nrwl.writeLock().lock(); try { cache.put(k, v); } finally { rwl.writeLock().unlock(); }"
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "Locks & Concurrency Utilities — ReentrantLock, ReadWriteLock, Semaphore",
+    "question": "How does a Semaphore work and when do you use it?",
+    "quickAnswer": "Semaphore maintains a count of permits. acquire() decrements the count (blocks if 0); release() increments it. Use cases: rate limiting (allow N concurrent DB connections), connection pool management, and limiting concurrent access to a resource. A binary semaphore (1 permit) behaves like a mutex but is not reentrant.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Semaphore(n): n permits; acquire() blocks when 0; release() adds permit\nBinary semaphore (n=1): mutex — but not reentrant unlike synchronized\nRate limiter: Semaphore(10) limits 10 concurrent threads accessing a resource\nConnection pool: semaphore guards available connections\nFair semaphore: new Semaphore(n, true) — FIFO ordering\ntryAcquire(timeout): non-blocking with timeout attempt",
+    "codeExample": "Semaphore sem = new Semaphore(3); // max 3 concurrent\nsem.acquire(); // blocks if 3 already running\ntry { callDatabase(); } finally { sem.release(); }"
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "Locks & Concurrency Utilities — ReentrantLock, ReadWriteLock, Semaphore",
+    "question": "What is CountDownLatch and CyclicBarrier? When do you use each?",
+    "quickAnswer": "CountDownLatch is a one-shot countdown: threads call countDown() and a waiting thread blocks at await() until count reaches 0. Not reusable. CyclicBarrier makes N threads wait for each other at a barrier point — when all arrive, they all proceed. Reusable. Use CountDownLatch for 'wait for services to start'; CyclicBarrier for 'all threads sync at a checkpoint'.",
+    "difficulty": "HIGH",
+    "keyPoints": "CountDownLatch: one-shot, count from N to 0, then all waiters released\nCyclicBarrier: N threads wait for each other; resets and reusable\nCountDownLatch: coordinator waits for workers; workers signal done\nCyclicBarrier: workers wait for each other at a merge point\nCyclicBarrier optional action: runs when all threads arrive at barrier\nPhaser (Java 7): more flexible — dynamic parties, multiple phases",
+    "codeExample": null
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "JDBC & Connection Pooling",
+    "question": "What is connection pooling and why is it critical for production applications?",
+    "quickAnswer": "Creating a DB connection is expensive (~50-200ms): TCP handshake, authentication, session setup. Connection pooling maintains a pool of pre-created connections that are reused. A request borrows a connection, uses it, and returns it. Without pooling, a high-traffic app creates/destroys thousands of connections per second — crushing the database. HikariCP is the fastest and most popular pool.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Connection creation cost: ~50-200ms; pool reuses connections\nHikariCP: fastest pool, default in Spring Boot 2+\nPool sizing: not always bigger = better; too many connections → DB contention\nKey settings: maximumPoolSize, connectionTimeout, idleTimeout, maxLifetime\nLeak detection: connectionTimeout expiry or HikariCP leakDetectionThreshold\nPool exhaustion: all connections busy → requests queue or timeout",
+    "codeExample": null
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "JDBC & Connection Pooling",
+    "question": "What is the difference between Statement, PreparedStatement, and CallableStatement?",
+    "quickAnswer": "Statement: executes plain SQL — vulnerable to SQL injection, no pre-compilation. PreparedStatement: parameterized query compiled once, run many times — prevents SQL injection, faster for repeated execution. CallableStatement: calls stored procedures. Always use PreparedStatement for user-supplied input; never concatenate user input into SQL.",
+    "difficulty": "HIGH",
+    "keyPoints": "Statement: plain SQL, no params, SQL injection risk\nPreparedStatement: ? placeholders, pre-compiled, injection-safe, faster for batch\nCallableStatement: stored procedure calls via {call proc(?)}\nSQL injection: Statement + user input = critical vulnerability\nBatch inserts: ps.addBatch(); ps.executeBatch() — 10-100x faster than single inserts\nPrepared statement caching: DB caches the execution plan",
+    "codeExample": "// Safe:\nPreparedStatement ps = conn.prepareStatement(\"SELECT * FROM users WHERE id = ?\");\nps.setInt(1, userId);\nResultSet rs = ps.executeQuery();"
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "JDBC & Connection Pooling",
+    "question": "How do you handle database transactions in JDBC?",
+    "quickAnswer": "By default, JDBC is in auto-commit mode (each statement is a transaction). For multi-statement transactions, disable auto-commit: conn.setAutoCommit(false), execute statements, then conn.commit() on success or conn.rollback() on failure. Always use try-catch-finally to ensure rollback on error. Use Savepoints for partial rollbacks.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Auto-commit default: each statement commits immediately\nTransaction: conn.setAutoCommit(false) → execute → commit or rollback\nRollback on exception: catch in try block, rollback in catch\nSavepoint: partial rollback within a transaction\nIsolation levels: READ_UNCOMMITTED, READ_COMMITTED, REPEATABLE_READ, SERIALIZABLE\nResource cleanup: always close Connection in finally or try-with-resources",
+    "codeExample": "conn.setAutoCommit(false);\ntry {\n    ps1.executeUpdate(); ps2.executeUpdate();\n    conn.commit();\n} catch (SQLException e) {\n    conn.rollback();\n    throw e;\n}"
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "JDBC & Connection Pooling",
+    "question": "What is HikariCP and what are the critical settings to configure?",
+    "quickAnswer": "HikariCP is the fastest JDBC connection pool (default in Spring Boot). Critical settings: maximumPoolSize (default 10 — tune based on DB and CPU), minimumIdle, connectionTimeout (how long to wait for a connection — default 30s), idleTimeout (how long idle connections live), maxLifetime (max connection age — must be < DB/firewall timeout), and leakDetectionThreshold.",
+    "difficulty": "HIGH",
+    "keyPoints": "maximumPoolSize: key setting — too high = DB contention; too low = timeouts\nPool size formula: connections = (core_count * 2) + effective_spindle_count\nconnectionTimeout: time to wait for pool connection before exception\nmaxLifetime: should be less than MySQL wait_timeout to prevent stale connections\nleakDetectionThreshold: log warning if connection borrowed too long\nSpring Boot: configure via spring.datasource.hikari.* properties",
+    "codeExample": null
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "Optional & Parallel Streams",
+    "question": "What is the difference between Optional.map() and Optional.flatMap()?",
+    "quickAnswer": "Optional.map() applies a function to the value if present and wraps the result in Optional. If the function returns an Optional itself, you get Optional<Optional<T>>. Optional.flatMap() expects the function to return Optional<T> and flattens it — preventing double-nesting. Use flatMap when calling a method that itself returns Optional.",
+    "difficulty": "HIGH",
+    "keyPoints": "map: T → R, wraps in Optional<R> — use for non-Optional-returning functions\nflatMap: T → Optional<R>, unwraps — use when function returns Optional\nNested Optional: Optional<Optional<T>> is a code smell — use flatMap\nChaining: optional.flatMap(User::getAddress).map(Address::getCity)\nflatMap prevents: Optional<Optional<String>> which requires two gets",
+    "codeExample": "Optional<String> city = \n    userRepo.findById(id)        // Optional<User>\n           .flatMap(User::getAddress)  // Optional<Address>\n           .map(Address::getCity);     // Optional<String>"
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "Optional & Parallel Streams",
+    "question": "What are the wrong ways to use Optional that you should avoid?",
+    "quickAnswer": "Don't: use Optional as a method parameter (forces caller to wrap in Optional), use Optional in collections (Optional is itself a container — redundant), use it as a field (not Serializable), call get() without isPresent() check (throws NoSuchElementException). Do: use Optional as a return type from methods that may return nothing; use orElse/orElseGet/orElseThrow instead of get().",
+    "difficulty": "HIGH",
+    "keyPoints": "Anti-patterns: Optional as parameter, in List/Map, as entity field\nNever: optional.get() without isPresent() — NoSuchElementException\nPrefer: orElse, orElseGet, orElseThrow over isPresent + get\norElse(default) vs orElseGet(() -> default): orElse evaluates eagerly\nOptional.isPresent() + get() = old Java 7 null pattern in disguise\nOptional is not Serializable — don't use in DTOs or entity fields",
+    "codeExample": null
+  },
+  {
+    "category": "ADVANCED_JAVA",
+    "topicTitle": "Optional & Parallel Streams",
+    "question": "How does parallel stream splitting work under the hood?",
+    "quickAnswer": "Parallel streams use the Spliterator (Splittable Iterator) to divide work. The stream source defines a Spliterator that can split itself into halves recursively — the ForkJoinPool distributes these splits across worker threads. ArrayList splits evenly (good); LinkedList doesn't support efficient splitting (poor parallel performance). The workload per element must outweigh the splitting and merging overhead.",
+    "difficulty": "HIGH",
+    "keyPoints": "Spliterator: like Iterator but can trySplit() into halves\nForkJoinPool: recursively splits, each thread processes a chunk\nArrayList: excellent splitting (index-based); LinkedList: poor (must traverse)\nOverhead: splitting + thread coordination + result merging\nBreak-even: parallel faster only when N * cost_per_element >> overhead\nCharacteristics: SIZED, ORDERED, DISTINCT guide optimization",
+    "codeExample": null
+  }
+]

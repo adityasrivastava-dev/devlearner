@@ -1,0 +1,173 @@
+[
+  {
+    "category": "MYSQL",
+    "topicTitle": "SQL Basics",
+    "question": "What is the difference between WHERE and HAVING in SQL?",
+    "quickAnswer": "WHERE filters rows before aggregation — it cannot reference aggregate functions. HAVING filters after GROUP BY, on aggregated results. You can use aggregate functions (SUM, COUNT) in HAVING but not in WHERE. Think: WHERE filters rows, HAVING filters groups.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "WHERE: filters individual rows before grouping\nHAVING: filters groups after GROUP BY (can use aggregates)\nExecution order: WHERE → GROUP BY → HAVING → SELECT → ORDER BY\nHAVING without GROUP BY: treats entire table as one group\nPerformance: WHERE is faster (fewer rows to group)",
+    "codeExample": "SELECT dept, COUNT(*) as cnt\nFROM employees\nWHERE salary > 30000\nGROUP BY dept\nHAVING COUNT(*) > 5;"
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "SQL Basics",
+    "question": "What is the difference between DISTINCT and GROUP BY?",
+    "quickAnswer": "DISTINCT removes duplicate rows from the result. GROUP BY groups rows for aggregation and also eliminates duplicates for the grouped columns. DISTINCT is conceptually equivalent to GROUP BY without aggregates, but GROUP BY allows aggregate functions. Both often produce the same result for unique-value queries, but GROUP BY is more flexible.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "DISTINCT: removes duplicate rows from result set\nGROUP BY: groups rows — enables aggregate functions\nSELECT DISTINCT col ≈ SELECT col GROUP BY col (for deduplication)\nDISTINCT across multiple columns: whole-row combination must be unique\nGROUP BY can have multiple aggregates; DISTINCT cannot\nPerformance: can differ — optimizer may choose different execution plans",
+    "codeExample": null
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "SQL Basics",
+    "question": "What is the SQL query execution order?",
+    "quickAnswer": "Logical execution order: FROM → JOIN → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT. This matters because aliases defined in SELECT cannot be used in WHERE (SELECT runs after WHERE). Many developers write SELECT first but FROM is processed first.",
+    "difficulty": "HIGH",
+    "keyPoints": "1. FROM + JOIN (identify source tables)\n2. WHERE (filter rows)\n3. GROUP BY (group remaining rows)\n4. HAVING (filter groups)\n5. SELECT (compute output columns)\n6. DISTINCT (remove duplicates)\n7. ORDER BY (sort)\n8. LIMIT/OFFSET (paginate)",
+    "codeExample": null
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "SQL Basics",
+    "question": "What is the difference between DELETE, TRUNCATE, and DROP?",
+    "quickAnswer": "DELETE: removes specific rows (with WHERE), is transactional, triggers fire, slow for large tables. TRUNCATE: removes all rows, faster (deallocates pages), resets auto-increment, DDL (not fully transactional in MySQL). DROP: removes the entire table structure and data — irreversible. DELETE is DML; TRUNCATE and DROP are DDL.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "DELETE: row-by-row, WHERE supported, triggers fire, DML — rollbackable\nTRUNCATE: all rows, faster (deallocates pages), resets AUTO_INCREMENT, DDL\nDROP: removes table entirely (structure + data), cannot be rolled back\nTRUNCATE vs DELETE: truncate doesn't fire row triggers, not filterable\nMySQL: TRUNCATE implicitly commits; use DELETE if you need to rollback",
+    "codeExample": null
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "Joins and Subqueries",
+    "question": "What is the difference between INNER JOIN, LEFT JOIN, RIGHT JOIN, and FULL OUTER JOIN?",
+    "quickAnswer": "INNER JOIN: only rows with matches in both tables. LEFT JOIN: all rows from left table + matching rows from right (NULL for no match). RIGHT JOIN: all rows from right + matching from left. FULL OUTER JOIN: all rows from both tables (MySQL doesn't support it natively — simulate with UNION of LEFT + RIGHT JOIN).",
+    "difficulty": "MEDIUM",
+    "keyPoints": "INNER JOIN: intersection — only matched rows\nLEFT JOIN: all of left + matched right (unmatched right = NULL)\nRIGHT JOIN: all of right + matched left (unmatched left = NULL)\nFULL OUTER JOIN: union — all rows, NULLs for non-matches\nMySQLsimulate FULL OUTER: LEFT JOIN UNION RIGHT JOIN\nSELF JOIN: join table with itself (managers and employees in same table)",
+    "codeExample": null
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "Joins and Subqueries",
+    "question": "What is the difference between correlated and non-correlated subqueries?",
+    "quickAnswer": "Non-correlated subquery runs independently once and its result is used by the outer query — efficient. Correlated subquery references the outer query's columns and is re-executed for every row of the outer query — expensive (O(n*m)). EXISTS with correlated subquery is common for 'does related record exist' checks. Often JOIN is faster than a correlated subquery.",
+    "difficulty": "HIGH",
+    "keyPoints": "Non-correlated: runs once, result used by outer → efficient\nCorrelated: references outer query's column, runs per-outer-row → O(n*m)\nEXISTS with correlated subquery: common pattern for existence checks\nNOT EXISTS vs NOT IN: NOT IN fails if subquery returns NULL; NOT EXISTS is safer\nRefactoring: correlated subqueries → JOINs for better performance\nLateral JOIN (MySQL 8.0+): correlated subquery in FROM clause, executed per row",
+    "codeExample": "-- Correlated (slow): runs once per employee\nSELECT name FROM employees e\nWHERE salary > (SELECT AVG(salary) FROM employees WHERE dept = e.dept);"
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "Joins and Subqueries",
+    "question": "What is the difference between EXISTS and IN?",
+    "quickAnswer": "IN checks if a value is in a list/subquery result set — materializes the whole subquery. EXISTS checks if any matching row exists — short-circuits on first match, doesn't need to return data. EXISTS is faster when the subquery returns many rows (stops at first match). IN performs poorly with NULLs (NULL IN list is UNKNOWN, not FALSE).",
+    "difficulty": "HIGH",
+    "keyPoints": "IN: compares value against subquery result set (full materialization)\nEXISTS: checks row existence, short-circuits on first match\nNULL problem: NOT IN with NULL in subquery → always empty result (UNKNOWN)\nNOT EXISTS: safe alternative to NOT IN when NULLs possible\nPerformance: EXISTS faster for large subquery results; IN faster for small sets\nOptimizer often rewrites them to the same plan anyway",
+    "codeExample": null
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "Advanced SQL — Window Functions, CTEs & Transactions",
+    "question": "What are window functions and how do they differ from GROUP BY?",
+    "quickAnswer": "Window functions (ROW_NUMBER, RANK, SUM OVER, etc.) compute values across a set of rows related to the current row without collapsing rows — the original row count is preserved. GROUP BY collapses rows into one per group. Window functions use OVER(PARTITION BY ... ORDER BY ...) clause. They allow computing running totals, rankings, and comparisons without self-joins.",
+    "difficulty": "HIGH",
+    "keyPoints": "OVER(): defines the window — PARTITION BY, ORDER BY\nROW_NUMBER(): unique sequential number per partition\nRANK(): allows gaps on ties; DENSE_RANK(): no gaps\nLAG/LEAD: access previous/next row values without self-join\nSUM OVER(ORDER BY date): running total\nWindow functions don't collapse rows — key difference from GROUP BY",
+    "codeExample": "SELECT name, salary,\n  RANK() OVER(PARTITION BY dept ORDER BY salary DESC) as salary_rank,\n  SUM(salary) OVER(PARTITION BY dept) as dept_total\nFROM employees;"
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "Advanced SQL — Window Functions, CTEs & Transactions",
+    "question": "What is a CTE (Common Table Expression) and what are its benefits?",
+    "quickAnswer": "CTE (WITH clause) is a named temporary result set scoped to a single query. Benefits: readability (replace complex subqueries), reusability (reference CTE multiple times in one query), recursion (WITH RECURSIVE for hierarchical data like org charts). Unlike subqueries, CTEs can be self-referencing (recursive).",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Syntax: WITH cte_name AS (SELECT ...) SELECT ... FROM cte_name\nScoped to single query — not stored permanently\nReadability: replace deeply nested subqueries with named steps\nMultiple CTEs: chain with commas — WITH a AS (...), b AS (...)\nRecursive CTE: WITH RECURSIVE — base case + recursive case\nApplication: org chart traversal, bill of materials, path finding",
+    "codeExample": "WITH dept_avg AS (\n  SELECT dept, AVG(salary) as avg_sal FROM employees GROUP BY dept\n)\nSELECT e.name, e.salary, d.avg_sal\nFROM employees e JOIN dept_avg d ON e.dept = d.dept\nWHERE e.salary > d.avg_sal;"
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "Advanced SQL — Window Functions, CTEs & Transactions",
+    "question": "What are transaction isolation levels and what anomalies does each prevent?",
+    "quickAnswer": "READ UNCOMMITTED: dirty reads allowed (can read uncommitted changes). READ COMMITTED: prevents dirty reads; phantom reads and non-repeatable reads possible. REPEATABLE READ (MySQL InnoDB default): prevents dirty + non-repeatable reads; prevents phantom reads (via gap locks in InnoDB). SERIALIZABLE: fully isolated, maximum consistency, lowest concurrency.",
+    "difficulty": "HIGH",
+    "keyPoints": "Dirty read: reading uncommitted data from another transaction\nNon-repeatable read: same query returns different values in same transaction\nPhantom read: new rows appear in a repeated range query\nREAD UNCOMMITTED: allows all anomalies — rarely used\nREAD COMMITTED: prevents dirty reads — common in PostgreSQL default\nREPEATABLE READ: MySQL InnoDB default — prevents dirty + non-repeatable + phantoms (gap locks)\nSERIALIZABLE: strict, all anomalies prevented, most locking",
+    "codeExample": null
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "MySQL Indexing — Clustered, Composite & Covering Indexes",
+    "question": "What is the difference between a clustered index and a non-clustered index?",
+    "quickAnswer": "Clustered index determines physical row order on disk — one per table. In MySQL InnoDB, the primary key is always the clustered index. Non-clustered index (secondary index) is a separate B-tree structure with index columns and a pointer to the primary key. Looking up a non-clustered index requires two B-tree lookups (index → PK → row), called a 'bookmark lookup' or 'double lookup'.",
+    "difficulty": "HIGH",
+    "keyPoints": "Clustered index: physical row order = index order; one per table\nMySQL InnoDB PK: always clustered — choose PK wisely (small, monotonically increasing)\nSecondary index: points to PK, not directly to row\nDouble lookup: secondary index → PK → clustered index lookup\nCovering index: query fields entirely in index → skip second lookup\nHeap tables (MyISAM): no clustered index — all indexes point to row offset",
+    "codeExample": null
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "MySQL Indexing — Clustered, Composite & Covering Indexes",
+    "question": "What is a composite index and what is the leftmost prefix rule?",
+    "quickAnswer": "A composite index on (a, b, c) can be used for queries filtering on (a), (a, b), or (a, b, c) — the leftmost prefix must be present. Queries on (b) or (c) alone won't use the index. Order columns in the composite index by: equality conditions first, then range conditions last, then cardinality (highest first within equality cols).",
+    "difficulty": "HIGH",
+    "keyPoints": "Leftmost prefix: index on (a,b,c) usable for: a, a+b, a+b+c\nNot usable: b alone, c alone, b+c without a\nColumn order matters: equality conditions before range conditions\nRange column: only leftmost range column used from index\nHigh cardinality columns first (in equality group): better selectivity\nIndex merge: MySQL can sometimes combine two single-column indexes",
+    "codeExample": "-- Index on (status, created_at)\n-- Good: WHERE status='ACTIVE' AND created_at > '2024-01-01'\n-- Bad: WHERE created_at > '2024-01-01' (skips status)"
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "MySQL Indexing — Clustered, Composite & Covering Indexes",
+    "question": "What is a covering index and how does it eliminate extra lookups?",
+    "quickAnswer": "A covering index contains all columns needed by a query (in SELECT, WHERE, ORDER BY, GROUP BY). MySQL can answer the query entirely from the index without touching the actual table rows. EXPLAIN output shows 'Using index' for covering index usage. This eliminates the expensive secondary lookup (reading the clustered index for row data).",
+    "difficulty": "HIGH",
+    "keyPoints": "Covering index: all query columns are in the index\nELIMINATES: secondary lookup (reading full row from clustered index)\nEXPLAIN: 'Using index' = covering index hit\nStrategy: add 'extra' columns to index that queries frequently SELECT\nInclude non-filter columns: MySQL InnoDB allows including extra columns in index\nTrade-off: wider index = more storage + slower writes",
+    "codeExample": "-- Covering index for: SELECT name, email FROM users WHERE status='ACTIVE'\nCREATE INDEX idx_covering ON users(status, name, email);\n-- 'Using index' in EXPLAIN -- no table lookup needed"
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "MySQL Query Optimization — EXPLAIN Plans & Slow Query Tuning",
+    "question": "How do you read a MySQL EXPLAIN output?",
+    "quickAnswer": "Key EXPLAIN columns: type (access type — ALL=full scan, index, range, ref, eq_ref, const — best to worst: const > eq_ref > ref > range > index > ALL). rows (estimated rows examined). key (index used). Extra: 'Using index' (covering), 'Using filesort' (needs sort), 'Using temporary' (temp table). Aim for no ALL, no filesort, no temporary.",
+    "difficulty": "HIGH",
+    "keyPoints": "type=ALL: full table scan — needs index\ntype=ref/eq_ref/const: index lookup — good\ntype=range: index range scan — acceptable\nrows: estimate of rows examined — lower is better\nkey: which index is used (NULL = no index)\nExtra: 'Using filesort' = slow sort; 'Using temporary' = slow GROUP BY/ORDER BY",
+    "codeExample": "EXPLAIN SELECT * FROM orders WHERE user_id = 5 AND status = 'PENDING';\n-- Look for: type=ref, key=idx_user_status, Extra=Using index"
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "MySQL Query Optimization — EXPLAIN Plans & Slow Query Tuning",
+    "question": "What causes a query to not use an index in MySQL?",
+    "quickAnswer": "Common causes: function on indexed column (WHERE YEAR(created_at) = 2024 bypasses the index — use range instead), leading wildcard in LIKE ('%keyword'), type mismatch (string column compared to integer), low selectivity (boolean column index rarely used by optimizer), OR conditions across different columns, negation (NOT IN, !=).",
+    "difficulty": "HIGH",
+    "keyPoints": "Function on column: WHERE YEAR(col) = X → use WHERE col BETWEEN X AND Y\nLeading wildcard: LIKE '%text' — full scan; 'text%' uses index\nType mismatch: implicit cast prevents index use\nLow cardinality: boolean index often skipped by optimizer (full scan cheaper)\nOR: can prevent index use; UNION may help\nNegation: NOT IN, != often don't use indexes efficiently",
+    "codeExample": "-- Bad (no index on year):\nWHERE YEAR(created_at) = 2024\n-- Good:\nWHERE created_at BETWEEN '2024-01-01' AND '2024-12-31'"
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "MySQL Query Optimization — EXPLAIN Plans & Slow Query Tuning",
+    "question": "How do you identify and fix slow queries in MySQL?",
+    "quickAnswer": "Step 1: Enable slow query log (slow_query_log=ON, long_query_time=1). Step 2: Analyze with pt-query-digest or MySQL Workbench. Step 3: EXPLAIN the slow query — look for full table scans, filesorts. Step 4: Add appropriate indexes. Step 5: Optimize query (avoid SELECT *, reduce subqueries, use LIMIT, check joins). Also consider: query cache, connection pooling, read replicas.",
+    "difficulty": "HIGH",
+    "keyPoints": "Enable slow query log: slow_query_log=ON, long_query_time threshold\nEXPLAIN: identify full scans (type=ALL), missing indexes\nAdd indexes: based on WHERE, JOIN, ORDER BY, GROUP BY columns\nAvoid: SELECT *, functions on indexed columns, N+1 query patterns\nApplication-level: add connection pooling, caching layer\nRead replicas: offload read-heavy queries from primary",
+    "codeExample": null
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "MySQL Internals — InnoDB Architecture, MVCC & Locking",
+    "question": "How does MVCC (Multi-Version Concurrency Control) work in InnoDB?",
+    "quickAnswer": "MVCC allows readers and writers to not block each other. Each row has hidden columns: DB_TRX_ID (last modified transaction), DB_ROLL_PTR (undo log pointer), DB_ROW_ID. When a transaction reads, it gets a consistent snapshot based on its start time — old row versions are reconstructed from the undo log. Writers create new versions; readers use the appropriate old version.",
+    "difficulty": "HIGH",
+    "keyPoints": "MVCC: readers don't block writers; writers don't block readers\nHidden columns: DB_TRX_ID, DB_ROLL_PTR, DB_ROW_ID\nRead view: created at transaction start; determines visible row version\nUndo log: stores old row versions for MVCC reads and rollback\nConsistent snapshot: REPEATABLE READ uses read view from tx start\nREAD COMMITTED: new read view per statement → can see committed changes",
+    "codeExample": null
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "MySQL Internals — InnoDB Architecture, MVCC & Locking",
+    "question": "What is a gap lock in InnoDB and when does it occur?",
+    "quickAnswer": "A gap lock locks the gap between index records (not the records themselves) to prevent phantom reads in REPEATABLE READ isolation. If you query WHERE id BETWEEN 10 AND 20, InnoDB locks the gap between 10 and 20 so no new rows can be inserted in that range by other transactions. Gap locks can cause deadlocks in concurrent inserts. Not used in READ COMMITTED isolation.",
+    "difficulty": "HIGH",
+    "keyPoints": "Gap lock: locks range between index records (no actual row locked)\nPrevents: phantom reads (new rows being inserted in a range)\nTriggered by: range queries in REPEATABLE READ\nNext-key lock: record lock + gap lock on preceding gap\nDeadlock risk: concurrent INSERTs in same range can deadlock\nDisable: use READ COMMITTED isolation (no gap locks)",
+    "codeExample": null
+  },
+  {
+    "category": "MYSQL",
+    "topicTitle": "MySQL Internals — InnoDB Architecture, MVCC & Locking",
+    "question": "What is the InnoDB buffer pool and why is it important?",
+    "quickAnswer": "The buffer pool is InnoDB's main memory cache — it stores frequently accessed data pages and index pages in RAM. MySQL reads from buffer pool first; only goes to disk on a miss. Proper buffer pool sizing (typically 70-80% of available RAM) dramatically reduces I/O. The LRU algorithm manages eviction. innodb_buffer_pool_size is the most critical InnoDB setting.",
+    "difficulty": "HIGH",
+    "keyPoints": "Buffer pool: memory cache for data and index pages (default 128MB)\nHit ratio: >99% is good; misses = disk reads (very slow)\ninnodb_buffer_pool_size: set to 70-80% of available RAM\nLRU list: recently accessed pages kept; old ones evicted on miss\nDirty pages: modified pages not yet flushed to disk; written periodically\nMultiple instances: innodb_buffer_pool_instances for high concurrency (8 recommended)",
+    "codeExample": null
+  }
+]

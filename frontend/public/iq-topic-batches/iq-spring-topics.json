@@ -1,0 +1,182 @@
+[
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Spring Core — IoC & Dependency Injection",
+    "question": "What is the difference between @Component, @Service, @Repository, and @Controller?",
+    "quickAnswer": "All four are specializations of @Component and trigger component scanning (Spring creates beans for them). @Service: marks business logic layer (semantic). @Repository: marks data access layer — also enables automatic exception translation (JPA/JDBC exceptions → Spring DataAccessException). @Controller: marks MVC controller, enables request mapping. Functionally similar, but semantics matter for readability and AOP.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "@Component: generic bean; all others are meta-annotations on it\n@Repository: data access layer + exception translation (DataAccessException wrapping)\n@Service: business layer — no extra behavior, purely semantic\n@Controller: MVC layer — integrates with DispatcherServlet\n@RestController = @Controller + @ResponseBody (returns JSON/XML directly)\nAll trigger @ComponentScan — no difference in bean creation",
+    "codeExample": null
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Spring Core — IoC & Dependency Injection",
+    "question": "What is the difference between constructor injection and field injection? Which is preferred?",
+    "quickAnswer": "Constructor injection: dependencies passed via constructor — recommended. Benefits: immutable fields (final), explicit dependencies, fails fast if bean missing, works without Spring (for unit tests). Field injection (@Autowired on field): concise but hides dependencies, prevents final fields, requires reflection (can't instantiate without Spring). Spring team recommends constructor injection.",
+    "difficulty": "HIGH",
+    "keyPoints": "Constructor injection: immutable (final fields), testable without Spring, explicit\nField injection: concise but hides deps, can't use final, Spring required\nSetter injection: optional dependencies, can be re-injected (rarely needed)\nSingle-constructor rule: Spring auto-injects constructor if only one (no @Autowired needed)\nLombok @RequiredArgsConstructor: generates constructor for final fields — best practice\nCircular dependency: constructor injection fails fast; field injection allows it (bad)",
+    "codeExample": "// Preferred: constructor injection\n@Service\n@RequiredArgsConstructor\npublic class OrderService {\n    private final OrderRepository repo;  // final, injected via constructor\n    private final EmailService email;\n}"
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Spring Core — IoC & Dependency Injection",
+    "question": "What is the difference between BeanFactory and ApplicationContext?",
+    "quickAnswer": "BeanFactory is the basic IoC container — lazy initialization (beans created on first request), lower memory footprint. ApplicationContext extends BeanFactory with enterprise features: eager initialization by default, event publishing, internationalization (MessageSource), AOP integration, and annotation processing. Always use ApplicationContext in Spring Boot; BeanFactory is for extremely resource-constrained environments.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "BeanFactory: basic container, lazy init, minimal features\nApplicationContext: BeanFactory + events + i18n + AOP + annotations\nEager init: ApplicationContext creates singletons at startup — catches config errors early\nEvent publishing: applicationContext.publishEvent()\nEnvironment abstraction: profiles, property resolution\nSpring Boot: always uses AnnotationConfigServletWebApplicationContext",
+    "codeExample": null
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Spring Core — IoC & Dependency Injection",
+    "question": "What is @Qualifier and when do you need it?",
+    "quickAnswer": "When Spring finds multiple beans of the same type, autowiring is ambiguous. @Qualifier specifies which bean to inject by name. Alternative: @Primary marks one bean as the default. @Qualifier is more explicit — use it when you have multiple implementations (e.g., two DataSource beans, two CacheManager implementations) and want to inject a specific one.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "@Qualifier(\"beanName\"): disambiguate when multiple beans of same type\n@Primary: default bean when no qualifier specified\nCombined: @Qualifier takes precedence over @Primary\nCustom qualifiers: create @interface with @Qualifier meta-annotation\nProfile-based: @Profile(\"dev\") / @Profile(\"prod\") for environment-specific beans\nNaming convention: @Bean method name becomes bean name by default",
+    "codeExample": "@Autowired\n@Qualifier(\"masterDataSource\")\nprivate DataSource dataSource;"
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Spring Boot — Auto-Configuration, Profiles & Starters",
+    "question": "How does Spring Boot auto-configuration work?",
+    "quickAnswer": "@SpringBootApplication includes @EnableAutoConfiguration, which reads META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports (Spring Boot 3) to find candidate auto-configuration classes. Each is annotated with @ConditionalOnClass, @ConditionalOnMissingBean, etc. — only applies if conditions are met. You can see what's configured with --debug flag or actuator /conditions endpoint.",
+    "difficulty": "HIGH",
+    "keyPoints": "@EnableAutoConfiguration: scans auto-config candidates from META-INF imports file\n@ConditionalOnClass: only configure if class on classpath (e.g., DataSource if HikariCP present)\n@ConditionalOnMissingBean: back off if user already defined the bean\n@ConditionalOnProperty: enable based on config property\nDebug: --debug flag prints auto-config report (what applied, what didn't, why)\nExclusion: @SpringBootApplication(exclude=DataSourceAutoConfiguration.class)",
+    "codeExample": null
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Spring Boot — Auto-Configuration, Profiles & Starters",
+    "question": "How do Spring profiles work and how do you use them?",
+    "quickAnswer": "Profiles allow different configurations for different environments (dev, staging, prod). Activate with spring.profiles.active=prod in properties or -Dspring.profiles.active=prod JVM arg. @Profile(\"dev\") on beans/config classes — only loaded for that profile. application-{profile}.yml files are loaded in addition to application.yml for the active profile, with profile-specific values overriding.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Activation: spring.profiles.active=dev (properties), --spring.profiles.active=prod (CLI)\napplication-dev.yml: loaded when dev profile active (overrides application.yml)\n@Profile(\"prod\"): bean/config only created for prod profile\n@Profile({\"dev\",\"test\"}): multiple profiles\nDefault profile: @Profile(\"default\") — when no profile active\nCloud environments: inject profile via env vars SPRING_PROFILES_ACTIVE",
+    "codeExample": null
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Spring Boot — Auto-Configuration, Profiles & Starters",
+    "question": "What is a Spring Boot starter and what does spring-boot-starter-web include?",
+    "quickAnswer": "A starter is a curated dependency aggregator — one dependency that pulls in everything needed for a feature, with compatible versions. spring-boot-starter-web includes: Spring MVC, embedded Tomcat, Jackson (JSON), validation, and logging (SLF4J + Logback). Replace Tomcat with Jetty: exclude tomcat starter, add starter-jetty.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Starter = dependency aggregator with compatible transitive dependencies\nspring-boot-starter-web: Spring MVC + embedded Tomcat + Jackson + validation\nspring-boot-starter-data-jpa: Hibernate + Spring Data JPA + HikariCP\nspring-boot-starter-security: Spring Security + filter chain\nBOM: Spring Boot manages all dependency versions — no need to specify versions\nSwap server: exclude 'spring-boot-starter-tomcat', add 'spring-boot-starter-jetty'",
+    "codeExample": null
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Spring Security — JWT, Filters & OAuth2",
+    "question": "How does the Spring Security filter chain work?",
+    "quickAnswer": "Spring Security is a chain of servlet filters. Every HTTP request passes through SecurityFilterChain. Key filters: UsernamePasswordAuthenticationFilter, BasicAuthenticationFilter, BearerTokenAuthenticationFilter (for JWT), ExceptionTranslationFilter, FilterSecurityInterceptor. Order matters — early filters can short-circuit. You can add custom filters with addFilterBefore/addFilterAfter.",
+    "difficulty": "HIGH",
+    "keyPoints": "DelegatingFilterProxy: bridges Spring to servlet container filter\nSecurityFilterChain: ordered list of security filters\nKey filters: Authentication filters → SessionMgmt → ExceptionTranslation → Authorization\nJwt custom filter: extends OncePerRequestFilter, added before UsernamePasswordAuth\nSecurityContextHolder: stores Authentication for current request thread\nCsrf: enabled by default for stateful; disable for stateless JWT APIs",
+    "codeExample": "@Bean\nSecurityFilterChain filterChain(HttpSecurity http) throws Exception {\n    return http\n        .csrf(csrf -> csrf.disable())\n        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)\n        .authorizeHttpRequests(auth -> auth\n            .requestMatchers(\"/api/auth/**\").permitAll()\n            .anyRequest().authenticated())\n        .build();\n}"
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Spring Security — JWT, Filters & OAuth2",
+    "question": "How does JWT authentication work in Spring Security?",
+    "quickAnswer": "Client sends JWT in Authorization: Bearer <token> header. A custom OncePerRequestFilter extracts and validates the token (signature, expiry). On valid token, create UsernamePasswordAuthenticationToken and set it in SecurityContextHolder. Spring Security sees authenticated request and allows it. The server is stateless — no session stored. Token contains user identity and roles encoded in claims.",
+    "difficulty": "HIGH",
+    "keyPoints": "JWT = header.payload.signature (Base64URL encoded)\nFilter: extract Bearer token, validate with secret, set Authentication in context\nSecurityContextHolder: ThreadLocal storing current auth\nStateless: no HttpSession; SecurityContext cleared after each request\nJWT claims: sub (user), roles, exp (expiry), iat (issued at)\nRefresh token: long-lived token to get new access tokens without re-login",
+    "codeExample": null
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Spring Security — JWT, Filters & OAuth2",
+    "question": "What is the difference between authentication and authorization in Spring Security?",
+    "quickAnswer": "Authentication: verifying who the user is (login, JWT validation). Authorization: determining what the authenticated user can do (access control). In Spring Security: AuthenticationManager handles authentication. SecurityContextHolder stores authenticated principal. Access decisions made by AuthorizationManager based on roles/permissions in SecurityFilterChain matchers or @PreAuthorize annotations.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Authentication: 'Who are you?' — credentials → Authentication object in context\nAuthorization: 'What can you do?' — roles/permissions → allow or 403\nAuthenticationManager: validates credentials, returns Authentication\n@PreAuthorize(\"hasRole('ADMIN')\") / @Secured: method-level authorization\nRoles: stored in GrantedAuthority — 'ROLE_ADMIN' convention\nResourceServer: validates JWT and extracts authorities automatically",
+    "codeExample": null
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Spring Data JPA & Hibernate — Entity Lifecycle, N+1, Caching",
+    "question": "What is the N+1 query problem and how do you fix it?",
+    "quickAnswer": "N+1 problem: fetching N parent entities, then triggering 1 additional query per parent for their children. Example: loading 100 orders, each access of order.getItems() fires a separate query → 101 total queries. Fix: use JOIN FETCH in JPQL, @EntityGraph, or Hibernate's @BatchSize to batch child loading.",
+    "difficulty": "HIGH",
+    "keyPoints": "N+1: 1 query to fetch parents + N queries for each parent's children\nRoot cause: LAZY fetching triggered in a loop\nFix 1: JOIN FETCH — single query with join\nFix 2: @EntityGraph on repository method — fetches associations\nFix 3: @BatchSize(size=50) — loads children in batches\nFix 4: DTO projection — select only needed fields, no entity loading\nDetect: spring.jpa.show-sql=true; Hibernate statistics; p6spy",
+    "codeExample": "@Query(\"SELECT o FROM Order o JOIN FETCH o.items WHERE o.userId = :uid\")\nList<Order> findWithItems(@Param(\"uid\") Long userId);"
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Spring Data JPA & Hibernate — Entity Lifecycle, N+1, Caching",
+    "question": "What are the Hibernate entity lifecycle states?",
+    "quickAnswer": "Transient: object not associated with any persistence context — new'd but not saved. Managed (Persistent): associated with current EntityManager session — changes auto-flushed to DB on commit. Detached: was managed but session closed — changes not tracked. Removed: scheduled for deletion. Transition: persist() → managed, detach() → detached, merge() → managed copy, remove() → removed.",
+    "difficulty": "HIGH",
+    "keyPoints": "Transient: new object, no DB row, no session association\nManaged: em.persist() or found via em.find() — dirty checking enabled\nDetached: session closed; em.merge() to re-attach\nRemoved: em.remove() — will be deleted on flush/commit\nDirty checking: Hibernate compares entity snapshot vs current state on flush\n@Transactional: session bound to transaction; entities managed within method",
+    "codeExample": null
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Spring Data JPA & Hibernate — Entity Lifecycle, N+1, Caching",
+    "question": "What is the difference between EAGER and LAZY loading in Hibernate?",
+    "quickAnswer": "EAGER: relationship is loaded immediately with the parent entity (always, even if not needed) — can cause unnecessary data loading and N+1 issues. LAZY: relationship loaded only when accessed — good for performance but must be within a transaction (LazyInitializationException if accessed after session close). Default: @OneToMany/@ManyToMany = LAZY; @ManyToOne/@OneToOne = EAGER.",
+    "difficulty": "HIGH",
+    "keyPoints": "EAGER: loads immediately with parent — always hits DB for related data\nLAZY: proxy/placeholder until accessed — efficient but needs open session\nLazyInitializationException: accessing LAZY collection outside transaction\nFix: fetch within @Transactional, or use JOIN FETCH, or OpenEntityManagerInView\nDefault: @OneToMany/@ManyToMany = LAZY (good); @ManyToOne = EAGER (often bad)\nRecommendation: use LAZY everywhere; fetch eagerly only via JOIN FETCH when needed",
+    "codeExample": null
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "REST API Design Principles",
+    "question": "What makes an HTTP method idempotent and which methods are idempotent?",
+    "quickAnswer": "An operation is idempotent if making the same call multiple times produces the same result as making it once. GET, HEAD, PUT, DELETE, OPTIONS are idempotent. POST is NOT (creates a new resource each time). PATCH may or may not be (depends on implementation). Idempotency matters for retry safety — you can safely retry idempotent requests after network failures.",
+    "difficulty": "HIGH",
+    "keyPoints": "Idempotent: f(f(x)) = f(x) — same result regardless of how many times called\nGET/HEAD: safe AND idempotent — no side effects\nPUT: idempotent — replaces resource; same call = same result\nDELETE: idempotent — first call deletes, subsequent calls return 404 (same final state)\nPOST: NOT idempotent — creates new resource each time\nIdempotency keys: POST with unique key in header for idempotent payments",
+    "codeExample": null
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "REST API Design Principles",
+    "question": "What are the correct HTTP status codes for common REST operations?",
+    "quickAnswer": "200 OK: successful GET/PUT/PATCH. 201 Created: successful POST (resource created, include Location header). 204 No Content: successful DELETE or update with no response body. 400 Bad Request: validation error. 401 Unauthorized: not authenticated. 403 Forbidden: authenticated but no permission. 404 Not Found. 409 Conflict: duplicate resource. 500 Internal Server Error.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "200: GET success, PUT/PATCH success with body\n201: POST created — include Location header pointing to new resource\n204: DELETE success or update with no body\n400: client validation error (missing fields, invalid format)\n401: no authentication (no token or invalid token)\n403: authenticated but lacks permission (wrong role)\n404: resource not found\n409: conflict — duplicate key, optimistic locking failure",
+    "codeExample": null
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "REST API Design Principles",
+    "question": "How should you version a REST API?",
+    "quickAnswer": "Three main approaches: URL versioning (/api/v1/users — simple, cacheable, most common in practice), header versioning (Accept: application/vnd.api.v1+json — clean URLs but complex), and query param (?version=1 — least RESTful). Best practice: URL versioning for public APIs (most explicit); maintain backward compatibility; deprecate old versions with sunset headers before removing.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "URL versioning: /api/v1/resource — visible, cacheable, most common\nHeader versioning: Accept header — cleaner URLs but harder to test/browse\nQuery param: ?v=1 — not recommended (breaks caching, less standard)\nBackward compatibility: add fields (never remove), use Optional/nullable\nDeprecation: Sunset header, deprecation notice, migration period\nInternal APIs: can avoid versioning if client-server deployed together",
+    "codeExample": null
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "REST API Design Principles",
+    "question": "How do you design pagination for a REST API?",
+    "quickAnswer": "Offset-based: ?page=2&size=20 — simple but inefficient for large datasets (deep pages are slow: OFFSET 100000 scans 100000 rows). Cursor-based: ?cursor=<lastId>&limit=20 — efficient for large data, consistent with inserts/deletes, used by social APIs. Return pagination metadata in response body or Link headers. Use Pageable in Spring Data JPA.",
+    "difficulty": "HIGH",
+    "keyPoints": "Offset pagination: page+size params, easy but slow for large offsets\nCursor pagination: stable, efficient — WHERE id > cursor ORDER BY id LIMIT n\nResponse format: data + pagination metadata (total, page, hasMore, nextCursor)\nSpring Data: Pageable parameter → Page<T> return → includes metadata\nDeep page problem: OFFSET 10000 must scan 10000 rows before returning 20\nTotal count: expensive COUNT(*) — consider omitting or caching",
+    "codeExample": "Page<User> findByStatus(String status, Pageable pageable);\n// GET /users?page=0&size=20&sort=createdAt,desc"
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Microservices — Service Discovery, Circuit Breaker & Inter-Service Communication",
+    "question": "What is service discovery and how does Eureka work?",
+    "quickAnswer": "Service discovery allows services to find each other dynamically without hardcoded URLs. Eureka (Netflix) is a client-side service registry: services register themselves on startup and send heartbeats. Clients fetch the registry and use client-side load balancing (Ribbon/LoadBalancer) to choose instances. If a service misses heartbeats, Eureka removes it from the registry.",
+    "difficulty": "HIGH",
+    "keyPoints": "Service registry: central store of service instances (name → host:port)\nEureka server: maintains registry; health via heartbeats (30s default)\nClient: registers on start, fetches registry, renews via heartbeat\nClient-side LB: Ribbon/Spring Cloud LoadBalancer picks instance from registry\nSelf-preservation mode: Eureka doesn't remove instances if too many fail (network partition)\nAlternatives: Consul (also supports health checks, KV store), Zookeeper, Kubernetes services",
+    "codeExample": null
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Microservices — Service Discovery, Circuit Breaker & Inter-Service Communication",
+    "question": "What is the Circuit Breaker pattern and how does Resilience4j implement it?",
+    "quickAnswer": "Circuit Breaker prevents cascading failures: when a downstream service fails repeatedly, the circuit 'opens' and calls immediately return a fallback without hitting the failing service. States: CLOSED (normal, calls pass), OPEN (failing, calls blocked), HALF-OPEN (test calls allowed to check recovery). Resilience4j is the modern Spring Boot choice; counts failures/slow calls to trigger state transitions.",
+    "difficulty": "HIGH",
+    "keyPoints": "CLOSED: all calls pass through; failure count tracked\nOPEN: calls rejected immediately with fallback — downstream gets breathing room\nHALF-OPEN: limited test calls; if successful → CLOSED; if fail → OPEN again\nResilience4j: functional, non-Spring, composable — CircuitBreaker + Retry + RateLimiter + Bulkhead\n@CircuitBreaker(name, fallbackMethod): AOP-based annotation\nMetrics: Actuator exposes circuit breaker state via /actuator/circuitbreakers",
+    "codeExample": "@CircuitBreaker(name = \"paymentService\", fallbackMethod = \"paymentFallback\")\npublic PaymentResult processPayment(Order order) { ... }\n\npublic PaymentResult paymentFallback(Order order, Exception ex) {\n    return PaymentResult.queued();\n}"
+  },
+  {
+    "category": "SPRING_BOOT",
+    "topicTitle": "Microservices — Service Discovery, Circuit Breaker & Inter-Service Communication",
+    "question": "What is the Saga pattern and when do you use it?",
+    "quickAnswer": "Saga manages distributed transactions across microservices without using 2PC (which requires all services to be locked simultaneously). A saga is a sequence of local transactions, each publishing events/commands to trigger the next. On failure, compensating transactions undo earlier steps. Two implementations: choreography (event-driven, no coordinator) and orchestration (central orchestrator commands steps).",
+    "difficulty": "HIGH",
+    "keyPoints": "Saga replaces 2PC for distributed transactions (no global lock)\nChoreography: services emit events, others react — no central coordinator\nOrchestration: saga orchestrator directs steps and compensations\nCompensating transactions: undo completed steps on failure (not rollback — idempotent undo)\nEventual consistency: saga achieves eventual consistency, not ACID\nExample: place-order saga: reserve-inventory → charge-payment → update-order\nOutbox pattern: ensure event published atomically with local DB transaction",
+    "codeExample": null
+  }
+]
