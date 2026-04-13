@@ -66,6 +66,7 @@ export default function AdminPage() {
 function TopicsSection({ qc }) {
   const [catFilter, setCatFilter] = useState('ALL');
   const [selectedTopic, setSelectedTopic] = useState(null);
+  const [confirmingTopicId, setConfirmingTopicId] = useState(null);
 
   const { data: topics = [], isLoading } = useQuery({
     queryKey: QUERY_KEYS.topics(catFilter),
@@ -84,9 +85,9 @@ function TopicsSection({ qc }) {
   });
 
   function confirmDelete(topic) {
-    if (window.confirm(`Delete "${topic.title}" and all its problems/examples?`)) {
-      deleteMutation.mutate(topic.id);
-    }
+    if (confirmingTopicId !== topic.id) { setConfirmingTopicId(topic.id); return; }
+    setConfirmingTopicId(null);
+    deleteMutation.mutate(topic.id);
   }
 
   return (
@@ -131,11 +132,18 @@ function TopicsSection({ qc }) {
                       {meta.label}
                     </span>
                   </div>
-                  <button
-                    className={styles.deleteBtn}
-                    onClick={(e) => { e.stopPropagation(); confirmDelete(t); }}
-                    title="Delete topic"
-                  >🗑</button>
+                  {confirmingTopicId === t.id ? (
+                    <div style={{ display: 'flex', gap: 4 }} onClick={(e) => e.stopPropagation()}>
+                      <button className="btn btn-danger btn-xs" onClick={() => confirmDelete(t)}>Yes</button>
+                      <button className="btn btn-ghost btn-xs" onClick={() => setConfirmingTopicId(null)}>✕</button>
+                    </div>
+                  ) : (
+                    <button
+                      className={styles.deleteBtn}
+                      onClick={(e) => { e.stopPropagation(); confirmDelete(t); }}
+                      title="Delete topic"
+                    >🗑</button>
+                  )}
                 </div>
               );
             })}
@@ -556,6 +564,7 @@ function Field({ label, value, onChange, textarea, rows = 2, wide, code, type = 
 /* ── Topic Examples Panel ─────────────────────────────────────────────────────── */
 function TopicExamplesPanel({ topicId }) {
   const [editing, setEditing] = useState(null); // null | {} (new) | example obj
+  const [confirmingExId, setConfirmingExId] = useState(null);
   const queryKey = ['admin-topic-examples', topicId];
 
   const { data: examples = [], isLoading, refetch } = useQuery({
@@ -616,10 +625,17 @@ function TopicExamplesPanel({ topicId }) {
               </span>
               <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
                 <button className="btn btn-ghost btn-xs" onClick={() => setEditing(ex)}>✏️ Edit</button>
-                <button className="btn btn-danger btn-xs"
-                  onClick={() => window.confirm(`Delete example "${ex.title}"?`) && deleteMut.mutate(ex.id)}
-                  disabled={deleteMut.isPending}
-                >🗑</button>
+                {confirmingExId === ex.id ? (
+                  <>
+                    <button className="btn btn-danger btn-xs" onClick={() => { setConfirmingExId(null); deleteMut.mutate(ex.id); }}>Yes</button>
+                    <button className="btn btn-ghost btn-xs" onClick={() => setConfirmingExId(null)}>✕</button>
+                  </>
+                ) : (
+                  <button className="btn btn-danger btn-xs"
+                    onClick={() => setConfirmingExId(ex.id)}
+                    disabled={deleteMut.isPending}
+                  >🗑</button>
+                )}
               </div>
             </div>
           ))}
@@ -695,6 +711,7 @@ function ExampleForm({ example, onCancel, onSave, isPending }) {
 function TopicProblemsPanel({ topicId }) {
   const [editingProblem, setEditingProblem] = useState(null); // null | {} (new) | problem obj
   const [bulkMode, setBulkMode] = useState(false);
+  const [confirmingProblemId, setConfirmingProblemId] = useState(null);
   const queryKey = ['admin-topic-problems', topicId];
 
   const { data: problems = [], isLoading, refetch } = useQuery({
@@ -767,10 +784,17 @@ function TopicProblemsPanel({ topicId }) {
                 </span>
                 <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
                   <button className="btn btn-ghost btn-xs" onClick={() => setEditingProblem(p)}>✏️ Edit</button>
-                  <button className="btn btn-danger btn-xs"
-                    onClick={() => window.confirm(`Delete problem "${p.title}"?`) && deleteMut.mutate(p.id)}
-                    disabled={deleteMut.isPending}
-                  >🗑</button>
+                  {confirmingProblemId === p.id ? (
+                    <>
+                      <button className="btn btn-danger btn-xs" onClick={() => { setConfirmingProblemId(null); deleteMut.mutate(p.id); }}>Yes</button>
+                      <button className="btn btn-ghost btn-xs" onClick={() => setConfirmingProblemId(null)}>✕</button>
+                    </>
+                  ) : (
+                    <button className="btn btn-danger btn-xs"
+                      onClick={() => setConfirmingProblemId(p.id)}
+                      disabled={deleteMut.isPending}
+                    >🗑</button>
+                  )}
                 </div>
               </div>
             );
@@ -969,6 +993,7 @@ function ProblemForm({ problem, onCancel, onSave, isPending }) {
 function UsersSection() {
   const SUPER_ADMIN = 'asaditya1826@gmail.com';
   const qc = useQueryClient();
+  const [confirmingUser, setConfirmingUser] = useState(null); // { id, action: 'grant'|'revoke' }
 
   const { data, isLoading } = useQuery({
     queryKey: QUERY_KEYS.adminUsers,
@@ -1018,17 +1043,30 @@ function UsersSection() {
                   <td style={{ fontSize: 12 }}>{u.problemsSolved}</td>
                   <td>
                     {u.email !== SUPER_ADMIN && (
-                      u.role === 'ADMIN' ? (
+                      confirmingUser?.id === u.id ? (
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button
+                            className="btn btn-danger btn-xs"
+                            onClick={() => {
+                              const a = confirmingUser.action;
+                              setConfirmingUser(null);
+                              if (a === 'revoke') revokeMutation.mutate(u.id);
+                              else grantMutation.mutate(u.id);
+                            }}
+                          >Yes</button>
+                          <button className="btn btn-ghost btn-xs" onClick={() => setConfirmingUser(null)}>✕</button>
+                        </div>
+                      ) : u.role === 'ADMIN' ? (
                         <button
                           className="btn btn-danger btn-xs"
                           disabled={revokeMutation.isPending}
-                          onClick={() => window.confirm(`Revoke admin from ${u.name}?`) && revokeMutation.mutate(u.id)}
+                          onClick={() => setConfirmingUser({ id: u.id, action: 'revoke' })}
                         >Revoke Admin</button>
                       ) : (
                         <button
                           className="btn btn-ghost btn-xs"
                           disabled={grantMutation.isPending}
-                          onClick={() => window.confirm(`Grant admin to ${u.name}?`) && grantMutation.mutate(u.id)}
+                          onClick={() => setConfirmingUser({ id: u.id, action: 'grant' })}
                         >Grant Admin</button>
                       )
                     )}
@@ -1483,6 +1521,7 @@ function SeedPastePanel() {
 /* ── Stats section ───────────────────────────────────────────────────────────── */
 function StatsSection() {
   const qc = useQueryClient();
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
   const { data, isLoading, refetch } = useQuery({
     queryKey: QUERY_KEYS.adminStats,
     queryFn:  adminApi.getStats,
@@ -1502,9 +1541,8 @@ function StatsSection() {
   });
 
   function handleClearAll() {
-    if (!window.confirm(
-      '⚠️ DELETE ALL DATA?\n\nThis will permanently remove ALL topics, examples, problems AND import history from the database.\n\nYou will need to re-import all seed files afterwards.\n\nConfirm?'
-    )) return;
+    if (!confirmClearAll) { setConfirmClearAll(true); return; }
+    setConfirmClearAll(false);
     clearMutation.mutate();
   }
 
@@ -1570,15 +1608,36 @@ function StatsSection() {
               You will need to re-import seed files afterwards.
             </div>
           </div>
-          <button
-            className={styles.clearAllBtn}
-            disabled={clearMutation.isPending}
-            onClick={handleClearAll}
-          >
-            {clearMutation.isPending
-              ? <><span className="spinner" /> Clearing…</>
-              : '🗑 Clear All Data'}
-          </button>
+          {confirmClearAll ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+              <span style={{ fontSize: 12, color: 'var(--red)', fontWeight: 600 }}>
+                Are you sure? This cannot be undone.
+              </span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  className={styles.clearAllBtn}
+                  disabled={clearMutation.isPending}
+                  onClick={handleClearAll}
+                >
+                  {clearMutation.isPending ? <><span className="spinner" /> Clearing…</> : 'Yes, delete everything'}
+                </button>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setConfirmClearAll(false)}
+                >Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button
+              className={styles.clearAllBtn}
+              disabled={clearMutation.isPending}
+              onClick={handleClearAll}
+            >
+              {clearMutation.isPending
+                ? <><span className="spinner" /> Clearing…</>
+                : '🗑 Clear All Data'}
+            </button>
+          )}
         </div>
       </div>
     </div>

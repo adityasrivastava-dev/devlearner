@@ -426,6 +426,12 @@ export const interviewApi = {
 
   deleteAll: () =>
     http.delete('/api/admin/interview-questions').then((r) => r.data),
+
+  getFiles: () =>
+    http.get('/api/admin/interview-questions/files').then((r) => r.data),
+
+  importFile: (filename) =>
+    http.post(`/api/admin/interview-questions/files/${encodeURIComponent(filename)}`).then((r) => r.data),
 };
 
 // ─── Learning Gate ────────────────────────────────────────────────────────────

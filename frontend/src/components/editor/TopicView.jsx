@@ -172,6 +172,7 @@ export default function TopicView({ topic, onProblemOpen, onBack, theme = 'dark'
           { key: 'examples', label: 'Examples', icon: '💡' },
           { key: 'practice', label: 'Practice', icon: '🎯', locked: !practiceUnlocked },
           { key: 'optimize', label: 'Approach', icon: '⚡' },
+          { key: 'qa',       label: 'Q&A',      icon: '🎯' },
           { key: 'notes',    label: 'Notes',    icon: '📝' },
         ].map(({ key, label, icon, locked }) => (
           <button
@@ -405,11 +406,15 @@ export default function TopicView({ topic, onProblemOpen, onBack, theme = 'dark'
           </div>
         )}
 
+        {/* Q&A */}
+        {tab === 'qa' && (
+          <TopicInterviewQuestions category={topic.category} topicTitle={topic.title} />
+        )}
+
         {/* NOTES */}
         {tab === 'notes' && (
           <div className={styles.notesTabWrap}>
             <NotesPanel key={topic.id} topicId={topic.id} />
-            <TopicInterviewQuestions category={topic.category} topicTitle={topic.title} />
             {topic.youtubeUrls && <YoutubeVideosCard raw={topic.youtubeUrls} />}
           </div>
         )}
@@ -651,65 +656,127 @@ function NotesPanel({ topicId }) {
   );
 }
 
-// ── Most-Asked Interview Questions for this topic's category ─────────────────
+// ── Interview Q&A tab (standalone panel) ──────────────────────────────────────
 function TopicInterviewQuestions({ category, topicTitle }) {
   const [expanded, setExpanded] = useState(null);
+  const [size, setSize]         = useState(15);
 
   const { data: questions = [], isLoading } = useQuery({
-    queryKey: ['interviewQ', category, topicTitle],
-    queryFn:  () => interviewApi.getAll({ category, topicTitle, size: 8 }),
+    queryKey: ['interviewQ', category, topicTitle, size],
+    queryFn:  () => interviewApi.getAll({ category, topicTitle, size }),
     staleTime: 10 * 60 * 1000,
     enabled:  !!category,
   });
 
-  if (!isLoading && questions.length === 0) return null;
-
   const diffColor = { EASY: '#4ade80', MEDIUM: '#fbbf24', HARD: '#f87171', HIGH: '#f87171', LOW: '#4ade80' };
+  const isTopicSpecific = questions.length > 0 && questions[0]?.topicTitle === topicTitle;
 
   return (
-    <div className={styles.iqSection}>
-      <div className={styles.iqHeader}>
-        <span className={styles.iqIcon}>🎯</span>
-        <div>
-          <div className={styles.iqTitle}>Most Asked Interview Questions</div>
-          <div className={styles.iqSub}>
-            {questions.length > 0 && questions[0]?.topicTitle === topicTitle
-              ? `Specific to "${topicTitle}"`
-              : `${category?.replace(/_/g, ' ')} category questions`}
+    <div className={styles.qaPanel}>
+      {/* Header */}
+      <div className={styles.qaHeader}>
+        <div className={styles.qaHeaderLeft}>
+          <span className={styles.qaHeaderIcon}>🎯</span>
+          <div>
+            <div className={styles.qaHeaderTitle}>Interview Q&amp;A</div>
+            <div className={styles.qaHeaderSub}>
+              {isLoading
+                ? 'Loading…'
+                : questions.length === 0
+                  ? 'No questions found for this topic yet'
+                  : isTopicSpecific
+                    ? `${questions.length} questions specific to "${topicTitle}"`
+                    : `${questions.length} ${category?.replace(/_/g, ' ')} category questions`}
+            </div>
           </div>
         </div>
+        {isTopicSpecific && (
+          <span className={styles.qaBadgeSpecific}>Topic-specific</span>
+        )}
       </div>
 
-      {isLoading ? (
-        <div className={styles.iqSkeleton}>
-          {[1,2,3].map(i => <div key={i} className={styles.iqSkeletonItem} />)}
+      {/* Skeleton */}
+      {isLoading && (
+        <div className={styles.qaSkeleton}>
+          {[1, 2, 3, 4, 5].map(i => <div key={i} className={styles.qaSkeletonItem} />)}
         </div>
-      ) : (
-        <div className={styles.iqList}>
-          {questions.map((q, i) => (
-            <div key={q.id ?? i} className={styles.iqItem}>
-              <button
-                className={`${styles.iqQuestion} ${expanded === i ? styles.iqQuestionOpen : ''}`}
-                onClick={() => setExpanded(expanded === i ? null : i)}
-              >
-                <span className={styles.iqNum}>{i + 1}</span>
-                <span className={styles.iqText}>{q.question}</span>
-                <span
-                  className={styles.iqDiff}
-                  style={{ color: diffColor[q.difficulty] || '#94a3b8' }}
+      )}
+
+      {/* Empty state */}
+      {!isLoading && questions.length === 0 && (
+        <div className={styles.qaEmpty}>
+          <div className={styles.qaEmptyIcon}>📭</div>
+          <div className={styles.qaEmptyText}>No questions imported for this topic yet.</div>
+          <div className={styles.qaEmptyHint}>Ask an admin to import the Q&amp;A batch files.</div>
+        </div>
+      )}
+
+      {/* List */}
+      {!isLoading && questions.length > 0 && (
+        <>
+          <div className={styles.qaList}>
+            {questions.map((q, i) => (
+              <div key={q.id ?? i} className={`${styles.qaItem} ${expanded === i ? styles.qaItemOpen : ''}`}>
+                {/* Question row */}
+                <button
+                  className={styles.qaQuestion}
+                  onClick={() => setExpanded(expanded === i ? null : i)}
                 >
-                  {q.difficulty?.toLowerCase()}
-                </span>
-                <span className={`${styles.iqChevron} ${expanded === i ? styles.iqChevronOpen : ''}`}>›</span>
-              </button>
-              {expanded === i && q.answer && (
-                <div className={styles.iqAnswer}>
-                  {q.answer}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                  <span className={styles.qaNum}>{i + 1}</span>
+                  <span className={styles.qaText}>{q.question}</span>
+                  <span className={styles.qaDiff} style={{ color: diffColor[q.difficulty] || '#94a3b8' }}>
+                    {q.difficulty === 'HIGH' ? 'Hard' : 'Medium'}
+                  </span>
+                  <span className={`${styles.qaChevron} ${expanded === i ? styles.qaChevronOpen : ''}`}>›</span>
+                </button>
+
+                {/* Expanded answer */}
+                {expanded === i && (
+                  <div className={styles.qaAnswer}>
+                    {/* Quick answer */}
+                    {q.quickAnswer && (
+                      <div className={styles.qaAnswerSection}>
+                        <div className={styles.qaAnswerLabel}>Answer</div>
+                        <div className={styles.qaAnswerText}>{q.quickAnswer}</div>
+                      </div>
+                    )}
+
+                    {/* Key points */}
+                    {q.keyPoints && (
+                      <div className={styles.qaAnswerSection}>
+                        <div className={styles.qaAnswerLabel}>Key Points</div>
+                        <ul className={styles.qaKeyPoints}>
+                          {q.keyPoints.split('\n').filter(Boolean).map((pt, pi) => (
+                            <li key={pi} className={styles.qaKeyPoint}>
+                              {pt.includes(':')
+                                ? <><strong>{pt.split(':')[0]}</strong>:{pt.split(':').slice(1).join(':')}</>
+                                : pt}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Code example */}
+                    {q.codeExample && (
+                      <div className={styles.qaAnswerSection}>
+                        <div className={styles.qaAnswerLabel}>Example</div>
+                        <pre className={styles.qaCode}><code>{q.codeExample}</code></pre>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Load more */}
+          {questions.length >= size && (
+            <button className={styles.qaLoadMore} onClick={() => setSize(s => s + 15)}>
+              Load more questions
+            </button>
+          )}
+        </>
       )}
     </div>
   );

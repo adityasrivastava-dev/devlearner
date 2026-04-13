@@ -1,16 +1,20 @@
 package com.learnsystem.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnsystem.model.InterviewQuestion;
 import com.learnsystem.repository.InterviewQuestionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
@@ -18,6 +22,8 @@ import java.util.Map;
 public class InterviewQuestionController {
 
     private final InterviewQuestionRepository repo;
+    private final ObjectMapper objectMapper;
+    private final ResourcePatternResolver resourcePatternResolver;
 
     // ── Public: read endpoints (used by /revision and /interview-prep) ─────────
 
@@ -129,5 +135,92 @@ public class InterviewQuestionController {
         long count = repo.count();
         repo.deleteAll();
         return ResponseEntity.ok(Map.of("deleted", count));
+    }
+
+    // ── File-based import (classpath:interviewquestions/) ─────────────────────
+
+    /**
+     * GET /api/admin/interview-questions/files
+     * Lists all *.json files in classpath:interviewquestions/
+     */
+    @GetMapping("/api/admin/interview-questions/files")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<Map<String, Object>>> listFiles() {
+        try {
+            Resource[] resources = resourcePatternResolver.getResources("classpath:interviewquestions/*.json");
+            List<Map<String, Object>> files = Arrays.stream(resources)
+                .map(r -> {
+                    Map<String, Object> info = new LinkedHashMap<>();
+                    info.put("filename", r.getFilename());
+                    try {
+                        List<InterviewQuestion> qs = objectMapper.readValue(
+                            r.getInputStream(),
+                            new TypeReference<List<InterviewQuestion>>() {}
+                        );
+                        info.put("count", qs.size());
+                        // collect unique topicTitles for display
+                        List<String> topics = qs.stream()
+                            .map(InterviewQuestion::getTopicTitle)
+                            .filter(Objects::nonNull)
+                            .distinct()
+                            .sorted()
+                            .collect(Collectors.toList());
+                        info.put("topics", topics);
+                    } catch (Exception e) {
+                        info.put("count", 0);
+                        info.put("topics", List.of());
+                    }
+                    return info;
+                })
+                .collect(Collectors.toList());
+            return ResponseEntity.ok(files);
+        } catch (Exception e) {
+            log.error("Failed to list IQ files", e);
+            return ResponseEntity.ok(List.of());
+        }
+    }
+
+    /**
+     * POST /api/admin/interview-questions/files/{filename}
+     * Imports a specific *.json from classpath:interviewquestions/.
+     * Skips duplicates (same category + question text).
+     */
+    @PostMapping("/api/admin/interview-questions/files/{filename}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> importFile(@PathVariable String filename) {
+        try {
+            Resource resource = resourcePatternResolver.getResource(
+                "classpath:interviewquestions/" + filename);
+            if (!resource.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            List<InterviewQuestion> incoming = objectMapper.readValue(
+                resource.getInputStream(),
+                new TypeReference<List<InterviewQuestion>>() {}
+            );
+
+            // Deduplicate: skip if same category + question already exists
+            Set<String> existing = repo.findAll().stream()
+                .map(q -> q.getCategory() + "||" + q.getQuestion())
+                .collect(Collectors.toSet());
+
+            List<InterviewQuestion> toSave = incoming.stream()
+                .filter(q -> q.getCategory() != null && q.getQuestion() != null)
+                .filter(q -> !existing.contains(q.getCategory() + "||" + q.getQuestion()))
+                .peek(q -> q.setId(null))
+                .collect(Collectors.toList());
+
+            List<InterviewQuestion> saved = repo.saveAll(toSave);
+            int skipped = incoming.size() - saved.size();
+            return ResponseEntity.ok(Map.of(
+                "imported", saved.size(),
+                "skipped",  skipped,
+                "total",    incoming.size()
+            ));
+        } catch (Exception e) {
+            log.error("Failed to import IQ file: {}", filename, e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", e.getMessage()));
+        }
     }
 }

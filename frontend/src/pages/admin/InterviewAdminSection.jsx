@@ -105,7 +105,7 @@ const BLANK = {
 
 /* ── Main exported section ──────────────────────────────────────────────────── */
 export default function InterviewAdminSection() {
-  const [tab, setTab] = useState('manage'); // manage | create | bulk | library | build
+  const [tab, setTab] = useState('manage'); // manage | create | bulk | library | topicfiles | build
 
   return (
     <div className={styles.section}>
@@ -113,11 +113,12 @@ export default function InterviewAdminSection() {
         <span className={styles.sectionTitle}>Interview Q&amp;A</span>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {[
-            ['manage',  '⚙ Manage'],
-            ['create',  '+ New Question'],
-            ['bulk',    '⬆ Paste JSON'],
-            ['library', '📚 Batch Library'],
-            ['build',   '🔨 Build Set'],
+            ['manage',     '⚙ Manage'],
+            ['create',     '+ New Question'],
+            ['bulk',       '⬆ Paste JSON'],
+            ['topicfiles', '📂 Topic Files'],
+            ['library',    '📚 Batch Library'],
+            ['build',      '🔨 Build Set'],
           ].map(([key, label]) => (
             <button
               key={key}
@@ -128,11 +129,12 @@ export default function InterviewAdminSection() {
         </div>
       </div>
 
-      {tab === 'manage'  && <IQManagePanel onEdit={(q) => setTab('edit-' + q.id)} />}
-      {tab === 'create'  && <IQFormPanel question={null} onDone={() => setTab('manage')} />}
-      {tab === 'bulk'    && <IQBulkUploadPanel onDone={() => setTab('manage')} />}
-      {tab === 'library' && <IQBatchLibraryPanel />}
-      {tab === 'build'   && <IQBuildSetPanel />}
+      {tab === 'manage'     && <IQManagePanel onEdit={(q) => setTab('edit-' + q.id)} />}
+      {tab === 'create'     && <IQFormPanel question={null} onDone={() => setTab('manage')} />}
+      {tab === 'bulk'       && <IQBulkUploadPanel onDone={() => setTab('manage')} />}
+      {tab === 'topicfiles' && <IQTopicFilesPanel />}
+      {tab === 'library'    && <IQBatchLibraryPanel />}
+      {tab === 'build'      && <IQBuildSetPanel />}
       {tab.startsWith('edit-') && (
         <IQEditWrapper
           id={parseInt(tab.replace('edit-', ''))}
@@ -143,15 +145,125 @@ export default function InterviewAdminSection() {
   );
 }
 
+/* ── Topic Files panel (classpath:interviewquestions/) ───────────────────────── */
+function IQTopicFilesPanel() {
+  const qc = useQueryClient();
+  const [importing, setImporting] = useState(null);
+  const [results, setResults]     = useState({});
+
+  const { data: files = [], isLoading } = useQuery({
+    queryKey: ['iqTopicFiles'],
+    queryFn:  () => interviewApi.getFiles(),
+    staleTime: 60 * 1000,
+  });
+
+  async function handleImport(filename) {
+    setImporting(filename);
+    try {
+      const res = await interviewApi.importFile(filename);
+      setResults(prev => ({ ...prev, [filename]: res }));
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.interviewQuestions });
+      toast.success(`${filename}: imported ${res.imported}, skipped ${res.skipped}`);
+    } catch (e) {
+      toast.error(`Failed to import ${filename}`);
+    } finally {
+      setImporting(null);
+    }
+  }
+
+  async function handleImportAll() {
+    for (const f of files) {
+      await handleImport(f.filename);
+    }
+  }
+
+  const FILE_LABELS = {
+    'iq-java-topics.json':     { label: 'Java Core',       color: '#f59e0b', icon: '☕' },
+    'iq-adv-java-topics.json': { label: 'Advanced Java',   color: '#8b5cf6', icon: '⚡' },
+    'iq-dsa-topics.json':      { label: 'DSA',             color: '#10b981', icon: '🌳' },
+    'iq-sql-topics.json':      { label: 'MySQL / SQL',     color: '#3b82f6', icon: '🗄' },
+    'iq-spring-topics.json':   { label: 'Spring Boot',     color: '#22c55e', icon: '🍃' },
+    'iq-sysdesign-topics.json':{ label: 'System Design',   color: '#f472b6', icon: '🏗' },
+    'iq-aws-topics.json':      { label: 'AWS',             color: '#f97316', icon: '☁' },
+  };
+
+  return (
+    <div style={{ padding: '16px 0' }}>
+      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
+            Topic-Specific Q&A Files
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+            Topic-tagged interview questions stored in backend resources. Importing skips duplicates.
+          </div>
+        </div>
+        {files.length > 0 && (
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={handleImportAll}
+            disabled={importing !== null}
+          >
+            Import All
+          </button>
+        )}
+      </div>
+
+      {isLoading && (
+        <div style={{ color: 'var(--text3)', fontSize: 13 }}>Loading files…</div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {files.map(f => {
+          const meta   = FILE_LABELS[f.filename] || { label: f.filename, color: '#94a3b8', icon: '📄' };
+          const result = results[f.filename];
+          return (
+            <div key={f.filename} className={styles.iqFileRow}>
+              <span style={{ fontSize: 20 }}>{meta.icon}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
+                  <span style={{ color: meta.color }}>{meta.label}</span>
+                  <span style={{ color: 'var(--text3)', fontWeight: 400, marginLeft: 6 }}>
+                    ({f.filename})
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  {f.count} questions · {f.topics.length} topics
+                  {f.topics.length > 0 && `: ${f.topics.slice(0, 3).join(', ')}${f.topics.length > 3 ? ` +${f.topics.length - 3} more` : ''}`}
+                </div>
+                {result && (
+                  <div style={{ fontSize: 11, color: '#4ade80', marginTop: 2 }}>
+                    ✓ Imported {result.imported} · Skipped {result.skipped}
+                  </div>
+                )}
+              </div>
+              <button
+                className="btn btn-sm btn-ghost"
+                onClick={() => handleImport(f.filename)}
+                disabled={importing === f.filename}
+              >
+                {importing === f.filename ? 'Importing…' : result ? 'Re-import' : 'Import'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ── Manage panel ───────────────────────────────────────────────────────────── */
 function IQManagePanel({ onEdit }) {
   const qc = useQueryClient();
-  const [search, setSearch]   = useState('');
-  const [catFilter, setCat]   = useState('ALL');
-  const [diffFilter, setDiff] = useState('ALL');
-  const [deleting, setDeleting] = useState(null);
-  const [importing, setImporting] = useState(false);
-  const [jsonPreview, setJsonPreview] = useState(null); // question whose JSON is shown
+  const [search, setSearch]         = useState('');
+  const [catFilter, setCat]         = useState('ALL');
+  const [diffFilter, setDiff]       = useState('ALL');
+  const [deleting, setDeleting]     = useState(null);   // question id being deleted
+  const [confirmingId, setConfirmingId] = useState(null); // id awaiting confirm
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+  const [deletingAll, setDeletingAll]   = useState(false);
+  const [importing, setImporting]   = useState(false);
+  const [jsonPreview, setJsonPreview] = useState(null);
 
   const { data: questions = [], isLoading, refetch } = useQuery({
     queryKey: QUERY_KEYS.interviewQuestions,
@@ -160,7 +272,9 @@ function IQManagePanel({ onEdit }) {
   });
 
   async function handleDelete(q) {
-    if (!window.confirm(`Delete this question?\n\n"${q.question.slice(0, 80)}…"\n\nThis cannot be undone.`)) return;
+    // First click → show inline confirm; second click → actually delete
+    if (confirmingId !== q.id) { setConfirmingId(q.id); return; }
+    setConfirmingId(null);
     setDeleting(q.id);
     try {
       await interviewApi.delete(q.id);
@@ -172,14 +286,15 @@ function IQManagePanel({ onEdit }) {
   }
 
   async function handleDeleteAll() {
-    if (!window.confirm(`Delete ALL ${questions.length} interview questions? This cannot be undone.`)) return;
+    setDeletingAll(true);
     try {
       const res = await interviewApi.deleteAll();
       toast.success(`Deleted ${res.deleted} questions`);
       qc.invalidateQueries({ queryKey: QUERY_KEYS.interviewQuestions });
+      setConfirmDeleteAll(false);
     } catch {
       toast.error('Delete all failed');
-    }
+    } finally { setDeletingAll(false); }
   }
 
   async function handleImportDefaults() {
@@ -247,8 +362,17 @@ function IQManagePanel({ onEdit }) {
         >
           {importing ? <><span className="spinner" />Importing…</> : '⬇ Import Defaults'}
         </button>
-        {questions.length > 0 && (
-          <button className="btn btn-danger btn-sm" onClick={handleDeleteAll}>🗑 Delete All</button>
+        {questions.length > 0 && !confirmDeleteAll && (
+          <button className="btn btn-danger btn-sm" onClick={() => setConfirmDeleteAll(true)}>🗑 Delete All</button>
+        )}
+        {confirmDeleteAll && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(248,113,113,.12)', border: '1px solid rgba(248,113,113,.4)', borderRadius: 8, padding: '4px 10px' }}>
+            <span style={{ fontSize: 12, color: '#f87171', fontWeight: 600 }}>Delete all {questions.length} questions?</span>
+            <button className="btn btn-danger btn-sm" disabled={deletingAll} onClick={handleDeleteAll}>
+              {deletingAll ? <span className="spinner" /> : 'Yes, delete all'}
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={() => setConfirmDeleteAll(false)}>Cancel</button>
+          </div>
         )}
       </div>
 
@@ -293,15 +417,29 @@ function IQManagePanel({ onEdit }) {
               >
                 {'{ }'}
               </button>
-              <button className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }} onClick={() => onEdit(q)}>✏ Edit</button>
-              <button
-                className="btn btn-danger btn-sm"
-                style={{ flexShrink: 0 }}
-                disabled={deleting === q.id}
-                onClick={() => handleDelete(q)}
-              >
-                {deleting === q.id ? <span className="spinner" /> : '🗑'}
-              </button>
+              <button className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }} onClick={() => { setConfirmingId(null); onEdit(q); }}>✏ Edit</button>
+              {confirmingId === q.id ? (
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    style={{ flexShrink: 0, fontSize: 11 }}
+                    disabled={deleting === q.id}
+                    onClick={() => handleDelete(q)}
+                  >
+                    {deleting === q.id ? <span className="spinner" /> : 'Confirm'}
+                  </button>
+                  <button className="btn btn-ghost btn-sm" style={{ flexShrink: 0, fontSize: 11 }} onClick={() => setConfirmingId(null)}>✕</button>
+                </div>
+              ) : (
+                <button
+                  className="btn btn-danger btn-sm"
+                  style={{ flexShrink: 0 }}
+                  disabled={deleting === q.id}
+                  onClick={() => handleDelete(q)}
+                >
+                  🗑
+                </button>
+              )}
               {/* Inline JSON editor — full width below the row */}
               {jsonPreview?.id === q.id && (
                 <div style={{ width: '100%' }}>
