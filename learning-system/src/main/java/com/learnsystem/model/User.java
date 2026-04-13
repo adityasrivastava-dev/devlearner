@@ -100,9 +100,9 @@ private int xp = 0;
 @Builder.Default
 private String level = "Beginner";
 /** Whether the user has a pending request to become admin. Default false. */
-@Column(name = "admin_request_pending", nullable = false)
+@Column(name = "admin_request_pending", columnDefinition = "boolean default false")
 @Builder.Default
-private boolean adminRequestPending = false;
+private Boolean adminRequestPending = false;
 // Admin roles managed directly via SQL:
 // INSERT IGNORE INTO user_roles (user_id, role)
 // SELECT id, 'ADMIN' FROM users WHERE email = 'asaditya1826@gmail.com';
