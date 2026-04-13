@@ -181,6 +181,7 @@ function TopicEditor({ topic, onSaved }) {
     story:            topic?.story            || '',
     analogy:          topic?.analogy          || '',
     firstPrinciples:  topic?.firstPrinciples  || '',
+    youtubeUrls:      topic?.youtubeUrls      || '',
     starterCode:      topic?.starterCode      || '',
   });
 
@@ -229,6 +230,7 @@ function TopicEditor({ topic, onSaved }) {
       story:             seedTopic.story              || '',
       analogy:           seedTopic.analogy            || '',
       firstPrinciples:   seedTopic.firstPrinciples    || '',
+      youtubeUrls:       seedTopic.youtubeUrls        || '',
       starterCode:       seedTopic.starterCode        || '',
     });
     setShowSeedLoader(false);
@@ -391,6 +393,15 @@ function TopicEditor({ topic, onSaved }) {
             <Field label="Story" value={form.story} onChange={set('story')} textarea rows={5} wide />
             <Field label="Analogy" value={form.analogy} onChange={set('analogy')} textarea rows={4} wide />
             <Field label="First Principles" value={form.firstPrinciples} onChange={set('firstPrinciples')} textarea rows={4} wide />
+            <Field
+              label='YouTube URLs (JSON array: ["url1","url2"] or comma-separated)'
+              value={form.youtubeUrls}
+              onChange={set('youtubeUrls')}
+              textarea
+              rows={2}
+              wide
+              placeholder='["https://youtu.be/abc123","https://youtu.be/xyz456"]'
+            />
           </div>
         )}
         {activeTab === 'code' && (

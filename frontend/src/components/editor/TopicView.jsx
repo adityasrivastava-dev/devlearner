@@ -233,6 +233,9 @@ export default function TopicView({ topic, onProblemOpen, onBack, theme = 'dark'
                 <pre className={styles.codeBlock}>{topic.starterCode}</pre>
               </div>
             )}
+            {topic.youtubeUrls && (
+              <YoutubeVideosCard raw={topic.youtubeUrls} />
+            )}
             {!topic.description && !topic.memoryAnchor && !topic.story && !topic.analogy && !topic.firstPrinciples && !topic.starterCode && (
               <div className={styles.emptyState}>
                 <span>✍️</span>
@@ -755,6 +758,64 @@ function ExampleDetailView({ ex, index, total, theme = 'dark', onBack, onPrev, o
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
+
+// ── YouTube helpers ───────────────────────────────────────────────────────────
+function extractYoutubeId(url) {
+  if (!url) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function parseYoutubeUrls(raw) {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.filter(Boolean);
+  } catch {
+    // fallback: comma-separated
+    return raw.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function YoutubeVideosCard({ raw }) {
+  const urls = parseYoutubeUrls(raw);
+  if (!urls.length) return null;
+  return (
+    <div className={`${styles.theoryCard} ${styles.youtubeCard}`}>
+      <div className={styles.cardTitle}>▶ Recommended Videos</div>
+      <div className={styles.youtubeGrid}>
+        {urls.map((url, i) => {
+          const vid = extractYoutubeId(url);
+          const thumb = vid ? `https://img.youtube.com/vi/${vid}/mqdefault.jpg` : null;
+          return (
+            <a
+              key={i}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.youtubeItem}
+              title={`Watch video ${i + 1}`}
+            >
+              {thumb ? (
+                <img src={thumb} alt={`Video ${i + 1}`} className={styles.youtubeThumbnail} />
+              ) : (
+                <div className={styles.youtubePlaceholder}>▶</div>
+              )}
+              <span className={styles.youtubeLabel}>Video {i + 1}</span>
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 // Split text into sentences on ". " boundaries (only where next char is uppercase or end)
 function splitSentences(text) {

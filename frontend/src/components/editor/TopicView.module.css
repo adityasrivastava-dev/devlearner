@@ -324,6 +324,62 @@
   color: #ec4899;
 }
 
+/* ── YouTube videos card ───────────────────────────────────────────────────── */
+.youtubeCard {
+  border-left: 3px solid #ff4444;
+  background: rgba(255,68,68,.04);
+  border-color: rgba(255,68,68,.2);
+  border-left-color: #ff4444;
+}
+.youtubeCard .cardTitle {
+  color: #ef4444;
+}
+.youtubeGrid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.youtubeItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  transition: border-color .15s, transform .15s;
+  width: 160px;
+  padding-bottom: 8px;
+}
+.youtubeItem:hover {
+  border-color: #ef4444;
+  transform: translateY(-2px);
+}
+.youtubeThumbnail {
+  width: 160px;
+  height: 90px;
+  object-fit: cover;
+  display: block;
+}
+.youtubePlaceholder {
+  width: 160px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg3);
+  font-size: 28px;
+  color: #ef4444;
+}
+.youtubeLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  text-align: center;
+}
+
 .codeBlock {
   background: var(--bg3);
   border: 1px solid var(--border);

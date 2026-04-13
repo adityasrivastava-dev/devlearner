@@ -75,6 +75,7 @@ public Topic updateTopic(Long id, Topic incoming) {
     existing.setAnalogy(incoming.getAnalogy());
     existing.setMemoryAnchor(incoming.getMemoryAnchor());
     existing.setFirstPrinciples(incoming.getFirstPrinciples());
+    existing.setYoutubeUrls(incoming.getYoutubeUrls());
     // Ordering / grouping
     existing.setSubCategory(incoming.getSubCategory());
     if (incoming.getDisplayOrder() != null) existing.setDisplayOrder(incoming.getDisplayOrder());

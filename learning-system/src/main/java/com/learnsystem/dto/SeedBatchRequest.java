@@ -33,6 +33,8 @@ public static class TopicSeedDto {
     private String firstPrinciples;
     private String subCategory;
     private Integer displayOrder;
+    /** JSON array string or comma-separated YouTube URLs for this topic */
+    private String youtubeUrls;
     private List<ExampleSeedDto> examples;
     private List<ProblemSeedDto> problems;
 }

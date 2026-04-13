@@ -182,6 +182,7 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
             topic.setAnalogy(dto.getAnalogy());
             topic.setMemoryAnchor(dto.getMemoryAnchor());
             topic.setFirstPrinciples(dto.getFirstPrinciples());
+            topic.setYoutubeUrls(dto.getYoutubeUrls());
             topic.setSubCategory(dto.getSubCategory());
             if (dto.getDisplayOrder() != null) topic.setDisplayOrder(dto.getDisplayOrder());
             topic = topicRepo.save(topic);

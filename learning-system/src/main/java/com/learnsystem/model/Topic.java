@@ -72,6 +72,10 @@ private String memoryAnchor;
 @Column(name = "first_principles", columnDefinition = "TEXT")
 private String firstPrinciples;
 
+/** JSON array of YouTube video URLs, e.g. ["https://youtu.be/abc","https://youtu.be/xyz"] */
+@Column(name = "youtube_urls", columnDefinition = "TEXT")
+private String youtubeUrls;
+
 // ── Relationships ─────────────────────────────────────────────────────────
 
 @JsonIgnore
