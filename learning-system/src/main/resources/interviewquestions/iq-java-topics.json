@@ -664,5 +664,293 @@
     "difficulty": "HIGH",
     "keyPoints": "Uses ForkJoinPool.commonPool() — shared across the JVM\nGood for: CPU-bound, large data, no shared mutable state\nBad for: small data (overhead > gain), I/O, non-associative reduce, shared state\nOrder: parallelStream + sorted = expensive (forced sequential merge)\nCustom pool: submit(() -> stream.parallel()...) inside ForkJoinPool\nNever mutate shared collections inside parallel operations",
     "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Control Flow in Java",
+    "question": "What is the enhanced for-loop (for-each) and when can't you use it?",
+    "quickAnswer": "The enhanced for-loop (for (Type x : collection)) iterates over any Iterable or array without managing an index. It's cleaner and less error-prone. You can't use it when: you need the index, you need to modify the collection while iterating, you need to traverse two collections simultaneously, or you need to iterate in reverse.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "for-each works on: arrays and anything implementing Iterable<T>\nCan't modify collection (ConcurrentModificationException)\nNo index access — use traditional for-loop when index needed\nCan't reverse iterate or skip elements\nUnder the hood: calls iterator() on Iterable; for arrays uses index counter",
+    "codeExample": "// When you need index — use traditional for\nfor (int i = 0; i < arr.length; i++) {\n    arr[i] = arr[i] * 2;\n}\n// When iterating a collection without index — use for-each\nfor (String item : list) {\n    System.out.println(item);\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Control Flow in Java",
+    "question": "What is the ternary operator and how is it different from an if-else?",
+    "quickAnswer": "The ternary operator (condition ? valueIfTrue : valueIfFalse) is an expression — it produces a value and can be used inline in assignments, method arguments, or return statements. if-else is a statement — it controls flow but doesn't produce a value. Ternary is ideal for simple conditional assignments; if-else is better for multi-statement branches.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Ternary is an expression (produces a value); if-else is a statement\nCan nest ternary but deeply nested ternaries hurt readability\nBoth branches must be type-compatible (or promotable)\nUseful in: assignments, method arguments, string building\nPerformance: identical to if-else; no difference after compilation",
+    "codeExample": "String label = score >= 50 ? \"Pass\" : \"Fail\";\nSystem.out.println(\"Status: \" + (active ? \"Active\" : \"Inactive\"));"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Polymorphism in Java",
+    "question": "What is covariant return type in Java?",
+    "quickAnswer": "Covariant return type (Java 5+) allows an overriding method to return a subtype of the parent method's return type. For example, if Animal.clone() returns Animal, Dog.clone() can return Dog. This removes the need for casting at the call site and makes the API more type-safe.",
+    "difficulty": "HIGH",
+    "keyPoints": "Overriding method can declare return type = original type OR a subtype\nAvoids casting: Dog d = dog.clone() instead of (Dog) animal.clone()\nType safety: compiler guarantees the narrower type\nCovariance = return type narrows; contravariance = parameter type widens (not native in Java)\nArrays are covariant: Dog[] can be assigned to Animal[] — but this is a runtime trap (ArrayStoreException)",
+    "codeExample": "class Animal { Animal clone() { ... } }\nclass Dog extends Animal {\n    @Override\n    Dog clone() { ... } // covariant return type\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Polymorphism in Java",
+    "question": "What is the instanceof operator and how has it improved in modern Java?",
+    "quickAnswer": "instanceof checks if an object is an instance of a type at runtime. Classic usage requires a separate cast after the check. Java 16+ pattern matching for instanceof combines the check and cast: if (obj instanceof String s) gives you the typed variable s directly — no cast needed. This eliminates a class of ClassCastException risks.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "instanceof: runtime type check — returns boolean\nClassic: if (a instanceof Dog) { Dog d = (Dog) a; d.bark(); }\nPattern matching (Java 16+): if (a instanceof Dog d) { d.bark(); }\nNull check: null instanceof Anything → false (safe, no NPE)\nExcessive instanceof = code smell — prefer polymorphism\nSealed classes (Java 17+) + pattern matching in switch = exhaustive dispatch",
+    "codeExample": "// Modern pattern matching\nif (shape instanceof Circle c) {\n    return Math.PI * c.radius() * c.radius();\n} else if (shape instanceof Rectangle r) {\n    return r.width() * r.height();\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Abstraction in Java",
+    "question": "What are default methods in interfaces and why were they introduced?",
+    "quickAnswer": "Default methods (Java 8) allow interfaces to provide a concrete method implementation. They were introduced to allow the Java Collections API to be extended (e.g., adding forEach, stream(), removeIf to Collection) without breaking the millions of existing implementations. A class can override a default method. If two interfaces declare conflicting defaults, the implementing class must override to resolve the conflict.",
+    "difficulty": "HIGH",
+    "keyPoints": "Declared with 'default' keyword; implementing classes inherit it automatically\nPurpose: backward-compatible interface evolution (Java 8 Streams retrofit)\nDiamond conflict: two interfaces with same default → compile error → class must override\nClass always wins: if a superclass and interface provide the same method, class version wins\nDefault ≠ abstract: it has a body; classes don't have to override it\nStatic methods in interfaces (Java 8): utility methods, not inherited",
+    "codeExample": "interface Greeter {\n    default void greet(String name) {\n        System.out.println(\"Hello, \" + name);\n    }\n}\nclass FormalGreeter implements Greeter {\n    @Override\n    public void greet(String name) {\n        System.out.println(\"Good day, \" + name + \".\");\n    }\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Encapsulation & Access Modifiers in Java",
+    "question": "What is the difference between final, finally, and finalize in Java?",
+    "quickAnswer": "final is a modifier: on a variable = constant (can't reassign), on a method = can't be overridden, on a class = can't be subclassed. finally is a try-catch block section that always runs for resource cleanup. finalize() is a deprecated Object method called by GC before collecting — unreliable (never guaranteed to run) and replaced by Cleaners/AutoCloseable.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "final variable: reference can't change (object's internals still mutable)\nfinal method: prevents override — used for security/template methods\nfinal class: no subclassing — String, Integer are final\nfinally: cleanup block in try — always runs except on System.exit()\nfinalize(): called by GC before collection — deprecated (Java 9+), unreliable\nUse AutoCloseable + try-with-resources instead of finalize",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Generics in Java",
+    "question": "What is a bounded type parameter in Java generics and how do you use it?",
+    "quickAnswer": "A bounded type parameter restricts which types can be used as a generic argument. <T extends Number> means T must be Number or a subclass — you can call Number's methods on T. Multiple bounds are allowed: <T extends Comparable<T> & Serializable>. This provides both flexibility and type safety beyond raw types.",
+    "difficulty": "HIGH",
+    "keyPoints": "<T extends Type>: T must be Type or its subtype — upper bound\nMultiple bounds: <T extends A & B & C> — class first, then interfaces\nCan call bound's methods on T inside the method\nComparable bound: <T extends Comparable<T>> enables sorting algorithms\nRecursive bound: <T extends Comparable<T>> — T must be comparable with itself\nDifference from wildcard: T is a named type parameter; ? is a wildcard (no name binding)",
+    "codeExample": "public <T extends Comparable<T>> T max(T a, T b) {\n    return a.compareTo(b) >= 0 ? a : b;\n}\n// Works for Integer, String, LocalDate, etc."
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java I/O & NIO",
+    "question": "What is the difference between a byte stream and a character stream in Java IO?",
+    "quickAnswer": "Byte streams (InputStream/OutputStream) work with raw bytes — use for binary data (images, audio, serialized objects). Character streams (Reader/Writer) add encoding/decoding — they work with characters using a specified charset (default: platform encoding). Always use character streams for text files and specify the charset explicitly (StandardCharsets.UTF_8) to avoid platform-dependent behavior.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Byte streams: InputStream/OutputStream — raw binary, no encoding\nCharacter streams: Reader/Writer — encode/decode chars using charset\nInputStreamReader: bridges byte → char stream (specify charset!)\nFileReader/FileWriter: convenient but use platform default charset (avoid)\nBest practice: new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))\nBuffering: BufferedReader/BufferedWriter reduce system calls significantly",
+    "codeExample": "// Reading text file safely with explicit charset\ntry (BufferedReader br = new BufferedReader(\n        new InputStreamReader(new FileInputStream(\"data.txt\"), StandardCharsets.UTF_8))) {\n    String line;\n    while ((line = br.readLine()) != null) System.out.println(line);\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Date & Time API (java.time)",
+    "question": "How do you parse and format dates in Java using DateTimeFormatter?",
+    "quickAnswer": "DateTimeFormatter.ofPattern(\"dd-MM-yyyy\") creates a formatter. Use .parse(str) on the date class to parse, or .format(formatter) on the date object to format. DateTimeFormatter is immutable and thread-safe — share as a constant. Common predefined formatters: ISO_LOCAL_DATE (2024-01-15), ISO_DATE_TIME. Locale matters for month names.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "DateTimeFormatter.ofPattern(): custom pattern — M=month, d=day, y=year, H=24hr, h=12hr\nParsing: LocalDate.parse(\"15-01-2024\", formatter)\nFormatting: date.format(formatter)\nThread-safe: safe to use as static final constant\nPredefined: ISO_LOCAL_DATE, ISO_LOCAL_DATE_TIME, ISO_INSTANT\nLocale-specific: ofPattern(\"d MMMM\", Locale.ENGLISH) for \"15 January\"",
+    "codeExample": "DateTimeFormatter fmt = DateTimeFormatter.ofPattern(\"dd-MMM-yyyy\");\nLocalDate date = LocalDate.parse(\"15-Jan-2024\", fmt);\nString formatted = date.format(fmt); // \"15-Jan-2024\""
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Garbage Collection & Memory Leaks",
+    "question": "What are SoftReference, WeakReference, and PhantomReference in Java?",
+    "quickAnswer": "Java has four reference strengths. Strong: normal reference — never GC'd while reachable. Soft: cleared when JVM needs memory (good for caches). Weak: cleared at next GC cycle — WeakHashMap uses this so keys are GC'd when no strong refs exist. Phantom: enqueued after the object is finalized — used for cleanup actions (replacement for finalize).",
+    "difficulty": "HIGH",
+    "keyPoints": "Strong reference: never collected while any strong ref exists\nSoftReference: GC clears only under memory pressure — cache-friendly\nWeakReference: GC clears at next cycle — WeakHashMap, ThreadLocal keys\nPhantomReference: object already finalized — used with ReferenceQueue for cleanup\nReferenceQueue: JVM enqueues refs when their referent is collected\nWeakHashMap: map entries automatically removed when key is GC'd",
+    "codeExample": "Cache<K,V> cache = new LinkedHashMap<>(); // strong ref = no eviction\n// Soft reference based cache:\nSoftReference<Bitmap> ref = new SoftReference<>(bitmap);\nbitmap = ref.get(); // null if GC'd"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Collections Internal Working — HashMap, Comparators & Iterators",
+    "question": "What is the difference between ConcurrentHashMap and a synchronized HashMap?",
+    "quickAnswer": "Collections.synchronizedMap(map) wraps a HashMap — every read and write locks the entire map, allowing only one thread at a time. ConcurrentHashMap (Java 5+) uses segment-based locking (Java 7) or lock-striping + CAS (Java 8+) — reads are lock-free, and only the affected bucket is locked on write. ConcurrentHashMap offers much higher throughput under concurrent access.",
+    "difficulty": "HIGH",
+    "keyPoints": "synchronizedMap: coarse-grained single lock — all operations serialized\nConcurrentHashMap: fine-grained locking — reads are lock-free (volatile reads)\nJava 8 CHM: CAS for insert, synchronized on single bucket node for collision\nBulk operations: forEach, reduce, search (parallelism threshold configurable)\nNo null keys/values in ConcurrentHashMap (would be ambiguous)\nPrefer CHM for concurrent workloads; synchronizedMap for simple wrapping of existing map",
+    "codeExample": null
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Reflection API & Annotations",
+    "question": "What is a dynamic proxy in Java and how does it work?",
+    "quickAnswer": "A JDK dynamic proxy creates an implementation of one or more interfaces at runtime. You provide an InvocationHandler whose invoke() method intercepts every interface method call. Frameworks like Spring AOP and MyBatis use this to add cross-cutting concerns (logging, transactions) without modifying the original class. It only works for interfaces — for classes, use CGLIB or ByteBuddy.",
+    "difficulty": "HIGH",
+    "keyPoints": "Proxy.newProxyInstance(classLoader, interfaces[], handler): creates proxy at runtime\nInvocationHandler.invoke(proxy, method, args): intercepts every call\nJDK proxy: interface-only; CGLIB/ByteBuddy: class proxying (subclasses)\nSpring @Transactional: backed by proxy — method called from within same class bypasses it!\nPerformance: slight overhead per call vs direct method call\nReflection inside handler: method.invoke(target, args) to delegate to real object",
+    "codeExample": "Service proxy = (Service) Proxy.newProxyInstance(\n    Service.class.getClassLoader(),\n    new Class[]{Service.class},\n    (p, method, args) -> {\n        System.out.println(\"Before: \" + method.getName());\n        return method.invoke(realService, args);\n    });"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Java Serialization & Externalization",
+    "question": "What is serialVersionUID and what happens if you don't declare it?",
+    "quickAnswer": "serialVersionUID is a version identifier for a Serializable class. During deserialization, Java checks that the serialVersionUID in the stream matches the class. If you don't declare it, Java auto-generates one based on the class structure — any change to the class (adding a field, method) regenerates it, breaking deserialization of old data. Always declare it explicitly to control compatibility.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Auto-generated: based on class name, fields, methods — fragile\nDeclare explicitly: private static final long serialVersionUID = 1L;\nMismatch: InvalidClassException at deserialization time\nChanging serialVersionUID intentionally: signals intentional incompatibility\nCommon gotcha: IDE refactoring (renaming a method) changes auto UID\nNot needed for Externalizable (you handle the format yourself)",
+    "codeExample": "public class User implements Serializable {\n    private static final long serialVersionUID = 1L;\n    private String name;\n    private int age;\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Enums in Java",
+    "question": "What are enums in Java and how are they different from int constants?",
+    "quickAnswer": "An enum is a type-safe set of named constants. Unlike int constants (public static final int STATUS_ACTIVE = 1), enums prevent invalid values at compile time — you can't pass 99 where a Status is expected. Enums can have fields, methods, and implement interfaces. Each constant is a singleton instance of the enum class.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Type safety: enum enforces valid values at compile time\nEnum is a class: can have fields, constructors, methods\nEach constant: singleton instance of the enum type\nvalues(): returns all constants as array; valueOf(\"NAME\"): lookup by name\nordinal(): position (avoid using — fragile); name(): string name\nSwitch with enum: compiler can warn about missing cases",
+    "codeExample": "enum Status {\n    ACTIVE(\"A\"), INACTIVE(\"I\"), DELETED(\"D\");\n    private final String code;\n    Status(String code) { this.code = code; }\n    public String getCode() { return code; }\n}\nStatus s = Status.ACTIVE;\nSystem.out.println(s.getCode()); // A"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Enums in Java",
+    "question": "Can an enum implement an interface or extend a class?",
+    "quickAnswer": "Enums can implement interfaces — this allows polymorphism with enum constants. Enums cannot extend classes because all enums implicitly extend java.lang.Enum<T>, and Java doesn't support multiple class inheritance. Implementing interfaces on enums is a common pattern for strategy-like behavior (each constant implements the interface differently).",
+    "difficulty": "HIGH",
+    "keyPoints": "Enum implicitly extends java.lang.Enum<E> — no more class extension possible\nEnum CAN implement interfaces — common pattern for per-constant behavior\nAbstract method in enum: each constant must provide its own implementation\nEnums are final implicitly — can't subclass an enum\nEnum constants are public static final — thread-safe singletons",
+    "codeExample": "enum Operation {\n    ADD { public int apply(int a, int b) { return a + b; } },\n    SUB { public int apply(int a, int b) { return a - b; } };\n    public abstract int apply(int a, int b);\n}\nint result = Operation.ADD.apply(3, 4); // 7"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Enums in Java",
+    "question": "How do EnumSet and EnumMap differ from regular Set and Map?",
+    "quickAnswer": "EnumSet is backed by a long bitmask — all operations are O(1) and extremely fast. EnumMap stores values in an array indexed by enum ordinal — also O(1) and more memory-efficient than HashMap. Both require the key type to be an enum. They are the recommended collections when keys/elements are enums.",
+    "difficulty": "HIGH",
+    "keyPoints": "EnumSet: bitmask-backed, O(1) all ops, no boxing, no null\nEnumMap: array-backed (indexed by ordinal), O(1), preserves enum declaration order\nEnumSet.of(A, B, C): concise; EnumSet.allOf(Day.class): all values\nFaster and smaller than HashSet<Enum>/HashMap<Enum,V>\nThread-safety: neither is thread-safe — wrap with Collections.synchronized*\nCommon use: permission sets (EnumSet<Permission>), config maps",
+    "codeExample": "EnumSet<DayOfWeek> weekend = EnumSet.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);\nEnumMap<DayOfWeek, String> schedule = new EnumMap<>(DayOfWeek.class);\nschedule.put(DayOfWeek.MONDAY, \"Standup at 9am\");"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Enums in Java",
+    "question": "How can you look up an enum constant safely without throwing an exception?",
+    "quickAnswer": "Enum.valueOf(\"NAME\") throws IllegalArgumentException for unknown names. To look up safely, iterate values() with a try-catch, or pre-build a Map<String, MyEnum> from all values(). A static fromCode() method pattern is common when the lookup key is a field (not the name). Avoid using ordinal() for lookup — it's fragile when constants are reordered.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "valueOf(name): throws IllegalArgumentException if name not found\nSafe pattern: pre-built Map<String, MyEnum> in a static block\nordinal(): fragile — reordering constants changes values\nAnnotation or field: store display name/code in a field; add fromCode() factory\nStream approach: Arrays.stream(values()).filter(v -> v.code.equals(code)).findFirst()\nCommon bug: valueOf() is case-sensitive",
+    "codeExample": "enum Status {\n    ACTIVE(\"A\"), INACTIVE(\"I\");\n    private static final Map<String, Status> BY_CODE =\n        Arrays.stream(values()).collect(Collectors.toMap(s -> s.code, s -> s));\n    final String code;\n    Status(String code) { this.code = code; }\n    public static Optional<Status> fromCode(String code) {\n        return Optional.ofNullable(BY_CODE.get(code));\n    }\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Design Patterns in Java",
+    "question": "What is the Singleton pattern and how do you implement it thread-safely?",
+    "quickAnswer": "Singleton ensures a class has only one instance. Thread-safe options: (1) Eager initialization — create at class load time using a static final field. (2) Bill Pugh — static inner class holder (lazy + thread-safe without synchronization). (3) Enum singleton — JVM guarantees one instance, handles serialization safely. Avoid double-checked locking unless the field is volatile.",
+    "difficulty": "HIGH",
+    "keyPoints": "Eager: static final instance = new Singleton() — simple, always created\nLazy (Bill Pugh): static inner holder class — loaded on first access, JVM ensures thread safety\nEnum: best for serialization safety — JVM prevents creating extra instances\nDouble-checked locking: needs volatile on instance field (Java 5+)\nSingleton pitfalls: hard to test (mock difficult), hides dependencies\nSpring @Component is a singleton by default within the ApplicationContext",
+    "codeExample": "// Bill Pugh — preferred lazy singleton\nclass Singleton {\n    private Singleton() {}\n    private static class Holder {\n        static final Singleton INSTANCE = new Singleton();\n    }\n    public static Singleton getInstance() { return Holder.INSTANCE; }\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Design Patterns in Java",
+    "question": "What is the Builder pattern and when should you use it?",
+    "quickAnswer": "Builder separates object construction from its representation, letting you build complex objects step by step. Use it when: an object has many optional parameters (avoids telescoping constructors), the object must be immutable (no setters), or construction order matters. Lombok's @Builder auto-generates the builder. Unlike constructors with many params, Builder calls are self-documenting.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Fluent API: Person.builder().name(\"Alice\").age(30).build()\nSolves telescoping constructor problem (constructors with 5+ params)\nEnables immutability: all fields set in builder, object has no setters\nDirector class (GoF): optional — directs the build steps\nLombok @Builder: generates the builder class automatically\nValidation: add checks in build() before constructing the object",
+    "codeExample": "Person person = Person.builder()\n    .name(\"Alice\")\n    .age(30)\n    .email(\"alice@example.com\")\n    .build();"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Design Patterns in Java",
+    "question": "What is the difference between Strategy and Template Method patterns?",
+    "quickAnswer": "Both define algorithms, but differ in how variation is achieved. Template Method uses inheritance: a base class defines the algorithm skeleton with abstract steps; subclasses fill in the steps. Strategy uses composition: the algorithm is extracted to a separate interface, and the client holds a reference to a strategy object. Prefer Strategy (composition over inheritance) when the algorithm should be swappable at runtime.",
+    "difficulty": "HIGH",
+    "keyPoints": "Template Method: inheritance — base class has the flow, subclass fills in steps\nStrategy: composition — algorithm interface injected at runtime\nTemplate Method: fixed algorithm structure, variable steps\nStrategy: algorithm entirely swappable; object holds a reference to it\nJava examples: Collections.sort() = Strategy (Comparator); InputStream.read() = Template Method\nPrefer Strategy for testability and runtime flexibility",
+    "codeExample": "// Strategy\ninterface SortStrategy { void sort(int[] arr); }\nclass Sorter {\n    private SortStrategy strategy;\n    Sorter(SortStrategy s) { this.strategy = s; }\n    void sort(int[] arr) { strategy.sort(arr); }\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Design Patterns in Java",
+    "question": "What is the Observer pattern and how is it used in Java?",
+    "quickAnswer": "Observer defines a one-to-many dependency: when a Subject changes state, all registered Observers are notified automatically. In Java, this is the basis for event listeners (ActionListener in Swing), PropertyChangeListener, and reactive streams. The classic java.util.Observable is deprecated; prefer custom EventBus, guava EventBus, or Spring ApplicationEvent.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Subject (Observable): maintains list of observers; notifies on state change\nObserver: interface with update() callback method\nLoose coupling: subject doesn't know observer types\nJava built-in: PropertyChangeSupport + PropertyChangeListener\nSpring: ApplicationEventPublisher + @EventListener\nPitfall: order of notification not guaranteed; memory leak if observers not removed",
+    "codeExample": "// Simple Observer\ninterface Observer { void onEvent(String event); }\nclass EventSource {\n    private List<Observer> listeners = new ArrayList<>();\n    void addListener(Observer o) { listeners.add(o); }\n    void fire(String event) { listeners.forEach(o -> o.onEvent(event)); }\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "CompletableFuture in Java",
+    "question": "What is CompletableFuture and how is it different from Future?",
+    "quickAnswer": "Future (Java 5) represents an async result but has a blocking get() — you can't chain operations or add callbacks. CompletableFuture (Java 8) adds: non-blocking callbacks (thenApply, thenAccept), chaining pipelines, combining multiple futures (allOf, anyOf), exception handling (exceptionally, handle), and explicit completion (complete(), completeExceptionally()). It makes async programming composable.",
+    "difficulty": "HIGH",
+    "keyPoints": "Future.get(): blocking — wastes a thread waiting\nCompletableFuture: callback-based — register what to do when done\nthenApply(fn): transform result (like Stream.map)\nthenAccept(consumer): consume result (no return)\nthenCompose(fn): chain — fn returns another CompletableFuture (flatMap equivalent)\ncombineWith/allOf: wait for multiple futures\nDefault executor: ForkJoinPool.commonPool() (unless Async variant with custom executor)",
+    "codeExample": "CompletableFuture.supplyAsync(() -> fetchUser(id))\n    .thenApply(user -> enrichWithProfile(user))\n    .thenAccept(profile -> cache.put(id, profile))\n    .exceptionally(ex -> { log.error(\"Failed\", ex); return null; });"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "CompletableFuture in Java",
+    "question": "What is the difference between thenApply, thenCompose, and thenCombine?",
+    "quickAnswer": "thenApply(fn) transforms the result synchronously — like map(). thenCompose(fn) chains another async operation — fn returns a CompletableFuture — like flatMap(), avoids nesting. thenCombine(other, fn) waits for two independent futures and combines their results. Use thenCompose when your callback itself returns a future; use thenApply for simple transformations.",
+    "difficulty": "HIGH",
+    "keyPoints": "thenApply: T → U (sync transform, like map)\nthenCompose: T → CompletableFuture<U> (async chain, like flatMap — avoids CompletableFuture<CompletableFuture<U>>)\nthenCombine: (T, U) → V — two independent futures merged\nthenAcceptBoth: like thenCombine but no return value\nthenRun: no input, no output — just a side effect after completion\nAsync variants (thenApplyAsync): run callback on a different thread",
+    "codeExample": "// thenCompose: fetch user then fetch their orders\nCompletableFuture<List<Order>> orders = \n    fetchUser(userId)\n        .thenCompose(user -> fetchOrders(user.getId()));"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "CompletableFuture in Java",
+    "question": "How do you handle exceptions in a CompletableFuture pipeline?",
+    "quickAnswer": "Two main methods: exceptionally(fn) — handles error, provides a fallback value (like catch); handle(fn) — runs on both success and failure, receives (result, exception) and always produces a value (like finally). whenComplete is similar to handle but doesn't transform the result. If no exception handler is added, exceptions are swallowed until get() is called.",
+    "difficulty": "HIGH",
+    "keyPoints": "exceptionally(fn): catches exception, returns fallback — like a catch block\nhandle(fn): runs always — receives (T result, Throwable ex), one will be null\nwhenComplete(consumer): side-effect on both paths, doesn't change result\nWithout a handler: exceptions propagate silently to get() as ExecutionException\nExceptionHandler chain: each stage can add its own handler\nNested futures: exceptions in thenCompose propagate to the outer future",
+    "codeExample": "CompletableFuture<String> result = fetchData()\n    .exceptionally(ex -> \"default-value\")\n    .handle((val, ex) -> ex != null ? \"error: \" + ex.getMessage() : val);"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "CompletableFuture in Java",
+    "question": "How do you run multiple CompletableFutures in parallel and wait for all of them?",
+    "quickAnswer": "CompletableFuture.allOf(cf1, cf2, cf3) returns a CompletableFuture<Void> that completes when all complete. To collect results, join each future after allOf completes. anyOf(cf1, cf2, cf3) returns a future that completes as soon as any one completes. For a list of futures, use allOf(list.toArray(new CompletableFuture[0])).",
+    "difficulty": "HIGH",
+    "keyPoints": "allOf: waits for ALL — returns Void, results must be collected separately\nanyOf: completes on FIRST — returns Object (result of first completed)\nAfter allOf.join(): safe to call cf.join() on each future (already done)\nList of futures: allOf(futures.toArray(new CompletableFuture[0]))\nStream pattern: futures.stream().map(CompletableFuture::join) — collects results\nTimeout: future.orTimeout(3, TimeUnit.SECONDS) (Java 9+)",
+    "codeExample": "List<CompletableFuture<User>> futures = userIds.stream()\n    .map(id -> CompletableFuture.supplyAsync(() -> fetchUser(id)))\n    .toList();\nCompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();\nList<User> users = futures.stream().map(CompletableFuture::join).toList();"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Locks & Advanced Concurrency",
+    "question": "What is the difference between synchronized and ReentrantLock?",
+    "quickAnswer": "synchronized is a keyword — simple, automatic unlock on exception/return, but inflexible. ReentrantLock is a class providing: tryLock() with timeout, lockInterruptibly() (can be interrupted while waiting), fairness option (longest-waiting thread gets lock first), and multiple Condition objects. ReentrantLock must be explicitly unlocked — always in a finally block.",
+    "difficulty": "HIGH",
+    "keyPoints": "synchronized: automatic unlock, no timeout, not interruptible, one implicit condition\nReentrantLock: explicit lock/unlock, tryLock(timeout), lockInterruptibly(), multiple Conditions\nFairness: new ReentrantLock(true) — FIFO order (slower but prevents starvation)\nReentrant: same thread can lock multiple times; must unlock same number of times\nCondition: lock.newCondition() → await()/signal()/signalAll() (replaces wait/notify)\nAlways unlock in finally: lock.lock(); try { ... } finally { lock.unlock(); }",
+    "codeExample": "ReentrantLock lock = new ReentrantLock();\nif (lock.tryLock(100, TimeUnit.MILLISECONDS)) {\n    try {\n        // critical section\n    } finally {\n        lock.unlock();\n    }\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Locks & Advanced Concurrency",
+    "question": "What is ReadWriteLock and when should you use it?",
+    "quickAnswer": "ReadWriteLock (ReentrantReadWriteLock) maintains two locks: a read lock (shared — multiple threads can hold it simultaneously) and a write lock (exclusive — only one thread at a time, blocks all readers). Use when reads are frequent and writes are rare — allows high read concurrency without sacrificing write safety. Typical use: caches, configuration objects.",
+    "difficulty": "HIGH",
+    "keyPoints": "Read lock: multiple threads can acquire concurrently (shared)\nWrite lock: exclusive — no readers or writers allowed concurrently\nUse case: read-heavy, write-rare workloads (e.g., in-memory cache)\nDowngrading: write → read lock is allowed (acquire read, release write)\nUpgrading: read → write lock is NOT supported (deadlock risk)\nStarvation risk: with heavy read traffic, writers may be starved",
+    "codeExample": "ReadWriteLock rwLock = new ReentrantReadWriteLock();\n// Read:\nrwLock.readLock().lock();\ntry { return cache.get(key); } finally { rwLock.readLock().unlock(); }\n// Write:\nrwLock.writeLock().lock();\ntry { cache.put(key, val); } finally { rwLock.writeLock().unlock(); }"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Locks & Advanced Concurrency",
+    "question": "What are CountDownLatch, CyclicBarrier, and Semaphore? When do you use each?",
+    "quickAnswer": "CountDownLatch: one or more threads wait until N other threads finish (one-shot, not reusable). CyclicBarrier: N threads all wait at a barrier point before proceeding together (reusable — 'cyclic'). Semaphore: limits concurrent access to a resource — like a pool of N permits. Semaphore(1) is a binary semaphore (mutex). CountDownLatch for one-time startup sync; CyclicBarrier for iterative phased work; Semaphore for rate limiting.",
+    "difficulty": "HIGH",
+    "keyPoints": "CountDownLatch: await() blocks until countdown reaches 0; countDown() from workers\nCyclicBarrier: await() blocks until all N parties arrive; then all proceed together\nSemaphore: acquire() takes a permit; release() returns it; blocks if no permits available\nCountDownLatch: NOT reusable — use Phaser for repeated countdowns\nCyclicBarrier: reusable — resets after each cycle; optional Runnable at barrier\nSemaphore use: connection pool, rate limiter, bounding concurrent requests",
+    "codeExample": "// CountDownLatch: wait for 3 services to start\nCountDownLatch latch = new CountDownLatch(3);\n// Each service calls latch.countDown() when ready\nlatch.await(); // main thread waits here\nSystem.out.println(\"All services started\");"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "Locks & Advanced Concurrency",
+    "question": "What is the happens-before relationship in Java memory model?",
+    "quickAnswer": "The Java Memory Model (JMM) guarantees that actions in one thread are visible to another only if there is a happens-before (HB) edge. Key HB relationships: program order within a thread; monitor unlock HB monitor lock of the same monitor; volatile write HB volatile read of the same variable; Thread.start() HB all actions in the started thread; thread termination HB Thread.join() return.",
+    "difficulty": "HIGH",
+    "keyPoints": "Without HB: compiler/CPU may reorder instructions — stale caches possible\nVolatile write HB volatile read: guarantees visibility across threads\nsynchronized release HB synchronized acquire: all writes before unlock visible after lock\nThread.start() HB thread body: thread sees all actions before start()\nThread.join() HB caller: caller sees all actions of the joined thread\nAtomic operations (CAS): also establish HB",
+    "codeExample": "// volatile write HB volatile read ensures flag change is visible:\nprivate volatile boolean ready = false;\n// Thread 1:\ndata = 42;\nready = true; // volatile write\n// Thread 2:\nif (ready) System.out.println(data); // guaranteed to see 42"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "JDBC in Java",
+    "question": "What is JDBC and what are the main steps to query a database?",
+    "quickAnswer": "JDBC (Java Database Connectivity) is the standard API for connecting Java applications to relational databases. Main steps: (1) Load driver (auto-loaded via SPI in modern JDBC). (2) Get a Connection from DriverManager or DataSource. (3) Create a Statement or PreparedStatement. (4) Execute query. (5) Process ResultSet. (6) Close resources (use try-with-resources).",
+    "difficulty": "MEDIUM",
+    "keyPoints": "DriverManager.getConnection(url, user, pass): creates a connection\nPreparedStatement: preferred over Statement — prevents SQL injection, reusable\nResultSet: cursor over rows — rs.next() advances; rs.getString(\"col\") gets value\nConnection is expensive: always close; use a connection pool (HikariCP)\ntry-with-resources: auto-closes Connection, PreparedStatement, ResultSet\nJDBC URL format: jdbc:mysql://host:port/db?params",
+    "codeExample": "String sql = \"SELECT name FROM users WHERE id = ?\";\ntry (Connection conn = dataSource.getConnection();\n     PreparedStatement ps = conn.prepareStatement(sql)) {\n    ps.setLong(1, userId);\n    try (ResultSet rs = ps.executeQuery()) {\n        if (rs.next()) return rs.getString(\"name\");\n    }\n}"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "JDBC in Java",
+    "question": "What is the difference between Statement, PreparedStatement, and CallableStatement?",
+    "quickAnswer": "Statement executes ad-hoc SQL — risk of SQL injection. PreparedStatement precompiles SQL with ? placeholders — prevents injection, better performance for repeated queries (parsed once). CallableStatement executes stored procedures. Always prefer PreparedStatement for queries with user input. Never concatenate user input into SQL strings.",
+    "difficulty": "MEDIUM",
+    "keyPoints": "Statement: no parameters, vulnerable to SQL injection, parsed each time\nPreparedStatement: compiled once, ? placeholders, safe from injection\nCallableStatement: calls stored procedures {call proc_name(?)}\nPerformance: PreparedStatement caches query plan — faster for repeated execution\nSQL injection: Statement + string concat = vulnerability; PreparedStatement = safe\nBatch inserts: ps.addBatch(); ps.executeBatch() — far faster than individual inserts",
+    "codeExample": "// SQL injection risk — NEVER do this:\nString sql = \"SELECT * FROM users WHERE name = '\" + userInput + \"'\";\n// Safe:\nPreparedStatement ps = conn.prepareStatement(\"SELECT * FROM users WHERE name = ?\");\nps.setString(1, userInput);"
+  },
+  {
+    "category": "JAVA",
+    "topicTitle": "JDBC in Java",
+    "question": "What is a connection pool and why is it critical in production JDBC applications?",
+    "quickAnswer": "Creating a database connection is expensive (TCP handshake, auth, protocol negotiation). A connection pool pre-creates and maintains a set of reusable connections. Application code borrows a connection and returns it after use — the underlying connection stays open. HikariCP is the fastest and most popular pool (default in Spring Boot). Without pooling, each request could take 50–200ms just to open a connection.",
+    "difficulty": "HIGH",
+    "keyPoints": "Connection creation cost: ~50–200ms — too slow per request\nPool: pre-creates N connections; app borrows and returns\nHikariCP: Spring Boot default; ~130μs to borrow a connection\nKey settings: maximumPoolSize, connectionTimeout, idleTimeout, maxLifetime\nLeak detection: HikariCP can log unclosed connections (leakDetectionThreshold)\nDataSource interface: pool exposes DataSource — code is pool-agnostic",
+    "codeExample": "// application.properties (Spring Boot + HikariCP)\n# spring.datasource.hikari.maximum-pool-size=10\n# spring.datasource.hikari.connection-timeout=3000\n# spring.datasource.hikari.idle-timeout=600000"
   }
 ]
