@@ -162,6 +162,7 @@ Frontend `CATEGORIES` array and `CATEGORY_META` in `src/utils/helpers.js` must m
 | Roadmap (custom learning paths) | `/roadmap` | Done |
 | Playground (free-form code editor) | `/playground` | Done |
 | Quick Win (confidence-builder sessions) | `/quick-win` | Done |
+| Videos (per-topic videos, admin + personal, grouped by topic) | `/videos` | Done |
 
 ### Learning Gate Stages
 `THEORY → EASY → MEDIUM → HARD → MASTERED`
@@ -255,5 +256,6 @@ Apply to all new seeds:
 | Visualizer engine + tab | `frontend/src/components/visualizer/VisualizerEngine.jsx`, `VisualizerTab.jsx` |
 | Visualizer renderers | `frontend/src/components/visualizer/renderers/` |
 | Roadmap page | `frontend/src/pages/roadmap/RoadmapPage.jsx` |
+| Videos page | `frontend/src/pages/videos/VideosPage.jsx` |
 | Playground page | `frontend/src/pages/playground/PlaygroundPage.jsx` |
 | Startup runners | `learning-system/src/main/java/com/learnsystem/runner/` |

@@ -12,5 +12,7 @@ public interface UserTopicVideoRepository extends JpaRepository<UserTopicVideo, 
 
     List<UserTopicVideo> findByUserIdAndTopicIdOrderByAddedAtDesc(Long userId, Long topicId);
 
+    List<UserTopicVideo> findByUserIdOrderByAddedAtDesc(Long userId);
+
     Optional<UserTopicVideo> findByIdAndUserId(Long id, Long userId);
 }

@@ -1179,12 +1179,14 @@ function VideosTab({ topic, isAdmin, ytEditing, ytDraft, setYtDraft, setYtEditin
                     )}
                     <span className={styles.userVideoTitle}>{v.title || v.url}</span>
                   </a>
-                  <button
-                    className={styles.userVideoDelete}
-                    onClick={() => removeMutation.mutate(v.id)}
-                    disabled={removeMutation.isPending}
-                    title="Remove video"
-                  >✕</button>
+                  {isAdmin && (
+                    <button
+                      className={styles.userVideoDelete}
+                      onClick={() => removeMutation.mutate(v.id)}
+                      disabled={removeMutation.isPending}
+                      title="Remove video"
+                    >✕</button>
+                  )}
                 </div>
               );
             })}

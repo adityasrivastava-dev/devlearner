@@ -165,6 +165,9 @@ export const userVideosApi = {
 
   remove: (topicId, videoId) =>
     http.delete(`/api/topics/${topicId}/videos/user/${videoId}`).then((r) => r.data),
+
+  getAll: () =>
+    http.get('/api/videos/all').then((r) => r.data),
 };
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
@@ -410,6 +413,7 @@ export const QUERY_KEYS = {
   analyticsDashboard:      ['analyticsDashboard'],
   analyticsMistakes:       ['analyticsMistakes'],
   userVideos:    (tid)  => ['userVideos', tid],
+  allVideos:             ['allVideos'],
 };
 // ─── Spaced Repetition ────────────────────────────────────────────────────────
 export const srsApi = {

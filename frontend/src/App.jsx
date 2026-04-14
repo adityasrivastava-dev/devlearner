@@ -22,6 +22,7 @@ import MasteryPage        from './pages/mastery/MasteryPage';
 import ReviewPage         from './pages/review/ReviewPage';
 import InterviewModePage  from './pages/interview-mode/InterviewModePage';
 import AnalyticsPage      from './pages/analytics/AnalyticsPage';
+import VideosPage         from './pages/videos/VideosPage';
 
 // Apply saved theme on load
 const savedTheme = localStorage.getItem('devlearn_theme') || 'dark';
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="/review"         element={<ProtectedRoute><ReviewPage /></ProtectedRoute>} />
             <Route path="/interview-mode" element={<ProtectedRoute><InterviewModePage /></ProtectedRoute>} />
             <Route path="/analytics"     element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+            <Route path="/videos"        element={<ProtectedRoute><VideosPage /></ProtectedRoute>} />
             <Route path="/admin"      element={<AdminRoute><AdminPage /></AdminRoute>} />
             <Route path="*"           element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
           </Routes>

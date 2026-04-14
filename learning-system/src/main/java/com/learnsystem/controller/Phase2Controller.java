@@ -13,6 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Phase 2 REST API — all Phase 2 features in one controller.
@@ -47,6 +48,7 @@ import java.util.*;
  *   GET    /api/topics/:topicId/videos/user           — get user's own saved videos for a topic
  *   POST   /api/topics/:topicId/videos/user           — add a video url (body: {url, title?})
  *   DELETE /api/topics/:topicId/videos/user/:videoId  — delete own video
+ *   GET    /api/videos/all                            — all videos grouped by topic (admin + personal)
  */
 @Slf4j
 @RestController
@@ -63,6 +65,7 @@ private final UserRepository                 userRepo;
 private final JwtService                     jwtService;
 private final com.learnsystem.repository.TopicRatingRepository ratingRepo;
 private final UserTopicVideoRepository       userVideoRepo;
+private final TopicRepository                topicRepo;
 
 // ═══════════════════════════════════════════════════════════════════
 // SPACED REPETITION
@@ -407,5 +410,81 @@ public ResponseEntity<?> deleteUserVideo(
 		return ResponseEntity.status(403).body(Map.of("error", "Not found or not yours"));
 	userVideoRepo.deleteById(videoId);
 	return ResponseEntity.ok(Map.of("deleted", true));
+}
+
+// ── All videos grouped by topic ───────────────────────────────────────────
+@GetMapping("/api/videos/all")
+public ResponseEntity<?> getAllVideos(@AuthenticationPrincipal User user) {
+	if (user == null) return ResponseEntity.status(401).build();
+
+	// User's personal videos grouped by topicId
+	Map<Long, List<UserTopicVideo>> userByTopic = userVideoRepo
+			.findByUserIdOrderByAddedAtDesc(user.getId())
+			.stream().collect(Collectors.groupingBy(UserTopicVideo::getTopicId));
+
+	// Topics that have admin-added videos
+	Map<Long, com.learnsystem.model.Topic> adminTopicMap = topicRepo.findAllWithVideos()
+			.stream().collect(Collectors.toMap(com.learnsystem.model.Topic::getId, t -> t));
+
+	// Merge all topic IDs
+	Set<Long> allIds = new LinkedHashSet<>();
+	allIds.addAll(adminTopicMap.keySet());
+	allIds.addAll(userByTopic.keySet());
+
+	// Fetch any topics only in userByTopic (not in adminTopicMap)
+	Set<Long> missing = userByTopic.keySet().stream()
+			.filter(id -> !adminTopicMap.containsKey(id))
+			.collect(Collectors.toSet());
+	if (!missing.isEmpty()) {
+		topicRepo.findAllById(missing).forEach(t -> adminTopicMap.put(t.getId(), t));
+	}
+
+	List<Map<String, Object>> result = allIds.stream()
+			.map(topicId -> {
+				var t = adminTopicMap.get(topicId);
+				if (t == null) return null;
+
+				List<String> adminUrls = parseYoutubeUrls(t.getYoutubeUrls());
+				List<Map<String, Object>> userVids = userByTopic
+						.getOrDefault(topicId, List.of())
+						.stream().map(v -> Map.<String, Object>of(
+								"id",    v.getId(),
+								"url",   v.getUrl(),
+								"title", v.getTitle() != null ? v.getTitle() : ""
+						)).toList();
+
+				if (adminUrls.isEmpty() && userVids.isEmpty()) return null;
+
+				Map<String, Object> row = new LinkedHashMap<>();
+				row.put("topicId",     t.getId());
+				row.put("topicTitle",  t.getTitle());
+				row.put("category",    t.getCategory().name());
+				row.put("adminVideos", adminUrls.stream().map(url ->
+						Map.<String, Object>of("url", url)).toList());
+				row.put("userVideos",  userVids);
+				return row;
+			})
+			.filter(Objects::nonNull)
+			.toList();
+
+	return ResponseEntity.ok(result);
+}
+
+/** Parse youtubeUrls field — JSON array or newline/comma separated */
+private List<String> parseYoutubeUrls(String raw) {
+	if (raw == null || raw.isBlank()) return List.of();
+	raw = raw.trim();
+	if (raw.startsWith("[")) {
+		try {
+			// Strip JSON array brackets and split on "," between entries
+			String inner = raw.substring(1, raw.length() - 1);
+			return Arrays.stream(inner.split(","))
+					.map(s -> s.trim().replaceAll("^\"|\"$", ""))
+					.filter(s -> !s.isBlank())
+					.toList();
+		} catch (Exception e) { /* fall through */ }
+	}
+	return Arrays.stream(raw.split("[,\n]"))
+			.map(String::trim).filter(s -> !s.isBlank()).toList();
 }
 }

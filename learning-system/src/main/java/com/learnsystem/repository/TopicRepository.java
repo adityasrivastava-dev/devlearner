@@ -34,6 +34,9 @@ public interface TopicRepository extends JpaRepository<Topic, Long> {
         String  getSpaceComplexity();
     }
 
+    @Query("SELECT t FROM Topic t WHERE t.youtubeUrls IS NOT NULL AND t.youtubeUrls <> '' ORDER BY t.displayOrder ASC, t.title ASC")
+    List<Topic> findAllWithVideos();
+
     @Query("SELECT t FROM Topic t ORDER BY t.displayOrder ASC, t.title ASC")
     List<TopicSummary> findAllSummaries();
 

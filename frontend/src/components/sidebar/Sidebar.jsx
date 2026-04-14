@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
-import { CATEGORIES, CATEGORY_META } from '../../utils/helpers';
+import { CATEGORIES } from '../../utils/helpers';
+import { topicsApi, userVideosApi, QUERY_KEYS } from '../../api';
 import UserBar from './UserBar';
 import styles from './Sidebar.module.css';
 
@@ -16,6 +18,7 @@ const NAV_SECTIONS = [
       { path: '/review',      icon: '↻',  label: 'Review Queue'   },
       { path: '/analytics',   icon: '▲',  label: 'Analytics'      },
       { path: '/roadmap',     icon: '🗺', label: 'Roadmap'        },
+      { path: '/videos',      icon: '▶',  label: 'Videos'         },
     ],
   },
   {
@@ -45,7 +48,34 @@ const NAV_SECTIONS = [
   },
 ];
 
-// Category display config (icon + color)
+// ── YouTube helpers ───────────────────────────────────────────────────────────
+function getYtId(url) {
+  if (!url) return null;
+  const patterns = [
+    /youtu\.be\/([^?&\s]{11})/,
+    /[?&]v=([^&\s]{11})/,
+    /embed\/([^?&\s]{11})/,
+    /shorts\/([^?&\s]{11})/,
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function parseYtUrls(raw) {
+  if (!raw) return [];
+  try {
+    const p = JSON.parse(raw);
+    if (Array.isArray(p)) return p.filter(Boolean);
+  } catch {
+    return raw.split(/[\n,]/).map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+// ── Category display config (icon + color)
 const CAT_CONFIG = {
   JAVA:          { icon: '☕', color: '#fbbf24' },
   ADVANCED_JAVA: { icon: '⚡', color: '#a78bfa' },
@@ -56,6 +86,90 @@ const CAT_CONFIG = {
   SYSTEM_DESIGN: { icon: '🏗', color: '#f472b6'  },
   TESTING:       { icon: '🧪', color: '#34d399'  },
 };
+
+// ── Videos Section ────────────────────────────────────────────────────────────
+function VideosSection({ topicId }) {
+  const [open, setOpen] = useState(false);
+
+  const { data: topic } = useQuery({
+    queryKey: QUERY_KEYS.topic(topicId),
+    queryFn:  () => topicsApi.getById(topicId),
+    enabled:  !!topicId,
+    staleTime: 15 * 60 * 1000,
+  });
+
+  const { data: userVideos = [] } = useQuery({
+    queryKey: QUERY_KEYS.userVideos(topicId),
+    queryFn:  () => userVideosApi.getForTopic(topicId),
+    enabled:  !!topicId,
+    staleTime: 60 * 1000,
+  });
+
+  // Reset collapsed state when topic changes
+  useEffect(() => { setOpen(false); }, [topicId]);
+
+  const adminUrls = parseYtUrls(topic?.youtubeUrls);
+  const total     = adminUrls.length + userVideos.length;
+
+  if (total === 0) return null;
+
+  return (
+    <div className={styles.videosSection}>
+      {/* Accordion header — same style as nav sections */}
+      <button className={styles.videosAccordion} onClick={() => setOpen(v => !v)}>
+        <div className={styles.videosAccordionLeft}>
+          <span className={styles.videosSectionTitle}>Videos</span>
+          <span className={styles.videosCount}>{total}</span>
+        </div>
+        <span className={`${styles.navChevron} ${open ? styles.navChevronOpen : ''}`}>›</span>
+      </button>
+
+      {/* Collapsed: show topic name as hint */}
+      {!open && (
+        <div className={styles.videosCollapsedHint}>{topic?.title}</div>
+      )}
+
+      {/* Expanded: full list */}
+      {open && (
+        <div className={styles.videosList}>
+          {adminUrls.map((url, i) => {
+            const vid   = getYtId(url);
+            const thumb = vid ? `https://img.youtube.com/vi/${vid}/mqdefault.jpg` : null;
+            return (
+              <a key={`a-${i}`} href={url} target="_blank" rel="noopener noreferrer" className={styles.videoItem}>
+                {thumb
+                  ? <img src={thumb} alt="" className={styles.videoThumb} />
+                  : <div className={styles.videoThumbFallback}>▶</div>
+                }
+                <div className={styles.videoMeta}>
+                  <span className={styles.videoName}>Video {i + 1}</span>
+                  <span className={styles.videoTopicName}>{topic?.title}</span>
+                </div>
+              </a>
+            );
+          })}
+
+          {userVideos.map((v) => {
+            const vid   = getYtId(v.url);
+            const thumb = vid ? `https://img.youtube.com/vi/${vid}/mqdefault.jpg` : null;
+            return (
+              <a key={`u-${v.id}`} href={v.url} target="_blank" rel="noopener noreferrer" className={styles.videoItem}>
+                {thumb
+                  ? <img src={thumb} alt="" className={styles.videoThumb} />
+                  : <div className={styles.videoThumbFallback}>▶</div>
+                }
+                <div className={styles.videoMeta}>
+                  <span className={styles.videoName}>{v.title || 'My Video'}</span>
+                  <span className={styles.videoTopicName}>{topic?.title}</span>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function sectionForPath(pathname) {
   for (const s of NAV_SECTIONS) {
@@ -72,7 +186,8 @@ export default function Sidebar({ isOpen, onClose }) {
   const [searchParams] = useSearchParams();
   const { isAdmin } = useAuth();
 
-  const activeCategory = searchParams.get('category');
+  const activeCategory  = searchParams.get('category');
+  const selectedTopicId = (() => { const v = searchParams.get('topic'); const n = parseInt(v, 10); return v && !isNaN(n) ? n : null; })();
 
   const [openSections, setOpenSections] = useState(() => {
     const active = sectionForPath(location.pathname);
@@ -122,6 +237,9 @@ export default function Sidebar({ isOpen, onClose }) {
           <button className={`${styles.iconBtn} ${styles.closeBtn}`} onClick={onClose} title="Close">✕</button>
         </div>
 
+        {/* ── Scrollable body ───────────────────────────────────────────── */}
+        <div className={styles.scrollArea}>
+
         {/* ── Nav ───────────────────────────────────────────────────────── */}
         <nav className={styles.nav}>
           {NAV_SECTIONS.map((section) => {
@@ -166,6 +284,9 @@ export default function Sidebar({ isOpen, onClose }) {
           )}
         </nav>
 
+        {/* ── Videos for current topic ──────────────────────────────────── */}
+        {selectedTopicId && <VideosSection topicId={selectedTopicId} />}
+
         {/* ── Topic Categories ──────────────────────────────────────────── */}
         <div className={styles.catSection}>
           <div className={styles.catSectionHeader}>Topics</div>
@@ -188,6 +309,8 @@ export default function Sidebar({ isOpen, onClose }) {
             })}
           </div>
         </div>
+
+        </div>{/* end scrollArea */}
 
         {/* ── User bar ──────────────────────────────────────────────────── */}
         <UserBar />
