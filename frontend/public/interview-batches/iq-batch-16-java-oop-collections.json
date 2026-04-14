@@ -1,0 +1,197 @@
+{
+  "batchName": "iq-batch-16-java-oop-collections",
+  "questions": [
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the difference between abstract class and interface in Java 8+? When do you choose each?",
+      "quickAnswer": "An abstract class can have state (instance fields), constructors, and concrete methods. An interface (Java 8+) can have default and static methods but no instance state. A class can implement multiple interfaces but extend only one class. Choose abstract class for 'is-a' with shared state. Choose interface for capability contracts or multiple inheritance of behavior.",
+      "keyPoints": [
+        "Abstract class: can have fields, constructors, abstract and concrete methods",
+        "Interface (Java 8+): default methods (with body), static methods, constants (implicitly public static final)",
+        "Interface (Java 9+): private methods allowed to share code between defaults",
+        "Multiple inheritance: class implements many interfaces, extends only one class",
+        "Abstract class constructor runs when subclass is instantiated — useful for invariant setup",
+        "Interface default method conflict: if two interfaces provide same default, implementing class MUST override",
+        "Template Method pattern: abstract class with skeleton algorithm; interface for pure capabilities (Comparable, Runnable)"
+      ],
+      "displayOrder": 0
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is method overloading vs overriding? What is the difference between compile-time and runtime polymorphism?",
+      "quickAnswer": "Overloading: same method name, different parameter signature — resolved at compile time (static dispatch). Overriding: subclass provides a different implementation of a parent method — resolved at runtime based on actual object type (dynamic dispatch). Compile-time poly = overloading + generics. Runtime poly = overriding via inheritance.",
+      "keyPoints": [
+        "Overloading: same name, different params (type, count, order) — same class or subclass",
+        "Overriding: same name + same signature in subclass; @Override annotation catches mistakes",
+        "Static dispatch: overload selected at compile time based on declared (reference) type",
+        "Dynamic dispatch: override selected at runtime based on actual (heap) object type",
+        "Cannot override: static, private, final methods",
+        "Covariant return: overriding method can return a subtype (Animal → Dog)",
+        "Widening in overloading: int promoted to long/double if no exact match"
+      ],
+      "displayOrder": 1
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the contract between equals() and hashCode()? What breaks if you violate it?",
+      "quickAnswer": "If two objects are equal (equals() returns true), they must have the same hashCode. The reverse is not required (hash collisions are allowed). If you override equals() without hashCode(), equal objects may have different hash codes, causing HashMap/HashSet to store them in different buckets and treat them as unequal — you lose keys from a HashMap.",
+      "keyPoints": [
+        "Contract: a.equals(b) == true → a.hashCode() == b.hashCode()",
+        "Reverse not required: same hash doesn't mean equal (collision is fine)",
+        "Violation effect: key inserted into HashMap, then can't be found after mutation",
+        "equals() must be: reflexive (a.equals(a)), symmetric, transitive, consistent, null-safe",
+        "hashCode() must return same value for multiple calls if object didn't change",
+        "Always override both or neither — IDE can generate both",
+        "Use Objects.equals(a, b) and Objects.hash(f1, f2, f3) to avoid null checks"
+      ],
+      "displayOrder": 2
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between HashMap, LinkedHashMap, TreeMap, and Hashtable?",
+      "quickAnswer": "HashMap: O(1) get/put, unordered, allows one null key, not thread-safe. LinkedHashMap: maintains insertion order (or access order for LRU cache). TreeMap: sorted by natural order or Comparator, O(log n) operations. Hashtable: legacy, synchronized, no null keys/values — replaced by ConcurrentHashMap.",
+      "keyPoints": [
+        "HashMap: hash table, O(1) average, unordered, one null key, not thread-safe",
+        "LinkedHashMap: doubly-linked list + hash table, insertion or access order, O(1)",
+        "TreeMap: Red-Black tree, sorted, O(log n), no null keys",
+        "Hashtable: synchronized (every method), null not allowed — legacy, avoid",
+        "ConcurrentHashMap: segment-level locking (Java 7) / CAS (Java 8+) — use instead of Hashtable",
+        "HashMap initial capacity 16, load factor 0.75 — resizes (doubles) when 75% full",
+        "Java 8: HashMap bucket becomes TreeNode when chain length > 8 — O(log n) worst case instead of O(n)"
+      ],
+      "displayOrder": 3
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the difference between ArrayList, LinkedList, and ArrayDeque? When do you use each?",
+      "quickAnswer": "ArrayList: dynamic array, O(1) random access, O(n) insert/delete in middle, best for reads. LinkedList: doubly-linked list, O(1) add/remove at head/tail, O(n) random access, also implements Deque. ArrayDeque: resizable ring buffer, O(1) add/remove at both ends, no random access — best queue/stack. Avoid LinkedList in modern Java — cache misses kill performance.",
+      "keyPoints": [
+        "ArrayList: O(1) get(i), O(n) add(i)/remove(i) in middle, amortized O(1) add at tail",
+        "LinkedList: O(1) addFirst/addLast, O(n) get(i) — traversal required",
+        "ArrayDeque: O(1) offerFirst/offerLast/pollFirst/pollLast — preferred over LinkedList as Deque",
+        "Memory: ArrayList is compact array; LinkedList has node overhead (16+ bytes per node)",
+        "Cache locality: ArrayList = sequential memory = CPU cache friendly; LinkedList = pointer chasing = cache miss",
+        "Never use Stack class — use ArrayDeque: Deque<Integer> stack = new ArrayDeque<>()",
+        "Never use LinkedList as List — use ArrayList; only as Deque, prefer ArrayDeque"
+      ],
+      "displayOrder": 4
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the difference between fail-fast and fail-safe iterators?",
+      "quickAnswer": "Fail-fast iterators throw ConcurrentModificationException if the collection is modified during iteration (detected via modCount). Fail-safe iterators (in java.util.concurrent collections) work on a copy of the collection and never throw. CopyOnWriteArrayList is fail-safe but expensive on writes.",
+      "keyPoints": [
+        "Fail-fast: ArrayList, HashMap, HashSet iterators — check modCount, throw CME on structural change",
+        "modCount incremented on add/remove — iterator's expectedModCount must match",
+        "Fail-safe: ConcurrentHashMap, CopyOnWriteArrayList — iterate over snapshot, no CME",
+        "CopyOnWriteArrayList: write creates new array copy — reads are lock-free, writes are O(n)",
+        "CopyOnWriteArrayList best for: rare writes, many concurrent reads (event listeners)",
+        "Safe remove during iteration: use Iterator.remove() — doesn't increment modCount",
+        "Java 8+: removeIf(predicate) on collection — safe, uses iterator internally"
+      ],
+      "displayOrder": 5
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "How does HashMap work internally in Java 8? What is a hash collision and how is it handled?",
+      "quickAnswer": "HashMap uses an array of buckets. The bucket index is computed from key.hashCode() & (capacity-1). Multiple keys with the same bucket index (hash collision) form a chain (linked list). In Java 8+, chains longer than 8 nodes convert to a Red-Black tree, giving O(log n) worst-case instead of O(n). Java 8 also added treeification threshold for better performance.",
+      "keyPoints": [
+        "Bucket index: (n-1) & hash(key) — bitwise AND instead of modulo, works for power-of-2 capacity",
+        "Collision chain: multiple keys in same bucket, linked by Node.next",
+        "Treeify threshold: 8 → chain becomes TreeNode (Red-Black tree)",
+        "Untreeify threshold: 6 → back to linked list on removal",
+        "Resize: capacity doubles when size > capacity * loadFactor (0.75); all nodes rehashed",
+        "Java 8 hash spread: (h = key.hashCode()) ^ (h >>> 16) — XOR with upper bits to reduce clustering",
+        "null key always goes to bucket 0; null value is allowed"
+      ],
+      "displayOrder": 6
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between Comparable and Comparator? When do you use each?",
+      "quickAnswer": "Comparable defines the natural ordering of a class — implement compareTo() in the class itself. Comparator is an external ordering strategy — a separate object. Use Comparable for the default sort order. Use Comparator when you need multiple orderings, or when you can't modify the class.",
+      "keyPoints": [
+        "Comparable: class implements Comparable<T>, one natural order (e.g., Integer, String, Date)",
+        "Comparator: external object compare(a, b) — multiple orderings for same type",
+        "Collections.sort(list) uses Comparable; Collections.sort(list, comparator) uses Comparator",
+        "Comparator.comparing(Person::getAge).thenComparing(Person::getName) — chained",
+        "Lambda Comparator: list.sort((a, b) -> a.getName().compareTo(b.getName()))",
+        "Reversed: Comparator.comparing(Person::getAge).reversed()",
+      "TreeMap(comparator): custom key ordering; PriorityQueue(comparator): custom heap order"
+      ],
+      "displayOrder": 7
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is autoboxing and unboxing? What are the performance implications and pitfalls?",
+      "quickAnswer": "Autoboxing converts primitive to wrapper (int → Integer); unboxing converts wrapper to primitive. The compiler inserts the conversions automatically. Pitfalls: NullPointerException on unboxing null, unexpected object creation in loops, and subtle equals vs == bugs with cached Integer values (-128 to 127).",
+      "keyPoints": [
+        "Integer cache: Integer.valueOf(127) == Integer.valueOf(127) is true (cached range -128 to 127)",
+        "Integer.valueOf(128) == Integer.valueOf(128) is FALSE — new objects outside cache",
+        "NullPointerException: Integer x = null; int y = x; — unboxing null throws NPE",
+        "Performance: autoboxing in a loop creates many Integer objects — GC pressure",
+        "Collections can only hold objects: List<int> is illegal, must use List<Integer>",
+        "Prefer primitives over wrappers where possible in performance-critical code",
+        "IntStream/LongStream: operate on primitives, avoid boxing — use instead of Stream<Integer>"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the Java Memory Model (JMM)? What does the volatile keyword guarantee?",
+      "quickAnswer": "The JMM defines when changes made by one thread are visible to another. Without synchronization, threads may see stale cached values. volatile guarantees visibility (write is immediately visible to all threads) and prevents instruction reordering around it. volatile does NOT guarantee atomicity — use AtomicInteger for compound operations like count++.",
+      "keyPoints": [
+        "Happens-before: a write happens-before a subsequent read → the read sees the write",
+        "volatile: forces read/write directly to main memory (no CPU cache), adds memory barrier",
+        "volatile ensures: visibility of latest value, prevents reordering",
+        "volatile does NOT ensure: atomicity of compound operations (check-then-act, read-modify-write)",
+        "count++ is NOT atomic: read, increment, write — three steps, race condition possible",
+        "Use AtomicInteger.incrementAndGet() for thread-safe counters",
+        "Double-checked locking: requires volatile on the field to work correctly (prevents partial construction)"
+      ],
+      "displayOrder": 9
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What are generics and type erasure? What can't you do with generics at runtime?",
+      "quickAnswer": "Generics add compile-time type safety. Type erasure removes generic type information at runtime — List<String> and List<Integer> are both just List at runtime. You cannot create generic arrays, use instanceof with generic types, or get T.class. Bounded wildcards: ? extends T (producer/read) and ? super T (consumer/write) — PECS rule.",
+      "keyPoints": [
+        "Type erasure: List<String> becomes List at bytecode level — no runtime type info",
+        "Cannot: new T(), new T[10], List<String>.class, instanceof List<String>",
+        "Can: List<?>, List<? extends Number>, List<? super Integer>",
+        "PECS: Producer Extends (? extends T — read from), Consumer Super (? super T — write to)",
+        "Bounded type parameter: <T extends Comparable<T>> — T must implement Comparable",
+        "Reifiable type: arrays are reified (carry type at runtime); generics are not",
+        "Heap pollution: mixing raw types with generic causes ClassCastException at runtime, not compile time"
+      ],
+      "displayOrder": 10
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is a functional interface? Name five built-in ones from java.util.function.",
+      "quickAnswer": "A functional interface has exactly one abstract method (SAM — Single Abstract Method) and can be used as a lambda target. @FunctionalInterface enforces this. Five key built-ins: Function<T,R> (transform), Predicate<T> (boolean test), Consumer<T> (no return), Supplier<T> (no input), BiFunction<T,U,R> (two inputs).",
+      "keyPoints": [
+        "Function<T,R>: R apply(T t) — transformation, compose()/andThen() chaining",
+        "Predicate<T>: boolean test(T t) — and/or/negate composition",
+        "Consumer<T>: void accept(T t) — side effect (print, persist) andThen() chaining",
+        "Supplier<T>: T get() — lazy factory, no input",
+        "BiFunction<T,U,R>: R apply(T t, U u) — two-input transform",
+        "UnaryOperator<T> extends Function<T,T>, BinaryOperator<T> extends BiFunction<T,T,T>",
+        "Primitive specializations: IntFunction, ToIntFunction, IntSupplier — avoid boxing overhead"
+      ],
+      "displayOrder": 11
+    }
+  ]
+}

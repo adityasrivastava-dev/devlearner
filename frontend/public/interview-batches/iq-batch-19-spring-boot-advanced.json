@@ -1,0 +1,182 @@
+{
+  "batchName": "iq-batch-19-spring-boot-advanced",
+  "questions": [
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is Spring's ApplicationContext? How does it differ from BeanFactory?",
+      "quickAnswer": "BeanFactory is the basic IoC container — lazy bean creation on demand. ApplicationContext extends BeanFactory with enterprise features: eager singleton initialization, event publishing, i18n, AOP integration, and environment abstraction. In practice, always use ApplicationContext (specifically AnnotationConfigApplicationContext or the one Spring Boot creates).",
+      "keyPoints": [
+        "BeanFactory: lazy initialization, basic DI — only used in memory-constrained environments",
+        "ApplicationContext: eager singleton creation at startup, event publishing (ApplicationEventPublisher)",
+        "ApplicationContext subtypes: AnnotationConfigApplicationContext, GenericWebApplicationContext",
+        "Spring Boot creates a AnnotationConfigServletWebServerApplicationContext automatically",
+        "ApplicationContext.getBean(Type) for programmatic access — avoid outside tests",
+        "ApplicationContext is itself a bean — inject it via @Autowired if needed",
+        "ApplicationContextAware: implement to receive the context reference in a bean"
+      ],
+      "displayOrder": 0
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is Spring AOP? What are Join Points, Pointcuts, and Advices?",
+      "quickAnswer": "Spring AOP adds cross-cutting concerns (logging, security, transactions) via proxy objects. Join point: a specific execution point (method call). Pointcut: expression that selects which join points. Advice: the code to run (before, after, around the join point). Spring AOP only intercepts Spring-managed bean method calls — no constructor interception.",
+      "keyPoints": [
+        "JoinPoint: a point in program execution — Spring AOP only supports method execution",
+        "Pointcut: expression matching joinpoints — @Pointcut('execution(* com.app.service.*.*(..))')",
+        "Advice types: @Before, @After, @AfterReturning, @AfterThrowing, @Around",
+        "@Around: most powerful — wraps method, can modify input/output, call or skip proceed()",
+        "Spring AOP uses JDK proxy (for interfaces) or CGLIB proxy (for classes) — method must be public",
+        "AspectJ: full AOP (constructor, field, private method) — Spring integrates at load time (LTW)",
+        "@Transactional is implemented via @Around AOP — self-invocation bypasses the proxy!"
+      ],
+      "displayOrder": 1
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What are the Spring bean scopes? What is the difference between singleton and prototype?",
+      "quickAnswer": "Singleton: one instance per ApplicationContext — default. Prototype: new instance per getBean() call or injection point. Request/Session/Application/WebSocket: web-scoped. Singleton is stateless shared; prototype is stateful per-user. Injecting prototype into singleton: singleton holds the first prototype forever — use ObjectFactory<T> or @Lookup to get a fresh one each time.",
+      "keyPoints": [
+        "Singleton: one shared instance, stateless — 99% of Spring beans",
+        "Prototype: new instance every injection/getBean() — stateful beans (e.g., shopping cart wizard)",
+        "Request: one instance per HTTP request (web app only)",
+        "Session: one instance per HTTP session",
+        "Singleton-with-prototype problem: Spring injects prototype once into singleton field — not fresh",
+        "Fix: inject ObjectProvider<Foo> or use @Lookup void inject(Foo f) — Spring generates override",
+        "@Scope(proxyMode = ScopedProxyMode.TARGET_CLASS): scoped proxy solves singleton-prototype mismatch"
+      ],
+      "displayOrder": 2
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "How does @Transactional work? What are propagation levels and isolation levels?",
+      "quickAnswer": "@Transactional wraps the method in a transaction via AOP proxy. If the method throws an unchecked exception, the transaction is rolled back. Propagation defines what happens when a transactional method calls another. Isolation defines visibility of changes between concurrent transactions.",
+      "keyPoints": [
+        "Proxy-based: @Transactional on method → Spring wraps bean in proxy that begins/commits/rolls back",
+        "Self-invocation bypass: calling @Transactional method from same class skips the proxy — no transaction!",
+        "Propagation.REQUIRED (default): join existing or create new",
+        "Propagation.REQUIRES_NEW: always new transaction, suspend existing",
+        "Propagation.NESTED: savepoint within existing transaction",
+        "Isolation.READ_COMMITTED: can't read uncommitted data (default for most DBs)",
+        "Isolation.REPEATABLE_READ: same row reads return same value in transaction (MySQL InnoDB default)",
+        "readOnly=true: hint to driver/JPA for optimization; commits faster"
+      ],
+      "displayOrder": 3
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is Spring Boot auto-configuration? How does @ConditionalOnClass work?",
+      "quickAnswer": "Auto-configuration classes are registered in META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports. Each auto-config class uses @Conditional annotations to only activate when specific conditions are met (class on classpath, bean missing, property set). You can disable specific auto-configs with @SpringBootApplication(exclude=).",
+      "keyPoints": [
+        "@EnableAutoConfiguration (included in @SpringBootApplication): loads auto-config classes",
+        "@ConditionalOnClass(DataSource.class): only configures if DataSource is on classpath",
+        "@ConditionalOnMissingBean(DataSource.class): only creates bean if none already defined",
+        "@ConditionalOnProperty('feature.enabled', havingValue='true'): property-based activation",
+        "Spring Boot META-INF: spring.factories (old) → AutoConfiguration.imports (Spring Boot 2.7+/3.x)",
+        "Exclude: @SpringBootApplication(exclude=DataSourceAutoConfiguration.class)",
+        "ConditionEvaluationReport: see why each auto-config was/wasn't applied: --debug or /actuator/conditions"
+      ],
+      "displayOrder": 4
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is the N+1 query problem in JPA/Hibernate? How do you detect and fix it?",
+      "quickAnswer": "N+1 occurs when you load a list of N entities and then lazily load a relationship for each — 1 query for the list + N queries for each entity's relation = N+1 queries. Fix: use JOIN FETCH in JPQL, @EntityGraph, @BatchSize, or Hibernate's batch fetching. Detect with: spring.jpa.show-sql=true or p6spy.",
+      "keyPoints": [
+        "Example: load 100 Orders (1 query), access order.getCustomer() for each (100 queries) = 101 total",
+        "Root cause: @ManyToOne/@OneToMany with FetchType.LAZY + accessing in a loop",
+        "Fix 1: JPQL JOIN FETCH — 'SELECT o FROM Order o JOIN FETCH o.customer'",
+        "Fix 2: @EntityGraph(attributePaths={'customer'}) on repository method",
+        "Fix 3: @BatchSize(size=20) on the relationship — batches lazy loads into fewer queries",
+        "Fix 4: DTO projection — SELECT new OrderDTO(o.id, c.name) — no entity loading at all",
+        "Detection: spring.jpa.show-sql=true + spring.jpa.properties.hibernate.format_sql=true"
+      ],
+      "displayOrder": 5
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is Spring Security's filter chain? How does authentication and authorization work?",
+      "quickAnswer": "Spring Security uses a chain of servlet Filters. UsernamePasswordAuthenticationFilter authenticates credentials and stores the result in SecurityContextHolder. Every subsequent request, JwtAuthFilter (or SessionManagementFilter) restores the SecurityContext. Authorization happens in AuthorizationFilter, checking the Authentication's granted authorities against the required roles.",
+      "keyPoints": [
+        "SecurityFilterChain: ordered list of filters applied to each request",
+        "Authentication: UsernamePasswordAuthenticationFilter → AuthenticationManager → UserDetailsService",
+        "SecurityContextHolder: ThreadLocal holding the current Authentication",
+        "JWT flow: JwtAuthFilter reads Authorization header → validates → sets SecurityContextHolder",
+        "Authorization: @PreAuthorize, @Secured, or antMatchers/requestMatchers — checked against roles",
+        "GrantedAuthority: 'ROLE_ADMIN' — prefix 'ROLE_' required for hasRole('ADMIN') shortcut",
+        "@EnableMethodSecurity: enables @PreAuthorize, @PostAuthorize, @Secured at method level"
+      ],
+      "displayOrder": 6
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between @Component, @Service, @Repository, and @Controller?",
+      "quickAnswer": "All four are specializations of @Component and trigger component scanning. @Service and @Controller are semantic only (no extra behavior). @Repository adds exception translation — Spring wraps data-access exceptions into DataAccessException hierarchy, unifying JDBC, JPA, and MongoDB exceptions. @Controller enables MVC handler detection.",
+      "keyPoints": [
+        "@Component: generic Spring bean — caught by component scan",
+        "@Service: semantic label for business logic layer — no extra behavior",
+        "@Repository: enables persistence exception translation via PersistenceExceptionTranslationPostProcessor",
+        "@Controller: marks as Spring MVC controller — enables @RequestMapping handler detection",
+        "@RestController = @Controller + @ResponseBody — JSON response without @ResponseBody on each method",
+        "All detected by @ComponentScan in classes annotated with @SpringBootApplication",
+        "Prefer specific annotations: code intention is clearer; some frameworks check the specific type"
+      ],
+      "displayOrder": 7
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is Spring Data JPA? How do derived query methods work?",
+      "quickAnswer": "Spring Data JPA auto-generates SQL from repository method names. findByEmailAndActive(String, boolean) generates 'WHERE email = ? AND active = ?'. The repository interface extends JpaRepository<Entity, ID> — Spring creates the implementation at startup via a JDK proxy. Custom queries use @Query with JPQL or nativeQuery=true for SQL.",
+      "keyPoints": [
+        "JpaRepository extends PagingAndSortingRepository extends CrudRepository — all CRUD + paging",
+        "Derived methods: findBy, countBy, existsBy, deleteBy + property names + keywords (And, Or, Between, Like, In)",
+        "Sorting: findByDeptOrderBySalaryDesc() or pass Sort parameter",
+        "Pagination: findByDept(dept, Pageable) returns Page<T> — includes totalElements, totalPages",
+        "@Query JPQL: 'SELECT e FROM Employee e WHERE e.dept = :dept' — entity-based, not table-based",
+        "@Modifying + @Query: required for UPDATE/DELETE queries; add @Transactional on method",
+        "Projections: interface with getters for subset of fields — avoids loading full entity"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is @ConfigurationProperties? How is it better than @Value?",
+      "quickAnswer": "@ConfigurationProperties binds a group of related properties to a strongly-typed POJO — all properties under a prefix. @Value injects one property at a time with SpEL. @ConfigurationProperties supports nested objects, validation (@Validated + @NotNull), relaxed binding (kebab-case, SCREAMING_SNAKE_CASE), and is easier to test.",
+      "keyPoints": [
+        "@Value('${app.timeout}'): single property, SpEL supported, harder to test (requires Spring context)",
+        "@ConfigurationProperties(prefix='app'): maps all app.* to POJO fields",
+        "Relaxed binding: app.connectionTimeout → connectionTimeout, connection-timeout, CONNECTION_TIMEOUT",
+        "@Validated: add JSR-303 annotations (@NotNull, @Min) to properties POJO for startup validation",
+        "Record support (Spring Boot 2.6+): @ConfigurationProperties record with canonical constructor",
+        "Registered via: @EnableConfigurationProperties(AppProperties.class) or @Component on the class",
+        "Test: @SpringBootTest or @ConfigurationPropertiesTest with PropertySources"
+      ],
+      "displayOrder": 9
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is Spring's event system? How do @EventListener and ApplicationEventPublisher work?",
+      "quickAnswer": "Spring's event system is a synchronous observer pattern. Publish an event with applicationEventPublisher.publishEvent(event). @EventListener methods in any Spring bean are called synchronously. @Async on the listener makes it asynchronous. Useful for decoupling: OrderService publishes OrderCreatedEvent; EmailService, AuditService listen without OrderService knowing about them.",
+      "keyPoints": [
+        "ApplicationEventPublisher: inject and call publishEvent(Object) — any object can be an event",
+        "@EventListener: on any Spring bean method taking the event type as parameter",
+        "@Async + @EventListener: async delivery in separate thread from ForkJoinPool or custom executor",
+        "@TransactionalEventListener: only delivers event after the transaction commits — prevents phantom sends",
+        "Ordered delivery: @EventListener(condition='#event.type == T(OrderType).ONLINE') with SpEL filter",
+        "@Order on listener: control delivery order when multiple listeners for same event",
+        "Built-in events: ContextRefreshedEvent, ApplicationReadyEvent, ApplicationStartedEvent"
+      ],
+      "displayOrder": 10
+    }
+  ]
+}

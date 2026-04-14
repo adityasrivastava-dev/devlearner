@@ -1,0 +1,172 @@
+{
+  "batchName": "iq-batch-14-logging-actuator",
+  "questions": [
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is SLF4J? How does it differ from Log4j and Logback?",
+      "quickAnswer": "SLF4J (Simple Logging Facade for Java) is a logging API — your code only calls SLF4J interfaces. Log4j2 and Logback are implementations. This decouples application code from the logging implementation, allowing the framework to be swapped without changing application code. Spring Boot uses Logback by default but can switch to Log4j2.",
+      "keyPoints": [
+        "SLF4J: interface only — Logger, LoggerFactory (no actual logging happens here)",
+        "Logback: default Spring Boot implementation, created by the SLF4J author",
+        "Log4j2: faster async logging (LMAX Disruptor), more flexible configuration",
+        "Binding: SLF4J picks implementation via classpath presence (slf4j-simple, logback-classic)",
+        "Bridge: route old APIs (log4j 1.x, JUL) through SLF4J with bridge JARs",
+        "Switch in Spring Boot: exclude logback-classic, add spring-boot-starter-log4j2",
+        "Never use Log4j2 directly in code — always use SLF4J facade for portability"
+      ],
+      "displayOrder": 0
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is MDC (Mapped Diagnostic Context)? Why must you always call MDC.clear() in a finally block?",
+      "quickAnswer": "MDC is a ThreadLocal map that attaches key-value pairs to every log line from the current thread. It's used for request correlation IDs, user IDs, and tenant IDs that should appear in all logs for a request without passing them as parameters. MDC.clear() is mandatory in finally because thread-pool threads are reused — without clearing, next request inherits the previous request's MDC values.",
+      "keyPoints": [
+        "MDC uses ThreadLocal — data is per-thread, automatically included in log patterns via %X{key}",
+        "MDC.put('requestId', uuid) at filter entry, MDC.clear() in finally",
+        "Without clear(): Thread-1 serves request A (reqId=abc), returns to pool, serves request B with reqId=abc still",
+        "Pattern: %d [%thread] %-5level %logger [%X{requestId}] [%X{userId}] - %msg%n",
+        "MDC enables: grep 'req-abc123' across all log files → complete request trace",
+        "Spring Boot: MDCLoggingFilter or OncePerRequestFilter is the standard place to set MDC",
+        "Micrometer Tracing: auto-populates MDC with traceId/spanId for distributed tracing"
+      ],
+      "displayOrder": 1
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "Why should you use {} placeholders instead of string concatenation in SLF4J log statements?",
+      "quickAnswer": "SLF4J's {} placeholders defer message formatting until it's known the log level is active. String concatenation always executes, even when the log level is disabled. If DEBUG is off and you write log.debug('val=' + heavyObject.toString()), toString() still runs. With log.debug('val={}', heavyObject), toString() only runs if DEBUG is active.",
+      "keyPoints": [
+        "Lazy evaluation: log.debug('x={}', x) checks level first, then formats only if DEBUG is on",
+        "Eager (bad): log.debug('x=' + x.toString()) — x.toString() always runs, wastes CPU",
+        "Performance: in production with DEBUG off, {} eliminates all formatting overhead",
+        "Exception logging: log.error('Failed', e) — e as final argument gets full stack trace",
+        "Wrong: log.error(e.getMessage()) — only the message, no stack trace",
+        "Multiple params: log.debug('{} processed {} items in {}ms', service, count, time)",
+        "Conditional guard: if (log.isDebugEnabled()) { log.debug(...) } — for very expensive operations"
+      ],
+      "displayOrder": 2
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What are the log levels? When do you use WARN vs ERROR?",
+      "quickAnswer": "TRACE (most verbose) < DEBUG < INFO < WARN < ERROR. INFO: business events (user login, order created). DEBUG: request details, SQL queries — off in production. WARN: recoverable issues, degraded service, deprecated usage. ERROR: unhandled exceptions, service failures, data integrity issues requiring immediate attention.",
+      "keyPoints": [
+        "TRACE: step-by-step execution traces, protocol-level debugging — rarely used",
+        "DEBUG: input params, intermediate values, SQL, cache hits/misses — dev/staging only",
+        "INFO: significant business events, service start/stop, scheduled job runs",
+        "WARN: slow response (SLA breach), retry attempted, config missing (using default)",
+        "ERROR: unhandled exception, external service down, DB connection failed",
+        "Never WARN for expected user errors (wrong password is INFO, not WARN)",
+        "Never ERROR for validation failures — those are expected; ERROR means the system is broken",
+        "Production default: INFO for root, DEBUG for specific packages via loggers config"
+      ],
+      "displayOrder": 3
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is an AsyncAppender in Logback? What are the trade-offs?",
+      "quickAnswer": "AsyncAppender wraps a synchronous appender (like RollingFileAppender) and moves the I/O to a background thread using a queue. The application thread enqueues the log event and continues — dramatically reducing logging latency impact. Trade-off: under high load, the queue can fill, causing the application thread to block, or log events can be dropped (discardingThreshold setting).",
+      "keyPoints": [
+        "Default: synchronous logging blocks the app thread on every log statement (disk I/O)",
+        "AsyncAppender: app thread puts event in blocking queue; background thread drains it",
+        "queueSize: default 256; set to 1024+ for high-throughput apps",
+        "discardingThreshold: default 20 (drops TRACE/DEBUG/INFO when queue is 80% full)",
+        "discardingThreshold=0: never drop any events (safer for audit logs)",
+        "includeCallerData=false: skips expensive stack frame lookup (filename, line number)",
+        "Log4j2 AsyncLogger: uses LMAX Disruptor ring buffer — lower latency, zero GC",
+        "Risk: app shutdown may lose queued events — set shutdown hook or graceful drain"
+      ],
+      "displayOrder": 4
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is Spring Boot Actuator? Which endpoints are safe to expose publicly?",
+      "quickAnswer": "Actuator exposes production monitoring endpoints over HTTP. Only /health is safe for public exposure (for load balancers). All others should be restricted to internal networks or require ROLE_ADMIN. /env and /beans expose sensitive configuration. Best practice: run Actuator on a separate management port (e.g., 8081) inaccessible from the internet.",
+      "keyPoints": [
+        "Expose selectively: management.endpoints.web.exposure.include=health,info,metrics,prometheus",
+        "/health: safe to expose (load balancers need it), but hide details: show-details=when-authorized",
+        "/env: DANGEROUS — exposes all properties including DB passwords, API keys",
+        "/beans: exposes internal Spring context — information disclosure",
+        "/actuator/loggers POST: allows runtime log level changes — admin only",
+        "management.server.port=8081: separate port, block at network level from internet",
+        "Secure with Spring Security: httpSecurity.requestMatchers('/actuator/**').hasRole('ADMIN')",
+        "/actuator/health/liveness and /readiness: Kubernetes probe endpoints"
+      ],
+      "displayOrder": 5
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What is Micrometer? How does it relate to Prometheus and Grafana?",
+      "quickAnswer": "Micrometer is a metrics facade (like SLF4J for logging) — your code uses Micrometer API to record counters, gauges, and timers, and the implementation publishes to Prometheus, Datadog, CloudWatch, etc. Spring Boot Auto-configures Micrometer. /actuator/prometheus exposes all metrics in Prometheus format for scraping.",
+      "keyPoints": [
+        "Micrometer = measurement API; MeterRegistry = sink for all metrics",
+        "Counter: monotonically increasing (total requests, errors, events)",
+        "Gauge: current value snapshot (queue depth, active connections, cache size)",
+        "Timer: measures duration AND throughput (count, sum, max, percentiles)",
+        "DistributionSummary: value distribution (request sizes, batch sizes)",
+        "@Timed annotation on methods — requires TimedAspect bean",
+        "Prometheus: pull-based scraper, /actuator/prometheus every 15s",
+        "Grafana: queries Prometheus to build dashboards (p99 latency, error rate, JVM memory)"
+      ],
+      "displayOrder": 6
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between liveness and readiness probes in Kubernetes? How does Actuator support them?",
+      "quickAnswer": "Liveness probe: is the app alive? Failure → restart the container (used for deadlock detection). Readiness probe: is the app ready to serve traffic? Failure → remove from load balancer rotation (used when DB is down). Actuator provides dedicated health groups: /actuator/health/liveness and /actuator/health/readiness.",
+      "keyPoints": [
+        "Liveness: app is running but stuck (deadlock, infinite loop) → restart fixes it",
+        "Readiness: app can't serve (DB is down, cache warming) → don't send traffic, don't restart",
+        "Confusing liveness for readiness: DB down → pod restarts → DB still down → restart loop",
+        "management.endpoint.health.group.liveness.include=livenessState",
+        "management.endpoint.health.group.readiness.include=readinessState,db,redis",
+        "initialDelaySeconds: give app time to start before probes begin",
+        "periodSeconds + failureThreshold: how many consecutive failures before action",
+        "Spring Boot sets ApplicationAvailability — manually set REFUSING_TRAFFIC for graceful shutdown"
+      ],
+      "displayOrder": 7
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "MEDIUM",
+      "question": "How do you write a custom HealthIndicator in Spring Boot?",
+      "quickAnswer": "Implement the HealthIndicator interface, override the health() method, return Health.up() or Health.down() with optional details. Spring auto-detects beans implementing HealthIndicator and includes them in /actuator/health. The component name (or @Component('customName')) becomes the key in the JSON response.",
+      "keyPoints": [
+        "@Component class that implements HealthIndicator, override Health health()",
+        "Health.up().withDetail('key', 'value').build() — successful check",
+        "Health.down().withDetail('error', ex.getMessage()).withException(ex).build() — failed",
+        "Health.unknown() — indeterminate state (e.g., circuit breaker HALF_OPEN)",
+        "Component name → key in /actuator/health response (e.g., 'paymentGateway')",
+        "If any indicator returns DOWN → aggregate status is DOWN → probe fails",
+        "Timeout pattern: call external service with timeout, return DOWN on timeout",
+        "Composite health: management.endpoint.health.group.readiness.include=db,redis,paymentGateway"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "category": "SPRING_BOOT",
+      "difficulty": "HIGH",
+      "question": "What default metrics does Spring Boot Actuator provide automatically? Name 5 useful ones.",
+      "quickAnswer": "Spring Boot auto-configures metrics for: JVM (memory, GC, threads), Tomcat (thread pool, sessions), HikariCP (connection pool), HTTP server (request count, latency by endpoint), and Spring Data (repository operation latency). All appear in /actuator/prometheus without any code.",
+      "keyPoints": [
+        "jvm.memory.used / jvm.memory.max — heap and non-heap, watch for memory leak trend",
+        "hikaricp.connections.active / .max — connection pool saturation",
+        "http.server.requests — request count, latency by URI, method, status — p99 latency",
+        "jvm.gc.pause — GC duration and frequency — sign of memory pressure",
+        "executor.pool.size / executor.active — Spring's thread pool utilization",
+        "spring.data.repository.invocations — JPA repository method timing",
+        "process.cpu.usage — CPU utilization (vs system CPU)",
+        "All auto-configured — just add micrometer-registry-prometheus dependency"
+      ],
+      "displayOrder": 9
+    }
+  ]
+}

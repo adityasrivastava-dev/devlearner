@@ -121,6 +121,7 @@ export default function ProblemsPage() {
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
+          <button className={styles.backBtn} onClick={() => navigate('/')}>← Home</button>
           <h1 className={styles.heading}>Problems</h1>
           <span className={styles.totalCount}>{totalElements.toLocaleString()}</span>
         </div>

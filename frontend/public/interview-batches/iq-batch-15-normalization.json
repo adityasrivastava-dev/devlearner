@@ -1,0 +1,170 @@
+{
+  "batchName": "iq-batch-15-normalization",
+  "questions": [
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What are the normal forms? Explain 1NF, 2NF, 3NF in simple terms.",
+      "quickAnswer": "1NF: atomic values, no repeating groups, each row unique. 2NF: all non-key columns depend on the whole primary key (no partial dependencies — applies to composite keys). 3NF: no transitive dependencies — non-key columns must depend directly on the key, not on other non-key columns. Mnemonic: 'depend on the key, the whole key, and nothing but the key.'",
+      "keyPoints": [
+        "1NF: no multi-valued attributes ('Red,Blue' in one cell), no repeated column groups (phone1, phone2, phone3)",
+        "2NF: if PK is (OrderID, ProductID), ProductName can't be in this table — it depends on ProductID alone",
+        "3NF: if CustomerCity depends on CustomerID→ZipCode→City, City goes in a ZipCodes table",
+        "Functional dependency: A → B means knowing A uniquely determines B",
+        "Candidate key: minimal set that uniquely identifies a row (not just the designated PK)",
+        "BCNF: every determinant is a candidate key — stricter than 3NF",
+        "4NF: no multi-valued dependencies; 5NF: no join dependencies — rarely discussed in interviews"
+      ],
+      "displayOrder": 0
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What are update, insert, and delete anomalies? How does normalization prevent them?",
+      "quickAnswer": "Update anomaly: changing one fact requires updating multiple rows (risk of inconsistency). Insert anomaly: can't record a fact without unrelated data. Delete anomaly: removing a row destroys an unrelated fact. Normalization prevents all three by ensuring each fact is stored exactly once in the correct table.",
+      "keyPoints": [
+        "Update anomaly: ProductPrice in every OrderItem row — change price requires 1000 updates",
+        "Insert anomaly: flat Orders table — can't add a Product without a customer order",
+        "Delete anomaly: flat table — delete last order for a customer → lose customer contact details",
+        "3NF fix: Products table stores price once; CustomerID FK in Orders; Products table independent",
+        "Snapshot exception: OrderItems.unit_price is intentional denormalization (price at order time)",
+        "Real cost: update anomalies caused the famous 2007 TJX data breach (inconsistent auth records)",
+        "Each normal form eliminates one class of anomaly"
+      ],
+      "displayOrder": 1
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What is a partial dependency? Give an example of a 2NF violation.",
+      "quickAnswer": "A partial dependency is when a non-key column depends on only part of a composite primary key, not the whole key. Example: table Orders(OrderID, ProductID, ProductName, Qty, OrderDate). PK is (OrderID, ProductID). ProductName depends only on ProductID — not the full composite key. This is a 2NF violation. Fix: move ProductName to a Products table with ProductID as PK.",
+      "keyPoints": [
+        "Only possible when PK is composite — single-column PKs can't have partial dependencies",
+        "Test: can you determine column X from just part of the PK? If yes, partial dependency",
+        "Example: (StudentID, CourseID) PK — CourseName depends on CourseID alone (partial dep)",
+        "Example: (OrderID, ProductID) PK — OrderDate depends on OrderID alone (partial dep)",
+        "Fix: remove the column to a new table where the partial key becomes the full PK",
+        "Columns that depend on the FULL PK stay in the junction table",
+        "hours_worked in (StudentID, CourseID) table is fine — depends on both"
+      ],
+      "displayOrder": 2
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What is a transitive dependency? Give an example of a 3NF violation.",
+      "quickAnswer": "A transitive dependency is when a non-key column depends on another non-key column, not directly on the key. Example: Employees(EmpID, DeptID, DeptName). EmpID → DeptID → DeptName. DeptName depends on DeptID (a non-key), not directly on EmpID. Fix: move DeptID+DeptName to a Departments table.",
+      "keyPoints": [
+        "Chain: PK → non-key column B → non-key column C (transitive: PK transitively determines C via B)",
+        "Classic example: zip_code in Customers → city, state — if zip_code is not the PK, this is transitive",
+        "Fix: create ZipCodes(zip_code, city, state) table; Customers has zip_code FK",
+        "Interview mnemonic: 'depend on the key (2NF), the whole key (2NF), and nothing but the key (3NF)'",
+        "Tolerated in practice: if the transitively determined column rarely changes (city in Customers)",
+        "Always violates integrity: employee changes department → must update DeptName in all rows",
+        "BCNF is stricter: determinant must be a candidate key (handles overlapping candidate keys)"
+      ],
+      "displayOrder": 3
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "MEDIUM",
+      "question": "What is denormalization? When is it appropriate?",
+      "quickAnswer": "Denormalization intentionally introduces redundancy for performance. Common techniques: storing pre-computed aggregates (total_orders on customers), duplicating lookup data (category_name in products), and creating summary tables. Appropriate for read-heavy workloads, OLAP/reporting, and when JOIN-heavy queries run millions of times per day.",
+      "keyPoints": [
+        "Add column that's computable from elsewhere (category_name instead of category_id join)",
+        "Summary/rollup tables: student_course_summary with denormalized student + course info",
+        "Materialized views: MySQL manually via triggers; PostgreSQL has native MATERIALIZED VIEW",
+        "Trade-off: faster reads, but writes must maintain consistency (update two places)",
+        "Cache layer as denormalization: Redis stores product+review count (no JOIN on read)",
+        "OLAP star schema: fact table + dimension tables (denormalized, no joins needed)",
+        "When NOT to: OLTP systems where write correctness matters more than read speed",
+        "Rule: normalize first, then selectively denormalize based on measured performance problems"
+      ],
+      "displayOrder": 4
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "MEDIUM",
+      "question": "What is a composite primary key? When do you use it vs a surrogate key?",
+      "quickAnswer": "A composite primary key uses two or more columns to uniquely identify a row (e.g., OrderID + ProductID in OrderItems). A surrogate key is a system-generated ID (AUTO_INCREMENT) with no business meaning. Use composite PKs for true many-to-many junction tables where the combination is naturally unique. Use surrogate keys for entities with complex or changeable natural keys.",
+      "keyPoints": [
+        "Composite PK: (student_id, course_id) in enrollments — natural, meaningful uniqueness",
+        "Surrogate PK: enrollment_id AUTO_INCREMENT — simpler FKs, easier to reference",
+        "Composite PK advantage: implicit unique index on the combination; no separate UNIQUE constraint needed",
+        "Surrogate PK advantage: simpler FK references, easier to add columns to the PK later",
+        "Natural key as PK: SSN, email — risky (can change, privacy concerns, length)",
+        "UUID as surrogate: globally unique but larger (16 bytes vs 4), random inserts fragment B-tree",
+        "Best practice: junction tables (OrderItems) — composite PK from the two parent FKs",
+        "Entities (Users, Products): surrogate INT/BIGINT AUTO_INCREMENT"
+      ],
+      "displayOrder": 5
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "How does normalization affect query performance? What is the JOIN cost?",
+      "quickAnswer": "Normalization requires JOINs to reconstruct data from multiple tables. Each JOIN has a cost — evaluating the join condition, sorting, or probing hash tables. However, each table is smaller and fits in cache better. With proper indexes on FK columns, JOINs are fast (index nested loop, hash join). Denormalized tables avoid JOINs but have larger row sizes and more cache misses.",
+      "keyPoints": [
+        "JOIN cost: Index nested loop — O(n) outer × O(log m) inner with index = O(n log m)",
+        "Always index foreign key columns — MySQL does NOT auto-create FK indexes (unlike PostgreSQL)",
+        "EXPLAIN: check 'type' column — ref (index scan) is good, ALL (full scan) is bad",
+        "With indexes: JOINing millions of rows is milliseconds",
+        "Without indexes: hash join or sort-merge join — expensive for large tables",
+        "Normalized smaller tables fit in InnoDB buffer pool — fewer disk reads",
+        "Denormalized large rows: more data per row → fewer rows fit in a page → more I/O",
+        "Measure first: don't denormalize speculatively; profile with EXPLAIN ANALYZE"
+      ],
+      "displayOrder": 6
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "MEDIUM",
+      "question": "What is BCNF (Boyce-Codd Normal Form)? How does it differ from 3NF?",
+      "quickAnswer": "BCNF requires that every determinant must be a candidate key. A table can be in 3NF but not BCNF when there are overlapping candidate keys. Example: Table (StudentID, CourseID, Instructor) where each instructor teaches only one course. Instructor → CourseID is a functional dependency, but Instructor is not a candidate key. 3NF allows this; BCNF does not.",
+      "keyPoints": [
+        "BCNF: for every FD X → Y, X must be a candidate key",
+        "3NF allows: if Y is a prime attribute (part of some candidate key), non-candidate-key determinant is OK",
+        "BCNF is stricter — eliminates remaining anomalies in 3NF tables with overlapping candidate keys",
+        "When 3NF ≠ BCNF: multiple candidate keys that overlap (share some columns)",
+        "BCNF decomposition may lose some dependencies — a trade-off (can't always achieve both)",
+        "In practice: most well-designed 3NF schemas are already in BCNF",
+        "Interviews rarely go beyond BCNF — focus on 1NF/2NF/3NF for most questions"
+      ],
+      "displayOrder": 7
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "MEDIUM",
+      "question": "How would you design the schema for a many-to-many relationship? What columns go in the junction table?",
+      "quickAnswer": "Many-to-many requires a junction table with FKs to both parent tables as a composite PK. Only columns that describe the relationship itself go in the junction table. For example, Students-Courses: junction Enrollments(student_id, course_id, grade, enrolled_at) — grade and enrolled_at describe the enrollment, not the student or course.",
+      "keyPoints": [
+        "Junction table: (entity1_id, entity2_id) as composite PK — ensures unique pairs",
+        "FK to both parents with ON DELETE CASCADE (usually) — delete parent removes memberships",
+        "Only relationship attributes in junction: grade (enrollment), quantity (order line), hours (assignment)",
+        "Do NOT put entity attributes in junction: course_name belongs in Courses, not Enrollments",
+        "Common pattern: (order_id, product_id, quantity, unit_price) — OrderItems",
+        "unit_price in OrderItems is intentional snapshot (price at order time), not a 3NF violation",
+        "Add indexes on each FK column separately for efficient reverse lookups",
+        "Surrogate PK option: add enrollment_id for simpler URL references (/enrollments/42)"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What is a functional dependency? How do you identify them when designing a schema?",
+      "quickAnswer": "A functional dependency A → B means knowing A's value uniquely determines B's value. Example: student_id → student_name (one student has one name). Identify by asking: 'Given only this value, can I look up exactly one value for that column?' If yes, A → B is a functional dependency.",
+      "keyPoints": [
+        "A → B: for every A value, there is exactly one B value",
+        "emp_id → emp_name (one employee, one name) ✓",
+        "dept_id → dept_name (one dept has one name) ✓",
+        "(student_id, course_id) → grade (grade is unique per enrollment, not per student or course) ✓",
+        "Counter-example: customer_city → customer_id is NOT a FD (multiple customers per city)",
+        "Trivial FD: A → A (X determines itself) — always true, not interesting",
+        "Full FD: Y is fully functionally dependent on X if removing any part of X breaks the FD",
+        "Identifying FDs is the first step of normalization analysis — list them before drawing tables"
+      ],
+      "displayOrder": 9
+    }
+  ]
+}

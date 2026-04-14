@@ -1,0 +1,198 @@
+{
+  "batchName": "iq-batch-17-java-streams-concurrency",
+  "questions": [
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the difference between intermediate and terminal operations in Streams? What is lazy evaluation?",
+      "quickAnswer": "Intermediate operations (filter, map, sorted) return a Stream and are lazy — they don't execute until a terminal operation is called. Terminal operations (collect, forEach, count, findFirst) trigger the pipeline. Lazy evaluation means operations on elements that aren't needed (e.g., findFirst found after 3 elements) are never executed for the remaining elements.",
+      "keyPoints": [
+        "Intermediate: filter, map, flatMap, sorted, distinct, peek, limit, skip — return Stream, lazy",
+        "Terminal: collect, forEach, count, findFirst, findAny, anyMatch, reduce, toList() — trigger execution",
+        "Lazy: filter().map() chains don't loop until terminal is hit — single pass through elements",
+        "Short-circuit: findFirst/anyMatch stop as soon as result is found",
+        "Stateless: filter, map — don't need to see all elements; Stateful: sorted, distinct — buffer all elements",
+        "Parallel: stream().parallel() — splits into sub-tasks via ForkJoinPool; order not guaranteed without forEachOrdered()",
+        "Cannot reuse a stream — once terminal is called, stream is closed"
+      ],
+      "displayOrder": 0
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the difference between map() and flatMap() in streams?",
+      "quickAnswer": "map() transforms each element 1-to-1 and wraps the result — if the mapper returns a List, you get a Stream<List>. flatMap() transforms each element to a Stream and flattens them into one stream — if mapper returns a List, you get the elements directly. Use flatMap() when your mapping function returns a collection.",
+      "keyPoints": [
+        "map(f): Stream<T> → Stream<R> — one output per input",
+        "flatMap(f): Stream<T> → Stream<R> — zero or more outputs per input, flattened",
+        "Example: words.map(w -> w.split('')) → Stream<String[]>; flatMap → Stream<String>",
+        "Optional.flatMap: avoids nested Optional<Optional<T>> — if mapper returns Optional<R>",
+        "CompletableFuture.thenCompose vs thenApply: same pattern (flatMap vs map for async)",
+        "Use case: orders → each order has items → flatMap to get all items across all orders",
+        "Performance: flatMap with large sub-streams is fine; avoid when output is always single element (use map)"
+      ],
+      "displayOrder": 1
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the difference between synchronized, ReentrantLock, and ReadWriteLock?",
+      "quickAnswer": "synchronized is implicit (using object monitor), non-interruptible, and has no timeout. ReentrantLock is explicit (lock()/unlock() in try-finally), supports tryLock(timeout), lockInterruptibly(), and fairness. ReadWriteLock allows multiple concurrent readers or one exclusive writer — dramatically improves read-heavy workloads.",
+      "keyPoints": [
+        "synchronized: simpler, auto-releases, cannot try without blocking, no condition variables (only wait/notify)",
+        "ReentrantLock: tryLock(1, SECONDS), lockInterruptibly(), fair=true (FIFO queue)",
+        "Always: lock.lock(); try { ... } finally { lock.unlock(); } — never skip unlock()",
+        "ReentrantReadWriteLock: readLock() for reads (shared), writeLock() for writes (exclusive)",
+        "ReadWriteLock benefit: 10 threads can read simultaneously; one write blocks all readers",
+        "ReentrantLock condition: lock.newCondition(); cond.await(); cond.signal() — like wait/notify but per-condition",
+        "StampedLock (Java 8): optimistic reads — try read without lock, validate stamp, re-read if invalidated"
+      ],
+      "displayOrder": 2
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the Executor framework? What are the differences between thread pool types?",
+      "quickAnswer": "The Executor framework decouples task submission from execution. Key factory methods: newFixedThreadPool(n) — bounded threads, queued tasks; newCachedThreadPool() — unbounded threads, reused; newSingleThreadExecutor() — sequential; newScheduledThreadPool() — delayed/periodic. Always shutdown() the pool to release threads.",
+      "keyPoints": [
+        "Executors.newFixedThreadPool(n): n threads, LinkedBlockingQueue (unbounded!) — beware OOM from queue growth",
+        "Executors.newCachedThreadPool(): unlimited threads (risk of OOM/thread explosion under burst load)",
+        "Executors.newSingleThreadExecutor(): single thread, tasks execute in submission order",
+        "Executors.newScheduledThreadPool(n): scheduleAtFixedRate() or scheduleWithFixedDelay()",
+        "Virtual threads (Java 21): Executors.newVirtualThreadPerTaskExecutor() — preferred for I/O-heavy",
+        "ThreadPoolExecutor: full control — core/max pool size, keep-alive, queue type, rejection policy",
+        "RejectedExecutionPolicy: AbortPolicy (throw), CallerRunsPolicy (submit thread runs it), DiscardPolicy"
+      ],
+      "displayOrder": 3
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is CompletableFuture? How is it different from Future?",
+      "quickAnswer": "Future is a placeholder for an async result — you can only get() (blocking) or cancel(). CompletableFuture adds non-blocking composition: thenApply (map), thenCompose (flatMap), thenCombine (zip), allOf (wait for all), anyOf (first done). Callbacks are called when the future completes without blocking.",
+      "keyPoints": [
+        "Future.get() blocks the calling thread — useless for async pipelines",
+        "CompletableFuture.thenApply(fn): apply fn when result is ready (like Stream.map)",
+        "thenCompose(fn): fn returns CompletableFuture — flattens (like Stream.flatMap)",
+        "thenCombine(cf2, fn): combine two independent futures when both complete",
+        "CompletableFuture.allOf(cf1, cf2, cf3): returns CF<Void> that completes when all do",
+        "supplyAsync(supplier): run on ForkJoinPool.commonPool(); supplyAsync(s, executor): custom pool",
+        "exceptionally(ex -> fallback): handle exception without interrupting the chain",
+        "whenComplete(fn): always runs (success and failure) — like finally"
+      ],
+      "displayOrder": 4
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is a deadlock? How do you prevent it in Java?",
+      "quickAnswer": "Deadlock occurs when two or more threads each hold a lock the other needs, causing permanent blocking. Prevention strategies: consistent lock ordering (always acquire locks in the same order), use tryLock with timeout, avoid nested synchronized blocks, use higher-level abstractions (java.util.concurrent).",
+      "keyPoints": [
+        "Four conditions for deadlock: mutual exclusion, hold and wait, no preemption, circular wait",
+        "Break circular wait: always acquire lock A before lock B — all threads follow same order",
+        "ReentrantLock.tryLock(timeout): gives up if can't acquire — no circular wait possible",
+        "Detect: thread dump (jstack/jcmd) shows 'Found deadlock' with involved threads",
+        "Avoid: minimize lock scope, avoid calling external methods while holding lock (alien method)",
+        "Livelock: threads keep yielding/retrying to each other — look busy but make no progress",
+        "Java thread dump: kill -3 on Linux or jstack PID — includes 'Deadlock found' section"
+      ],
+      "displayOrder": 5
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the difference between Runnable, Callable, and Future in Java concurrency?",
+      "quickAnswer": "Runnable has run() — no return value, can't throw checked exceptions. Callable<V> has call() — returns a value and can throw checked exceptions. Future<V> is the result holder for a Callable submitted to ExecutorService — get() blocks until done, get(timeout) is bounded.",
+      "keyPoints": [
+        "Runnable: void run() — fire-and-forget tasks, submit to executor or Thread.start()",
+        "Callable<V>: V call() throws Exception — result-returning tasks",
+        "Future<V>: executor.submit(callable) returns Future; future.get() blocks for result",
+        "Future.isDone(): non-blocking check; future.cancel(mayInterrupt): attempt cancellation",
+        "ExecutorService.invokeAll(callables): submit all, wait for all, returns List<Future<V>>",
+        "ExecutorService.invokeAny(callables): returns first successful result, cancels others",
+        "CompletableFuture replaces Future for non-blocking composition (thenApply, thenCompose)"
+      ],
+      "displayOrder": 6
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is ThreadLocal? What are the risks of using it in thread pools?",
+      "quickAnswer": "ThreadLocal provides a per-thread variable — each thread gets its own copy, invisible to other threads. Risk in thread pools: pool threads are reused, so ThreadLocal values set in one request persist for the next request served by the same thread. Always call remove() in a finally block after each task completes.",
+      "keyPoints": [
+        "ThreadLocal<T>: set(value), get(), remove() — separate instance per thread",
+        "Use case: security context (Spring SecurityContextHolder), request correlation (MDC), DB connection per thread",
+        "Thread pool reuse problem: TaskA sets threadLocal=userA, completes, TaskB runs on same thread, reads userA!",
+        "Fix: always threadLocal.remove() in finally after task completion",
+        "Spring RequestContextHolder, MDC, SecurityContextHolder all use ThreadLocal internally",
+        "InheritableThreadLocal: child threads inherit parent's value (use case: trace ID propagation)",
+        "Memory leak: ThreadLocal key is weakly referenced; value is strongly referenced — GC can't collect value"
+      ],
+      "displayOrder": 7
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What are the Java 8 Stream Collectors? Name five commonly used ones.",
+      "quickAnswer": "Collectors are terminal operations for collect(). Key ones: toList(), toSet(), toMap(keyFn, valueFn), groupingBy(classifier), joining(delimiter), counting(), partitioningBy(predicate), toUnmodifiableList(). groupingBy is the most powerful — groups elements into a Map<K, List<V>>.",
+      "keyPoints": [
+        "Collectors.toList(): collect to ArrayList; Collectors.toUnmodifiableList() (Java 10+) for immutable",
+        "Collectors.toMap(k, v): careful with duplicate keys — third merge function required",
+        "Collectors.groupingBy(Person::getDept): Map<String, List<Person>> — department groups",
+        "Collectors.groupingBy(dept, Collectors.counting()): Map<String, Long> — count per group",
+        "Collectors.joining(', ', '[', ']'): 'hello, world' with delimiter, prefix, suffix",
+        "Collectors.partitioningBy(pred): Map<Boolean, List<T>> — true/false split",
+        "Downstream collectors: groupingBy(dept, averagingInt(Person::getSalary))"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is Optional<T>? When should you use it and when should you avoid it?",
+      "quickAnswer": "Optional<T> is a container that may or may not contain a value, replacing null checks with a fluent API. Use it as return type for methods that may produce no result. Avoid it as: method parameter (use overloading), field type (serialization issues), or inside Collections. Never call get() without isPresent() — use orElse/orElseGet/orElseThrow instead.",
+      "keyPoints": [
+        "Optional.of(value): throws NPE if null; Optional.ofNullable(value): wraps null as empty",
+        "orElse(default): returns default if empty (always evaluates default expression)",
+        "orElseGet(supplier): lazy default — only called if empty (prefer for expensive defaults)",
+        "orElseThrow(Exception::new): throw if empty — replaces manual null check + throw",
+        "map(fn): transform if present, stays Optional; flatMap(fn): when fn returns Optional",
+        "ifPresent(consumer): run side-effect if present; ifPresentOrElse(fn, emptyFn) Java 9+",
+        "Anti-pattern: opt.isPresent() then opt.get() — use orElse/map instead"
+      ],
+      "displayOrder": 9
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between String, StringBuilder, and StringBuffer?",
+      "quickAnswer": "String is immutable — every operation creates a new object. StringBuilder is mutable, not thread-safe, O(1) amortized append. StringBuffer is mutable, thread-safe (synchronized methods), but slower. Use StringBuilder in single-threaded code; use String.join/Collectors.joining for stream assembly; avoid String + in loops.",
+      "keyPoints": [
+        "String immutable: 'hello' + 'world' creates a new String; compiler optimizes string literals",
+        "String + in loop: O(n²) total — each += creates new String copying all previous content",
+        "StringBuilder: append() is amortized O(1), toString() at end — use in loops",
+        "StringBuffer: same API as StringBuilder, every method synchronized — use only if shared across threads",
+        "String.format() / formatted(): readable but creates intermediate strings — use for readability, not performance",
+        "String pool: literals are interned; new String('x') is not — always use .equals() not ==",
+        "Java 11 String methods: isBlank(), strip(), repeat(n), lines() returning Stream<String>"
+      ],
+      "displayOrder": 10
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is try-with-resources and how does it work with AutoCloseable?",
+      "quickAnswer": "try-with-resources automatically calls close() on resources declared in the try header, in reverse order, even if an exception is thrown. The resource class must implement AutoCloseable. Multiple resources are closed in reverse declaration order. Suppressed exceptions (from close()) are attached to the primary exception.",
+      "keyPoints": [
+        "AutoCloseable: one method — void close() throws Exception",
+        "Closeable extends AutoCloseable: close() throws IOException — for I/O resources",
+        "try (Resource r = new Resource()) { ... } — r.close() called automatically after try block",
+        "Multiple resources: try (A a = ...; B b = ...) — B closed first, then A (reverse order)",
+        "Suppressed exceptions: if both try block and close() throw, close() exception is suppressed",
+        "Access suppressed: e.getSuppressed() on the primary exception",
+        "Java 9: effectively final variables as resources — try (existing) { } without re-declaration"
+      ],
+      "displayOrder": 11
+    }
+  ]
+}

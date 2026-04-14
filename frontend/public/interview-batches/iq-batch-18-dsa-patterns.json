@@ -1,0 +1,197 @@
+{
+  "batchName": "iq-batch-18-dsa-patterns",
+  "questions": [
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is the sliding window technique? What type of problems does it solve?",
+      "quickAnswer": "Sliding window maintains a window of elements (a contiguous subarray/substring) and slides it forward, expanding or shrinking based on a condition. It converts O(n²) brute-force (check all subarrays) to O(n). Used for: maximum sum subarray of size k, longest substring without repeating characters, minimum window substring.",
+      "keyPoints": [
+        "Fixed window: size k — slide by moving left++ and right++; sum maintained with add/subtract",
+        "Variable window: expand right when condition unmet; shrink left when condition violated",
+        "Two pointers: left and right — right expands, left shrinks when window invalid",
+        "Key insight: each element enters and exits the window at most once → O(n)",
+        "With HashMap: frequency map tracks window contents — useful for character problems",
+        "Pattern: while (right < n) { add arr[right]; while (invalid) { remove arr[left++]; } update answer; right++; }",
+        "Classic problems: Longest Substring Without Repeating, Minimum Window Substring, Max Sum Subarray K"
+      ],
+      "displayOrder": 0
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is two pointers? When do you use it vs sliding window?",
+      "quickAnswer": "Two pointers uses two indices moving toward each other (or in the same direction) to avoid O(n²) nested loops. Works on sorted arrays for pair/triplet sum problems. Sliding window is a special case where pointers move in the same direction maintaining a window. Use two pointers for sorted arrays; use sliding window for contiguous subarray/substring problems.",
+      "keyPoints": [
+        "Opposite direction: sorted array, one pointer at start, one at end — Two Sum II, Container With Most Water",
+        "Same direction: fast/slow — cycle detection, remove duplicates, partition",
+        "Sorted array requirement: opposite direction requires sorted (or sortable) array",
+        "Three Sum: fix one element, two pointers on rest — O(n²) from O(n³)",
+        "Fast/slow pointer: cycle detection (Floyd's), find middle of linked list",
+        "Remove duplicates in-place: slow pointer marks write position, fast scans ahead",
+        "Sliding window is two same-direction pointers with a maintained invariant on the window"
+      ],
+      "displayOrder": 1
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is dynamic programming? What are the two approaches (top-down vs bottom-up)?",
+      "quickAnswer": "DP breaks a problem into overlapping subproblems and stores results to avoid recomputation (memoization). Top-down (memoization): recursive, cache results in a map/array. Bottom-up (tabulation): iterative, fill a DP table from base cases up. Bottom-up is usually faster (no recursion overhead) and avoids stack overflow for large n.",
+      "keyPoints": [
+        "Two properties required: optimal substructure (optimal solution uses optimal sub-solutions), overlapping subproblems",
+        "Top-down: dp[n] = memo if seen; else compute recursively, store in memo[n], return",
+        "Bottom-up: fill dp[0..n] iteratively, each dp[i] built from earlier entries",
+        "State: what uniquely describes a subproblem — dp[i], dp[i][j], dp[i][w] etc.",
+        "Transition: how dp[i] relates to dp[i-1] etc. — the recurrence relation",
+        "Space optimization: many DP problems only need dp[i-1] — use two variables instead of array",
+        "Classic problems: Fibonacci, Knapsack, LCS, LIS, Coin Change, Edit Distance"
+      ],
+      "displayOrder": 2
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is BFS vs DFS? When do you use each?",
+      "quickAnswer": "BFS (Breadth-First Search) explores level by level using a queue — finds the shortest path in unweighted graphs, minimum steps. DFS (Depth-First Search) goes deep using a stack/recursion — used for cycle detection, topological sort, connected components, path existence. BFS space: O(width), DFS space: O(depth).",
+      "keyPoints": [
+        "BFS: queue, level-by-level, shortest path in unweighted graph, O(V+E) time, O(width) space",
+        "DFS: stack/recursion, deep-first, cycle detection, topological sort, O(V+E) time, O(depth) space",
+        "Shortest path: BFS (Dijkstra for weighted, BFS for unweighted/unit weight)",
+        "DFS use cases: connected components, topological sort (Kahn's or DFS), detect cycle (back edge)",
+        "BFS on tree = level order traversal; DFS on tree = preorder/inorder/postorder",
+        "Multi-source BFS: start BFS from multiple nodes simultaneously — find distance to nearest source",
+        "Bidirectional BFS: start from both source and target, meet in middle — O(b^(d/2)) vs O(b^d)"
+      ],
+      "displayOrder": 3
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is a binary search tree? What are its time complexities and when does it degrade?",
+      "quickAnswer": "BST: left child < node < right child. Average O(log n) search/insert/delete. Degrades to O(n) on sorted input (tree becomes a linked list). Self-balancing trees (AVL, Red-Black) maintain O(log n) worst case. Java's TreeMap uses Red-Black tree — always O(log n).",
+      "keyPoints": [
+        "BST property: all left descendants < node < all right descendants",
+        "Search: compare, go left if smaller, right if larger — O(log n) average, O(n) worst",
+        "Inorder traversal of BST gives sorted sequence",
+        "Balanced BST: AVL (strict balance, more rotations), Red-Black (looser, fewer rotations — faster insert/delete)",
+        "Java TreeMap/TreeSet: Red-Black tree — O(log n) guaranteed",
+        "BST delete: 3 cases — no child (remove), one child (replace), two children (replace with inorder successor)",
+        "BST validation: not just parent-child relationship — must check against all ancestors (use min/max range)"
+      ],
+      "displayOrder": 4
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is Dijkstra's algorithm? What does it require? What is its time complexity?",
+      "quickAnswer": "Dijkstra finds the shortest path from a source to all vertices in a weighted graph with non-negative edge weights. Uses a min-heap (priority queue). Time: O((V+E) log V) with binary heap. Does NOT work with negative weights — use Bellman-Ford for negative edges.",
+      "keyPoints": [
+        "Algorithm: dist[src]=0, all others ∞; min-heap; pop min, relax neighbors, push updated distances",
+        "Relaxation: if dist[u] + weight(u,v) < dist[v], update dist[v] and push (dist[v], v) to heap",
+        "Non-negative weights required: negative edges break the greedy assumption",
+        "O((V+E) log V) with binary heap; O(V log V + E) with Fibonacci heap",
+        "Lazy Dijkstra: allow stale entries in heap, skip if visited — simpler implementation",
+        "Dijkstra vs BFS: BFS for unit weights (each edge = 1); Dijkstra for varying weights",
+        "Real use: GPS routing, network routing protocols (OSPF), game pathfinding (A*)"
+      ],
+      "displayOrder": 5
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is a heap/priority queue? How is it implemented? What are the time complexities?",
+      "quickAnswer": "A heap is a complete binary tree stored as an array, satisfying the heap property: parent ≤ children (min-heap) or parent ≥ children (max-heap). Peek O(1), insert O(log n), extractMin/Max O(log n). Java's PriorityQueue is a min-heap. For max-heap: new PriorityQueue<>(Comparator.reverseOrder()).",
+      "keyPoints": [
+        "Array representation: parent at i, left child at 2i+1, right child at 2i+2",
+        "Heapify up (bubble up): after insert at end, swap with parent while parent > child",
+        "Heapify down (sift down): after extract (swap root with last, remove last), fix root downward",
+        "Heap sort: build max-heap O(n), extract n times O(n log n) — in-place, not stable",
+        "Top-K problems: min-heap of size K; push each element, pop if size > K — O(n log k)",
+        "Median maintenance: one max-heap (lower half) + one min-heap (upper half)",
+        "Java PriorityQueue: not thread-safe; PriorityBlockingQueue for concurrent use"
+      ],
+      "displayOrder": 6
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is the difference between memoization and tabulation? When does each approach work better?",
+      "quickAnswer": "Memoization (top-down): recursive, cache results; only computes subproblems actually needed (good for sparse problem spaces). Tabulation (bottom-up): iterative, fills whole table; no recursion overhead, cache-friendly, can optimize space. Memoization is easier to write; tabulation is more efficient in practice.",
+      "keyPoints": [
+        "Memoization: HashMap or array for cache; recursive calls; only visits reachable subproblems",
+        "Tabulation: loops fill dp[] from base cases; all subproblems computed (may waste time for sparse)",
+        "Space optimization with tabulation: LCS/knapsack often need only prev row → O(n) instead of O(n²)",
+        "Stack overflow risk: memoization recurses O(n) deep for problems like Fibonacci(10000)",
+        "Tabulation is cache-friendly: sequential array access vs hash map lookups in memoization",
+        "Both have same time complexity if same subproblems are computed",
+        "Memoization for: grid problems with few reachable cells, trees (naturally recursive structure)"
+      ],
+      "displayOrder": 7
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is a Trie? When do you use it vs HashMap for string lookups?",
+      "quickAnswer": "A Trie (prefix tree) is a tree where each node represents a character. Words sharing a prefix share a path. Search/insert is O(L) where L is the word length. HashMap has O(L) hash computation per lookup but wastes memory on non-shared prefixes. Use Trie for: autocomplete, prefix search, word dictionary with prefix queries, longest common prefix.",
+      "keyPoints": [
+        "Trie node: boolean isEnd, TrieNode[] children (size 26 for lowercase English)",
+        "Insert: for each char, create child if absent, move to child, mark isEnd at word end",
+        "Search: same traversal, return isEnd at last char",
+        "startsWith(prefix): same as search but return true at last prefix char (not isEnd)",
+        "Trie advantage over HashMap: O(1) prefix operations; shared prefixes save memory",
+        "Trie vs HashMap: Trie = O(L) per op, prefix-capable; HashMap = O(L) hash, no prefix support",
+        "Applications: autocomplete (Google search), spell checker, IP routing prefix match"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is backtracking? What is the pruning optimization?",
+      "quickAnswer": "Backtracking is a recursive DFS technique that builds solutions incrementally and abandons a path as soon as it violates a constraint (backtracks). It explores all possibilities systematically. Pruning eliminates branches early when the current partial solution can't lead to a valid complete solution — dramatically reduces search space.",
+      "keyPoints": [
+        "Template: choose → explore → unchoose (restore state before next choice)",
+        "State space tree: each node is a partial solution; backtrack at invalid/complete nodes",
+        "Pruning: check constraint before recursing — 'if no valid moves, return early'",
+        "Classic problems: N-Queens, Sudoku, Word Search, Permutations, Combinations, Subsets",
+        "Time complexity: worst case O(k^n) — k choices per step, n steps — pruning reduces constants",
+        "Visited array: for path problems on grids, mark visited and unmark on backtrack",
+        "Memoization + backtracking: cache (state, index) pairs to avoid revisiting — reduces to DP"
+      ],
+      "displayOrder": 9
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What are the common graph representations? When do you use adjacency list vs adjacency matrix?",
+      "quickAnswer": "Adjacency list: Map<Node, List<Neighbor>> or int[][] adj. O(V+E) space. Efficient for sparse graphs (few edges). Adjacency matrix: boolean[][] or int[][]. O(V²) space. Efficient for dense graphs and O(1) edge presence check. Most interview problems use sparse graphs — prefer adjacency list.",
+      "keyPoints": [
+        "Adjacency list: HashMap<Integer, List<int[]>> for weighted; O(V+E) space; iterate neighbors O(degree)",
+        "Adjacency matrix: int[V][V]; O(V²) space; check edge in O(1); iterate neighbors O(V)",
+        "Sparse graph (roads, social networks): O(V+E) << O(V²) → adjacency list",
+        "Dense graph (complete graph): E ≈ V² → matrix saves no space, O(1) edge check is useful",
+        "Edge list: List<int[]> of (u, v, weight) — compact, used in Kruskal's MST",
+        "For BFS/DFS: adjacency list is natural; iterating all neighbors is O(degree) not O(V)",
+        "Directed vs undirected: directed list adds edge one-way; undirected adds both directions"
+      ],
+      "displayOrder": 10
+    },
+    {
+      "category": "DSA",
+      "difficulty": "HIGH",
+      "question": "What is the time complexity of common sorting algorithms? Which is best for different scenarios?",
+      "quickAnswer": "QuickSort: O(n log n) avg, O(n²) worst (bad pivot) — in-place, cache-friendly, fastest in practice. MergeSort: O(n log n) guaranteed — stable, not in-place (O(n) extra space). HeapSort: O(n log n) guaranteed — in-place, not stable. CountingSort: O(n+k) — for small integer range. Java's Arrays.sort uses TimSort (hybrid merge+insertion, stable, O(n log n)).",
+      "keyPoints": [
+        "QuickSort: avg O(n log n), worst O(n²) — worst avoided by random pivot or 3-way partition",
+        "MergeSort: O(n log n) always, stable — Java Objects/List sort uses TimSort (hybrid)",
+        "HeapSort: O(n log n) guaranteed, in-place, NOT stable — poor cache locality",
+        "InsertionSort: O(n²) but O(n) for nearly sorted — used in TimSort for small arrays",
+        "CountingSort: O(n+k) — k = range of values; not comparison-based",
+        "RadixSort: O(d*(n+k)) — d digits; fast for fixed-length integers",
+        "Stability: MergeSort, InsertionSort, CountingSort are stable; HeapSort, QuickSort are not"
+      ],
+      "displayOrder": 11
+    }
+  ]
+}

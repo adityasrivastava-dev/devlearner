@@ -46,7 +46,7 @@ export default function VideosPage() {
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <button className={styles.backBtn} onClick={() => navigate(-1)}>← Back</button>
+          <button className={styles.backBtn} onClick={() => navigate('/')}>← Home</button>
           <h1 className={styles.title}>▶ Videos</h1>
           <span className={styles.subtitle}>{totalVideos} video{totalVideos !== 1 ? 's' : ''} across {groups.length} topic{groups.length !== 1 ? 's' : ''}</span>
         </div>

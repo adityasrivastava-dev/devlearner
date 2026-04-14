@@ -1,0 +1,182 @@
+{
+  "batchName": "iq-batch-21-aws-system-design",
+  "questions": [
+    {
+      "category": "AWS",
+      "difficulty": "HIGH",
+      "question": "What is the difference between EC2, ECS, EKS, and Lambda for running applications?",
+      "quickAnswer": "EC2: virtual machines — full control, you manage OS/runtime. ECS: AWS's container orchestrator (Fargate = serverless containers). EKS: managed Kubernetes — industry-standard orchestration. Lambda: serverless functions — runs on event triggers, bills per invocation, no idle cost. Choose by operational maturity and control needs.",
+      "keyPoints": [
+        "EC2: IaaS — you provision, patch, scale; max control; vertical + horizontal scaling",
+        "ECS Fargate: run containers without managing servers; AWS handles host patching",
+        "EKS: Kubernetes on AWS; best if already using k8s; more complex than ECS",
+        "Lambda: event-driven (API Gateway, SQS, S3 events); max 15 min runtime; cold start latency",
+        "Lambda limitations: 15 min max, 10GB memory, cold starts, no persistent connections",
+        "Cost: EC2 = always-on cost; Lambda = pay-per-use; Fargate = per vCPU-second",
+        "Spring Boot on Lambda: use Spring Cloud Function or Snapstart (reduces cold starts)"
+      ],
+      "displayOrder": 0
+    },
+    {
+      "category": "AWS",
+      "difficulty": "HIGH",
+      "question": "What is the difference between SQS, SNS, and EventBridge? When do you use each?",
+      "quickAnswer": "SQS: message queue — producer sends, one consumer processes (point-to-point). SNS: pub-sub — one message fans out to multiple subscribers (topics/email/SQS/Lambda). EventBridge: serverless event bus — routes events by rules, integrates with 100+ AWS services and SaaS. Use SQS for work queues, SNS for fan-out, EventBridge for event-driven architecture.",
+      "keyPoints": [
+        "SQS Standard: at-least-once delivery, best-effort ordering, nearly unlimited throughput",
+        "SQS FIFO: exactly-once, guaranteed ordering, 3000 msg/sec with batching",
+        "SNS: push-based, fanout to multiple SQS queues, HTTP endpoints, Lambda, email",
+        "SNS+SQS fanout: SNS topic → multiple SQS queues — decouple producers from consumers",
+        "EventBridge: pattern-based routing (if source=myapp AND detail.type=OrderCreated → Lambda)",
+        "Dead Letter Queue (DLQ): failed messages after N retries → DLQ for inspection",
+        "SQS visibility timeout: message invisible to other consumers while being processed"
+      ],
+      "displayOrder": 1
+    },
+    {
+      "category": "AWS",
+      "difficulty": "HIGH",
+      "question": "What is an Application Load Balancer (ALB) vs a Network Load Balancer (NLB)?",
+      "quickAnswer": "ALB: Layer 7 (HTTP/HTTPS) — routes based on URL path, host header, query params, headers. Supports WebSocket, HTTP/2, gRPC, WAF integration. NLB: Layer 4 (TCP/UDP) — ultra-low latency (<1ms), millions of requests/sec, static IP, preserves source IP. Use ALB for web apps and microservices, NLB for gaming/IoT or when you need extreme throughput.",
+      "keyPoints": [
+        "ALB: content-based routing — /api/* → API servers, /static/* → S3; host-based for multi-tenant",
+        "ALB health checks: HTTP endpoint check; target groups with weighted routing (blue/green)",
+        "NLB: TCP pass-through — preserves client IP; ALB replaces source IP with its own",
+        "NLB: static IP per AZ (useful for whitelisting by IP); ALB IP changes",
+        "ALB integrates with: WAF, Cognito, Lambda as target, ECS service discovery",
+        "Sticky sessions: ALB cookies ensure same client → same target (needed for stateful apps)",
+        "Classic LB (ELB): deprecated — use ALB or NLB"
+      ],
+      "displayOrder": 2
+    },
+    {
+      "category": "AWS",
+      "difficulty": "HIGH",
+      "question": "What is the difference between RDS, Aurora, and DynamoDB? How do you choose?",
+      "quickAnswer": "RDS: managed MySQL/PostgreSQL/Oracle/SQL Server — automated backups, failover. Aurora: AWS-built MySQL/Postgres-compatible DB, 5x faster than RDS MySQL, automatic multi-AZ replication, Aurora Serverless v2. DynamoDB: NoSQL key-value/document, single-digit ms at any scale, serverless. Choose RDS for existing SQL workloads, Aurora for high performance SQL, DynamoDB for massive scale key-value.",
+      "keyPoints": [
+        "RDS: standard managed relational — Multi-AZ standby for failover, Read Replicas for reads",
+        "Aurora: distributed storage (6 copies across 3 AZs), 15 read replicas, Aurora Global Database",
+        "Aurora Serverless v2: auto-scales capacity in 0.5 ACU increments — great for variable load",
+        "DynamoDB: partition key (+ optional sort key), single-digit ms, auto-scales, no schema",
+        "DynamoDB pricing: capacity units (RCU/WCU) or on-demand; DAX for microsecond caching",
+        "DynamoDB limitations: item max 400KB; no complex JOINs; must design access patterns upfront",
+        "ElastiCache (Redis/Memcached): in-memory cache layer in front of RDS — not a replacement"
+      ],
+      "displayOrder": 3
+    },
+    {
+      "category": "AWS",
+      "difficulty": "HIGH",
+      "question": "What is VPC? What are subnets, security groups, and NACLs?",
+      "quickAnswer": "VPC (Virtual Private Cloud) is an isolated network in AWS. Subnets divide the VPC — public subnets have internet gateway routes; private subnets don't. Security groups are instance-level stateful firewalls. NACLs (Network ACLs) are subnet-level stateless firewalls applied before security groups.",
+      "keyPoints": [
+        "VPC: your own CIDR block (e.g., 10.0.0.0/16), isolated from other AWS accounts",
+        "Public subnet: route to Internet Gateway — web servers, load balancers",
+        "Private subnet: no direct internet — RDS, ECS tasks, internal services; use NAT Gateway for outbound",
+        "Security group: stateful (return traffic auto-allowed), instance-level, allow-only rules",
+        "NACL: stateless (must allow inbound AND outbound explicitly), subnet-level, numbered rules",
+        "NAT Gateway: private subnet → internet (outbound only); costly — prefer VPC Endpoints for AWS services",
+        "VPC Peering / Transit Gateway: connect VPCs; Private Link: expose service without VPC peering"
+      ],
+      "displayOrder": 4
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "What is the CAP theorem? Can a distributed system be both consistent and available?",
+      "quickAnswer": "CAP theorem: a distributed system can guarantee at most 2 of 3 properties: Consistency (all nodes see same data), Availability (every request gets a response), Partition tolerance (system works despite network splits). Since network partitions are unavoidable in practice, choose between CP (consistent, may reject requests) or AP (available, may return stale data).",
+      "keyPoints": [
+        "Partition tolerance: must be chosen — network splits happen in real systems",
+        "CP systems: reject requests if can't guarantee consistency — HBase, ZooKeeper, etcd",
+        "AP systems: always respond but may be stale — Cassandra, DynamoDB, CouchDB",
+        "CA is impossible in practice: partition tolerance cannot be sacrificed in distributed systems",
+        "PACELC extension: even without partitions, trade-off between latency and consistency",
+        "Eventual consistency: AP systems eventually converge — 'stale for milliseconds'",
+        "Strong consistency: CP — writes are visible everywhere before the next read succeeds"
+      ],
+      "displayOrder": 5
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "What is consistent hashing? Why is it used in distributed caching and load balancing?",
+      "quickAnswer": "Consistent hashing maps keys and nodes to positions on a virtual ring. A key belongs to the first node clockwise on the ring. When a node is added/removed, only the keys on its segment are remapped — not all keys. Traditional modulo hashing remaps almost all keys on node changes. Used in Redis Cluster, Cassandra, CDN load balancing.",
+      "keyPoints": [
+        "Problem with modulo: hash(key) % N — adding a node changes almost all assignments",
+        "Consistent hash ring: N nodes placed at positions on a 0 to 2^32-1 ring via hash(node)",
+        "Key assignment: hash(key) → find next node clockwise on ring",
+        "Adding node: only keys between previous node and new node migrate",
+        "Removing node: only that node's keys move to its successor",
+        "Virtual nodes (vnodes): each physical node has 150+ virtual positions — avoids hotspots from uneven distribution",
+        "Used in: Redis Cluster, Cassandra (token ring), Memcached client-side sharding, CDN edge selection"
+      ],
+      "displayOrder": 6
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "How do you design a rate limiter? What algorithms can be used?",
+      "quickAnswer": "A rate limiter controls how many requests a client can make in a time window. Algorithms: Token Bucket (smooth bursts), Leaky Bucket (constant output rate), Fixed Window Counter (simple, boundary burst problem), Sliding Window Log (accurate, memory-heavy), Sliding Window Counter (compromise). Redis is the standard backend for distributed rate limiting.",
+      "keyPoints": [
+        "Token Bucket: bucket fills at rate r tokens/sec, max capacity b; request consumes one token — allows bursts",
+        "Leaky Bucket: queue of requests, processed at fixed rate — smooths traffic, can delay bursts",
+        "Fixed Window: count requests per minute; reset at window boundary — burst problem at boundary",
+        "Sliding Window Log: store timestamps of all requests in last 60s — accurate, O(requests) memory",
+        "Sliding Window Counter: interpolate between current and previous window — good accuracy, O(1) memory",
+        "Redis implementation: INCR + EXPIRE for fixed window; Lua script for atomic sliding window",
+        "Response headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After"
+      ],
+      "displayOrder": 7
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "What is the difference between horizontal and vertical scaling? What is the limit of each?",
+      "quickAnswer": "Vertical scaling (scale up): add more CPU/RAM to existing server. Simple but has a hardware ceiling, single point of failure, downtime for upgrade. Horizontal scaling (scale out): add more servers. No hardware ceiling, fault-tolerant, but requires stateless application design, load balancing, and distributed session/data handling.",
+      "keyPoints": [
+        "Vertical: larger EC2 instance — easy, no code changes, but max limit (~448 vCPU, 24TB RAM)",
+        "Horizontal: more instances behind load balancer — no ceiling, but requires stateless services",
+        "Stateful challenge: user sessions must be in shared store (Redis) not in-memory",
+        "Database: vertical (bigger RDS) vs horizontal (read replicas, sharding, Aurora)",
+        "Sharding: partition data across multiple DB servers by shard key — horizontal DB scaling",
+        "Sticky sessions: route same user to same server — avoid if possible (breaks horizontal scaling)",
+        "12-Factor App: stateless processes — store state in backing services (DB, cache)"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "What is a CDN? How does it improve performance and reduce origin load?",
+      "quickAnswer": "A CDN (Content Delivery Network) is a geographically distributed network of edge servers that cache static content close to users. Requests for cached assets (JS, CSS, images, videos) are served from the nearest edge server — reducing latency and offloading traffic from your origin. Dynamic content can also be accelerated via optimized routing.",
+      "keyPoints": [
+        "Cache hit: edge serves from cache — sub-10ms response, no origin load",
+        "Cache miss: edge fetches from origin, caches with TTL, serves response",
+        "Cache-Control header: max-age=86400 → cache for 24 hours",
+        "Cache invalidation: version file names (app.js?v=abc123) or CDN API purge",
+        "CDN providers: CloudFront (AWS), Cloudflare, Fastly, Akamai",
+        "DDoS protection: CDN absorbs traffic at edge — origin never sees attack volume",
+        "Origin shield: optional layer between edge and origin — further reduces origin requests",
+        "Dynamic content: CDN can still help via TCP optimization and HTTP/2 multiplexing"
+      ],
+      "displayOrder": 9
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "What is database sharding? What are the common sharding strategies and their trade-offs?",
+      "quickAnswer": "Sharding horizontally partitions data across multiple databases (each shard holds a subset of rows). Strategies: Range-based (shard by ID range — simple, hot shards possible), Hash-based (shard = hash(key) % N — uniform but no range queries), Directory-based (lookup table maps keys to shards — flexible but lookup latency).",
+      "keyPoints": [
+        "Problem solved: single DB can't hold all data or handle all write traffic",
+        "Range sharding: users 1-1M → shard1, 1M-2M → shard2 — simple, but popular ranges become hot",
+        "Hash sharding: shard = hash(userId) % 4 — uniform distribution, hard to do range queries",
+        "Directory sharding: lookup service maps key → shard — flexible, add new shards easily, extra hop",
+        "Cross-shard queries: JOIN across shards requires scatter-gather — expensive",
+        "Rebalancing: adding shards requires moving data — consistent hashing minimizes moves",
+        "Application-level sharding: app routes to correct shard; middleware sharding: transparent"
+      ],
+      "displayOrder": 10
+    }
+  ]
+}

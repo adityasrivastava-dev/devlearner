@@ -1,0 +1,170 @@
+{
+  "batchName": "iq-batch-13-http-rest",
+  "questions": [
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What are the REST architectural constraints? What makes an API truly RESTful?",
+      "quickAnswer": "REST has 6 constraints: client-server (separation of concerns), stateless (no server-side session per request), cacheable (responses can be cached), uniform interface (resource URLs + HTTP verbs + HATEOAS), layered system (client doesn't know if it talks to a server or proxy), and optional code-on-demand (JS sent from server). Most 'REST' APIs are actually HTTP APIs — HATEOAS is rarely implemented.",
+      "keyPoints": [
+        "Stateless: each request must contain all info; no session state on server",
+        "Uniform interface: URIs identify resources; HTTP verbs indicate action; representations (JSON/XML)",
+        "HATEOAS: responses include links to next valid actions — rarely implemented in practice",
+        "Cacheable: GET responses can be cached; POST/DELETE typically not",
+        "Roy Fielding's 2000 dissertation coined REST — most APIs don't fully implement it",
+        "Richardson Maturity Model: Level 0 (one URI) → Level 1 (resources) → Level 2 (verbs) → Level 3 (HATEOAS)",
+        "Statelessness enables horizontal scaling — any instance handles any request"
+      ],
+      "displayOrder": 0
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the difference between PUT and PATCH? When do you use each?",
+      "quickAnswer": "PUT replaces the entire resource — client sends the complete representation. PATCH applies a partial update — client sends only the fields to change. PUT is idempotent (calling it N times has the same result). PATCH is usually idempotent but the HTTP spec doesn't require it. Use PUT for full replacement, PATCH for status changes or updating one field.",
+      "keyPoints": [
+        "PUT: idempotent full replace — PUT /users/42 with {name, email, role} replaces all fields",
+        "PATCH: partial update — PATCH /orders/7 with {status:'SHIPPED'} changes only status",
+        "PUT is idempotent — 5 identical PUTs = same result as 1",
+        "PATCH may or may not be idempotent depending on semantics (increment operations are not)",
+        "Missing field in PUT = that field is set to null/default",
+        "PATCH body format: JSON Merge Patch (RFC 7396) or JSON Patch (RFC 6902)",
+        "In practice: many APIs use PUT for partial updates — not RESTfully correct but common"
+      ],
+      "displayOrder": 1
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the difference between HTTP 401 and 403? When does each occur?",
+      "quickAnswer": "401 Unauthorized means authentication is required — the request lacked credentials or they were invalid. The client should authenticate and retry. 403 Forbidden means the server recognized the user but they don't have permission for this action. Re-authenticating won't help.",
+      "keyPoints": [
+        "401: no token, expired token, invalid token — 'Who are you? Prove it.'",
+        "403: valid token, insufficient role/permission — 'I know who you are, but you can't do this'",
+        "401 should include WWW-Authenticate header indicating the auth method",
+        "403 use case: regular user trying to access /api/admin/**",
+        "Common confusion: apps return 403 when they mean 401 (to avoid revealing resource existence)",
+        "Spring Security: @PreAuthorize('hasRole(ADMIN)') throws AccessDeniedException → 403",
+        "JWT expired → 401; JWT valid but wrong role → 403"
+      ],
+      "displayOrder": 2
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What does idempotent mean in HTTP? Which methods are idempotent and which are not?",
+      "quickAnswer": "Idempotent means calling the operation N times has the same effect as calling it once. GET, HEAD, OPTIONS, PUT, DELETE are idempotent. POST is not (each POST creates a new resource). PATCH depends on implementation — incrementing a counter is not idempotent, replacing a value is.",
+      "keyPoints": [
+        "GET: idempotent — reading doesn't change state",
+        "DELETE: idempotent — deleting an already-deleted resource still results in 'deleted'",
+        "PUT: idempotent — 5 identical PUTs leave the resource in the same final state",
+        "POST: NOT idempotent — POST /orders creates a new order each time",
+        "HEAD: idempotent — same as GET but no body",
+        "Safe = no side effects at all (GET, HEAD, OPTIONS); idempotent doesn't imply safe",
+        "Idempotency key: for POST, client sends X-Idempotency-Key header; server deduplicates"
+      ],
+      "displayOrder": 3
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is CORS? How does the browser enforce it? What happens during a preflight request?",
+      "quickAnswer": "CORS (Cross-Origin Resource Sharing) is a browser security mechanism that blocks JS from reading cross-origin responses. Browser adds Origin header to cross-origin requests. Server must respond with Access-Control-Allow-Origin. For non-simple requests (custom headers, PUT/DELETE), the browser sends an OPTIONS preflight first and only proceeds if the server responds correctly.",
+      "keyPoints": [
+        "Same-Origin Policy: browser blocks JS from reading responses from different origin (protocol+host+port)",
+        "CORS relaxes this: server explicitly allows specific origins via response headers",
+        "Simple request: GET/POST with basic content-type → no preflight, just check ACAO header",
+        "Preflight: OPTIONS request for PUT/DELETE/custom headers → checks ACAM, ACAH headers",
+        "Key headers: Access-Control-Allow-Origin, Access-Control-Allow-Methods, Access-Control-Allow-Headers",
+        "Access-Control-Max-Age: cache preflight result (avoids OPTIONS on every call)",
+        "CORS is BROWSER-enforced — curl, Postman, server-to-server calls bypass it",
+        "Spring: @CrossOrigin or CorsConfigurationSource in SecurityConfig"
+      ],
+      "displayOrder": 4
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "How does HTTPS/TLS work? What does a TLS handshake do?",
+      "quickAnswer": "TLS adds encryption to HTTP. During the handshake: client sends supported cipher suites, server replies with its certificate (containing its public key), client verifies the certificate against trusted CAs, both derive a shared symmetric key using ECDHE (without sending it over the wire), then all data is encrypted with that symmetric key (AES-GCM).",
+      "keyPoints": [
+        "TLS 1.3: 1 round-trip handshake (TLS 1.2 needed 2); much faster",
+        "Certificate: issued by CA (Let's Encrypt, DigiCert), contains server's public key and domain",
+        "Client verifies: signed by trusted CA? correct domain? not expired?",
+        "ECDHE: Ephemeral Diffie-Hellman — derives shared key without sending it; provides forward secrecy",
+        "Forward secrecy: if server's private key is stolen later, past sessions can't be decrypted",
+        "Symmetric encryption (AES-256-GCM) for data: 1000x faster than asymmetric RSA",
+        "HTTPS hides the body but not the domain (visible in SNI extension during handshake)",
+        "HTTP Strict Transport Security (HSTS): forces browser to always use HTTPS for your domain"
+      ],
+      "displayOrder": 5
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between REST, SOAP, GraphQL, and gRPC? When do you choose each?",
+      "quickAnswer": "REST: HTTP+JSON, stateless, resource URLs, cacheable — best for public APIs and mobile backends. SOAP: XML envelopes, WSDL contracts, WS-Security — enterprise integrations. GraphQL: single endpoint, client defines query shape, eliminates over/under-fetching — complex UIs. gRPC: HTTP/2, binary Protobuf, streaming, type-safe — high-throughput internal microservices.",
+      "keyPoints": [
+        "REST: human-readable JSON, cacheable GETs, widely supported, standard tooling",
+        "SOAP: strict contract (WSDL), built-in security (WS-Security), stateful options — banking/insurance",
+        "GraphQL: one /graphql endpoint, client specifies exact fields needed, N+1 problem exists",
+        "gRPC: 10x faster than REST for internal calls, streaming (bidirectional), code generation from .proto",
+        "WebSocket: full-duplex, persistent — real-time (chat, live prices, collaborative editing)",
+        "gRPC drawback: not browser-native (gRPC-Web proxy needed), harder to debug (binary)",
+        "GraphQL drawback: complex server-side implementation, caching harder than REST"
+      ],
+      "displayOrder": 6
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What HTTP status codes should a POST (create), PUT (update), and DELETE return?",
+      "quickAnswer": "POST create: 201 Created + Location header pointing to new resource. PUT full replace: 200 OK with updated resource. PATCH partial update: 200 OK with updated resource. DELETE: 204 No Content (success, empty body). If the resource doesn't exist for PUT/DELETE: 404 Not Found.",
+      "keyPoints": [
+        "POST → 201 Created + Location: /users/42 in response header",
+        "PUT/PATCH → 200 OK with updated representation",
+        "DELETE → 204 No Content — empty body, nothing to return",
+        "GET (success) → 200 OK; GET (not found) → 404",
+        "POST validation fails → 400 Bad Request (malformed) or 422 Unprocessable Entity (semantic error)",
+        "POST conflict → 409 Conflict (duplicate email)",
+        "Never return 200 for errors — breaks clients that check status code",
+        "204 vs 200 for DELETE: 204 is correct; 200 is acceptable but must include a body"
+      ],
+      "displayOrder": 7
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is HTTP/2? How does it improve on HTTP/1.1?",
+      "quickAnswer": "HTTP/2 multiplexes multiple requests over a single TCP connection, solving HTTP/1.1's head-of-line blocking. It uses binary framing instead of text, header compression (HPACK), and server push. HTTP/1.1 needed multiple connections for parallel requests. HTTP/2 maintains backward compatibility with the same HTTP semantics.",
+      "keyPoints": [
+        "Multiplexing: multiple requests/responses interleaved on one TCP connection — no head-of-line blocking",
+        "HTTP/1.1 problem: browsers opened 6-8 parallel connections per domain as a workaround",
+        "Binary framing: messages split into binary frames — more efficient than text",
+        "HPACK header compression: duplicate headers (User-Agent, Cookie) not resent",
+        "Server push: server sends resources before client requests them (e.g., CSS with HTML)",
+        "HTTP/2 requires TLS in practice (browsers enforce it)",
+        "HTTP/3 (QUIC): runs over UDP instead of TCP — eliminates TCP head-of-line blocking too",
+        "Spring Boot 3.2 supports HTTP/2 natively: server.http2.enabled=true"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is JWT? How does token-based authentication work compared to sessions?",
+      "quickAnswer": "JWT (JSON Web Token) is a self-contained, signed token containing claims (userId, roles, expiry). The server creates and signs it with a secret key. The client stores it and sends it on every request in the Authorization header. The server verifies the signature without a DB lookup. No server-side session storage needed — enables stateless, horizontally scalable APIs.",
+      "keyPoints": [
+        "Structure: header.payload.signature — all base64url encoded",
+        "Signed with HMAC-SHA256 (symmetric) or RSA/EC (asymmetric) — tampering detected",
+        "Claims: sub (subject/userId), iat (issued at), exp (expiry), roles (custom)",
+        "Verification: recalculate signature from header+payload, compare — no DB needed",
+        "Stateless: no session table, no Redis — any server instance validates any token",
+        "Expiry: short-lived access token (15min) + long-lived refresh token (7 days)",
+        "Cannot revoke before expiry — use a blocklist (Redis set) for logout/compromise",
+        "Storage: httpOnly cookie (no XSS risk) or localStorage (simpler, XSS risk)"
+      ],
+      "displayOrder": 9
+    }
+  ]
+}

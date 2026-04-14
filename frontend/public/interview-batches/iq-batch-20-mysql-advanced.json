@@ -1,0 +1,183 @@
+{
+  "batchName": "iq-batch-20-mysql-advanced",
+  "questions": [
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What are MySQL indexes? How does a B-Tree index work? When are indexes not used?",
+      "quickAnswer": "An index is a separate data structure (usually a B-Tree) that speeds up reads by allowing the database to find rows without a full table scan. B-Tree stores sorted key values with pointers to rows. MySQL's InnoDB uses B+Trees (data in leaves). Indexes are NOT used when: column has low cardinality, leading wildcard LIKE '%abc', using function on indexed column, or optimizer decides full scan is faster.",
+      "keyPoints": [
+        "B+Tree: all data in leaf nodes, internal nodes are routing keys — fast range scans",
+        "Primary key: clustered index in InnoDB — row data stored IN the index leaf (physical order)",
+        "Secondary index: stores indexed column + primary key value — needs extra lookup to get full row",
+        "Covering index: index contains all columns in the query — no row lookup needed",
+        "Composite index (a, b, c): usable for queries on (a), (a,b), (a,b,c) — leftmost prefix rule",
+        "Not used: LIKE '%abc' (leading wildcard), WHERE YEAR(created_at) = 2024 (function on column), low cardinality",
+        "EXPLAIN: type=ref (index), type=range (partial), type=ALL (full scan — bad)"
+      ],
+      "displayOrder": 0
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What is the difference between INNER JOIN, LEFT JOIN, RIGHT JOIN, and FULL OUTER JOIN?",
+      "quickAnswer": "INNER JOIN: only rows with matches in BOTH tables. LEFT JOIN: all rows from left table + matching rows from right (NULLs where no match). RIGHT JOIN: all rows from right + matching from left. FULL OUTER JOIN: all rows from both (MySQL doesn't support it natively — use UNION of LEFT and RIGHT JOIN).",
+      "keyPoints": [
+        "INNER JOIN: intersection — rows that exist in both tables",
+        "LEFT JOIN: left table rows always included; right side NULL if no match",
+        "RIGHT JOIN: right table always included; rarely used (rewrite as LEFT JOIN with tables swapped)",
+        "FULL OUTER JOIN (MySQL): SELECT * FROM a LEFT JOIN b ... UNION SELECT * FROM a RIGHT JOIN b ...",
+        "CROSS JOIN: cartesian product — m × n rows; for generating combinations",
+        "SELF JOIN: join table to itself — organizational hierarchy, find pairs",
+        "NULL handling: WHERE b.id IS NULL after LEFT JOIN → find rows with NO match (anti-join)"
+      ],
+      "displayOrder": 1
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What are window functions? How do ROW_NUMBER, RANK, DENSE_RANK, and LAG work?",
+      "quickAnswer": "Window functions operate over a set of rows (window) related to the current row, without collapsing rows like GROUP BY. ROW_NUMBER: unique sequential number (1,2,3). RANK: same number for ties, gaps after (1,1,3). DENSE_RANK: same for ties, no gaps (1,1,2). LAG/LEAD: access previous/next row's value.",
+      "keyPoints": [
+        "Syntax: FUNC() OVER (PARTITION BY dept ORDER BY salary DESC)",
+        "ROW_NUMBER(): unique 1,2,3 — use for pagination, deduplication (WHERE row_num=1)",
+        "RANK(): 1,1,3,4 — ties share rank, then skip; DENSE_RANK(): 1,1,2,3 — no gaps",
+        "LAG(col, offset, default): previous row value — calculate difference from previous period",
+        "LEAD(col, offset, default): next row value",
+        "SUM() OVER (ORDER BY date): running total; AVG() OVER (PARTITION BY dept): dept average without GROUP BY",
+        "NTILE(n): divide rows into n equal buckets — percentiles"
+      ],
+      "displayOrder": 2
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What is a transaction? What are ACID properties and how does InnoDB implement them?",
+      "quickAnswer": "A transaction is a unit of work that is all-or-nothing. ACID: Atomicity (all or nothing), Consistency (DB constraints preserved), Isolation (concurrent transactions don't interfere), Durability (committed data survives crash). InnoDB: Atomicity via undo log, Durability via redo log (WAL), Isolation via MVCC+locking, Consistency via constraints.",
+      "keyPoints": [
+        "Atomicity: InnoDB undo log — rollback by applying reverse operations",
+        "Durability: Write-Ahead Log (redo log) — written before dirty page — survives crash",
+        "Isolation: MVCC (Multi-Version Concurrency Control) — readers don't block writers",
+        "MVCC: each row has hidden trx_id; reads see consistent snapshot based on transaction start time",
+        "Consistency: enforced by constraints (FK, UNIQUE, NOT NULL, CHECK) and triggers",
+        "innodb_flush_log_at_trx_commit=1: flush redo log on every commit — safest, slowest",
+        "BEGIN / COMMIT / ROLLBACK — or Spring @Transactional wraps automatically"
+      ],
+      "displayOrder": 3
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What are the transaction isolation levels? What phenomena does each prevent?",
+      "quickAnswer": "Four levels from weakest to strongest: READ UNCOMMITTED (allows dirty reads), READ COMMITTED (prevents dirty reads — default for most DBs), REPEATABLE READ (prevents dirty + non-repeatable reads — MySQL InnoDB default), SERIALIZABLE (prevents all anomalies including phantom reads — slowest, fully serial).",
+      "keyPoints": [
+        "Dirty read: see uncommitted changes from another transaction — prevented by READ COMMITTED and above",
+        "Non-repeatable read: same SELECT returns different rows in same transaction — prevented by REPEATABLE READ and above",
+        "Phantom read: new rows appear from concurrent INSERT — prevented by SERIALIZABLE",
+        "MySQL InnoDB REPEATABLE READ: prevents phantoms too via gap locks + next-key locks (extra vs standard)",
+        "READ UNCOMMITTED: no locks — fastest but useless for financial data",
+        "SERIALIZABLE: SELECT acquires shared locks — consistent but lowest concurrency",
+        "SET TRANSACTION ISOLATION LEVEL READ COMMITTED; — per-session override"
+      ],
+      "displayOrder": 4
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What is a deadlock in MySQL? How does InnoDB detect and handle it?",
+      "quickAnswer": "MySQL deadlock occurs when two transactions each hold a lock the other needs. InnoDB detects the cycle in the wait-for graph and rolls back the 'victim' transaction (the one with fewest rows changed). You should catch the deadlock error (error 1213) and retry the transaction.",
+      "keyPoints": [
+        "Detection: InnoDB maintains a wait-for graph, detects cycle in real time",
+        "Victim selection: transaction with least undo log work (smallest number of rows changed)",
+        "Error: java.sql.SQLException: Deadlock found (MySQL error 1213)",
+        "Prevention: consistent lock ordering — all transactions lock rows in same order",
+        "SHOW ENGINE INNODB STATUS: shows last detected deadlock with full transaction details",
+        "Lock timeout: innodb_lock_wait_timeout=50 (seconds) — transaction gives up after timeout",
+        "Retry: Spring @Retryable with DeadlockLoserDataAccessException for auto-retry"
+      ],
+      "displayOrder": 5
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What is EXPLAIN? How do you interpret its output to diagnose slow queries?",
+      "quickAnswer": "EXPLAIN shows the query execution plan — which tables are accessed, which indexes are used, estimated row counts. Key columns: type (access method), key (index used), rows (estimated), Extra (Using filesort, Using temporary — bad). Always check type=ALL (full table scan) and Extra=Using filesort — these indicate missing indexes.",
+      "keyPoints": [
+        "type column (best to worst): system > const > eq_ref > ref > range > index > ALL",
+        "type=ALL: full table scan — add an index on WHERE/JOIN columns",
+        "type=ref: index scan with equality condition — good",
+        "type=range: index scan over a range — acceptable",
+        "key: which index is being used; key_len: how many bytes of the index are used",
+        "rows: estimated rows examined — lower is better; multiply across tables for join cost",
+        "Extra=Using filesort: needs extra sort pass (add index on ORDER BY column)",
+        "Extra=Using temporary: uses temp table — optimize GROUP BY/DISTINCT",
+        "EXPLAIN ANALYZE (MySQL 8.0): shows actual execution stats, not just estimates"
+      ],
+      "displayOrder": 6
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between WHERE and HAVING? Can HAVING exist without GROUP BY?",
+      "quickAnswer": "WHERE filters rows before grouping — operates on individual rows, can't reference aggregate functions. HAVING filters groups after GROUP BY — operates on group results, can reference aggregates (COUNT, SUM, AVG). HAVING without GROUP BY operates on the entire table as one group (rare but valid).",
+      "keyPoints": [
+        "WHERE: filters individual rows before grouping; no aggregates allowed",
+        "HAVING: filters groups after GROUP BY; aggregates allowed",
+        "Example: WHERE salary > 50000 → filter employees before grouping",
+        "Example: HAVING AVG(salary) > 80000 → filter departments by average salary",
+        "HAVING without GROUP BY: treats all rows as one group — useful for HAVING COUNT(*) > 0",
+        "Performance: WHERE is more efficient — reduces rows before GROUP BY computation",
+        "Both in same query: WHERE filters rows first, then GROUP BY, then HAVING filters groups"
+      ],
+      "displayOrder": 7
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What are CTEs (Common Table Expressions)? When do you use them over subqueries?",
+      "quickAnswer": "A CTE (WITH clause) defines a named temporary result set used once or multiple times in the query. Unlike a subquery, a CTE can be self-referencing (recursive CTE for hierarchical data). CTEs improve readability and can be referenced multiple times — subqueries are re-evaluated each time they appear.",
+      "keyPoints": [
+        "Syntax: WITH cte_name AS (SELECT ...) SELECT * FROM cte_name",
+        "Multiple CTEs: WITH a AS (...), b AS (...) SELECT * FROM a JOIN b ...",
+        "Recursive CTE: WITH RECURSIVE — for trees/graphs; uses UNION ALL with base case + recursive case",
+        "Recursive example: organizational hierarchy (employee → manager → manager chain)",
+        "CTE vs subquery: CTEs are named (readable), can be referenced multiple times, can be recursive",
+        "CTE vs temporary table: CTEs exist only for the query; temp tables persist in session",
+        "MySQL 8.0+: full CTE and window function support"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What is the difference between DELETE, TRUNCATE, and DROP? What about performance?",
+      "quickAnswer": "DELETE: DML, removes specific rows matching WHERE, fires triggers, can be rolled back, slow for large tables (row-by-row). TRUNCATE: DDL, removes all rows instantly, no triggers, cannot be rolled back (in most cases), resets AUTO_INCREMENT. DROP: removes the entire table structure. TRUNCATE is much faster than DELETE for clearing all rows.",
+      "keyPoints": [
+        "DELETE: WHERE clause optional, triggers fire, transactional (rollback possible), logs each row delete",
+        "TRUNCATE: no WHERE, no triggers, deallocates data pages (not row-by-row), resets AUTO_INCREMENT",
+        "DROP: removes table schema + data — cannot SELECT after; also drops indexes, triggers, constraints",
+        "TRUNCATE performance: O(1) page deallocation vs O(n) row-by-row DELETE",
+        "TRUNCATE in MySQL: releases storage pages to OS; InnoDB allows rollback if in explicit transaction",
+        "Cannot TRUNCATE: table with foreign keys pointing to it (FK constraint)",
+        "Cascade: DELETE with ON DELETE CASCADE removes child rows; TRUNCATE does NOT cascade"
+      ],
+      "displayOrder": 9
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What is a stored procedure vs a function vs a trigger in MySQL?",
+      "quickAnswer": "Stored procedure: executable block called with CALL — can have IN/OUT params, DML, flow control. Function: called inside SQL expressions (SELECT fn()), must return a value, no DML allowed (usually). Trigger: automatically fires on INSERT/UPDATE/DELETE — for audit logs, derived column computation, constraint enforcement.",
+      "keyPoints": [
+        "Stored procedure: CALL proc(arg) — can modify data, no direct use in SELECT",
+        "Function: SELECT fn(col) — must RETURN a value; DETERMINISTIC flag required for replication",
+        "Trigger: BEFORE/AFTER INSERT/UPDATE/DELETE ON table — executes FOR EACH ROW",
+        "Trigger NEW and OLD: NEW.column (after update value), OLD.column (before update value)",
+        "Triggers are hidden logic — hard to debug, test, and trace; avoid for complex business rules",
+        "Use triggers for: audit logs, soft deletes, derived column maintenance",
+        "Stored procedures reduce round trips for multi-step operations — useful for batch jobs"
+      ],
+      "displayOrder": 10
+    }
+  ]
+}

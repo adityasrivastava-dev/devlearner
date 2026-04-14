@@ -16,7 +16,20 @@
   gap: 16px;
   flex-wrap: wrap;
 }
-.headerLeft { display: flex; flex-direction: column; gap: 2px; }
+.headerLeft { display: flex; flex-direction: column; gap: 4px; }
+.backBtn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text3);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  align-self: flex-start;
+  transition: color .15s, border-color .15s;
+}
+.backBtn:hover { color: var(--text); border-color: var(--border2); }
 .title {
   font-size: 22px;
   font-weight: 800;

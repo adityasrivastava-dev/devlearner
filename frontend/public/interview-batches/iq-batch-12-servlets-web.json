@@ -1,0 +1,184 @@
+{
+  "batchName": "iq-batch-12-servlets-web",
+  "questions": [
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the Servlet lifecycle? Which methods run once vs per-request?",
+      "quickAnswer": "The container creates one servlet instance. Constructor and init() run once on first load. service() (which dispatches to doGet/doPost/etc.) runs per request, potentially on multiple threads simultaneously. destroy() runs once on undeploy.",
+      "keyPoints": [
+        "One instance per servlet — the container uses the Singleton pattern",
+        "init(ServletConfig) — once at load time; open resources, read init-params",
+        "service() → doGet/doPost/doPut/doDelete based on HTTP method",
+        "Multiple threads call service() concurrently on the SAME instance",
+        "Instance fields are shared across threads — never store per-request state there",
+        "destroy() — once on shutdown; close resources opened in init()",
+        "Lazy init (first request) vs eager init (load-on-startup in web.xml)"
+      ],
+      "displayOrder": 0
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "Why are servlets not thread-safe by default? How do you write a thread-safe servlet?",
+      "quickAnswer": "The container reuses one servlet instance for all concurrent requests, each handled by a different thread. Instance variables are shared across threads, creating race conditions. Fix: use only local variables inside service methods — each thread has its own stack. Never store request-specific data (user, session data) in instance fields.",
+      "keyPoints": [
+        "One servlet instance + thread pool = all threads share instance variables",
+        "Race condition: Thread-1 sets instanceField='Alice', Thread-2 sets it='Bob', Thread-1 reads 'Bob'",
+        "Fix: local variables are on the per-thread stack — inherently thread-safe",
+        "Request data: use request.getAttribute/getParameter (per-request, thread-safe)",
+        "Shared state you must synchronize: counters, caches — use AtomicInteger or synchronized",
+        "HttpSession is per-user, not thread-safe — same user can make concurrent requests",
+        "SingleThreadModel (deprecated) — forced one-at-a-time, catastrophic for performance"
+      ],
+      "displayOrder": 1
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between forward() and sendRedirect()? When do you use each?",
+      "quickAnswer": "forward() (RequestDispatcher) passes the request to another resource server-side — one HTTP request, same request/response objects, URL doesn't change in the browser. sendRedirect() sends an HTTP 302 to the client, which makes a new GET request — two HTTP round trips, URL changes, POST data is lost.",
+      "keyPoints": [
+        "forward(): server-side hand-off, same request/response, URL stays same, preserves request attributes",
+        "sendRedirect(): client gets 302, browser makes new GET — two round trips, URL changes",
+        "forward() use case: MVC — servlet sets request attributes, forwards to JSP for rendering",
+        "sendRedirect() use case: PRG pattern (Post-Redirect-Get) — prevents form re-submission on refresh",
+        "sendRedirect('/login') after logout — browser URL changes to /login, back button goes to /login",
+        "forward() cannot cross contexts (different web apps); sendRedirect() can go anywhere",
+        "forward() preserves HTTP method; sendRedirect() always results in GET"
+      ],
+      "displayOrder": 2
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between cookies and sessions? When do you use each?",
+      "quickAnswer": "Cookies are stored client-side (browser), max 4KB, sent automatically on every matching request. Sessions are stored server-side (memory/Redis), only the session ID (JSESSIONID) is in a cookie. Cookies for user preferences and remember-me tokens. Sessions for authentication state and sensitive data.",
+      "keyPoints": [
+        "Cookie: client-side, 4KB limit, String key-value, travels on every request to matching domain/path",
+        "Session: server-side storage, any Java object, only JSESSIONID cookie sent",
+        "HttpOnly flag: JS cannot access cookie — prevents XSS token theft",
+        "Secure flag: cookie only sent over HTTPS",
+        "SameSite=Strict: prevents cross-site request forgery (CSRF) for cookie auth",
+        "Session timeout: session.setMaxInactiveInterval(1800) — 30 minutes idle",
+        "session.invalidate() on logout — mandatory, prevents session hijacking"
+      ],
+      "displayOrder": 3
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is a Filter in the Servlet API? How does the filter chain work?",
+      "quickAnswer": "A Filter intercepts requests before they reach a servlet and responses before they go to the client. chain.doFilter() passes to the next filter or the servlet. Filters are chained in the order they are declared in web.xml or by @Order. Used for authentication, logging, CORS, compression, CSRF protection.",
+      "keyPoints": [
+        "Filter interface: init(), doFilter(request, response, chain), destroy()",
+        "chain.doFilter(req, res) — must call to continue; don't call to block (e.g., auth failure → redirect)",
+        "Runs before the servlet (pre-processing) and after (post-processing) around chain.doFilter()",
+        "Authentication filter: check session/JWT before chain — short-circuit to /login if missing",
+        "Order: @WebFilter urlPattern or FilterRegistrationBean with @Order",
+        "Spring Security FilterChainProxy is a chain of Filters (OncePerRequestFilter subclasses)",
+        "OncePerRequestFilter: Spring's base class that guarantees single execution per request"
+      ],
+      "displayOrder": 4
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is session fixation and how do you prevent it?",
+      "quickAnswer": "Session fixation is an attack where an attacker sets a known session ID on the victim's browser before login. When the victim logs in, the server reuses that session ID — now the attacker knows the valid session ID. Prevention: invalidate the old session and create a new one immediately after successful authentication.",
+      "keyPoints": [
+        "Attack: attacker sets JSESSIONID=known-value via URL or cookie, victim logs in with it",
+        "Server reuses the session → attacker now has a valid authenticated session",
+        "Fix: on login success, call session.invalidate() then request.getSession(true) for fresh session",
+        "Spring Security: session-fixation protection built in (migrateSession mode by default)",
+        "migrateSession: copies attributes to new session ID — preserves cart/form data",
+        "newSession: creates completely new session, discards old attributes",
+        "HttpSessionIdResolver: Spring uses header-based session (X-Auth-Token) for stateless APIs"
+      ],
+      "displayOrder": 5
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the difference between include() and forward() in RequestDispatcher?",
+      "quickAnswer": "forward() transfers full control to the target — the calling servlet cannot write to the response after forwarding. include() includes the target's output into the current response — the calling servlet can write before and after the include. Both are server-side, same request/response, URL unchanged.",
+      "keyPoints": [
+        "forward(): response committed to target only; calling servlet must not write after",
+        "include(): calling servlet can write before and after; output merged into one response",
+        "include() use case: server-side includes for headers/footers — <jsp:include page='header.jsp'/>",
+        "forward() use case: MVC dispatch — controller forwards to view JSP",
+        "Both preserve request attributes; both run in same request thread",
+        "IllegalStateException if response is already committed before forward()",
+        "Dynamic include (runtime): rd.include(req, res) — different from static <%@ include file %>"
+      ],
+      "displayOrder": 6
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the PRG (Post-Redirect-Get) pattern? Why is it important?",
+      "quickAnswer": "After a POST request that modifies data, redirect the client with 302 to a GET endpoint. Without PRG, browser refresh on the POST response re-submits the form — potentially creating duplicate orders, payments, or records. The redirect forces the browser to make a clean GET request, which can safely be refreshed.",
+      "keyPoints": [
+        "Problem: browser refresh on POST response re-submits — 'Do you want to resend the form data?'",
+        "Solution: POST processes data → sendRedirect('/success') → browser GETs /success",
+        "Duplicate prevention: 'Pay Now' without PRG → double-charge on refresh",
+        "Implementation: response.sendRedirect('/orders?created=true') after POST /orders",
+        "Flash attributes: Spring MVC RedirectAttributes.addFlashAttribute('msg','Order saved') — survives redirect in session, then removed",
+        "Idempotency key alternative: server-side dedup for payment APIs",
+        "PRG is the standard answer to 'how do you prevent form re-submission?'"
+      ],
+      "displayOrder": 7
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What happens under the hood when you deploy a JSP? How does it become a Servlet?",
+      "quickAnswer": "The JSP engine (Jasper in Tomcat) translates the JSP to a Java class on first access, compiles it to bytecode, and loads it. The generated class extends HttpJspBase (which extends HttpServlet). The lifecycle is identical: _jspInit() (once), _jspService() (per request, multi-threaded), _jspDestroy() (once).",
+      "keyPoints": [
+        "Translation: .jsp → .java (Jasper generates a full Java class)",
+        "Compilation: .java → .class (javac or ECJ compiler)",
+        "Generated class extends HttpJspBase extends HttpServlet",
+        "First request is slow (translation + compilation); subsequent requests use cached bytecode",
+        "Scriptlets <% %> become code inside _jspService()",
+        "Expressions <%= %> become out.print() calls",
+        "JSP implicit objects (request, response, session, out, etc.) injected at start of _jspService()",
+        "Tomcat stores generated files in work/Catalina/localhost/appname/org/apache/jsp/"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is JSTL? Why use it over scriptlets? What are the main tag libraries?",
+      "quickAnswer": "JSTL (JSP Standard Tag Library) provides XML-like tags for common operations (iteration, conditionals, formatting) replacing Java scriptlets in JSP. Scriptlets mix Java code with HTML, are untestable, and violate MVC separation. JSTL's core library has c:forEach, c:if, c:choose. fmt has date/number formatting. sql and xml libraries exist but are discouraged.",
+      "keyPoints": [
+        "Core (c): c:forEach, c:if, c:choose/when/otherwise, c:set, c:out, c:url, c:param, c:redirect",
+        "Formatting (fmt): fmt:formatDate, fmt:formatNumber, fmt:message (i18n)",
+        "Functions (fn): fn:length, fn:substring, fn:contains, fn:split",
+        "Taglib declaration: <%@ taglib prefix='c' uri='http://java.sun.com/jsp/jstl/core' %>",
+        "c:out escapes HTML by default — prevents XSS when rendering user input",
+        "c:forEach varStatus: count(1-based), index(0-based), first, last, step",
+        "EL (Expression Language) works alongside JSTL: ${user.name}, ${sessionScope.cart}",
+        "Scriptlets are banned in many coding standards — JSTL is the required replacement"
+      ],
+      "displayOrder": 9
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is EL (Expression Language) in JSP? What are the four scopes?",
+      "quickAnswer": "EL (${expr}) provides a simplified syntax to access Java objects in JSP without scriptlets. It searches four scopes in order: page → request → session → application. ${user} finds the first 'user' attribute. Use explicit scope: ${requestScope.user}, ${sessionScope.cart} to avoid ambiguity.",
+      "keyPoints": [
+        "Scope search order (narrowest to widest): page → request → session → application",
+        "First match wins — request.setAttribute('x',1) hides session.getAttribute('x'=2)",
+        "Explicit: ${requestScope.x}, ${sessionScope.x}, ${applicationScope.x}, ${pageScope.x}",
+        "EL implicit objects: ${param.name} = getParameter, ${header['X-Id']} = getHeader",
+        "${empty list} — true if list is null, empty array, or empty collection",
+        "${a ? b : c} — ternary; ${map['key']}, ${list[0].name} — map and indexed access",
+        "EL is null-safe: ${user.address.city} returns empty string if user is null",
+        "JSTL functions: ${fn:length(list)}, ${fn:contains(str,'sub')}"
+      ],
+      "displayOrder": 10
+    }
+  ]
+}
