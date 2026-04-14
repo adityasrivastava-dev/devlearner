@@ -337,6 +337,9 @@ export const roadmapsApi = {
   removeTopic: (id, topicId) =>
     http.delete(`/api/roadmaps/${id}/topics/${topicId}`).then((r) => r.data),
 
+  toggleDone: (id, topicId) =>
+    http.patch(`/api/roadmaps/${id}/topics/${topicId}/done`).then((r) => r.data),
+
   delete: (id) =>
     http.delete(`/api/roadmaps/${id}`).then((r) => r.data),
 };

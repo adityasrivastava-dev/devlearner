@@ -118,6 +118,16 @@ public RoadmapDto reorderTopics(Long roadmapId, List<Long> orderedTopicIds, Long
     return toDto(roadmapRepo.findById(roadmapId).orElseThrow());
 }
 
+@Transactional
+public RoadmapDto toggleTopicDone(Long roadmapId, Long topicId, Long userId) {
+    findOwned(roadmapId, userId);
+    RoadmapTopic rt = roadmapTopicRepo.findByRoadmapIdAndTopicId(roadmapId, topicId)
+            .orElseThrow(() -> new IllegalArgumentException("Topic not in roadmap"));
+    rt.setCompleted(!rt.isCompleted());
+    roadmapTopicRepo.save(rt);
+    return toDto(roadmapRepo.findById(roadmapId).orElseThrow());
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 /**
@@ -156,6 +166,7 @@ private RoadmapDto toDto(Roadmap r) {
                     .timeComplexity(rt.getTopic().getTimeComplexity())
                     .orderIndex(rt.getOrderIndex())
                     .note(rt.getNote())
+                    .completed(rt.isCompleted())
                     .build()
     ).collect(Collectors.toList());
 

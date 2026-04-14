@@ -41,5 +41,6 @@ public static class RoadmapTopicDto {
     private String  timeComplexity;
     private Integer orderIndex;
     private String  note;
+    private boolean completed;
 }
 }

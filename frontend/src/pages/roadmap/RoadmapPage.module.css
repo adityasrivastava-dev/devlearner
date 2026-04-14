@@ -3,8 +3,8 @@
 
 .header {
   display: flex; align-items: center; gap: 14px;
-  padding: 16px 24px; border-bottom: 1px solid var(--border);
-  background: var(--bg2); flex-shrink: 0;
+  padding: 14px 24px; border-bottom: 1px solid var(--border);
+  background: var(--bg2); flex-shrink: 0; flex-wrap: wrap;
 }
 .backBtn {
   padding: 5px 10px; background: var(--bg3); border: 1px solid var(--border2);
@@ -27,7 +27,7 @@
 .empty span { font-size: 48px; }
 .empty h3 { font-size: 18px; font-weight: 800; color: var(--text); }
 .empty p { font-size: 13px; color: var(--text3); }
-.emptySmall { font-size: 12px; color: var(--text3); padding: 8px 0; }
+.emptySmall { font-size: 12px; color: var(--text3); padding: 8px 12px; }
 
 /* ── Template picker ─────────────────────────────────────────────────────── */
 .tplGrid {
@@ -80,7 +80,11 @@
   overflow-y: auto;
   display: flex; flex-direction: column; gap: 12px;
 }
-.label { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 4px; }
+.label {
+  font-size: 11px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .05em;
+  display: block; margin-bottom: 4px;
+}
 .formRow { display: flex; gap: 12px; align-items: flex-start; }
 .colorPicker {
   width: 48px; height: 36px; padding: 2px; border-radius: 6px;
@@ -89,8 +93,7 @@
 
 /* ── Topic picker (configure view) ──────────────────────────────────────── */
 .topicPicker {
-  flex: 1; display: flex; flex-direction: column; overflow: hidden;
-  padding: 24px;
+  flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 24px;
 }
 .pickerHeader {
   display: flex; align-items: center; gap: 12px;
@@ -101,6 +104,18 @@
   border: 1px solid var(--border); border-radius: var(--radius);
   background: var(--bg2);
 }
+
+/* Phase header inside the topic picker (configure view) */
+.pickerPhaseHeader {
+  padding: 6px 12px;
+  background: color-mix(in srgb, var(--ph-color, var(--accent)) 12%, var(--bg3));
+  border-bottom: 1px solid var(--border);
+  font-size: 11px; font-weight: 800; color: var(--ph-color, var(--accent));
+  letter-spacing: .04em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 6px;
+  position: sticky; top: 0; z-index: 1;
+}
+
 .topicRow {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 12px; cursor: pointer;
@@ -112,85 +127,258 @@
 .topicRowSel { background: var(--adim2) !important; }
 .topicRow input[type=checkbox] { flex-shrink: 0; accent-color: var(--accent3); }
 .topicRowTitle { font-size: 13px; color: var(--text); flex: 1; }
-.topicRowCat {
-  font-size: 10px; font-weight: 600; color: var(--text3);
-  padding: 2px 6px; background: var(--bg3); border: 1px solid var(--border2);
-  border-radius: 3px; flex-shrink: 0;
+
+/* ── Detail view — header ────────────────────────────────────────────────── */
+.detailIcon { font-size: 28px; flex-shrink: 0; line-height: 1; }
+.detailTitle { font-size: 17px; font-weight: 800; color: var(--text); line-height: 1.3; margin: 0; }
+.detailDesc { font-size: 12px; color: var(--text3); margin: 2px 0 0; }
+.detailActions { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* ── Detail view — progress bar ─────────────────────────────────────────── */
+.progressBar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 24px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0; background: var(--bg2);
+}
+.progressTrack {
+  flex: 1; height: 8px; background: var(--bg3);
+  border-radius: 99px; overflow: hidden;
+  border: 1px solid var(--border);
+}
+.progressFill {
+  height: 100%;
+  background: var(--rm-color, var(--accent3));
+  border-radius: 99px;
+  transition: width .4s ease;
+}
+.progressLabel { font-size: 12px; font-weight: 600; color: var(--text2); white-space: nowrap; }
+
+/* ── Detail view — body (scroll area) ───────────────────────────────────── */
+.detailBody {
+  flex: 1; overflow-y: auto; padding: 16px 20px 40px;
+  display: flex; flex-direction: column; gap: 10px;
 }
 
-/* ── Roadmap list ────────────────────────────────────────────────────────── */
-.listWrap { display: flex; flex-direction: column; gap: 20px; }
+/* ── Phase accordion ─────────────────────────────────────────────────────── */
+.phase {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg2);
+}
+.phaseHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  background: color-mix(in srgb, var(--ph-color, var(--accent)) 10%, var(--bg2));
+  border-bottom: 1px solid color-mix(in srgb, var(--ph-color, var(--accent)) 20%, var(--border));
+  cursor: pointer;
+  user-select: none;
+  transition: background .15s;
+}
+.phaseHeader:hover {
+  background: color-mix(in srgb, var(--ph-color, var(--accent)) 18%, var(--bg2));
+}
+.phaseLeft { display: flex; align-items: center; gap: 10px; }
+.phaseNum {
+  font-size: 10px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .06em;
+  background: var(--bg3); border: 1px solid var(--border2);
+  padding: 2px 6px; border-radius: 3px; white-space: nowrap;
+}
+.phaseIcon { font-size: 18px; line-height: 1; }
+.phaseLabel { font-size: 14px; font-weight: 800; color: var(--text); }
 
-.grid {
+.phaseRight { display: flex; align-items: center; gap: 10px; }
+.phaseProg { font-size: 12px; font-weight: 700; color: var(--text2); white-space: nowrap; min-width: 36px; text-align: right; }
+.phaseMiniBar {
+  width: 60px; height: 6px;
+  background: var(--bg3); border-radius: 99px; overflow: hidden;
+  border: 1px solid var(--border);
+}
+.phaseMiniBarFill {
+  height: 100%; border-radius: 99px;
+  transition: width .3s ease;
+}
+.phaseChevron { font-size: 10px; color: var(--text3); width: 12px; text-align: center; }
+
+/* ── Phase topics list ───────────────────────────────────────────────────── */
+.phaseTopics {
+  display: flex; flex-direction: column;
+}
+
+.topicItem {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
+}
+.topicItem:last-child { border-bottom: none; }
+.topicItem:hover { background: var(--bg3); }
+
+.topicDone { opacity: .65; }
+.topicDone .topicItemTitle { text-decoration: line-through; color: var(--text3); }
+
+.topicStep {
+  width: 22px; height: 22px; flex-shrink: 0;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 50%; font-size: 10px; font-weight: 700; color: var(--text3);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.doneBtn {
+  width: 24px; height: 24px; flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--border2);
+  background: transparent;
+  color: var(--text3); font-size: 12px; font-weight: 800;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: border-color .15s, background .15s, color .15s;
+  line-height: 1;
+}
+.doneBtn:hover { border-color: #22c55e; color: #22c55e; }
+.doneBtnActive {
+  background: #22c55e !important;
+  border-color: #22c55e !important;
+  color: #fff !important;
+}
+
+.topicItemTitle { font-size: 13px; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topicItemCat {
+  font-size: 10px; font-weight: 600; padding: 2px 6px;
+  border-radius: 3px; flex-shrink: 0;
+  color: var(--cat-color, var(--text3));
+  background: color-mix(in srgb, var(--cat-color, var(--border)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cat-color, var(--border)) 30%, transparent);
+}
+
+.topicItemActions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.openBtn {
+  padding: 3px 8px; font-size: 11px; font-weight: 600;
+  border-radius: 4px; border: 1px solid var(--border2);
+  background: var(--bg3); color: var(--accent3);
+  cursor: pointer; white-space: nowrap;
+  transition: background .1s, color .1s;
+}
+.openBtn:hover { background: var(--accent3); color: #000; border-color: var(--accent3); }
+
+.removeTopicBtn {
+  width: 22px; height: 22px; flex-shrink: 0;
+  border-radius: 4px; border: 1px solid rgba(239,68,68,.3);
+  background: rgba(239,68,68,.08); color: var(--red, #ef4444);
+  font-size: 10px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .1s;
+}
+.removeTopicBtn:hover { background: rgba(239,68,68,.22); }
+
+/* ── Add topic to phase (inline search) ──────────────────────────────────── */
+.phaseAddBox {
+  padding: 12px 16px;
+  background: var(--bg3);
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.phaseAddList {
+  max-height: 200px; overflow-y: auto;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg2);
+}
+.phaseAddItem {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px; border-bottom: 1px solid var(--border);
+}
+.phaseAddItem:last-child { border-bottom: none; }
+
+.addTopicBtn {
+  padding: 3px 10px; font-size: 11px; font-weight: 700;
+  border-radius: 4px; border: 1px solid rgba(74,222,128,.35);
+  background: rgba(74,222,128,.12); color: #4ade80;
+  cursor: pointer; flex-shrink: 0; white-space: nowrap;
+  transition: background .1s;
+}
+.addTopicBtn:hover { background: rgba(74,222,128,.25); }
+.addTopicBtn:disabled { opacity: .45; cursor: not-allowed; }
+
+.addToPhaseBtn {
+  margin: 8px 16px 12px;
+  padding: 6px 12px; font-size: 11px; font-weight: 700;
+  border-radius: 6px; border: 1px dashed var(--border2);
+  background: transparent; color: var(--text3);
+  cursor: pointer; align-self: flex-start;
+  transition: color .1s, border-color .1s;
+}
+.addToPhaseBtn:hover { color: var(--text); border-color: var(--text3); }
+
+/* ── Add phase hint (bottom of detail body) ──────────────────────────────── */
+.addPhaseHint {
+  display: flex; flex-direction: column; gap: 8px; margin-top: 4px;
+}
+.emptyPhase {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.addEmptyPhaseBtn {
+  width: 100%; padding: 11px 16px; text-align: left;
+  font-size: 13px; font-weight: 700;
+  border-radius: var(--radius-lg); border: 1px dashed color-mix(in srgb, var(--ph-color, var(--border)) 40%, var(--border));
+  background: color-mix(in srgb, var(--ph-color, var(--bg3)) 6%, var(--bg2));
+  color: var(--ph-color, var(--text3));
+  cursor: pointer; display: flex; align-items: center; gap: 8px;
+  transition: background .15s, border-color .15s;
+}
+.addEmptyPhaseBtn:hover {
+  background: color-mix(in srgb, var(--ph-color, var(--bg3)) 14%, var(--bg2));
+  border-style: solid;
+}
+
+/* ── List view ───────────────────────────────────────────────────────────── */
+.listGrid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
 }
-.card {
-  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg);
-  padding: 16px; transition: border-color .15s, box-shadow .15s;
-  display: flex; flex-direction: column; gap: 10px;
+
+.listCard {
+  background: var(--bg2); border: 1px solid var(--border);
   border-left: 3px solid var(--rm-color, var(--border));
+  border-radius: var(--radius-lg); padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s, transform .1s;
 }
-.card:hover { border-color: var(--border2); box-shadow: 0 4px 16px rgba(0,0,0,.2); }
-.selectedCard { border-color: rgba(74,222,128,.4) !important; background: var(--adim2) !important; }
-
-.cardHeader { display: flex; align-items: flex-start; gap: 10px; }
-.cardIcon { font-size: 22px; flex-shrink: 0; line-height: 1.2; }
-.cardName { font-size: 14px; font-weight: 800; color: var(--text); }
-.cardDesc { font-size: 11px; color: var(--text3); margin-top: 2px; }
-.cardMeta { font-size: 11px; color: var(--text3); flex-shrink: 0; margin-top: 2px; }
-
-.topicPills { display: flex; flex-wrap: wrap; gap: 5px; }
-.topicPill {
-  padding: 2px 8px; background: var(--bg3); border: 1px solid var(--border2);
-  border-radius: 3px; font-size: 10px; color: var(--text2); font-weight: 500;
+.listCard:hover {
+  border-color: var(--rm-color, var(--border2));
+  box-shadow: 0 4px 18px rgba(0,0,0,.22);
+  transform: translateY(-1px);
 }
-.noTopicsHint { font-size: 11px; color: var(--text3); font-style: italic; }
 
-.cardActions { display: flex; gap: 8px; }
+.listCardTop { display: flex; align-items: flex-start; gap: 10px; }
+.listCardIcon { font-size: 26px; flex-shrink: 0; line-height: 1; }
+.listCardName { font-size: 14px; font-weight: 800; color: var(--text); line-height: 1.3; }
+.listCardDesc { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 
-/* ── Manage panel ────────────────────────────────────────────────────────── */
-.managePanel {
-  background: var(--bg2); border: 1px solid var(--border2);
-  border-radius: var(--radius-lg); padding: 0;
-  overflow: hidden;
+.listProgress { display: flex; flex-direction: column; gap: 4px; }
+.listProgressTrack {
+  height: 6px; background: var(--bg3); border-radius: 99px;
+  overflow: hidden; border: 1px solid var(--border);
 }
-.managePanelHeader {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px; border-bottom: 1px solid var(--border);
-  background: var(--bg3);
+.listProgressFill {
+  height: 100%; border-radius: 99px;
+  background: var(--rm-color, var(--accent3));
+  transition: width .3s ease;
 }
-.manageSection {
-  padding: 16px; border-bottom: 1px solid var(--border);
-}
-.manageSection:last-child { border-bottom: none; }
+.listProgressLabel { font-size: 11px; color: var(--text3); font-weight: 600; }
 
-.manageTopic {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--border);
+.listPhasePills { display: flex; flex-wrap: wrap; gap: 4px; }
+.listPhasePill {
+  width: 24px; height: 24px;
+  border-radius: 6px; border: 1px solid color-mix(in srgb, var(--ph-color, var(--border)) 35%, var(--border));
+  background: color-mix(in srgb, var(--ph-color, var(--bg3)) 15%, var(--bg3));
+  font-size: 12px; display: flex; align-items: center; justify-content: center;
+  title: attr(title);
 }
-.manageTopic:last-child { border-bottom: none; }
-.manageTopicTitle { font-size: 13px; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.addTopicList { max-height: 280px; overflow-y: auto; }
-
-.removeBtn {
-  flex-shrink: 0; width: 24px; height: 24px; border-radius: 4px;
-  background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3);
-  color: var(--red); font-size: 11px; font-weight: 700;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: background .1s;
+.listCardFooter {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  padding-top: 4px; border-top: 1px solid var(--border);
 }
-.removeBtn:hover { background: rgba(239,68,68,.3); }
-.removeBtn:disabled { opacity: .5; cursor: not-allowed; }
-
-.addBtn {
-  flex-shrink: 0; width: 24px; height: 24px; border-radius: 4px;
-  background: rgba(74,222,128,.15); border: 1px solid rgba(74,222,128,.3);
-  color: var(--accent3); font-size: 16px; font-weight: 700;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: background .1s; line-height: 1;
-}
-.addBtn:hover { background: rgba(74,222,128,.3); }
-.addBtn:disabled { opacity: .5; cursor: not-allowed; }

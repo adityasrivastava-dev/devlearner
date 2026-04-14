@@ -115,4 +115,16 @@ public ResponseEntity<RoadmapDto> reorder(
 	return ResponseEntity.ok(
 			roadmapService.reorderTopics(id, orderedTopicIds, user.getId()));
 }
+
+// PATCH /api/roadmaps/{id}/topics/{topicId}/done — toggle completion
+@PatchMapping("/{id}/topics/{topicId}/done")
+public ResponseEntity<RoadmapDto> toggleDone(
+		@PathVariable Long id,
+		@PathVariable Long topicId,
+		@AuthenticationPrincipal User user) {
+	if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+	RoadmapDto result = roadmapService.toggleTopicDone(id, topicId, user.getId());
+	log.info("Topic done toggled: roadmapId={} topicId={} userId={}", id, topicId, user.getId());
+	return ResponseEntity.ok(result);
+}
 }

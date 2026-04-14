@@ -1,18 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { topicsApi, submissionsApi, bookmarksApi, notesApi, ratingsApi, gateApi, interviewApi, QUERY_KEYS } from '../../api';
+import { topicsApi, submissionsApi, bookmarksApi, notesApi, ratingsApi, gateApi, interviewApi, adminApi, QUERY_KEYS } from '../../api';
 import { getCategoryMeta, getDiffMeta } from '../../utils/helpers';
 import TracerPlayer from './TracerPlayer';
 import FlowchartViewer from './FlowchartViewer';
 import SqlTableVisualizer from '../sql/SqlTableVisualizer';
 import styles from './TopicView.module.css';
 import ReadOnlyCodeViewer from './ReadOnlyCodeViewer';
+import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext, theme = 'dark' }) {
   const [tab, setTab]               = useState('theory');
   const [activeExample, setActiveExample] = useState(null);
   const [diffFilter, setDiffFilter] = useState('ALL');
   const queryClient = useQueryClient();
+
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN' || user?.roles?.includes('ADMIN');
+  const [ytEditing, setYtEditing] = useState(false);
+  const [ytDraft, setYtDraft] = useState('');
 
   useEffect(() => { setActiveExample(null); setTab('theory'); }, [topic.id]);
 
@@ -54,6 +61,16 @@ export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext
       queryClient.invalidateQueries({ queryKey: ['bookmark', 'TOPIC', topic.id] });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.bookmarks });
     },
+  });
+
+  const saveYtMutation = useMutation({
+    mutationFn: (urls) => adminApi.updateTopic(topic.id, { ...topic, youtubeUrls: urls }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.topic(topic.id) });
+      setYtEditing(false);
+      toast.success('YouTube URLs saved');
+    },
+    onError: () => toast.error('Failed to save'),
   });
 
   const { data: examples = [], isLoading: exLoading } = useQuery({
@@ -431,7 +448,40 @@ export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext
         {tab === 'notes' && (
           <div className={styles.notesTabWrap}>
             <NotesPanel key={topic.id} topicId={topic.id} />
-            {topic.youtubeUrls && <YoutubeVideosCard raw={topic.youtubeUrls} />}
+            <div className={styles.ytSection}>
+              <div className={styles.ytSectionHeader}>
+                <span className={styles.ytSectionTitle}>▶ Reference Videos</span>
+                {isAdmin && !ytEditing && (
+                  <button className={styles.ytEditBtn} onClick={() => { setYtDraft(topic.youtubeUrls || ''); setYtEditing(true); }}>
+                    {topic.youtubeUrls ? '✎ Edit' : '+ Add Videos'}
+                  </button>
+                )}
+              </div>
+              {ytEditing ? (
+                <div className={styles.ytEditBox}>
+                  <textarea
+                    className={styles.ytInput}
+                    value={ytDraft}
+                    onChange={e => setYtDraft(e.target.value)}
+                    rows={4}
+                    placeholder={'Paste YouTube URLs, one per line or JSON array:\n["https://youtu.be/abc", "https://youtu.be/xyz"]'}
+                    autoFocus
+                  />
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <button className="btn btn-primary btn-sm" disabled={saveYtMutation.isPending} onClick={() => saveYtMutation.mutate(ytDraft)}>
+                      {saveYtMutation.isPending ? 'Saving…' : 'Save'}
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setYtEditing(false)}>Cancel</button>
+                  </div>
+                </div>
+              ) : topic.youtubeUrls ? (
+                <YoutubeVideosCard raw={topic.youtubeUrls} />
+              ) : (
+                <div className={styles.ytEmpty}>
+                  {isAdmin ? 'No videos added yet. Click "+ Add Videos" to add YouTube links.' : 'No reference videos for this topic yet.'}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

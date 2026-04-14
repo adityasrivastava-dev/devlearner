@@ -31,4 +31,7 @@ public class RoadmapTopic {
     /** Optional note shown on this step in the roadmap, e.g. "Focus on iteration first" */
     @Column(columnDefinition = "TEXT")
     private String note;
+
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean completed;
 }
