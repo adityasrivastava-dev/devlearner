@@ -207,6 +207,7 @@ export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext
           { key: 'optimize', label: 'Approach', icon: '⚡' },
           { key: 'qa',       label: 'Q&A',      icon: '🎯' },
           { key: 'notes',    label: 'Notes',    icon: '📝' },
+          { key: 'videos',   label: 'Videos',   icon: '▶' },
         ].map(({ key, label, icon, locked }) => (
           <button
             key={key}
@@ -448,40 +449,44 @@ export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext
         {tab === 'notes' && (
           <div className={styles.notesTabWrap}>
             <NotesPanel key={topic.id} topicId={topic.id} />
-            <div className={styles.ytSection}>
-              <div className={styles.ytSectionHeader}>
-                <span className={styles.ytSectionTitle}>▶ Reference Videos</span>
-                {isAdmin && !ytEditing && (
-                  <button className={styles.ytEditBtn} onClick={() => { setYtDraft(topic.youtubeUrls || ''); setYtEditing(true); }}>
-                    {topic.youtubeUrls ? '✎ Edit' : '+ Add Videos'}
-                  </button>
-                )}
-              </div>
-              {ytEditing ? (
-                <div className={styles.ytEditBox}>
-                  <textarea
-                    className={styles.ytInput}
-                    value={ytDraft}
-                    onChange={e => setYtDraft(e.target.value)}
-                    rows={4}
-                    placeholder={'Paste YouTube URLs, one per line or JSON array:\n["https://youtu.be/abc", "https://youtu.be/xyz"]'}
-                    autoFocus
-                  />
-                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                    <button className="btn btn-primary btn-sm" disabled={saveYtMutation.isPending} onClick={() => saveYtMutation.mutate(ytDraft)}>
-                      {saveYtMutation.isPending ? 'Saving…' : 'Save'}
-                    </button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => setYtEditing(false)}>Cancel</button>
-                  </div>
-                </div>
-              ) : topic.youtubeUrls ? (
-                <YoutubeVideosCard raw={topic.youtubeUrls} />
-              ) : (
-                <div className={styles.ytEmpty}>
-                  {isAdmin ? 'No videos added yet. Click "+ Add Videos" to add YouTube links.' : 'No reference videos for this topic yet.'}
-                </div>
+          </div>
+        )}
+
+        {/* VIDEOS */}
+        {tab === 'videos' && (
+          <div className={styles.ytSection}>
+            <div className={styles.ytSectionHeader}>
+              <span className={styles.ytSectionTitle}>▶ Reference Videos</span>
+              {isAdmin && !ytEditing && (
+                <button className={styles.ytEditBtn} onClick={() => { setYtDraft(topic.youtubeUrls || ''); setYtEditing(true); }}>
+                  {topic.youtubeUrls ? '✎ Edit URLs' : '+ Add Videos'}
+                </button>
               )}
             </div>
+            {ytEditing ? (
+              <div className={styles.ytEditBox}>
+                <textarea
+                  className={styles.ytInput}
+                  value={ytDraft}
+                  onChange={e => setYtDraft(e.target.value)}
+                  rows={6}
+                  placeholder={'Paste YouTube URLs, one per line or JSON array:\n["https://youtu.be/abc", "https://youtu.be/xyz"]'}
+                  autoFocus
+                />
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <button className="btn btn-primary btn-sm" disabled={saveYtMutation.isPending} onClick={() => saveYtMutation.mutate(ytDraft)}>
+                    {saveYtMutation.isPending ? 'Saving…' : 'Save'}
+                  </button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setYtEditing(false)}>Cancel</button>
+                </div>
+              </div>
+            ) : topic.youtubeUrls ? (
+              <YoutubeVideosCard raw={topic.youtubeUrls} />
+            ) : (
+              <div className={styles.ytEmpty}>
+                {isAdmin ? 'No videos added yet. Click "+ Add Videos" to add YouTube links.' : 'No reference videos for this topic yet.'}
+              </div>
+            )}
           </div>
         )}
 

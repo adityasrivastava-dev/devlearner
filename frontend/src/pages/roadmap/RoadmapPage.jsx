@@ -233,8 +233,9 @@ export default function RoadmapPage() {
 
   function startRoadmap(rm) {
     if (!rm.topics?.length) { toast.error('This roadmap has no topics yet'); return; }
-    const topicIds = rm.topics.map((t) => t.topicId);
-    navigate(`/?topic=${topicIds[0]}&rmId=${rm.id}&rmName=${encodeURIComponent(rm.name)}&rmTopics=${topicIds.join(',')}`);
+    const firstTopicId = sortTopics(rm.topics)[0]?.topicId;
+    if (!firstTopicId) return;
+    navigate(`/?topic=${firstTopicId}&rmId=${rm.id}&rmName=${encodeURIComponent(rm.name)}`);
   }
 
   function togglePhase(cat) {
@@ -424,7 +425,7 @@ export default function RoadmapPage() {
             const isOpen     = expandedPhases.has(phase.cat);
 
             return (
-              <div key={phase.cat} className={styles.phase}>
+              <div key={phase.cat} className={`${styles.phase} ${!isOpen ? styles.phaseClosed : ''}`}>
                 {/* Phase header */}
                 <div
                   className={styles.phaseHeader}
@@ -465,10 +466,7 @@ export default function RoadmapPage() {
                         <div className={styles.topicItemActions}>
                           <button
                             className={styles.openBtn}
-                            onClick={() => {
-                              const orderedIds = sortTopics(detailRm.topics).map((x) => x.topicId);
-                              navigate(`/?topic=${t.topicId}&rmId=${detailRm.id}&rmName=${encodeURIComponent(detailRm.name)}&rmTopics=${orderedIds.join(',')}`);
-                            }}
+                            onClick={() => navigate(`/?topic=${t.topicId}&rmId=${detailRm.id}&rmName=${encodeURIComponent(detailRm.name)}`)}
                             title="Open topic"
                           >
                             Open →

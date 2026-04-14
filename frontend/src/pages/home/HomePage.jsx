@@ -8,7 +8,7 @@ import TopicBrowser from './TopicBrowser';
 import ProblemSolveView from '../../components/editor/ProblemSolveView';
 import DashboardPage from '../dashboard/DashboardPage';
 import OnboardingFlow from '../onboarding/OnboardingFlow';
-import { topicsApi, QUERY_KEYS } from '../../api';
+import { topicsApi, roadmapsApi, QUERY_KEYS } from '../../api';
 import styles from './HomePage.module.css';
 
 export default function HomePage() {
@@ -27,33 +27,55 @@ export default function HomePage() {
   const openProblemId    = (() => { const v = searchParams.get('openProblem'); const n = parseInt(v, 10); return v && !isNaN(n) ? n : null; })();
   const fromParam        = searchParams.get('from');
 
-  // Roadmap context (set when navigating from a roadmap's "Open →" button)
-  const rmId         = searchParams.get('rmId') ? parseInt(searchParams.get('rmId'), 10) : null;
-  const rmName       = searchParams.get('rmName') ? decodeURIComponent(searchParams.get('rmName')) : null;
-  const rmTopicsRaw  = searchParams.get('rmTopics') || null;
-  const rmTopics     = rmTopicsRaw ? rmTopicsRaw.split(',').map(Number).filter(Boolean) : null;
+  // Roadmap context — only rmId + rmName live in the URL (no giant rmTopics list)
+  const rmId   = searchParams.get('rmId') ? parseInt(searchParams.get('rmId'), 10) : null;
+  const rmName = searchParams.get('rmName') ? decodeURIComponent(searchParams.get('rmName')) : null;
 
-  // Fetch topic list for the current category (used for prev/next nav when NOT in roadmap mode)
+  // When in roadmap mode, subscribe to the same roadmaps cache used by RoadmapPage.
+  // Uses the cached data when the user navigated from the roadmap page; fetches on
+  // direct URL access. This is more reliable than passing 86 IDs as a URL param.
+  const { data: allRoadmaps = [] } = useQuery({
+    queryKey: QUERY_KEYS.roadmaps,
+    queryFn:  roadmapsApi.getAll,
+    staleTime: 2 * 60 * 1000,
+    enabled:  !!rmId,
+  });
+  const currentRoadmap = rmId ? allRoadmaps.find((r) => r.id === rmId) : null;
+
+  // Sort roadmap topics in canonical phase order (mirrors RoadmapPage.sortTopics)
+  const RM_PHASE_ORDER = ['JAVA', 'ADVANCED_JAVA', 'DSA', 'SPRING_BOOT', 'MYSQL', 'SYSTEM_DESIGN', 'TESTING', 'AWS'];
+  const rmTopicIds = currentRoadmap?.topics?.length
+    ? [...currentRoadmap.topics]
+        .sort((a, b) => {
+          const pi = RM_PHASE_ORDER.indexOf(a.topicCategory);
+          const pj = RM_PHASE_ORDER.indexOf(b.topicCategory);
+          if (pi !== pj) return (pi === -1 ? 99 : pi) - (pj === -1 ? 99 : pj);
+          return (a.orderIndex || 0) - (b.orderIndex || 0);
+        })
+        .map((t) => t.topicId)
+    : null;
+
+  // Fetch topic list for category-based prev/next (only when NOT in roadmap mode)
   const { data: topicList = [] } = useQuery({
     queryKey: QUERY_KEYS.topics(selectedCategory || 'ALL'),
     queryFn:  () => topicsApi.getAll(selectedCategory || 'ALL'),
     staleTime: 5 * 60 * 1000,
-    enabled:  !!selectedTopicId && !rmTopics,
+    enabled:  !!selectedTopicId && !rmId,
   });
 
-  // Compute adjacent topic IDs — prefer roadmap order when available
+  // Compute adjacent topic IDs — roadmap order takes priority
   const currentTopicIndex = topicList.findIndex((t) => t.id === selectedTopicId);
   const prevTopicId = (() => {
-    if (rmTopics && selectedTopicId) {
-      const idx = rmTopics.indexOf(selectedTopicId);
-      return idx > 0 ? rmTopics[idx - 1] : null;
+    if (rmTopicIds && selectedTopicId) {
+      const idx = rmTopicIds.indexOf(selectedTopicId);
+      return idx > 0 ? rmTopicIds[idx - 1] : null;
     }
     return currentTopicIndex > 0 ? topicList[currentTopicIndex - 1].id : null;
   })();
   const nextTopicId = (() => {
-    if (rmTopics && selectedTopicId) {
-      const idx = rmTopics.indexOf(selectedTopicId);
-      return idx >= 0 && idx < rmTopics.length - 1 ? rmTopics[idx + 1] : null;
+    if (rmTopicIds && selectedTopicId) {
+      const idx = rmTopicIds.indexOf(selectedTopicId);
+      return idx >= 0 && idx < rmTopicIds.length - 1 ? rmTopicIds[idx + 1] : null;
     }
     return currentTopicIndex >= 0 && currentTopicIndex < topicList.length - 1
       ? topicList[currentTopicIndex + 1].id : null;
@@ -90,10 +112,8 @@ export default function HomePage() {
   function selectTopic(id) {
     const params = { topic: id };
     if (selectedCategory) params.category = selectedCategory;
-    // Preserve roadmap context when navigating prev/next within a roadmap
     if (rmId) {
       params.rmId = String(rmId);
-      if (rmTopicsRaw) params.rmTopics = rmTopicsRaw;
       if (rmName) params.rmName = encodeURIComponent(rmName);
     }
     setSearchParams(params);
@@ -103,6 +123,7 @@ export default function HomePage() {
     const params = { openProblem: id };
     if (selectedTopicId) params.topic = selectedTopicId;
     if (selectedCategory) params.category = selectedCategory;
+    if (rmId) { params.rmId = String(rmId); if (rmName) params.rmName = encodeURIComponent(rmName); }
     setSearchParams(params);
     window.history.replaceState({ from: 'topic' }, '');
   }
@@ -114,6 +135,7 @@ export default function HomePage() {
       const params = {};
       if (selectedTopicId) params.topic = selectedTopicId;
       if (selectedCategory) params.category = selectedCategory;
+      if (rmId) { params.rmId = String(rmId); if (rmName) params.rmName = encodeURIComponent(rmName); }
       setSearchParams(params);
     }
   }

@@ -365,6 +365,7 @@ function TopicEditor({ topic, onSaved }) {
           ['info',      '📋 Info'],
           ['story',     '📖 Story'],
           ['code',      '💻 Code'],
+          ['videos',    '▶ Videos'],
           ['questions', '🎯 Q&A'],
           ...(!isNew ? [['examples', '💡 Examples'], ['problems', '🎯 Problems']] : []),
         ].map(([t,l]) => (
@@ -402,15 +403,23 @@ function TopicEditor({ topic, onSaved }) {
             <Field label="Story" value={form.story} onChange={set('story')} textarea rows={5} wide />
             <Field label="Analogy" value={form.analogy} onChange={set('analogy')} textarea rows={4} wide />
             <Field label="First Principles" value={form.firstPrinciples} onChange={set('firstPrinciples')} textarea rows={4} wide />
-            <Field
-              label='YouTube URLs (JSON array: ["url1","url2"] or comma-separated)'
-              value={form.youtubeUrls}
-              onChange={set('youtubeUrls')}
-              textarea
-              rows={2}
-              wide
-              placeholder='["https://youtu.be/abc123","https://youtu.be/xyz456"]'
-            />
+          </div>
+        )}
+        {activeTab === 'videos' && (
+          <div className={styles.formGrid}>
+            <div className={styles.fieldWrap} style={{ gridColumn: '1 / -1' }}>
+              <label className={styles.fieldLabel}>YouTube URLs</label>
+              <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
+                Paste one URL per line, or as a JSON array. Shown in the Videos tab of the topic.
+              </p>
+              <textarea
+                className={styles.textarea}
+                rows={8}
+                value={form.youtubeUrls}
+                onChange={set('youtubeUrls')}
+                placeholder={'One URL per line:\nhttps://youtu.be/abc123\nhttps://youtu.be/xyz456\n\nOr as JSON array:\n["https://youtu.be/abc123","https://youtu.be/xyz456"]'}
+              />
+            </div>
           </div>
         )}
         {activeTab === 'code' && (

@@ -23,6 +23,7 @@
 .empty {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; padding: 80px 24px; gap: 12px; text-align: center;
+  flex-shrink: 0;
 }
 .empty span { font-size: 48px; }
 .empty h3 { font-size: 18px; font-weight: 800; color: var(--text); }
@@ -163,29 +164,23 @@
 .phase {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  /* No overflow:hidden — it kills sticky headers; border-radius applied to children instead */
+  overflow: hidden;          /* clips children to rounded corners */
   background: var(--bg2);
-  min-height: 0;
+  flex-shrink: 0;            /* never compress to a thin strip in the flex column */
 }
 .phaseHeader {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 16px;
-  min-height: 48px;
+  min-height: 48px;          /* never collapse to a thin strip */
+  box-sizing: border-box;
   background: color-mix(in srgb, var(--ph-color, var(--accent)) 10%, var(--bg2));
   border-bottom: 1px solid color-mix(in srgb, var(--ph-color, var(--accent)) 20%, var(--border));
   cursor: pointer;
   user-select: none;
   transition: background .15s;
-  /* Round the top corners since phase no longer has overflow:hidden */
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  /* Sticky within .detailBody scroll container */
-  position: sticky;
-  top: 0;
-  z-index: 4;
 }
-/* When phase is collapsed, also round the bottom corners */
-.phaseHeader:only-child {
-  border-radius: var(--radius-lg);
+/* Collapsed state — border-bottom becomes bottom edge of .phase card */
+.phaseClosed .phaseHeader {
   border-bottom: none;
 }
 .phaseHeader:hover {
@@ -217,8 +212,6 @@
 /* ── Phase topics list ───────────────────────────────────────────────────── */
 .phaseTopics {
   display: flex; flex-direction: column;
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  overflow: hidden;
 }
 
 .topicItem {
@@ -328,6 +321,7 @@
 /* ── Add phase hint (bottom of detail body) ──────────────────────────────── */
 .addPhaseHint {
   display: flex; flex-direction: column; gap: 8px; margin-top: 4px;
+  flex-shrink: 0;
 }
 .emptyPhase {
   border-radius: var(--radius-lg);
