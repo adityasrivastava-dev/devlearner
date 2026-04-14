@@ -1815,37 +1815,100 @@
   border: 1px solid #10b98133;
 }
 
-/* ── YouTube admin section ───────────────────────────────────────────────── */
+/* ── Videos tab ──────────────────────────────────────────────────────────── */
+.videosTab {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 16px;
+}
+
+/* ── YouTube sections ───────────────────────────────────────────────────── */
 .ytSection {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 20px 24px;
-  min-height: 200px;
+  padding: 16px 20px;
 }
 .ytSectionHeader {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; gap: 10px;
   margin-bottom: 12px;
 }
 .ytSectionTitle {
-  font-size: 13px; font-weight: 700; color: var(--text2);
+  font-size: 12px; font-weight: 700; color: var(--text2);
   text-transform: uppercase; letter-spacing: .05em;
+}
+.ytSectionSub {
+  font-size: 11px; color: var(--text3); flex: 1;
 }
 .ytEditBtn {
   padding: 4px 10px; font-size: 11px; font-weight: 700;
   background: var(--bg3); border: 1px solid var(--border2);
   border-radius: 5px; color: var(--text2); cursor: pointer;
-  font-family: var(--font-ui);
+  font-family: var(--font-ui); flex-shrink: 0;
 }
 .ytEditBtn:hover { color: var(--accent3); border-color: var(--accent3); }
-.ytEditBox { display: flex; flex-direction: column; }
+.ytEditBox  { display: flex; flex-direction: column; }
+.ytAddBox   { display: flex; flex-direction: column; margin-bottom: 12px; }
 .ytInput {
   width: 100%; background: var(--bg3); border: 1px solid var(--border2);
   border-radius: var(--radius); color: var(--text); font-size: 12px;
   padding: 8px 10px; font-family: var(--font-mono); resize: vertical;
-  line-height: 1.5;
+  line-height: 1.5; box-sizing: border-box;
 }
 .ytInput:focus { outline: none; border-color: var(--accent); }
 .ytEmpty {
-  font-size: 12px; color: var(--text3); font-style: italic; padding: 8px 0;
+  font-size: 12px; color: var(--text3); font-style: italic; padding: 6px 0;
 }
+
+/* ── User video list ────────────────────────────────────────────────────── */
+.userVideoList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.userVideoItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+.userVideoLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  color: var(--text);
+  text-decoration: none;
+  min-width: 0;
+}
+.userVideoLink:hover .userVideoTitle { color: var(--accent3); }
+.userVideoThumb {
+  width: 80px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.userVideoTitle {
+  font-size: 13px;
+  color: var(--text2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.userVideoDelete {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.userVideoDelete:hover { color: var(--danger, #f87171); background: rgba(248,113,113,.1); }

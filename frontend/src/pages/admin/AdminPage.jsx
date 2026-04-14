@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { adminApi, topicsApi, algorithmAdminApi, interviewApi, QUERY_KEYS } from '../../api';
@@ -155,6 +156,7 @@ function TopicsSection({ qc }) {
       <div className={styles.rightCol}>
         {selectedTopic ? (
           <TopicEditor
+            key={selectedTopic._new ? 'new' : selectedTopic.id}
             topic={selectedTopic._new ? null : selectedTopic}
             onSaved={() => {
               qc.invalidateQueries({ queryKey: ['topics'] });
@@ -172,28 +174,44 @@ function TopicsSection({ qc }) {
   );
 }
 
+function buildForm(t) {
+  return {
+    title:             t?.title             || '',
+    category:          t?.category          || 'DSA',
+    subCategory:       t?.subCategory       || '',
+    displayOrder:      t?.displayOrder      ?? 999,
+    description:       t?.description       || '',
+    timeComplexity:    t?.timeComplexity    || '',
+    spaceComplexity:   t?.spaceComplexity   || '',
+    bruteForce:        t?.bruteForce        || '',
+    optimizedApproach: t?.optimizedApproach || '',
+    whenToUse:         t?.whenToUse         || '',
+    memoryAnchor:      t?.memoryAnchor      || '',
+    story:             t?.story             || '',
+    analogy:           t?.analogy           || '',
+    firstPrinciples:   t?.firstPrinciples   || '',
+    youtubeUrls:       t?.youtubeUrls       || '',
+    starterCode:       t?.starterCode       || '',
+  };
+}
+
 function TopicEditor({ topic, onSaved }) {
   const isNew = !topic;
-  const [form, setForm] = useState({
-    title:            topic?.title            || '',
-    category:         topic?.category         || 'DSA',
-    subCategory:      topic?.subCategory      || '',
-    displayOrder:     topic?.displayOrder     ?? 999,
-    description:      topic?.description      || '',
-    timeComplexity:   topic?.timeComplexity   || '',
-    spaceComplexity:  topic?.spaceComplexity  || '',
-    bruteForce:       topic?.bruteForce       || '',
-    optimizedApproach:topic?.optimizedApproach|| '',
-    whenToUse:        topic?.whenToUse        || '',
-    memoryAnchor:     topic?.memoryAnchor     || '',
-    story:            topic?.story            || '',
-    analogy:          topic?.analogy          || '',
-    firstPrinciples:  topic?.firstPrinciples  || '',
-    youtubeUrls:      topic?.youtubeUrls      || '',
-    starterCode:      topic?.starterCode      || '',
+  const [form, setForm] = useState(() => buildForm(topic));
+  const [activeTab, setActiveTab] = useState('info');
+
+  // Fetch the full topic (list endpoint only returns partial data)
+  const { data: fullTopic, isLoading: loadingFull } = useQuery({
+    queryKey: QUERY_KEYS.topic(topic?.id),
+    queryFn:  () => topicsApi.getById(topic?.id),
+    enabled:  !!topic?.id,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const [activeTab, setActiveTab] = useState('info');
+  // Once full data arrives, populate the form
+  useEffect(() => {
+    if (fullTopic) setForm(buildForm(fullTopic));
+  }, [fullTopic?.id]);
 
   // ── Seed file loader state ────────────────────────────────────────────────
   const [showSeedLoader, setShowSeedLoader] = useState(false);
@@ -262,7 +280,10 @@ function TopicEditor({ topic, onSaved }) {
   return (
     <div className={styles.topicEditor}>
       <div className={styles.editorHeader}>
-        <span className={styles.editorTitle}>{isNew ? '+ New Topic' : `Editing: ${topic.title}`}</span>
+        <span className={styles.editorTitle}>
+          {isNew ? '+ New Topic' : `Editing: ${topic.title}`}
+          {loadingFull && <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 8 }}>Loading…</span>}
+        </span>
         <div style={{ display: 'flex', gap: 6 }}>
           {/* Seed file loader toggle */}
           <button
@@ -274,7 +295,7 @@ function TopicEditor({ topic, onSaved }) {
           </button>
           <button
             className="btn btn-primary btn-sm"
-            disabled={mutation.isPending || !form.title}
+            disabled={mutation.isPending || loadingFull || !form.title}
             onClick={() => mutation.mutate(form)}
           >
             {mutation.isPending ? <><span className="spinner" />Saving…</> : '💾 Save'}

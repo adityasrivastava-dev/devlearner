@@ -155,6 +155,18 @@ export const notesApi = {
     http.delete(`/api/notes/${id}`).then((r) => r.data),
 };
 
+// ─── User Topic Videos ────────────────────────────────────────────────────────
+export const userVideosApi = {
+  getForTopic: (topicId) =>
+    http.get(`/api/topics/${topicId}/videos/user`).then((r) => r.data),
+
+  add: (topicId, url, title = '') =>
+    http.post(`/api/topics/${topicId}/videos/user`, { url, title }).then((r) => r.data),
+
+  remove: (topicId, videoId) =>
+    http.delete(`/api/topics/${topicId}/videos/user/${videoId}`).then((r) => r.data),
+};
+
 // ─── Admin ────────────────────────────────────────────────────────────────────
 export const adminApi = {
   getUsers: () =>
@@ -397,6 +409,7 @@ export const QUERY_KEYS = {
   interviewQuestions:      ['interviewQuestions'],
   analyticsDashboard:      ['analyticsDashboard'],
   analyticsMistakes:       ['analyticsMistakes'],
+  userVideos:    (tid)  => ['userVideos', tid],
 };
 // ─── Spaced Repetition ────────────────────────────────────────────────────────
 export const srsApi = {

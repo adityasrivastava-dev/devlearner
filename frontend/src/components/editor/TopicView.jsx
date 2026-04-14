@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { topicsApi, submissionsApi, bookmarksApi, notesApi, ratingsApi, gateApi, interviewApi, adminApi, QUERY_KEYS } from '../../api';
+import { topicsApi, submissionsApi, bookmarksApi, notesApi, ratingsApi, gateApi, interviewApi, adminApi, userVideosApi, QUERY_KEYS } from '../../api';
 import { getCategoryMeta, getDiffMeta } from '../../utils/helpers';
 import TracerPlayer from './TracerPlayer';
 import FlowchartViewer from './FlowchartViewer';
@@ -454,40 +454,15 @@ export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext
 
         {/* VIDEOS */}
         {tab === 'videos' && (
-          <div className={styles.ytSection}>
-            <div className={styles.ytSectionHeader}>
-              <span className={styles.ytSectionTitle}>▶ Reference Videos</span>
-              {isAdmin && !ytEditing && (
-                <button className={styles.ytEditBtn} onClick={() => { setYtDraft(topic.youtubeUrls || ''); setYtEditing(true); }}>
-                  {topic.youtubeUrls ? '✎ Edit URLs' : '+ Add Videos'}
-                </button>
-              )}
-            </div>
-            {ytEditing ? (
-              <div className={styles.ytEditBox}>
-                <textarea
-                  className={styles.ytInput}
-                  value={ytDraft}
-                  onChange={e => setYtDraft(e.target.value)}
-                  rows={6}
-                  placeholder={'Paste YouTube URLs, one per line or JSON array:\n["https://youtu.be/abc", "https://youtu.be/xyz"]'}
-                  autoFocus
-                />
-                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                  <button className="btn btn-primary btn-sm" disabled={saveYtMutation.isPending} onClick={() => saveYtMutation.mutate(ytDraft)}>
-                    {saveYtMutation.isPending ? 'Saving…' : 'Save'}
-                  </button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => setYtEditing(false)}>Cancel</button>
-                </div>
-              </div>
-            ) : topic.youtubeUrls ? (
-              <YoutubeVideosCard raw={topic.youtubeUrls} />
-            ) : (
-              <div className={styles.ytEmpty}>
-                {isAdmin ? 'No videos added yet. Click "+ Add Videos" to add YouTube links.' : 'No reference videos for this topic yet.'}
-              </div>
-            )}
-          </div>
+          <VideosTab
+            topic={topic}
+            isAdmin={isAdmin}
+            ytEditing={ytEditing}
+            ytDraft={ytDraft}
+            setYtDraft={setYtDraft}
+            setYtEditing={setYtEditing}
+            saveYtMutation={saveYtMutation}
+          />
         )}
 
       </div>
@@ -1068,6 +1043,156 @@ function parseYoutubeUrls(raw) {
     return raw.split(',').map(s => s.trim()).filter(Boolean);
   }
   return [];
+}
+
+// ── Videos Tab ───────────────────────────────────────────────────────────────
+function VideosTab({ topic, isAdmin, ytEditing, ytDraft, setYtDraft, setYtEditing, saveYtMutation }) {
+  const queryClient = useQueryClient();
+  const [addUrl,   setAddUrl]   = useState('');
+  const [addTitle, setAddTitle] = useState('');
+  const [adding,   setAdding]   = useState(false);
+
+  const { data: userVideos = [], isLoading: uvLoading } = useQuery({
+    queryKey: QUERY_KEYS.userVideos(topic.id),
+    queryFn:  () => userVideosApi.getForTopic(topic.id),
+    staleTime: 60 * 1000,
+  });
+
+  const addMutation = useMutation({
+    mutationFn: ({ url, title }) => userVideosApi.add(topic.id, url, title),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.userVideos(topic.id) });
+      setAddUrl('');
+      setAddTitle('');
+      setAdding(false);
+      toast.success('Video added');
+    },
+    onError: () => toast.error('Failed to add video'),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (videoId) => userVideosApi.remove(topic.id, videoId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.userVideos(topic.id) });
+      toast.success('Video removed');
+    },
+    onError: () => toast.error('Failed to remove'),
+  });
+
+  function handleAdd() {
+    if (!addUrl.trim()) return toast.error('Paste a YouTube URL first');
+    addMutation.mutate({ url: addUrl.trim(), title: addTitle.trim() });
+  }
+
+  return (
+    <div className={styles.videosTab}>
+
+      {/* ── Admin / shared videos ───────────────────────────────────── */}
+      <div className={styles.ytSection}>
+        <div className={styles.ytSectionHeader}>
+          <span className={styles.ytSectionTitle}>▶ Reference Videos</span>
+          <span className={styles.ytSectionSub}>Added by admin · visible to everyone</span>
+          {isAdmin && !ytEditing && (
+            <button className={styles.ytEditBtn} onClick={() => { setYtDraft(topic.youtubeUrls || ''); setYtEditing(true); }}>
+              {topic.youtubeUrls ? '✎ Edit' : '+ Add'}
+            </button>
+          )}
+        </div>
+        {ytEditing ? (
+          <div className={styles.ytEditBox}>
+            <textarea
+              className={styles.ytInput}
+              value={ytDraft}
+              onChange={e => setYtDraft(e.target.value)}
+              rows={4}
+              placeholder={'Paste YouTube URLs, one per line or JSON array:\n["https://youtu.be/abc", "https://youtu.be/xyz"]'}
+              autoFocus
+            />
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <button className="btn btn-primary btn-sm" disabled={saveYtMutation.isPending} onClick={() => saveYtMutation.mutate(ytDraft)}>
+                {saveYtMutation.isPending ? 'Saving…' : 'Save'}
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setYtEditing(false)}>Cancel</button>
+            </div>
+          </div>
+        ) : topic.youtubeUrls ? (
+          <YoutubeVideosCard raw={topic.youtubeUrls} />
+        ) : (
+          <div className={styles.ytEmpty}>
+            {isAdmin ? 'No shared videos yet. Click "+ Add" to add links.' : 'No reference videos added by admin yet.'}
+          </div>
+        )}
+      </div>
+
+      {/* ── User's own videos ───────────────────────────────────────── */}
+      <div className={styles.ytSection} style={{ marginTop: 16 }}>
+        <div className={styles.ytSectionHeader}>
+          <span className={styles.ytSectionTitle}>📌 My Videos</span>
+          <span className={styles.ytSectionSub}>Only visible to you</span>
+          {!adding && (
+            <button className={styles.ytEditBtn} onClick={() => setAdding(true)}>+ Add Video</button>
+          )}
+        </div>
+
+        {adding && (
+          <div className={styles.ytAddBox}>
+            <input
+              className={styles.ytInput}
+              style={{ padding: '6px 10px', marginBottom: 6 }}
+              value={addUrl}
+              onChange={e => setAddUrl(e.target.value)}
+              placeholder="YouTube URL  (e.g. https://youtu.be/abc123)"
+              autoFocus
+            />
+            <input
+              className={styles.ytInput}
+              style={{ padding: '6px 10px', marginBottom: 8 }}
+              value={addTitle}
+              onChange={e => setAddTitle(e.target.value)}
+              placeholder="Title (optional)"
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-primary btn-sm" disabled={addMutation.isPending} onClick={handleAdd}>
+                {addMutation.isPending ? 'Adding…' : 'Add'}
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setAdding(false); setAddUrl(''); setAddTitle(''); }}>Cancel</button>
+            </div>
+          </div>
+        )}
+
+        {uvLoading ? (
+          <div className={styles.ytEmpty}>Loading…</div>
+        ) : userVideos.length === 0 ? (
+          <div className={styles.ytEmpty}>No videos saved yet. Click "+ Add Video" to add your own links.</div>
+        ) : (
+          <div className={styles.userVideoList}>
+            {userVideos.map((v) => {
+              const vid = extractYoutubeId(v.url);
+              const thumb = vid ? `https://img.youtube.com/vi/${vid}/mqdefault.jpg` : null;
+              return (
+                <div key={v.id} className={styles.userVideoItem}>
+                  <a href={v.url} target="_blank" rel="noopener noreferrer" className={styles.userVideoLink}>
+                    {thumb ? (
+                      <img src={thumb} alt="" className={styles.userVideoThumb} />
+                    ) : (
+                      <div className={styles.youtubePlaceholder}>▶</div>
+                    )}
+                    <span className={styles.userVideoTitle}>{v.title || v.url}</span>
+                  </a>
+                  <button
+                    className={styles.userVideoDelete}
+                    onClick={() => removeMutation.mutate(v.id)}
+                    disabled={removeMutation.isPending}
+                    title="Remove video"
+                  >✕</button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function YoutubeVideosCard({ raw }) {

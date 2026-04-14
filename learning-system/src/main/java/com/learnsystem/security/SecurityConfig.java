@@ -61,8 +61,9 @@ public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 					// Auth endpoints — always public
 					.requestMatchers("/api/auth/**").permitAll()
 
-					// Gate endpoints require authentication (user-specific data)
+					// Gate + user video endpoints require authentication (user-specific data)
 					.requestMatchers("/api/topics/*/gate", "/api/topics/*/gate/**").authenticated()
+					.requestMatchers("/api/topics/*/videos/user", "/api/topics/*/videos/user/**").authenticated()
 
 					// Public read-only data
 					.requestMatchers(HttpMethod.GET,

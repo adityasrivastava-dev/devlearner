@@ -42,21 +42,27 @@ import java.util.*;
  *   GET    /api/bookmarks         — all bookmarks
  *   POST   /api/bookmarks/toggle  — add or remove bookmark
  *   GET    /api/bookmarks/check?itemType=X&itemId=Y — is this bookmarked?
+ *
+ * User Topic Videos:
+ *   GET    /api/topics/:topicId/videos/user           — get user's own saved videos for a topic
+ *   POST   /api/topics/:topicId/videos/user           — add a video url (body: {url, title?})
+ *   DELETE /api/topics/:topicId/videos/user/:videoId  — delete own video
  */
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 public class Phase2Controller {
 
-private final SpacedRepetitionService      srsService;
-private final StreakService                streakService;
-private final PerformanceAnalyticsService  analyticsService;
-private final UserNoteRepository           noteRepo;
-private final BookmarkRepository           bookmarkRepo;
+private final SpacedRepetitionService        srsService;
+private final StreakService                  streakService;
+private final PerformanceAnalyticsService    analyticsService;
+private final UserNoteRepository             noteRepo;
+private final BookmarkRepository             bookmarkRepo;
 private final UserTopicPerformanceRepository perfRepo;
-private final UserRepository               userRepo;
-private final JwtService                   jwtService;
+private final UserRepository                 userRepo;
+private final JwtService                     jwtService;
 private final com.learnsystem.repository.TopicRatingRepository ratingRepo;
+private final UserTopicVideoRepository       userVideoRepo;
 
 // ═══════════════════════════════════════════════════════════════════
 // SPACED REPETITION
@@ -345,5 +351,61 @@ public ResponseEntity<?> getTopicRating(
 			"count",    count != null ? count : 0L,
 			"myRating", myRating
 	));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// USER TOPIC VIDEOS
+// ═══════════════════════════════════════════════════════════════════
+
+@GetMapping("/api/topics/{topicId}/videos/user")
+public ResponseEntity<?> getUserVideos(
+		@PathVariable Long topicId,
+		@AuthenticationPrincipal User user) {
+	if (user == null) return ResponseEntity.status(401).build();
+	var videos = userVideoRepo.findByUserIdAndTopicIdOrderByAddedAtDesc(user.getId(), topicId);
+	return ResponseEntity.ok(videos.stream().map(v -> Map.of(
+			"id",      v.getId(),
+			"url",     v.getUrl(),
+			"title",   v.getTitle() != null ? v.getTitle() : "",
+			"addedAt", v.getAddedAt() != null ? v.getAddedAt().toString() : ""
+	)).toList());
+}
+
+@PostMapping("/api/topics/{topicId}/videos/user")
+public ResponseEntity<?> addUserVideo(
+		@PathVariable Long topicId,
+		@RequestBody Map<String, Object> body,
+		@AuthenticationPrincipal User user) {
+	if (user == null) return ResponseEntity.status(401).build();
+	String url   = (String) body.get("url");
+	String title = (String) body.getOrDefault("title", "");
+	if (url == null || url.isBlank())
+		return ResponseEntity.badRequest().body(Map.of("error", "url required"));
+
+	var saved = userVideoRepo.save(UserTopicVideo.builder()
+			.userId(user.getId())
+			.topicId(topicId)
+			.url(url.trim())
+			.title(title != null && !title.isBlank() ? title.trim() : null)
+			.build());
+
+	return ResponseEntity.ok(Map.of(
+			"id",    saved.getId(),
+			"url",   saved.getUrl(),
+			"title", saved.getTitle() != null ? saved.getTitle() : ""
+	));
+}
+
+@DeleteMapping("/api/topics/{topicId}/videos/user/{videoId}")
+public ResponseEntity<?> deleteUserVideo(
+		@PathVariable Long topicId,
+		@PathVariable Long videoId,
+		@AuthenticationPrincipal User user) {
+	if (user == null) return ResponseEntity.status(401).build();
+	var video = userVideoRepo.findByIdAndUserId(videoId, user.getId());
+	if (video.isEmpty())
+		return ResponseEntity.status(403).body(Map.of("error", "Not found or not yours"));
+	userVideoRepo.deleteById(videoId);
+	return ResponseEntity.ok(Map.of("deleted", true));
 }
 }
