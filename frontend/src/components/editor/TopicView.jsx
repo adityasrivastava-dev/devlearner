@@ -10,7 +10,7 @@ import ReadOnlyCodeViewer from './ReadOnlyCodeViewer';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 
-export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext, theme = 'dark' }) {
+export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext, theme = 'dark', backLabel = '← Home' }) {
   const [tab, setTab]               = useState('theory');
   const [activeExample, setActiveExample] = useState(null);
   const [diffFilter, setDiffFilter] = useState('ALL');
@@ -140,8 +140,8 @@ export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext
       <div className={styles.header}>
         <div className={styles.headerTop}>
           {onBack && (
-            <button className={styles.backBtn} onClick={onBack} title="Back to Dashboard">
-              ← Home
+            <button className={styles.backBtn} onClick={onBack} title="Go back">
+              {backLabel}
             </button>
           )}
           {(onPrev || onNext) && (

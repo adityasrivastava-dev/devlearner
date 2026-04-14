@@ -27,19 +27,37 @@ export default function HomePage() {
   const openProblemId    = (() => { const v = searchParams.get('openProblem'); const n = parseInt(v, 10); return v && !isNaN(n) ? n : null; })();
   const fromParam        = searchParams.get('from');
 
-  // Fetch topic list for the current category (used for prev/next nav)
+  // Roadmap context (set when navigating from a roadmap's "Open →" button)
+  const rmId         = searchParams.get('rmId') ? parseInt(searchParams.get('rmId'), 10) : null;
+  const rmName       = searchParams.get('rmName') ? decodeURIComponent(searchParams.get('rmName')) : null;
+  const rmTopicsRaw  = searchParams.get('rmTopics') || null;
+  const rmTopics     = rmTopicsRaw ? rmTopicsRaw.split(',').map(Number).filter(Boolean) : null;
+
+  // Fetch topic list for the current category (used for prev/next nav when NOT in roadmap mode)
   const { data: topicList = [] } = useQuery({
     queryKey: QUERY_KEYS.topics(selectedCategory || 'ALL'),
     queryFn:  () => topicsApi.getAll(selectedCategory || 'ALL'),
     staleTime: 5 * 60 * 1000,
-    enabled:  !!selectedTopicId,
+    enabled:  !!selectedTopicId && !rmTopics,
   });
 
-  // Compute adjacent topic IDs
+  // Compute adjacent topic IDs — prefer roadmap order when available
   const currentTopicIndex = topicList.findIndex((t) => t.id === selectedTopicId);
-  const prevTopicId = currentTopicIndex > 0 ? topicList[currentTopicIndex - 1].id : null;
-  const nextTopicId = currentTopicIndex >= 0 && currentTopicIndex < topicList.length - 1
-    ? topicList[currentTopicIndex + 1].id : null;
+  const prevTopicId = (() => {
+    if (rmTopics && selectedTopicId) {
+      const idx = rmTopics.indexOf(selectedTopicId);
+      return idx > 0 ? rmTopics[idx - 1] : null;
+    }
+    return currentTopicIndex > 0 ? topicList[currentTopicIndex - 1].id : null;
+  })();
+  const nextTopicId = (() => {
+    if (rmTopics && selectedTopicId) {
+      const idx = rmTopics.indexOf(selectedTopicId);
+      return idx >= 0 && idx < rmTopics.length - 1 ? rmTopics[idx + 1] : null;
+    }
+    return currentTopicIndex >= 0 && currentTopicIndex < topicList.length - 1
+      ? topicList[currentTopicIndex + 1].id : null;
+  })();
 
   // Fetch full topic when a topic is selected
   const { data: currentTopic } = useQuery({
@@ -70,11 +88,15 @@ export default function HomePage() {
 
   // ── Navigation helpers ───────────────────────────────────────────────────
   function selectTopic(id) {
-    if (selectedCategory) {
-      setSearchParams({ category: selectedCategory, topic: id });
-    } else {
-      setSearchParams({ topic: id });
+    const params = { topic: id };
+    if (selectedCategory) params.category = selectedCategory;
+    // Preserve roadmap context when navigating prev/next within a roadmap
+    if (rmId) {
+      params.rmId = String(rmId);
+      if (rmTopicsRaw) params.rmTopics = rmTopicsRaw;
+      if (rmName) params.rmName = encodeURIComponent(rmName);
     }
+    setSearchParams(params);
   }
 
   function openProblem(id) {
@@ -97,6 +119,11 @@ export default function HomePage() {
   }
 
   function goBackFromTopic() {
+    // If we came from a roadmap, navigate back to it
+    if (rmId) {
+      navigate(`/roadmap?rmId=${rmId}`);
+      return;
+    }
     if (selectedCategory) {
       setSearchParams({ category: selectedCategory });
     } else {
@@ -149,6 +176,7 @@ export default function HomePage() {
         fontSize={fontSize}
         onProblemOpen={openProblem}
         onBack={goBackFromTopic}
+        backLabel={rmName ? `← ${rmName}` : '← Home'}
         onPrev={prevTopicId ? () => selectTopic(prevTopicId) : null}
         onNext={nextTopicId ? () => selectTopic(nextTopicId) : null}
       />

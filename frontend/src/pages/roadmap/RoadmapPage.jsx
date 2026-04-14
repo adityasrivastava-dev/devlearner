@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { roadmapsApi, topicsApi, QUERY_KEYS } from '../../api';
 import toast from 'react-hot-toast';
 import styles from './RoadmapPage.module.css';
@@ -103,6 +103,7 @@ function groupByPhase(topics) {
 
 export default function RoadmapPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const qc = useQueryClient();
 
   // 'list' | 'pick-template' | 'configure' | 'detail'
@@ -130,6 +131,20 @@ export default function RoadmapPage() {
     queryFn: () => topicsApi.getAll(),
     staleTime: 10 * 60 * 1000,
   });
+
+  // Auto-open a roadmap when navigated back from a topic with ?rmId=
+  const rmIdFromUrl = searchParams.get('rmId') ? parseInt(searchParams.get('rmId'), 10) : null;
+  useEffect(() => {
+    if (rmIdFromUrl && view === 'list' && roadmaps.length > 0) {
+      const rm = roadmaps.find((r) => r.id === rmIdFromUrl);
+      if (rm) {
+        setDetailId(rm.id);
+        setExpandedPhases(new Set(PHASE_ORDER));
+        setView('detail');
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rmIdFromUrl, roadmaps.length]);
 
   // ── Mutations ─────────────────────────────────────────────────────────────
 
@@ -450,7 +465,10 @@ export default function RoadmapPage() {
                         <div className={styles.topicItemActions}>
                           <button
                             className={styles.openBtn}
-                            onClick={() => navigate(`/?topic=${t.topicId}`)}
+                            onClick={() => {
+                              const orderedIds = sortTopics(detailRm.topics).map((x) => x.topicId);
+                              navigate(`/?topic=${t.topicId}&rmId=${detailRm.id}&rmName=${encodeURIComponent(detailRm.name)}&rmTopics=${orderedIds.join(',')}`);
+                            }}
                             title="Open topic"
                           >
                             Open →
