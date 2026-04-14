@@ -6,6 +6,7 @@ import com.learnsystem.model.User;
 import com.learnsystem.service.RoadmapService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +20,7 @@ import java.util.Map;
  * GET endpoints still return 200 for any logged-in user (each user sees only
  * their own roadmaps — scoping is applied in RoadmapService).
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/roadmaps")
 @RequiredArgsConstructor
@@ -49,8 +51,9 @@ public ResponseEntity<RoadmapDto> create(
 		@Valid @RequestBody CreateRoadmapRequest req,
 		@AuthenticationPrincipal User user) {
 	if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-	return ResponseEntity.status(HttpStatus.CREATED)
-			.body(roadmapService.createRoadmap(req, user.getId()));
+	RoadmapDto created = roadmapService.createRoadmap(req, user.getId());
+	log.info("Roadmap created: id={} name='{}' topics={} userId={}", created.getId(), created.getName(), created.getTotalTopics(), user.getId());
+	return ResponseEntity.status(HttpStatus.CREATED).body(created);
 }
 
 // PUT /api/roadmaps/{id} — update (owner only)
@@ -70,6 +73,7 @@ public ResponseEntity<Void> delete(
 		@AuthenticationPrincipal User user) {
 	if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 	roadmapService.deleteRoadmap(id, user.getId());
+	log.info("Roadmap deleted: id={} userId={}", id, user.getId());
 	return ResponseEntity.noContent().build();
 }
 
@@ -84,8 +88,9 @@ public ResponseEntity<RoadmapDto> addTopic(
 	int order = body != null && body.containsKey("orderIndex")
 			? (int) body.get("orderIndex") : 999;
 	String note = body != null ? (String) body.get("note") : null;
-	return ResponseEntity.ok(
-			roadmapService.addTopicToRoadmap(id, topicId, order, note, user.getId()));
+	RoadmapDto result = roadmapService.addTopicToRoadmap(id, topicId, order, note, user.getId());
+	log.info("Topic added to roadmap: roadmapId={} topicId={} userId={}", id, topicId, user.getId());
+	return ResponseEntity.ok(result);
 }
 
 // DELETE /api/roadmaps/{id}/topics/{topicId} — remove topic (owner only)
@@ -95,8 +100,9 @@ public ResponseEntity<RoadmapDto> removeTopic(
 		@PathVariable Long topicId,
 		@AuthenticationPrincipal User user) {
 	if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-	return ResponseEntity.ok(
-			roadmapService.removeTopicFromRoadmap(id, topicId, user.getId()));
+	RoadmapDto result = roadmapService.removeTopicFromRoadmap(id, topicId, user.getId());
+	log.info("Topic removed from roadmap: roadmapId={} topicId={} userId={}", id, topicId, user.getId());
+	return ResponseEntity.ok(result);
 }
 
 // PUT /api/roadmaps/{id}/reorder — reorder topics (owner only)

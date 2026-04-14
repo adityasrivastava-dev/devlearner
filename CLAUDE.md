@@ -53,14 +53,19 @@ docker-compose up          # Build and run both services
 
 **Dev proxy** — Vite proxies `/api`, `/oauth2`, and `/login/oauth2` to `http://localhost:8080`. In production, Nginx does the same using the `BACKEND_URL` env var (injected via `envsubst` at container start).
 
+**Visualizer subsystem** — `src/components/visualizer/` contains a data-structure step-player: `VisualizerEngine.jsx` drives playback state; `VisualizerTab.jsx` is the tab wrapper; `PlaybackControls.jsx` handles timeline; renderers in `renderers/` cover Array, Grid, Tree, LinkedList, Stack, and Graph. Used inside the Algorithms page to animate algorithm traces.
+
+**Theme** — persisted in `localStorage` as `devlearn_theme` (`dark`/`light`); applied to `document.documentElement` as `data-theme` on app load in `App.jsx`.
+
 ### Backend Structure
 
 Layered architecture: `controller/` → `service/` → `repository/`, with `model/` (JPA entities) and `dto/` (request/response objects).
 
 **Key packages:**
-- `config/` — `SecurityConfig`, `DataInitializer`, `CurriculumSeeder` (seed data runs on startup)
-- `security/` — `JwtService`, `JwtAuthFilter` (request filter), `OAuth2SuccessHandler` (issues JWT after Google login)
-- `service/` — notable services: `CodeExecutionService`, `SpacedRepetitionService`, `ComplexityAnalysisService`, `TraceService`, `LearningGateService`
+- `config/` — `DataInitializer`, `CurriculumSeeder` (seed data runs on startup), `GlobalExceptionHandler`
+- `security/` — `SecurityConfig`, `JwtService`, `JwtAuthFilter` (request filter), `OAuth2SuccessHandler` (issues JWT after Google login)
+- `runner/` — `SeedDataRunner` and `DatabaseMigrationRunner` run on startup (after `CurriculumSeeder`)
+- `service/` — notable services: `ExecutionService`, `SpacedRepetitionService`, `ComplexityAnalyzer`, `TraceService`, `LearningGateService`, `PerformanceAnalyticsService`, `StreakService`, `HintService`, `DebugService`, `RoadmapService`, `VisualizationService`
 
 **Security rules (from `SecurityConfig`):**
 - Public: `/api/auth/**`, GET `/api/topics/**`, GET `/api/problems/**`, GET `/api/quiz/sets/**`
@@ -71,9 +76,9 @@ Layered architecture: `controller/` → `service/` → `repository/`, with `mode
 
 ### Database
 
-MySQL 8.0. Schema is managed by Hibernate with `ddl-auto=update` (no Flyway/Liquibase). Initial data is seeded via `DataInitializer` and `CurriculumSeeder` on startup.
+MySQL 8.0. Schema is managed by Hibernate with `ddl-auto=update` (no Flyway/Liquibase). Initial data is seeded via `DataInitializer` and `CurriculumSeeder` on startup, followed by `SeedDataRunner` and `DatabaseMigrationRunner`.
 
-Connection is configured in `application.properties` via env vars (DB URL, username, password). The database is created automatically if it does not exist (`createDatabaseIfNotExist=true`).
+Connection is configured in `application.properties` via env vars (`DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`). **Important:** the default fallback in `application.properties` currently points to a staging Railway DB, not a local MySQL instance. Override with local DB env vars for isolated dev. The database is created automatically if it does not exist (`createDatabaseIfNotExist=true`).
 
 ### Key API Patterns
 
@@ -154,6 +159,9 @@ Frontend `CATEGORIES` array and `CATEGORY_META` in `src/utils/helpers.js` must m
 | Problems Page (difficulty pills, search, bookmark, pagination) | `/problems` | Done |
 | Admin Panel (Topics, Users, Quick Import, Seed, Quiz, Algorithms, Interview Q&A, Stats) | `/admin` | Done |
 | Notes & Bookmarks | Theory tab + header | Done |
+| Roadmap (custom learning paths) | `/roadmap` | Done |
+| Playground (free-form code editor) | `/playground` | Done |
+| Quick Win (confidence-builder sessions) | `/quick-win` | Done |
 
 ### Learning Gate Stages
 `THEORY → EASY → MEDIUM → HARD → MASTERED`
@@ -229,7 +237,7 @@ Apply to all new seeds:
 | Phase 2 controller (SRS, analytics, notes, bookmarks) | `learning-system/src/main/java/com/learnsystem/controller/Phase2Controller.java` |
 | Topic seed files | `learning-system/src/main/resources/seeds/` |
 | Algorithm seed files | `learning-system/src/main/resources/algorithm-seeds/` |
-| Security config | `learning-system/src/main/java/com/learnsystem/config/SecurityConfig.java` |
+| Security config | `learning-system/src/main/java/com/learnsystem/security/SecurityConfig.java` |
 | Interview Q&A bank (static fallback) | `frontend/src/pages/interview/interviewData.js` |
 | Interview Prep page | `frontend/src/pages/interview/InterviewPrepPage.jsx` |
 | Revision page | `frontend/src/pages/interview/RevisionPage.jsx` |
@@ -244,3 +252,8 @@ Apply to all new seeds:
 | Interview Q&A admin section | `frontend/src/pages/admin/InterviewAdminSection.jsx` |
 | Interview question controller | `learning-system/src/main/java/com/learnsystem/controller/InterviewQuestionController.java` |
 | Bundled interview batch files | `frontend/public/interview-batches/` |
+| Visualizer engine + tab | `frontend/src/components/visualizer/VisualizerEngine.jsx`, `VisualizerTab.jsx` |
+| Visualizer renderers | `frontend/src/components/visualizer/renderers/` |
+| Roadmap page | `frontend/src/pages/roadmap/RoadmapPage.jsx` |
+| Playground page | `frontend/src/pages/playground/PlaygroundPage.jsx` |
+| Startup runners | `learning-system/src/main/java/com/learnsystem/runner/` |

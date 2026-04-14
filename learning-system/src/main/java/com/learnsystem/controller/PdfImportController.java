@@ -5,6 +5,7 @@ import com.learnsystem.service.PdfImportService;
 import com.learnsystem.service.PdfImportService.PdfImportResult;
 import com.learnsystem.service.SeedBatchService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
@@ -35,7 +37,9 @@ public ResponseEntity<?> preview(
 	if (!file.getOriginalFilename().toLowerCase().endsWith(".pdf"))
 		return ResponseEntity.badRequest().body(Map.of("error", "Only PDF files supported"));
 	try {
+		log.info("PDF import preview: file='{}' category={}", file.getOriginalFilename(), category);
 		PdfImportResult result = pdfImportService.importPdf(file, category != null ? category : "DSA");
+		log.info("PDF preview done: file='{}' pages={} topics={} method={}", result.filename(), result.totalPages(), result.topicCount(), result.detectionMethod());
 		return ResponseEntity.ok(Map.of(
 				"filename",        result.filename(),
 				"totalPages",      result.totalPages(),
@@ -69,8 +73,10 @@ public ResponseEntity<?> saveAll(
 	if (file == null || file.isEmpty())
 		return ResponseEntity.badRequest().body(Map.of("error", "No file uploaded"));
 	try {
+		log.info("PDF import save: file='{}' category={}", file.getOriginalFilename(), category);
 		PdfImportResult result = pdfImportService.importPdf(file, category != null ? category : "DSA");
 		SeedBatchResponse saved = seedBatchService.seed(result.batch());
+		log.info("PDF import saved: file='{}' created={} skipped={}", result.filename(), saved.getTopicsSeeded(), saved.getTopicsSkipped());
 		return ResponseEntity.ok(Map.of(
 				"filename",        result.filename(),
 				"detectionMethod", result.detectionMethod(),

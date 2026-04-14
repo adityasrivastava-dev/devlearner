@@ -4,6 +4,7 @@ import com.learnsystem.model.User;
 import com.learnsystem.repository.UserRepository;
 import com.learnsystem.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
  * listUsers() is commented out — AdminApprovalController handles GET /api/admin/users.
  * All other paths here are unique: /stats, /{id}/roles, /switch-role etc.
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
@@ -71,6 +73,7 @@ public ResponseEntity<?> setRoles(@PathVariable Long id,
 	user.getRoles().clear();
 	user.getRoles().addAll(newRoles);
 	userRepository.save(user);
+	log.info("Roles set: userId={} newRoles={}", id, newRoles);
 	return ResponseEntity.ok(toMap(user));
 }
 
@@ -90,6 +93,7 @@ public ResponseEntity<?> addRole(@PathVariable Long id,
 		return ResponseEntity.badRequest().body(Map.of("error", "Unknown role: " + body.get("role")));
 	}
 	userRepository.save(user);
+	log.info("Role added: userId={} role={}", id, body.get("role"));
 	return ResponseEntity.ok(toMap(user));
 }
 
@@ -118,6 +122,7 @@ public ResponseEntity<?> removeRole(@PathVariable Long id,
 @DeleteMapping("/{id}")
 public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
 	userRepository.deleteById(id);
+	log.info("User deleted: userId={}", id);
 	return ResponseEntity.noContent().build();
 }
 
@@ -164,6 +169,7 @@ public ResponseEntity<?> switchRole(@RequestBody Map<String, Object> body,
 
 	String token = jwtService.generateToken(fake);
 	List<String> roleNames = targetRoles.stream().map(User.Role::name).sorted().toList();
+	log.info("Role switch (test-only): userId={} switchedTo={}", caller.getId(), roleNames);
 
 	return ResponseEntity.ok(Map.of(
 			"token",         token,

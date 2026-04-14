@@ -6,11 +6,13 @@ import com.learnsystem.model.Topic;
 import com.learnsystem.repository.TopicRepository;
 import com.learnsystem.service.TopicService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/topics")
 @RequiredArgsConstructor
@@ -25,15 +27,18 @@ public class TopicController {
     public ResponseEntity<List<TopicRepository.TopicSummary>> getTopics(
             @RequestParam(required = false) String category) {
 
+        log.debug("Topics list requested: category={}", category != null ? category : "ALL");
         List<TopicRepository.TopicSummary> topics = category != null
                 ? topicService.getTopicsByCategory(category)
                 : topicService.getAllTopics();
+        log.debug("Topics returned: count={}", topics.size());
         return ResponseEntity.ok(topics);
     }
 
     // GET /api/topics/{id}
     @GetMapping("/{id}")
     public ResponseEntity<Topic> getTopic(@PathVariable Long id) {
+        log.debug("Topic detail requested: id={}", id);
         return topicService.getTopicById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

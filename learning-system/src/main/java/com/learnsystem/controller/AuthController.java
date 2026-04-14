@@ -7,6 +7,7 @@ import com.learnsystem.security.JwtService;
 import com.learnsystem.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -31,7 +33,10 @@ private final JwtService      jwtService;
  */
 @PostMapping("/register")
 public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest req) {
-	return ResponseEntity.ok(authService.register(req));
+	log.info("Register attempt: {}", req.getEmail());
+	AuthResponse resp = authService.register(req);
+	log.info("User registered: {} (id={})", req.getEmail(), resp.getId());
+	return ResponseEntity.ok(resp);
 }
 
 /**
@@ -41,7 +46,10 @@ public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest
  */
 @PostMapping("/login")
 public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest req) {
-	return ResponseEntity.ok(authService.login(req));
+	log.info("Login attempt: {}", req.getEmail());
+	AuthResponse resp = authService.login(req);
+	log.info("Login success: {} (id={})", req.getEmail(), resp.getId());
+	return ResponseEntity.ok(resp);
 }
 
 /**
@@ -61,6 +69,7 @@ public ResponseEntity<UserProfileResponse> me(@AuthenticationPrincipal User user
  */
 @PostMapping("/logout")
 public ResponseEntity<Map<String, String>> logout() {
+	log.debug("Logout requested");
 	return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
 }
 

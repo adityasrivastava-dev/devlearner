@@ -6,6 +6,7 @@ import com.learnsystem.model.User;
 import com.learnsystem.repository.ProblemRepository;
 import com.learnsystem.repository.SubmissionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ import java.util.Map;
  * This endpoint exists to prevent users from reading solutionCode via DevTools
  * on the regular /api/topics/:id/problems response (Bug 7 fix).
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/problems")
 @RequiredArgsConstructor
@@ -55,11 +57,13 @@ public ResponseEntity<?> getEditorial(
 			.anyMatch(s -> "ACCEPTED".equalsIgnoreCase(s.getStatus()));
 
 	if (!hasSolved) {
+		log.warn("Editorial locked: problemId={} userId={} — not solved yet", id, user.getId());
 		return ResponseEntity.status(403).body(Map.of(
 				"error",   "Editorial locked",
 				"message", "Solve the problem first to unlock the editorial."
 		));
 	}
+	log.info("Editorial accessed: problemId={} userId={}", id, user.getId());
 
 	// Resolve brute force and optimized approach:
 	// 1. Use per-problem fields if set (most specific)

@@ -5,12 +5,14 @@ import com.learnsystem.dto.SeedBatchResponse;
 import com.learnsystem.service.SeedBatchService;
 import com.learnsystem.service.TopicGeneratorService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
@@ -32,6 +34,7 @@ public ResponseEntity<SeedBatchRequest> preview(@RequestBody Map<String,String> 
 	if (title.isEmpty()) {
 		return ResponseEntity.badRequest().build();
 	}
+	log.info("Topic generation preview: title='{}' category={}", title, category);
 	SeedBatchRequest generated = generatorService.generate(title, category);
 	return ResponseEntity.ok(generated);
 }
@@ -47,8 +50,10 @@ public ResponseEntity<SeedBatchResponse> generateAndSave(@RequestBody Map<String
 	if (title.isEmpty()) {
 		return ResponseEntity.badRequest().build();
 	}
+	log.info("Topic generate-and-save: title='{}' category={}", title, category);
 	SeedBatchRequest batch = generatorService.generate(title, category);
 	SeedBatchResponse result = seedBatchService.seed(batch);
+	log.info("Topic generated and saved: title='{}' seeded={} skipped={}", title, result.getTopicsSeeded(), result.getTopicsSkipped());
 	return ResponseEntity.ok(result);
 }
 }

@@ -2,6 +2,7 @@ package com.learnsystem.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +29,7 @@ import java.util.concurrent.TimeUnit;
  * Frontend fetches this once on editor mount and on Java version change.
  * No static arrays in frontend code — all completions live here.
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/java")
 @RequiredArgsConstructor
@@ -58,8 +60,10 @@ public ResponseEntity<?> getCompletions(
 
 	final String key = v;
 
+	log.debug("Java completions requested: version={} (resolved={})", version, key);
 	try {
 		// Serve from in-memory cache after first load
+		boolean cacheMiss = !cache.containsKey(key);
 		Object data = cache.computeIfAbsent(key, vk -> {
 			try {
 				ClassPathResource res = new ClassPathResource(
@@ -71,6 +75,7 @@ public ResponseEntity<?> getCompletions(
 				throw new RuntimeException("Could not load completions for Java " + vk, e);
 			}
 		});
+		if (cacheMiss) log.info("Java completions loaded from disk: version={}", key);
 
 		return ResponseEntity.ok()
 				// Cache 24 hours in browser — completions rarely change
@@ -78,6 +83,7 @@ public ResponseEntity<?> getCompletions(
 				.body(data);
 
 	} catch (Exception e) {
+		log.error("Failed to load Java completions: version={} error={}", key, e.getMessage());
 		return ResponseEntity.internalServerError()
 				.body(Map.of("error", "Failed to load completions: " + e.getMessage()));
 	}

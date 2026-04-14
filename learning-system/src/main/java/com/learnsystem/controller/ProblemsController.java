@@ -4,6 +4,7 @@ import com.learnsystem.dto.ProblemSummaryDto;
 import com.learnsystem.model.Topic;
 import com.learnsystem.repository.ProblemRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
  * GET /api/problems/filters
  *   Returns { categories, difficulties, patterns } for building the UI dropdowns.
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/problems")
 @RequiredArgsConstructor
@@ -65,6 +67,8 @@ public class ProblemsController {
             catch (IllegalArgumentException e) { cat = null; }
         }
 
+        log.debug("Problems list: category={} difficulty={} pattern={} search={} page={}", cat, diff, pat, srch, page);
+
         Page<com.learnsystem.model.Problem> pageResult =
                 problemRepo.findPageFiltered(cat, topicId, diff, pat, srch, pageable);
 
@@ -72,6 +76,8 @@ public class ProblemsController {
                 .stream()
                 .map(ProblemSummaryDto::from)
                 .collect(Collectors.toList());
+
+        log.debug("Problems returned: total={} page={}/{}", pageResult.getTotalElements(), pageResult.getNumber(), pageResult.getTotalPages());
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("content",       content);

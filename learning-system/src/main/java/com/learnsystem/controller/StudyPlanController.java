@@ -4,6 +4,7 @@ import com.learnsystem.model.StudySession;
 import com.learnsystem.model.User;
 import com.learnsystem.service.StudySessionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,6 +25,7 @@ import java.util.Map;
  * PATCH /api/study-plans/{id}/complete                    — mark done
  * DELETE /api/study-plans/{id}                            — delete
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/study-plans")
 @RequiredArgsConstructor
@@ -36,16 +38,19 @@ public class StudyPlanController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
             @AuthenticationPrincipal User user) {
+        log.debug("Study sessions by range: userId={} start={} end={}", user.getId(), start, end);
         return ResponseEntity.ok(service.getByDateRange(user.getId(), start, end));
     }
 
     @GetMapping("/upcoming")
     public ResponseEntity<List<StudySession>> getUpcoming(@AuthenticationPrincipal User user) {
+        log.debug("Upcoming study sessions requested: userId={}", user.getId());
         return ResponseEntity.ok(service.getUpcoming(user.getId()));
     }
 
     @GetMapping("/all")
     public ResponseEntity<List<StudySession>> getAll(@AuthenticationPrincipal User user) {
+        log.debug("All study sessions requested: userId={}", user.getId());
         return ResponseEntity.ok(service.getAll(user.getId()));
     }
 
@@ -53,7 +58,9 @@ public class StudyPlanController {
     public ResponseEntity<StudySession> create(
             @RequestBody Map<String, Object> body,
             @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(service.create(user.getId(), body));
+        StudySession session = service.create(user.getId(), body);
+        log.info("Study session created: id={} userId={}", session.getId(), user.getId());
+        return ResponseEntity.ok(session);
     }
 
     @PutMapping("/{id}")
@@ -61,6 +68,7 @@ public class StudyPlanController {
             @PathVariable Long id,
             @RequestBody Map<String, Object> body,
             @AuthenticationPrincipal User user) {
+        log.info("Study session updated: id={} userId={}", id, user.getId());
         return ResponseEntity.ok(service.update(id, user.getId(), body));
     }
 
@@ -68,7 +76,9 @@ public class StudyPlanController {
     public ResponseEntity<StudySession> complete(
             @PathVariable Long id,
             @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(service.complete(id, user.getId()));
+        StudySession session = service.complete(id, user.getId());
+        log.info("Study session completed: id={} userId={}", id, user.getId());
+        return ResponseEntity.ok(session);
     }
 
     @DeleteMapping("/{id}")
@@ -76,6 +86,7 @@ public class StudyPlanController {
             @PathVariable Long id,
             @AuthenticationPrincipal User user) {
         service.delete(id, user.getId());
+        log.info("Study session deleted: id={} userId={}", id, user.getId());
         return ResponseEntity.ok(Map.of("deleted", true));
     }
 }

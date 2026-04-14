@@ -3,6 +3,7 @@ package com.learnsystem.controller;
 import com.learnsystem.model.User;
 import com.learnsystem.service.LearningGateService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import java.util.Map;
  * Used by the Topic Mastery Map page to load all stage data in a single request
  * instead of making N individual /api/topics/{id}/gate calls.
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/gate")
 @RequiredArgsConstructor
@@ -26,6 +28,9 @@ public class GateBulkController {
     @GetMapping("/all")
     public ResponseEntity<Map<Long, String>> getAllStages(@AuthenticationPrincipal User user) {
         if (user == null) return ResponseEntity.status(401).build();
-        return ResponseEntity.ok(gateService.getAllGateStages(user.getId()));
+        log.debug("Bulk gate stages requested: userId={}", user.getId());
+        Map<Long, String> stages = gateService.getAllGateStages(user.getId());
+        log.debug("Bulk gate stages returned: userId={} count={}", user.getId(), stages.size());
+        return ResponseEntity.ok(stages);
     }
 }

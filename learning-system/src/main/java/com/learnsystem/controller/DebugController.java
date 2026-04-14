@@ -4,6 +4,7 @@ import com.learnsystem.dto.DebugRequest;
 import com.learnsystem.dto.DebugResponse;
 import com.learnsystem.service.DebugService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
  *   - variables   : map of all tracked variable names → current values
  *   - phase       : DECLARE | ASSIGN | LOOP | CONDITION | STATEMENT
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/debug")
 @RequiredArgsConstructor
@@ -31,6 +33,9 @@ public class DebugController {
 
     @PostMapping
     public ResponseEntity<DebugResponse> debug(@RequestBody DebugRequest request) {
-        return ResponseEntity.ok(debugService.debug(request));
+        log.debug("Debug requested: codeLength={}", request.getCode() != null ? request.getCode().length() : 0);
+        DebugResponse resp = debugService.debug(request);
+        log.debug("Debug result: steps={}", resp.getSteps() != null ? resp.getSteps().size() : 0);
+        return ResponseEntity.ok(resp);
     }
 }
