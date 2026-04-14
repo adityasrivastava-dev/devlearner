@@ -5,6 +5,7 @@ import FlowchartViewer from '../../components/editor/FlowchartViewer';
 import AlgorithmVisualizer from './AlgorithmVisualizer';
 import VisualizationPlan from './VisualizationPlan';
 import ComplexityVisualizer from './ComplexityVisualizer';
+import VisualizerTab from '../../components/visualizer/VisualizerTab';
 import styles from './AlgorithmsPage.module.css';
 
 // ─── Category metadata (icons/labels only — counts come from DB) ──────────────
@@ -112,6 +113,7 @@ function AlgorithmDetail({ algo, onBack }) {
     { key: 'howitworks',  label: '⚙️ How It Works'   },
     { key: 'complexity',  label: '🔢 Complexity'     },
     { key: 'visual',      label: '📊 Visual'         },
+    { key: 'visualizer',  label: '⚡ Visualizer'     },
     { key: 'code',        label: '💻 Java Code'      },
     { key: 'usecases',    label: '🌍 Use Cases'      },
     { key: 'pitfalls',    label: '⚠️ Pitfalls'       },
@@ -253,6 +255,12 @@ function AlgorithmDetail({ algo, onBack }) {
 
             {/* ── Visualization Blueprint: always shown ── */}
             <VisualizationPlan algo={algo} />
+          </div>
+        )}
+
+        {activeTab === 'visualizer' && (
+          <div className={styles.section}>
+            <VisualizerTab algo={algo} />
           </div>
         )}
 

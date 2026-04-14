@@ -1,0 +1,116 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 8px;
+  width: 100%;
+}
+.phaseBadge {
+  display: inline-block;
+  padding: 3px 14px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  background: var(--accent,#6366f1);
+  color: #fff;
+}
+
+/* ── Array section ── */
+.arraySection { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; max-width: 680px; width: 100%; }
+.arrayLabel { font-size: 11px; font-weight: 700; color: var(--text2,#888); text-transform: uppercase; letter-spacing: .06em; }
+.arrayRow { display: flex; flex-wrap: wrap; gap: 4px; }
+.arrayCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 46px; height: 46px;
+  border-radius: 7px;
+  transition: background .2s, border-color .2s, color .2s, transform .15s;
+}
+.arrayCellCurrent { transform: translateY(-5px) scale(1.08); }
+.arrVal { font-size: 14px; font-weight: 700; }
+.arrIdx { font-size: 9px; opacity: .45; margin-top: 1px; }
+
+/* ── Stacks row ── */
+.stacksRow { display: flex; gap: 24px; align-items: flex-end; justify-content: center; }
+
+/* ── Single stack column ── */
+.stackCol { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.stackLabel { font-size: 11px; font-weight: 700; color: var(--text2,#888); text-transform: uppercase; letter-spacing: .06em; }
+.stackBody {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  min-width: 120px;
+  max-width: 180px;
+  min-height: 60px;
+}
+.emptyStack {
+  text-align: center;
+  color: var(--text2,#888);
+  font-style: italic;
+  font-size: 12px;
+  padding: 12px;
+  border: 1px dashed var(--border,#2a2a3e);
+  border-radius: 6px;
+}
+.stackCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-mono, monospace);
+  transition: background .2s, border-color .2s;
+  position: relative;
+}
+.topCell { border-width: 2px !important; }
+.topArrow {
+  position: absolute;
+  right: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--accent,#818cf8);
+  white-space: nowrap;
+}
+.cellVal { flex: 1; text-align: center; }
+.stackBase {
+  height: 4px;
+  background: var(--border,#2a2a3e);
+  border-radius: 0 0 3px 3px;
+}
+
+/* ── Var strip ── */
+.varStrip { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.varPill {
+  display: flex; gap: 4px; align-items: center;
+  background: var(--bg2,#12121f);
+  border: 1px solid var(--border,#2a2a3e);
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-size: 12px;
+}
+.varKey { color: var(--text2,#888); }
+.varVal { color: var(--accent,#818cf8); font-weight: 700; }
+
+/* ── Message ── */
+.message {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: var(--bg2,#12121f);
+  border: 1px solid var(--border,#2a2a3e);
+  border-left: 3px solid var(--accent,#6366f1);
+  border-radius: 6px;
+  padding: 10px 14px;
+  max-width: 680px; width: 100%;
+  font-size: 13px; line-height: 1.5;
+}
+.msgIcon { color: var(--accent,#818cf8); font-weight: 700; flex-shrink: 0; }
+.msgText { color: var(--text,#e2e8f0); }
