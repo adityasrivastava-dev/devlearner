@@ -109,12 +109,117 @@ Runtime.getRuntime().exec("docker pull devlearn-judge:17");
 
 ---
 
+### Phase 1.5 — MySQL Async Job Queue ✅ IMPLEMENTED (2026-04-16)
+
+**What was built:** MySQL-as-queue async execution using the existing Railway DB. Zero new infrastructure.
+
+**How it works (confirmed by reverse-engineering LeetCode's own API — see section below):**
+```
+POST /api/execute/async        → enqueues job, returns { jobId } in < 5ms
+POST /api/submissions/submit/async → same pattern
+GET  /api/jobs/{jobId}         → poll: PENDING → RUNNING → DONE
+
+@Scheduled worker polls execution_jobs table every 400ms
+FOR UPDATE SKIP LOCKED  →  atomic claim, safe for multiple workers
+WORKER_ENABLED=false    →  disable worker on Render, move to home server with zero code changes
+```
+
+**Key files:** `ExecutionJob.java`, `ExecutionJobRepository.java`, `JobQueueService.java`, `ExecutionWorkerScheduler.java`
+
+---
+
+### LeetCode API — Reverse Engineering (2026-04-16)
+
+> Observed by running code with `System.exit(0)` on LeetCode and capturing the network calls.
+> This is exactly the architecture we should build toward.
+
+**What LeetCode does on "Run":**
+
+**Step 1 — POST /problems/{slug}/interpret_solution/**
+```json
+Request:  { "lang": "java", "question_id": "1", "typed_code": "...", "data_input": "[2,7,11,15]\n9\n..." }
+Response: { "interpret_id": "runcode_1776280418.9630487_O8QL3fZD06", "test_case": "..." }
+```
+- Returns in milliseconds — just enqueues, never executes synchronously
+- `interpret_id` = `runcode_{timestamp}_{random}` — not a sequential int like ours, harder to guess
+- `data_input` is sent in the request (not stored only server-side) — enables custom test cases
+
+**Step 2 — GET /submissions/detail/{interpret_id}/check/** (polled every ~1.5s)
+```
+Attempt 1: { "state": "PENDING" }
+Attempt 2: { "state": "PENDING" }
+Attempt 3: { "state": "STARTED" }
+Attempt 4: { "state": "SUCCESS", "status_msg": "Accepted", ... }
+```
+Status progression: **PENDING → STARTED → SUCCESS** (3 states, not 2)
+
+**Full final response shape (our target):**
+```json
+{
+  "status_code": 10,
+  "lang": "java",
+  "run_success": true,
+  "status_runtime": "82 ms",
+  "memory": 42584000,
+  "code_answer": [],
+  "code_output": [],
+  "std_output_list": [""],
+  "elapsed_time": 86,
+  "expected_code_answer": ["[0,1]", "[1,2]", "[0,1]", ""],
+  "expected_std_output_list": ["", "", "", ""],
+  "correct_answer": false,
+  "compare_result": "000",
+  "total_correct": 0,
+  "total_testcases": 3,
+  "status_msg": "Accepted",
+  "state": "SUCCESS"
+}
+```
+
+**Key insights from LeetCode's response:**
+
+| What LeetCode returns | What we return now | Gap / Action |
+|---|---|---|
+| `state: PENDING/STARTED/SUCCESS` | `status: PENDING/RUNNING/DONE` | Minor naming difference — acceptable |
+| `run_success: true` even when `correct_answer: false` | Same (we return execution success separately) | ✅ Already correct |
+| `code_answer[]` — user's actual output per test case | ✅ `results[].output` | ✅ Already correct |
+| `expected_code_answer[]` — expected output per test case | ✅ `results[].expectedOutput` | ✅ Already correct |
+| `compare_result: "000"` — pass/fail per test case as bit string | ❌ Not returned | **Add to response** |
+| `std_output_list[]` — stdout per test case | ✅ `results[].stdout` | ✅ Already correct |
+| `memory` in bytes | ❌ Not measured | Future improvement |
+| `status_runtime: "82 ms"` | ✅ `executionTimeMs` | ✅ Already correct |
+| `interpret_id` uses timestamp+random (not sequential int) | ❌ We use sequential `IDENTITY` id | **Security: add random suffix to job ID in URL** |
+
+**Critical finding — `System.exit(0)` ran successfully on LeetCode:**
+- LeetCode returned `run_success: true` with `status_msg: "Accepted"` despite `System.exit(0)` in the code
+- This confirms they run each submission in a **Docker container** — `System.exit` kills only the container, not their server
+- Our `CodeSafetyScanner` blocks `System.exit` statically — correct for now (Phase 0, no Docker isolation)
+- Once we add Docker (Phase 1), we can remove the `System.exit` block since it becomes harmless
+
+**What to implement next based on LeetCode findings:**
+
+1. **`compare_result` bit string** — `"010"` means test 1 failed, test 2 passed, test 3 failed. Add to `ExecutionWorkerScheduler.buildSubmitResponseMap()`:
+   ```java
+   String compareResult = result.getResults().stream()
+       .map(r -> r.isPassed() ? "1" : "0")
+       .collect(Collectors.joining());
+   map.put("compareResult", compareResult);
+   ```
+
+2. **Job ID obfuscation** — replace sequential `Long id` in the polling URL with `jobId + "_" + UUID.randomUUID().toString().substring(0,8)`. Store both in the job row. Prevents users from polling other users' jobs by guessing IDs.
+
+3. **`STARTED` status** — add a third status value between RUNNING and DONE so frontend can show "Running your code…" vs "Waiting in queue…". Update `ExecutionJob.Status` to `{ PENDING, RUNNING, STARTED, DONE, ERROR }` and set it when the worker begins compilation.
+
+4. **`data_input` in Run requests** — LeetCode sends test case data in the request payload. We store test cases in the DB and look them up. Both are valid — ours is safer (can't inject custom test cases for Submit). Keep as-is for Submit; for Run we already accept `stdin` in the request.
+
+---
+
 ### Phase 2 — Async Submission with Job Polling (Target: 200K DAU / ~2K concurrent)
 
 **Problem Phase 1 doesn't solve:** HTTP thread still blocks for 5-10s waiting for Docker.
 With 400 Tomcat threads and 8s average execution, you saturate at 50 concurrent.
 
-**Solution:** Return a job ID immediately. Browser polls for result.
+**Solution:** Replace MySQL queue with Redis for lower latency. Same polling interface.
 
 **New flow:**
 ```
@@ -369,7 +474,7 @@ These must be in place before going live at any scale:
 | Container | `--pids-limit 50` (no fork bombs) | Phase 1 |
 | Container | `--read-only --tmpfs /code` | Phase 1 |
 | Container | `--user nobody` (unprivileged) | Phase 1 |
-| Queue | Async execution with job polling | Phase 2 |
+| Queue | Async execution with MySQL job polling | ✅ Done (Phase 1.5) |
 | Rate limit | Redis-backed distributed rate limiter (replaces in-memory) | Phase 2 |
 | Database | Read replica for analytics queries | Phase 3 |
 | Network | WAF + DDoS protection (Cloudflare) | Phase 3 |
