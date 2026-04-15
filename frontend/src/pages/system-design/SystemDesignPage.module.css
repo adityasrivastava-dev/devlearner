@@ -1,0 +1,258 @@
+/* ══ System Design Canvas ══════════════════════════════════════════════════ */
+
+.page { display: flex; flex-direction: column; height: 100vh; background: var(--bg); overflow: hidden; }
+
+/* ── Toolbar ── */
+.toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 16px; height: 52px; flex-shrink: 0;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+}
+.toolbarLeft   { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.toolbarCenter { display: flex; align-items: center; gap: 6px; flex: 1; overflow-x: auto; padding: 0 8px; }
+.toolbarRight  { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.backBtn {
+  padding: 5px 11px; background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 6px; color: var(--text2); font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: inherit; white-space: nowrap;
+}
+.backBtn:hover { color: var(--text); }
+
+.titleWrap { display: flex; align-items: center; gap: 8px; }
+.designName {
+  font-size: 14px; font-weight: 700; color: var(--text); cursor: pointer;
+  white-space: nowrap; display: flex; align-items: center; gap: 6px;
+}
+.designName:hover { color: var(--accent); }
+.dirtyDot { width: 6px; height: 6px; border-radius: 50%; background: var(--yellow); display: inline-block; }
+.nameInput {
+  font-size: 14px; font-weight: 700; background: var(--bg3); border: 1px solid var(--accent);
+  border-radius: 5px; color: var(--text); padding: 3px 8px; font-family: inherit; outline: none;
+}
+
+.templateBtn {
+  padding: 5px 11px; background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 6px; color: var(--text2); font-size: 11px; font-weight: 600;
+  cursor: pointer; font-family: inherit; white-space: nowrap; transition: .15s;
+}
+.templateBtn:hover { border-color: var(--accent); color: var(--accent); background: var(--adim); }
+
+.clearBtn {
+  padding: 5px 11px; background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.2);
+  border-radius: 6px; color: var(--red); font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+}
+.clearBtn:hover { background: rgba(248,113,113,.15); }
+
+.savedBtn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 11px; background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 6px; color: var(--text2); font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+}
+.savedBtn:hover { color: var(--text); }
+.badge {
+  background: var(--accent); color: #000; font-size: 9px; font-weight: 800;
+  padding: 1px 5px; border-radius: 10px;
+}
+
+.saveBtn {
+  padding: 6px 14px; background: var(--accent); border: none; border-radius: 6px;
+  color: #000; font-size: 12px; font-weight: 800; cursor: pointer; font-family: inherit;
+  transition: opacity .15s;
+}
+.saveBtn:disabled { opacity: .6; cursor: not-allowed; }
+.saving { opacity: .7; }
+
+/* ── Saved panel dropdown ── */
+.savedPanel {
+  position: absolute; top: 52px; right: 16px; z-index: 100;
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px;
+  min-width: 280px; box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  max-height: 360px; overflow-y: auto;
+}
+.savedHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  font-size: 12px; font-weight: 700; color: var(--text2);
+}
+.savedClose {
+  background: none; border: none; color: var(--text3); cursor: pointer; font-size: 13px;
+}
+.savedEmpty { font-size: 12px; color: var(--text3); padding: 16px 14px; margin: 0; }
+.savedItem {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+  border-bottom: 1px solid var(--border); cursor: pointer; transition: background .1s;
+}
+.savedItem:hover { background: var(--bg3); }
+.savedItemName  { flex: 1; font-size: 13px; color: var(--text); font-weight: 500; }
+.savedItemDate  { font-size: 10px; color: var(--text3); }
+.savedItemDel   {
+  background: none; border: none; color: var(--text3); cursor: pointer; font-size: 11px;
+  padding: 2px 5px; border-radius: 3px;
+}
+.savedItemDel:hover { color: var(--red); background: rgba(248,113,113,.1); }
+
+/* ── Body layout ── */
+.body { display: flex; flex: 1; min-height: 0; position: relative; }
+
+/* ── Palette ── */
+.palette {
+  width: 188px; flex-shrink: 0;
+  background: var(--bg2); border-right: 1px solid var(--border);
+  overflow-y: auto; padding: 10px 8px 16px;
+}
+.palette::-webkit-scrollbar { width: 3px; }
+.palette::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.paletteTitle {
+  font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--text3); padding: 4px 8px 10px;
+}
+.paletteGroup    { margin-bottom: 8px; }
+.paletteGroupLabel {
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px;
+  color: var(--border2); padding: 2px 8px 4px;
+}
+.paletteItem {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 6px 8px; border-radius: 7px;
+  background: none; border: 1px solid transparent; cursor: pointer;
+  font-family: inherit; text-align: left; transition: .12s;
+  border-left: 2px solid var(--node-color, var(--border2));
+}
+.paletteItem:hover { background: var(--bg3); border-color: var(--node-color, var(--border2)); }
+.paletteIcon { font-size: 16px; flex-shrink: 0; }
+.paletteText { min-width: 0; }
+.paletteLabel { font-size: 11px; font-weight: 600; color: var(--text); }
+.paletteDesc  { font-size: 9px; color: var(--text3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.help {
+  margin-top: 16px; padding: 10px 8px;
+  border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 5px;
+}
+.help p { font-size: 10px; color: var(--text3); margin: 0; }
+.help kbd {
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: 3px;
+  padding: 1px 4px; font-size: 9px; font-family: monospace; color: var(--text2);
+}
+
+/* ── Canvas wrapper ── */
+.canvasWrap {
+  flex: 1; overflow: auto; position: relative; cursor: default;
+  background: var(--bg);
+}
+.canvasWrap::-webkit-scrollbar { width: 8px; height: 8px; }
+.canvasWrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+.connectCursor { cursor: crosshair !important; }
+
+/* Dot-grid canvas */
+.canvas {
+  position: relative;
+  width: 3200px; height: 2000px;
+  background-color: var(--bg);
+  background-image: radial-gradient(circle, var(--border) 1.2px, transparent 1.2px);
+  background-size: 28px 28px;
+}
+
+/* SVG edge layer */
+.edgeSvg {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; overflow: visible;
+}
+.edgeLabel { pointer-events: none; font-family: var(--font-ui, system-ui); }
+
+.edgeLabelInput {
+  width: 100%; height: 22px; background: var(--bg2);
+  border: 1px solid var(--accent); border-radius: 4px;
+  color: var(--text); font-size: 10px; text-align: center;
+  padding: 2px 4px; font-family: inherit; outline: none;
+}
+
+/* ── Nodes ── */
+.node {
+  position: absolute;
+  width: 148px; height: 62px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border2);
+  background: var(--bg2);
+  cursor: grab;
+  user-select: none;
+  transition: box-shadow .15s, border-color .15s;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.node:active       { cursor: grabbing; }
+.node:hover        { border-color: var(--nc); box-shadow: 0 0 0 1px color-mix(in srgb, var(--nc) 20%, transparent); }
+.nodeSelected      { border-color: var(--nc) !important; box-shadow: 0 0 0 2px color-mix(in srgb, var(--nc) 25%, transparent); }
+.nodeConnSrc       { border-color: #4ade80 !important; box-shadow: 0 0 0 2px rgba(74,222,128,.3); animation: pulse 1s infinite; }
+.nodeConnTarget    { cursor: crosshair !important; }
+.nodeConnTarget:hover { border-color: #4ade80 !important; background: rgba(74,222,128,.08); }
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(74,222,128,.3); }
+  50%       { box-shadow: 0 0 0 5px rgba(74,222,128,.1); }
+}
+
+.nodeColorBar { height: 3px; background: var(--nc); flex-shrink: 0; }
+.nodeBody { display: flex; align-items: center; gap: 8px; padding: 0 10px; flex: 1; min-width: 0; }
+.nodeIcon { font-size: 18px; flex-shrink: 0; }
+.nodeText { flex: 1; min-width: 0; }
+.nodeLabel {
+  font-size: 11px; font-weight: 700; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nodeLabelInput {
+  width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--accent);
+  color: var(--text); font-size: 11px; font-weight: 700; font-family: inherit;
+  padding: 0; outline: none;
+}
+.nodeDesc {
+  font-size: 9px; color: var(--text3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.connectBtn {
+  position: absolute; right: -10px; top: 50%; transform: translateY(-50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--bg);
+  color: #000; font-size: 10px; font-weight: 800;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  z-index: 10; transition: transform .1s;
+}
+.connectBtn:hover { transform: translateY(-50%) scale(1.2); }
+
+.deleteNodeBtn {
+  position: absolute; right: 4px; top: 4px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: rgba(248,113,113,.15); border: 1px solid rgba(248,113,113,.3);
+  color: var(--red); font-size: 8px; font-weight: 800;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  z-index: 10;
+}
+.deleteNodeBtn:hover { background: rgba(248,113,113,.3); }
+
+/* ── Empty hint ── */
+.emptyHint {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  text-align: center; pointer-events: none;
+}
+.emptyIcon  { font-size: 48px; margin-bottom: 12px; opacity: .4; }
+.emptyTitle { font-size: 16px; font-weight: 700; color: var(--text3); margin: 0 0 6px; }
+.emptyDesc  { font-size: 13px; color: var(--text3); opacity: .6; margin: 0; }
+
+/* ── Info bar ── */
+.infoBar {
+  position: absolute; bottom: 0; left: 188px; right: 0;
+  height: 36px; background: var(--bg2); border-top: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 16px;
+  font-size: 12px;
+}
+.infoConnect { color: var(--accent); }
+.infoEdge    { color: var(--text2); }
+.infoNode    { color: var(--text2); }
+.infoBar kbd {
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: 3px;
+  padding: 1px 5px; font-size: 10px; font-family: monospace; color: var(--text2);
+}

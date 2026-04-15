@@ -11,6 +11,7 @@ import QuizAdminSection from './QuizAdminSection';
 import AlgorithmAdminSection from './AlgorithmAdminSection';
 import InterviewAdminSection from './InterviewAdminSection';
 import TrackingAdminSection from './TrackingAdminSection';
+import DailyAdminSection from './DailyAdminSection';
 
 const NAV_GROUPS = [
   {
@@ -20,6 +21,7 @@ const NAV_GROUPS = [
       { key: 'algorithms',  icon: '∑',  label: 'Algorithms' },
       { key: 'quiz',        icon: '🧠', label: 'Quiz' },
       { key: 'interview',   icon: '📋', label: 'Interview Q&A' },
+      { key: 'daily',       icon: '🔥', label: 'Daily Challenge' },
     ],
   },
   {
@@ -103,6 +105,7 @@ export default function AdminPage() {
           {section === 'interview'   && <InterviewAdminSection />}
           {section === 'stats'       && <StatsSection />}
           {section === 'tracking'    && <TrackingAdminSection />}
+          {section === 'daily'       && <DailyAdminSection />}
         </div>
       </div>
     </div>

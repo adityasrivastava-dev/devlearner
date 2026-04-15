@@ -24,11 +24,13 @@ const NAV_SECTIONS = [
   {
     label: 'Practice',
     items: [
+      { path: '/daily',        icon: '🔥', label: 'Daily Challenge' },
       { path: '/problems',    icon: '≡',  label: 'Problems'       },
       { path: '/quiz',        icon: '🧠', label: 'MCQ Quiz'       },
       { path: '/playground',  icon: '{}', label: 'Playground'     },
       { path: '/complexity',  icon: '∑',  label: 'Complexity'     },
       { path: '/quick-win',   icon: '⚡', label: '5-Min Mode'     },
+      { path: '/system-design', icon: '🏗', label: 'System Design' },
     ],
   },
   {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import CodeEditor from '../../components/editor/CodeEditor';
 import { codeApi } from '../../api';
 import toast from 'react-hot-toast';
+import ComplexityChart from '../../components/complexity/ComplexityChart';
 import styles from './ComplexityPage.module.css';
 
 const DEFAULT_CODE = `public class Solution {
@@ -280,6 +281,9 @@ export default function ComplexityPage() {
                   ))}
                 </div>
               </div>
+
+              {/* ── Growth visualization ── */}
+              <ComplexityChart timeComplexity={result.timeComplexity} />
 
             </div>
           )}

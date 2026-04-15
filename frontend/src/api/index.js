@@ -412,6 +412,30 @@ export const similarApi = {
     http.get(`/api/problems/${problemId}/similar`).then((r) => r.data).catch(() => []),
 };
 
+// ─── Daily Challenge ──────────────────────────────────────────────────────────
+export const dailyApi = {
+  getToday:      ()     => http.get('/api/daily').then((r) => r.data).catch(() => ({ available: false })),
+  getLeaderboard:(date) => http.get(`/api/daily/leaderboard${date ? `?date=${date}` : ''}`).then((r) => r.data).catch(() => []),
+  getHistory:    ()     => http.get('/api/daily/history').then((r) => r.data).catch(() => []),
+  getMyStatus:   ()     => http.get('/api/daily/my-status').then((r) => r.data).catch(() => ({ solved: false })),
+  recordSolve:   (timeMs, attempts) => http.post('/api/daily/solve', { timeMs, attempts }).then((r) => r.data),
+
+  // Admin
+  adminSetChallenge: (problemId, date) =>
+    http.post('/api/admin/daily/set', { problemId, date: date || null }).then((r) => r.data),
+  adminList: () =>
+    http.get('/api/admin/daily/list').then((r) => r.data).catch(() => []),
+};
+
+// ─── System Design Canvas ─────────────────────────────────────────────────────
+export const systemDesignApi = {
+  list:   ()          => http.get('/api/system-design').then((r) => r.data).catch(() => []),
+  get:    (id)        => http.get(`/api/system-design/${id}`).then((r) => r.data),
+  create: (body)      => http.post('/api/system-design', body).then((r) => r.data),
+  update: (id, body)  => http.put(`/api/system-design/${id}`, body).then((r) => r.data),
+  remove: (id)        => http.delete(`/api/system-design/${id}`),
+};
+
 // ─── React Query Keys ─────────────────────────────────────────────────────────
 export const QUERY_KEYS = {
   topics:            (cat)  => ['topics', cat],
@@ -443,6 +467,11 @@ export const QUERY_KEYS = {
   analyticsMistakes:       ['analyticsMistakes'],
   userVideos:    (tid)  => ['userVideos', tid],
   allVideos:             ['allVideos'],
+  dailyChallenge:        ['dailyChallenge'],
+  dailyLeaderboard:      ['dailyLeaderboard'],
+  dailyHistory:          ['dailyHistory'],
+  dailyStatus:           ['dailyStatus'],
+  systemDesigns:         ['systemDesigns'],
 };
 // ─── Spaced Repetition ────────────────────────────────────────────────────────
 export const srsApi = {

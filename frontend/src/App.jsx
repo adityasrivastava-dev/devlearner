@@ -22,8 +22,10 @@ import ComplexityPage     from './pages/complexity/ComplexityPage';
 import MasteryPage        from './pages/mastery/MasteryPage';
 import ReviewPage         from './pages/review/ReviewPage';
 import InterviewModePage  from './pages/interview-mode/InterviewModePage';
-import AnalyticsPage      from './pages/analytics/AnalyticsPage';
-import VideosPage         from './pages/videos/VideosPage';
+import AnalyticsPage        from './pages/analytics/AnalyticsPage';
+import VideosPage           from './pages/videos/VideosPage';
+import SystemDesignPage     from './pages/system-design/SystemDesignPage';
+import DailyChallengePage   from './pages/daily/DailyChallengePage';
 
 // Apply saved theme on load
 const savedTheme = localStorage.getItem('devlearn_theme') || 'dark';
@@ -63,6 +65,8 @@ function AppRoutes() {
       <Route path="/interview-mode" element={<ProtectedRoute><InterviewModePage /></ProtectedRoute>} />
       <Route path="/analytics"      element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
       <Route path="/videos"         element={<ProtectedRoute><VideosPage /></ProtectedRoute>} />
+      <Route path="/system-design"  element={<ProtectedRoute><SystemDesignPage /></ProtectedRoute>} />
+      <Route path="/daily"          element={<ProtectedRoute><DailyChallengePage /></ProtectedRoute>} />
       <Route path="/admin"          element={<AdminRoute><AdminPage /></AdminRoute>} />
       <Route path="*"               element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
     </Routes>
