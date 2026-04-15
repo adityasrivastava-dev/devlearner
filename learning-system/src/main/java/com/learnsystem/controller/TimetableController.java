@@ -2,8 +2,10 @@ package com.learnsystem.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnsystem.model.Timetable;
+import com.learnsystem.model.Topic;
 import com.learnsystem.model.User;
 import com.learnsystem.repository.TimetableRepository;
+import com.learnsystem.repository.TopicRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,7 @@ import java.util.*;
 public class TimetableController {
 
     private final TimetableRepository timetableRepo;
+    private final TopicRepository      topicRepo;
     private final ObjectMapper         objectMapper;
 
     /* ─────────────────────────────── List ─────────────────────────── */
@@ -140,6 +143,19 @@ public class TimetableController {
                 return ResponseEntity.badRequest().body(Map.of("message", "Topics list is required"));
             if (hoursPerDay < 1 || hoursPerDay > 12)
                 return ResponseEntity.badRequest().body(Map.of("message", "Hours per day must be 1–12"));
+
+            // Resolve template topic names → real DB topic IDs + titles
+            List<Topic> allDbTopics = topicRepo.findAllByOrderByDisplayOrderAscTitleAsc();
+            for (Map<String, Object> topic : topics) {
+                if (topic.get("id") == null) {
+                    String topicName = (String) topic.getOrDefault("name", "");
+                    Topic match = resolveTopicByName(allDbTopics, topicName);
+                    if (match != null) {
+                        topic.put("id",   match.getId());
+                        topic.put("name", match.getTitle()); // use real DB title
+                    }
+                }
+            }
 
             List<Map<String, Object>> schedule = buildSchedule(topics, hoursPerDay, startDate, includeRestDays);
 
@@ -358,5 +374,41 @@ public class TimetableController {
         d.put("totalMinutes", 0);
         d.put("isRestDay",    true);
         return d;
+    }
+
+    /**
+     * Word-overlap scoring: finds the DB topic whose title has the most words in
+     * common with the template topic name (case-insensitive, ignores punctuation).
+     * Returns null if no topic scores > 0.
+     */
+    private Topic resolveTopicByName(List<Topic> allTopics, String searchName) {
+        String[] searchWords = searchName.toLowerCase()
+            .replaceAll("[^a-z0-9\\s]", " ").trim().split("\\s+");
+
+        int   bestScore = 0;
+        Topic bestMatch = null;
+
+        for (Topic topic : allTopics) {
+            String[] titleWords = topic.getTitle().toLowerCase()
+                .replaceAll("[^a-z0-9\\s]", " ").trim().split("\\s+");
+
+            int score = 0;
+            for (String sw : searchWords) {
+                if (sw.length() < 2) continue;
+                for (String tw : titleWords) {
+                    if (tw.length() < 2) continue;
+                    if (tw.contains(sw) || sw.contains(tw)) {
+                        score++;
+                        break;
+                    }
+                }
+            }
+            if (score > bestScore) {
+                bestScore = score;
+                bestMatch = topic;
+            }
+        }
+
+        return bestScore > 0 ? bestMatch : null;
     }
 }

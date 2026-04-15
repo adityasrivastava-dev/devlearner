@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
@@ -26,6 +26,8 @@ export default function HomePage() {
   const selectedCategory = searchParams.get('category') || null;
   const openProblemId    = (() => { const v = searchParams.get('openProblem'); const n = parseInt(v, 10); return v && !isNaN(n) ? n : null; })();
   const fromParam        = searchParams.get('from');
+  const topicSearch      = searchParams.get('topicSearch') || null;
+  const fromTimetable    = searchParams.get('fromTimetable') === 'true';
 
   // Roadmap context — only rmId + rmName live in the URL (no giant rmTopics list)
   const rmId   = searchParams.get('rmId') ? parseInt(searchParams.get('rmId'), 10) : null;
@@ -54,6 +56,46 @@ export default function HomePage() {
         })
         .map((t) => t.topicId)
     : null;
+
+  // Fetch all topics for name-based lookup when coming from timetable
+  const { data: allTopicsForSearch = [] } = useQuery({
+    queryKey: QUERY_KEYS.topics('ALL'),
+    queryFn:  () => topicsApi.getAll('ALL'),
+    staleTime: 5 * 60 * 1000,
+    enabled:  !!topicSearch,
+  });
+
+  // Resolve topicSearch → topicId and redirect
+  const resolvedRef = useRef(null);
+  useEffect(() => {
+    if (!topicSearch || !allTopicsForSearch.length) return;
+    if (resolvedRef.current === topicSearch) return; // already tried
+    resolvedRef.current = topicSearch;
+
+    const toWords = (s) =>
+      s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length >= 2);
+
+    const searchWords = toWords(topicSearch);
+
+    // Score: count how many search words appear in the topic title
+    const scored = allTopicsForSearch
+      .map(t => {
+        const titleWords = toWords(t.title || '');
+        const score = searchWords.filter(sw =>
+          titleWords.some(tw => tw.includes(sw) || sw.includes(tw))
+        ).length;
+        return { topic: t, score };
+      })
+      .filter(x => x.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    const found = scored[0]?.topic;
+
+    if (found) {
+      setSearchParams({ topic: found.id, fromTimetable: 'true' }, { replace: true });
+    }
+    // No match → stay on dashboard; user can search manually via sidebar
+  }, [topicSearch, allTopicsForSearch]);
 
   // Fetch topic list for category-based prev/next (only when NOT in roadmap mode)
   const { data: topicList = [] } = useQuery({
@@ -141,6 +183,10 @@ export default function HomePage() {
   }
 
   function goBackFromTopic() {
+    if (fromTimetable) {
+      navigate('/timetable');
+      return;
+    }
     // If we came from a roadmap, navigate back to it
     if (rmId) {
       navigate(`/roadmap?rmId=${rmId}`);
@@ -198,7 +244,7 @@ export default function HomePage() {
         fontSize={fontSize}
         onProblemOpen={openProblem}
         onBack={goBackFromTopic}
-        backLabel={rmName ? `← ${rmName}` : '← Home'}
+        backLabel={fromTimetable ? '← Timetable' : rmName ? `← ${rmName}` : '← Home'}
         onPrev={prevTopicId ? () => selectTopic(prevTopicId) : null}
         onNext={nextTopicId ? () => selectTopic(nextTopicId) : null}
       />

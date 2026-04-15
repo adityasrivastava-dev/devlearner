@@ -10,7 +10,7 @@ DevLearner is a full-stack **Interview Preparation OS for Backend Engineers** �
 - **Frontend:** React 19 + Vite, React Router, TanStack Query, Zustand, Monaco Editor — runs on port **3000**
 - **Deployment:** Docker + Nginx reverse proxy
 
-> Feature roadmap (Features 1–40), data schema changes, seed file specs, and content plans are in [PLAN.md](./PLAN.md).
+> Feature roadmap (Features 1–40), data schema changes, seed file specs, and content plans are in [PLAN.md](./PLAN.md). and [SUGGESTIONS.md](./SUGGESTIONS.md)
 
 ---
 

@@ -825,8 +825,8 @@ function taskNavPath(task) {
   const type = task.type || '';
   if (type === 'REVIEW')              return '/review';
   if (type.startsWith('PRACTICE'))    return `/problems?search=${encodeURIComponent(task.topicName)}`;
-  if (task.topicId)                   return `/?topic=${task.topicId}`;
-  return '/';
+  if (task.topicId)                   return `/?topic=${task.topicId}&fromTimetable=true`;
+  return `/?topicSearch=${encodeURIComponent(task.topicName)}&fromTimetable=true`;
 }
 
 function taskNavLabel(task) {
