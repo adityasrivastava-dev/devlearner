@@ -79,7 +79,7 @@
 
 .menu {
   position: absolute;
-  top: 100%;
+  bottom: calc(100% + 6px);
   right: 0;
   z-index: 100;
   background: var(--bg2);
@@ -87,10 +87,10 @@
   border-radius: var(--radius);
   padding: 4px;
   min-width: 160px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  box-shadow: 0 -4px 24px rgba(0,0,0,.4);
   animation: menuIn .15s ease;
 }
-@keyframes menuIn { from { opacity:0; transform: scale(.95) translateY(-4px); } }
+@keyframes menuIn { from { opacity:0; transform: scale(.95) translateY(4px); } }
 
 .menu button {
   display: flex;

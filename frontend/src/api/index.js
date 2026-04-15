@@ -19,7 +19,11 @@ http.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem('devlearn_token');
       localStorage.removeItem('devlearn_user');
-      window.location.href = '/login';
+      // Don't hard-reload if already on /login — prevents the refresh loop
+      // when the backend cold-starts on Render and returns 401 for a stale token.
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   }
@@ -447,6 +451,13 @@ export const systemDesignApi = {
   remove: (id)        => http.delete(`/api/system-design/${id}`),
 };
 
+// ─── App Screenshots ──────────────────────────────────────────────────────────
+export const screenshotsApi = {
+  getAll: () => http.get('/api/app-screenshots').then((r) => r.data),
+  save:   (data) => http.post('/api/admin/app-screenshots', data).then((r) => r.data),
+  delete: (slideKey) => http.delete(`/api/admin/app-screenshots/${slideKey}`).then((r) => r.data),
+};
+
 // ─── React Query Keys ─────────────────────────────────────────────────────────
 export const QUERY_KEYS = {
   topics:            (cat)  => ['topics', cat],
@@ -485,6 +496,7 @@ export const QUERY_KEYS = {
   systemDesigns:         ['systemDesigns'],
   timetables:            ['timetables'],
   timetable:       (id)  => ['timetable', id],
+  screenshots:           ['screenshots'],
 };
 // ─── Spaced Repetition ────────────────────────────────────────────────────────
 export const srsApi = {

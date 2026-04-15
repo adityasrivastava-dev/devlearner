@@ -84,6 +84,9 @@ public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 							"/api/quiz/sets",
 							"/api/quiz/sets/**").permitAll()
 
+					// Login page screenshots — public (shown to unauthenticated visitors)
+					.requestMatchers(HttpMethod.GET, "/api/app-screenshots").permitAll()
+
 					// Admin endpoints
 					.requestMatchers("/api/admin/**").hasRole("ADMIN")
 

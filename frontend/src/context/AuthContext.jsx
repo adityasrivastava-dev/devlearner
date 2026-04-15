@@ -42,10 +42,13 @@ export function AuthProvider({ children }) {
         });
       })
       .catch((err) => {
-        // 401 = token expired → logout handled by axios interceptor
-        if (err.response?.status !== 401) {
-          // Network error — keep current token
+        if (err.response?.status === 401) {
+          // Token expired — interceptor already cleared localStorage,
+          // clear React state too so GuestRoute stops redirecting to /
+          setToken(null);
+          setUser(null);
         }
+        // Network error (backend cold-starting) — keep current token and wait
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

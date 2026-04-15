@@ -12,6 +12,7 @@ import AlgorithmAdminSection from './AlgorithmAdminSection';
 import InterviewAdminSection from './InterviewAdminSection';
 import TrackingAdminSection from './TrackingAdminSection';
 import DailyAdminSection from './DailyAdminSection';
+import LoginScreenshotsAdmin from './LoginScreenshotsAdmin';
 
 const NAV_GROUPS = [
   {
@@ -21,7 +22,8 @@ const NAV_GROUPS = [
       { key: 'algorithms',  icon: '∑',  label: 'Algorithms' },
       { key: 'quiz',        icon: '🧠', label: 'Quiz' },
       { key: 'interview',   icon: '📋', label: 'Interview Q&A' },
-      { key: 'daily',       icon: '🔥', label: 'Daily Challenge' },
+      { key: 'daily',              icon: '🔥', label: 'Daily Challenge' },
+      { key: 'login-screenshots', icon: '🖼', label: 'Login Screenshots' },
     ],
   },
   {
@@ -105,7 +107,8 @@ export default function AdminPage() {
           {section === 'interview'   && <InterviewAdminSection />}
           {section === 'stats'       && <StatsSection />}
           {section === 'tracking'    && <TrackingAdminSection />}
-          {section === 'daily'       && <DailyAdminSection />}
+          {section === 'daily'             && <DailyAdminSection />}
+          {section === 'login-screenshots' && <LoginScreenshotsAdmin />}
         </div>
       </div>
     </div>
