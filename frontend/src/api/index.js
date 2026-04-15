@@ -368,6 +368,35 @@ export const analyticsApi = {
     http.get('/api/analytics/mistakes').then((r) => r.data).catch(() => []),
 };
 
+// ─── Tracking (page views + user events) ─────────────────────────────────────
+let _sessionId = null;
+function getSessionId() {
+  if (!_sessionId) _sessionId = Math.random().toString(36).slice(2, 10);
+  return _sessionId;
+}
+
+export const trackingApi = {
+  pageView: (pagePath) =>
+    http.post('/api/tracking/pageview', {
+      pagePath,
+      pageTitle: document.title,
+      sessionId: getSessionId(),
+    }).catch(() => {}),
+
+  event: (eventType, pagePath, data = {}) =>
+    http.post('/api/tracking/event', {
+      eventType,
+      pagePath,
+      eventData: JSON.stringify(data),
+    }).catch(() => {}),
+
+  // Admin reporting
+  getPageStats:  (days = 7)  => http.get(`/api/admin/tracking/page-stats?days=${days}`).then((r) => r.data).catch(() => ({})),
+  getEventStats: (days = 7)  => http.get(`/api/admin/tracking/event-stats?days=${days}`).then((r) => r.data).catch(() => ({})),
+  getDailyVisits:(days = 30) => http.get(`/api/admin/tracking/daily?days=${days}`).then((r) => r.data).catch(() => []),
+  getRecentViews:()          => http.get('/api/admin/tracking/recent').then((r) => r.data).catch(() => []),
+};
+
 // ─── Topic Ratings ────────────────────────────────────────────────────────────
 export const ratingsApi = {
   get: (topicId) =>

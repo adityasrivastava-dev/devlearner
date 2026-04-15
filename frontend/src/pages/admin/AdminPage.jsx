@@ -10,54 +10,100 @@ import JsonBuilderSection from './JsonBuilderSection';
 import QuizAdminSection from './QuizAdminSection';
 import AlgorithmAdminSection from './AlgorithmAdminSection';
 import InterviewAdminSection from './InterviewAdminSection';
+import TrackingAdminSection from './TrackingAdminSection';
+
+const NAV_GROUPS = [
+  {
+    label: 'Content',
+    items: [
+      { key: 'topics',      icon: '📚', label: 'Topics' },
+      { key: 'algorithms',  icon: '∑',  label: 'Algorithms' },
+      { key: 'quiz',        icon: '🧠', label: 'Quiz' },
+      { key: 'interview',   icon: '📋', label: 'Interview Q&A' },
+    ],
+  },
+  {
+    label: 'Data',
+    items: [
+      { key: 'quickimport', icon: '⚡', label: 'Quick Import' },
+      { key: 'seed',        icon: '📦', label: 'Seed Files' },
+      { key: 'build',       icon: '🛠', label: 'Build JSON' },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { key: 'users',       icon: '👥', label: 'Users' },
+      { key: 'stats',       icon: '📊', label: 'Stats' },
+      { key: 'tracking',    icon: '📈', label: 'Usage' },
+    ],
+  },
+];
 
 export default function AdminPage() {
   const navigate   = useNavigate();
   const qc         = useQueryClient();
-  const [section, setSection] = useState('topics'); // topics | users | seed | build | quiz | algorithms | interview | stats | quickimport
+  const [section, setSection] = useState('topics');
+
+  const currentItem = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.key === section);
 
   return (
     <div className={styles.adminPage}>
-      {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <button className={styles.backBtn} onClick={() => navigate('/')}>← App</button>
-          <div className={styles.logo}>⟨devlearn⟩ <span className={styles.adminBadge}>ADMIN</span></div>
+
+      {/* ── Top bar ── */}
+      <div className={styles.topBar}>
+        <div className={styles.topBarLeft}>
+          <button className={styles.backBtn} onClick={() => navigate('/')}>
+            ← Back to App
+          </button>
+          <div className={styles.adminBrand}>
+            <span className={styles.brandCode}>⟨devlearn⟩</span>
+            <span className={styles.adminBadge}>ADMIN PANEL</span>
+          </div>
         </div>
-        <nav className={styles.nav}>
-          {[
-            { key: 'topics',      icon: '📚', label: 'Topics' },
-            { key: 'users',       icon: '👥', label: 'Users' },
-            { key: 'quickimport', icon: '⚡', label: 'Quick Import' },
-            { key: 'seed',        icon: '📦', label: 'Seed Files' },
-            { key: 'build',       icon: '🛠', label: 'Build JSON' },
-            { key: 'quiz',        icon: '🧠', label: 'Quiz' },
-            { key: 'algorithms',  icon: '∑',  label: 'Algorithms' },
-            { key: 'interview',   icon: '📋', label: 'Interview Q&A' },
-            { key: 'stats',       icon: '📊', label: 'Stats' },
-          ].map((item) => (
-            <button
-              key={item.key}
-              className={`${styles.navBtn} ${section === item.key ? styles.activeNav : ''}`}
-              onClick={() => setSection(item.key)}
-            >
-              {item.icon} {item.label}
-            </button>
-          ))}
-        </nav>
+        <div className={styles.topBarRight}>
+          <span className={styles.currentSection}>
+            {currentItem?.icon} {currentItem?.label}
+          </span>
+        </div>
       </div>
 
-      {/* Content */}
-      <div className={styles.content}>
-        {section === 'topics'      && <TopicsSection qc={qc} />}
-        {section === 'users'       && <UsersSection />}
-        {section === 'quickimport' && <QuickImportSection />}
-        {section === 'seed'        && <SeedSection />}
-        {section === 'build'       && <div className={styles.section}><div className={styles.sectionHeader}><span className={styles.sectionTitle}>JSON Builder</span></div><JsonBuilderSection /></div>}
-        {section === 'quiz'        && <QuizAdminSection />}
-        {section === 'algorithms'  && <AlgorithmAdminSection />}
-        {section === 'interview'   && <InterviewAdminSection />}
-        {section === 'stats'       && <StatsSection />}
+      {/* ── Shell ── */}
+      <div className={styles.shell}>
+
+        {/* ── Left sidebar ── */}
+        <aside className={styles.sidebar}>
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label} className={styles.navGroup}>
+              <div className={styles.navGroupLabel}>{group.label}</div>
+              {group.items.map((item) => (
+                <button
+                  key={item.key}
+                  className={`${styles.navItem} ${section === item.key ? styles.navItemActive : ''}`}
+                  onClick={() => setSection(item.key)}
+                >
+                  <span className={styles.navIcon}>{item.icon}</span>
+                  <span className={styles.navLabel}>{item.label}</span>
+                  {section === item.key && <span className={styles.navIndicator} />}
+                </button>
+              ))}
+            </div>
+          ))}
+        </aside>
+
+        {/* ── Main content ── */}
+        <div className={styles.content}>
+          {section === 'topics'      && <TopicsSection qc={qc} />}
+          {section === 'users'       && <UsersSection />}
+          {section === 'quickimport' && <QuickImportSection />}
+          {section === 'seed'        && <SeedSection />}
+          {section === 'build'       && <div className={styles.section}><div className={styles.sectionHeader}><span className={styles.sectionTitle}>JSON Builder</span></div><JsonBuilderSection /></div>}
+          {section === 'quiz'        && <QuizAdminSection />}
+          {section === 'algorithms'  && <AlgorithmAdminSection />}
+          {section === 'interview'   && <InterviewAdminSection />}
+          {section === 'stats'       && <StatsSection />}
+          {section === 'tracking'    && <TrackingAdminSection />}
+        </div>
       </div>
     </div>
   );

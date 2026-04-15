@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { userVideosApi, QUERY_KEYS } from '../../api';
 import { getCategoryMeta, CATEGORIES } from '../../utils/helpers';
+import { SkeletonCard } from '../../components/shared/Skeleton';
 import styles from './VideosPage.module.css';
 
 // ── YouTube helpers ────────────────────────────────────────────────────────────
@@ -73,7 +74,11 @@ export default function VideosPage() {
 
       {/* ── Content ─────────────────────────────────────────────────────── */}
       {isLoading ? (
-        <div className={styles.loading}><span className="spinner" /> Loading videos…</div>
+        <div className={styles.groups}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonCard key={i} className={styles.group} />
+          ))}
+        </div>
       ) : filtered.length === 0 ? (
         <div className={styles.empty}>
           <span className={styles.emptyIcon}>📹</span>

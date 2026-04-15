@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { problemsApi, submissionsApi, bookmarksApi, QUERY_KEYS } from '../../api';
 import { getDiffMeta } from '../../utils/helpers';
+import { SkeletonTableRow } from '../../components/shared/Skeleton';
 import styles from './ProblemsPage.module.css';
 
 const PAGE_SIZE = 20;
@@ -193,7 +194,24 @@ export default function ProblemsPage() {
       {/* ── Table ───────────────────────────────────────────────────────────── */}
       <div className={`${styles.tableWrap} ${isFetching ? styles.fetching : ''}`}>
         {isLoading ? (
-          <div className={styles.loading}><span className="spinner" />Loading…</div>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th style={{ width: 32 }}></th>
+                <th style={{ width: 32 }}></th>
+                <th style={{ width: 44 }}>#</th>
+                <th>Title</th>
+                <th style={{ width: 100 }}>Difficulty</th>
+                <th style={{ width: 130 }}>Pattern</th>
+                <th style={{ width: 120 }}>Topic</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+                <SkeletonTableRow key={i} columns={[32, 32, 44, '100%', 100, 130, 120]} />
+              ))}
+            </tbody>
+          </table>
         ) : isError ? (
           <div className={styles.empty}>
             <span>⚠</span><p>Failed to load problems. Try again.</p>
