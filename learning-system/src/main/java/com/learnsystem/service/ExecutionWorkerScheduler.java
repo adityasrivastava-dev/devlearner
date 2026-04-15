@@ -130,12 +130,12 @@ public class ExecutionWorkerScheduler {
                 .passedTests(result.getPassedTests())
                 .totalTests(result.getTotalTests())
                 .executionTimeMs(maxMs)
-                .solveTimeSecs(job.getSolveTimeSecs())
+                .solveTimeSecs(job.getSolveTimeSecs() != null ? job.getSolveTimeSecs().longValue() : null)
                 .code(job.getCode())
                 .hintAssisted(Boolean.TRUE.equals(job.getHintAssisted()))
                 .javaVersion(job.getJavaVersion())
                 .approachText(job.getApproachText())
-                .submittedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
                 .build();
         submissionRepo.save(sub);
         log.info("Submission saved: user={} problem={} status={} ms={}",
@@ -158,7 +158,7 @@ public class ExecutionWorkerScheduler {
 
             postSubmissionTask.run(
                     job.getUserId(), job.getProblemId(), topicId, problemTitle,
-                    status, job.getSolveTimeSecs(), Boolean.TRUE.equals(job.getHintAssisted()),
+                    status, job.getSolveTimeSecs() != null ? job.getSolveTimeSecs().longValue() : null, Boolean.TRUE.equals(job.getHintAssisted()),
                     result.getDetectedPattern(), correctPattern,
                     job.getCode(), xpEarned);
         }
