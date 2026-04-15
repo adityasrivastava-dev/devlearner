@@ -147,6 +147,22 @@ export default function ProblemSolveView({
     }
   }
 
+  // ── Async poll helper ─────────────────────────────────────────────────────
+  // Polls every 1.5s until the job reaches DONE/ERROR or 90s timeout.
+  // Calls onTick(attempt) so callers can update loading copy.
+  async function pollUntilDone(jobId, onTick) {
+    const POLL_INTERVAL = 1500;
+    const MAX_ATTEMPTS  = 60; // 90s ceiling
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      await new Promise(r => setTimeout(r, POLL_INTERVAL));
+      onTick?.(attempt);
+      const job = await codeApi.pollJob(jobId);
+      if (job.status === 'DONE')  return { ok: true,  data: job.result };
+      if (job.status === 'ERROR') return { ok: false, error: job.error || 'Execution failed' };
+    }
+    return { ok: false, error: 'Timed out waiting for result — please try again.' };
+  }
+
   // ── Run ───────────────────────────────────────────────────────────────────
   async function handleRun() {
     if (!code.trim()) return;
@@ -155,10 +171,15 @@ export default function ProblemSolveView({
     setActiveResultTab('result');
     setRunResult({ loading: true });
     try {
-      const res = await withRetry(() => codeApi.execute(code, testInput, javaVersion));
-      setRunResult(res);
-      if (res.compileErrors?.length) {
-        applyMarkers(editorRef, monacoRef, res.compileErrors);
+      const { jobId } = await withRetry(() => codeApi.executeAsync(code, testInput, javaVersion));
+      const { ok, data, error } = await pollUntilDone(jobId, (attempt) => {
+        if (attempt > 0) setRunResult({ loading: true, retryMsg: `Running… (${attempt * 1.5 | 0}s)` });
+      });
+      if (!ok) {
+        setRunResult({ status: 'ERROR', error });
+      } else {
+        setRunResult(data);
+        if (data.compileErrors?.length) applyMarkers(editorRef, monacoRef, data.compileErrors);
       }
     } catch (err) {
       if (err.isRateLimit) {
@@ -177,26 +198,31 @@ export default function ProblemSolveView({
     setIsSubmitting(true);
     setActiveResultTab('result');
     setSubmitResult({ loading: true });
-    // BUG FIX: pass actual elapsed solve time instead of always 0
     const solveTimeSecs = Math.floor((Date.now() - solveStartRef.current) / 1000);
     try {
-      const res = await withRetry(() => codeApi.submit(problemId, code, solveTimeSecs, hintsShown >= 3, javaVersion, approach));
-      setSubmitResult(res);
-      if (res.compileErrors?.length) {
-        applyMarkers(editorRef, monacoRef, res.compileErrors);
-      }
-      if (res.allPassed) {
-        const solved = JSON.parse(localStorage.getItem('devlearn_solved') || '[]').map(Number);
-        const isFirstSolve = !solved.includes(_pid);
-        toast.success('✅ Accepted! Editorial unlocked.');
-        if (isFirstSolve) {
-          localStorage.setItem('devlearn_solved', JSON.stringify([...solved, _pid]));
-        }
-        qc.invalidateQueries({ queryKey: QUERY_KEYS.solvedIds });
-        refetchEditorial();
-        // Fire recall drill only on the very first AC for this problem
-        if (isFirstSolve) {
-          setTimeout(() => setRecallOpen(true), 600);
+      const { jobId } = await withRetry(() =>
+        codeApi.submitAsync(problemId, code, solveTimeSecs, hintsShown >= 3, javaVersion, approach));
+      const { ok, data, error } = await pollUntilDone(jobId, (attempt) => {
+        if (attempt > 0) setSubmitResult({ loading: true, retryMsg: `Judging… (${attempt * 1.5 | 0}s)` });
+      });
+      if (!ok) {
+        setSubmitResult({ error });
+      } else {
+        const res = data;
+        setSubmitResult(res);
+        if (res.compileErrors?.length) applyMarkers(editorRef, monacoRef, res.compileErrors);
+        if (res.allPassed) {
+          const solved = JSON.parse(localStorage.getItem('devlearn_solved') || '[]').map(Number);
+          const isFirstSolve = !solved.includes(_pid);
+          toast.success('✅ Accepted! Editorial unlocked.');
+          if (isFirstSolve) {
+            localStorage.setItem('devlearn_solved', JSON.stringify([...solved, _pid]));
+          }
+          qc.invalidateQueries({ queryKey: QUERY_KEYS.solvedIds });
+          refetchEditorial();
+          if (isFirstSolve) {
+            setTimeout(() => setRecallOpen(true), 600);
+          }
         }
       }
     } catch (err) {

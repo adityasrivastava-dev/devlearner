@@ -2,6 +2,7 @@ package com.learnsystem.controller;
 
 import com.learnsystem.dto.SubmitRequest;
 import com.learnsystem.dto.SubmitResponse;
+import com.learnsystem.model.ExecutionJob;
 import com.learnsystem.model.Submission;
 import com.learnsystem.model.User;
 import com.learnsystem.repository.SubmissionRepository;
@@ -9,6 +10,7 @@ import com.learnsystem.repository.UserRepository;
 import com.learnsystem.repository.ProblemRepository;
 import com.learnsystem.security.JwtService;
 import com.learnsystem.service.EvaluationService;
+import com.learnsystem.service.JobQueueService;
 import com.learnsystem.service.PostSubmissionTask;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +47,32 @@ private final UserRepository             userRepo;
 private final ProblemRepository          problemRepo;
 private final JwtService                 jwtService;
 private final PostSubmissionTask         postSubmissionTask;
+private final JobQueueService            jobQueue;
+
+// ── POST /api/submissions/submit/async ───────────────────────────────────────
+// Enqueue a SUBMIT job, return {jobId} immediately (< 5ms).
+// Frontend polls GET /api/jobs/{jobId} until status=DONE.
+@PostMapping("/submit/async")
+public ResponseEntity<Map<String, Object>> submitAsync(
+        @Valid @RequestBody SubmitPersistRequest req,
+        HttpServletRequest httpReq) {
+
+    Long userId = resolveUserId(httpReq);
+    ExecutionJob job = jobQueue.enqueueSubmit(
+            userId,
+            req.getProblemId(),
+            req.getCode(),
+            req.getJavaVersion() != null ? req.getJavaVersion() : "17",
+            req.getApproachText(),
+            req.isHintAssisted(),
+            req.getSolveTimeSecs() != null ? req.getSolveTimeSecs().intValue() : null
+    );
+    log.debug("Async SUBMIT enqueued: jobId={} userId={} problemId={}", job.getId(), userId, req.getProblemId());
+    Map<String, Object> resp = new LinkedHashMap<>();
+    resp.put("jobId",  job.getId());
+    resp.put("status", job.getStatus());
+    return ResponseEntity.ok(resp);
+}
 
 // ── Idempotency cache — prevents duplicate submissions on network retry ──────
 // Key: "userId:problemId:codeHash" → [timestamp, submissionId]

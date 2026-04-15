@@ -2,10 +2,13 @@ package com.learnsystem.controller;
 
 import com.learnsystem.config.ExecutionRateLimiter;
 import com.learnsystem.dto.*;
+import com.learnsystem.model.ExecutionJob;
 import com.learnsystem.model.User;
 import com.learnsystem.service.ComplexityAnalyzer;
 import com.learnsystem.service.EvaluationService;
 import com.learnsystem.service.ExecutionService;
+import com.learnsystem.service.JobQueueService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import org.springframework.http.HttpHeaders;
 import java.util.Map;
+import java.util.LinkedHashMap;
 
 @Slf4j
 @RestController
@@ -27,6 +31,8 @@ public class ExecutionController {
     private final EvaluationService   evaluationService;
     private final ComplexityAnalyzer  complexityAnalyzer;
     private final ExecutionRateLimiter rateLimiter;
+    private final JobQueueService     jobQueue;
+    private final ObjectMapper        objectMapper;
 
     // POST /api/execute — run code freely (rate-limited: 10 runs/min per user)
     @PostMapping("/execute")
@@ -92,5 +98,62 @@ public class ExecutionController {
     public ResponseEntity<ComplexityResponse> analyzeComplexity(@RequestBody ExecuteRequest request) {
         log.debug("Complexity analysis requested: codeLength={}", request.getCode() != null ? request.getCode().length() : 0);
         return ResponseEntity.ok(complexityAnalyzer.analyze(request.getCode()));
+    }
+
+    // ── Async execution endpoints ─────────────────────────────────────────────
+
+    /**
+     * POST /api/execute/async — enqueue a RUN job, return {jobId} immediately.
+     * Frontend polls GET /api/jobs/{jobId} until status=DONE.
+     */
+    @PostMapping("/execute/async")
+    public ResponseEntity<?> executeAsync(
+            @Valid @RequestBody ExecuteRequest request,
+            @AuthenticationPrincipal User principal) {
+
+        Long userId = (principal != null) ? principal.getId() : null;
+        if (userId != null && !rateLimiter.tryConsume(userId)) {
+            log.warn("Rate limit exceeded for userId={}", userId);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .header(HttpHeaders.RETRY_AFTER, "60")
+                    .body(Map.of(
+                            "error",             "Rate limit exceeded",
+                            "message",           "Maximum 10 code executions per minute. Please wait.",
+                            "retryAfterSeconds", 60
+                    ));
+        }
+
+        ExecutionJob job = jobQueue.enqueueRun(userId, request.getCode(),
+                request.getStdin(), request.getJavaVersion());
+        log.debug("Async RUN enqueued: jobId={} userId={}", job.getId(), userId);
+        return ResponseEntity.ok(Map.of("jobId", job.getId(), "status", job.getStatus()));
+    }
+
+    /**
+     * GET /api/jobs/{jobId} — poll job status.
+     * Returns:  { status, jobType, result } where result is the parsed JSON
+     * of ExecuteResponse (RUN) or the submit response map (SUBMIT).
+     */
+    @GetMapping("/jobs/{jobId}")
+    public ResponseEntity<?> pollJob(@PathVariable Long jobId) {
+        return jobQueue.getJob(jobId)
+                .map(job -> {
+                    Map<String, Object> resp = new LinkedHashMap<>();
+                    resp.put("jobId",   job.getId());
+                    resp.put("status",  job.getStatus());
+                    resp.put("jobType", job.getJobType());
+
+                    if (job.getStatus() == ExecutionJob.Status.DONE && job.getResult() != null) {
+                        try {
+                            resp.put("result", objectMapper.readValue(job.getResult(), Object.class));
+                        } catch (Exception e) {
+                            resp.put("result", job.getResult()); // fallback: raw string
+                        }
+                    } else if (job.getStatus() == ExecutionJob.Status.ERROR) {
+                        resp.put("error", job.getErrorMessage());
+                    }
+                    return ResponseEntity.ok(resp);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 }
