@@ -26,6 +26,7 @@ import AnalyticsPage        from './pages/analytics/AnalyticsPage';
 import VideosPage           from './pages/videos/VideosPage';
 import SystemDesignPage     from './pages/system-design/SystemDesignPage';
 import DailyChallengePage   from './pages/daily/DailyChallengePage';
+import TimetablePage        from './pages/timetable/TimetablePage';
 
 // Apply saved theme on load
 const savedTheme = localStorage.getItem('devlearn_theme') || 'dark';
@@ -66,7 +67,8 @@ function AppRoutes() {
       <Route path="/analytics"      element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
       <Route path="/videos"         element={<ProtectedRoute><VideosPage /></ProtectedRoute>} />
       <Route path="/system-design"  element={<ProtectedRoute><SystemDesignPage /></ProtectedRoute>} />
-      <Route path="/daily"          element={<ProtectedRoute><DailyChallengePage /></ProtectedRoute>} />
+      <Route path="/daily"           element={<ProtectedRoute><DailyChallengePage /></ProtectedRoute>} />
+      <Route path="/timetable"      element={<ProtectedRoute><TimetablePage /></ProtectedRoute>} />
       <Route path="/admin"          element={<AdminRoute><AdminPage /></AdminRoute>} />
       <Route path="*"               element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
     </Routes>

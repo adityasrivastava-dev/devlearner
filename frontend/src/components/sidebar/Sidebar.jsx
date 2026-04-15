@@ -18,6 +18,7 @@ const NAV_SECTIONS = [
       { path: '/review',      icon: '↻',  label: 'Review Queue'   },
       { path: '/analytics',   icon: '▲',  label: 'Analytics'      },
       { path: '/roadmap',     icon: '🗺', label: 'Roadmap'        },
+      { path: '/timetable',   icon: '📅', label: 'Timetable'      },
       { path: '/videos',      icon: '▶',  label: 'Videos'         },
     ],
   },

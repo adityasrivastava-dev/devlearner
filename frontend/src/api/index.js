@@ -427,6 +427,17 @@ export const dailyApi = {
     http.get('/api/admin/daily/list').then((r) => r.data).catch(() => []),
 };
 
+// ─── Timetable ────────────────────────────────────────────────────────────────
+export const timetableApi = {
+  list:       ()           => http.get('/api/timetable').then((r) => r.data).catch(() => []),
+  get:        (id)         => http.get(`/api/timetable/${id}`).then((r) => r.data),
+  generate:   (body)       => http.post('/api/timetable/generate', body).then((r) => r.data),
+  toggleTask: (id, dn, ti) => http.patch(`/api/timetable/${id}/toggle-task`, { dayNumber: dn, taskIndex: ti }).then((r) => r.data),
+  setDayNote: (id, dn, note) => http.patch(`/api/timetable/${id}/day-note`, { dayNumber: dn, note }).then((r) => r.data),
+  delete:     (id)         => http.delete(`/api/timetable/${id}`),
+  today:      ()           => http.get('/api/timetable/today').then((r) => r.data).catch(() => []),
+};
+
 // ─── System Design Canvas ─────────────────────────────────────────────────────
 export const systemDesignApi = {
   list:   ()          => http.get('/api/system-design').then((r) => r.data).catch(() => []),
@@ -472,6 +483,8 @@ export const QUERY_KEYS = {
   dailyHistory:          ['dailyHistory'],
   dailyStatus:           ['dailyStatus'],
   systemDesigns:         ['systemDesigns'],
+  timetables:            ['timetables'],
+  timetable:       (id)  => ['timetable', id],
 };
 // ─── Spaced Repetition ────────────────────────────────────────────────────────
 export const srsApi = {
