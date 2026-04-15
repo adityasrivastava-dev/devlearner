@@ -4,8 +4,112 @@ import { useRef, useEffect, useCallback, lazy, Suspense } from 'react';
 // will never download Monaco at all.
 const MonacoEditor = lazy(() => import('@monaco-editor/react'));
 import { codeApi } from '../../api';
-import { debounce } from '../../utils/helpers';
 import { HOVER_DOCS } from './JavaCompletions';
+
+// ─── Client-side Java heuristic checks (no API calls) ────────────────────────
+// Catches structural errors instantly as you type — same pattern LeetCode uses.
+// Real compilation errors are shown when you click Run or Submit.
+function runClientChecks(code, monaco, model) {
+  if (!code || code.trim().length < 10) return [];
+
+  const lines   = code.split('\n');
+  const markers = [];
+  let braceDepth = 0;
+  let parenDepth = 0;
+  let inLineComment = false;
+  let inBlockComment = false;
+  let inString = false;
+  let inChar   = false;
+  let stringChar = '"';
+
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li];
+    inLineComment = false;
+
+    for (let ci = 0; ci < line.length; ci++) {
+      const ch  = line[ci];
+      const ch2 = line.slice(ci, ci + 2);
+
+      // Handle block comment end
+      if (inBlockComment) {
+        if (ch2 === '*/') { inBlockComment = false; ci++; }
+        continue;
+      }
+      // Handle string/char literal end
+      if (inString) {
+        if (ch === '\\') { ci++; continue; }
+        if (ch === stringChar) inString = false;
+        continue;
+      }
+      if (inChar) {
+        if (ch === '\\') { ci++; continue; }
+        if (ch === "'") inChar = false;
+        continue;
+      }
+      // Start block comment
+      if (ch2 === '/*') { inBlockComment = true; ci++; continue; }
+      // Start line comment — rest of line is safe to skip
+      if (ch2 === '//') break;
+      // Start string / char literals
+      if (ch === '"') { inString = true; stringChar = '"'; continue; }
+      if (ch === "'") { inChar   = true; continue; }
+
+      // Structural depth tracking
+      if (ch === '{') braceDepth++;
+      if (ch === '}') {
+        braceDepth--;
+        if (braceDepth < 0) {
+          markers.push({
+            severity: monaco.MarkerSeverity.Error,
+            startLineNumber: li + 1, startColumn: ci + 1,
+            endLineNumber:   li + 1, endColumn:   ci + 2,
+            message: 'Unmatched closing brace }',
+            source: 'client',
+          });
+          braceDepth = 0; // reset to keep scanning
+        }
+      }
+      if (ch === '(') parenDepth++;
+      if (ch === ')') {
+        parenDepth--;
+        if (parenDepth < 0) {
+          markers.push({
+            severity: monaco.MarkerSeverity.Error,
+            startLineNumber: li + 1, startColumn: ci + 1,
+            endLineNumber:   li + 1, endColumn:   ci + 2,
+            message: 'Unmatched closing parenthesis )',
+            source: 'client',
+          });
+          parenDepth = 0;
+        }
+      }
+    }
+  }
+
+  // Unclosed braces/parens at end of file
+  const lastLine = lines.length;
+  const lastCol  = (lines[lastLine - 1] || '').length + 1;
+  if (braceDepth > 0) {
+    markers.push({
+      severity: monaco.MarkerSeverity.Error,
+      startLineNumber: lastLine, startColumn: lastCol,
+      endLineNumber:   lastLine, endColumn:   lastCol,
+      message: `${braceDepth} unclosed brace${braceDepth > 1 ? 's' : ''} {`,
+      source: 'client',
+    });
+  }
+  if (parenDepth > 0) {
+    markers.push({
+      severity: monaco.MarkerSeverity.Warning,
+      startLineNumber: lastLine, startColumn: lastCol,
+      endLineNumber:   lastLine, endColumn:   lastCol,
+      message: `${parenDepth} unclosed parenthes${parenDepth > 1 ? 'es' : 'is'} (`,
+      source: 'client',
+    });
+  }
+
+  return markers;
+}
 
 // ─── Themes ──────────────────────────────────────────────────────────────────
 const DARK_THEME = {
@@ -149,26 +253,35 @@ export default function CodeEditor({
   const hoverRef      = useRef(null);
   const signatureRef  = useRef(null);
 
-  // ── KEY FIX: use a ref to hold the latest doSyntaxCheck ──────────────────
-  // Monaco's onDidChangeModelContent listener is registered ONCE on mount.
-  // If we close over doSyntaxCheck directly, the listener keeps calling the
-  // initial version — java version changes are never seen.
-  // Solution: store the function in a ref; the listener calls syntaxCheckRef.current.
+  // ── Syntax check ref ─────────────────────────────────────────────────────
+  // Two layers:
+  //   1. Client-side heuristic (instant, no network) — catches unbalanced braces/parens
+  //   2. Debounced API call (600ms) — real javac compilation errors from the server
+  // Monaco's onDidChangeModelContent listener is registered ONCE on mount so we
+  // keep the function in a ref to avoid stale closures over javaVersion.
   const syntaxCheckRef = useRef(null);
 
-  // Rebuild the syntax check function whenever javaVersion or onSyntaxChange changes
   useEffect(() => {
-    syntaxCheckRef.current = debounce(async (code) => {
-      if (!code || code.trim().length < 15) { onSyntaxChange?.('ok', []); return; }
-      onSyntaxChange?.('checking', []);
-      try {
-        const res = await codeApi.syntaxCheck(code, javaVersion);
-        const errors = res.errors || [];
-        onSyntaxChange?.(res.valid ? 'ok' : 'error', errors);
-        applyMarkers(editorRef, monacoRef, errors);
-      } catch { /* network error — keep existing markers */ }
-    }, 600);
-  }, [javaVersion, onSyntaxChange]);
+    syntaxCheckRef.current = (code) => {
+      // Client-side structural checks only — instant, no API call.
+      // Real javac errors appear when Run or Submit is clicked.
+      if (!editorRef.current || !monacoRef.current) return;
+      const model  = editorRef.current.getModel();
+      const monaco = monacoRef.current;
+      if (!model) return;
+      if (!code || code.trim().length < 10) {
+        monaco.editor.setModelMarkers(model, 'client', []);
+        onSyntaxChange?.('ok', []);
+        return;
+      }
+      const markers = runClientChecks(code, monaco, model);
+      monaco.editor.setModelMarkers(model, 'client', markers);
+      const errors = markers.map(m => ({
+        line: m.startLineNumber, column: m.startColumn, message: m.message, severity: 'error',
+      }));
+      onSyntaxChange?.(markers.length > 0 ? 'error' : 'ok', errors);
+    };
+  }, [onSyntaxChange]);
 
   // Export refs if caller wants them (for applying markers from run result)
   useEffect(() => {

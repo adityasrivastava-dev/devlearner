@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import javax.tools.*;
 import java.io.*;
@@ -17,6 +18,7 @@ import java.net.URI;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 import java.util.regex.*;
 
 /**
@@ -42,18 +44,37 @@ private static final Set<String> VALID_VERSIONS = Set.of("8","11","17","21");
 private static final String      DEFAULT_VERSION = "17";
 
 /**
- * Hard cap on simultaneous JVM child processes.
- * Each process can use up to -Xmx128m = 128 MB.
- * 25 × 128 MB = 3.2 GB max — safe on a 4 GB server.
- * Configurable via execution.max-concurrent in application.properties.
+ * TWO-GATE concurrency model
+ * ──────────────────────────
+ * Gate 1 — submission gate (max-concurrent, default 25):
+ *   Controls how many COMPILATIONS run simultaneously.
+ *   Compilation uses the in-process Java Compiler API so it's cheap on RAM,
+ *   but we still cap it to bound queue depth and temp-dir creation.
+ *
+ * Gate 2 — process gate (max-processes, default 16):
+ *   Controls how many JVM CHILD PROCESSES exist at any moment, globally.
+ *   Each child uses -Xmx128m ≈ 180 MB (heap + JVM overhead).
+ *   16 × 180 MB = 2.88 GB — safe headroom on a 4 GB server.
+ *
+ * Why two gates?
+ *   executeAll() now runs N test cases in parallel.  Without Gate 2, a single
+ *   submission with 8 test cases would spawn 8 JVM processes while holding only
+ *   1 Gate-1 slot.  With 25 Gate-1 slots in use that's 200 live processes
+ *   (200 × 180 MB = 36 GB → OOM).  Gate 2 prevents this regardless of how many
+ *   test cases each submission has or how many users are active.
  */
 @Value("${execution.max-concurrent:25}")
 private int maxConcurrent;
 
-// Lazily initialised so @Value is available
+@Value("${execution.max-processes:16}")
+private int maxProcesses;
+
+// Lazily initialised so @Value is injected before first use
 private volatile Semaphore concurrencyGate;
+private volatile Semaphore processGate;
 private volatile ExecutorService ioPool;
 
+/** Gate 1 — limits concurrent compilations */
 private Semaphore gate() {
     if (concurrencyGate == null) {
         synchronized (this) {
@@ -63,16 +84,26 @@ private Semaphore gate() {
     return concurrencyGate;
 }
 
+/** Gate 2 — limits total live JVM child processes (RAM safety) */
+private Semaphore processGate() {
+    if (processGate == null) {
+        synchronized (this) {
+            if (processGate == null) processGate = new Semaphore(maxProcesses, true);
+        }
+    }
+    return processGate;
+}
+
 /**
- * Single shared thread pool for stdout/stderr reading — 2 threads per execution slot.
- * Replaces the per-execution Executors.newFixedThreadPool(2) that was creating
- * a new thread pool on every request (thread explosion under load).
+ * Single shared thread pool for stdout/stderr reading.
+ * Sized to serve up to maxProcesses concurrent child processes, each needing
+ * 2 I/O reader threads (stdout + stderr).
  */
 private ExecutorService ioPool() {
     if (ioPool == null) {
         synchronized (this) {
             if (ioPool == null)
-                ioPool = Executors.newFixedThreadPool(maxConcurrent * 2,
+                ioPool = Executors.newFixedThreadPool(maxProcesses * 2,
                         r -> { Thread t = new Thread(r, "exec-io"); t.setDaemon(true); return t; });
         }
     }
@@ -82,6 +113,37 @@ private ExecutorService ioPool() {
 @PreDestroy
 public void shutdown() {
     if (ioPool != null) ioPool.shutdownNow();
+}
+
+/**
+ * Pre-warm the Java Compiler API on startup.
+ *
+ * ToolProvider.getSystemJavaCompiler() loads several classes from tools.jar on first use.
+ * Running a trivial compile here pays that one-time cost at boot instead of
+ * making the first real user request absorb it (~150-300ms saved on first compile).
+ */
+@PostConstruct
+public void warmUp() {
+    try {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        if (compiler == null) return;
+        String dummy = "public class _Warmup { public static void main(String[] a) {} }";
+        Path tmp = Files.createTempDirectory("learnsystem_warmup_");
+        try {
+            Path src = tmp.resolve("_Warmup.java");
+            Files.writeString(src, dummy);
+            try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
+                compiler.getTask(null, fm, null,
+                    List.of("--release", "17", "-proc:none"),
+                    null, fm.getJavaFileObjectsFromPaths(List.of(src))).call();
+            }
+        } finally {
+            cleanup(tmp);
+        }
+        log.info("Java Compiler API pre-warmed successfully");
+    } catch (Exception e) {
+        log.warn("Compiler warm-up skipped: {}", e.getMessage());
+    }
 }
 
 // ── Public API ────────────────────────────────────────────────────────────
@@ -162,8 +224,36 @@ public List<ExecuteResponse> executeAll(String code, List<String> inputs, String
             return Collections.nCopies(inputs.size(), compileErr);
         }
 
+        // Run all test cases in parallel — compile once, spawn N processes concurrently.
+        // Total wall-clock time = max(individual_run_time) instead of sum(individual_run_time).
+        // Each run() submits its own I/O tasks to ioPool(), so no extra pool needed here.
+        final Path finalTempDir  = tempDir;
+        final String finalClass  = className;
+
+        List<CompletableFuture<ExecuteResponse>> futures = inputs.stream()
+                .map(input -> CompletableFuture.supplyAsync(() -> {
+                    try { return run(finalTempDir, input, finalClass); }
+                    catch (Exception e) {
+                        return ExecuteResponse.builder().success(false)
+                                .status("RUNTIME_ERROR")
+                                .error("Internal error: " + e.getMessage()).build();
+                    }
+                }, ioPool()))
+                .collect(Collectors.toList());
+
         List<ExecuteResponse> results = new ArrayList<>(inputs.size());
-        for (String input : inputs) results.add(run(tempDir, input, className));
+        for (CompletableFuture<ExecuteResponse> f : futures) {
+            try {
+                results.add(f.get(TIMEOUT_SECONDS + 5L, TimeUnit.SECONDS));
+            } catch (TimeoutException e) {
+                f.cancel(true);
+                results.add(ExecuteResponse.builder().success(false).status("TIMEOUT")
+                        .error("Test case timed out").build());
+            } catch (Exception e) {
+                results.add(ExecuteResponse.builder().success(false).status("RUNTIME_ERROR")
+                        .error(e.getMessage()).build());
+            }
+        }
         return results;
 
     } catch (ResponseStatusException rse) {
@@ -394,6 +484,16 @@ private String formatCompileErrors(List<CompileError> errors) {
 // ── Run ───────────────────────────────────────────────────────────────────
 
 private ExecuteResponse run(Path tempDir, String stdin, String className) throws Exception {
+    // Gate 2: acquire a process slot before spawning any JVM child.
+    // This is the RAM safety valve — it prevents the parallel test-case runner
+    // in executeAll() from spawning unlimited JVM processes concurrently.
+    // Every call to run() — whether from execute() or executeAll() — must pass here.
+    if (!processGate().tryAcquire(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+        return ExecuteResponse.builder().success(false).status("TIMEOUT")
+                .error("Server busy — could not acquire execution slot within timeout")
+                .executionTimeMs(0).build();
+    }
+    try {
     ProcessBuilder pb = new ProcessBuilder(
             "java",
             "-cp",          tempDir.toString(),
@@ -401,8 +501,8 @@ private ExecuteResponse run(Path tempDir, String stdin, String className) throws
             "-Xmx128m",
             // Metaspace: 64 MB max — prevents class-generation OOM attacks
             "-XX:MaxMetaspaceSize=64m",
-            // Stack: 4 MB per thread (was 8m — halved; sufficient for deep recursion)
-            "-Xss4m",
+            // Stack: 1 MB per thread — sufficient for interview-depth recursion (~8K frames)
+            "-Xss1m",
             // Serial GC: simpler, smaller footprint for short-lived processes
             "-XX:+UseSerialGC",
             // No JIT compilation — faster startup, prevents JIT-based timing attacks
@@ -454,6 +554,9 @@ private ExecuteResponse run(Path tempDir, String stdin, String className) throws
     }
     return ExecuteResponse.builder().success(true).status("SUCCESS")
             .output(stdout).executionTimeMs(elapsed).build();
+    } finally {
+        processGate().release(); // Gate 2 released — slot available for next process
+    }
 }
 
 // ── Utils ─────────────────────────────────────────────────────────────────

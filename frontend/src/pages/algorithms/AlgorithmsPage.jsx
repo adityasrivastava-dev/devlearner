@@ -6,6 +6,7 @@ import AlgorithmVisualizer from './AlgorithmVisualizer';
 import VisualizationPlan from './VisualizationPlan';
 import ComplexityVisualizer from './ComplexityVisualizer';
 import VisualizerTab from '../../components/visualizer/VisualizerTab';
+import { getAlgorithmFlowDiagram } from './algorithmFlowDiagrams';
 import styles from './AlgorithmsPage.module.css';
 
 // ─── Category metadata (icons/labels only — counts come from DB) ──────────────
@@ -108,12 +109,15 @@ function AlgorithmDetail({ algo, onBack }) {
   const pitfalls    = parseJSON(algo.pitfalls, []);
   const variants    = parseJSON(algo.variants, []);
 
+  const flowDiagram = getAlgorithmFlowDiagram(algo.name, algo.category);
+
   const tabs = [
     { key: 'overview',    label: '📖 Overview'      },
     { key: 'howitworks',  label: '⚙️ How It Works'   },
     { key: 'complexity',  label: '🔢 Complexity'     },
     { key: 'visual',      label: '📊 Visual'         },
     { key: 'visualizer',  label: '⚡ Visualizer'     },
+    ...(flowDiagram ? [{ key: 'flowdiagram', label: '🗺️ Flow Diagram' }] : []),
     { key: 'code',        label: '💻 Java Code'      },
     { key: 'usecases',    label: '🌍 Use Cases'      },
     { key: 'pitfalls',    label: '⚠️ Pitfalls'       },
@@ -261,6 +265,19 @@ function AlgorithmDetail({ algo, onBack }) {
         {activeTab === 'visualizer' && (
           <div className={styles.section}>
             <VisualizerTab algo={algo} />
+          </div>
+        )}
+
+        {activeTab === 'flowdiagram' && flowDiagram && (
+          <div className={styles.section}>
+            <div className={styles.flowDiagramHeader}>
+              <h3 className={styles.sectionTitle}>Algorithm Flow Diagram</h3>
+              <p className={styles.flowDiagramHint}>
+                Follow the decision nodes to understand exactly how {algo.name} makes choices at each step.
+                Diamond shapes are conditions, rounded boxes are start/end states.
+              </p>
+            </div>
+            <FlowchartViewer definition={flowDiagram} />
           </div>
         )}
 

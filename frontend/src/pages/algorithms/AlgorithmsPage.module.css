@@ -577,3 +577,18 @@
 @media (max-width: 480px) {
   .grid { grid-template-columns: 1fr; }
 }
+
+/* ─── Flow Diagram tab ───────────────────────────────────────────────────── */
+.flowDiagramHeader {
+  margin-bottom: 20px;
+}
+.flowDiagramHint {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin: 6px 0 0;
+  padding: 10px 14px;
+  background: var(--bg2);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+}
