@@ -1,5 +1,8 @@
-import { useRef, useEffect, useCallback } from 'react';
-import MonacoEditor from '@monaco-editor/react';
+import { useRef, useEffect, useCallback, lazy, Suspense } from 'react';
+// Lazy-load Monaco so it doesn't bloat the initial JS bundle (~5MB).
+// Pages that don't use the editor (login, algorithms, interview-prep, etc.)
+// will never download Monaco at all.
+const MonacoEditor = lazy(() => import('@monaco-editor/react'));
 import { codeApi } from '../../api';
 import { debounce } from '../../utils/helpers';
 import { HOVER_DOCS } from './JavaCompletions';
@@ -361,6 +364,17 @@ export default function CodeEditor({
   }, []);
 
   return (
+    <Suspense fallback={
+      <div style={{
+        display:'flex', alignItems:'center', justifyContent:'center',
+        height: height || '100%', color:'#4d5767',
+        fontFamily:"'JetBrains Mono',monospace",
+        gap:12, fontSize:13, background:'#0d1117',
+        borderRadius: 8,
+      }}>
+        <span className="spinner" /> Loading IDE…
+      </div>
+    }>
     <MonacoEditor
       height={height}
       language={language}
@@ -425,5 +439,6 @@ export default function CodeEditor({
         </div>
       }
     />
+    </Suspense>
   );
 }

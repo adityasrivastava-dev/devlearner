@@ -6,6 +6,7 @@ import com.learnsystem.model.Topic;
 import com.learnsystem.service.TopicService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +40,7 @@ public class AdminContentController {
     // ── Topic CRUD ────────────────────────────────────────────────────────────
 
     @PostMapping("/api/admin/topics")
-    public ResponseEntity<?> createTopic(@RequestBody Topic topic) {
+    public ResponseEntity<?> createTopic(@Valid @RequestBody Topic topic) {
         try {
             Topic saved = topicService.createTopic(topic);
             log.info("[Admin] Created topic id={} title={}", saved.getId(), saved.getTitle());
@@ -51,7 +52,7 @@ public class AdminContentController {
     }
 
     @PutMapping("/api/admin/topics/{id}")
-    public ResponseEntity<?> updateTopic(@PathVariable Long id, @RequestBody Topic topic) {
+    public ResponseEntity<?> updateTopic(@PathVariable Long id, @Valid @RequestBody Topic topic) {
         try {
             Topic updated = topicService.updateTopic(id, topic);
             log.info("[Admin] Updated topic id={}", id);
@@ -85,7 +86,7 @@ public ResponseEntity<Map<String, Object>> deleteTopic(@PathVariable Long id) {
     @PostMapping("/api/admin/topics/{topicId}/examples")
     public ResponseEntity<?> createExample(
             @PathVariable Long topicId,
-            @RequestBody Example example) {
+            @Valid @RequestBody Example example) {
         try {
             Example saved = topicService.createExample(topicId, example);
             log.info("[Admin] Created example id={} title={} topic={}", saved.getId(), saved.getTitle(), topicId);
@@ -98,7 +99,7 @@ public ResponseEntity<Map<String, Object>> deleteTopic(@PathVariable Long id) {
     }
 
     @PutMapping("/api/admin/examples/{id}")
-    public ResponseEntity<?> updateExample(@PathVariable Long id, @RequestBody Example example) {
+    public ResponseEntity<?> updateExample(@PathVariable Long id, @Valid @RequestBody Example example) {
         try {
             Example updated = topicService.updateExample(id, example);
             log.info("[Admin] Updated example id={}", id);
@@ -126,7 +127,7 @@ public ResponseEntity<Map<String, Object>> deleteTopic(@PathVariable Long id) {
     @PostMapping("/api/admin/topics/{topicId}/problems")
     public ResponseEntity<?> createProblem(
             @PathVariable Long topicId,
-            @RequestBody Problem problem) {
+            @Valid @RequestBody Problem problem) {
         try {
             Problem saved = topicService.createProblem(topicId, problem);
             log.info("[Admin] Created problem id={} title={} topic={}", saved.getId(), saved.getTitle(), topicId);
@@ -139,7 +140,7 @@ public ResponseEntity<Map<String, Object>> deleteTopic(@PathVariable Long id) {
     }
 
     @PutMapping("/api/admin/problems/{id}")
-    public ResponseEntity<?> updateProblem(@PathVariable Long id, @RequestBody Problem problem) {
+    public ResponseEntity<?> updateProblem(@PathVariable Long id, @Valid @RequestBody Problem problem) {
         try {
             Problem updated = topicService.updateProblem(id, problem);
             log.info("[Admin] Updated problem id={}", id);

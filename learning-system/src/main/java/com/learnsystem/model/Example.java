@@ -6,8 +6,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
-@Table(name = "examples")
+@Table(
+    name = "examples",
+    indexes = {
+        @Index(name = "idx_example_topic_id",     columnList = "topic_id"),
+        @Index(name = "idx_example_display_order", columnList = "topic_id, display_order")
+    }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -59,4 +67,18 @@ private String tracerSteps;
 // rendered by SqlTableVisualizer in the frontend
 @Column(name = "table_data", columnDefinition = "TEXT")
 private String tableData;
+
+// ── Audit ─────────────────────────────────────────────────────────────────
+
+@Column(name = "created_at", updatable = false)
+private LocalDateTime createdAt;
+
+@Column(name = "updated_at")
+private LocalDateTime updatedAt;
+
+@PrePersist
+protected void onCreate() { createdAt = updatedAt = LocalDateTime.now(); }
+
+@PreUpdate
+protected void onUpdate() { updatedAt = LocalDateTime.now(); }
 }

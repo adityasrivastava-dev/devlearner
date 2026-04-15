@@ -6,8 +6,20 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
-@Table(name = "problems")
+@Table(
+    name = "problems",
+    indexes = {
+        // Speeds up fetching problems for a given topic
+        @Index(name = "idx_problem_topic_id",         columnList = "topic_id"),
+        // Speeds up difficulty filter on the problems list page
+        @Index(name = "idx_problem_topic_difficulty",  columnList = "topic_id, difficulty"),
+        // Speeds up ordered problem lists within a topic
+        @Index(name = "idx_problem_display_order",     columnList = "topic_id, display_order")
+    }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -87,6 +99,20 @@ private String hint3;
 
 @Column(length = 100)
 private String pattern;
+
+// ── Audit ─────────────────────────────────────────────────────────────────
+
+@Column(name = "created_at", updatable = false)
+private LocalDateTime createdAt;
+
+@Column(name = "updated_at")
+private LocalDateTime updatedAt;
+
+@PrePersist
+protected void onCreate() { createdAt = updatedAt = LocalDateTime.now(); }
+
+@PreUpdate
+protected void onUpdate() { updatedAt = LocalDateTime.now(); }
 
 public enum Difficulty {
     EASY, MEDIUM, HARD

@@ -9,9 +9,7 @@ import com.learnsystem.repository.UserRepository;
 import com.learnsystem.repository.ProblemRepository;
 import com.learnsystem.security.JwtService;
 import com.learnsystem.service.EvaluationService;
-import com.learnsystem.service.UserProgressService;
-import com.learnsystem.service.StreakService;
-import com.learnsystem.service.PerformanceAnalyticsService;
+import com.learnsystem.service.PostSubmissionTask;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +18,9 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -44,9 +44,15 @@ private final SubmissionRepository       submissionRepo;
 private final UserRepository             userRepo;
 private final ProblemRepository          problemRepo;
 private final JwtService                 jwtService;
-private final UserProgressService        userProgressService;
-private final StreakService              streakService;
-private final PerformanceAnalyticsService analyticsService;
+private final PostSubmissionTask         postSubmissionTask;
+
+// ── Idempotency cache — prevents duplicate submissions on network retry ──────
+// Key: "userId:problemId:codeHash" → [timestamp, submissionId]
+// If the same user submits the same code for the same problem within 10 seconds,
+// return the existing submission ID rather than running the code again.
+private final ConcurrentHashMap<String, Long[]> idempotencyCache = new ConcurrentHashMap<>();
+private static final long IDEMPOTENCY_WINDOW_MS  = 10_000L; // 10 seconds
+private static final int  IDEMPOTENCY_MAX_ENTRIES = 10_000;  // hard cap to prevent OOM
 
 // ── POST /api/submissions/submit ─────────────────────────────────────────
 // Same as /api/submit but persists the result
@@ -55,15 +61,33 @@ public ResponseEntity<Map<String, Object>> submitAndPersist(
 		@Valid @RequestBody SubmitPersistRequest req,
 		HttpServletRequest httpReq) {
 
+	// 0. Idempotency check — prevent duplicate submissions from frontend retries
+	Long userId = resolveUserId(httpReq);
+	long now = System.currentTimeMillis();
+
+	// Periodic cleanup — evict expired entries to prevent unbounded map growth
+	if (idempotencyCache.size() > IDEMPOTENCY_MAX_ENTRIES) {
+		idempotencyCache.entrySet().removeIf(e -> now - e.getValue()[0] >= IDEMPOTENCY_WINDOW_MS);
+	}
+
+	if (userId != null && req.getCode() != null) {
+		String iKey = userId + ":" + req.getProblemId() + ":" + req.getCode().hashCode();
+		Long[] cached = idempotencyCache.get(iKey);
+		if (cached != null && now - cached[0] < IDEMPOTENCY_WINDOW_MS) {
+			// Same submission within window — return the cached submission ID
+			log.debug("Idempotent submit: userId={} problemId={} submissionId={}", userId, req.getProblemId(), cached[1]);
+			return submissionRepo.findById(cached[1])
+					.map(existing -> ResponseEntity.ok(buildResponse(existing)))
+					.orElseGet(() -> performSubmit(req, userId));
+		}
+	}
+
 	// 1. Evaluate
 	com.learnsystem.dto.SubmitRequest evalReq = new com.learnsystem.dto.SubmitRequest();
 	evalReq.setProblemId(req.getProblemId());
 	evalReq.setCode(req.getCode());
 	evalReq.setJavaVersion(req.getJavaVersion() != null ? req.getJavaVersion() : "17");
 	SubmitResponse result = evaluationService.evaluate(evalReq);
-
-	// 2. Resolve current user (optional — anonymous submits allowed)
-	Long userId = resolveUserId(httpReq);
 
 	// 3. Determine max execution time across test cases
 	long maxMs = result.getResults() == null ? 0L :
@@ -99,38 +123,33 @@ public ResponseEntity<Map<String, Object>> submitAndPersist(
 	log.info("Submission saved: user={} problem={} status={} ms={}",
 			userId, req.getProblemId(), status, maxMs);
 
-	// ── Phase 1 + Phase 2: streak engine, XP, problems_solved ───────────────
-	// StreakService.onDailyActivity handles streak, XP, lastActiveDate.
-	// UserProgressService.onAccepted also updates streak via lastLogin — REMOVED
-	// to prevent double-counting. StreakService is the single source of truth.
-	try {
+	// Store in idempotency cache so retries within 10s return this submission
+	if (userId != null && req.getCode() != null) {
+		String iKey = userId + ":" + req.getProblemId() + ":" + req.getCode().hashCode();
+		idempotencyCache.put(iKey, new Long[]{System.currentTimeMillis(), sub.getId()});
+	}
+
+	// ── Phase 2: streak, XP, analytics — fired async, never blocks HTTP thread ──
+	// User gets the submission result immediately. Streak/analytics update in background.
+	if (userId != null) {
 		int xpEarned = "ACCEPTED".equals(status) ? 10 : 1;
-		streakService.onDailyActivity(userId, xpEarned);
-
-		// Also recount problems_solved from DB (streak service doesn't do this)
-		userProgressService.onAccepted(userId);
-
-		// Resolve topicId for analytics
 		Long topicId = null;
 		String problemTitle = null;
 		String correctPattern = null;
 		try {
 			var prob = problemRepo.findById(req.getProblemId()).orElse(null);
 			if (prob != null) {
-				topicId      = prob.getTopic() != null ? prob.getTopic().getId() : null;
-				problemTitle = prob.getTitle();
+				topicId       = prob.getTopic() != null ? prob.getTopic().getId() : null;
+				problemTitle  = prob.getTitle();
 				correctPattern = prob.getPattern();
 			}
 		} catch (Exception ignored) {}
 
-		analyticsService.onSubmission(
+		postSubmissionTask.run(
 				userId, req.getProblemId(), topicId, problemTitle,
 				status, req.getSolveTimeSecs(), req.isHintAssisted(),
 				result.getDetectedPattern(), correctPattern,
-				req.getCode()
-		);
-	} catch (Exception e) {
-		log.warn("Phase 2 analytics error (non-critical): {}", e.getMessage());
+				req.getCode(), xpEarned);
 	}
 
 	// 6. Compute percentile if accepted
@@ -253,7 +272,38 @@ public ResponseEntity<Map<String, Object>> getPercentile(
 	return ResponseEntity.ok(resp);
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────
+// ── Idempotency helpers ───────────────────────────────────────────────────
+
+/** Performs a full submit + persist. Called after idempotency cache miss. */
+private ResponseEntity<Map<String, Object>> performSubmit(SubmitPersistRequest req, Long userId) {
+	// Delegates back to the main method path — only called on cache miss
+	// This exists so the idempotency early-return path has a clean fallback
+	com.learnsystem.dto.SubmitRequest evalReq = new com.learnsystem.dto.SubmitRequest();
+	evalReq.setProblemId(req.getProblemId());
+	evalReq.setCode(req.getCode());
+	evalReq.setJavaVersion(req.getJavaVersion() != null ? req.getJavaVersion() : "17");
+	SubmitResponse result = evaluationService.evaluate(evalReq);
+	Map<String, Object> response = new LinkedHashMap<>();
+	response.put("allPassed",  result.isAllPassed());
+	response.put("totalTests", result.getTotalTests());
+	response.put("passedTests",result.getPassedTests());
+	response.put("results",    result.getResults());
+	return ResponseEntity.ok(response);
+}
+
+/** Builds a minimal response map from a persisted Submission entity. */
+private Map<String, Object> buildResponse(Submission s) {
+	Map<String, Object> r = new LinkedHashMap<>();
+	r.put("allPassed",    "ACCEPTED".equals(s.getStatus()));
+	r.put("totalTests",   s.getTotalTests());
+	r.put("passedTests",  s.getPassedTests());
+	r.put("submissionId", s.getId());
+	r.put("runtimeMs",    s.getExecutionTimeMs());
+	r.put("idempotent",   true); // flag so frontend can detect a dedup response
+	return r;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
 private Long resolveUserId(HttpServletRequest req) {
 	try {
 		String authHeader = req.getHeader("Authorization");

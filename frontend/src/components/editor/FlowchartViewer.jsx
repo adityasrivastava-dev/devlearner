@@ -19,7 +19,9 @@ async function ensureMermaid() {
       ? 'default'
       : 'dark',
     fontFamily: 'inherit',
-    securityLevel: 'loose',
+    // 'antiscript' strips event handlers and scripts from SVG output.
+    // 'loose' was previously used but allows arbitrary JS in SVG — XSS risk.
+    securityLevel: 'antiscript',
   });
   mermaidReady = true;
   return mermaid;
@@ -47,12 +49,14 @@ export default function FlowchartViewer({ definition, title }) {
         const { svg } = await mermaid.render(id, definition.trim());
 
         if (!cancelled && containerRef.current) {
-          containerRef.current.innerHTML = svg;
-          // Make SVG responsive
-          const svgEl = containerRef.current.querySelector('svg');
+          // Use DOMParser instead of innerHTML to avoid XSS via crafted SVG content
+          const parser = new DOMParser();
+          const doc    = parser.parseFromString(svg, 'image/svg+xml');
+          const svgEl  = doc.querySelector('svg');
           if (svgEl) {
             svgEl.removeAttribute('height');
             svgEl.style.maxWidth = '100%';
+            containerRef.current.replaceChildren(svgEl);
           }
         }
       } catch (err) {

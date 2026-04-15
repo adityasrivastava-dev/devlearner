@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Set;
 
 /**
  * Phase 2 REST API — all Phase 2 features in one controller.
@@ -87,6 +88,14 @@ public ResponseEntity<?> submitReview(
 	int    quality  = body.get("quality") instanceof Number n ? n.intValue() : 3;
 	if (itemType == null || itemId == null) {
 		return ResponseEntity.badRequest().body(Map.of("error", "itemType and itemId required"));
+	}
+	// SM-2 quality must be 0–5; values outside this range break the algorithm
+	if (quality < 0 || quality > 5) {
+		return ResponseEntity.badRequest().body(Map.of("error", "quality must be 0–5"));
+	}
+	// Whitelist allowed item types to prevent garbage data in the SRS table
+	if (!Set.of("TOPIC", "PROBLEM", "QUESTION").contains(itemType.toUpperCase())) {
+		return ResponseEntity.badRequest().body(Map.of("error", "invalid itemType"));
 	}
 	var entry = srsService.review(user.getId(), itemType, itemId, quality);
 	return ResponseEntity.ok(Map.of(
@@ -197,6 +206,10 @@ public ResponseEntity<?> createNote(
 	String content = (String) body.get("content");
 	if (content == null || content.isBlank()) {
 		return ResponseEntity.badRequest().body(Map.of("error", "content required"));
+	}
+	// Prevent excessively large notes from being stored (50KB limit)
+	if (content.length() > 50_000) {
+		return ResponseEntity.badRequest().body(Map.of("error", "Note too long (max 50,000 characters)"));
 	}
 	Long topicId = body.get("topicId") instanceof Number n ? n.longValue() : null;
 	var note = UserNote.builder()
@@ -384,6 +397,9 @@ public ResponseEntity<?> addUserVideo(
 	String title = (String) body.getOrDefault("title", "");
 	if (url == null || url.isBlank())
 		return ResponseEntity.badRequest().body(Map.of("error", "url required"));
+	// Basic URL safety: must start with http(s) and be under 2048 chars
+	if (!url.strip().matches("^https?://.*") || url.length() > 2048)
+		return ResponseEntity.badRequest().body(Map.of("error", "Invalid URL"));
 
 	var saved = userVideoRepo.save(UserTopicVideo.builder()
 			.userId(user.getId())

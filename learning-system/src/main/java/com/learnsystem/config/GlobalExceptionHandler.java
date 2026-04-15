@@ -19,14 +19,17 @@ public class GlobalExceptionHandler {
 
 @ExceptionHandler(BadCredentialsException.class)
 public ResponseEntity<Map<String,String>> badCredentials(BadCredentialsException e) {
+    // Never echo the real message — it varies between "bad password" and "user not found",
+    // which leaks whether the account exists (user enumeration attack).
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            .body(Map.of("error", "Unauthorized", "message", e.getMessage()));
+            .body(Map.of("error", "Unauthorized", "message", "Invalid credentials"));
 }
 
 @ExceptionHandler(UsernameNotFoundException.class)
 public ResponseEntity<Map<String,String>> notFound(UsernameNotFoundException e) {
-    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(Map.of("error", "Not Found", "message", e.getMessage()));
+    // Return the same response as BadCredentials to prevent user enumeration.
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(Map.of("error", "Unauthorized", "message", "Invalid credentials"));
 }
 
 @ExceptionHandler(IllegalArgumentException.class)
@@ -66,11 +69,14 @@ public ResponseEntity<Map<String,String>> generic(Exception e) {
             || msg.contains("Broken pipe")
             || e.getCause() instanceof java.io.IOException) {
         // Browser navigated away mid-response — completely normal, not an error
-        log.debug("Client disconnected (normal): {}", msg);
+        log.debug("Client disconnected (normal)");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Client disconnected", "message", msg));
+                .body(Map.of("error", "Client disconnected", "message", "Connection closed"));
     }
-    log.error("Unhandled exception: {}", msg, e);
+    // Log exception class + message only — NOT the full stack trace.
+    // Stack traces can expose DB schema, class paths, and internal query details
+    // to anyone who can read logs (e.g., misconfigured log aggregators).
+    log.error("Unhandled exception [{}]: {}", e.getClass().getSimpleName(), msg);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(Map.of("error", "Server Error", "message", "Something went wrong"));
 }

@@ -3,9 +3,14 @@ package com.learnsystem.service;
 import com.learnsystem.dto.CompileError;
 import com.learnsystem.dto.ExecuteResponse;
 import com.learnsystem.dto.SyntaxCheckResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
+import jakarta.annotation.PreDestroy;
 import javax.tools.*;
 import java.io.*;
 import java.net.URI;
@@ -25,7 +30,10 @@ import java.util.regex.*;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ExecutionService {
+
+    private final CodeSafetyScanner safetyScanner;
 
 private static final int  TIMEOUT_SECONDS  = 10;
 private static final long MAX_OUTPUT_BYTES = 10_000;
@@ -33,9 +41,66 @@ private static final long MAX_OUTPUT_BYTES = 10_000;
 private static final Set<String> VALID_VERSIONS = Set.of("8","11","17","21");
 private static final String      DEFAULT_VERSION = "17";
 
+/**
+ * Hard cap on simultaneous JVM child processes.
+ * Each process can use up to -Xmx128m = 128 MB.
+ * 25 × 128 MB = 3.2 GB max — safe on a 4 GB server.
+ * Configurable via execution.max-concurrent in application.properties.
+ */
+@Value("${execution.max-concurrent:25}")
+private int maxConcurrent;
+
+// Lazily initialised so @Value is available
+private volatile Semaphore concurrencyGate;
+private volatile ExecutorService ioPool;
+
+private Semaphore gate() {
+    if (concurrencyGate == null) {
+        synchronized (this) {
+            if (concurrencyGate == null) concurrencyGate = new Semaphore(maxConcurrent, true);
+        }
+    }
+    return concurrencyGate;
+}
+
+/**
+ * Single shared thread pool for stdout/stderr reading — 2 threads per execution slot.
+ * Replaces the per-execution Executors.newFixedThreadPool(2) that was creating
+ * a new thread pool on every request (thread explosion under load).
+ */
+private ExecutorService ioPool() {
+    if (ioPool == null) {
+        synchronized (this) {
+            if (ioPool == null)
+                ioPool = Executors.newFixedThreadPool(maxConcurrent * 2,
+                        r -> { Thread t = new Thread(r, "exec-io"); t.setDaemon(true); return t; });
+        }
+    }
+    return ioPool;
+}
+
+@PreDestroy
+public void shutdown() {
+    if (ioPool != null) ioPool.shutdownNow();
+}
+
 // ── Public API ────────────────────────────────────────────────────────────
 
 public ExecuteResponse execute(String code, String stdin, String javaVersion) {
+    // 1. Safety scan — must happen before semaphore acquire (no process spawned yet)
+    CodeSafetyScanner.ScanResult scan = safetyScanner.scan(code);
+    if (!scan.safe()) {
+        return ExecuteResponse.builder()
+                .success(false).status("BLOCKED")
+                .error(scan.reason()).build();
+    }
+
+    // 2. Concurrency gate — hard cap on simultaneous JVM processes
+    if (!gate().tryAcquire()) {
+        log.warn("Execution capacity reached ({} slots full) — rejecting request", maxConcurrent);
+        throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                "Server is busy. Please retry in a few seconds.");
+    }
     Path tempDir = null;
     try {
         tempDir = Files.createTempDirectory("learnsystem_");
@@ -51,11 +116,16 @@ public ExecuteResponse execute(String code, String stdin, String javaVersion) {
                     .compileErrors(cr.errors()).build();
         }
         return run(tempDir, stdin, className);
+    } catch (ResponseStatusException rse) {
+        throw rse;
     } catch (Exception e) {
         log.error("Execution failed", e);
         return ExecuteResponse.builder().success(false)
                 .status("RUNTIME_ERROR").error("Internal error: " + e.getMessage()).build();
-    } finally { cleanup(tempDir); }
+    } finally {
+        gate().release();
+        cleanup(tempDir);
+    }
 }
 
 public ExecuteResponse execute(String code, String stdin) {
@@ -63,6 +133,19 @@ public ExecuteResponse execute(String code, String stdin) {
 }
 
 public List<ExecuteResponse> executeAll(String code, List<String> inputs, String javaVersion) {
+    // Safety scan before acquiring the semaphore
+    CodeSafetyScanner.ScanResult scan = safetyScanner.scan(code);
+    if (!scan.safe()) {
+        ExecuteResponse blocked = ExecuteResponse.builder()
+                .success(false).status("BLOCKED").error(scan.reason()).build();
+        return Collections.nCopies(inputs.size(), blocked);
+    }
+
+    if (!gate().tryAcquire()) {
+        log.warn("Execution capacity reached ({} slots full) — rejecting batch request", maxConcurrent);
+        throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                "Server is busy. Please retry in a few seconds.");
+    }
     Path tempDir = null;
     try {
         tempDir = Files.createTempDirectory("learnsystem_");
@@ -83,12 +166,17 @@ public List<ExecuteResponse> executeAll(String code, List<String> inputs, String
         for (String input : inputs) results.add(run(tempDir, input, className));
         return results;
 
+    } catch (ResponseStatusException rse) {
+        throw rse;
     } catch (Exception e) {
         log.error("Batch execution failed", e);
         ExecuteResponse err = ExecuteResponse.builder().success(false)
                 .status("RUNTIME_ERROR").error("Internal error: " + e.getMessage()).build();
         return Collections.nCopies(inputs.size(), err);
-    } finally { cleanup(tempDir); }
+    } finally {
+        gate().release();
+        cleanup(tempDir);
+    }
 }
 
 public SyntaxCheckResponse syntaxCheck(String code, String javaVersion) {
@@ -307,7 +395,26 @@ private String formatCompileErrors(List<CompileError> errors) {
 
 private ExecuteResponse run(Path tempDir, String stdin, String className) throws Exception {
     ProcessBuilder pb = new ProcessBuilder(
-            "java", "-cp", tempDir.toString(), "-Xmx128m", "-Xss8m", className)
+            "java",
+            "-cp",          tempDir.toString(),
+            // Heap: 128 MB max — more than enough for interview problems
+            "-Xmx128m",
+            // Metaspace: 64 MB max — prevents class-generation OOM attacks
+            "-XX:MaxMetaspaceSize=64m",
+            // Stack: 4 MB per thread (was 8m — halved; sufficient for deep recursion)
+            "-Xss4m",
+            // Serial GC: simpler, smaller footprint for short-lived processes
+            "-XX:+UseSerialGC",
+            // No JIT compilation — faster startup, prevents JIT-based timing attacks
+            // Students notice no difference for interview-sized inputs
+            "-XX:TieredStopAtLevel=1",
+            // Disable all network access at the JVM level
+            "-Djava.net.preferIPv4Stack=true",
+            // Deterministic output encoding
+            "-Dfile.encoding=UTF-8",
+            // No GUI — prevents X11 display attacks
+            "-Djava.awt.headless=true",
+            className)
             .directory(tempDir.toFile());
 
     long startTime = System.currentTimeMillis();
@@ -320,7 +427,8 @@ private ExecuteResponse run(Path tempDir, String stdin, String className) throws
         }
     }
 
-    ExecutorService pool = Executors.newFixedThreadPool(2);
+    // Use the shared I/O pool — avoids creating a new 2-thread pool per execution
+    ExecutorService pool = ioPool();
     Future<String> stdoutFuture = pool.submit(() -> readStream(process.getInputStream(), MAX_OUTPUT_BYTES));
     Future<String> stderrFuture = pool.submit(() -> readStream(process.getErrorStream(), MAX_OUTPUT_BYTES));
 
@@ -329,13 +437,13 @@ private ExecuteResponse run(Path tempDir, String stdin, String className) throws
 
     if (!finished) {
         process.destroyForcibly();
-        pool.shutdownNow();
+        stdoutFuture.cancel(true);
+        stderrFuture.cancel(true);
         return ExecuteResponse.builder().success(false).status("TIMEOUT")
                 .error("Program exceeded " + TIMEOUT_SECONDS + "s time limit")
                 .executionTimeMs(elapsed).build();
     }
 
-    pool.shutdown();
     String stdout = stdoutFuture.get(2, TimeUnit.SECONDS);
     String stderr = stderrFuture.get(2, TimeUnit.SECONDS);
 
