@@ -126,23 +126,48 @@ export default function ProblemSolveView({
     JSON.parse(localStorage.getItem('devlearn_solved') || '[]')
       .map(Number).includes(_pid);
 
+  // ── Retry helper — auto-retries on 429 with exponential backoff ─────────────
+  // When the server is at capacity (semaphore full), retries up to 4 times
+  // before giving up. User sees "Queued… retrying (1/4)" instead of an error.
+  async function withRetry(fn, { maxAttempts = 4, baseDelayMs = 3000 } = {}) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await fn();
+      } catch (err) {
+        const isCapacity = err.response?.status === 429 && err.isServerBusy;
+        if (isCapacity && attempt < maxAttempts) {
+          const delay = baseDelayMs * attempt; // 3s, 6s, 9s, 12s
+          setRunResult?.({ loading: true, retryMsg: `Server busy — retrying (${attempt}/${maxAttempts - 1}) in ${delay / 1000}s…` });
+          setSubmitResult?.({ loading: true, retryMsg: `Server busy — retrying (${attempt}/${maxAttempts - 1}) in ${delay / 1000}s…` });
+          await new Promise(r => setTimeout(r, delay));
+          continue;
+        }
+        throw err; // rate limit or non-retryable error — surface to user
+      }
+    }
+  }
+
   // ── Run ───────────────────────────────────────────────────────────────────
   async function handleRun() {
     if (!code.trim()) return;
-    // BUG FIX: clear submitResult so the result panel shows the run output,
-    // not the stale submit result from a previous submission.
     setSubmitResult(null);
     setIsRunning(true);
     setActiveResultTab('result');
     setRunResult({ loading: true });
     try {
-      const res = await codeApi.execute(code, testInput, javaVersion);
+      const res = await withRetry(() => codeApi.execute(code, testInput, javaVersion));
       setRunResult(res);
       if (res.compileErrors?.length) {
         applyMarkers(editorRef, monacoRef, res.compileErrors);
       }
-    } catch {
-      setRunResult({ status: 'ERROR', error: 'Server unreachable — is Spring Boot running?' });
+    } catch (err) {
+      if (err.isRateLimit) {
+        setRunResult({ status: 'RATE_LIMITED', error: err.userMessage });
+      } else if (err.isServerBusy || err.response?.status === 429) {
+        setRunResult({ status: 'SERVER_BUSY', error: 'Server is at capacity. Please try again in a moment.' });
+      } else {
+        setRunResult({ status: 'ERROR', error: 'Server unreachable — is Spring Boot running?' });
+      }
     } finally { setIsRunning(false); }
   }
 
@@ -155,7 +180,7 @@ export default function ProblemSolveView({
     // BUG FIX: pass actual elapsed solve time instead of always 0
     const solveTimeSecs = Math.floor((Date.now() - solveStartRef.current) / 1000);
     try {
-      const res = await codeApi.submit(problemId, code, solveTimeSecs, hintsShown >= 3, javaVersion, approach);
+      const res = await withRetry(() => codeApi.submit(problemId, code, solveTimeSecs, hintsShown >= 3, javaVersion, approach));
       setSubmitResult(res);
       if (res.compileErrors?.length) {
         applyMarkers(editorRef, monacoRef, res.compileErrors);
@@ -174,8 +199,14 @@ export default function ProblemSolveView({
           setTimeout(() => setRecallOpen(true), 600);
         }
       }
-    } catch {
-      setSubmitResult({ error: 'Submission failed — server error' });
+    } catch (err) {
+      if (err.isRateLimit) {
+        setSubmitResult({ status: 'RATE_LIMITED', error: err.userMessage });
+      } else if (err.isServerBusy || err.response?.status === 429) {
+        setSubmitResult({ status: 'SERVER_BUSY', error: 'Server is busy — please retry in a few seconds.' });
+      } else {
+        setSubmitResult({ error: 'Submission failed — server error' });
+      }
     } finally { setIsSubmitting(false); }
   }
 
@@ -671,11 +702,14 @@ function HintsTab({ problem, hintsShown, onShowHint }) {
 
 // ── Submissions History tab ────────────────────────────────────────────────────
 const STATUS_META = {
-  ACCEPTED:      { color: 'var(--accent)', label: 'Accepted',       icon: '✅' },
-  WRONG_ANSWER:  { color: 'var(--red)',    label: 'Wrong Answer',    icon: '❌' },
-  COMPILE_ERROR: { color: 'var(--red)',    label: 'Compile Error',   icon: '🔴' },
-  RUNTIME_ERROR: { color: 'var(--red)',    label: 'Runtime Error',   icon: '🔴' },
-  TLE:           { color: 'var(--yellow)', label: 'Time Limit',      icon: '⏰' },
+  ACCEPTED:      { color: 'var(--accent)',  label: 'Accepted',           icon: '✅' },
+  WRONG_ANSWER:  { color: 'var(--red)',     label: 'Wrong Answer',        icon: '❌' },
+  COMPILE_ERROR: { color: 'var(--red)',     label: 'Compile Error',       icon: '🔴' },
+  RUNTIME_ERROR: { color: 'var(--red)',     label: 'Runtime Error',       icon: '🔴' },
+  TLE:           { color: 'var(--yellow)',  label: 'Time Limit',          icon: '⏰' },
+  BLOCKED:       { color: 'var(--yellow)',  label: 'Not Permitted',       icon: '🚫' },
+  RATE_LIMITED:  { color: 'var(--yellow)',  label: 'Rate Limit Reached',  icon: '⏳' },
+  SERVER_BUSY:   { color: 'var(--yellow)',  label: 'Server Busy',         icon: '🔄' },
 };
 
 function SubmissionsTab({ history }) {
@@ -912,9 +946,12 @@ function ResultPanel({ runResult, submitResult }) {
 
   const active = submitResult || runResult;
   if (active.loading) {
-    const msg = submitResult?.loading ? 'Evaluating all test cases…' : 'Running code…';
+    const retryMsg = active.retryMsg;
+    const msg = retryMsg
+      ? retryMsg
+      : submitResult?.loading ? 'Evaluating all test cases…' : 'Running code…';
     return (
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: 16, color: 'var(--text3)', fontSize: 12 }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: 16, color: retryMsg ? 'var(--yellow)' : 'var(--text3)', fontSize: 12 }}>
         <span className="spinner" />{msg}
       </div>
     );

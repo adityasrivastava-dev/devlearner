@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute, AdminRoute, GuestRoute } from './components/shared/RouteGuards';
+import ErrorBoundary from './components/shared/ErrorBoundary';
 import { usePageTracking } from './hooks/useTracking';
 
 import LoginPage          from './pages/login/LoginPage';
@@ -47,31 +48,33 @@ function AppRoutes() {
   usePageTracking();
 
   return (
-    <Routes>
-      <Route path="/login"          element={<GuestRoute><LoginPage /></GuestRoute>} />
-      <Route path="/"               element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-      <Route path="/problems"       element={<ProtectedRoute><ProblemsPage /></ProtectedRoute>} />
-      <Route path="/roadmap"        element={<ProtectedRoute><RoadmapPage /></ProtectedRoute>} />
-      <Route path="/playground"     element={<ProtectedRoute><PlaygroundPage /></ProtectedRoute>} />
-      <Route path="/profile"        element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-      <Route path="/quiz"           element={<ProtectedRoute><QuizPage /></ProtectedRoute>} />
-      <Route path="/algorithms"     element={<ProtectedRoute><AlgorithmsPage /></ProtectedRoute>} />
-      <Route path="/quick-win"      element={<ProtectedRoute><QuickWinPage /></ProtectedRoute>} />
-      <Route path="/drill"          element={<ProtectedRoute><DrillPage /></ProtectedRoute>} />
-      <Route path="/interview-prep" element={<ProtectedRoute><InterviewPrepPage /></ProtectedRoute>} />
-      <Route path="/revision"       element={<ProtectedRoute><RevisionPage /></ProtectedRoute>} />
-      <Route path="/complexity"     element={<ProtectedRoute><ComplexityPage /></ProtectedRoute>} />
-      <Route path="/mastery"        element={<ProtectedRoute><MasteryPage /></ProtectedRoute>} />
-      <Route path="/review"         element={<ProtectedRoute><ReviewPage /></ProtectedRoute>} />
-      <Route path="/interview-mode" element={<ProtectedRoute><InterviewModePage /></ProtectedRoute>} />
-      <Route path="/analytics"      element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
-      <Route path="/videos"         element={<ProtectedRoute><VideosPage /></ProtectedRoute>} />
-      <Route path="/system-design"  element={<ProtectedRoute><SystemDesignPage /></ProtectedRoute>} />
-      <Route path="/daily"           element={<ProtectedRoute><DailyChallengePage /></ProtectedRoute>} />
-      <Route path="/timetable"      element={<ProtectedRoute><TimetablePage /></ProtectedRoute>} />
-      <Route path="/admin"          element={<AdminRoute><AdminPage /></AdminRoute>} />
-      <Route path="*"               element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-    </Routes>
+    <ErrorBoundary label="Application">
+      <Routes>
+        <Route path="/login"          element={<GuestRoute><ErrorBoundary label="Login" minimal><LoginPage /></ErrorBoundary></GuestRoute>} />
+        <Route path="/"               element={<ProtectedRoute><ErrorBoundary label="Home"><HomePage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/problems"       element={<ProtectedRoute><ErrorBoundary label="Problems"><ProblemsPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/roadmap"        element={<ProtectedRoute><ErrorBoundary label="Roadmap"><RoadmapPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/playground"     element={<ProtectedRoute><ErrorBoundary label="Playground"><PlaygroundPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/profile"        element={<ProtectedRoute><ErrorBoundary label="Profile"><ProfilePage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/quiz"           element={<ProtectedRoute><ErrorBoundary label="Quiz"><QuizPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/algorithms"     element={<ProtectedRoute><ErrorBoundary label="Algorithms"><AlgorithmsPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/quick-win"      element={<ProtectedRoute><ErrorBoundary label="Quick Win"><QuickWinPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/drill"          element={<ProtectedRoute><ErrorBoundary label="Drill"><DrillPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/interview-prep" element={<ProtectedRoute><ErrorBoundary label="Interview Prep"><InterviewPrepPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/revision"       element={<ProtectedRoute><ErrorBoundary label="Revision"><RevisionPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/complexity"     element={<ProtectedRoute><ErrorBoundary label="Complexity"><ComplexityPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/mastery"        element={<ProtectedRoute><ErrorBoundary label="Mastery Map"><MasteryPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/review"         element={<ProtectedRoute><ErrorBoundary label="Review"><ReviewPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/interview-mode" element={<ProtectedRoute><ErrorBoundary label="Interview Mode"><InterviewModePage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/analytics"      element={<ProtectedRoute><ErrorBoundary label="Analytics"><AnalyticsPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/videos"         element={<ProtectedRoute><ErrorBoundary label="Videos"><VideosPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/system-design"  element={<ProtectedRoute><ErrorBoundary label="System Design"><SystemDesignPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/daily"          element={<ProtectedRoute><ErrorBoundary label="Daily Challenge"><DailyChallengePage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/timetable"      element={<ProtectedRoute><ErrorBoundary label="Timetable"><TimetablePage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/admin"          element={<AdminRoute><ErrorBoundary label="Admin Panel"><AdminPage /></ErrorBoundary></AdminRoute>} />
+        <Route path="*"               element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+      </Routes>
+    </ErrorBoundary>
   );
 }
 

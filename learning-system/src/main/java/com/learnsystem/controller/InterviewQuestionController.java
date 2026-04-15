@@ -196,6 +196,12 @@ public class InterviewQuestionController {
     @PostMapping("/api/admin/interview-questions/files/{filename}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> importFile(@PathVariable String filename) {
+        // Whitelist: only allow simple alphanumeric filenames ending in .json
+        // Prevents path traversal attacks like ../../application.properties
+        if (filename == null || !filename.matches("^[a-zA-Z0-9_-]+\\.json$")) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "Invalid filename. Must match pattern: name.json"));
+        }
         try {
             Resource resource = resourcePatternResolver.getResource(
                 "classpath:interviewquestions/" + filename);

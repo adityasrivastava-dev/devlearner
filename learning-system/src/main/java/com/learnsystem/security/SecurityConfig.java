@@ -56,8 +56,33 @@ public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 			.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 			.sessionManagement(sm -> sm
 					.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			.headers(headers -> headers
+					// Prevent MIME-type sniffing
+					.contentTypeOptions(ct -> {})
+					// Prevent clickjacking
+					.frameOptions(fo -> fo.deny())
+					// Force HTTPS (1 year, include subdomains)
+					.httpStrictTransportSecurity(hsts -> hsts
+							.includeSubDomains(true)
+							.maxAgeInSeconds(31536000))
+					// Content Security Policy — restrict resource origins
+					.contentSecurityPolicy(csp -> csp
+							.policyDirectives(
+									"default-src 'self'; " +
+									"script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+									"style-src 'self' 'unsafe-inline'; " +
+									"img-src 'self' data: blob: https:; " +
+									"font-src 'self' data:; " +
+									"connect-src 'self' https://accounts.google.com; " +
+									"frame-ancestors 'none'"
+							)
+					)
+			)
 
 			.authorizeHttpRequests(auth -> auth
+					// Health check — public for load balancer / AWS ALB target group checks
+					.requestMatchers("/actuator/health", "/actuator/info").permitAll()
+
 					// Auth endpoints — always public
 					.requestMatchers("/api/auth/**").permitAll()
 
@@ -196,7 +221,11 @@ public CorsConfigurationSource corsConfigurationSource() {
 	));
 
 	config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-	config.setAllowedHeaders(List.of("*"));
+	// Enumerate specific headers instead of wildcard — wildcard + credentials violates CORS spec
+	config.setAllowedHeaders(List.of(
+			"Authorization", "Content-Type", "X-Requested-With",
+			"Accept", "Origin", "Cache-Control", "X-Session-Id"
+	));
 	config.setExposedHeaders(List.of("Authorization"));
 	config.setAllowCredentials(true);
 	config.setMaxAge(3600L); // Cache preflight for 1 hour

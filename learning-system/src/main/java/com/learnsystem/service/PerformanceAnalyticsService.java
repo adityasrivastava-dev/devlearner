@@ -60,10 +60,10 @@ public void onSubmission(Long userId, Long problemId, Long topicId,
 	boolean accepted = "ACCEPTED".equals(status);
 
 	// ── 1. Update performance stats ────────────────────────────────────
-	String topicTitle    = topicRepo.findById(topicId)
-			.map(t -> t.getTitle()).orElse("Unknown");
-	String topicCategory = topicRepo.findById(topicId)
-			.map(t -> t.getCategory().name()).orElse("DSA");
+	// Single DB lookup for both title and category (was calling findById twice)
+	var topicOpt     = topicRepo.findById(topicId);
+	String topicTitle    = topicOpt.map(t -> t.getTitle()).orElse("Unknown");
+	String topicCategory = topicOpt.map(t -> t.getCategory().name()).orElse("DSA");
 
 	UserTopicPerformance perf = perfRepo
 			.findByUserIdAndTopicId(userId, topicId)

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import DOMPurify from 'dompurify';
 import { problemsApi, topicsApi, codeApi, QUERY_KEYS } from '../../api';
 import CodeEditor, { applyMarkers } from '../../components/editor/CodeEditor';
 import { getDiffMeta, PROBLEM_STARTER_CODE } from '../../utils/helpers';
@@ -102,7 +103,7 @@ function ProblemPanel({ problem }) {
       </div>
       <div
         className={styles.problemBody}
-        dangerouslySetInnerHTML={{ __html: problem.description || problem.title }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(problem.description || problem.title) }}
       />
       {problem.sampleInput && (
         <div className={styles.sampleBlock}>

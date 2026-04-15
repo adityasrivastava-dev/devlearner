@@ -12,11 +12,13 @@ http.interceptors.request.use((config) => {
   return config;
 });
 
-// Auto-logout on 401
+// Auto-logout on 401; surface rate-limit details on 429
 http.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const status = err.response?.status;
+
+    if (status === 401) {
       localStorage.removeItem('devlearn_token');
       localStorage.removeItem('devlearn_user');
       // Don't hard-reload if already on /login — prevents the refresh loop
@@ -25,6 +27,22 @@ http.interceptors.response.use(
         window.location.href = '/login';
       }
     }
+
+    if (status === 429) {
+      // Attach a friendly message and retry hint so callers can show it in the UI
+      const retryAfter = parseInt(err.response?.headers?.['retry-after'] || '60', 10);
+      const serverMsg  = err.response?.data?.message || 'Too many requests';
+      err.isRateLimit      = true;
+      err.retryAfterSeconds = retryAfter;
+      err.userMessage      = `${serverMsg} Try again in ${retryAfter}s.`;
+    }
+
+    if (status === 503 || status === 0) {
+      // Server busy (semaphore full) or network down
+      err.isServerBusy = true;
+      err.userMessage  = 'Server is busy. Please retry in a few seconds.';
+    }
+
     return Promise.reject(err);
   }
 );
@@ -375,7 +393,13 @@ export const analyticsApi = {
 // ─── Tracking (page views + user events) ─────────────────────────────────────
 let _sessionId = null;
 function getSessionId() {
-  if (!_sessionId) _sessionId = Math.random().toString(36).slice(2, 10);
+  if (!_sessionId) {
+    // Use cryptographically secure random values instead of Math.random()
+    // Math.random() is predictable and not suitable for security-sensitive identifiers
+    const arr = new Uint8Array(8);
+    crypto.getRandomValues(arr);
+    _sessionId = Array.from(arr, (b) => b.toString(16).padStart(2, '0')).join('');
+  }
   return _sessionId;
 }
 

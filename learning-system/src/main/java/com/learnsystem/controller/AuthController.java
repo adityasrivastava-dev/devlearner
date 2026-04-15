@@ -1,15 +1,19 @@
 package com.learnsystem.controller;
 
+import com.learnsystem.config.LoginRateLimiter;
 import com.learnsystem.dto.AuthDtos.*;
 import com.learnsystem.model.User;
 import com.learnsystem.repository.UserRepository;
 import com.learnsystem.security.JwtService;
 import com.learnsystem.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,9 +26,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthController {
 
-private final AuthService     authService;
-private final UserRepository  userRepository;
-private final JwtService      jwtService;
+private final AuthService      authService;
+private final UserRepository   userRepository;
+private final JwtService       jwtService;
+private final LoginRateLimiter loginRateLimiter;
 
 /**
  * POST /api/auth/register
@@ -45,11 +50,51 @@ public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest
  * Returns JWT + user info
  */
 @PostMapping("/login")
-public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest req) {
-	log.info("Login attempt: {}", req.getEmail());
-	AuthResponse resp = authService.login(req);
-	log.info("Login success: {} (id={})", req.getEmail(), resp.getId());
-	return ResponseEntity.ok(resp);
+public ResponseEntity<?> login(
+		@Valid @RequestBody LoginRequest req,
+		HttpServletRequest httpReq) {
+
+	String email = req.getEmail();
+	String ip    = getClientIp(httpReq);
+
+	// Brute-force protection: 5 failed attempts per email or IP locks for 15 min
+	if (!loginRateLimiter.isAllowed(email, ip)) {
+		int remaining = loginRateLimiter.remainingAttempts(email);
+		log.warn("Login blocked (rate limit): email={} ip={}", email, ip);
+		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+				.body(Map.of(
+						"error",   "Too many failed attempts",
+						"message", "Account temporarily locked. Try again in 15 minutes.",
+						"remainingAttempts", remaining
+				));
+	}
+
+	try {
+		log.info("Login attempt: email={} ip={}", email, ip);
+		AuthResponse resp = authService.login(req);
+		loginRateLimiter.recordSuccess(email, ip); // reset counter on success
+		log.info("Login success: email={} id={}", email, resp.getId());
+		return ResponseEntity.ok(resp);
+	} catch (BadCredentialsException e) {
+		loginRateLimiter.recordFailure(email, ip);
+		int remaining = loginRateLimiter.remainingAttempts(email);
+		log.warn("Login failed: email={} ip={} remainingAttempts={}", email, ip, remaining);
+		// Return generic message — don't reveal whether email exists
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+				.body(Map.of(
+						"error",   "Invalid credentials",
+						"message", "Email or password is incorrect.",
+						"remainingAttempts", remaining
+				));
+	}
+}
+
+private static String getClientIp(HttpServletRequest req) {
+	String forwarded = req.getHeader("X-Forwarded-For");
+	if (forwarded != null && !forwarded.isBlank()) {
+		return forwarded.split(",")[0].strip();
+	}
+	return req.getRemoteAddr();
 }
 
 /**

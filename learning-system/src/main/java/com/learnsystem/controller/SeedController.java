@@ -100,8 +100,8 @@ public ResponseEntity<List<SeedFileInfo>> listSeedFiles() {
  */
 @PostMapping("/seed-files/{filename}")
 public ResponseEntity<?> importSeedFile(@PathVariable String filename) {
-    if (!filename.endsWith(".json") || filename.contains("/") || filename.contains("..")) {
-        return ResponseEntity.badRequest().body(Map.of("error", "Invalid filename"));
+    if (filename == null || !filename.matches("^[a-zA-Z0-9_-]+\\.json$")) {
+        return ResponseEntity.badRequest().body(Map.of("error", "Invalid filename. Must match pattern: name.json"));
     }
     try {
         Resource[] resources = resourcePatternResolver.getResources("classpath:seeds/" + filename);
@@ -136,8 +136,8 @@ public ResponseEntity<?> importSeedFile(@PathVariable String filename) {
  */
 @PostMapping("/seed-files/{filename}/patch-editorial")
 public ResponseEntity<?> patchEditorial(@PathVariable String filename) {
-    if (!filename.endsWith(".json") || filename.contains("/") || filename.contains("..")) {
-        return ResponseEntity.badRequest().body(Map.of("error", "Invalid filename"));
+    if (filename == null || !filename.matches("^[a-zA-Z0-9_-]+\\.json$")) {
+        return ResponseEntity.badRequest().body(Map.of("error", "Invalid filename. Must match pattern: name.json"));
     }
     try {
         Resource[] resources = resourcePatternResolver.getResources("classpath:seeds/" + filename);
@@ -205,8 +205,8 @@ public ResponseEntity<?> patchEditorial(@PathVariable String filename) {
  */
 @GetMapping("/seed-files/{filename}/topics")
 public ResponseEntity<?> getTopicsFromFile(@PathVariable String filename) {
-    if (!filename.endsWith(".json") || filename.contains("/") || filename.contains("..")) {
-        return ResponseEntity.badRequest().body(Map.of("error", "Invalid filename"));
+    if (filename == null || !filename.matches("^[a-zA-Z0-9_-]+\\.json$")) {
+        return ResponseEntity.badRequest().body(Map.of("error", "Invalid filename. Must match pattern: name.json"));
     }
     try {
         Resource[] resources = resourcePatternResolver.getResources("classpath:seeds/" + filename);

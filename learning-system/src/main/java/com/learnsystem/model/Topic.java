@@ -5,11 +5,23 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "topics")
+@Table(
+    name = "topics",
+    indexes = {
+        // Speeds up sidebar category filtering (most common query)
+        @Index(name = "idx_topic_category",       columnList = "category"),
+        // Speeds up sub-category grouping within a category
+        @Index(name = "idx_topic_cat_subcat",      columnList = "category, sub_category"),
+        // Speeds up ordered list queries used by the sidebar
+        @Index(name = "idx_topic_display_order",   columnList = "display_order")
+    }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -76,14 +88,30 @@ private String firstPrinciples;
 @Column(name = "youtube_urls", columnDefinition = "TEXT")
 private String youtubeUrls;
 
+// ── Audit ─────────────────────────────────────────────────────────────────
+
+@Column(name = "created_at", updatable = false)
+private LocalDateTime createdAt;
+
+@Column(name = "updated_at")
+private LocalDateTime updatedAt;
+
+@PrePersist
+protected void onCreate() { createdAt = updatedAt = LocalDateTime.now(); }
+
+@PreUpdate
+protected void onUpdate() { updatedAt = LocalDateTime.now(); }
+
 // ── Relationships ─────────────────────────────────────────────────────────
 
 @JsonIgnore
 @OneToMany(mappedBy = "topic", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+@BatchSize(size = 20)   // batch-loads child collections → avoids N+1 on topic lists
 private List<Example> examples;
 
 @JsonIgnore
 @OneToMany(mappedBy = "topic", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+@BatchSize(size = 20)
 private List<Problem> problems;
 
 public enum Category {

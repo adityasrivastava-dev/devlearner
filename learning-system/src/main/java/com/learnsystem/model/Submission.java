@@ -17,7 +17,10 @@ import java.time.LocalDateTime;
 		indexes = {
 				@Index(name = "idx_sub_user",    columnList = "user_id"),
 				@Index(name = "idx_sub_problem", columnList = "problem_id"),
-				@Index(name = "idx_sub_up",      columnList = "user_id,problem_id")
+				@Index(name = "idx_sub_up",      columnList = "user_id,problem_id"),
+				// Composite index for percentile queries:
+				// SELECT COUNT(*) WHERE problem_id=? AND status='ACCEPTED' AND execution_time_ms > ?
+				@Index(name = "idx_sub_percentile", columnList = "problem_id,status,execution_time_ms")
 		})
 @Data
 @Builder

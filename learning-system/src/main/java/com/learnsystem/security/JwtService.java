@@ -89,17 +89,28 @@ public Claims getClaims(String token) {
 // ── Key ───────────────────────────────────────────────────────────────────
 
 private SecretKey getSigningKey() {
+	// Attempt Base64 decode first (production secrets should be base64-encoded)
+	byte[] keyBytes;
 	try {
-		byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-		if (keyBytes.length >= 64) return Keys.hmacShaKeyFor(keyBytes);
-	} catch (Exception ignored) {}
-
-	byte[] raw    = jwtSecret.getBytes();
-	byte[] padded = new byte[64];
-	System.arraycopy(raw, 0, padded, 0, Math.min(raw.length, 64));
-	if (raw.length < 64) {
-		log.warn("JWT secret < 64 bytes — generate with: openssl rand -base64 64");
+		keyBytes = Decoders.BASE64.decode(jwtSecret);
+	} catch (IllegalArgumentException e) {
+		// Not valid Base64 — treat as raw UTF-8 string (dev/test only)
+		log.warn("JWT secret is not Base64-encoded — treating as raw string. " +
+				"Generate a secure secret with: openssl rand -base64 64");
+		keyBytes = jwtSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
 	}
-	return Keys.hmacShaKeyFor(padded);
+
+	// Enforce minimum key length — HMAC-SHA512 requires 64 bytes (512 bits)
+	// Zero-padding a short key does NOT add entropy and is cryptographically weak
+	if (keyBytes.length < 32) {
+		throw new IllegalStateException(
+			"JWT secret is too short (" + keyBytes.length + " bytes). " +
+			"Minimum 32 bytes required. Generate with: openssl rand -base64 64");
+	}
+	if (keyBytes.length < 64) {
+		log.warn("JWT secret is {} bytes — recommend 64+ bytes for HMAC-SHA512. " +
+				"Generate with: openssl rand -base64 64", keyBytes.length);
+	}
+	return Keys.hmacShaKeyFor(keyBytes);
 }
 }

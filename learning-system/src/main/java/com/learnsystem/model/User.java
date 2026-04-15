@@ -63,8 +63,11 @@ private String verificationToken;
 @Column(name = "token_expiry")
 private LocalDateTime tokenExpiry;
 
-@Column(name = "created_at")
+@Column(name = "created_at", updatable = false)
 private LocalDateTime createdAt;
+
+@Column(name = "updated_at")
+private LocalDateTime updatedAt;
 
 @Column(name = "last_login")
 private LocalDateTime lastLogin;
@@ -110,7 +113,13 @@ private Boolean adminRequestPending = false;
 @PrePersist
 protected void onCreate() {
 	createdAt = LocalDateTime.now();
+	updatedAt = LocalDateTime.now();
 	lastLogin = LocalDateTime.now();
+}
+
+@PreUpdate
+protected void onUpdate() {
+	updatedAt = LocalDateTime.now();
 }
 
 // ── Convenience helpers ───────────────────────────────────────────────────
