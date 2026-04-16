@@ -3,6 +3,7 @@ package com.learnsystem.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * ExecutionJob — the job queue row.
@@ -30,11 +31,17 @@ import java.time.LocalDateTime;
 public class ExecutionJob {
 
     public enum Type   { RUN, SUBMIT }
-    public enum Status { PENDING, RUNNING, DONE, ERROR }
+    public enum Status { PENDING, RUNNING, STARTED, DONE, ERROR }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /** Non-guessable token used in all public-facing URLs instead of the raw id.
+     *  Nullable so existing DB rows without a token don't violate constraints.
+     *  @PrePersist always generates one for new rows. */
+    @Column(length = 16, unique = true, updatable = false)
+    private String token;
 
     private Long userId;
     private Long problemId;
@@ -81,6 +88,7 @@ public class ExecutionJob {
 
     @PrePersist
     void prePersist() {
+        if (token     == null) token     = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (status    == null) status    = Status.PENDING;
         if (javaVersion == null) javaVersion = "17";

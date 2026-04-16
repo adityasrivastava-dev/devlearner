@@ -33,15 +33,95 @@ public void run(ApplicationArguments args) {
 	log.info("DatabaseMigrationRunner: checking column types...");
 
 	// ── examples.real_world_use ───────────────────────────────────────────
-	// Was created as VARCHAR(255) — must be TEXT to hold seed content.
 	alterColumnIfNotText("examples", "real_world_use",
 			"ALTER TABLE examples MODIFY COLUMN real_world_use TEXT");
-
-	// ── Defensive: any other VARCHAR(255) columns that store long content ──
 	alterColumnIfNotText("examples", "explanation",
 			"ALTER TABLE examples MODIFY COLUMN explanation TEXT");
 
+	// ── execution_jobs.status ─────────────────────────────────────────────
+	// If the column is a MySQL ENUM (fixed list) or VARCHAR too short,
+	// inserting 'STARTED' gives "Data truncated". Ensure it is VARCHAR(10).
+	ensureVarcharMinLength("execution_jobs", "status", 10,
+			"ALTER TABLE execution_jobs MODIFY COLUMN status VARCHAR(10) NOT NULL DEFAULT 'PENDING'");
+
+	// ── execution_jobs.token ──────────────────────────────────────────────
+	// Non-guessable polling token added to replace raw integer IDs in URLs.
+	// Added as NULL so existing rows without a token don't violate constraints.
+	addColumnIfMissing("execution_jobs", "token",
+			"ALTER TABLE execution_jobs ADD COLUMN token VARCHAR(16) NULL");
+
+	// ── problems.code_harness ─────────────────────────────────────────────
+	// Hidden runner harness for method-based problems (LeetCode-style).
+	// Hibernate will create it via ddl-auto=update but this ensures existing
+	// Railway DBs get the column without a full schema recreate.
+	addColumnIfMissing("problems", "code_harness",
+			"ALTER TABLE problems ADD COLUMN code_harness LONGTEXT NULL");
+
 	log.info("DatabaseMigrationRunner: column checks complete.");
+}
+
+/**
+ * Ensures a column is VARCHAR with at least minLength characters.
+ * Also handles the case where the column is a MySQL ENUM type — ENUM
+ * columns report a CHARACTER_MAXIMUM_LENGTH equal to their longest value,
+ * but inserting any value not in the ENUM list gives "Data truncated".
+ * The DATA_TYPE check catches both cases.
+ */
+private void ensureVarcharMinLength(String table, String column, int minLength, String alterSql) {
+	try {
+		String[] row = jdbc.queryForObject(
+				"SELECT DATA_TYPE, CHARACTER_MAXIMUM_LENGTH " +
+				"FROM information_schema.COLUMNS " +
+				"WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+				(rs, n) -> new String[]{ rs.getString(1), rs.getString(2) },
+				table, column);
+
+		if (row == null) {
+			log.warn("DatabaseMigrationRunner: column {}.{} not found — skipping.", table, column);
+			return;
+		}
+
+		String dataType = row[0];
+		int    currentLen = row[1] != null ? Integer.parseInt(row[1]) : 0;
+
+		boolean isVarcharLargeEnough = "varchar".equalsIgnoreCase(dataType) && currentLen >= minLength;
+		if (isVarcharLargeEnough) {
+			log.debug("DatabaseMigrationRunner: {}.{} is VARCHAR({}) — no change needed.", table, column, currentLen);
+			return;
+		}
+
+		log.info("DatabaseMigrationRunner: {}.{} is {} ({}) — altering to VARCHAR({})...",
+				table, column, dataType, currentLen, minLength);
+		jdbc.execute(alterSql);
+		log.info("DatabaseMigrationRunner: {}.{} altered successfully.", table, column);
+
+	} catch (Exception e) {
+		log.error("DatabaseMigrationRunner: failed to check/alter {}.{}: {}", table, column, e.getMessage());
+	}
+}
+
+/**
+ * Adds a column only if it doesn't already exist — fully idempotent.
+ */
+private void addColumnIfMissing(String table, String column, String alterSql) {
+	try {
+		Integer count = jdbc.queryForObject(
+				"SELECT COUNT(*) FROM information_schema.COLUMNS " +
+				"WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+				Integer.class, table, column);
+
+		if (count != null && count > 0) {
+			log.debug("DatabaseMigrationRunner: {}.{} already exists — skipping.", table, column);
+			return;
+		}
+
+		log.info("DatabaseMigrationRunner: adding column {}.{}...", table, column);
+		jdbc.execute(alterSql);
+		log.info("DatabaseMigrationRunner: {}.{} added successfully.", table, column);
+
+	} catch (Exception e) {
+		log.error("DatabaseMigrationRunner: failed to add {}.{}: {}", table, column, e.getMessage());
+	}
 }
 
 /**

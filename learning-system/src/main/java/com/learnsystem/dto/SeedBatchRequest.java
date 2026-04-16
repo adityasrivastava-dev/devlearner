@@ -97,5 +97,7 @@ public static class ProblemSeedDto {
     private String optimizedApproach;
     // Editorial explanation shown after problem is solved
     private String editorial;
+    // Hidden runner harness for method-based problems (no main in user code)
+    private String codeHarness;
 }
 }

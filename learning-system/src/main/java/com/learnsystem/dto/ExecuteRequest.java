@@ -11,4 +11,5 @@ public class ExecuteRequest {
 
     private String stdin;        // optional stdin for the program
     private String javaVersion;  // "8" | "11" | "17" | "21" — defaults to "17"
+    private Long   problemId;    // optional — if set, harness from problem.codeHarness is used
 }

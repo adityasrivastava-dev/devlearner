@@ -148,14 +148,42 @@ public void warmUp() {
 
 // ── Public API ────────────────────────────────────────────────────────────
 
+/**
+ * Merge user code with an optional hidden harness.
+ *
+ * When a problem has a codeHarness AND the user's code has no main():
+ *   - Appended to the user's code in the same .java file (valid multi-class file)
+ *   - The harness class is always named __Runner__ with a public static void main
+ *   - Execution runs `java __Runner__` instead of `java Solution`
+ *   - Safety scanner is called ONLY on the user's code (harness is trusted backend content)
+ */
+private boolean hasMain(String code) {
+    return code != null && code.contains("public static void main");
+}
+
+private String wrapWithHarness(String userCode, String harness) {
+    if (harness == null || harness.isBlank()) return userCode;
+    if (hasMain(userCode)) return userCode;
+    return userCode + "\n\n" + harness;
+}
+
 public ExecuteResponse execute(String code, String stdin, String javaVersion) {
-    // 1. Safety scan — must happen before semaphore acquire (no process spawned yet)
+    return execute(code, stdin, javaVersion, null);
+}
+
+public ExecuteResponse execute(String code, String stdin, String javaVersion, String harness) {
+    // 1. Safety scan on USER code only — harness is trusted
     CodeSafetyScanner.ScanResult scan = safetyScanner.scan(code);
     if (!scan.safe()) {
         return ExecuteResponse.builder()
                 .success(false).status("BLOCKED")
                 .error(scan.reason()).build();
     }
+
+    boolean useHarness = harness != null && !harness.isBlank() && !hasMain(code);
+    String fullCode  = useHarness ? wrapWithHarness(code, harness) : code;
+    String className = extractPublicClassName(code);   // always based on user's class name
+    String runClass  = useHarness ? "__Runner__" : className;
 
     // 2. Concurrency gate — hard cap on simultaneous JVM processes
     if (!gate().tryAcquire()) {
@@ -166,18 +194,17 @@ public ExecuteResponse execute(String code, String stdin, String javaVersion) {
     Path tempDir = null;
     try {
         tempDir = Files.createTempDirectory("learnsystem_");
-        String className = extractPublicClassName(code);
         Path sourceFile = tempDir.resolve(className + ".java");
-        Files.writeString(sourceFile, code);
+        Files.writeString(sourceFile, fullCode);
 
-        CompileResult cr = compile(tempDir, sourceFile, code, javaVersion);
+        CompileResult cr = compile(tempDir, sourceFile, fullCode, javaVersion);
         if (!cr.success()) {
             return ExecuteResponse.builder()
                     .success(false).status("COMPILE_ERROR")
                     .error(formatCompileErrors(cr.errors()))
                     .compileErrors(cr.errors()).build();
         }
-        return run(tempDir, stdin, className);
+        return run(tempDir, stdin, runClass);
     } catch (ResponseStatusException rse) {
         throw rse;
     } catch (Exception e) {
@@ -191,17 +218,26 @@ public ExecuteResponse execute(String code, String stdin, String javaVersion) {
 }
 
 public ExecuteResponse execute(String code, String stdin) {
-    return execute(code, stdin, DEFAULT_VERSION);
+    return execute(code, stdin, DEFAULT_VERSION, null);
 }
 
 public List<ExecuteResponse> executeAll(String code, List<String> inputs, String javaVersion) {
-    // Safety scan before acquiring the semaphore
+    return executeAll(code, inputs, javaVersion, null);
+}
+
+public List<ExecuteResponse> executeAll(String code, List<String> inputs, String javaVersion, String harness) {
+    // Safety scan on USER code only — harness is trusted
     CodeSafetyScanner.ScanResult scan = safetyScanner.scan(code);
     if (!scan.safe()) {
         ExecuteResponse blocked = ExecuteResponse.builder()
                 .success(false).status("BLOCKED").error(scan.reason()).build();
         return Collections.nCopies(inputs.size(), blocked);
     }
+
+    boolean useHarness = harness != null && !harness.isBlank() && !hasMain(code);
+    String fullCode  = useHarness ? wrapWithHarness(code, harness) : code;
+    String className = extractPublicClassName(code);
+    String runClass  = useHarness ? "__Runner__" : className;
 
     if (!gate().tryAcquire()) {
         log.warn("Execution capacity reached ({} slots full) — rejecting batch request", maxConcurrent);
@@ -211,11 +247,10 @@ public List<ExecuteResponse> executeAll(String code, List<String> inputs, String
     Path tempDir = null;
     try {
         tempDir = Files.createTempDirectory("learnsystem_");
-        String className = extractPublicClassName(code);
         Path sourceFile = tempDir.resolve(className + ".java");
-        Files.writeString(sourceFile, code);
+        Files.writeString(sourceFile, fullCode);
 
-        CompileResult cr = compile(tempDir, sourceFile, code, javaVersion);
+        CompileResult cr = compile(tempDir, sourceFile, fullCode, javaVersion);
         if (!cr.success()) {
             ExecuteResponse compileErr = ExecuteResponse.builder()
                     .success(false).status("COMPILE_ERROR")
@@ -225,10 +260,8 @@ public List<ExecuteResponse> executeAll(String code, List<String> inputs, String
         }
 
         // Run all test cases in parallel — compile once, spawn N processes concurrently.
-        // Total wall-clock time = max(individual_run_time) instead of sum(individual_run_time).
-        // Each run() submits its own I/O tasks to ioPool(), so no extra pool needed here.
-        final Path finalTempDir  = tempDir;
-        final String finalClass  = className;
+        final Path finalTempDir = tempDir;
+        final String finalClass = runClass;
 
         List<CompletableFuture<ExecuteResponse>> futures = inputs.stream()
                 .map(input -> CompletableFuture.supplyAsync(() -> {

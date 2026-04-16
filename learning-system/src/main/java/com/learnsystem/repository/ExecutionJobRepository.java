@@ -28,7 +28,7 @@ public interface ExecutionJobRepository extends JpaRepository<ExecutionJob, Long
     @Transactional
     @Query(value = """
         UPDATE execution_jobs
-           SET status     = 'RUNNING',
+           SET status     = 'STARTED',
                started_at = NOW()
          WHERE id = (
                SELECT id FROM (
@@ -44,17 +44,18 @@ public interface ExecutionJobRepository extends JpaRepository<ExecutionJob, Long
     int claimNextPending();
 
     /** After claimNextPending() returns 1, fetch the row we just claimed. */
-    @Query("SELECT j FROM ExecutionJob j WHERE j.status = 'RUNNING' ORDER BY j.startedAt ASC")
+    @Query("SELECT j FROM ExecutionJob j WHERE j.status = 'STARTED' ORDER BY j.startedAt ASC")
     List<ExecutionJob> findAllRunning();
 
     /**
-     * On server restart, jobs left in RUNNING state were abandoned.
+     * On server restart, jobs left in RUNNING or STARTED state were abandoned.
      * Reset them to PENDING so they are retried.
      */
     @Modifying
     @Transactional
-    @Query("UPDATE ExecutionJob j SET j.status = 'PENDING', j.startedAt = null " +
-           "WHERE j.status = 'RUNNING' AND j.startedAt < :cutoff")
+    @Query(value = "UPDATE execution_jobs SET status = 'PENDING', started_at = NULL " +
+                   "WHERE status IN ('RUNNING', 'STARTED') AND started_at < :cutoff",
+           nativeQuery = true)
     int resetStuckJobs(@Param("cutoff") LocalDateTime cutoff);
 
     /**
@@ -68,4 +69,6 @@ public interface ExecutionJobRepository extends JpaRepository<ExecutionJob, Long
     int deleteOldFinishedJobs(@Param("cutoff") LocalDateTime cutoff);
 
     Optional<ExecutionJob> findById(Long id);
+
+    Optional<ExecutionJob> findByToken(String token);
 }

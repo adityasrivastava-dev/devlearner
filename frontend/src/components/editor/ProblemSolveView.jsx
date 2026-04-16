@@ -148,15 +148,15 @@ export default function ProblemSolveView({
   }
 
   // ── Async poll helper ─────────────────────────────────────────────────────
-  // Polls every 1.5s until the job reaches DONE/ERROR or 90s timeout.
-  // Calls onTick(attempt) so callers can update loading copy.
-  async function pollUntilDone(jobId, onTick) {
+  // Polls every 1.5s until DONE/ERROR or 90s timeout.
+  // onTick(attempt, jobStatus) — caller can show different copy for PENDING vs STARTED.
+  async function pollUntilDone(token, onTick) {
     const POLL_INTERVAL = 1500;
     const MAX_ATTEMPTS  = 60; // 90s ceiling
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       await new Promise(r => setTimeout(r, POLL_INTERVAL));
-      onTick?.(attempt);
-      const job = await codeApi.pollJob(jobId);
+      const job = await codeApi.pollJob(token);
+      onTick?.(attempt, job.status);
       if (job.status === 'DONE')  return { ok: true,  data: job.result };
       if (job.status === 'ERROR') return { ok: false, error: job.error || 'Execution failed' };
     }
@@ -171,9 +171,11 @@ export default function ProblemSolveView({
     setActiveResultTab('result');
     setRunResult({ loading: true });
     try {
-      const { jobId } = await withRetry(() => codeApi.executeAsync(code, testInput, javaVersion));
-      const { ok, data, error } = await pollUntilDone(jobId, (attempt) => {
-        if (attempt > 0) setRunResult({ loading: true, retryMsg: `Running… (${attempt * 1.5 | 0}s)` });
+      const { token } = await withRetry(() => codeApi.executeAsync(code, testInput, javaVersion, problemId));
+      const { ok, data, error } = await pollUntilDone(token, (attempt, status) => {
+        const secs = attempt * 1.5 | 0;
+        const msg  = status === 'STARTED' ? `Running your code… (${secs}s)` : `Waiting in queue… (${secs}s)`;
+        setRunResult({ loading: true, retryMsg: msg });
       });
       if (!ok) {
         setRunResult({ status: 'ERROR', error });
@@ -200,10 +202,12 @@ export default function ProblemSolveView({
     setSubmitResult({ loading: true });
     const solveTimeSecs = Math.floor((Date.now() - solveStartRef.current) / 1000);
     try {
-      const { jobId } = await withRetry(() =>
+      const { token } = await withRetry(() =>
         codeApi.submitAsync(problemId, code, solveTimeSecs, hintsShown >= 3, javaVersion, approach));
-      const { ok, data, error } = await pollUntilDone(jobId, (attempt) => {
-        if (attempt > 0) setSubmitResult({ loading: true, retryMsg: `Judging… (${attempt * 1.5 | 0}s)` });
+      const { ok, data, error } = await pollUntilDone(token, (attempt, status) => {
+        const secs = attempt * 1.5 | 0;
+        const msg  = status === 'STARTED' ? `Judging your code… (${secs}s)` : `Waiting in queue… (${secs}s)`;
+        setSubmitResult({ loading: true, retryMsg: msg });
       });
       if (!ok) {
         setSubmitResult({ error });
@@ -963,6 +967,15 @@ function ReflectTab({ problemId, answers, onChange }) {
 
 // ── Result panel ──────────────────────────────────────────────────────────────
 function ResultPanel({ runResult, submitResult }) {
+  const [selectedCase, setSelectedCase] = useState(0);
+
+  // Auto-select first failing case whenever a new result arrives
+  useEffect(() => {
+    if (!submitResult?.results?.length) return;
+    const firstFail = submitResult.results.findIndex(r => !r.passed);
+    setSelectedCase(firstFail >= 0 ? firstFail : 0);
+  }, [submitResult]);
+
   if (!runResult && !submitResult) return (
     <div style={{ padding: 16, textAlign: 'center', color: 'var(--text3)', fontSize: 12 }}>
       Press ▶ Run (Ctrl+Enter) to test with your input,<br />
@@ -972,12 +985,11 @@ function ResultPanel({ runResult, submitResult }) {
 
   const active = submitResult || runResult;
   if (active.loading) {
-    const retryMsg = active.retryMsg;
-    const msg = retryMsg
-      ? retryMsg
-      : submitResult?.loading ? 'Evaluating all test cases…' : 'Running code…';
+    const msg = active.retryMsg
+      || (submitResult?.loading ? 'Evaluating all test cases…' : 'Running code…');
     return (
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: 16, color: retryMsg ? 'var(--yellow)' : 'var(--text3)', fontSize: 12 }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: 16,
+        color: active.retryMsg ? 'var(--yellow)' : 'var(--text3)', fontSize: 12 }}>
         <span className="spinner" />{msg}
       </div>
     );
@@ -1001,14 +1013,17 @@ function ResultPanel({ runResult, submitResult }) {
         </div>
         {runResult.output && (
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 4 }}>Output</div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+              letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 4 }}>Output</div>
             <pre className="code-block" style={{ fontSize: 12 }}>{runResult.output}</pre>
           </div>
         )}
         {runResult.error && (
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--red)', marginBottom: 4 }}>Error</div>
-            <pre className="code-block" style={{ fontSize: 12, color: 'var(--red)', borderColor: 'rgba(248,113,113,.2)' }}>{runResult.error}</pre>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+              letterSpacing: '.5px', color: 'var(--red)', marginBottom: 4 }}>Error</div>
+            <pre className="code-block" style={{ fontSize: 12, color: 'var(--red)',
+              borderColor: 'rgba(248,113,113,.2)' }}>{runResult.error}</pre>
           </div>
         )}
       </div>
@@ -1017,75 +1032,70 @@ function ResultPanel({ runResult, submitResult }) {
 
   // ── Submit result ─────────────────────────────────────────────────────────
   const pass    = submitResult.allPassed;
-  const dots    = submitResult.results || [];
-  const failed  = dots.filter((r) => !r.passed);
-  const passedN = submitResult.passedTests ?? dots.filter(r => r.passed).length;
-  const totalN  = submitResult.totalTests  ?? dots.length;
+  const cases   = submitResult.results || [];
+  const passedN = submitResult.passedTests ?? cases.filter(r => r.passed).length;
+  const totalN  = submitResult.totalTests  ?? cases.length;
+  const sel     = cases[selectedCase];
 
   return (
-    <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-      {/* Header */}
+      {/* ── Header ─────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ fontSize: 24 }}>{pass ? '✅' : '❌'}</span>
         <div>
           <div style={{ fontWeight: 800, fontSize: 16, color: pass ? 'var(--success)' : 'var(--red)' }}>
-            {pass ? 'Accepted' : submitResult.status || 'Wrong Answer'}
+            {pass ? 'Accepted' : resolveOverallStatus(cases)}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
             {passedN}/{totalN} test cases passed
-            {submitResult.runtimeMs > 0 && ` · ⏱ ${submitResult.runtimeMs}ms`}
+            {submitResult.executionTimeMs > 0 && ` · ⏱ ${submitResult.executionTimeMs}ms`}
           </div>
         </div>
         {submitResult.percentile > 0 && (
           <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent3)' }}>Top {100 - submitResult.percentile}%</div>
-            <div style={{ fontSize: 10, color: 'var(--text3)' }}>Faster than {submitResult.percentile}% of submissions</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent3)' }}>
+              Top {100 - submitResult.percentile}%
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text3)' }}>
+              Faster than {submitResult.percentile}% of submissions
+            </div>
           </div>
         )}
       </div>
 
-      {/* Test case dots */}
-      {dots.length > 0 && (
-        <div>
-          <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 5 }}>Test Cases</div>
-          <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-            {dots.map((tc, i) => (
-              <div key={i} title={`Test ${i + 1}: ${tc.passed ? 'PASS' : 'FAIL'}`}
-                style={{ width: 12, height: 12, borderRadius: 3, cursor: 'default',
-                  background: tc.passed ? 'var(--success)' : 'var(--red)' }} />
-            ))}
-          </div>
+      {/* ── Clickable test case tabs ────────────────────────────────────── */}
+      {cases.length > 0 && (
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+          {cases.map((tc, i) => {
+            const isActive = i === selectedCase;
+            const color    = tc.passed ? 'var(--success)' : 'var(--red)';
+            return (
+              <button key={i} onClick={() => setSelectedCase(i)} style={{
+                padding: '4px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 12,
+                fontWeight: isActive ? 700 : 400,
+                color: isActive ? color : 'var(--text2)',
+                background: isActive
+                  ? (tc.passed ? 'rgba(34,197,94,.12)' : 'rgba(248,113,113,.12)')
+                  : 'transparent',
+                border: `1px solid ${isActive ? color : 'var(--border)'}`,
+                transition: 'all .12s',
+              }}>
+                Case {i + 1}
+                <span style={{ marginLeft: 5, fontSize: 10 }}>{tc.passed ? '✓' : '✗'}</span>
+              </button>
+            );
+          })}
         </div>
       )}
 
-      {/* Failed case detail */}
-      {failed.slice(0, 2).map((tc, i) => (
-        <div key={i} style={{ padding: '10px 12px', background: 'rgba(248,113,113,.05)',
-          border: '1px solid rgba(248,113,113,.15)', borderRadius: 8 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--red)', marginBottom: 6 }}>
-            Test Case {tc.testNumber || i + 1} — {tc.status === 'COMPILE_ERROR' ? 'Compile Error' : tc.status === 'RUNTIME_ERROR' ? 'Runtime Error' : tc.status === 'TIMEOUT' ? 'Time Limit Exceeded' : 'Wrong Answer'}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', gap: '3px 10px', fontSize: 11 }}>
-            {tc.input && <><span style={{ color: 'var(--text3)' }}>Input</span>
-            <code style={{ fontFamily: 'var(--font-code)', color: 'var(--text)' }}>{String(tc.input)}</code></>}
-            {tc.expected && <><span style={{ color: 'var(--text3)' }}>Expected</span>
-            <code style={{ fontFamily: 'var(--font-code)', color: 'var(--success)' }}>{String(tc.expected)}</code></>}
-            <span style={{ color: 'var(--text3)' }}>Got</span>
-            <code style={{ fontFamily: 'var(--font-code)', color: 'var(--red)' }}>{String(tc.actual || '')}</code>
-          </div>
-        </div>
-      ))}
+      {/* ── Per-test-case detail panel ──────────────────────────────────── */}
+      {sel && <TestCaseDetail tc={sel} />}
 
-      {/* Smart feedback card — algorithm detection */}
+      {/* ── Pattern detection ───────────────────────────────────────────── */}
       {submitResult.detectedPattern && submitResult.detectedPattern !== 'UNKNOWN' && (
-        <div style={{
-          padding: '10px 12px',
-          background: 'var(--adim2)',
-          border: '1px solid rgba(99,102,241,.2)',
-          borderRadius: 8,
-          display: 'flex', flexDirection: 'column', gap: 5
-        }}>
+        <div style={{ padding: '10px 12px', background: 'var(--adim2)',
+          border: '1px solid rgba(99,102,241,.2)', borderRadius: 8,
+          display: 'flex', flexDirection: 'column', gap: 5 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 13 }}>🔍</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent3)' }}>
@@ -1098,29 +1108,105 @@ function ResultPanel({ runResult, submitResult }) {
             </div>
           )}
           {submitResult.optimizationNote && (
-            <div style={{
-              fontSize: 11, color: 'var(--yellow)', paddingLeft: 21,
-              display: 'flex', gap: 5, alignItems: 'flex-start'
-            }}>
-              <span>💡</span>
-              <span>{submitResult.optimizationNote}</span>
+            <div style={{ fontSize: 11, color: 'var(--yellow)', paddingLeft: 21,
+              display: 'flex', gap: 5, alignItems: 'flex-start' }}>
+              <span>💡</span><span>{submitResult.optimizationNote}</span>
             </div>
           )}
         </div>
       )}
 
-      {/* Hint on wrong answer */}
+      {/* ── Hint on wrong answer ────────────────────────────────────────── */}
       {!pass && submitResult.hint && (
         <div style={{ padding: '8px 12px', background: 'rgba(251,191,36,.06)',
-          border: '1px solid rgba(251,191,36,.15)', borderRadius: 6, fontSize: 12, color: 'var(--yellow)' }}>
+          border: '1px solid rgba(251,191,36,.15)', borderRadius: 6, fontSize: 12,
+          color: 'var(--yellow)' }}>
           💡 {submitResult.hint}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Error output (compile/runtime) */}
-      {submitResult.error && (
-        <pre className="code-block" style={{ fontSize: 12, color: 'var(--red)' }}>{submitResult.error}</pre>
+// ── Per-test-case detail ──────────────────────────────────────────────────────
+function TestCaseDetail({ tc }) {
+  const isCompileErr  = tc.status === 'COMPILE_ERROR';
+  const isRuntimeErr  = tc.status === 'RUNTIME_ERROR';
+  const isTimeout     = tc.status === 'TIMEOUT';
+  const isErrorStatus = isCompileErr || isRuntimeErr || isTimeout;
+
+  const statusText = isCompileErr  ? 'Compile Error'
+    : isRuntimeErr                 ? 'Runtime Error'
+    : isTimeout                    ? 'Time Limit Exceeded'
+    : tc.passed                    ? 'Accepted'
+    :                                'Wrong Answer';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 12, fontWeight: 700,
+          color: tc.passed ? 'var(--success)' : 'var(--red)' }}>
+          {statusText}
+        </span>
+        {tc.executionTimeMs > 0 && (
+          <span style={{ fontSize: 11, color: 'var(--text3)' }}>⏱ {tc.executionTimeMs}ms</span>
+        )}
+      </div>
+
+      {tc.input   && <DetailBlock label="Input"           value={tc.input} />}
+
+      {isErrorStatus ? (
+        <DetailBlock
+          label={isTimeout ? 'Result' : 'Error'}
+          value={tc.actual || statusText}
+          color="var(--red)"
+        />
+      ) : (
+        <>
+          <DetailBlock
+            label="Your Output"
+            value={tc.actual ?? '(empty)'}
+            color={tc.passed ? 'var(--success)' : 'var(--red)'}
+          />
+          <DetailBlock
+            label="Expected Output"
+            value={tc.expected ?? '(empty)'}
+            color="var(--success)"
+          />
+        </>
       )}
     </div>
   );
+}
+
+function DetailBlock({ label, value, color }) {
+  return (
+    <div>
+      <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+        letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 4 }}>
+        {label}
+      </div>
+      <pre style={{
+        margin: 0, padding: '8px 10px',
+        background: 'var(--bg2)',
+        border: '1px solid var(--border)',
+        borderRadius: 6,
+        fontSize: 12,
+        fontFamily: 'var(--font-code)',
+        color: color || 'var(--text)',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-all',
+        maxHeight: 100,
+        overflowY: 'auto',
+      }}>{String(value)}</pre>
+    </div>
+  );
+}
+
+function resolveOverallStatus(cases) {
+  if (!cases?.length) return 'Wrong Answer';
+  if (cases.some(r => r.status === 'COMPILE_ERROR')) return 'Compile Error';
+  if (cases.some(r => r.status === 'RUNTIME_ERROR')) return 'Runtime Error';
+  if (cases.some(r => r.status === 'TIMEOUT'))       return 'Time Limit Exceeded';
+  return 'Wrong Answer';
 }

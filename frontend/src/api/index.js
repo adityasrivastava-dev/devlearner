@@ -113,9 +113,9 @@ export const codeApi = {
       approachText: approachText || null,
     }).then((r) => r.data),
 
-  // Async variants — returns { jobId } immediately; poll with pollJob()
-  executeAsync: (code, stdin = '', javaVersion = '17') =>
-    http.post('/api/execute/async', { code, stdin, javaVersion }).then((r) => r.data),
+  // Async variants — returns { token } immediately; poll with pollJob(token)
+  executeAsync: (code, stdin = '', javaVersion = '17', problemId = null) =>
+    http.post('/api/execute/async', { code, stdin, javaVersion, problemId }).then((r) => r.data),
 
   submitAsync: (problemId, code, solveTimeSecs, hintAssisted, javaVersion = '17', approachText = '') =>
     http.post('/api/submissions/submit/async', {
@@ -126,9 +126,9 @@ export const codeApi = {
       approachText: approachText || null,
     }).then((r) => r.data),
 
-  // Poll a job until DONE/ERROR or timeout
-  pollJob: (jobId) =>
-    http.get(`/api/jobs/${jobId}`).then((r) => r.data),
+  // Poll a job by its non-guessable token until DONE/ERROR or timeout
+  pollJob: (token) =>
+    http.get(`/api/jobs/${token}`).then((r) => r.data),
 
   syntaxCheck: (code, javaVersion = '17') =>
     http.post('/api/syntax-check', { code, javaVersion }).then((r) => r.data),

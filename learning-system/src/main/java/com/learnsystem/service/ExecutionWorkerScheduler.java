@@ -16,6 +16,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 /**
  * ExecutionWorkerScheduler — the async execution engine.
@@ -96,10 +97,18 @@ public class ExecutionWorkerScheduler {
     // ── RUN ───────────────────────────────────────────────────────────────────
 
     private String processRun(ExecutionJob job) throws Exception {
+        // If the job is linked to a problem, use the problem's codeHarness (if any)
+        String harness = null;
+        if (job.getProblemId() != null) {
+            harness = problemRepo.findById(job.getProblemId())
+                    .map(p -> p.getCodeHarness())
+                    .orElse(null);
+        }
         ExecuteResponse res = executionService.execute(
                 job.getCode(),
                 job.getStdin() != null ? job.getStdin() : "",
-                job.getJavaVersion());
+                job.getJavaVersion(),
+                harness);
         return objectMapper.writeValueAsString(res);
     }
 
@@ -188,9 +197,14 @@ public class ExecutionWorkerScheduler {
     private java.util.Map<String, Object> buildSubmitResponseMap(
             SubmitResponse result, Long submissionId, long maxMs) {
         var map = new java.util.LinkedHashMap<String, Object>();
+        String compareResult = result.getResults() == null ? "" :
+                result.getResults().stream()
+                        .map(r -> r.isPassed() ? "1" : "0")
+                        .collect(Collectors.joining());
         map.put("allPassed",              result.isAllPassed());
         map.put("totalTests",             result.getTotalTests());
         map.put("passedTests",            result.getPassedTests());
+        map.put("compareResult",          compareResult);
         map.put("hint",                   result.getHint());
         map.put("results",                result.getResults());
         map.put("detectedPattern",        result.getDetectedPattern());

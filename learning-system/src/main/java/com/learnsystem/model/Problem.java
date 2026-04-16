@@ -100,6 +100,26 @@ private String hint3;
 @Column(length = 100)
 private String pattern;
 
+/**
+ * Hidden runner harness for method-based problems.
+ *
+ * When set, the user writes only the Solution class (no main).
+ * This harness is appended to the user's code before execution — it provides
+ * a main() that reads stdin, calls the user's method, and prints the result.
+ * The user never sees this code; the safety scanner only scans user code.
+ *
+ * Example harness:
+ *   class __Runner__ {
+ *     public static void main(String[] args) throws Exception {
+ *       java.util.Scanner sc = new java.util.Scanner(System.in);
+ *       int[] nums = ...; int target = sc.nextInt();
+ *       System.out.println(java.util.Arrays.toString(new Solution().twoSum(nums, target)));
+ *     }
+ *   }
+ */
+@Column(name = "code_harness", columnDefinition = "LONGTEXT")
+private String codeHarness;
+
 // ── Audit ─────────────────────────────────────────────────────────────────
 
 @Column(name = "created_at", updatable = false)

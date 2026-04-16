@@ -67,9 +67,9 @@ public ResponseEntity<Map<String, Object>> submitAsync(
             req.isHintAssisted(),
             req.getSolveTimeSecs() != null ? req.getSolveTimeSecs().intValue() : null
     );
-    log.debug("Async SUBMIT enqueued: jobId={} userId={} problemId={}", job.getId(), userId, req.getProblemId());
+    log.debug("Async SUBMIT enqueued: token={} userId={} problemId={}", job.getToken(), userId, req.getProblemId());
     Map<String, Object> resp = new LinkedHashMap<>();
-    resp.put("jobId",  job.getId());
+    resp.put("token",  job.getToken());
     resp.put("status", job.getStatus());
     return ResponseEntity.ok(resp);
 }

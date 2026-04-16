@@ -50,14 +50,20 @@ public SubmitResponse evaluate(SubmitRequest request) {
 
     // BUG FIX (javaVersion): SubmitRequest.javaVersion was missing, so the Java version
     // the user selected in the editor was silently ignored during submission.
-    List<ExecuteResponse> execResults = executionService.executeAll(request.getCode(), inputs, javaVersion);
+    // Pass the problem's codeHarness so method-based problems run correctly.
+    List<ExecuteResponse> execResults = executionService.executeAll(
+            request.getCode(), inputs, javaVersion, problem.getCodeHarness());
 
     List<SubmitResponse.TestCaseResult> results = new ArrayList<>();
     int passed = 0;
 
     for (int i = 0; i < testCases.size(); i++) {
         Map<String, String> tc = testCases.get(i);
-        String expected = tc.getOrDefault("expectedOutput", "").trim();
+        // Support both "expectedOutput" (new) and "output" (legacy seed format)
+        String expected = tc.containsKey("expectedOutput")
+                ? tc.getOrDefault("expectedOutput", "")
+                : tc.getOrDefault("output", "");
+        expected = expected != null ? expected.trim() : "";
         ExecuteResponse exec = execResults.get(i);
 
         boolean testPassed = exec.isSuccess() &&

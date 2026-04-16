@@ -151,7 +151,17 @@ public Problem updateProblem(Long problemId, Problem incoming) {
     existing.setHint2(incoming.getHint2());
     existing.setHint3(incoming.getHint3());
     existing.setPattern(incoming.getPattern());
+    existing.setCodeHarness(incoming.getCodeHarness());
     return problemRepository.save(existing);
+}
+
+@Transactional
+public void updateProblemHarness(Long problemId, String harness, String testCases) {
+    Problem p = problemRepository.findById(problemId)
+            .orElseThrow(() -> new RuntimeException("Problem not found: " + problemId));
+    p.setCodeHarness(harness == null || harness.isBlank() ? null : harness);
+    if (testCases != null && !testCases.isBlank()) p.setTestCases(testCases);
+    problemRepository.save(p);
 }
 
 @Transactional

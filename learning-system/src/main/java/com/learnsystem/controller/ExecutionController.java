@@ -3,7 +3,9 @@ package com.learnsystem.controller;
 import com.learnsystem.config.ExecutionRateLimiter;
 import com.learnsystem.dto.*;
 import com.learnsystem.model.ExecutionJob;
+import com.learnsystem.model.Problem;
 import com.learnsystem.model.User;
+import com.learnsystem.repository.ProblemRepository;
 import com.learnsystem.service.ComplexityAnalyzer;
 import com.learnsystem.service.EvaluationService;
 import com.learnsystem.service.ExecutionService;
@@ -33,6 +35,7 @@ public class ExecutionController {
     private final ExecutionRateLimiter rateLimiter;
     private final JobQueueService     jobQueue;
     private final ObjectMapper        objectMapper;
+    private final ProblemRepository   problemRepo;
 
     // POST /api/execute — run code freely (rate-limited: 10 runs/min per user)
     @PostMapping("/execute")
@@ -53,9 +56,12 @@ public class ExecutionController {
                     ));
         }
 
-        log.debug("Execute: userId={} javaVersion={} codeLength={}", userId,
-                request.getJavaVersion(), request.getCode() != null ? request.getCode().length() : 0);
-        ExecuteResponse resp = executionService.execute(request.getCode(), request.getStdin(), request.getJavaVersion());
+        log.debug("Execute: userId={} javaVersion={} problemId={} codeLength={}", userId,
+                request.getJavaVersion(), request.getProblemId(),
+                request.getCode() != null ? request.getCode().length() : 0);
+        String harness = resolveHarness(request.getProblemId());
+        ExecuteResponse resp = executionService.execute(
+                request.getCode(), request.getStdin(), request.getJavaVersion(), harness);
         log.debug("Execute result: status={} timeMs={}", resp.getStatus(), resp.getExecutionTimeMs());
         return ResponseEntity.ok(resp);
     }
@@ -124,22 +130,22 @@ public class ExecutionController {
         }
 
         ExecutionJob job = jobQueue.enqueueRun(userId, request.getCode(),
-                request.getStdin(), request.getJavaVersion());
-        log.debug("Async RUN enqueued: jobId={} userId={}", job.getId(), userId);
-        return ResponseEntity.ok(Map.of("jobId", job.getId(), "status", job.getStatus()));
+                request.getStdin(), request.getJavaVersion(), request.getProblemId());
+        log.debug("Async RUN enqueued: token={} userId={} problemId={}", job.getToken(), userId, request.getProblemId());
+        return ResponseEntity.ok(Map.of("token", job.getToken(), "status", job.getStatus()));
     }
 
     /**
-     * GET /api/jobs/{jobId} — poll job status.
-     * Returns:  { status, jobType, result } where result is the parsed JSON
+     * GET /api/jobs/{token} — poll job status.
+     * Returns:  { token, status, jobType, result } where result is the parsed JSON
      * of ExecuteResponse (RUN) or the submit response map (SUBMIT).
      */
-    @GetMapping("/jobs/{jobId}")
-    public ResponseEntity<?> pollJob(@PathVariable Long jobId) {
-        return jobQueue.getJob(jobId)
+    @GetMapping("/jobs/{token}")
+    public ResponseEntity<?> pollJob(@PathVariable String token) {
+        return jobQueue.getJob(token)
                 .map(job -> {
                     Map<String, Object> resp = new LinkedHashMap<>();
-                    resp.put("jobId",   job.getId());
+                    resp.put("token",   job.getToken());
                     resp.put("status",  job.getStatus());
                     resp.put("jobType", job.getJobType());
 
@@ -155,5 +161,15 @@ public class ExecutionController {
                     return ResponseEntity.ok(resp);
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /** Returns the codeHarness for the given problem, or null if no problemId / no harness. */
+    private String resolveHarness(Long problemId) {
+        if (problemId == null) return null;
+        return problemRepo.findById(problemId)
+                .map(Problem::getCodeHarness)
+                .orElse(null);
     }
 }

@@ -30,9 +30,11 @@ public class JobQueueService {
 
     // ── Enqueue ───────────────────────────────────────────────────────────────
 
-    public ExecutionJob enqueueRun(Long userId, String code, String stdin, String javaVersion) {
+    public ExecutionJob enqueueRun(Long userId, String code, String stdin,
+                                   String javaVersion, Long problemId) {
         ExecutionJob job = ExecutionJob.builder()
                 .userId(userId)
+                .problemId(problemId)
                 .code(code)
                 .stdin(stdin)
                 .javaVersion(javaVersion)
@@ -99,8 +101,8 @@ public class JobQueueService {
 
     // ── Polling ───────────────────────────────────────────────────────────────
 
-    public Optional<ExecutionJob> getJob(Long jobId) {
-        return repo.findById(jobId);
+    public Optional<ExecutionJob> getJob(String token) {
+        return repo.findByToken(token);
     }
 
     // ── Housekeeping ──────────────────────────────────────────────────────────

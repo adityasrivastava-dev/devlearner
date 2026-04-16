@@ -152,6 +152,29 @@ public ResponseEntity<Map<String, Object>> deleteTopic(@PathVariable Long id) {
         }
     }
 
+    /**
+     * PATCH /api/admin/problems/{id}/harness
+     * Sets (or clears) the codeHarness and optionally updates testCases.
+     * Body: { "codeHarness": "class __Runner__ { ... }", "testCases": "[...]" }
+     * Send null or empty string for codeHarness to clear it.
+     * testCases is optional — omit to leave existing test cases unchanged.
+     */
+    @PatchMapping("/api/admin/problems/{id}/harness")
+    public ResponseEntity<?> updateHarness(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        try {
+            String harness   = body.get("codeHarness");
+            String testCases = body.get("testCases");   // optional
+            topicService.updateProblemHarness(id, harness, testCases);
+            log.info("[Admin] Updated harness for problem id={} ({})", id,
+                    harness == null || harness.isBlank() ? "cleared" : harness.length() + " chars");
+            return ResponseEntity.ok(Map.of("id", id, "updated", true));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @DeleteMapping("/api/admin/problems/{id}")
     public ResponseEntity<?> deleteProblem(@PathVariable Long id) {
         try {

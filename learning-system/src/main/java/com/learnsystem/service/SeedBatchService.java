@@ -125,6 +125,7 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
                         p.setBruteForce(pdto.getBruteForce());
                         p.setOptimizedApproach(pdto.getOptimizedApproach());
                         p.setEditorial(pdto.getEditorial());
+                        p.setCodeHarness(pdto.getCodeHarness());
                         try {
                             p.setDifficulty(Problem.Difficulty.valueOf(pdto.getDifficulty().toUpperCase()));
                         } catch (Exception e) {
@@ -152,6 +153,14 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
                         if (isBlank(p.getConstraints())      && notBlank(pdto.getConstraints()))      { p.setConstraints(pdto.getConstraints());           dirty = true; }
                         if (isBlank(p.getBruteForce())       && notBlank(pdto.getBruteForce()))       { p.setBruteForce(pdto.getBruteForce());             dirty = true; }
                         if (isBlank(p.getOptimizedApproach())&& notBlank(pdto.getOptimizedApproach())){ p.setOptimizedApproach(pdto.getOptimizedApproach()); dirty = true; }
+                        if (isBlank(p.getCodeHarness())      && notBlank(pdto.getCodeHarness()))      { p.setCodeHarness(pdto.getCodeHarness());           dirty = true; }
+                        // testCases: always update if seed has them — seed is authoritative for test data
+                        if (pdto.getTestCases() != null) {
+                            String newTc = pdto.getTestCases().isTextual()
+                                    ? pdto.getTestCases().asText()
+                                    : pdto.getTestCases().toString();
+                            if (!newTc.equals(p.getTestCases())) { p.setTestCases(newTc); dirty = true; }
+                        }
                         if (dirty) { problemRepo.save(p); patchedProblems++; }
                     }
                 }
@@ -237,6 +246,7 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
                     p.setBruteForce(pdto.getBruteForce());
                     p.setOptimizedApproach(pdto.getOptimizedApproach());
                     p.setEditorial(pdto.getEditorial());
+                    p.setCodeHarness(pdto.getCodeHarness());
                     try {
                         p.setDifficulty(Problem.Difficulty.valueOf(pdto.getDifficulty().toUpperCase()));
                     } catch (Exception e) {
