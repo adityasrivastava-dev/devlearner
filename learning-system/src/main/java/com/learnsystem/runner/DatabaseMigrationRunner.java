@@ -44,6 +44,13 @@ public void run(ApplicationArguments args) {
 	ensureVarcharMinLength("execution_jobs", "status", 10,
 			"ALTER TABLE execution_jobs MODIFY COLUMN status VARCHAR(10) NOT NULL DEFAULT 'PENDING'");
 
+	// ── execution_jobs.job_type ──────────────────────────────────────────
+	// TEST_RUN (8 chars) was added to the enum. If MySQL created job_type as
+	// an ENUM('RUN','SUBMIT') rather than VARCHAR, inserting 'TEST_RUN' would
+	// give "Data truncated". Ensure it is VARCHAR(10) just like status.
+	ensureVarcharMinLength("execution_jobs", "job_type", 10,
+			"ALTER TABLE execution_jobs MODIFY COLUMN job_type VARCHAR(10) NOT NULL DEFAULT 'RUN'");
+
 	// ── execution_jobs.token ──────────────────────────────────────────────
 	// Non-guessable polling token added to replace raw integer IDs in URLs.
 	// Added as NULL so existing rows without a token don't violate constraints.

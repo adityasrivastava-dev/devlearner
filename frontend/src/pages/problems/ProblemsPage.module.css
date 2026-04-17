@@ -285,8 +285,13 @@
   white-space: nowrap;
 }
 
-/* Topic label */
+/* Topic label — truncates long topic names with ellipsis; full name on hover */
 .topicLabel {
+  display: block;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 12px;
   color: var(--text3);
 }

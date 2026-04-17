@@ -203,7 +203,7 @@ export default function ProblemsPage() {
                 <th>Title</th>
                 <th style={{ width: 100 }}>Difficulty</th>
                 <th style={{ width: 130 }}>Pattern</th>
-                <th style={{ width: 120 }}>Topic</th>
+                <th style={{ width: 160 }}>Topic</th>
               </tr>
             </thead>
             <tbody>
@@ -231,7 +231,7 @@ export default function ProblemsPage() {
                 <th>Title</th>
                 <th style={{ width: 100 }}>Difficulty</th>
                 <th style={{ width: 130 }}>Pattern</th>
-                <th style={{ width: 120 }}>Topic</th>
+                <th style={{ width: 160 }}>Topic</th>
               </tr>
             </thead>
             <tbody>
@@ -272,7 +272,7 @@ export default function ProblemsPage() {
                       </span>
                     </td>
                     <td>{p.pattern && <span className={styles.patternChip}>{p.pattern}</span>}</td>
-                    <td><span className={styles.topicLabel}>{p.topicTitle}</span></td>
+                    <td><span className={styles.topicLabel} title={p.topicTitle}>{p.topicTitle}</span></td>
                   </tr>
                 );
               })}

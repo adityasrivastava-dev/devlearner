@@ -158,7 +158,8 @@ public class ExecutionWorkerScheduler {
             String problemTitle   = null;
             String correctPattern = null;
             try {
-                var prob = problemRepo.findById(job.getProblemId()).orElse(null);
+                // JOIN FETCH loads topic in the same query — avoids LazyInitializationException
+                var prob = problemRepo.findByIdWithTopic(job.getProblemId()).orElse(null);
                 if (prob != null) {
                     topicId        = prob.getTopic() != null ? prob.getTopic().getId() : null;
                     problemTitle   = prob.getTitle();

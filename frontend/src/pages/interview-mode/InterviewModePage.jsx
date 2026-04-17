@@ -221,12 +221,23 @@ function CodingScreen({ problem, approach, timeLeft, totalSecs, onSubmit, isSubm
     setRunResult(null);
     setRunMsg('Running…');
     setActiveTab('output');
+
+    // Method-only detection: same logic as ProblemSolveView
+    const hasTestCases = (() => {
+      if (!problem?.testCases) return false;
+      try { return JSON.parse(problem.testCases).length > 0; }
+      catch { return false; }
+    })();
+    const isMethodOnly = hasTestCases && !code.includes('public static void main');
+
     try {
-      const { token } = await codeApi.executeAsync(code, testInput, '17', problem.id);
+      const { token } = isMethodOnly
+        ? await codeApi.testRunAsync(problem.id, code, '17')
+        : await codeApi.executeAsync(code, testInput, '17', problem.id);
       const { ok, data, error } = await pollUntilDone(token);
       if (!ok) setRunResult({ status: 'ERROR', error });
       else {
-        setRunResult(data);
+        setRunResult(isMethodOnly ? { ...data, isTestRun: true } : data);
         if (data.compileErrors?.length) applyMarkers(editorRef, monacoRef, data.compileErrors);
       }
     } catch {
@@ -318,20 +329,53 @@ function CodingScreen({ problem, approach, timeLeft, totalSecs, onSubmit, isSubm
                   <span className={styles.outputEmpty}>Run your code to see output</span>
                 )}
                 {isRunning && <span className={styles.outputEmpty}>{runMsg || 'Running…'}</span>}
-                {runResult && !isRunning && (
-                  <>
-                    {runResult.compileErrors?.length > 0 && (
-                      <div className={styles.outputErrors}>
-                        {runResult.compileErrors.map((e, i) => (
-                          <div key={i} className={styles.outputError}>Line {e.line}: {e.message}</div>
+                {runResult && !isRunning && (() => {
+                  // Test-run: per-case results (method-only problems)
+                  if (runResult.isTestRun) {
+                    const cases = runResult.results || [];
+                    const passedN = runResult.passedTests ?? cases.filter(r => r.passed).length;
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: runResult.allPassed ? '#4ade80' : '#f87171' }}>
+                          {runResult.allPassed ? '✓ All cases passed' : `${passedN}/${cases.length} cases passed`}
+                        </div>
+                        {cases.map((tc, i) => (
+                          <div key={i} style={{
+                            padding: '6px 8px', borderRadius: 5, fontSize: 11,
+                            background: tc.passed ? 'rgba(74,222,128,.08)' : 'rgba(248,113,113,.08)',
+                            border: `1px solid ${tc.passed ? 'rgba(74,222,128,.2)' : 'rgba(248,113,113,.2)'}`,
+                          }}>
+                            <span style={{ fontWeight: 700, color: tc.passed ? '#4ade80' : '#f87171' }}>
+                              Case {i + 1} {tc.passed ? '✓' : '✗'}
+                            </span>
+                            {!tc.passed && (
+                              <>
+                                {tc.input    && <div style={{ color: '#94a3b8', marginTop: 2 }}>In: <code>{tc.input}</code></div>}
+                                <div style={{ color: '#f87171' }}>Got: <code>{tc.actual ?? '(empty)'}</code></div>
+                                <div style={{ color: '#4ade80' }}>Expected: <code>{tc.expected ?? '(empty)'}</code></div>
+                              </>
+                            )}
+                          </div>
                         ))}
                       </div>
-                    )}
-                    <pre className={`${styles.outputPre} ${!runResult.success ? styles.outputPreError : ''}`}>
-                      {runResult.output || runResult.error || '(no output)'}
-                    </pre>
-                  </>
-                )}
+                    );
+                  }
+                  // Regular run: raw output
+                  return (
+                    <>
+                      {runResult.compileErrors?.length > 0 && (
+                        <div className={styles.outputErrors}>
+                          {runResult.compileErrors.map((e, i) => (
+                            <div key={i} className={styles.outputError}>Line {e.line}: {e.message}</div>
+                          ))}
+                        </div>
+                      )}
+                      <pre className={`${styles.outputPre} ${!runResult.success ? styles.outputPreError : ''}`}>
+                        {runResult.output || runResult.error || '(no output)'}
+                      </pre>
+                    </>
+                  );
+                })()}
               </div>
             )}
           </div>
