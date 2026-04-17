@@ -30,7 +30,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ExecutionJob {
 
-    public enum Type   { RUN, SUBMIT }
+    public enum Type   { RUN, SUBMIT, TEST_RUN }
     public enum Status { PENDING, RUNNING, STARTED, DONE, ERROR }
 
     @Id

@@ -181,8 +181,16 @@ export default function ProblemSolveView({
     setIsRunning(true);
     setActiveResultTab('result');
     setRunResult({ loading: true });
+
+    // Detect method-only code: no main() → run against test cases (LeetCode-style)
+    const isMethodOnly = hasTestCases && !code.includes('public static void main');
+
     try {
-      const { token } = await withRetry(() => codeApi.executeAsync(code, testInput, javaVersion, problemId));
+      const enqueueFn = isMethodOnly
+        ? () => codeApi.testRunAsync(problemId, code, javaVersion)
+        : () => codeApi.executeAsync(code, testInput, javaVersion, problemId);
+
+      const { token } = await withRetry(enqueueFn);
       const { ok, data, error } = await pollUntilDone(token, (attempt, status) => {
         const secs = attempt * 1.5 | 0;
         const msg  = status === 'STARTED' ? `Running your code… (${secs}s)` : `Waiting in queue… (${secs}s)`;
@@ -191,7 +199,8 @@ export default function ProblemSolveView({
       if (!ok) {
         setRunResult({ status: 'ERROR', error });
       } else {
-        setRunResult(data);
+        // Tag test-run results so ResultPanel knows to show per-case UI
+        setRunResult(isMethodOnly ? { ...data, isTestRun: true } : data);
         if (data.compileErrors?.length) applyMarkers(editorRef, monacoRef, data.compileErrors);
       }
     } catch (err) {
@@ -847,7 +856,7 @@ function TestcasePanel({ testInput, setTestInput, sampleInput, sampleOutput }) {
     <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)' }}>
-          stdin — passed to ▶ Run
+          stdin — passed to ▶ Run (if your code has main)
         </div>
         {sampleInput && (
           <button onClick={() => setTestInput(sampleInput)} style={{
@@ -984,12 +993,13 @@ function ReflectTab({ problemId, answers, onChange }) {
 function ResultPanel({ runResult, submitResult }) {
   const [selectedCase, setSelectedCase] = useState(0);
 
-  // Auto-select first failing case whenever a new result arrives
+  // Auto-select first failing case whenever a new result arrives (submit or test-run)
   useEffect(() => {
-    if (!submitResult?.results?.length) return;
-    const firstFail = submitResult.results.findIndex(r => !r.passed);
+    const results = submitResult?.results || (runResult?.isTestRun ? runResult?.results : null);
+    if (!results?.length) return;
+    const firstFail = results.findIndex(r => !r.passed);
     setSelectedCase(firstFail >= 0 ? firstFail : 0);
-  }, [submitResult]);
+  }, [submitResult, runResult]);
 
   if (!runResult && !submitResult) return (
     <div style={{ padding: 16, textAlign: 'center', color: 'var(--text3)', fontSize: 12 }}>
@@ -1010,7 +1020,74 @@ function ResultPanel({ runResult, submitResult }) {
     );
   }
 
-  // ── Run result ────────────────────────────────────────────────────────────
+  // ── Test-run result (method-only problems) — per-case display ────────────
+  if (!submitResult && runResult.isTestRun) {
+    const pass    = runResult.allPassed;
+    const cases   = runResult.results || [];
+    const passedN = runResult.passedTests ?? cases.filter(r => r.passed).length;
+    const totalN  = runResult.totalTests  ?? cases.length;
+    const sel     = cases[selectedCase];
+
+    return (
+      <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 16, color: pass ? 'var(--success)' : 'var(--red)' }}>
+              {pass ? 'All samples passed' : resolveOverallStatus(cases)}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+              {passedN}/{totalN} test cases · Run result (not submitted)
+            </div>
+          </div>
+          <div style={{ marginLeft: 'auto' }}>
+            <div style={{ fontSize: 10, color: 'var(--text3)', textAlign: 'right' }}>
+              Click ⬆ Submit to save your solution
+            </div>
+          </div>
+        </div>
+
+        {/* Clickable test case tabs */}
+        {cases.length > 0 && (
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+            {cases.map((tc, i) => {
+              const isActive = i === selectedCase;
+              const color    = tc.passed ? 'var(--success)' : 'var(--red)';
+              return (
+                <button key={i} onClick={() => setSelectedCase(i)} style={{
+                  padding: '4px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 12,
+                  fontWeight: isActive ? 700 : 400,
+                  color: isActive ? color : 'var(--text2)',
+                  background: isActive
+                    ? (tc.passed ? 'rgba(34,197,94,.12)' : 'rgba(248,113,113,.12)')
+                    : 'transparent',
+                  border: `1px solid ${isActive ? color : 'var(--border)'}`,
+                  transition: 'all .12s',
+                }}>
+                  Case {i + 1}
+                  <span style={{ marginLeft: 5, fontSize: 10 }}>{tc.passed ? '✓' : '✗'}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Per-test-case detail */}
+        {sel && <TestCaseDetail tc={sel} />}
+
+        {/* Hint on failure */}
+        {!pass && runResult.hint && (
+          <div style={{ padding: '8px 12px', background: 'rgba(251,191,36,.06)',
+            border: '1px solid rgba(251,191,36,.15)', borderRadius: 6, fontSize: 12,
+            color: 'var(--yellow)' }}>
+            💡 {runResult.hint}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Regular run result ────────────────────────────────────────────────────
   if (!submitResult) {
     const ok = runResult.status === 'SUCCESS';
     return (
@@ -1033,28 +1110,14 @@ function ResultPanel({ runResult, submitResult }) {
             <pre className="code-block" style={{ fontSize: 12 }}>{runResult.output}</pre>
           </div>
         )}
-        {runResult.error && (() => {
-          const isNoMain = runResult.error.includes('Main method not found');
-          return (
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-                letterSpacing: '.5px', color: 'var(--red)', marginBottom: 4 }}>
-                {isNoMain ? 'Tip' : 'Error'}
-              </div>
-              {isNoMain ? (
-                <div style={{ fontSize: 12, color: 'var(--yellow)', background: 'rgba(251,191,36,.08)',
-                  border: '1px solid rgba(251,191,36,.2)', borderRadius: 6, padding: '8px 10px', lineHeight: 1.6 }}>
-                  This problem uses method-only format (no <code>main()</code> needed).<br />
-                  <strong>Click ⬆ Submit</strong> to run against all test cases, or add a{' '}
-                  <code>main()</code> method manually to test your own input.
-                </div>
-              ) : (
-                <pre className="code-block" style={{ fontSize: 12, color: 'var(--red)',
-                  borderColor: 'rgba(248,113,113,.2)' }}>{runResult.error}</pre>
-              )}
-            </div>
-          );
-        })()}
+        {runResult.error && (
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+              letterSpacing: '.5px', color: 'var(--red)', marginBottom: 4 }}>Error</div>
+            <pre className="code-block" style={{ fontSize: 12, color: 'var(--red)',
+              borderColor: 'rgba(248,113,113,.2)' }}>{runResult.error}</pre>
+          </div>
+        )}
       </div>
     );
   }

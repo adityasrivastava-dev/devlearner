@@ -62,6 +62,19 @@ public class JobQueueService {
         return repo.save(job);
     }
 
+    public ExecutionJob enqueueTestRun(Long userId, Long problemId,
+                                      String code, String javaVersion) {
+        ExecutionJob job = ExecutionJob.builder()
+                .userId(userId)
+                .problemId(problemId)
+                .code(code)
+                .javaVersion(javaVersion)
+                .jobType(ExecutionJob.Type.TEST_RUN)
+                .status(ExecutionJob.Status.PENDING)
+                .build();
+        return repo.save(job);
+    }
+
     // ── Worker operations ─────────────────────────────────────────────────────
 
     /**

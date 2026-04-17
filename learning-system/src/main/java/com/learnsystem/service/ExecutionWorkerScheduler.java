@@ -83,8 +83,9 @@ public class ExecutionWorkerScheduler {
         log.debug("Processing job {} type={}", job.getId(), job.getJobType());
         try {
             String resultJson = switch (job.getJobType()) {
-                case RUN    -> processRun(job);
-                case SUBMIT -> processSubmit(job);
+                case RUN      -> processRun(job);
+                case SUBMIT   -> processSubmit(job);
+                case TEST_RUN -> processTestRun(job);
             };
             jobQueue.markDone(job.getId(), resultJson);
             log.debug("Job {} done in {}ms", job.getId(), System.currentTimeMillis() - start);
@@ -175,6 +176,22 @@ public class ExecutionWorkerScheduler {
         // 6. Return the full result including submissionId
         // The frontend uses this exactly like the old sync response
         return objectMapper.writeValueAsString(buildSubmitResponseMap(result, sub.getId(), maxMs, job.getProblemId()));
+    }
+
+    // ── TEST_RUN ──────────────────────────────────────────────────────────────
+
+    /**
+     * TEST_RUN: evaluate against the problem's test cases but do NOT persist a submission.
+     * Used when the user clicks Run on a method-based problem (no main() in their code).
+     * Returns the same SubmitResponse shape so the frontend can show per-case results.
+     */
+    private String processTestRun(ExecutionJob job) throws Exception {
+        SubmitRequest req = new SubmitRequest();
+        req.setProblemId(job.getProblemId());
+        req.setCode(job.getCode());
+        req.setJavaVersion(job.getJavaVersion() != null ? job.getJavaVersion() : "17");
+        SubmitResponse result = evaluationService.evaluate(req);
+        return objectMapper.writeValueAsString(result);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

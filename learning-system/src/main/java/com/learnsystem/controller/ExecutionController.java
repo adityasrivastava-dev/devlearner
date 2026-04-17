@@ -136,6 +136,38 @@ public class ExecutionController {
     }
 
     /**
+     * POST /api/execute/test-run/async — run code against test cases without saving a submission.
+     * Used for method-based problems (no main()) when the user clicks Run.
+     * Returns { token } immediately; poll GET /api/jobs/{token} for the per-case result.
+     */
+    @PostMapping("/execute/test-run/async")
+    public ResponseEntity<?> testRunAsync(
+            @Valid @RequestBody ExecuteRequest request,
+            @AuthenticationPrincipal User principal) {
+
+        Long userId = (principal != null) ? principal.getId() : null;
+        if (userId != null && !rateLimiter.tryConsume(userId)) {
+            log.warn("Rate limit exceeded for userId={}", userId);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .header(HttpHeaders.RETRY_AFTER, "60")
+                    .body(Map.of(
+                            "error",             "Rate limit exceeded",
+                            "message",           "Maximum 10 code executions per minute. Please wait.",
+                            "retryAfterSeconds", 60
+                    ));
+        }
+
+        if (request.getProblemId() == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "problemId is required for test-run"));
+        }
+
+        ExecutionJob job = jobQueue.enqueueTestRun(userId, request.getProblemId(),
+                request.getCode(), request.getJavaVersion());
+        log.debug("Async TEST_RUN enqueued: token={} userId={} problemId={}", job.getToken(), userId, request.getProblemId());
+        return ResponseEntity.ok(Map.of("token", job.getToken(), "status", job.getStatus()));
+    }
+
+    /**
      * GET /api/jobs/{token} — poll job status.
      * Returns:  { token, status, jobType, result } where result is the parsed JSON
      * of ExecuteResponse (RUN) or the submit response map (SUBMIT).

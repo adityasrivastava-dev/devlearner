@@ -126,6 +126,10 @@ export const codeApi = {
       approachText: approachText || null,
     }).then((r) => r.data),
 
+  // Test-run against problem's test cases without saving a submission (for method-only problems)
+  testRunAsync: (problemId, code, javaVersion = '17') =>
+    http.post('/api/execute/test-run/async', { problemId, code, javaVersion }).then((r) => r.data),
+
   // Poll a job by its non-guessable token until DONE/ERROR or timeout
   pollJob: (token) =>
     http.get(`/api/jobs/${token}`).then((r) => r.data),
