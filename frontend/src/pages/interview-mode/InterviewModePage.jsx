@@ -182,11 +182,25 @@ function ApproachScreen({ problem, timeLeft, totalSecs, onProceed }) {
   );
 }
 
+// ── Async poll helper (shared across Run and auto-submit) ────────────────────
+async function pollUntilDone(token) {
+  const POLL_INTERVAL = 1500;
+  const MAX_ATTEMPTS  = 60;
+  for (let i = 0; i < MAX_ATTEMPTS; i++) {
+    await new Promise(r => setTimeout(r, POLL_INTERVAL));
+    const job = await codeApi.pollJob(token);
+    if (job.status === 'DONE')  return { ok: true,  data: job.result };
+    if (job.status === 'ERROR') return { ok: false, error: job.error || 'Execution failed' };
+  }
+  return { ok: false, error: 'Timed out — please try again.' };
+}
+
 // ── Coding screen ─────────────────────────────────────────────────────────────
 function CodingScreen({ problem, approach, timeLeft, totalSecs, onSubmit, isSubmitting }) {
   const [code, setCode] = useState(problem.starterCode || PROBLEM_STARTER_CODE);
   const [runResult, setRunResult] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [runMsg,    setRunMsg]    = useState('');
   const [testInput, setTestInput] = useState(problem.sampleInput || '');
   const [activeTab, setActiveTab] = useState('output');
   const editorRef = useRef(null);
@@ -205,15 +219,21 @@ function CodingScreen({ problem, approach, timeLeft, totalSecs, onSubmit, isSubm
     if (!code.trim()) return;
     setIsRunning(true);
     setRunResult(null);
+    setRunMsg('Running…');
     setActiveTab('output');
     try {
-      const res = await codeApi.execute(code, testInput, '17');
-      setRunResult(res);
-      if (res.compileErrors?.length) applyMarkers(editorRef, monacoRef, res.compileErrors);
+      const { token } = await codeApi.executeAsync(code, testInput, '17', problem.id);
+      const { ok, data, error } = await pollUntilDone(token);
+      if (!ok) setRunResult({ status: 'ERROR', error });
+      else {
+        setRunResult(data);
+        if (data.compileErrors?.length) applyMarkers(editorRef, monacoRef, data.compileErrors);
+      }
     } catch {
       setRunResult({ status: 'ERROR', error: 'Execution failed' });
     } finally {
       setIsRunning(false);
+      setRunMsg('');
     }
   }
 
@@ -297,7 +317,7 @@ function CodingScreen({ problem, approach, timeLeft, totalSecs, onSubmit, isSubm
                 {!runResult && !isRunning && (
                   <span className={styles.outputEmpty}>Run your code to see output</span>
                 )}
-                {isRunning && <span className={styles.outputEmpty}>Running…</span>}
+                {isRunning && <span className={styles.outputEmpty}>{runMsg || 'Running…'}</span>}
                 {runResult && !isRunning && (
                   <>
                     {runResult.compileErrors?.length > 0 && (
@@ -324,8 +344,8 @@ function CodingScreen({ problem, approach, timeLeft, totalSecs, onSubmit, isSubm
 // ── Scorecard screen ──────────────────────────────────────────────────────────
 function ScorecardScreen({ problem, submitResult, timeUsed, totalSecs, approach, timedOut, onTryAnother, onReview }) {
   const solved   = submitResult?.allPassed ?? false;
-  const passed   = submitResult?.testResults?.filter(t => t.passed).length ?? 0;
-  const total    = submitResult?.testResults?.length ?? 0;
+  const passed   = submitResult?.results?.filter(t => t.passed).length ?? 0;
+  const total    = submitResult?.results?.length ?? 0;
   const timePct  = Math.min(100, Math.round((timeUsed / totalSecs) * 100));
   const hasApproach = approach?.trim().length >= MIN_APPROACH_CHARS;
   const diff     = getDiffMeta(problem.difficulty);
@@ -494,15 +514,17 @@ export default function InterviewModePage() {
       const solveTimeSecs = startedAtRef.current
         ? Math.floor((Date.now() - startedAtRef.current) / 1000)
         : totalSecs;
-      const res = await codeApi.submit(
+      const { token } = await codeApi.submitAsync(
         problem.id, code, solveTimeSecs,
         false,   // no hints
         '17',
         approachText
       );
-      setSubmitResult(res);
+      const { ok, data, error } = await pollUntilDone(token);
+      if (!ok) setSubmitResult({ allPassed: false, results: [], error });
+      else setSubmitResult(data);
     } catch {
-      setSubmitResult({ allPassed: false, testResults: [] });
+      setSubmitResult({ allPassed: false, results: [] });
     } finally {
       setIsSubmitting(false);
       setPhase('scored');

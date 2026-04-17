@@ -43,18 +43,23 @@ export default function PlaygroundPage() {
     setIsRunning(true);
     setResult(null);
     setActiveTab('output');
-
-    // Clear old markers
     applyMarkers(editorRef, monacoRef, []);
 
     try {
-      const res = await codeApi.execute(code, stdin, javaVersion);
-      setResult(res);
-
-      // Apply compile-error markers to Monaco
-      if (res.compileErrors?.length) {
-        applyMarkers(editorRef, monacoRef, res.compileErrors);
+      const { token } = await codeApi.executeAsync(code, stdin, javaVersion);
+      // Poll until done
+      const POLL_MS = 1500;
+      const MAX = 60;
+      let res = null;
+      for (let i = 0; i < MAX; i++) {
+        await new Promise(r => setTimeout(r, POLL_MS));
+        const job = await codeApi.pollJob(token);
+        if (job.status === 'DONE')  { res = job.result; break; }
+        if (job.status === 'ERROR') { res = { status: 'RUNTIME_ERROR', error: job.error || 'Execution failed' }; break; }
       }
+      if (!res) res = { status: 'TIMEOUT', error: 'Timed out waiting for result.' };
+      setResult(res);
+      if (res.compileErrors?.length) applyMarkers(editorRef, monacoRef, res.compileErrors);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Execution failed');
     } finally {

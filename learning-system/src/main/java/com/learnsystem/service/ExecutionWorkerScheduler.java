@@ -174,7 +174,7 @@ public class ExecutionWorkerScheduler {
 
         // 6. Return the full result including submissionId
         // The frontend uses this exactly like the old sync response
-        return objectMapper.writeValueAsString(buildSubmitResponseMap(result, sub.getId(), maxMs));
+        return objectMapper.writeValueAsString(buildSubmitResponseMap(result, sub.getId(), maxMs, job.getProblemId()));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -195,7 +195,7 @@ public class ExecutionWorkerScheduler {
      * so the frontend polling code doesn't need a different response handler.
      */
     private java.util.Map<String, Object> buildSubmitResponseMap(
-            SubmitResponse result, Long submissionId, long maxMs) {
+            SubmitResponse result, Long submissionId, long maxMs, Long problemId) {
         var map = new java.util.LinkedHashMap<String, Object>();
         String compareResult = result.getResults() == null ? "" :
                 result.getResults().stream()
@@ -212,6 +212,23 @@ public class ExecutionWorkerScheduler {
         map.put("optimizationNote",       result.getOptimizationNote());
         map.put("submissionId",           submissionId);
         map.put("executionTimeMs",        maxMs);
+        map.put("runtimeMs",              maxMs);
+
+        // Percentile — same logic as sync SubmissionController
+        if (result.isAllPassed() && maxMs > 0 && problemId != null) {
+            try {
+                long total  = submissionRepo.countAcceptedByProblemId(problemId);
+                long slower = submissionRepo.countAcceptedSlowerThan(problemId, maxMs);
+                if (total > 1) {
+                    double pct = Math.round((double) slower / total * 100.0);
+                    map.put("percentile",     pct);
+                    map.put("fasterThan",     (int) pct);
+                    map.put("totalAccepted",  total);
+                }
+            } catch (Exception e) {
+                log.warn("Percentile calc failed for problemId={}: {}", problemId, e.getMessage());
+            }
+        }
         return map;
     }
 }

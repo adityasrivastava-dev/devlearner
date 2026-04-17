@@ -35,8 +35,10 @@ public SubmitResponse evaluate(SubmitRequest request) {
 
     if (testCases.isEmpty()) {
         return SubmitResponse.builder()
-                .allPassed(true).totalTests(0).passedTests(0)
-                .results(List.of()).build();
+                .allPassed(false).totalTests(0).passedTests(0)
+                .results(List.of())
+                .hint("No automated test cases are configured for this problem.")
+                .build();
     }
 
     // BUG FIX (performance): previously execute() was called inside the loop, which compiled

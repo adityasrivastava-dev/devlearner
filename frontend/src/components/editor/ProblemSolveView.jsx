@@ -117,14 +117,25 @@ export default function ProblemSolveView({
     return () => clearInterval(id);
   }, []);
 
+  // ── Server-side solved IDs — never loses state across sessions ──────────────
+  const { data: solvedIds = [] } = useQuery({
+    queryKey: QUERY_KEYS.solvedIds,
+    queryFn:  submissionsApi.getSolvedIds,
+    staleTime: 5 * 60 * 1000,
+    enabled:  !!problemId,
+  });
+
   // ── Derived: is this problem already solved? ──────────────────────────────
-  // BUG FIX: problemId prop may arrive as string (URL param) or number (API).
-  // localStorage stores numbers via JSON.stringify. Normalise both sides to
-  // Number so .includes() never silently misses and locks the editorial.
   const _pid = Number(problemId);
   const isSolved = submitResult?.allPassed ||
-    JSON.parse(localStorage.getItem('devlearn_solved') || '[]')
-      .map(Number).includes(_pid);
+    solvedIds.map(Number).includes(_pid);
+
+  // ── Does this problem have test cases for automated judging? ──────────────
+  const hasTestCases = (() => {
+    if (!problem?.testCases) return false;
+    try { return JSON.parse(problem.testCases).length > 0; }
+    catch { return false; }
+  })();
 
   // ── Retry helper — auto-retries on 429 with exponential backoff ─────────────
   // When the server is at capacity (semaphore full), retries up to 4 times
@@ -368,8 +379,12 @@ export default function ProblemSolveView({
             title="Run (Ctrl+Enter)">
             {isRunning ? <><span className="spinner" style={{width:12,height:12}} />Running…</> : '▶ Run'}
           </button>
-          <button className={styles.submitBtn} onClick={handleSubmit} disabled={isSubmitting}
-            title="Submit (Ctrl+Shift+Enter)">
+          <button
+            className={styles.submitBtn}
+            onClick={hasTestCases ? handleSubmit : undefined}
+            disabled={isSubmitting || !hasTestCases}
+            title={hasTestCases ? 'Submit (Ctrl+Shift+Enter)' : 'No automated test cases for this problem'}
+          >
             {isSubmitting ? <><span className="spinner" style={{width:12,height:12}} />…</> : '⬆ Submit'}
           </button>
         </div>
@@ -1018,19 +1033,45 @@ function ResultPanel({ runResult, submitResult }) {
             <pre className="code-block" style={{ fontSize: 12 }}>{runResult.output}</pre>
           </div>
         )}
-        {runResult.error && (
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-              letterSpacing: '.5px', color: 'var(--red)', marginBottom: 4 }}>Error</div>
-            <pre className="code-block" style={{ fontSize: 12, color: 'var(--red)',
-              borderColor: 'rgba(248,113,113,.2)' }}>{runResult.error}</pre>
-          </div>
-        )}
+        {runResult.error && (() => {
+          const isNoMain = runResult.error.includes('Main method not found');
+          return (
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+                letterSpacing: '.5px', color: 'var(--red)', marginBottom: 4 }}>
+                {isNoMain ? 'Tip' : 'Error'}
+              </div>
+              {isNoMain ? (
+                <div style={{ fontSize: 12, color: 'var(--yellow)', background: 'rgba(251,191,36,.08)',
+                  border: '1px solid rgba(251,191,36,.2)', borderRadius: 6, padding: '8px 10px', lineHeight: 1.6 }}>
+                  This problem uses method-only format (no <code>main()</code> needed).<br />
+                  <strong>Click ⬆ Submit</strong> to run against all test cases, or add a{' '}
+                  <code>main()</code> method manually to test your own input.
+                </div>
+              ) : (
+                <pre className="code-block" style={{ fontSize: 12, color: 'var(--red)',
+                  borderColor: 'rgba(248,113,113,.2)' }}>{runResult.error}</pre>
+              )}
+            </div>
+          );
+        })()}
       </div>
     );
   }
 
   // ── Submit result ─────────────────────────────────────────────────────────
+  // Special case: no test cases configured for this problem
+  if ((submitResult.totalTests ?? 0) === 0) {
+    return (
+      <div style={{ padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text2)' }}>No Test Cases</div>
+        <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>
+          This problem has no automated test cases configured. Use ▶ Run with custom input to test your solution manually.
+        </div>
+      </div>
+    );
+  }
+
   const pass    = submitResult.allPassed;
   const cases   = submitResult.results || [];
   const passedN = submitResult.passedTests ?? cases.filter(r => r.passed).length;
