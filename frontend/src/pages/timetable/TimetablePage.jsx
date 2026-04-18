@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { timetableApi, QUERY_KEYS } from '../../api';
+import { timetableApi, gateApi, QUERY_KEYS } from '../../api';
 import toast from 'react-hot-toast';
 import styles from './TimetablePage.module.css';
 
@@ -57,6 +57,28 @@ const TEMPLATES = [
       { name: 'Case Studies', topics: ['Design Twitter Feed', 'Design URL Shortener', 'Design WhatsApp', 'Design Netflix'] },
     ],
   },
+];
+
+/* ── Company configs for Smart Plan ────────────────────────────────────────── */
+const COMPANIES = [
+  { key: 'GOOGLE',    label: 'Google',    icon: '🔍', color: '#4285F4',
+    topics: ['Arrays & Strings','Hash Maps','Binary Trees','Graphs','Dynamic Programming','BFS','DFS','Two Pointers','Sliding Window','Heaps & Priority Queues','System Design Fundamentals','Distributed Systems','Caching Strategies','JVM Architecture','Java Collections Framework'] },
+  { key: 'AMAZON',    label: 'Amazon',    icon: '📦', color: '#FF9900',
+    topics: ['Arrays & Strings','Hash Maps','Two Pointers','Binary Trees','Dynamic Programming','Design Patterns in Java','OOP Fundamentals','Java Collections Framework','Spring Boot','REST API Design','MySQL Basics','System Design Fundamentals','Distributed Systems','Microservices'] },
+  { key: 'META',      label: 'Meta',      icon: '🌐', color: '#0668E1',
+    topics: ['Arrays & Strings','Hash Maps','Graphs','Dynamic Programming','BFS','DFS','Binary Trees','Sliding Window','System Design Fundamentals','Distributed Systems','Caching Strategies','Performance Patterns'] },
+  { key: 'MICROSOFT', label: 'Microsoft', icon: '🪟', color: '#00A4EF',
+    topics: ['Arrays & Strings','Hash Maps','Binary Trees','Dynamic Programming','OOP Fundamentals','Java Collections Framework','Spring Boot','JPA & Hibernate','MySQL Basics','System Design Fundamentals','Design Patterns in Java','REST API Design'] },
+  { key: 'APPLE',     label: 'Apple',     icon: '🍎', color: '#555555',
+    topics: ['Arrays & Strings','Hash Maps','Binary Trees','Dynamic Programming','Graphs','Java Core','OOP Fundamentals','Concurrency & Threads','System Design Fundamentals','Performance Patterns'] },
+  { key: 'NETFLIX',   label: 'Netflix',   icon: '🎬', color: '#E50914',
+    topics: ['Java Collections Framework','Concurrency & Threads','Spring Boot','Microservices','System Design Fundamentals','Distributed Systems','Caching Strategies','Performance Patterns','MySQL Basics','Arrays & Strings','Dynamic Programming'] },
+  { key: 'FLIPKART',  label: 'Flipkart',  icon: '🛒', color: '#2874F0',
+    topics: ['Arrays & Strings','Hash Maps','Binary Trees','Dynamic Programming','Java Collections Framework','Spring Boot','MySQL Basics','JPA & Hibernate','System Design Fundamentals','Microservices','Design Patterns in Java'] },
+  { key: 'UBER',      label: 'Uber',      icon: '🚗', color: '#000000',
+    topics: ['Arrays & Strings','Graphs','Hash Maps','Dynamic Programming','System Design Fundamentals','Distributed Systems','Caching Strategies','Java Collections Framework','Concurrency & Threads','Performance Patterns'] },
+  { key: 'GENERAL',   label: 'General / Other', icon: '🎯', color: '#8B5CF6',
+    topics: ['Arrays & Strings','Hash Maps','Binary Trees','Graphs','Dynamic Programming','Two Pointers','Sliding Window','BFS','DFS','Java Collections Framework','OOP Fundamentals','Design Patterns in Java','Spring Boot','MySQL Basics','System Design Fundamentals'] },
 ];
 
 /* ── Task type meta ─────────────────────────────────────────────────────────── */
@@ -172,15 +194,21 @@ export default function TimetablePage() {
           </div>
         </div>
         {view === 'list' && (
-          <button className={styles.createBtn} onClick={() => setView('create')}>
-            + New Timetable
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className={styles.createBtn} style={{ background: '#8B5CF6' }} onClick={() => setView('smart')}>
+              🎯 Smart Plan
+            </button>
+            <button className={styles.createBtn} onClick={() => setView('create')}>
+              + Template
+            </button>
+          </div>
         )}
       </header>
 
       <div className={styles.body}>
-        {view === 'list'   && <ListView timetables={timetables} loading={listLoading} onOpen={openDetail} onCreate={() => setView('create')} />}
+        {view === 'list'   && <ListView timetables={timetables} loading={listLoading} onOpen={openDetail} onCreate={() => setView('create')} onSmart={() => setView('smart')} />}
         {view === 'create' && <CreateWizard onDone={(id) => { qc.invalidateQueries({ queryKey: QUERY_KEYS.timetables }); openDetail(id); }} onCancel={() => setView('list')} />}
+        {view === 'smart'  && <SmartPlanWizard onDone={(id) => { qc.invalidateQueries({ queryKey: QUERY_KEYS.timetables }); openDetail(id); }} onCancel={() => setView('list')} />}
         {view === 'detail' && (
           <DetailView
             detail={detail}
@@ -201,20 +229,27 @@ export default function TimetablePage() {
 /* ══════════════════════════════════════════════════════════════════════════════
    ListView
 ══════════════════════════════════════════════════════════════════════════════ */
-function ListView({ timetables, loading, onOpen, onCreate }) {
+function ListView({ timetables, loading, onOpen, onCreate, onSmart }) {
   if (loading) return <div className={styles.center}><span className={styles.spinner} /></div>;
 
   if (timetables.length === 0) return (
     <div className={styles.emptyState}>
       <div className={styles.emptyIcon}>📅</div>
       <h2 className={styles.emptyTitle}>No timetables yet</h2>
-      <p className={styles.emptyDesc}>Create a personalized day-by-day study plan from a template or build your own.</p>
-      <button className={styles.createBtn} onClick={onCreate}>+ Create First Timetable</button>
+      <p className={styles.emptyDesc}>Create a personalized study plan tailored to your target company and interview date.</p>
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <button className={styles.createBtn} style={{ background: '#8B5CF6' }} onClick={onSmart}>🎯 Smart Interview Plan</button>
+        <button className={styles.createBtn} onClick={onCreate}>+ Template Plan</button>
+      </div>
     </div>
   );
 
   return (
     <div className={styles.listWrap}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+        <button className={styles.createBtn} style={{ background: '#8B5CF6' }} onClick={onSmart}>🎯 Smart Interview Plan</button>
+        <button className={styles.createBtn} onClick={onCreate}>+ Template Plan</button>
+      </div>
       <div className={styles.listGrid}>
         {timetables.map(t => {
           const pct = t.totalTasks ? Math.round((t.completedCount / t.totalTasks) * 100) : 0;
@@ -834,4 +869,180 @@ function taskNavLabel(task) {
   if (type === 'REVIEW')           return 'Open Review Queue';
   if (type.startsWith('PRACTICE')) return `Search "${task.topicName}" in Problems`;
   return `Open topic on Dashboard`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SmartPlanWizard — F29 Study Plan Generator
+   Company + interview date + hours/week → personalised timetable
+══════════════════════════════════════════════════════════════════════════════ */
+function SmartPlanWizard({ onDone, onCancel }) {
+  const today     = new Date().toISOString().slice(0, 10);
+  const [company,       setCompany]       = useState(null);
+  const [interviewDate, setInterviewDate] = useState('');
+  const [hoursPerWeek,  setHoursPerWeek]  = useState(14);
+  const [generating,    setGenerating]    = useState(false);
+
+  // Load user's gate stages to filter out mastered topics
+  const { data: stages = {} } = useQuery({
+    queryKey: QUERY_KEYS.allGateStages,
+    queryFn:  gateApi.getAllStages,
+    staleTime: 60 * 1000,
+  });
+
+  // Derived: weeks & hours/day
+  const weeksLeft = interviewDate
+    ? Math.max(1, Math.ceil((new Date(interviewDate) - new Date(today)) / (7 * 86400000)))
+    : 0;
+  const hoursPerDay = Math.max(1, Math.min(8, Math.round(hoursPerWeek / 5)));
+
+  // Topics after filtering mastered ones
+  const filteredTopics = useMemo(() => {
+    if (!company) return [];
+    return company.topics
+      .filter(name => {
+        // We don't have topic IDs here — filter by checking if any stage entry matches
+        // We can't filter by name easily, so we filter after generation on the backend
+        // For now just return all company topics
+        return true;
+      })
+      .map(name => ({ name }));
+  }, [company, stages]);
+
+  async function handleGenerate() {
+    if (!company)        { toast.error('Choose a target company'); return; }
+    if (!interviewDate)  { toast.error('Set your interview date'); return; }
+    if (weeksLeft < 1)   { toast.error('Interview date must be in the future'); return; }
+
+    setGenerating(true);
+    try {
+      const name = `${company.label} Interview Prep`;
+      const result = await timetableApi.generate({
+        name,
+        hoursPerDay,
+        startDate: today,
+        includeRestDays: true,
+        topics: filteredTopics,
+        targetCompany: company.key,
+      });
+      toast.success('Study plan created!');
+      onDone(result.id);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to generate plan');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  const canGenerate = !!company && !!interviewDate && weeksLeft >= 1;
+
+  return (
+    <div className={styles.wizardWrap}>
+      <div className={styles.stepContent}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+          <span style={{ fontSize: '1.5rem' }}>🎯</span>
+          <h2 className={styles.stepTitle} style={{ margin: 0 }}>Smart Interview Plan</h2>
+        </div>
+        <p className={styles.stepDesc}>
+          Pick your target company and interview date — we'll build a prioritised day-by-day plan covering the topics that matter most.
+        </p>
+
+        {/* ── Company picker ── */}
+        <div className={styles.configField} style={{ marginTop: 24 }}>
+          <label className={styles.configLabel}>Target Company</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+            {COMPANIES.map(c => (
+              <button
+                key={c.key}
+                onClick={() => setCompany(c)}
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: 8,
+                  border: `1.5px solid ${company?.key === c.key ? c.color : 'var(--border)'}`,
+                  background: company?.key === c.key ? c.color + '22' : 'var(--bg)',
+                  color: company?.key === c.key ? c.color : 'var(--text)',
+                  fontWeight: company?.key === c.key ? 700 : 400,
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {c.icon} {c.label}
+              </button>
+            ))}
+          </div>
+          {company && (
+            <p style={{ fontSize: '0.78rem', color: 'var(--text3)', marginTop: 8 }}>
+              {company.topics.length} priority topics for {company.label}
+            </p>
+          )}
+        </div>
+
+        {/* ── Interview date ── */}
+        <div className={styles.configField}>
+          <label className={styles.configLabel}>Interview Date</label>
+          <input
+            type="date"
+            className={styles.configInput}
+            value={interviewDate}
+            min={today}
+            onChange={e => setInterviewDate(e.target.value)}
+          />
+          {weeksLeft > 0 && (
+            <p style={{ fontSize: '0.78rem', color: '#60a5fa', marginTop: 4 }}>
+              {weeksLeft} week{weeksLeft !== 1 ? 's' : ''} until interview
+            </p>
+          )}
+        </div>
+
+        {/* ── Hours per week ── */}
+        <div className={styles.configField}>
+          <label className={styles.configLabel}>
+            Hours per week —&nbsp;
+            <span style={{ color: '#60a5fa', fontWeight: 700 }}>{hoursPerWeek}h</span>
+            <span style={{ color: 'var(--text3)', marginLeft: 8, fontWeight: 400 }}>
+              ≈ {hoursPerDay}h/day
+            </span>
+          </label>
+          <div className={styles.sliderWrap}>
+            <span className={styles.sliderMin}>5h</span>
+            <input
+              type="range" min={5} max={40} step={1}
+              value={hoursPerWeek}
+              onChange={e => setHoursPerWeek(+e.target.value)}
+              className={styles.slider}
+            />
+            <span className={styles.sliderMax}>40h</span>
+          </div>
+        </div>
+
+        {/* ── Summary ── */}
+        {canGenerate && (
+          <div style={{
+            background: 'var(--bg2)', border: '1px solid var(--border)',
+            borderRadius: 10, padding: '14px 16px', marginTop: 8,
+          }}>
+            <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text)', fontWeight: 600 }}>
+              📋 Plan Summary
+            </p>
+            <ul style={{ margin: '8px 0 0', padding: '0 0 0 18px', fontSize: '0.82rem', color: 'var(--text2)', lineHeight: 1.8 }}>
+              <li><strong>{company?.label}</strong> focus — {filteredTopics.length} topics</li>
+              <li><strong>{weeksLeft} weeks</strong> · <strong>{hoursPerDay}h/day</strong></li>
+              <li>Starts today, ends {new Date(interviewDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</li>
+            </ul>
+          </div>
+        )}
+
+        <div className={styles.wizardActions} style={{ marginTop: 24 }}>
+          <button className={styles.ghostBtn} onClick={onCancel}>Cancel</button>
+          <button
+            className={styles.primaryBtn}
+            disabled={!canGenerate || generating}
+            onClick={handleGenerate}
+          >
+            {generating ? 'Generating…' : 'Generate Plan →'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
