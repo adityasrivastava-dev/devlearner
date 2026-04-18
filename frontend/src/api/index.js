@@ -554,6 +554,12 @@ export const srsApi = {
     http.post('/api/srs/review', { itemType, itemId, quality }).then((r) => r.data),
 };
 
+// ─── Skill Assessment ─────────────────────────────────────────────────────────
+export const assessmentApi = {
+  getQuestions: () => http.get('/api/assessment/questions').then((r) => r.data),
+  submit: (answers) => http.post('/api/assessment/submit', { answers }).then((r) => r.data),
+};
+
 // ─── Notifications ────────────────────────────────────────────────────────────
 export const notificationsApi = {
   getSummary: () => http.get('/api/notifications/summary').then((r) => r.data).catch(() => ({ streak: { days: 0, atRisk: false }, srsDue: 0, dailyPending: false, total: 0 })),

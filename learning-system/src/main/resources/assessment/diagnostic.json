@@ -1,0 +1,112 @@
+[
+  {
+    "id": "j1",
+    "category": "JAVA",
+    "questionText": "What does HashMap.computeIfAbsent(key, mappingFn) do?",
+    "optionA": "Throws an exception if the key already exists",
+    "optionB": "Inserts a new value only if the key is absent or maps to null",
+    "optionC": "Always overwrites the existing value",
+    "optionD": "Returns null if the key is absent",
+    "correctOption": "B",
+    "explanation": "computeIfAbsent() checks if the key is missing (or null), then calls the mapping function and stores its result. It's the standard idiom for lazy-initializing values in a Map."
+  },
+  {
+    "id": "j2",
+    "category": "JAVA",
+    "questionText": "In Java, what is the output of: int x = 5; System.out.println(x++ + \" \" + ++x);",
+    "optionA": "5 7",
+    "optionB": "6 7",
+    "optionC": "5 6",
+    "optionD": "6 6",
+    "correctOption": "A",
+    "explanation": "x++ returns 5 (post-increment, x becomes 6), then ++x pre-increments x to 7 and returns 7. Output: '5 7'."
+  },
+  {
+    "id": "d1",
+    "category": "DSA",
+    "questionText": "What is the average-case time complexity of HashMap.get(key) in Java?",
+    "optionA": "O(n)",
+    "optionB": "O(log n)",
+    "optionC": "O(1)",
+    "optionD": "O(n log n)",
+    "correctOption": "C",
+    "explanation": "HashMap uses hashing — the key is hashed to a bucket index, making lookup O(1) on average. Worst case is O(n) when all keys collide, but this is rare with a good hash function."
+  },
+  {
+    "id": "d2",
+    "category": "DSA",
+    "questionText": "Which algorithm is BEST suited for finding the shortest path in an unweighted graph?",
+    "optionA": "Depth-First Search (DFS)",
+    "optionB": "Dijkstra's Algorithm",
+    "optionC": "Breadth-First Search (BFS)",
+    "optionD": "Bellman-Ford",
+    "correctOption": "C",
+    "explanation": "BFS explores nodes level by level, guaranteeing it finds the shortest path (fewest edges) in an unweighted graph. Dijkstra is needed for weighted graphs; DFS doesn't guarantee shortest path."
+  },
+  {
+    "id": "s1",
+    "category": "SPRING_BOOT",
+    "questionText": "What is the default scope of a Spring Bean?",
+    "optionA": "prototype — a new instance per injection",
+    "optionB": "request — a new instance per HTTP request",
+    "optionC": "singleton — one shared instance per ApplicationContext",
+    "optionD": "session — one instance per HTTP session",
+    "correctOption": "C",
+    "explanation": "Spring beans are singleton by default — one instance is created and shared across the entire ApplicationContext. Use @Scope(\"prototype\") to get a new instance per injection point."
+  },
+  {
+    "id": "s2",
+    "category": "SPRING_BOOT",
+    "questionText": "What does @Transactional(readOnly = true) do in Spring?",
+    "optionA": "Prevents all database writes and throws an exception if any write is attempted",
+    "optionB": "Hints to the JPA provider and DB to optimise for read-only workloads (no dirty checking)",
+    "optionC": "Opens a database connection but does not start a transaction",
+    "optionD": "Automatically caches all query results",
+    "correctOption": "B",
+    "explanation": "readOnly=true is a performance hint — Hibernate skips dirty checking on loaded entities (they can't be modified), and some DB drivers route the query to a read replica. It does NOT enforce immutability at the Java level."
+  },
+  {
+    "id": "m1",
+    "category": "MYSQL",
+    "questionText": "What is the key difference between INNER JOIN and LEFT JOIN?",
+    "optionA": "INNER JOIN returns all rows from both tables; LEFT JOIN returns only matching rows",
+    "optionB": "LEFT JOIN returns all rows from the left table (including non-matching), INNER JOIN returns only matching rows",
+    "optionC": "They produce identical results but LEFT JOIN is faster",
+    "optionD": "INNER JOIN works on indexed columns only; LEFT JOIN works on all columns",
+    "correctOption": "B",
+    "explanation": "INNER JOIN returns rows only when both sides match. LEFT JOIN returns all rows from the left table — non-matching right-side columns are NULL. This is the standard way to include rows with no related records."
+  },
+  {
+    "id": "m2",
+    "category": "MYSQL",
+    "questionText": "Adding an index on a large table typically makes INSERT statements:",
+    "optionA": "Faster, because indexed inserts skip duplicate checks",
+    "optionB": "The same speed, because indexes don't affect writes",
+    "optionC": "Slower, because each insert must also update the index data structure",
+    "optionD": "Faster only on primary key columns, slower on all others",
+    "correctOption": "C",
+    "explanation": "Every INSERT (and UPDATE/DELETE) must maintain all indexes on the table. More indexes = more work per write. This is the classic read-vs-write trade-off — indexes speed up SELECTs but slow down writes."
+  },
+  {
+    "id": "a1",
+    "category": "AWS",
+    "questionText": "What is the key difference between Amazon SQS and Amazon SNS?",
+    "optionA": "SQS is for email delivery; SNS is for queuing jobs",
+    "optionB": "SQS is a pull-based message queue (one consumer); SNS is push-based pub/sub (many subscribers)",
+    "optionC": "SNS stores messages durably; SQS does not",
+    "optionD": "They are identical services with different pricing models",
+    "correctOption": "B",
+    "explanation": "SQS is a queue — messages sit until a consumer polls and processes them (point-to-point). SNS is pub/sub — a single message is pushed to all subscribers simultaneously (fan-out). They're often combined: SNS fans out to multiple SQS queues."
+  },
+  {
+    "id": "a2",
+    "category": "AWS",
+    "questionText": "Which AWS service provides a managed Redis or Memcached cache?",
+    "optionA": "Amazon RDS",
+    "optionB": "Amazon DynamoDB Accelerator (DAX)",
+    "optionC": "Amazon ElastiCache",
+    "optionD": "Amazon CloudFront",
+    "correctOption": "C",
+    "explanation": "Amazon ElastiCache is the fully-managed in-memory cache service supporting both Redis and Memcached. DAX is specifically DynamoDB's cache; RDS is relational DB; CloudFront is a CDN."
+  }
+]

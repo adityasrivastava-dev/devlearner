@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { roadmapsApi, topicsApi } from '../../api';
+import AssessmentQuiz from '../../components/assessment/AssessmentQuiz';
 import styles from './OnboardingFlow.module.css';
 
 const LEVELS = [
@@ -42,9 +43,10 @@ const GOALS = [
 ];
 
 export default function OnboardingFlow({ onComplete }) {
-  const [step,  setStep]  = useState(1); // 1, 2, 3(generating)
+  const [step,  setStep]  = useState(1); // 1, 2, 3(generating), 4(assessment)
   const [level, setLevel] = useState(null);
   const [goal,  setGoal]  = useState(null);
+  const [firstTopicId, setFirstTopicId] = useState(null);
   const navigate = useNavigate();
 
   const createRoadmap = useMutation({
@@ -71,18 +73,11 @@ export default function OnboardingFlow({ onComplete }) {
 
       return { roadmapId: roadmap.id, firstTopicId: topicIds[0] ?? null };
     },
-    onSuccess: ({ roadmapId, firstTopicId }) => {
-      // Mark onboarded so we never show this again
-      localStorage.setItem('devlearn_onboarded', '1');
+    onSuccess: ({ firstTopicId: tid }) => {
       localStorage.setItem('devlearn_level', level);
-      localStorage.setItem('devlearn_goal', goal);
-      onComplete?.();
-      // Navigate to roadmap or first topic
-      if (firstTopicId) {
-        navigate(`/?topic=${firstTopicId}`);
-      } else {
-        navigate('/roadmap');
-      }
+      localStorage.setItem('devlearn_goal',  goal);
+      setFirstTopicId(tid);
+      setStep(4); // go to assessment
     },
   });
 
@@ -92,18 +87,28 @@ export default function OnboardingFlow({ onComplete }) {
     createRoadmap.mutate(g);
   }
 
+  function finishOnboarding() {
+    localStorage.setItem('devlearn_onboarded',  '1');
+    localStorage.setItem('devlearn_assessed',    '1');
+    onComplete?.();
+    if (firstTopicId) navigate(`/?topic=${firstTopicId}`);
+    else navigate('/roadmap');
+  }
+
   return (
     <div className={styles.shell}>
       {/* Background glow */}
       <div className={styles.glow} />
 
-      <div className={styles.card}>
+      <div className={`${styles.card} ${step === 4 ? styles.cardWide : ''}`}>
         {/* Progress dots */}
-        <div className={styles.progress}>
-          {[1, 2].map((n) => (
-            <div key={n} className={`${styles.dot} ${step >= n ? styles.dotActive : ''}`} />
-          ))}
-        </div>
+        {step <= 3 && (
+          <div className={styles.progress}>
+            {[1, 2, 3].map((n) => (
+              <div key={n} className={`${styles.dot} ${step >= n ? styles.dotActive : ''}`} />
+            ))}
+          </div>
+        )}
 
         {/* ── Step 1 — Who are you? ─────────────────────────────────── */}
         {step === 1 && (
@@ -152,6 +157,19 @@ export default function OnboardingFlow({ onComplete }) {
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* ── Step 4 — Skill Assessment ─────────────────────────────── */}
+        {step === 4 && (
+          <div className={styles.stepWrap}>
+            <div className={styles.badge}>Optional · Step 3 of 3</div>
+            <h1 className={styles.title}>Quick Skill Check</h1>
+            <p className={styles.sub}>10 questions · ~3 min · We'll skip topics you already know.</p>
+            <AssessmentQuiz
+              onComplete={finishOnboarding}
+              onSkip={finishOnboarding}
+            />
           </div>
         )}
 
