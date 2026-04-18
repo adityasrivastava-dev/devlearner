@@ -609,6 +609,17 @@ export const interviewApi = {
     http.post(`/api/admin/interview-questions/files/${encodeURIComponent(filename)}`).then((r) => r.data),
 };
 
+// ─── Resume Analyzer ─────────────────────────────────────────────────────────
+export const resumeApi = {
+  analyze: (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return http.post('/api/resume/analyze', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((r) => r.data);
+  },
+};
+
 // ─── Learning Gate ────────────────────────────────────────────────────────────
 export const gateApi = {
   getStatus: (topicId) =>

@@ -1,0 +1,269 @@
+package com.learnsystem.controller;
+
+import com.learnsystem.model.Topic;
+import com.learnsystem.model.User;
+import com.learnsystem.repository.TopicRepository;
+import com.learnsystem.service.LearningGateService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+/**
+ * POST /api/resume/analyze  (multipart/form-data, field "file")
+ *
+ * Extracts tech keywords from a resume PDF and compares them against the
+ * user's gate stages to surface learning gaps.
+ *
+ * Returns:
+ *   extractedTech  — list of recognised tech terms found in the resume
+ *   gaps           — tech on resume but not yet mastered in DevLearn
+ *   strengths      — tech on resume that IS mastered
+ *   suggestions    — DevLearn topics to study for the gaps
+ *   unmapped       — tech terms found but not mapped to any DevLearn topic
+ */
+@Slf4j
+@RestController
+@RequestMapping("/api/resume")
+@RequiredArgsConstructor
+public class ResumeAnalyzerController {
+
+    private final TopicRepository    topicRepo;
+    private final LearningGateService gateService;
+
+    // ── Keyword → DevLearn topic title mappings ────────────────────────────────
+    // Key = lowercase keyword (regex word-boundary matched)
+    // Value = DevLearn topic title (must match actual topic titles in DB)
+    private static final Map<String, List<String>> KEYWORD_TOPICS = new LinkedHashMap<>();
+    static {
+        // Java Core
+        put("java",             "JVM / JRE / JDK Architecture", "Data Types & Variables", "Class & Object in Java");
+        put("jvm",              "JVM / JRE / JDK Architecture");
+        put("oop",              "Class & Object in Java", "Inheritance in Java", "Polymorphism in Java");
+        put("generics",         "Generics in Java");
+        put("collections",      "Java Collections Framework");
+        put("streams",          "Streams API & Functional Interfaces");
+        put("lambda",           "Streams API & Functional Interfaces");
+        put("multithreading",   "Concurrency & Threads");
+        put("concurrency",      "Concurrency & Threads");
+        put("threads",          "Concurrency & Threads");
+        put("design patterns",  "Design Patterns in Java");
+        put("solid",            "Design Patterns in Java");
+        put("exception handling","Exception Handling in Java");
+        put("serialization",    "Serialization in Java");
+        put("reflection",       "Reflection & Annotations");
+        put("garbage collection","JVM Garbage Collection");
+        put("completablefuture","CompletableFuture & Async");
+        put("optional",         "Optional & Parallel Streams");
+        // Spring
+        put("spring boot",      "Spring Boot");
+        put("spring",           "Spring Core & IoC");
+        put("spring security",  "Spring Security");
+        put("spring mvc",       "Spring Boot");
+        put("hibernate",        "Spring JPA & Hibernate");
+        put("jpa",              "Spring JPA & Hibernate");
+        put("rest",             "REST API Design");
+        put("microservices",    "Microservices Architecture");
+        put("actuator",         "Spring Boot Actuator");
+        // DSA
+        put("linked list",      "Linked List");
+        put("binary tree",      "Trees & Binary Trees");
+        put("tree",             "Trees & Binary Trees");
+        put("graph",            "Graphs & Graph Algorithms");
+        put("dynamic programming", "Dynamic Programming");
+        put("recursion",        "Recursion & Backtracking");
+        put("backtracking",     "Recursion & Backtracking");
+        put("sorting",          "Sorting Algorithms");
+        put("binary search",    "Binary Search");
+        put("heap",             "Heaps & Priority Queues");
+        put("trie",             "Trie & Advanced Trees");
+        put("stack",            "Stack & Queue");
+        put("queue",            "Stack & Queue");
+        put("greedy",           "Greedy Algorithms");
+        put("bit manipulation", "Bit Manipulation");
+        // MySQL
+        put("mysql",            "SQL Basics & DDL/DML");
+        put("sql",              "SQL Basics & DDL/DML");
+        put("postgresql",       "SQL Basics & DDL/DML");
+        put("database",         "SQL Basics & DDL/DML");
+        put("indexing",         "Indexing & Performance");
+        put("joins",            "Joins & Subqueries");
+        put("normalization",    "Normalization & Database Design");
+        put("transactions",     "Advanced SQL & Transactions");
+        put("query optimization","Query Optimization");
+        put("stored procedure", "Advanced SQL & Transactions");
+        // AWS
+        put("aws",              "AWS Core Services");
+        put("s3",               "AWS Core Services");
+        put("ec2",              "AWS Core Services");
+        put("lambda",           "Serverless & Messaging (AWS)");
+        put("sqs",              "Serverless & Messaging (AWS)");
+        put("sns",              "Serverless & Messaging (AWS)");
+        put("rds",              "RDS & Aurora");
+        put("elasticache",      "ElastiCache & Storage");
+        put("redis",            "ElastiCache & Storage");
+        put("cloudfront",       "Networking, CDN & Route 53");
+        put("vpc",              "Networking, CDN & Route 53");
+        put("docker",           "DevOps, Docker & CI/CD");
+        put("kubernetes",       "DevOps, Docker & CI/CD");
+        put("ci/cd",            "DevOps, Docker & CI/CD");
+        put("devops",           "DevOps, Docker & CI/CD");
+        // System Design
+        put("system design",    "System Design Fundamentals");
+        put("distributed",      "Distributed Systems & Consensus");
+        put("caching",          "Performance & Caching Patterns");
+        put("load balancing",   "System Design Fundamentals");
+        put("kafka",            "Distributed Systems & Consensus");
+        put("message queue",    "Distributed Systems & Consensus");
+        put("auth",             "Authentication Systems Design");
+        put("oauth",            "Authentication Systems Design");
+        put("jwt",              "Spring Security");
+        // Testing
+        put("junit",            "Unit & Integration Testing");
+        put("mockito",          "Unit & Integration Testing");
+        put("testing",          "Unit & Integration Testing");
+        put("tdd",              "Unit & Integration Testing");
+    }
+
+    private static void put(String keyword, String... topics) {
+        KEYWORD_TOPICS.put(keyword, Arrays.asList(topics));
+    }
+
+    // ── Endpoint ───────────────────────────────────────────────────────────────
+
+    @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> analyze(
+            @RequestPart("file") MultipartFile file,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) return ResponseEntity.status(401).build();
+
+        if (file == null || file.isEmpty())
+            return ResponseEntity.badRequest().body(Map.of("error", "No file uploaded"));
+
+        String fname = file.getOriginalFilename();
+        if (fname == null || !fname.toLowerCase().endsWith(".pdf"))
+            return ResponseEntity.badRequest().body(Map.of("error", "Only PDF files are supported"));
+
+        if (file.getSize() > 5 * 1024 * 1024)
+            return ResponseEntity.badRequest().body(Map.of("error", "File too large — maximum 5 MB"));
+
+        String text;
+        try (PDDocument doc = Loader.loadPDF(file.getBytes())) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            text = stripper.getText(doc).toLowerCase();
+        } catch (Exception e) {
+            log.error("PDF parse failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", "Could not read PDF — make sure it contains selectable text"));
+        }
+
+        // Match keywords
+        Set<String> foundKeywords = new LinkedHashSet<>();
+        Set<String> mentionedTopicTitles = new LinkedHashSet<>();
+
+        for (Map.Entry<String, List<String>> entry : KEYWORD_TOPICS.entrySet()) {
+            String keyword = entry.getKey();
+            Pattern p = Pattern.compile("\\b" + Pattern.quote(keyword) + "\\b");
+            if (p.matcher(text).find()) {
+                foundKeywords.add(keyword);
+                mentionedTopicTitles.addAll(entry.getValue());
+            }
+        }
+
+        if (foundKeywords.isEmpty()) {
+            return ResponseEntity.ok(Map.of(
+                "extractedTech", List.of(),
+                "gaps", List.of(),
+                "strengths", List.of(),
+                "suggestions", List.of(),
+                "unmapped", List.of(),
+                "message", "No recognised tech keywords found. Make sure the PDF contains selectable text."
+            ));
+        }
+
+        // Load topics + gate stages
+        List<Topic> allTopics = topicRepo.findAllByOrderByDisplayOrderAscTitleAsc();
+        Map<String, Topic> topicByTitle = allTopics.stream()
+                .collect(Collectors.toMap(t -> t.getTitle().toLowerCase(), t -> t, (a, b) -> a));
+        Map<Long, String> stages = gateService.getAllGateStages(user.getId());
+
+        List<Map<String, Object>> strengths   = new ArrayList<>();
+        List<Map<String, Object>> gaps        = new ArrayList<>();
+        Set<String> mappedTitles = new HashSet<>();
+
+        for (String topicTitle : mentionedTopicTitles) {
+            Topic topic = topicByTitle.get(topicTitle.toLowerCase());
+            if (topic == null) continue;
+            mappedTitles.add(topicTitle.toLowerCase());
+
+            String stage = stages.getOrDefault(topic.getId(), "THEORY");
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("topicId",   topic.getId());
+            item.put("title",     topic.getTitle());
+            item.put("category",  topic.getCategory().name());
+            item.put("stage",     stage);
+
+            if ("MASTERED".equals(stage)) {
+                strengths.add(item);
+            } else {
+                item.put("action", actionFor(stage));
+                gaps.add(item);
+            }
+        }
+
+        // Unmapped keywords (recognised but no DB topic match)
+        List<String> unmapped = foundKeywords.stream()
+                .filter(kw -> KEYWORD_TOPICS.get(kw).stream()
+                        .noneMatch(t -> topicByTitle.containsKey(t.toLowerCase())))
+                .collect(Collectors.toList());
+
+        // Suggestions = gap topics sorted by stage priority
+        List<Map<String, Object>> suggestions = gaps.stream()
+                .sorted(Comparator.comparingInt(m -> stageOrder((String) m.get("stage"))))
+                .limit(10)
+                .collect(Collectors.toList());
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("extractedTech", new ArrayList<>(foundKeywords));
+        result.put("strengths",     strengths);
+        result.put("gaps",          gaps);
+        result.put("suggestions",   suggestions);
+        result.put("unmapped",      unmapped);
+        result.put("totalFound",    foundKeywords.size());
+        result.put("gapCount",      gaps.size());
+        result.put("strengthCount", strengths.size());
+
+        log.info("Resume analyzed: userId={} keywords={} gaps={} strengths={}",
+                user.getId(), foundKeywords.size(), gaps.size(), strengths.size());
+        return ResponseEntity.ok(result);
+    }
+
+    private String actionFor(String stage) {
+        return switch (stage) {
+            case "THEORY" -> "Read theory & write a note";
+            case "EASY"   -> "Solve Easy problems";
+            case "MEDIUM" -> "Solve Medium problems";
+            case "HARD"   -> "Solve Hard problem to master";
+            default       -> "Start learning";
+        };
+    }
+
+    private int stageOrder(String stage) {
+        return switch (stage) {
+            case "EASY"   -> 0;
+            case "MEDIUM" -> 1;
+            case "HARD"   -> 2;
+            default       -> 3;
+        };
+    }
+}

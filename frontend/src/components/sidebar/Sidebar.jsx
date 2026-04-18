@@ -43,6 +43,7 @@ const NAV_SECTIONS = [
       { path: '/interview-prep', icon: '📋', label: 'Q&A Bank'       },
       { path: '/revision',       icon: '↺',  label: 'Revision'      },
       { path: '/drill',          icon: '⚔',  label: 'Pattern Drill'  },
+      { path: '/resume',         icon: '📄', label: 'Resume Analyzer' },
     ],
   },
   {
