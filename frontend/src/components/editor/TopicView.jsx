@@ -1,485 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { topicsApi, submissionsApi, bookmarksApi, notesApi, ratingsApi, gateApi, interviewApi, adminApi, userVideosApi, QUERY_KEYS } from '../../api';
-import { getCategoryMeta, getDiffMeta } from '../../utils/helpers';
-import TracerPlayer from './TracerPlayer';
-import FlowchartViewer from './FlowchartViewer';
-import SqlTableVisualizer from '../sql/SqlTableVisualizer';
+import { bookmarksApi, notesApi, ratingsApi, gateApi, interviewApi, adminApi, userVideosApi, QUERY_KEYS } from '../../api';
+import { getCategoryMeta } from '../../utils/helpers';
 import styles from './TopicView.module.css';
-import ReadOnlyCodeViewer from './ReadOnlyCodeViewer';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 
-export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext, theme = 'dark', backLabel = '← Home' }) {
-  const [tab, setTab]               = useState('theory');
-  const [activeExample, setActiveExample] = useState(null);
-  const [diffFilter, setDiffFilter] = useState('ALL');
-  const queryClient = useQueryClient();
-
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN' || user?.roles?.includes('ADMIN');
-  const [ytEditing, setYtEditing] = useState(false);
-  const [ytDraft, setYtDraft] = useState('');
-
-  useEffect(() => { setActiveExample(null); setTab('theory'); }, [topic.id]);
-
-  // ── Gate status ───────────────────────────────────────────────────────────────
-  const { data: gate, isLoading: gateLoading } = useQuery({
-    queryKey: QUERY_KEYS.gateStatus(topic.id),
-    queryFn:  () => gateApi.getStatus(topic.id),
-    staleTime: 30 * 1000,
-  });
-
-  const { mutate: completeTheory, isPending: completing, error: completeError } = useMutation({
-    mutationFn: ({ note }) => gateApi.completeTheory(topic.id, note),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.gateStatus(topic.id) }),
-  });
-
-  // ── Rating ────────────────────────────────────────────────────────────────────
-  const { data: ratingData, refetch: refetchRating } = useQuery({
-    queryKey: QUERY_KEYS.topicRating(topic.id),
-    queryFn:  () => ratingsApi.get(topic.id),
-    staleTime: 60 * 1000,
-  });
-
-  const { mutate: submitRating, isPending: ratingPending } = useMutation({
-    mutationFn: (stars) => ratingsApi.rate(topic.id, stars),
-    onSuccess: () => refetchRating(),
-  });
-
-  // ── Bookmark ──────────────────────────────────────────────────────────────────
-  const { data: bmData } = useQuery({
-    queryKey: ['bookmark', 'TOPIC', topic.id],
-    queryFn:  () => bookmarksApi.check('TOPIC', topic.id),
-    staleTime: 60 * 1000,
-  });
-  const isBookmarked = bmData?.bookmarked ?? false;
-
-  const { mutate: toggleBookmark } = useMutation({
-    mutationFn: () => bookmarksApi.toggle('TOPIC', topic.id, topic.title),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bookmark', 'TOPIC', topic.id] });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.bookmarks });
-    },
-  });
-
-  const saveYtMutation = useMutation({
-    mutationFn: (urls) => adminApi.updateTopic(topic.id, { ...topic, youtubeUrls: urls }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.topic(topic.id) });
-      setYtEditing(false);
-      toast.success('YouTube URLs saved');
-    },
-    onError: () => toast.error('Failed to save'),
-  });
-
-  const { data: examples = [], isLoading: exLoading } = useQuery({
-    queryKey: QUERY_KEYS.examples(topic.id),
-    queryFn:  () => topicsApi.getExamples(topic.id),
-    enabled:  tab === 'examples',
-    staleTime: 10 * 60 * 1000,
-  });
-
-  const { data: problems = [], isLoading: prLoading } = useQuery({
-    queryKey: QUERY_KEYS.problems(topic.id),
-    queryFn:  () => topicsApi.getProblems(topic.id),
-    enabled:  tab === 'practice',
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: solvedIdsFromServer = [] } = useQuery({
-    queryKey: QUERY_KEYS.solvedIds,
-    queryFn:  submissionsApi.getSolvedIds,
-    staleTime: 60 * 1000,
-    enabled:  tab === 'practice',
-  });
-  const localSolved = JSON.parse(localStorage.getItem('devlearn_solved') || '[]');
-  const solvedSet   = new Set([...solvedIdsFromServer, ...localSolved]);
-
-  const catMeta = getCategoryMeta(topic.category);
-
-  // ── Derived gate state ────────────────────────────────────────────────────────
-  const stage           = gate?.stage ?? 'THEORY';
-  const theoryDone      = gate?.theoryCompleted ?? false;
-  const practiceUnlocked = theoryDone; // any stage beyond THEORY unlocks Practice tab
-
-  // Problems visible per stage
-  const visibleProblems = (() => {
-    if (!practiceUnlocked) return [];
-    if (stage === 'MASTERED') return problems;
-    const allowed = { EASY: ['EASY'], MEDIUM: ['EASY', 'MEDIUM'], HARD: ['EASY', 'MEDIUM', 'HARD'] };
-    const allowedDiffs = allowed[stage] ?? ['EASY', 'MEDIUM', 'HARD'];
-    return problems.filter((p) => allowedDiffs.includes(p.difficulty));
-  })();
-
-  const filteredProblems = diffFilter === 'ALL' ? visibleProblems
-    : visibleProblems.filter((p) => p.difficulty === diffFilter);
-
-  // If in example detail view, show full-screen example
-  if (tab === 'examples' && activeExample !== null) {
-    const ex = examples[activeExample];
-    if (ex) {
-      return (
-        <ExampleDetailView
-          ex={ex}
-          index={activeExample}
-          total={examples.length}
-          theme={theme}
-          onBack={() => setActiveExample(null)}
-          onPrev={() => setActiveExample(i => Math.max(0, i - 1))}
-          onNext={() => setActiveExample(i => Math.min(examples.length - 1, i + 1))}
-        />
-      );
-    }
-  }
-
-  return (
-    <div className={styles.topicView}>
-
-      {/* ── Compact header ────────────────────────────────────────────────── */}
-      <div className={styles.header}>
-        <div className={styles.headerTop}>
-          {onBack && (
-            <button className={styles.backBtn} onClick={onBack} title="Go back">
-              {backLabel}
-            </button>
-          )}
-          {(onPrev || onNext) && (
-            <div className={styles.topicNav}>
-              <button
-                className={styles.topicNavBtn}
-                onClick={onPrev}
-                disabled={!onPrev}
-                title="Previous topic"
-              >‹ Prev</button>
-              <button
-                className={styles.topicNavBtn}
-                onClick={onNext}
-                disabled={!onNext}
-                title="Next topic"
-              >Next ›</button>
-            </div>
-          )}
-          <span className={`badge ${catMeta.cls}`}>{catMeta.label}</span>
-          <h1 className={styles.title}>{topic.title}</h1>
-
-          {/* Gate stage badge */}
-          {!gateLoading && (
-            <span className={`${styles.stageBadge} ${styles[`stage${stage}`]}`}>
-              {STAGE_LABELS[stage]}
-            </span>
-          )}
-
-          <button
-            className={`${styles.bookmarkBtn} ${isBookmarked ? styles.bookmarked : ''}`}
-            onClick={toggleBookmark}
-            title={isBookmarked ? 'Remove bookmark' : 'Bookmark this topic'}
-            aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this topic'}
-            aria-pressed={isBookmarked}
-          >
-            <span aria-hidden="true">{isBookmarked ? '★' : '☆'}</span>
-          </button>
-
-          {/* Star rating */}
-          <div
-            className={styles.starRating}
-            role="group"
-            aria-label={ratingData?.count > 0 ? `Rating: ${ratingData.average} out of 5 (${ratingData.count} ratings)` : 'Rate this topic'}
-          >
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                className={`${styles.starBtn} ${star <= (ratingData?.myRating ?? 0) ? styles.starFilled : ''}`}
-                onClick={() => !ratingPending && submitRating(star)}
-                aria-label={`Rate ${star} star${star !== 1 ? 's' : ''}`}
-                aria-pressed={star <= (ratingData?.myRating ?? 0)}
-              ><span aria-hidden="true">★</span></button>
-            ))}
-            {ratingData?.count > 0 && (
-              <span className={styles.ratingAvg}>{ratingData.average}</span>
-            )}
-          </div>
-        </div>
-        {topic.description && (
-          <p className={styles.desc}>{topic.description}</p>
-        )}
-      </div>
-
-      {/* ── Tab bar ───────────────────────────────────────────────────────── */}
-      <div className={styles.tabBar} role="tablist" aria-label="Topic sections">
-        {[
-          { key: 'theory',   label: 'Theory',   icon: '📖' },
-          { key: 'examples', label: 'Examples', icon: '💡' },
-          { key: 'practice', label: 'Practice', icon: '🎯', locked: !practiceUnlocked },
-          { key: 'optimize', label: 'Approach', icon: '⚡' },
-          { key: 'qa',       label: 'Q&A',      icon: '🎯' },
-          { key: 'notes',    label: 'Notes',    icon: '📝' },
-          { key: 'videos',   label: 'Videos',   icon: '▶' },
-        ].map(({ key, label, icon, locked }) => (
-          <button
-            key={key}
-            role="tab"
-            aria-selected={tab === key}
-            aria-controls={`tabpanel-${key}`}
-            className={`${styles.tabBtn} ${tab === key ? styles.tabActive : ''} ${locked ? styles.tabLocked : ''}`}
-            onClick={() => { setTab(key); setActiveExample(null); }}
-            title={locked ? 'Complete theory to unlock practice' : undefined}
-            aria-disabled={locked ? true : undefined}
-          >
-            <span className={styles.tabIcon} aria-hidden="true">{locked ? '🔒' : icon}</span>
-            <span className={styles.tabLabel}>{label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* ── Body ──────────────────────────────────────────────────────────── */}
-      <div className={styles.body} role="tabpanel" id={`tabpanel-${tab}`} aria-label={tab}>
-
-        {/* THEORY */}
-        {tab === 'theory' && (
-          <div className={styles.theoryPanel}>
-            {/* Overview — always show description as lead-in */}
-            {topic.description && (
-              <div className={`${styles.theoryCard} ${styles.overviewCard}`}>
-                <div className={styles.cardTitle}>💡 Overview</div>
-                <div className={styles.cardBody}>{topic.description}</div>
-                {(topic.timeComplexity || topic.spaceComplexity) && (
-                  <div className={styles.complexityRow}>
-                    {topic.timeComplexity && (
-                      <span className={styles.complexityBadge}>⏱ Time: {topic.timeComplexity}</span>
-                    )}
-                    {topic.spaceComplexity && (
-                      <span className={styles.complexityBadge}>💾 Space: {topic.spaceComplexity}</span>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-            {topic.memoryAnchor && (
-              <MemoryAnchorCard text={topic.memoryAnchor} />
-            )}
-            {topic.story && (
-              <StoryCard text={topic.story} />
-            )}
-            {topic.analogy && (
-              <AnalogyCard text={topic.analogy} />
-            )}
-            {topic.firstPrinciples && (
-              <PrinciplesCard text={topic.firstPrinciples} />
-            )}
-            {topic.whenToUse && (
-              <div className={`${styles.theoryCard} ${styles.whenToUseCard}`}>
-                <div className={styles.cardTitle}>🎯 When to Use</div>
-                <div className={styles.cardBody}>{topic.whenToUse}</div>
-              </div>
-            )}
-            {topic.starterCode && (
-              <div className={styles.theoryCard}>
-                <div className={styles.cardTitle}>🧩 Starter Template</div>
-                <pre className={styles.codeBlock}>{topic.starterCode}</pre>
-              </div>
-            )}
-            {topic.youtubeUrls && (
-              <YoutubeVideosCard raw={topic.youtubeUrls} />
-            )}
-            {!topic.description && !topic.memoryAnchor && !topic.story && !topic.analogy && !topic.firstPrinciples && !topic.starterCode && (
-              <div className={styles.emptyState}>
-                <span>✍️</span>
-                <p>Theory content not yet written.</p>
-              </div>
-            )}
-
-            {/* Gate: theory completion form */}
-            {!gateLoading && (
-              <TheoryGate
-                gate={gate}
-                completing={completing}
-                error={completeError}
-                onComplete={({ note }) => completeTheory({ note })}
-                onPractice={() => setTab('practice')}
-              />
-            )}
-          </div>
-        )}
-
-        {/* EXAMPLES — card grid */}
-        {tab === 'examples' && (
-          <div className={styles.examplesPanel}>
-            {exLoading ? (
-              <ExamplesSkeletons />
-            ) : examples.length === 0 ? (
-              <div className={styles.emptyState}><span>📭</span><p>No examples yet.</p></div>
-            ) : (
-              <>
-                <div className={styles.examplesGrid}>
-                  {examples.map((ex, i) => (
-                    <button
-                      key={ex.id || i}
-                      className={styles.exCard}
-                      onClick={() => setActiveExample(i)}
-                    >
-                      <div className={styles.exCardNum}>Example {ex.displayOrder || i + 1}</div>
-                      <div className={styles.exCardTitle}>{ex.title}</div>
-                      <div className={styles.exCardTags}>
-                        {ex.tableData && <span className={styles.exTag}>⊞ Tables</span>}
-                        {ex.tracerSteps && <span className={styles.exTag}>▶ Tracer</span>}
-                        {ex.flowchartMermaid && <span className={styles.exTag}>◈ Diagram</span>}
-                        {ex.pseudocode && <span className={styles.exTag}>≡ Pseudocode</span>}
-                      </div>
-                      <div className={styles.exCardArrow}>Open →</div>
-                    </button>
-                  ))}
-                </div>
-                <p className={styles.exHint}>Click any example for full code, tracer, and diagram</p>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* PRACTICE */}
-        {tab === 'practice' && (
-          <div className={styles.practicePanel}>
-            {!practiceUnlocked ? (
-              <LockedPractice onGoToTheory={() => setTab('theory')} />
-            ) : (
-              <>
-                {/* Stage progress bar */}
-                {gate && stage !== 'MASTERED' && (
-                  <StageProgressBar gate={gate} stage={stage} />
-                )}
-                {gate && stage === 'MASTERED' && (
-                  <div className={styles.masteredBanner}>
-                    🏆 Topic Mastered! You've solved problems at all difficulty levels.
-                  </div>
-                )}
-
-                <div className={styles.practiceHeader}>
-                  <div className={styles.practiceStats}>
-                    <span className={styles.practiceStat}>
-                      <strong>{visibleProblems.length}</strong> problems{stage !== 'MASTERED' && stage !== 'HARD' && ` unlocked`}
-                    </span>
-                    {visibleProblems.length > 0 && (
-                      <span className={styles.practiceStat}>
-                        <strong className={styles.solvedCount}>
-                          {[...solvedSet].filter(id => visibleProblems.some(p => p.id === id)).length}
-                        </strong> solved
-                      </span>
-                    )}
-                  </div>
-                  <div className={styles.diffFilters}>
-                    {['ALL', 'EASY', 'MEDIUM', 'HARD'].map((d) => {
-                      const m = d !== 'ALL' ? getDiffMeta(d) : null;
-                      return (
-                        <button
-                          key={d}
-                          className={`${styles.diffBtn} ${diffFilter === d ? styles.activeDiff : ''}`}
-                          style={diffFilter === d && m ? { color: m.color, borderColor: m.color, background: `${m.color}15` } : {}}
-                          onClick={() => setDiffFilter(d)}
-                        >
-                          {d === 'ALL' ? 'All' : d.charAt(0) + d.slice(1).toLowerCase()}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {prLoading ? (
-                  <div className={styles.loadingRow}><span className="spinner" />Loading…</div>
-                ) : filteredProblems.length === 0 ? (
-                  <div className={styles.emptyState}><span>🎯</span><p>No problems at this difficulty yet.</p></div>
-                ) : (
-                  <div className={styles.problemsList}>
-                    {filteredProblems.map((p, i) => {
-                      const diff    = getDiffMeta(p.difficulty);
-                      const isSolved = solvedSet.has(p.id);
-                      return (
-                        <div
-                          key={p.id}
-                          className={`${styles.problemRow} ${isSolved ? styles.problemSolved : ''}`}
-                          onClick={() => onProblemOpen(p.id)}
-                        >
-                          <span className={styles.probNum}>{p.displayOrder || i + 1}</span>
-                          <div className={`${styles.solvedDot} ${isSolved ? styles.solved : ''}`}>
-                            {isSolved ? '✓' : ''}
-                          </div>
-                          <span className={styles.probTitle}>{p.title}</span>
-                          <div className={styles.probMeta}>
-                            {p.pattern && <span className={styles.patternChip}>{p.pattern}</span>}
-                            <span className={`badge ${diff.cls}`}>{diff.label}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Locked harder problems teaser */}
-                {stage === 'EASY' && problems.some(p => p.difficulty === 'MEDIUM') && (
-                  <LockedDifficultyTeaser difficulty="Medium" gate={gate} />
-                )}
-                {(stage === 'EASY' || stage === 'MEDIUM') && problems.some(p => p.difficulty === 'HARD') && (
-                  <LockedDifficultyTeaser difficulty="Hard" gate={gate} />
-                )}
-              </>
-            )}
-          </div>
-        )}
-
-        {/* OPTIMIZE */}
-        {tab === 'optimize' && (
-          <div className={styles.optimizePanel}>
-            {[
-              { icon: '🐌', title: 'Brute Force',        key: 'bruteForce',        accent: false },
-              { icon: '⚡', title: 'Optimized Approach',  key: 'optimizedApproach', accent: true  },
-              { icon: '🎯', title: 'When to Use',         key: 'whenToUse',         accent: false },
-              { icon: '📈', title: 'Complexity',          key: '__complexity__',    accent: false },
-            ].map(({ icon, title, key, accent }) => (
-              <div key={key} className={`${styles.optCard} ${accent ? styles.optAccent : ''}`}>
-                <div className={styles.optTitle}>{icon} {title}</div>
-                <div className={styles.optContent}>
-                  {key === '__complexity__' ? (
-                    <>
-                      <div><span className={styles.optLabel}>Time</span>{topic.timeComplexity || '—'}</div>
-                      <div><span className={styles.optLabel}>Space</span>{topic.spaceComplexity || '—'}</div>
-                    </>
-                  ) : (
-                    topic[key] || <span className={styles.notSpecified}>Not specified</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Q&A */}
-        {tab === 'qa' && (
-          <TopicInterviewQuestions category={topic.category} topicTitle={topic.title} />
-        )}
-
-        {/* NOTES */}
-        {tab === 'notes' && (
-          <div className={styles.notesTabWrap}>
-            <NotesPanel key={topic.id} topicId={topic.id} />
-          </div>
-        )}
-
-        {/* VIDEOS */}
-        {tab === 'videos' && (
-          <VideosTab
-            topic={topic}
-            isAdmin={isAdmin}
-            ytEditing={ytEditing}
-            ytDraft={ytDraft}
-            setYtDraft={setYtDraft}
-            setYtEditing={setYtEditing}
-            saveYtMutation={saveYtMutation}
-          />
-        )}
-
-      </div>
-    </div>
-  );
-}
+import TopicTheoryTab  from './TopicTheoryTab';
+import TopicExamplesTab from './TopicExamplesTab';
+import TopicPracticeTab from './TopicPracticeTab';
 
 // ── Stage labels ──────────────────────────────────────────────────────────────
 const STAGE_LABELS = {
@@ -490,135 +19,12 @@ const STAGE_LABELS = {
   MASTERED: '🏆 Mastered',
 };
 
-// ── Theory Gate Component ─────────────────────────────────────────────────────
-function TheoryGate({ gate, completing, error, onComplete, onPractice }) {
-  const [note, setNote] = useState(gate?.theoryNote ?? '');
-  const isCompleted = gate?.theoryCompleted ?? false;
-
-  if (isCompleted) {
-    return (
-      <div className={styles.gateCompleted}>
-        <div className={styles.gateCompletedIcon}>✅</div>
-        <div className={styles.gateCompletedText}>
-          <strong>Theory completed!</strong>
-          {gate.theoryNote && (
-            <p className={styles.gateCompletedNote}>Your understanding: "{gate.theoryNote}"</p>
-          )}
-        </div>
-        <button className={styles.gatePracticeBtn} onClick={onPractice}>
-          🎯 Start Practising →
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.gateForm}>
-      <label htmlFor="gate-note" className={styles.gateFormTitle}>
-        ✍️ Write what you understood
-      </label>
-      <p id="gate-note-hint" className={styles.gateFormHint}>
-        Before unlocking practice problems, write a short summary in your own words (minimum 20 characters).
-        This forces active recall — the single best way to make knowledge stick.
-      </p>
-      <textarea
-        id="gate-note"
-        className={styles.gateTextarea}
-        placeholder="e.g. Two pointers work when the array is sorted and we need to find a pair. We move left/right based on the sum comparison..."
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        rows={4}
-        aria-describedby="gate-note-hint gate-note-count"
-      />
-      <div className={styles.gateFormFooter}>
-        <span
-          id="gate-note-count"
-          className={`${styles.gateCharCount} ${note.length >= 20 ? styles.gateCharOk : ''}`}
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          {note.length} / 20 min
-        </span>
-        <button
-          className={styles.gateUnlockBtn}
-          disabled={note.trim().length < 20 || completing}
-          onClick={() => onComplete({ note: note.trim() })}
-        >
-          {completing ? 'Unlocking…' : '🔓 I Understood This — Unlock Practice'}
-        </button>
-      </div>
-      {error && (
-        <p className={styles.gateError}>
-          {error?.response?.data?.error ?? 'Failed to save. Try again.'}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ── Stage Progress Bar ────────────────────────────────────────────────────────
-function StageProgressBar({ gate, stage }) {
-  const config = {
-    EASY:   { solved: gate.easySolved,   required: gate.easyRequiredToUnlockMedium,   label: 'Easy',   next: 'Medium' },
-    MEDIUM: { solved: gate.mediumSolved, required: gate.mediumRequiredToUnlockHard,   label: 'Medium', next: 'Hard'   },
-    HARD:   { solved: gate.hardSolved,   required: gate.hardRequiredToMaster,         label: 'Hard',   next: 'Mastered' },
-  }[stage];
-
-  if (!config) return null;
-
-  const pct = Math.min(100, Math.round((config.solved / config.required) * 100));
-
-  return (
-    <div className={styles.stageProgress}>
-      <div className={styles.stageProgressText}>
-        <span>Solve <strong>{config.required - config.solved}</strong> more {config.label} problem{config.required - config.solved !== 1 ? 's' : ''} to unlock <strong>{config.next}</strong></span>
-        <span className={styles.stageProgressCount}>{config.solved} / {config.required}</span>
-      </div>
-      <div className={styles.stageProgressBar}>
-        <div className={styles.stageProgressFill} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
-
-// ── Locked Practice State ─────────────────────────────────────────────────────
-function LockedPractice({ onGoToTheory }) {
-  return (
-    <div className={styles.lockedState}>
-      <span className={styles.lockedIcon}>🔒</span>
-      <h3 className={styles.lockedTitle}>Complete Theory First</h3>
-      <p className={styles.lockedDesc}>
-        Read the theory, understand the concept, then write what you learned in your own words.
-        This unlocks your first practice problems.
-      </p>
-      <button className={styles.lockedBtn} onClick={onGoToTheory}>
-        📖 Go to Theory
-      </button>
-    </div>
-  );
-}
-
-// ── Locked Difficulty Teaser ──────────────────────────────────────────────────
-function LockedDifficultyTeaser({ difficulty, gate }) {
-  const hint = difficulty === 'Medium'
-    ? `Solve ${gate.easyRequiredToUnlockMedium - gate.easySolved} more Easy problem${gate.easyRequiredToUnlockMedium - gate.easySolved !== 1 ? 's' : ''} to unlock Medium`
-    : `Solve ${gate.mediumRequiredToUnlockHard - gate.mediumSolved} more Medium problem${gate.mediumRequiredToUnlockHard - gate.mediumSolved !== 1 ? 's' : ''} to unlock Hard`;
-
-  return (
-    <div className={styles.lockedTeaser}>
-      <span className={styles.lockedTeaserIcon}>🔒</span>
-      <span className={styles.lockedTeaserLabel}>{difficulty} problems locked</span>
-      <span className={styles.lockedTeaserHint}>{hint}</span>
-    </div>
-  );
-}
-
 // ── Notes Panel ───────────────────────────────────────────────────────────────
 function NotesPanel({ topicId }) {
   const queryClient = useQueryClient();
-  const [noteText,   setNoteText]   = useState('');
-  const [editingId,  setEditingId]  = useState(null);
-  const [editText,   setEditText]   = useState('');
+  const [noteText,  setNoteText]  = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [editText,  setEditText]  = useState('');
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: QUERY_KEYS.notes(topicId),
@@ -628,18 +34,12 @@ function NotesPanel({ topicId }) {
 
   const { mutate: createNote, isPending: creating } = useMutation({
     mutationFn: (content) => notesApi.create(topicId, content),
-    onSuccess: () => {
-      setNoteText('');
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.notes(topicId) });
-    },
+    onSuccess: () => { setNoteText(''); queryClient.invalidateQueries({ queryKey: QUERY_KEYS.notes(topicId) }); },
   });
 
   const { mutate: updateNote } = useMutation({
     mutationFn: ({ id, content }) => notesApi.update(id, content),
-    onSuccess: () => {
-      setEditingId(null);
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.notes(topicId) });
-    },
+    onSuccess: () => { setEditingId(null); queryClient.invalidateQueries({ queryKey: QUERY_KEYS.notes(topicId) }); },
   });
 
   const { mutate: deleteNote } = useMutation({
@@ -688,12 +88,10 @@ function NotesPanel({ topicId }) {
                     onChange={(e) => setEditText(e.target.value)}
                     rows={3}
                     autoFocus
+                    aria-label="Edit note"
                   />
                   <div className={styles.noteActions}>
-                    <button
-                      className="btn btn-primary btn-sm"
-                      onClick={() => { if (editText.trim()) updateNote({ id: note.id, content: editText.trim() }); }}
-                    >Save</button>
+                    <button className="btn btn-primary btn-sm" onClick={() => { if (editText.trim()) updateNote({ id: note.id, content: editText.trim() }); }}>Save</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)}>Cancel</button>
                   </div>
                 </>
@@ -703,14 +101,8 @@ function NotesPanel({ topicId }) {
                   <div className={styles.noteMeta}>
                     <span className={styles.noteDate}>{formatNoteDate(note.updatedAt)}</span>
                     <div className={styles.noteActions}>
-                      <button
-                        className={styles.noteActionBtn}
-                        onClick={() => { setEditingId(note.id); setEditText(note.content); }}
-                      >Edit</button>
-                      <button
-                        className={`${styles.noteActionBtn} ${styles.noteDelete}`}
-                        onClick={() => deleteNote(note.id)}
-                      >Delete</button>
+                      <button className={styles.noteActionBtn} onClick={() => { setEditingId(note.id); setEditText(note.content); }}>Edit</button>
+                      <button className={`${styles.noteActionBtn} ${styles.noteDelete}`} onClick={() => deleteNote(note.id)}>Delete</button>
                     </div>
                   </div>
                 </>
@@ -723,17 +115,20 @@ function NotesPanel({ topicId }) {
   );
 }
 
-/** Parse a field that may be a JSON array string ["a","b"] or newline-separated text */
+function formatNoteDate(str) {
+  if (!str) return '';
+  try { return new Date(str).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); }
+  catch { return str; }
+}
+
+// ── Interview Q&A tab ─────────────────────────────────────────────────────────
 function parseJsonOrLines(value) {
   if (!value) return [];
   const v = value.trim();
-  if (v.startsWith('[')) {
-    try { return JSON.parse(v).filter(Boolean); } catch { /* fall through */ }
-  }
+  if (v.startsWith('[')) { try { return JSON.parse(v).filter(Boolean); } catch { /**/ } }
   return v.split('\n').map(s => s.trim()).filter(Boolean);
 }
 
-// ── Interview Q&A tab (standalone panel) ──────────────────────────────────────
 function TopicInterviewQuestions({ category, topicTitle }) {
   const [expanded, setExpanded] = useState(null);
   const [size, setSize]         = useState(15);
@@ -750,36 +145,28 @@ function TopicInterviewQuestions({ category, topicTitle }) {
 
   return (
     <div className={styles.qaPanel}>
-      {/* Header */}
       <div className={styles.qaHeader}>
         <div className={styles.qaHeaderLeft}>
-          <span className={styles.qaHeaderIcon}>🎯</span>
+          <span className={styles.qaHeaderIcon} aria-hidden="true">🎯</span>
           <div>
             <div className={styles.qaHeaderTitle}>Interview Q&amp;A</div>
             <div className={styles.qaHeaderSub}>
-              {isLoading
-                ? 'Loading…'
-                : questions.length === 0
-                  ? 'No questions found for this topic yet'
-                  : isTopicSpecific
-                    ? `${questions.length} questions specific to "${topicTitle}"`
-                    : `${questions.length} ${category?.replace(/_/g, ' ')} category questions`}
+              {isLoading ? 'Loading…'
+                : questions.length === 0 ? 'No questions found for this topic yet'
+                : isTopicSpecific ? `${questions.length} questions specific to "${topicTitle}"`
+                : `${questions.length} ${category?.replace(/_/g, ' ')} category questions`}
             </div>
           </div>
         </div>
-        {isTopicSpecific && (
-          <span className={styles.qaBadgeSpecific}>Topic-specific</span>
-        )}
+        {isTopicSpecific && <span className={styles.qaBadgeSpecific}>Topic-specific</span>}
       </div>
 
-      {/* Skeleton */}
       {isLoading && (
         <div className={styles.qaSkeleton}>
           {[1, 2, 3, 4, 5].map(i => <div key={i} className={styles.qaSkeletonItem} />)}
         </div>
       )}
 
-      {/* Empty state */}
       {!isLoading && questions.length === 0 && (
         <div className={styles.qaEmpty}>
           <div className={styles.qaEmptyIcon}>📭</div>
@@ -788,13 +175,11 @@ function TopicInterviewQuestions({ category, topicTitle }) {
         </div>
       )}
 
-      {/* List */}
       {!isLoading && questions.length > 0 && (
         <>
           <div className={styles.qaList}>
             {questions.map((q, i) => (
               <div key={q.id ?? i} className={`${styles.qaItem} ${expanded === i ? styles.qaItemOpen : ''}`}>
-                {/* Question row */}
                 <button
                   className={styles.qaQuestion}
                   onClick={() => setExpanded(expanded === i ? null : i)}
@@ -809,29 +194,21 @@ function TopicInterviewQuestions({ category, topicTitle }) {
                   <span className={`${styles.qaChevron} ${expanded === i ? styles.qaChevronOpen : ''}`} aria-hidden="true">›</span>
                 </button>
 
-                {/* Expanded answer */}
                 {expanded === i && (
                   <div id={`qa-answer-${i}`} className={styles.qaAnswer}>
-                    {/* Quick answer */}
                     {q.quickAnswer && (
                       <div className={styles.qaAnswerSection}>
                         <div className={styles.qaAnswerLabel}>Answer</div>
                         <div className={styles.qaAnswerText}>{q.quickAnswer}</div>
                       </div>
                     )}
-
-                    {/* Spoken answer */}
                     {q.spokenAnswer && (
                       <div className={`${styles.qaAnswerSection} ${styles.qaSpokenSection}`}>
                         <div className={styles.qaAnswerLabel}>🗣 Say it like this</div>
                         <div className={styles.qaSpokenText}>{q.spokenAnswer}</div>
-                        {q.timeToAnswer && (
-                          <span className={styles.qaTimeBadge}>⏱ {q.timeToAnswer}</span>
-                        )}
+                        {q.timeToAnswer && <span className={styles.qaTimeBadge}>⏱ {q.timeToAnswer}</span>}
                       </div>
                     )}
-
-                    {/* Key points */}
                     {q.keyPoints && (
                       <div className={styles.qaAnswerSection}>
                         <div className={styles.qaAnswerLabel}>Key Points</div>
@@ -846,32 +223,24 @@ function TopicInterviewQuestions({ category, topicTitle }) {
                         </ul>
                       </div>
                     )}
-
-                    {/* Common mistakes */}
                     {q.commonMistakes && (
                       <div className={`${styles.qaAnswerSection} ${styles.qaMistakesSection}`}>
                         <div className={styles.qaAnswerLabel}>⚠ Common Mistakes</div>
                         <div className={styles.qaMistakesText}>{q.commonMistakes}</div>
                       </div>
                     )}
-
-                    {/* Senior expectation */}
                     {q.seniorExpectation && (
                       <div className={`${styles.qaAnswerSection} ${styles.qaSeniorSection}`}>
                         <div className={styles.qaAnswerLabel}>🎯 Senior Level Adds</div>
                         <div className={styles.qaAnswerText}>{q.seniorExpectation}</div>
                       </div>
                     )}
-
-                    {/* Code example */}
                     {q.codeExample && (
                       <div className={styles.qaAnswerSection}>
                         <div className={styles.qaAnswerLabel}>Example</div>
                         <pre className={styles.qaCode}><code>{q.codeExample}</code></pre>
                       </div>
                     )}
-
-                    {/* Follow-up questions */}
                     {q.followUpQuestions && parseJsonOrLines(q.followUpQuestions).length > 0 && (
                       <div className={styles.qaAnswerSection}>
                         <div className={styles.qaAnswerLabel}>💬 Likely Follow-ups</div>
@@ -882,31 +251,23 @@ function TopicInterviewQuestions({ category, topicTitle }) {
                         </ul>
                       </div>
                     )}
-
-                    {/* Bottom row: companies + tags */}
                     {(q.companiesAskThis || q.tags || q.relatedTopics) && (
                       <div className={styles.qaMetaRow}>
                         {q.companiesAskThis && parseJsonOrLines(q.companiesAskThis).length > 0 && (
                           <div className={styles.qaMetaGroup}>
                             <span className={styles.qaMetaLabel}>Asked by</span>
-                            {parseJsonOrLines(q.companiesAskThis).map((c, ci) => (
-                              <span key={ci} className={styles.qaCompanyBadge}>{c}</span>
-                            ))}
+                            {parseJsonOrLines(q.companiesAskThis).map((c, ci) => <span key={ci} className={styles.qaCompanyBadge}>{c}</span>)}
                           </div>
                         )}
                         {q.tags && parseJsonOrLines(q.tags).length > 0 && (
                           <div className={styles.qaMetaGroup}>
-                            {parseJsonOrLines(q.tags).map((t, ti) => (
-                              <span key={ti} className={styles.qaTag}>#{t}</span>
-                            ))}
+                            {parseJsonOrLines(q.tags).map((t, ti) => <span key={ti} className={styles.qaTag}>#{t}</span>)}
                           </div>
                         )}
                         {q.relatedTopics && parseJsonOrLines(q.relatedTopics).length > 0 && (
                           <div className={styles.qaMetaGroup}>
                             <span className={styles.qaMetaLabel}>See also</span>
-                            {parseJsonOrLines(q.relatedTopics).map((rt, ri) => (
-                              <span key={ri} className={styles.qaRelatedTopic}>{rt}</span>
-                            ))}
+                            {parseJsonOrLines(q.relatedTopics).map((rt, ri) => <span key={ri} className={styles.qaRelatedTopic}>{rt}</span>)}
                           </div>
                         )}
                       </div>
@@ -916,8 +277,6 @@ function TopicInterviewQuestions({ category, topicTitle }) {
               </div>
             ))}
           </div>
-
-          {/* Load more */}
           {questions.length >= size && (
             <button className={styles.qaLoadMore} onClick={() => setSize(s => s + 15)}>
               Load more questions
@@ -929,146 +288,43 @@ function TopicInterviewQuestions({ category, topicTitle }) {
   );
 }
 
-function formatNoteDate(str) {
-  if (!str) return '';
-  try {
-    return new Date(str).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  } catch {
-    return str;
-  }
+// ── Videos Tab ────────────────────────────────────────────────────────────────
+function extractYoutubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
 }
 
-// ── Example Detail View (full-page) ──────────────────────────────────────────
-function ExampleDetailView({ ex, index, total, theme = 'dark', onBack, onPrev, onNext }) {
-  const [activeSection, setActiveSection] = useState(ex.tableData ? 'tables' : 'code');
+function parseYoutubeUrls(raw) {
+  if (!raw) return [];
+  try { const p = JSON.parse(raw); if (Array.isArray(p)) return p.filter(Boolean); } catch { /**/ }
+  return raw.split(',').map(s => s.trim()).filter(Boolean);
+}
 
-  const sections = [
-    ex.tableData       && { key: 'tables',    label: '⊞ Tables'     },
-    ex.pseudocode      && { key: 'pseudo',    label: '≡ Pseudocode' },
-    { key: 'code',       label: '{ } Code'    },
-    ex.tracerSteps     && { key: 'tracer',    label: '▶ Tracer'     },
-    ex.flowchartMermaid && { key: 'diagram',  label: '◈ Diagram'    },
-  ].filter(Boolean);
-
+function YoutubeVideosCard({ raw }) {
+  const urls = parseYoutubeUrls(raw);
+  if (!urls.length) return null;
   return (
-    <div className={styles.exDetailView}>
-
-      <div className={styles.exDetailNav}>
-        <button className={styles.exBackBtn} onClick={onBack}>
-          ← All Examples
-        </button>
-        <div className={styles.exDetailMeta}>
-          <span className={styles.exDetailNum}>Example {ex.displayOrder || index + 1}</span>
-          <span className={styles.exDetailTitle}>{ex.title}</span>
-        </div>
-        <div className={styles.exNavBtns}>
-          <button className={styles.exNavBtn} onClick={onPrev} disabled={index === 0}>
-            ‹ Prev
-          </button>
-          <span className={styles.exNavCount}>{index + 1} / {total}</span>
-          <button className={styles.exNavBtn} onClick={onNext} disabled={index === total - 1}>
-            Next ›
-          </button>
-        </div>
-      </div>
-
-      <div className={styles.exSectionBar}>
-        {sections.map(({ key, label }) => (
-          <button
-            key={key}
-            className={`${styles.exSectionBtn} ${activeSection === key ? styles.exSectionActive : ''}`}
-            onClick={() => setActiveSection(key)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className={styles.exDetailBody}>
-
-        {activeSection === 'tables' && ex.tableData && (
-          <div className={styles.exSection}>
-            <div className={styles.exSectionLabel}>Table Visualization</div>
-            <SqlTableVisualizer data={ex.tableData} />
-          </div>
-        )}
-
-        {activeSection === 'pseudo' && ex.pseudocode && (
-          <div className={styles.exSection}>
-            <div className={styles.exSectionLabel}>Pseudocode</div>
-            <pre className={styles.pseudoBlock}>{ex.pseudocode}</pre>
-          </div>
-        )}
-
-        {activeSection === 'code' && (
-          <div className={styles.exSection}>
-            <div className={styles.exSectionLabel}>Java Code</div>
-            <ReadOnlyCodeViewer code={ex.code} theme={theme} />
-          </div>
-        )}
-
-        {activeSection === 'tracer' && ex.tracerSteps && (
-          <div className={styles.exSection}>
-            <div className={styles.exSectionLabel}>Step-by-Step Tracer</div>
-            <TracerPlayer code={ex.code} tracerSteps={ex.tracerSteps} theme={theme} />
-          </div>
-        )}
-
-        {activeSection === 'diagram' && ex.flowchartMermaid && (
-          <div className={styles.exSection}>
-            <div className={styles.exSectionLabel}>Flow Diagram</div>
-            <FlowchartViewer definition={ex.flowchartMermaid} />
-          </div>
-        )}
-
-        <div className={styles.exInsightRow}>
-          {ex.explanation && (
-            <div className={styles.exInsightCard}>
-              <div className={styles.exInsightLabel}>💡 Key Insight</div>
-              <p className={styles.exInsightText}>{ex.explanation}</p>
-            </div>
-          )}
-          {ex.realWorldUse && (
-            <div className={styles.exRealCard}>
-              <div className={styles.exInsightLabel}>🌍 Real World Use</div>
-              <p className={styles.exInsightText}>{ex.realWorldUse}</p>
-            </div>
-          )}
-        </div>
-
+    <div className={`${styles.theoryCard} ${styles.youtubeCard}`}>
+      <div className={styles.cardTitle}>▶ Recommended Videos</div>
+      <div className={styles.youtubeGrid}>
+        {urls.map((url, i) => {
+          const vid = extractYoutubeId(url);
+          const thumb = vid ? `https://img.youtube.com/vi/${vid}/mqdefault.jpg` : null;
+          return (
+            <a key={i} href={url} target="_blank" rel="noopener noreferrer" className={styles.youtubeItem} aria-label={`Watch recommended video ${i + 1}`}>
+              {thumb
+                ? <img src={thumb} alt="" aria-hidden="true" className={styles.youtubeThumbnail} />
+                : <div className={styles.youtubePlaceholder} aria-hidden="true">▶</div>}
+              <span className={styles.youtubeLabel}>Video {i + 1}</span>
+            </a>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-// ── YouTube helpers ───────────────────────────────────────────────────────────
-function extractYoutubeId(url) {
-  if (!url) return null;
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-  ];
-  for (const re of patterns) {
-    const m = url.match(re);
-    if (m) return m[1];
-  }
-  return null;
-}
-
-function parseYoutubeUrls(raw) {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed.filter(Boolean);
-  } catch {
-    // fallback: comma-separated
-    return raw.split(',').map(s => s.trim()).filter(Boolean);
-  }
-  return [];
-}
-
-// ── Videos Tab ───────────────────────────────────────────────────────────────
 function VideosTab({ topic, isAdmin, ytEditing, ytDraft, setYtDraft, setYtEditing, saveYtMutation }) {
   const queryClient = useQueryClient();
   const [addUrl,   setAddUrl]   = useState('');
@@ -1085,9 +341,7 @@ function VideosTab({ topic, isAdmin, ytEditing, ytDraft, setYtDraft, setYtEditin
     mutationFn: ({ url, title }) => userVideosApi.add(topic.id, url, title),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.userVideos(topic.id) });
-      setAddUrl('');
-      setAddTitle('');
-      setAdding(false);
+      setAddUrl(''); setAddTitle(''); setAdding(false);
       toast.success('Video added');
     },
     onError: () => toast.error('Failed to add video'),
@@ -1095,22 +349,12 @@ function VideosTab({ topic, isAdmin, ytEditing, ytDraft, setYtDraft, setYtEditin
 
   const removeMutation = useMutation({
     mutationFn: (videoId) => userVideosApi.remove(topic.id, videoId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.userVideos(topic.id) });
-      toast.success('Video removed');
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: QUERY_KEYS.userVideos(topic.id) }); toast.success('Video removed'); },
     onError: () => toast.error('Failed to remove'),
   });
 
-  function handleAdd() {
-    if (!addUrl.trim()) return toast.error('Paste a YouTube URL first');
-    addMutation.mutate({ url: addUrl.trim(), title: addTitle.trim() });
-  }
-
   return (
     <div className={styles.videosTab}>
-
-      {/* ── Admin / shared videos ───────────────────────────────────── */}
       <div className={styles.ytSection}>
         <div className={styles.ytSectionHeader}>
           <span className={styles.ytSectionTitle}>▶ Reference Videos</span>
@@ -1129,6 +373,7 @@ function VideosTab({ topic, isAdmin, ytEditing, ytDraft, setYtDraft, setYtEditin
               onChange={e => setYtDraft(e.target.value)}
               rows={4}
               placeholder={'Paste YouTube URLs, one per line or JSON array:\n["https://youtu.be/abc", "https://youtu.be/xyz"]'}
+              aria-label="YouTube URLs for this topic"
               autoFocus
             />
             <div className={styles.ytBtnRow}>
@@ -1147,7 +392,6 @@ function VideosTab({ topic, isAdmin, ytEditing, ytDraft, setYtDraft, setYtEditin
         )}
       </div>
 
-      {/* ── User's own videos ───────────────────────────────────────── */}
       <div className={`${styles.ytSection} ${styles.ytSectionSpaced}`}>
         <div className={styles.ytSectionHeader}>
           <span className={styles.ytSectionTitle}>📌 My Videos</span>
@@ -1175,7 +419,7 @@ function VideosTab({ topic, isAdmin, ytEditing, ytDraft, setYtDraft, setYtEditin
               aria-label="Video title (optional)"
             />
             <div className={styles.ytBtnRow}>
-              <button className="btn btn-primary btn-sm" disabled={addMutation.isPending} onClick={handleAdd}>
+              <button className="btn btn-primary btn-sm" disabled={addMutation.isPending} onClick={() => { if (!addUrl.trim()) return toast.error('Paste a YouTube URL first'); addMutation.mutate({ url: addUrl.trim(), title: addTitle.trim() }); }}>
                 {addMutation.isPending ? 'Adding…' : 'Add'}
               </button>
               <button className="btn btn-ghost btn-sm" onClick={() => { setAdding(false); setAddUrl(''); setAddTitle(''); }}>Cancel</button>
@@ -1195,20 +439,13 @@ function VideosTab({ topic, isAdmin, ytEditing, ytDraft, setYtDraft, setYtEditin
               return (
                 <div key={v.id} className={styles.userVideoItem}>
                   <a href={v.url} target="_blank" rel="noopener noreferrer" className={styles.userVideoLink}>
-                    {thumb ? (
-                      <img src={thumb} alt="" className={styles.userVideoThumb} />
-                    ) : (
-                      <div className={styles.youtubePlaceholder}>▶</div>
-                    )}
+                    {thumb
+                      ? <img src={thumb} alt="" aria-hidden="true" className={styles.userVideoThumb} />
+                      : <div className={styles.youtubePlaceholder} aria-hidden="true">▶</div>}
                     <span className={styles.userVideoTitle}>{v.title || v.url}</span>
                   </a>
                   {isAdmin && (
-                    <button
-                      className={styles.userVideoDelete}
-                      onClick={() => removeMutation.mutate(v.id)}
-                      disabled={removeMutation.isPending}
-                      title="Remove video"
-                    >✕</button>
+                    <button className={styles.userVideoDelete} onClick={() => removeMutation.mutate(v.id)} disabled={removeMutation.isPending} aria-label="Remove video">✕</button>
                   )}
                 </div>
               );
@@ -1220,146 +457,230 @@ function VideosTab({ topic, isAdmin, ytEditing, ytDraft, setYtDraft, setYtEditin
   );
 }
 
-function YoutubeVideosCard({ raw }) {
-  const urls = parseYoutubeUrls(raw);
-  if (!urls.length) return null;
-  return (
-    <div className={`${styles.theoryCard} ${styles.youtubeCard}`}>
-      <div className={styles.cardTitle}>▶ Recommended Videos</div>
-      <div className={styles.youtubeGrid}>
-        {urls.map((url, i) => {
-          const vid = extractYoutubeId(url);
-          const thumb = vid ? `https://img.youtube.com/vi/${vid}/mqdefault.jpg` : null;
-          return (
-            <a
-              key={i}
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.youtubeItem}
-              title={`Watch video ${i + 1}`}
-            >
-              {thumb ? (
-                <img src={thumb} alt={`Video ${i + 1}`} className={styles.youtubeThumbnail} />
-              ) : (
-                <div className={styles.youtubePlaceholder}>▶</div>
-              )}
-              <span className={styles.youtubeLabel}>Video {i + 1}</span>
-            </a>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+// ── Main Component ────────────────────────────────────────────────────────────
+export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext, theme = 'dark', backLabel = '← Home' }) {
+  const [tab, setTab] = useState('theory');
+  const queryClient = useQueryClient();
 
-// Split text into sentences on ". " boundaries (only where next char is uppercase or end)
-function splitSentences(text) {
-  const raw = text.split(/\.\s+(?=[A-Z0-9])/);
-  return raw.map(s => s.replace(/\.$/, '').trim()).filter(Boolean);
-}
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN' || user?.roles?.includes('ADMIN');
+  const [ytEditing, setYtEditing] = useState(false);
+  const [ytDraft, setYtDraft] = useState('');
 
-// Memory Anchor → scannable chips
-function MemoryAnchorCard({ text }) {
-  const chips = splitSentences(text);
+  useEffect(() => { setTab('theory'); }, [topic.id]);
+
+  // ── Gate ──────────────────────────────────────────────────────────────────
+  const { data: gate, isLoading: gateLoading } = useQuery({
+    queryKey: QUERY_KEYS.gateStatus(topic.id),
+    queryFn:  () => gateApi.getStatus(topic.id),
+    staleTime: 30 * 1000,
+  });
+
+  const { mutate: completeTheory, isPending: completing, error: completeError } = useMutation({
+    mutationFn: ({ note }) => gateApi.completeTheory(topic.id, note),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.gateStatus(topic.id) }),
+  });
+
+  // ── Rating ────────────────────────────────────────────────────────────────
+  const { data: ratingData, refetch: refetchRating } = useQuery({
+    queryKey: QUERY_KEYS.topicRating(topic.id),
+    queryFn:  () => ratingsApi.get(topic.id),
+    staleTime: 60 * 1000,
+  });
+
+  const { mutate: submitRating, isPending: ratingPending } = useMutation({
+    mutationFn: (stars) => ratingsApi.rate(topic.id, stars),
+    onSuccess: () => refetchRating(),
+  });
+
+  // ── Bookmark ──────────────────────────────────────────────────────────────
+  const { data: bmData } = useQuery({
+    queryKey: ['bookmark', 'TOPIC', topic.id],
+    queryFn:  () => bookmarksApi.check('TOPIC', topic.id),
+    staleTime: 60 * 1000,
+  });
+  const isBookmarked = bmData?.bookmarked ?? false;
+
+  const { mutate: toggleBookmark } = useMutation({
+    mutationFn: () => bookmarksApi.toggle('TOPIC', topic.id, topic.title),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookmark', 'TOPIC', topic.id] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.bookmarks });
+    },
+  });
+
+  // ── Videos admin save ─────────────────────────────────────────────────────
+  const saveYtMutation = useMutation({
+    mutationFn: (urls) => adminApi.updateTopic(topic.id, { ...topic, youtubeUrls: urls }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: QUERY_KEYS.topic(topic.id) }); setYtEditing(false); toast.success('YouTube URLs saved'); },
+    onError: () => toast.error('Failed to save'),
+  });
+
+  const stage            = gate?.stage ?? 'THEORY';
+  const theoryDone       = gate?.theoryCompleted ?? false;
+  const practiceUnlocked = theoryDone;
+  const catMeta          = getCategoryMeta(topic.category);
+
+  const TABS = [
+    { key: 'theory',   label: 'Theory',   icon: '📖' },
+    { key: 'examples', label: 'Examples', icon: '💡' },
+    { key: 'practice', label: 'Practice', icon: '🎯', locked: !practiceUnlocked },
+    { key: 'optimize', label: 'Approach', icon: '⚡' },
+    { key: 'qa',       label: 'Q&A',      icon: '🎯' },
+    { key: 'notes',    label: 'Notes',    icon: '📝' },
+    { key: 'videos',   label: 'Videos',   icon: '▶' },
+  ];
+
   return (
-    <div className={styles.anchorCard}>
-      <div className={styles.anchorLabel}>⚡ Memory Anchor</div>
-      <div className={styles.anchorChips}>
-        {chips.map((chip, i) => {
-          const colonIdx = chip.indexOf(':');
-          const hasKey = colonIdx > 0 && colonIdx < 40;
-          return (
-            <span key={i} className={styles.anchorChip}>
-              {hasKey ? (
-                <>
-                  <strong className={styles.chipKey}>{chip.slice(0, colonIdx)}</strong>
-                  <span className={styles.chipVal}>{chip.slice(colonIdx)}</span>
-                </>
-              ) : chip}
+    <div className={styles.topicView}>
+
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <div className={styles.header}>
+        <div className={styles.headerTop}>
+          {onBack && (
+            <button className={styles.backBtn} onClick={onBack} title="Go back">{backLabel}</button>
+          )}
+          {(onPrev || onNext) && (
+            <div className={styles.topicNav}>
+              <button className={styles.topicNavBtn} onClick={onPrev} disabled={!onPrev} title="Previous topic">‹ Prev</button>
+              <button className={styles.topicNavBtn} onClick={onNext} disabled={!onNext} title="Next topic">Next ›</button>
+            </div>
+          )}
+          <span className={`badge ${catMeta.cls}`}>{catMeta.label}</span>
+          <h1 className={styles.title}>{topic.title}</h1>
+
+          {!gateLoading && (
+            <span className={`${styles.stageBadge} ${styles[`stage${stage}`]}`}>
+              {STAGE_LABELS[stage]}
             </span>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+          )}
 
-// Story → narrative card with italic/amber feel
-function StoryCard({ text }) {
-  return (
-    <div className={`${styles.theoryCard} ${styles.storyCard}`}>
-      <div className={styles.cardTitle}>📖 The Story</div>
-      <div className={`${styles.cardBody} ${styles.storyBody}`}>{text}</div>
-    </div>
-  );
-}
+          <button
+            className={`${styles.bookmarkBtn} ${isBookmarked ? styles.bookmarked : ''}`}
+            onClick={toggleBookmark}
+            aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this topic'}
+            aria-pressed={isBookmarked}
+          >
+            <span aria-hidden="true">{isBookmarked ? '★' : '☆'}</span>
+          </button>
 
-// Analogy → key = value pairs
-function AnalogyCard({ text }) {
-  const sentences = splitSentences(text);
-  return (
-    <div className={`${styles.theoryCard} ${styles.analogyCard}`}>
-      <div className={styles.cardTitle}>🔗 Visual Analogy</div>
-      <div className={styles.analogyList}>
-        {sentences.map((s, i) => {
-          const eqIdx = s.indexOf(' = ');
-          if (eqIdx > 0 && eqIdx < 60) {
-            const concept = s.slice(0, eqIdx).trim();
-            const meaning = s.slice(eqIdx + 3).trim();
-            return (
-              <div key={i} className={styles.analogyRow}>
-                <span className={styles.analogyConcept}>{concept}</span>
-                <span className={styles.analogyEq}>≡</span>
-                <span className={styles.analogyMeaning}>{meaning}</span>
-              </div>
-            );
-          }
-          return <p key={i} className={`${styles.cardBody} ${styles.analogyNote}`}>{s}.</p>;
-        })}
-      </div>
-    </div>
-  );
-}
-
-// First Principles → numbered list with teal accent
-function PrinciplesCard({ text }) {
-  const sentences = splitSentences(text);
-  return (
-    <div className={`${styles.theoryCard} ${styles.principlesCard}`}>
-      <div className={styles.cardTitle}>🔬 First Principles</div>
-      <ol className={styles.principlesList}>
-        {sentences.map((s, i) => (
-          <li key={i} className={styles.principlesItem}>{s}.</li>
-        ))}
-      </ol>
-    </div>
-  );
-}
-
-// Generic fallback card (kept for any unexpected usage)
-function TheoryCard({ icon, title, text }) {
-  return (
-    <div className={styles.theoryCard}>
-      <div className={styles.cardTitle}>{icon} {title}</div>
-      <div className={styles.cardBody}>{text}</div>
-    </div>
-  );
-}
-
-function ExamplesSkeletons() {
-  return (
-    <div className={styles.examplesGrid}>
-      {[1, 2, 3, 4, 5].map(i => (
-        <div key={i} className={styles.exCardSkeleton}>
-          <div className="skeleton" style={{ width: 60, height: 10, borderRadius: 4, marginBottom: 8 }} />
-          <div className="skeleton" style={{ width: '80%', height: 14, borderRadius: 4, marginBottom: 12 }} />
-          <div style={{ display: 'flex', gap: 6 }}>
-            <div className="skeleton" style={{ width: 55, height: 18, borderRadius: 10 }} />
-            <div className="skeleton" style={{ width: 55, height: 18, borderRadius: 10 }} />
+          <div
+            className={styles.starRating}
+            role="group"
+            aria-label={ratingData?.count > 0 ? `Rating: ${ratingData.average} out of 5 (${ratingData.count} ratings)` : 'Rate this topic'}
+          >
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                className={`${styles.starBtn} ${star <= (ratingData?.myRating ?? 0) ? styles.starFilled : ''}`}
+                onClick={() => !ratingPending && submitRating(star)}
+                aria-label={`Rate ${star} star${star !== 1 ? 's' : ''}`}
+                aria-pressed={star <= (ratingData?.myRating ?? 0)}
+              ><span aria-hidden="true">★</span></button>
+            ))}
+            {ratingData?.count > 0 && <span className={styles.ratingAvg}>{ratingData.average}</span>}
           </div>
         </div>
-      ))}
+        {topic.description && <p className={styles.desc}>{topic.description}</p>}
+      </div>
+
+      {/* ── Tab bar ─────────────────────────────────────────────────────── */}
+      <div className={styles.tabBar} role="tablist" aria-label="Topic sections">
+        {TABS.map(({ key, label, icon, locked }) => (
+          <button
+            key={key}
+            role="tab"
+            aria-selected={tab === key}
+            aria-controls={`tabpanel-${key}`}
+            aria-disabled={locked ? true : undefined}
+            className={`${styles.tabBtn} ${tab === key ? styles.tabActive : ''} ${locked ? styles.tabLocked : ''}`}
+            onClick={() => !locked && setTab(key)}
+            title={locked ? 'Complete theory to unlock practice' : undefined}
+          >
+            <span className={styles.tabIcon} aria-hidden="true">{locked ? '🔒' : icon}</span>
+            <span className={styles.tabLabel}>{label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* ── Body ────────────────────────────────────────────────────────── */}
+      <div className={styles.body} role="tabpanel" id={`tabpanel-${tab}`} aria-label={tab}>
+
+        {tab === 'theory' && (
+          <TopicTheoryTab
+            topic={topic}
+            gate={gate}
+            gateLoading={gateLoading}
+            completing={completing}
+            completeError={completeError}
+            onComplete={({ note }) => completeTheory({ note })}
+            onPractice={() => setTab('practice')}
+          />
+        )}
+
+        {tab === 'examples' && (
+          <TopicExamplesTab topicId={topic.id} theme={theme} />
+        )}
+
+        {tab === 'practice' && (
+          <TopicPracticeTab
+            topicId={topic.id}
+            gate={gate}
+            stage={stage}
+            practiceUnlocked={practiceUnlocked}
+            onProblemOpen={onProblemOpen}
+            onGoToTheory={() => setTab('theory')}
+          />
+        )}
+
+        {tab === 'optimize' && (
+          <div className={styles.optimizePanel}>
+            {[
+              { icon: '🐌', title: 'Brute Force',        key: 'bruteForce',        accent: false },
+              { icon: '⚡', title: 'Optimized Approach',  key: 'optimizedApproach', accent: true  },
+              { icon: '🎯', title: 'When to Use',         key: 'whenToUse',         accent: false },
+              { icon: '📈', title: 'Complexity',          key: '__complexity__',    accent: false },
+            ].map(({ icon, title, key, accent }) => (
+              <div key={key} className={`${styles.optCard} ${accent ? styles.optAccent : ''}`}>
+                <div className={styles.optTitle}>{icon} {title}</div>
+                <div className={styles.optContent}>
+                  {key === '__complexity__' ? (
+                    <>
+                      <div><span className={styles.optLabel}>Time</span>{topic.timeComplexity || '—'}</div>
+                      <div><span className={styles.optLabel}>Space</span>{topic.spaceComplexity || '—'}</div>
+                    </>
+                  ) : (
+                    topic[key] || <span className={styles.notSpecified}>Not specified</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab === 'qa' && (
+          <TopicInterviewQuestions category={topic.category} topicTitle={topic.title} />
+        )}
+
+        {tab === 'notes' && (
+          <div className={styles.notesTabWrap}>
+            <NotesPanel key={topic.id} topicId={topic.id} />
+          </div>
+        )}
+
+        {tab === 'videos' && (
+          <VideosTab
+            topic={topic}
+            isAdmin={isAdmin}
+            ytEditing={ytEditing}
+            ytDraft={ytDraft}
+            setYtDraft={setYtDraft}
+            setYtEditing={setYtEditing}
+            saveYtMutation={saveYtMutation}
+          />
+        )}
+
+      </div>
     </div>
   );
 }
