@@ -69,7 +69,7 @@
         {
           "displayOrder": 1,
           "title": "Read File to List",
-          "description": "Implement `readLines(String filePath)` that reads a text file and returns its contents as `List<String>`. Each element is one line. Empty files return an empty list. Use NIO.2 Files API.",
+          "description": "Read a text file and return its lines as a `List<String>` using `Files.readAllLines()` or `Files.lines()`.\n\n**Example:**\nreadLines(\"data.txt\") where file contains:\n```\nhello\nworld\njava\n```\n=> [\"hello\", \"world\", \"java\"]\n\n**Key insight:** `Files.readAllLines(path, UTF_8)` loads all at once. `Files.lines(path)` returns a lazy `Stream<String>` — better for large files.",
           "difficulty": "EASY",
           "pattern": "Files.readAllLines",
           "hint1": "`Files.readAllLines(Path.of(filePath))` reads all lines with UTF-8 charset.",
@@ -88,12 +88,14 @@
             }
           ],
           "constraints": "Returns empty list on error or empty file.",
-          "editorial": "Files.readAllLines() reads the entire file into memory as a List<String>. Fine for small files (<10MB). For larger files use Files.lines() which returns a lazy Stream<String> and must be closed in a try-with-resources block. Both default to UTF-8 charset."
+          "editorial": "Files.readAllLines() reads the entire file into memory as a List<String>. Fine for small files (<10MB). For larger files use Files.lines() which returns a lazy Stream<String> and must be closed in a try-with-resources block. Both default to UTF-8 charset.",
+          "sampleInput": "file: \"hello\\nworld\\njava\"",
+          "sampleOutput": "[\"hello\", \"world\", \"java\"]"
         },
         {
           "displayOrder": 2,
           "title": "Write List to File",
-          "description": "Implement `writeLines(String filePath, List<String> lines)` that writes each string on its own line to a file, overwriting if it exists. Use NIO.2.",
+          "description": "Write a `List<String>` to a file, one item per line, using `Files.write()` or `BufferedWriter`.\n\n**Example:**\nwriteLines(\"output.txt\", [\"line1\", \"line2\", \"line3\"])\n=> file contains:\nline1\nline2\nline3\n\n**Key insight:** `Files.write(path, lines, UTF_8)` is the simplest option. For large lists, `BufferedWriter` streams line by line without loading all into memory.",
           "difficulty": "EASY",
           "pattern": "Files.write",
           "hint1": "`Files.write(path, lines)` writes an Iterable<String> each on its own line.",
@@ -108,12 +110,14 @@
             }
           ],
           "constraints": "Overwrites existing file.",
-          "editorial": "Files.write(path, Iterable<String>) writes each element followed by the system line separator. It is the NIO.2 replacement for a manual BufferedWriter loop. Always prefer this over FileWriter + loop for simple write operations."
+          "editorial": "Files.write(path, Iterable<String>) writes each element followed by the system line separator. It is the NIO.2 replacement for a manual BufferedWriter loop. Always prefer this over FileWriter + loop for simple write operations.",
+          "sampleInput": "[\"line1\",\"line2\",\"line3\"] to output.txt",
+          "sampleOutput": "file written with 3 lines"
         },
         {
           "displayOrder": 3,
           "title": "Count Lines and Words in a File",
-          "description": "Implement `fileStats(String filePath)` returning `int[]{lineCount, wordCount}`. Words are whitespace-separated tokens. Use `Files.lines()` stream for line count and split for word count.",
+          "description": "Count the number of lines and words in a file.\n\n**Example:**\nFile contents: \"hello world\\njava is great\\n\"\ncountLinesAndWords(\"file.txt\")\n=> lines=2, words=5\n\n**Key insight:** Stream each line, count lines with `count()`, split each line on whitespace and sum word counts.",
           "difficulty": "EASY",
           "pattern": "Files.lines stream",
           "hint1": "`Files.lines(path)` returns a lazy `Stream<String>` — close it with try-with-resources.",
@@ -128,12 +132,14 @@
             }
           ],
           "constraints": "Files.lines() must be closed. Empty lines count as lines but contribute 0 words.",
-          "editorial": "Files.lines() returns a lazy Stream — MUST be closed with try-with-resources to close the underlying file handle. Using a mutable stats array inside forEach is necessary because lambda can't modify local variables. An alternative is two separate stream passes (one for lines, one for words) but that opens the file twice."
+          "editorial": "Files.lines() returns a lazy Stream — MUST be closed with try-with-resources to close the underlying file handle. Using a mutable stats array inside forEach is necessary because lambda can't modify local variables. An alternative is two separate stream passes (one for lines, one for words) but that opens the file twice.",
+          "sampleInput": "\"hello world\\njava is great\"",
+          "sampleOutput": "lines=2, words=5"
         },
         {
           "displayOrder": 4,
           "title": "Copy File",
-          "description": "Implement `copyFile(String src, String dst)` that copies a file. If `dst` already exists, overwrite it. Use NIO.2 `Files.copy()`.",
+          "description": "Copy a file from source to destination using `Files.copy()` or buffered streams.\n\n**Example:**\ncopyFile(\"source.txt\", \"dest.txt\")\n=> dest.txt created with identical content\n\n**Key insight:** `Files.copy(src, dest, REPLACE_EXISTING)` handles buffering internally. For large binary files, use a 8KB buffer with manual read/write for explicit control.",
           "difficulty": "EASY",
           "pattern": "Files.copy",
           "hint1": "`Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING)`.",
@@ -148,12 +154,14 @@
             }
           ],
           "constraints": "Overwrites destination if it exists.",
-          "editorial": "Files.copy() is atomic on most file systems — the destination either gets the complete copy or nothing. REPLACE_EXISTING silently overwrites. Without this option, Files.copy() throws FileAlreadyExistsException if the target exists. For large files across different file systems, Files.copy() falls back to a buffered stream copy internally."
+          "editorial": "Files.copy() is atomic on most file systems — the destination either gets the complete copy or nothing. REPLACE_EXISTING silently overwrites. Without this option, Files.copy() throws FileAlreadyExistsException if the target exists. For large files across different file systems, Files.copy() falls back to a buffered stream copy internally.",
+          "sampleInput": "copyFile(\"source.txt\", \"dest.txt\")",
+          "sampleOutput": "dest.txt = source.txt content"
         },
         {
           "displayOrder": 5,
           "title": "File Exists and Size Check",
-          "description": "Implement `fileInfo(String path)` returning a `Map<String, Object>` with keys: `exists` (boolean), `size` (long, bytes), `isDirectory` (boolean), `readable` (boolean). Use NIO.2.",
+          "description": "Check if a file exists, get its size in bytes, and last modified time.\n\n**Example:**\nPath p = Path.of(\"data.txt\");\nFiles.exists(p) => true\nFiles.size(p) => 1024\nFiles.getLastModifiedTime(p) => 2024-01-15T10:30:00Z\n\n**Key insight:** `Files.exists()` vs `new File().exists()` — prefer `java.nio.file.Files` API. `Files.size()` returns bytes, not KB.",
           "difficulty": "EASY",
           "pattern": "Files attributes",
           "hint1": "`Files.exists(path)`, `Files.size(path)`, `Files.isDirectory(path)`, `Files.isReadable(path)`.",
@@ -172,12 +180,14 @@
             }
           ],
           "constraints": "No exception thrown for non-existent path.",
-          "editorial": "Files.exists() is a safe boolean check — never throws. Files.size() throws IOException for non-existent files, so guard it. Note: java.io.File.exists() has a known bug on Windows with trailing spaces; Files.exists() does not. All these methods follow symlinks by default — pass LinkOption.NOFOLLOW_LINKS to check the symlink itself."
+          "editorial": "Files.exists() is a safe boolean check — never throws. Files.size() throws IOException for non-existent files, so guard it. Note: java.io.File.exists() has a known bug on Windows with trailing spaces; Files.exists() does not. All these methods follow symlinks by default — pass LinkOption.NOFOLLOW_LINKS to check the symlink itself.",
+          "sampleInput": "fileInfo(\"data.txt\")",
+          "sampleOutput": "exists=true, size=1024, modified=2024-01-15"
         },
         {
           "displayOrder": 6,
           "title": "Read a CSV Row",
-          "description": "Implement `parseCsvLine(String line)` that splits a simple CSV line (no quoted fields with commas inside) into a `List<String>`. Trim whitespace from each field. Handle empty fields.",
+          "description": "Parse the first row of a CSV file into a `String[]` of field values, handling quoted fields with commas.\n\n**Example 1:**\nparseCsvRow(\"Alice,30,Engineer\") => [\"Alice\", \"30\", \"Engineer\"]\n\n**Example 2:**\nparseCsvRow(\"\\\"Smith, John\\\",25,\\\"New York\\\"\") => [\"Smith, John\", \"25\", \"New York\"]\n\n**Key insight:** Simple `split(\",\")` breaks on commas inside quotes. A state-machine parser handles quoted fields correctly.",
           "difficulty": "EASY",
           "pattern": "String split CSV",
           "hint1": "`line.split(\",\", -1)` — the -1 keeps trailing empty strings.",
@@ -196,12 +206,14 @@
             }
           ],
           "constraints": "No quoted fields containing commas. Handles empty fields.",
-          "editorial": "split(\",\", -1) is critical — without the -1 limit, trailing empty strings are discarded. This means a line ending in a comma would lose the last empty field. stream + map(trim) handles spaces around commas. For production CSV (quoted fields, escaped commas), use Apache Commons CSV or OpenCSV."
+          "editorial": "split(\",\", -1) is critical — without the -1 limit, trailing empty strings are discarded. This means a line ending in a comma would lose the last empty field. stream + map(trim) handles spaces around commas. For production CSV (quoted fields, escaped commas), use Apache Commons CSV or OpenCSV.",
+          "sampleInput": "\"\\\"Smith, John\\\",25,\\\"New York\\\"\"",
+          "sampleOutput": "[\"Smith, John\", \"25\", \"New York\"]"
         },
         {
           "displayOrder": 7,
           "title": "Recursive Directory Walker",
-          "description": "Implement `listFilesRecursive(String dirPath, String extension)` that returns a sorted `List<String>` of all file paths (absolute) under the directory that match the given extension (e.g. `.java`, `.txt`). Use `Files.walk()`.",
+          "description": "Recursively walk a directory and return all `.java` files using `Files.walk()` or `Files.walkFileTree()`.\n\n**Example:**\nfindJavaFiles(\"/src\")\n=> [\"/src/Main.java\", \"/src/util/Helper.java\", \"/src/model/User.java\"]\n\n**Key insight:** `Files.walk(path).filter(p -> p.toString().endsWith(\".java\")).collect(toList())` — lazy stream over the directory tree.",
           "difficulty": "MEDIUM",
           "pattern": "Files.walk",
           "hint1": "`Files.walk(Path.of(dir))` returns a `Stream<Path>` of all entries recursively.",
@@ -216,12 +228,14 @@
             }
           ],
           "constraints": "Must close Stream from Files.walk(). Sort alphabetically.",
-          "editorial": "Files.walk() returns a Stream<Path> that must be closed — it holds open file handles for the directory iteration. Filter chain: isRegularFile excludes directories and symlinks; endsWith filters by extension. Sorting the string paths gives alphabetical order. For glob patterns use Files.newDirectoryStream(dir, '**.txt') instead."
+          "editorial": "Files.walk() returns a Stream<Path> that must be closed — it holds open file handles for the directory iteration. Filter chain: isRegularFile excludes directories and symlinks; endsWith filters by extension. Sorting the string paths gives alphabetical order. For glob patterns use Files.newDirectoryStream(dir, '**.txt') instead.",
+          "sampleInput": "findJavaFiles(\"/src\")",
+          "sampleOutput": "[\"/src/Main.java\", \"/src/util/Helper.java\"]"
         },
         {
           "displayOrder": 8,
           "title": "File Change Watcher",
-          "description": "Implement `watchForChanges(String dirPath, long timeoutMs)` that monitors a directory for file creation events for up to `timeoutMs` milliseconds. Returns a `List<String>` of filenames that were created during the watch period. Use `WatchService`.",
+          "description": "Watch a directory for file creation/modification events using `WatchService`.\n\n**Example:**\nwatcher = new FileWatcher(\"/logs\");\nwatcher.start(); // blocks, polling\n// when \"app.log\" is modified:\n=> \"MODIFIED: app.log\"\n// when \"new.log\" is created:\n=> \"CREATED: new.log\"\n\n**Key insight:** `WatchService` is OS-level (inotify on Linux) — far more efficient than polling `Files.getLastModifiedTime()` in a loop.",
           "difficulty": "MEDIUM",
           "pattern": "WatchService",
           "hint1": "`FileSystems.getDefault().newWatchService()` — register dir with `ENTRY_CREATE`.",
@@ -236,12 +250,14 @@
             }
           ],
           "constraints": "key.reset() is mandatory. Close WatchService in try-with-resources.",
-          "editorial": "WatchService uses OS-native notifications (inotify/FSEvents) — no polling. The loop uses a deadline to respect the timeout while still processing multiple events. key.reset() transitions the key back to READY state — without it, the key stays in SIGNALLED and no further events are delivered. event.context() returns the filename relative to the watched directory, not the full path."
+          "editorial": "WatchService uses OS-native notifications (inotify/FSEvents) — no polling. The loop uses a deadline to respect the timeout while still processing multiple events. key.reset() transitions the key back to READY state — without it, the key stays in SIGNALLED and no further events are delivered. event.context() returns the filename relative to the watched directory, not the full path.",
+          "sampleInput": "watch /logs, then modify app.log",
+          "sampleOutput": "\"MODIFIED: app.log\""
         },
         {
           "displayOrder": 9,
           "title": "CSV Parser With Quoted Fields",
-          "description": "Implement `parseCsvLine(String line)` that correctly handles quoted fields containing commas. For example `Alice,\"New York, NY\",30` should return `[Alice, New York, NY, 30]`. Quotes themselves are not returned.",
+          "description": "Parse a CSV file with quoted fields that may contain commas, newlines, or escaped quotes.\n\n**Example:**\nInput CSV row: `\"Jane \\\"Doe\\\"\",\"123 Main St, Apt 4\",30`\nparseFull(row) => [\"Jane \\\"Doe\\\"\", \"123 Main St, Apt 4\", \"30\"]\n\n**Key insight:** State machine: track if currently inside quotes. On `\"\"` inside quotes = escaped quote. On `\"` = toggle quote mode.",
           "difficulty": "MEDIUM",
           "pattern": "CSV quoted field parsing",
           "hint1": "Use a state machine: track whether you're inside quotes or not.",
@@ -260,12 +276,14 @@
             }
           ],
           "constraints": "Double-quote escape (`\"\"`) not required. Single-level quoting only.",
-          "editorial": "State machine parsing: one boolean `inQuotes` tracks whether the current character is inside a quoted field. When `inQuotes=true`, commas are treated as regular characters. This is the core of RFC 4180 CSV parsing. For production use Apache Commons CSV — it also handles escaped quotes (`\"\"` within a quoted field) and multiline fields."
+          "editorial": "State machine parsing: one boolean `inQuotes` tracks whether the current character is inside a quoted field. When `inQuotes=true`, commas are treated as regular characters. This is the core of RFC 4180 CSV parsing. For production use Apache Commons CSV — it also handles escaped quotes (`\"\"` within a quoted field) and multiline fields.",
+          "sampleInput": "\"\\\"Jane \\\"\\\"Doe\\\"\\\"\",\"123 Main St, Apt 4\",30",
+          "sampleOutput": "[\"Jane \\\"Doe\\\"\", \"123 Main St, Apt 4\", \"30\"]"
         },
         {
           "displayOrder": 10,
           "title": "Merge Sorted Files",
-          "description": "Given two sorted text files (one integer per line, ascending), merge them into a single sorted output file using an efficient merge (k-way merge pattern, not load-all-then-sort). Read both files line by line.",
+          "description": "Merge N sorted files into one sorted output file using a min-heap.\n\n**Example:**\nfile1.txt: 1 3 5\nfile2.txt: 2 4 6\nfile3.txt: 0 7 8\nmergeSorted([f1,f2,f3], \"out.txt\") => out.txt: 0 1 2 3 4 5 6 7 8\n\n**Key insight:** K-way merge with a `PriorityQueue<(value, fileIndex)>` — always extract the minimum across all file heads.",
           "difficulty": "MEDIUM",
           "pattern": "K-way merge / BufferedReader",
           "hint1": "Open both files with BufferedReader. Read the first line from each as the 'current' value.",
@@ -280,12 +298,14 @@
             }
           ],
           "constraints": "O(1) memory — do not load both files into memory.",
-          "editorial": "Classic 2-way merge from merge sort. Read one line from each file as the 'current' pair. Write the smaller, advance that reader. This is O(n+m) time, O(1) memory beyond the line buffers. This is the basis of external merge sort used in databases and MapReduce for sorting datasets larger than RAM."
+          "editorial": "Classic 2-way merge from merge sort. Read one line from each file as the 'current' pair. Write the smaller, advance that reader. This is O(n+m) time, O(1) memory beyond the line buffers. This is the basis of external merge sort used in databases and MapReduce for sorting datasets larger than RAM.",
+          "sampleInput": "merge sorted [1,3,5], [2,4,6], [0,7,8]",
+          "sampleOutput": "0 1 2 3 4 5 6 7 8"
         },
         {
           "displayOrder": 11,
           "title": "File-Based LRU Cache",
-          "description": "Implement `FileLRUCache` that stores key-value pairs as files in a temp directory. Constructor takes capacity. `put(key, value)` writes value to a file named by key, evicting the LRU entry if at capacity. `get(key)` reads and returns the file content, or null if not found.",
+          "description": "Implement a file-backed LRU cache. On miss, read from disk and cache in memory (up to capacity). On eviction, optionally write back if dirty.\n\n**Example:**\ncache = FileLRUCache(capacity=3, cacheDir=\"/tmp\")\ncache.get(\"key1\") => reads from key1.dat, caches it\ncache.get(\"key1\") => returns from memory (cache hit)\ncache.put(\"key4\", data) => evicts LRU entry\n\n**Key insight:** Combines an in-memory LRU map with file I/O fallback — common pattern for disk-backed caches.",
           "difficulty": "MEDIUM",
           "pattern": "LRU + File I/O",
           "hint1": "Use `LinkedHashMap(capacity, 0.75f, true)` with `removeEldestEntry` override for LRU ordering.",
@@ -300,12 +320,14 @@
             }
           ],
           "constraints": "LinkedHashMap access-order=true for LRU semantics.",
-          "editorial": "LinkedHashMap(cap, 0.75f, true) maintains access order — get() moves elements to the tail. removeEldestEntry returns true when size exceeds capacity, triggering automatic removal of the head (LRU). The file operation mirrors the map operation. This combines an in-memory index with persistent file storage."
+          "editorial": "LinkedHashMap(cap, 0.75f, true) maintains access order — get() moves elements to the tail. removeEldestEntry returns true when size exceeds capacity, triggering automatic removal of the head (LRU). The file operation mirrors the map operation. This combines an in-memory index with persistent file storage.",
+          "sampleInput": "get(key1) miss -> read disk, get(key1) hit",
+          "sampleOutput": "2nd get: from memory (no disk read)"
         },
         {
           "displayOrder": 12,
           "title": "Buffered Word Frequency Counter",
-          "description": "Implement `wordFrequency(String filePath)` that reads a large text file line by line using `BufferedReader` (not Files.readAllLines which loads everything) and returns a `Map<String, Integer>` of word counts. Words are lowercase, letters only.",
+          "description": "Count word frequency in a large file using `BufferedReader` for memory efficiency.\n\n**Example:**\nFile: 100MB text\ncountWords(\"bigfile.txt\") => {\"the\":50000, \"a\":30000, ...}\n\n**Key insight:** `BufferedReader` reads line by line — never loads the whole file. 8KB default buffer means only one OS read per 8KB chunk.",
           "difficulty": "MEDIUM",
           "pattern": "BufferedReader streaming",
           "hint1": "Open with `Files.newBufferedReader(Path.of(filePath))`.",
@@ -320,12 +342,14 @@
             }
           ],
           "constraints": "O(1) memory per line — no loading entire file. O(V) memory for the frequency map.",
-          "editorial": "BufferedReader.readLine() reads one line at a time using an 8KB OS-level buffer. map.merge(key, 1, Integer::sum) is the idiomatic Java 8+ way to increment a count: if key absent, sets value to 1; if present, applies Integer::sum to current value and 1. This streams through files of any size using constant I/O memory."
+          "editorial": "BufferedReader.readLine() reads one line at a time using an 8KB OS-level buffer. map.merge(key, 1, Integer::sum) is the idiomatic Java 8+ way to increment a count: if key absent, sets value to 1; if present, applies Integer::sum to current value and 1. This streams through files of any size using constant I/O memory.",
+          "sampleInput": "large file, count word frequencies",
+          "sampleOutput": "Map<word, count> without OOM"
         },
         {
           "displayOrder": 13,
           "title": "tail -f — Live File Tailer",
-          "description": "Implement `tailFile(String filePath, int lastNLines)` that reads the last N lines of a file (like `tail -n N`). Then implement `tailFollow(String filePath, Consumer<String> onLine, long durationMs)` that watches the file for new appended lines for `durationMs` ms and calls `onLine` for each new line (like `tail -f`).",
+          "description": "Implement `tailFile(String path, int n)` that returns the last N lines of a file, like Unix `tail`.\n\n**Example:**\nFile has 1000 lines.\ntailFile(\"log.txt\", 5) => last 5 lines\n\n**Key insight:** Efficient approach: `RandomAccessFile` seeking from the end backward, counting newlines. Simple approach: maintain a circular buffer of N lines while reading forward.",
           "difficulty": "HARD",
           "pattern": "WatchService + RandomAccess tail",
           "hint1": "For tail -n: use a `Deque<String>` of fixed size N. Read all lines, keep last N.",
@@ -344,12 +368,14 @@
             }
           ],
           "constraints": "tailFollow must use WatchService — no polling. tail reads last N without loading whole file into memory.",
-          "editorial": "tail -n: a circular Deque of size N is the classic solution — add to end, remove from front when full. tail -f: track file position (byte offset), watch for MODIFY events, seek to last position and read new content. RandomAccessFile.seek() enables reading from any byte position. The charset conversion handles RandomAccessFile's ISO-8859-1 byte reading."
+          "editorial": "tail -n: a circular Deque of size N is the classic solution — add to end, remove from front when full. tail -f: track file position (byte offset), watch for MODIFY events, seek to last position and read new content. RandomAccessFile.seek() enables reading from any byte position. The charset conversion handles RandomAccessFile's ISO-8859-1 byte reading.",
+          "sampleInput": "tailFile(\"log.txt\", 3) on 10-line file",
+          "sampleOutput": "lines 8, 9, 10"
         },
         {
           "displayOrder": 14,
           "title": "Binary File Diff",
-          "description": "Implement `binaryDiff(String file1, String file2)` that compares two binary files and returns a `List<String>` describing the differences. Each diff entry: `'offset 0x{hex}: file1={hex} file2={hex}'`. If files have different lengths, note that too.",
+          "description": "Compare two binary files byte-by-byte and report the first differing byte offset.\n\n**Example 1:**\nfile1.bin = [0x01, 0x02, 0x03]\nfile2.bin = [0x01, 0x02, 0x04]\ndiff(f1,f2) => \"Differ at offset 2: 0x03 vs 0x04\"\n\n**Example 2:**\ndiff(identical files) => \"Files are identical\"\n\n**Key insight:** Use buffered streams and compare arrays in 8KB chunks — never load both full files into memory.",
           "difficulty": "HARD",
           "pattern": "FileChannel ByteBuffer binary comparison",
           "hint1": "Open both files with `FileChannel`. Read chunks into two ByteBuffers of equal size.",
@@ -364,12 +390,14 @@
             }
           ],
           "constraints": "Chunk-based reading — do not load both files into memory.",
-          "editorial": "FileChannel reads into ByteBuffer in 4KB chunks — efficient for any file size. The offset is tracked across chunks. v & 0xFF converts signed byte (-128..127) to unsigned (0..255) for hex display. This is the core of the `diff --binary` command. For large files the chunk size can be tuned (larger = fewer syscalls, more memory)."
+          "editorial": "FileChannel reads into ByteBuffer in 4KB chunks — efficient for any file size. The offset is tracked across chunks. v & 0xFF converts signed byte (-128..127) to unsigned (0..255) for hex display. This is the core of the `diff --binary` command. For large files the chunk size can be tuned (larger = fewer syscalls, more memory).",
+          "sampleInput": "diff file1=[1,2,3] vs file2=[1,2,4]",
+          "sampleOutput": "\"Differ at offset 2: 0x03 vs 0x04\""
         },
         {
           "displayOrder": 15,
           "title": "Memory-Mapped Large File Search",
-          "description": "Implement `searchInFile(String filePath, String searchTerm)` that returns the byte offset of the first occurrence of `searchTerm` (UTF-8) in a large file using `MappedByteBuffer`. Return -1 if not found.",
+          "description": "Search a large file for a string using memory-mapped I/O (`MappedByteBuffer`).\n\n**Example:**\nsearchFile(\"huge.log\", \"ERROR\") => [line 42, line 108, line 5023]\n\n**Key insight:** `FileChannel.map()` maps the file into virtual memory — the OS pages in only what's accessed. Faster than `BufferedReader` for random access or multi-pass scans.",
           "difficulty": "HARD",
           "pattern": "MappedByteBuffer search",
           "hint1": "Map the file: `fc.map(MapMode.READ_ONLY, 0, fc.size())` gives direct memory access.",
@@ -388,12 +416,14 @@
             }
           ],
           "constraints": "Use MappedByteBuffer — no reading into a byte[] for the whole file.",
-          "editorial": "MappedByteBuffer.get(i) accesses file bytes at position i directly from virtual memory — the OS loads the relevant page on demand. The outer label on the loop enables continue outer to skip to the next starting position on mismatch. For production use, Boyer-Moore-Horspool or KMP would be O(n) instead of O(n*m). MappedByteBuffer is ideal here because the OS caches hot pages across repeated searches."
+          "editorial": "MappedByteBuffer.get(i) accesses file bytes at position i directly from virtual memory — the OS loads the relevant page on demand. The outer label on the loop enables continue outer to skip to the next starting position on mismatch. For production use, Boyer-Moore-Horspool or KMP would be O(n) instead of O(n*m). MappedByteBuffer is ideal here because the OS caches hot pages across repeated searches.",
+          "sampleInput": "search \"ERROR\" in large log file",
+          "sampleOutput": "[42, 108, 5023] (line numbers with ERROR)"
         },
         {
           "displayOrder": 16,
           "title": "Concurrent File Processor",
-          "description": "Implement `processFilesAsync(List<Path> files, Function<Path, String> processor)` that processes multiple files concurrently using `CompletableFuture`. Each file is processed by the given function. Returns `Map<Path, String>` of results. Preserve all results even if some files fail (use exceptionally to return error message).",
+          "description": "Process files in a directory concurrently using `ExecutorService` and `Future<Long>` to count lines in each file.\n\n**Example:**\nfiles: [a.txt(10 lines), b.txt(20 lines), c.txt(5 lines)]\nprocessConcurrently(files) => {a.txt=10, b.txt=20, c.txt=5}\n\n**Key insight:** Submit each file as a `Callable<Long>` to a thread pool. Collect results from futures. Speeds up I/O-bound work by overlapping disk reads.",
           "difficulty": "HARD",
           "pattern": "CompletableFuture file processing",
           "hint1": "`CompletableFuture.supplyAsync(() -> processor.apply(path))` for each file.",
@@ -408,12 +438,14 @@
             }
           ],
           "constraints": "All results collected even if some fail. Uses common ForkJoinPool.",
-          "editorial": "supplyAsync uses ForkJoinPool.commonPool() by default — parallel for CPU-bound work. For I/O-bound work (reading files), pass a custom Executor with more threads (Executors.newFixedThreadPool(20)). exceptionally catches CompletionException and provides a fallback value — ensures all futures complete. allOf().join() waits for all to finish, then individual join() calls retrieve results."
+          "editorial": "supplyAsync uses ForkJoinPool.commonPool() by default — parallel for CPU-bound work. For I/O-bound work (reading files), pass a custom Executor with more threads (Executors.newFixedThreadPool(20)). exceptionally catches CompletionException and provides a fallback value — ensures all futures complete. allOf().join() waits for all to finish, then individual join() calls retrieve results.",
+          "sampleInput": "3 files processed concurrently",
+          "sampleOutput": "{a.txt=10, b.txt=20, c.txt=5}"
         },
         {
           "displayOrder": 17,
           "title": "Custom Serialization With Versioning",
-          "description": "Implement a `ConfigV2` class with new field `theme` added after `ConfigV1(username, fontSize)`. Demonstrate backwards compatibility: deserializing a V1 byte stream into ConfigV2 should succeed with `theme` defaulting to `'dark'`. Use `serialVersionUID` and `readObject` with `defaultReadObject`.",
+          "description": "Implement custom serialization with version checking. Add a `serialVersionUID` and handle old vs new format in `readObject()`.\n\n**Example:**\nv1 object serialized: {name, age}\ndeserialize with v2 class: {name, age, email}\n=> email defaults to \"\" (new field)\n=> no InvalidClassException (same serialVersionUID)\n\n**Key insight:** Set `serialVersionUID` explicitly. In `readObject()`, use `defaultReadObject()` then handle missing fields.",
           "difficulty": "HARD",
           "pattern": "Serialization versioning",
           "hint1": "Keep `serialVersionUID = 1L` in V2 — same as V1. This tells Java the classes are compatible.",
@@ -428,12 +460,14 @@
             }
           ],
           "constraints": "Same serialVersionUID = backwards compatible. Different UID = InvalidClassException.",
-          "editorial": "Java serialization compares the stream's serialVersionUID with the class's serialVersionUID. If they match, deserialization proceeds — missing fields in the stream get default values (null, 0, false). defaultReadObject only restores fields that are present in the stream. New fields added to V2 are not in the stream, so they keep their field initializer value ('dark'). This is the standard approach for serialization version evolution."
+          "editorial": "Java serialization compares the stream's serialVersionUID with the class's serialVersionUID. If they match, deserialization proceeds — missing fields in the stream get default values (null, 0, false). defaultReadObject only restores fields that are present in the stream. New fields added to V2 are not in the stream, so they keep their field initializer value ('dark'). This is the standard approach for serialization version evolution.",
+          "sampleInput": "v1 serialized data, v2 class deserialization",
+          "sampleOutput": "email = \"\" (default for new field)"
         },
         {
           "displayOrder": 18,
           "title": "Append-Only Log File",
-          "description": "Implement `AppendLog` with `append(String message)` that writes a timestamped log entry, and `readAll()` that returns all entries. Entries format: `[ISO-timestamp] message`. File is created on first append. Entries survive JVM restarts (persistent). Use `StandardOpenOption.APPEND`.",
+          "description": "Implement an append-only log file: records are appended with a timestamp and never modified.\n\n**Example:**\nlog = new AppendOnlyLog(\"events.log\");\nlog.append(\"user_login\", \"alice\");\nlog.append(\"order_placed\", \"O-123\");\nlog.readAll() => [\n  \"2024-01-15T10:00:00 user_login alice\",\n  \"2024-01-15T10:01:00 order_placed O-123\"\n]\n\n**Key insight:** Open with `StandardOpenOption.APPEND` — each write goes to the end. Never open with TRUNCATE.",
           "difficulty": "HARD",
           "pattern": "Append-only file",
           "hint1": "`Files.writeString(path, entry, StandardOpenOption.CREATE, StandardOpenOption.APPEND)`.",
@@ -448,12 +482,14 @@
             }
           ],
           "constraints": "StandardOpenOption.APPEND never overwrites existing content.",
-          "editorial": "StandardOpenOption.CREATE creates the file if absent; APPEND positions the write pointer at the end. This is the append-only log pattern used by databases (WAL — Write-Ahead Log), Kafka (commit log), and Redis (AOF). The key property: once written, entries are never modified — only new entries are added. This makes the log crash-safe: a crash mid-write at worst adds a partial last line, which can be detected and truncated on recovery."
+          "editorial": "StandardOpenOption.CREATE creates the file if absent; APPEND positions the write pointer at the end. This is the append-only log pattern used by databases (WAL — Write-Ahead Log), Kafka (commit log), and Redis (AOF). The key property: once written, entries are never modified — only new entries are added. This makes the log crash-safe: a crash mid-write at worst adds a partial last line, which can be detected and truncated on recovery.",
+          "sampleInput": "append(user_login,alice) then readAll()",
+          "sampleOutput": "[\"2024-01-15T10:00:00 user_login alice\"]"
         },
         {
           "displayOrder": 19,
           "title": "ZIP File Reader and Writer",
-          "description": "Implement `createZip(Map<String, String> entries, String zipPath)` that creates a ZIP file where each key is the filename inside the ZIP and the value is its text content. Implement `readZip(String zipPath)` that returns the same `Map<String, String>` by reading back all entries.",
+          "description": "Read entries from a ZIP file and write modified entries to a new ZIP using `ZipInputStream` / `ZipOutputStream`.\n\n**Example:**\nInput: archive.zip contains [readme.txt, data.csv]\nreadZip(\"archive.zip\") => [\"readme.txt\", \"data.csv\"]\nwriteZip(\"out.zip\", Map.of(\"hello.txt\",\"Hello World\")) => creates zip with hello.txt\n\n**Key insight:** `ZipInputStream` iterates entries via `getNextEntry()`. Each entry is a stream — read/write without extracting to disk.",
           "difficulty": "HARD",
           "pattern": "ZipOutputStream / ZipInputStream",
           "hint1": "`ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipPath)))` — wrap with BufferedOutputStream.",
@@ -468,12 +504,14 @@
             }
           ],
           "constraints": "UTF-8 encoding for all text content.",
-          "editorial": "ZipOutputStream is a FilterOutputStream — it sits on top of any OutputStream. putNextEntry() starts a new entry; closeEntry() finalises it; close() on ZipOutputStream finalises the ZIP directory at the end. ZipInputStream.getNextEntry() returns null when all entries are read. readAllBytes() (Java 9+) reads the entire entry content in one call."
+          "editorial": "ZipOutputStream is a FilterOutputStream — it sits on top of any OutputStream. putNextEntry() starts a new entry; closeEntry() finalises it; close() on ZipOutputStream finalises the ZIP directory at the end. ZipInputStream.getNextEntry() returns null when all entries are read. readAllBytes() (Java 9+) reads the entire entry content in one call.",
+          "sampleInput": "readZip(\"archive.zip\")",
+          "sampleOutput": "[\"readme.txt\", \"data.csv\"]"
         },
         {
           "displayOrder": 20,
           "title": "NIO Non-Blocking File Server Skeleton",
-          "description": "Implement a simple NIO-based file serving skeleton: `FileServer` that accepts connections on a `ServerSocketChannel` (non-blocking), reads a filename from the client, and sends back the file's content bytes. Use `Selector` to handle multiple connections without threads.",
+          "description": "Implement a non-blocking file server skeleton using NIO `Selector` and `ServerSocketChannel`. Accept connections and echo file contents without blocking threads.\n\n**Key concepts:**\n- `Selector.open()` — monitors multiple channels\n- `SelectionKey.OP_ACCEPT` / `OP_READ` — event types\n- Non-blocking: a single thread handles many connections\n\n**Example:**\nserver starts on port 8888\nclient connects, requests \"file.txt\"\nserver sends file contents asynchronously\n\n**Key insight:** One selector thread handles thousands of connections — far more scalable than one-thread-per-connection.",
           "difficulty": "HARD",
           "pattern": "NIO Selector non-blocking",
           "hint1": "`ServerSocketChannel.open()` → `configureBlocking(false)` → `bind(port)` → register with `Selector` for `OP_ACCEPT`.",
@@ -488,7 +526,9 @@
             }
           ],
           "constraints": "Single thread handles all connections via Selector. No blocking I/O on the event loop.",
-          "editorial": "The Reactor pattern: one thread multiplexes many connections via Selector. OP_ACCEPT fires when a new client connects. OP_READ fires when data arrives. The key insight is configureBlocking(false) — without it, accept() and read() would block the entire event loop. selector.selectedKeys().remove() is mandatory — not removing a key causes it to fire again immediately. This is the foundation of Netty, Tomcat NIO connector, and Node.js (which uses libuv, the C equivalent)."
+          "editorial": "The Reactor pattern: one thread multiplexes many connections via Selector. OP_ACCEPT fires when a new client connects. OP_READ fires when data arrives. The key insight is configureBlocking(false) — without it, accept() and read() would block the entire event loop. selector.selectedKeys().remove() is mandatory — not removing a key causes it to fire again immediately. This is the foundation of Netty, Tomcat NIO connector, and Node.js (which uses libuv, the C equivalent).",
+          "sampleInput": "NIO server, client requests file.txt",
+          "sampleOutput": "file contents sent non-blocking"
         }
       ],
       "subCategory": "Core Concepts",

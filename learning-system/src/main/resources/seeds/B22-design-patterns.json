@@ -69,7 +69,7 @@
         {
           "displayOrder": 1,
           "title": "Thread-Safe Singleton",
-          "description": "Implement a thread-safe `AppConfig` Singleton that reads key-value properties from a `Map<String, String>`. It must be lazily initialised (created on first access, not at class load) and thread-safe. Provide `get(String key)` and `getOrDefault(String key, String def)` methods.",
+          "description": "Implement a thread-safe `Singleton` using the initialization-on-demand holder idiom.\n\n**Example:**\nConfig a = Config.getInstance();\nConfig b = Config.getInstance();\na == b => true\n\n```java\nclass Config {\n    private Config() {}\n    private static class Holder { static final Config INSTANCE = new Config(); }\n    public static Config getInstance() { return Holder.INSTANCE; }\n}\n```\n\n**Key insight:** Class loading is thread-safe by the JVM — `Holder` is only initialized when `getInstance()` is first called.",
           "difficulty": "EASY",
           "pattern": "Singleton / double-checked locking",
           "hint1": "Use `volatile static AppConfig instance` with double-checked locking in `getInstance()`.",
@@ -84,12 +84,14 @@
             }
           ],
           "constraints": "Must be lazily initialised and thread-safe.",
-          "editorial": "The Initialization-on-demand holder is the cleanest singleton in Java: the JVM guarantees class initialisation is single-threaded, so Holder.INSTANCE is created exactly once, lazily (when getInstance() is first called), and without explicit synchronisation. Double-checked locking with volatile also works but is more verbose. Never use Enum singleton for a class that needs to extend another class."
+          "editorial": "The Initialization-on-demand holder is the cleanest singleton in Java: the JVM guarantees class initialisation is single-threaded, so Holder.INSTANCE is created exactly once, lazily (when getInstance() is first called), and without explicit synchronisation. Double-checked locking with volatile also works but is more verbose. Never use Enum singleton for a class that needs to extend another class.",
+          "sampleInput": "Config.getInstance() from 2 threads",
+          "sampleOutput": "same instance (==)"
         },
         {
           "displayOrder": 2,
           "title": "Factory Registry — Plugin System",
-          "description": "Implement a `NotificationFactory` that supports registering new notification types at runtime (plugin pattern). `register(String type, Supplier<Notification> factory)` adds a new type. `create(String type)` creates one. Default types: EMAIL, SMS, PUSH. Show how to add WEBHOOK at runtime.",
+          "description": "Implement a `PluginRegistry` (Factory pattern): register `Class<? extends Plugin>` under a string key, create instances by name.\n\n**Example:**\nregistry.register(\"csv\", CsvPlugin.class);\nregistry.register(\"json\", JsonPlugin.class);\nregistry.create(\"csv\") instanceof CsvPlugin => true\nregistry.create(\"xml\") => throws IllegalArgumentException\n\n**Key insight:** Factory decouples creation from usage — callers don't import concrete classes. New plugins just need registration.",
           "difficulty": "EASY",
           "pattern": "Factory / Registry",
           "hint1": "Use a `Map<String, Supplier<Notification>>` as the registry.",
@@ -104,12 +106,14 @@
             }
           ],
           "constraints": "Runtime registration must work without modifying the factory class.",
-          "editorial": "The Registry pattern extends Factory: instead of hardcoded switch/if, new types are registered at startup or runtime. The factory is now Open for Extension without modification — adding WEBHOOK required zero changes to NotificationFactory. Spring uses this exact pattern: BeanDefinition registry, message converter registry, HandlerMapping registry."
+          "editorial": "The Registry pattern extends Factory: instead of hardcoded switch/if, new types are registered at startup or runtime. The factory is now Open for Extension without modification — adding WEBHOOK required zero changes to NotificationFactory. Spring uses this exact pattern: BeanDefinition registry, message converter registry, HandlerMapping registry.",
+          "sampleInput": "registry.create(\"csv\")",
+          "sampleOutput": "instanceof CsvPlugin => true"
         },
         {
           "displayOrder": 3,
           "title": "Builder for Complex Request Object",
-          "description": "Build a `DatabaseQuery` using the Builder pattern. Fields: `table` (required), `columns` (default: *), `whereClause` (optional), `orderBy` (optional), `limit` (default: 100), `offset` (default: 0). `build()` validates that `table` is not blank. `toSQL()` generates a SQL SELECT string.",
+          "description": "Build a `SearchRequest` using a Builder with optional fields: `query`, `page`, `pageSize`, `sortBy`, `filters`.\n\n**Example:**\nSearchRequest req = new SearchRequest.Builder(\"java\")\n    .page(2)\n    .pageSize(20)\n    .sortBy(\"date\")\n    .filter(\"category\", \"tutorials\")\n    .build();\nreq.getQuery() => \"java\"\nreq.getPage() => 2",
           "difficulty": "EASY",
           "pattern": "Builder",
           "hint1": "Put all fields and their defaults in the `Builder` class. `DatabaseQuery` has a private constructor taking the Builder.",
@@ -132,12 +136,14 @@
             }
           ],
           "constraints": "table is mandatory. All other fields have defaults.",
-          "editorial": "Builder shines when objects have many optional parameters. Without it you'd need constructors like DatabaseQuery(table, *, null, null, 100, 0) where null parameters are confusing and order-sensitive. The Builder makes the code self-documenting — .where(\"age > 18\") is clear; the third null in a constructor is not. Lombok's @Builder annotation generates this boilerplate automatically."
+          "editorial": "Builder shines when objects have many optional parameters. Without it you'd need constructors like DatabaseQuery(table, *, null, null, 100, 0) where null parameters are confusing and order-sensitive. The Builder makes the code self-documenting — .where(\"age > 18\") is clear; the third null in a constructor is not. Lombok's @Builder annotation generates this boilerplate automatically.",
+          "sampleInput": "Builder(\"java\").page(2).pageSize(20).sortBy(\"date\").build()",
+          "sampleOutput": "SearchRequest{query=java, page=2, pageSize=20}"
         },
         {
           "displayOrder": 4,
           "title": "Decorator Chain — Logging and Caching",
-          "description": "Implement a `DataRepository` interface with `findById(int id)` returning `String`. Create: `RealRepository` (returns 'data-N', simulates 100ms delay), `CachingDecorator` (caches results, skips delay on repeat), `LoggingDecorator` (logs every call with timing). Stack them: Logging wraps Caching wraps Real.",
+          "description": "Implement a Decorator chain combining logging and caching:\n\n**Example:**\nUserService base = new UserServiceImpl();\nUserService cached = new CachingDecorator(base);\nUserService logged = new LoggingDecorator(cached);\n\nlogged.findById(1):\n=> \"[LOG] findById(1) called\"\n=> checks cache: miss\n=> calls base.findById(1) => User{Alice}\n=> \"[LOG] findById(1) returned User{Alice}\"\nlogged.findById(1) again:\n=> cache hit — base not called",
           "difficulty": "EASY",
           "pattern": "Decorator",
           "hint1": "Both decorators implement `DataRepository` and take a `DataRepository` in their constructor.",
@@ -152,12 +158,14 @@
             }
           ],
           "constraints": "Decorator stacking order determines behaviour. Logging must be the outermost.",
-          "editorial": "Decorator order matters: LoggingDecorator → CachingDecorator → RealRepository. Logging wraps Caching, so the logged time includes cache lookup (fast) or real fetch (slow) — which is what you want to measure. If you swapped them (Caching wraps Logging), logging would always show the real fetch time even on cache hits. This is why Spring's @Cacheable and @Transactional order of application is significant."
+          "editorial": "Decorator order matters: LoggingDecorator → CachingDecorator → RealRepository. Logging wraps Caching, so the logged time includes cache lookup (fast) or real fetch (slow) — which is what you want to measure. If you swapped them (Caching wraps Logging), logging would always show the real fetch time even on cache hits. This is why Spring's @Cacheable and @Transactional order of application is significant.",
+          "sampleInput": "findById(1) twice through LoggingDecorator -> CachingDecorator -> Base",
+          "sampleOutput": "2nd call: cache hit, base not invoked"
         },
         {
           "displayOrder": 5,
           "title": "Proxy — Lazy Loading",
-          "description": "Implement a `HeavyReport` class that takes 500ms to load. Create a `LazyReportProxy` that implements the same `Report` interface but only loads the real report on first `getContent()` call. Subsequent calls return the cached result. Verify the report is NOT loaded on proxy creation.",
+          "description": "Implement a **Proxy** for lazy loading — create the expensive real object only on first use.\n\n**Example:**\nImage img = new LazyImageProxy(\"large-photo.jpg\");\n// real image NOT loaded yet\nimg.display();\n=> \"Loading large-photo.jpg from disk...\" (real object created)\n=> \"Displaying large-photo.jpg\"\nimg.display();\n=> \"Displaying large-photo.jpg\" (no reload)\n\n**Key insight:** Proxy implements the same interface as the real object — callers don't know they're talking to a proxy.",
           "difficulty": "EASY",
           "pattern": "Proxy / Lazy loading",
           "hint1": "The proxy holds a `HeavyReport real = null` field — null until first access.",
@@ -172,12 +180,14 @@
             }
           ],
           "constraints": "HeavyReport constructor must NOT run until getContent() is first called.",
-          "editorial": "Lazy loading proxy: defer expensive initialisation until actually needed. getTitle() works without triggering the load — the proxy knows the title statically. Only getContent() needs the real object. This is exactly how Hibernate's lazy-loaded @ManyToOne works: the proxy knows the ID immediately, but hitting a field triggers a DB query. In multi-threaded contexts, synchronise the null check to avoid double initialisation."
+          "editorial": "Lazy loading proxy: defer expensive initialisation until actually needed. getTitle() works without triggering the load — the proxy knows the title statically. Only getContent() needs the real object. This is exactly how Hibernate's lazy-loaded @ManyToOne works: the proxy knows the ID immediately, but hitting a field triggers a DB query. In multi-threaded contexts, synchronise the null check to avoid double initialisation.",
+          "sampleInput": "img.display() twice via proxy",
+          "sampleOutput": "1st: load + display; 2nd: display only"
         },
         {
           "displayOrder": 6,
           "title": "Abstract Factory — UI Theme System",
-          "description": "Implement an Abstract Factory for creating themed UI components. `UIFactory` creates `Button` and `TextField`. Two concrete factories: `DarkThemeFactory` and `LightThemeFactory`. Each produces components that render with their theme. The client code works with the `UIFactory` interface — it never knows which theme it's using.",
+          "description": "Implement Abstract Factory for a UI theme system: `LightTheme` and `DarkTheme` each produce matching `Button` and `Checkbox` widgets.\n\n**Example:**\nUIFactory f = new DarkTheme();\nf.createButton().render() => \"Dark Button\"\nf.createCheckbox().render() => \"Dark Checkbox\"\n\nUIFactory f2 = new LightTheme();\nf2.createButton().render() => \"Light Button\"\n\n**Key insight:** Abstract Factory ensures product families are consistent — a Dark button always pairs with a Dark checkbox.",
           "difficulty": "MEDIUM",
           "pattern": "Abstract Factory",
           "hint1": "Interface: `UIFactory { Button createButton(String label); TextField createTextField(String placeholder); }`",
@@ -196,12 +206,14 @@
             }
           ],
           "constraints": "Client code (buildLoginForm) must not reference any concrete theme class.",
-          "editorial": "Abstract Factory ensures product families are consistent — you can't accidentally mix a DarkButton with a LightTextField when using a single factory instance. The factory is the only place that mentions concrete classes. This is how look-and-feel theming works in Swing (UIManager), macOS vs Windows component sets, and cross-platform toolkits."
+          "editorial": "Abstract Factory ensures product families are consistent — you can't accidentally mix a DarkButton with a LightTextField when using a single factory instance. The factory is the only place that mentions concrete classes. This is how look-and-feel theming works in Swing (UIManager), macOS vs Windows component sets, and cross-platform toolkits.",
+          "sampleInput": "new DarkTheme().createButton().render()",
+          "sampleOutput": "\"Dark Button\""
         },
         {
           "displayOrder": 7,
           "title": "Observer — Event Bus",
-          "description": "Implement a generic `EventBus<T>` supporting: `subscribe(String eventType, Consumer<T> handler)`, `unsubscribe(String eventType, Consumer<T> handler)`, `publish(String eventType, T event)`. Support multiple handlers per event type. Demonstrate with ORDER_PLACED and ORDER_SHIPPED events.",
+          "description": "Implement an `EventBus` Observer: `subscribe(EventType, Listener)`, `publish(Event)` notifies all matching listeners.\n\n**Example:**\nbus.subscribe(\"USER_CREATED\", e -> System.out.println(\"Email: \" + e.data()));\nbus.subscribe(\"USER_CREATED\", e -> System.out.println(\"Log: \" + e.data()));\nbus.publish(new Event(\"USER_CREATED\", \"alice@example.com\"));\n=> \"Email: alice@example.com\"\n=> \"Log: alice@example.com\"",
           "difficulty": "MEDIUM",
           "pattern": "Observer / Event Bus",
           "hint1": "Use `Map<String, List<Consumer<T>>>` to store handlers per event type.",
@@ -220,12 +232,14 @@
             }
           ],
           "constraints": "publish() on unknown event type does nothing. Unsubscribing a non-subscribed handler is a no-op.",
-          "editorial": "Publishing a copy of the list (new ArrayList<>(list)) prevents ConcurrentModificationException if a handler unsubscribes itself during event handling. computeIfAbsent creates the list on first subscription without explicit null checks. This is exactly how Spring's ApplicationEventPublisher works, and how Guava EventBus is structured."
+          "editorial": "Publishing a copy of the list (new ArrayList<>(list)) prevents ConcurrentModificationException if a handler unsubscribes itself during event handling. computeIfAbsent creates the list on first subscription without explicit null checks. This is exactly how Spring's ApplicationEventPublisher works, and how Guava EventBus is structured.",
+          "sampleInput": "publish USER_CREATED with 2 subscribers",
+          "sampleOutput": "\"Email: alice@example.com\" / \"Log: alice@example.com\""
         },
         {
           "displayOrder": 8,
           "title": "Strategy — Payment Processor",
-          "description": "Implement a `PaymentProcessor` that uses a Strategy pattern to support multiple payment methods: `CreditCard`, `PayPal`, `Crypto`. Each strategy has `pay(double amount)` returning a `PaymentResult(success, transactionId, message)`. The processor selects the strategy at runtime and applies a 2% fee for credit card, 1% for PayPal, 0% for Crypto.",
+          "description": "Implement **Strategy** for a payment system: `PaymentContext` accepts a `PaymentStrategy` at runtime.\n\n**Example:**\nctx.setStrategy(new CreditCardStrategy(\"4111...\"));\nctx.pay(100.0) => \"Paid $100.00 with Credit Card ending 1111\"\n\nctx.setStrategy(new PayPalStrategy(\"user@paypal.com\"));\nctx.pay(50.0) => \"Paid $50.00 via PayPal (user@paypal.com)\"\n\n**Key insight:** Context delegates to strategy — swapping strategies at runtime without `if/else` chains.",
           "difficulty": "MEDIUM",
           "pattern": "Strategy",
           "hint1": "Interface: `PaymentStrategy { PaymentResult pay(double amount); String name(); }`",
@@ -244,12 +258,14 @@
             }
           ],
           "constraints": "Adding a new payment method requires only a new class — zero changes to PaymentProcessor.",
-          "editorial": "Strategy eliminates the if/switch in the processor — instead of if(type=='CC') charge2% else if(type=='PP') charge1%, each strategy knows its own fee. Adding SEPA bank transfer requires only one new class. The processor is closed for modification. This is how Spring's payment integrations, sorting algorithms in Collections, and compression strategies in ZIP libraries work."
+          "editorial": "Strategy eliminates the if/switch in the processor — instead of if(type=='CC') charge2% else if(type=='PP') charge1%, each strategy knows its own fee. Adding SEPA bank transfer requires only one new class. The processor is closed for modification. This is how Spring's payment integrations, sorting algorithms in Collections, and compression strategies in ZIP libraries work.",
+          "sampleInput": "ctx.setStrategy(new PayPalStrategy()).pay(50.0)",
+          "sampleOutput": "\"Paid $50.00 via PayPal (user@paypal.com)\""
         },
         {
           "displayOrder": 9,
           "title": "Command — Undo/Redo Text Editor",
-          "description": "Implement a simple text editor using Command pattern with full undo/redo. Commands: `InsertCommand(position, text)`, `DeleteCommand(position, length)`. The editor maintains undo and redo stacks. After undo, the command goes onto the redo stack. Redo reapplies the last undone command.",
+          "description": "Implement **Command** pattern for a text editor with undo/redo:\n\n**Example:**\neditor.execute(new InsertCommand(\"Hello\"));\neditor.execute(new InsertCommand(\" World\"));\neditor.getText() => \"Hello World\"\neditor.undo();\neditor.getText() => \"Hello\"\neditor.redo();\neditor.getText() => \"Hello World\"\n\n**Key insight:** Each command stores enough state to undo itself. Undo stack: push on execute, pop on undo. Redo stack: push on undo, pop on redo.",
           "difficulty": "MEDIUM",
           "pattern": "Command / undo-redo",
           "hint1": "Two stacks: `Deque<Command> undoStack` and `Deque<Command> redoStack`.",
@@ -268,12 +284,14 @@
             }
           ],
           "constraints": "Redo stack must be cleared when a new command is executed.",
-          "editorial": "Undo/redo requires two stacks. New execute clears redo because a new branch of history starts. The Delete command must save the deleted text at execute() time for undo — not at construction time (position might have changed). This exact pattern is used in IDEs, word processors, and database transaction logs."
+          "editorial": "Undo/redo requires two stacks. New execute clears redo because a new branch of history starts. The Delete command must save the deleted text at execute() time for undo — not at construction time (position might have changed). This exact pattern is used in IDEs, word processors, and database transaction logs.",
+          "sampleInput": "insert Hello, insert World, undo",
+          "sampleOutput": "text = \"Hello\""
         },
         {
           "displayOrder": 10,
           "title": "Template Method — Data Export Pipeline",
-          "description": "Create a `DataExporter` abstract class with a template method `export(List<Map<String,String>> data)`. Steps: `validate(data)` (throws if empty), `format(data)` (abstract — returns List<String>), `writeHeader()` (abstract), `writeRows(rows)`, `writeFooter(rows.size())`. Implement `CSVExporter` and `JSONExporter`.",
+          "description": "Implement **Template Method** for a data export pipeline: `abstract readData()`, `abstract transformData()`, `abstract writeOutput()`. `CsvExporter` and `JsonExporter` fill in the steps.\n\n**Example:**\nnew CsvExporter(data).export();\n=> \"[CSV] Reading 5 records\"\n=> \"[CSV] Transforming to CSV format\"\n=> \"[CSV] Writing output.csv\"\n\n**Key insight:** Parent defines WHEN; subclasses define HOW. The algorithm skeleton in the parent cannot be changed — only the steps.",
           "difficulty": "MEDIUM",
           "pattern": "Template Method",
           "hint1": "`export()` is `final` — it calls the steps in order. Only `format()`, `writeHeader()` are abstract.",
@@ -292,12 +310,14 @@
             }
           ],
           "constraints": "export() must be final. validate() must be private (not overridable). format() and writeHeader() are abstract.",
-          "editorial": "Template Method: the base class owns the algorithm sequence (validate → format → header → rows → footer). Subclasses only fill in the blanks — they cannot reorder steps. final prevents subclasses from breaking the contract. This is the pattern behind JdbcTemplate (you provide the RowMapper), AbstractBatchJob (you implement step logic), and JUnit lifecycle hooks."
+          "editorial": "Template Method: the base class owns the algorithm sequence (validate → format → header → rows → footer). Subclasses only fill in the blanks — they cannot reorder steps. final prevents subclasses from breaking the contract. This is the pattern behind JdbcTemplate (you provide the RowMapper), AbstractBatchJob (you implement step logic), and JUnit lifecycle hooks.",
+          "sampleInput": "new CsvExporter(data).export()",
+          "sampleOutput": "\"Reading\" -> \"Transforming\" -> \"Writing\" in CSV format"
         },
         {
           "displayOrder": 11,
           "title": "Chain of Responsibility — HTTP Middleware",
-          "description": "Build an HTTP request processing chain with four handlers: `AuthMiddleware` (rejects if no 'token' header), `RateLimitMiddleware` (allows max 3 requests per client), `LoggingMiddleware` (logs request), `RouteHandler` (final handler, returns '200 OK'). Chain them and test with valid and invalid requests.",
+          "description": "Implement **Chain of Responsibility** as HTTP middleware: `AuthFilter -> RateLimitFilter -> LoggingFilter -> Handler`.\n\n**Example:**\nchain.handle(request{authenticated=true, rateOk=true})\n=> \"Auth: OK\"\n=> \"RateLimit: OK\"\n=> \"Logging request\"\n=> \"Handled: /api/users\"\n\nchain.handle(request{authenticated=false})\n=> \"Auth: DENIED\" (chain stops)",
           "difficulty": "MEDIUM",
           "pattern": "Chain of Responsibility",
           "hint1": "Each handler has a `handle(Request req)` method and a `next` handler reference.",
@@ -320,12 +340,14 @@
             }
           ],
           "constraints": "Chain must stop at the first rejection — downstream handlers must NOT be called.",
-          "editorial": "Chain of Responsibility: each middleware decides independently whether to reject or pass. The order matters: Auth before RateLimit (no point rate-limiting unauthenticated requests). LoggingMiddleware is last-before-route so it can log the final response status. Spring Security's FilterChain and Spring MVC's HandlerInterceptor follow this exact pattern."
+          "editorial": "Chain of Responsibility: each middleware decides independently whether to reject or pass. The order matters: Auth before RateLimit (no point rate-limiting unauthenticated requests). LoggingMiddleware is last-before-route so it can log the final response status. Spring Security's FilterChain and Spring MVC's HandlerInterceptor follow this exact pattern.",
+          "sampleInput": "unauthenticated request through chain",
+          "sampleOutput": "\"Auth: DENIED\" (chain stops)"
         },
         {
           "displayOrder": 12,
           "title": "State Machine — Order Lifecycle",
-          "description": "Implement an `Order` state machine with states: `PENDING → PAID → PROCESSING → SHIPPED → DELIVERED`. Each state allows only specific transitions. Invalid transitions throw `IllegalStateException`. Implement state-specific behaviour: PAID computes delivery estimate, SHIPPED records tracking number.",
+          "description": "Implement **State Machine** for order lifecycle: PENDING -> CONFIRMED -> SHIPPED -> DELIVERED (or CANCELLED from any state).\n\n**Example:**\nOrder order = new Order();\norder.getState() => PENDING\norder.confirm() => CONFIRMED\norder.ship() => SHIPPED\norder.confirm() => throws InvalidStateTransitionException\n\n**Key insight:** Each state handles only its valid transitions — invalid operations throw exceptions. State pattern eliminates giant `switch` statements.",
           "difficulty": "HARD",
           "pattern": "State Machine",
           "hint1": "Interface: `OrderState { void pay(Order); void process(Order); void ship(Order, String trackingNo); void deliver(Order); String stateName(); }`",
@@ -344,12 +366,14 @@
             }
           ],
           "constraints": "Invalid transitions throw IllegalStateException. Valid transitions update state and print action.",
-          "editorial": "State pattern eliminates a giant switch(currentState) in every method. Each state class is responsible for its own valid transitions — adding a CANCELLED state only requires a new CancelledState class and updating the states that can transition to it. This is how Spring Statemachine works and how workflow engines (Activiti, Camunda) model business processes."
+          "editorial": "State pattern eliminates a giant switch(currentState) in every method. Each state class is responsible for its own valid transitions — adding a CANCELLED state only requires a new CancelledState class and updating the states that can transition to it. This is how Spring Statemachine works and how workflow engines (Activiti, Camunda) model business processes.",
+          "sampleInput": "PENDING -> confirm() -> ship() -> confirm()",
+          "sampleOutput": "final confirm() throws InvalidStateTransitionException"
         },
         {
           "displayOrder": 13,
           "title": "Composite — File System Tree",
-          "description": "Implement a file system using Composite: `FileSystemItem` interface with `getName()`, `getSize()`, `print(String indent)`. `File` is a leaf with a fixed size. `Directory` is a composite containing items. `getSize()` for Directory returns the sum of all children's sizes recursively. Build a sample tree and print it.",
+          "description": "Implement **Composite** for a file system tree where both `File` and `Directory` implement `FileSystemNode`.\n\n**Example:**\nDirectory root = new Directory(\"root\");\nroot.add(new File(\"a.txt\", 100));\nDirectory sub = new Directory(\"sub\");\nsub.add(new File(\"b.txt\", 200));\nroot.add(sub);\nroot.size() => 300\nroot.print(0) => \"root/ (300B)\\n  a.txt (100B)\\n  sub/ (200B)\\n    b.txt (200B)\"",
           "difficulty": "HARD",
           "pattern": "Composite",
           "hint1": "`Directory` holds `List<FileSystemItem> children`. `addItem(item)` appends to the list.",
@@ -364,12 +388,14 @@
             }
           ],
           "constraints": "getSize() on Directory must sum recursively — not just direct children.",
-          "editorial": "Composite lets you treat individual items and compositions uniformly through FileSystemItem. The key insight: Directory.getSize() calls getSize() on each child — if the child is a Directory, it recurses; if it's a File, it returns directly. The caller never needs to check if something is a File or Directory. This is how Java's Path API works, and how HTML DOM traversal operates."
+          "editorial": "Composite lets you treat individual items and compositions uniformly through FileSystemItem. The key insight: Directory.getSize() calls getSize() on each child — if the child is a Directory, it recurses; if it's a File, it returns directly. The caller never needs to check if something is a File or Directory. This is how Java's Path API works, and how HTML DOM traversal operates.",
+          "sampleInput": "root with File(100) + Dir(File(200))",
+          "sampleOutput": "root.size() = 300"
         },
         {
           "displayOrder": 14,
           "title": "Flyweight Pool — Particle System",
-          "description": "A particle system renders thousands of particles. Each particle has: `color`, `shape`, `texture` (shared — flyweight) and `x`, `y`, `velocity` (unique per particle). Implement a `ParticleFactory` that pools particle types. Show memory savings: 10,000 particles with only 5 unique types use 5 flyweight objects instead of 10,000.",
+          "description": "Implement **Flyweight** to share color/texture data across thousands of particles, minimizing memory.\n\n**Example:**\nParticleFactory factory = new ParticleFactory();\nParticle p1 = factory.getParticle(\"red\", \"circle\"); // creates flyweight\nParticle p2 = factory.getParticle(\"red\", \"circle\"); // returns cached\np1 == p2 => true (shared flyweight)\nfactory.getCacheSize() => 1 (only one red-circle flyweight)\n\n**Key insight:** Intrinsic state (color, texture) is shared; extrinsic state (position, velocity) is passed at use time.",
           "difficulty": "HARD",
           "pattern": "Flyweight",
           "hint1": "`ParticleType` record holds color, shape, texture (intrinsic state). `ParticleFactory` pools these.",
@@ -384,12 +410,14 @@
             }
           ],
           "constraints": "ParticleType objects must be created at most once per unique (color, shape, texture) combination.",
-          "editorial": "Flyweight separates intrinsic state (shared — same for all particles of a type) from extrinsic state (unique per particle). computeIfAbsent creates on first request and reuses thereafter. 10,000 particles with 5 types: 5 ParticleType objects instead of 10,000 — 99.95% fewer intrinsic objects. Java's String.intern(), Integer cache (-128 to 127), and the JVM's constant pool are all flyweight implementations."
+          "editorial": "Flyweight separates intrinsic state (shared — same for all particles of a type) from extrinsic state (unique per particle). computeIfAbsent creates on first request and reuses thereafter. 10,000 particles with 5 types: 5 ParticleType objects instead of 10,000 — 99.95% fewer intrinsic objects. Java's String.intern(), Integer cache (-128 to 127), and the JVM's constant pool are all flyweight implementations.",
+          "sampleInput": "getParticle(\"red\",\"circle\") twice",
+          "sampleOutput": "same instance (==), cache size = 1"
         },
         {
           "displayOrder": 15,
           "title": "Prototype — Deep Clone Registry",
-          "description": "Implement a `ShapeRegistry` that stores prototype shapes. `clone(String type)` returns a deep copy of the registered prototype. Shapes: `Circle(radius, color)`, `Rectangle(width, height, color)`. After cloning, modifying the clone must not affect the prototype. Demonstrate with a shape catalog.",
+          "description": "Implement a **Prototype Registry** where pre-configured objects can be cloned on demand.\n\n**Example:**\nregistry.register(\"alert-email\", new EmailNotification(\"ALERT\", \"ops@co.com\"));\nregistry.register(\"info-sms\", new SmsNotification(\"INFO\", \"+1800\"));\n\nEmailNotification n = (EmailNotification) registry.clone(\"alert-email\");\nn.setRecipient(\"dev@co.com\"); // customize the clone\nregistry.clone(\"alert-email\").getRecipient() => \"ops@co.com\" (original unchanged)\n\n**Key insight:** Clone from prototype — avoids re-initializing default config every time.",
           "difficulty": "HARD",
           "pattern": "Prototype",
           "hint1": "Each shape implements `Cloneable` and overrides `clone()` to return a deep copy.",
@@ -404,12 +432,14 @@
             }
           ],
           "constraints": "Clones must be completely independent — modifying a clone must not affect the prototype or other clones.",
-          "editorial": "Prototype avoids expensive initialisation by copying an existing object. The clone() method must do a DEEP copy — for reference fields, you must clone them too. Java's Object.clone() is shallow — a Shape with a List of points would share the same List between prototype and clone. Always implement clone() explicitly. Spring's BeanDefinition copying uses prototype-like semantics when creating prototype-scoped beans."
+          "editorial": "Prototype avoids expensive initialisation by copying an existing object. The clone() method must do a DEEP copy — for reference fields, you must clone them too. Java's Object.clone() is shallow — a Shape with a List of points would share the same List between prototype and clone. Always implement clone() explicitly. Spring's BeanDefinition copying uses prototype-like semantics when creating prototype-scoped beans.",
+          "sampleInput": "clone(\"alert-email\"), modify, then re-clone",
+          "sampleOutput": "re-clone still has original recipient"
         },
         {
           "displayOrder": 16,
           "title": "Facade — Microservice Client Facade",
-          "description": "Implement a `CheckoutFacade` that coordinates three subsystems: `InventoryService.reserve(productId, qty)`, `PaymentService.charge(customerId, amount)`, `ShippingService.schedule(orderId, address)`. If payment fails, it must release the inventory reservation. Return an `OrderConfirmation` on success.",
+          "description": "Implement a **Facade** that simplifies calling multiple microservices:\n\n**Example:**\nOrderFacade facade = new OrderFacade(inventoryClient, paymentClient, notificationClient);\nOrderResult result = facade.placeOrder(userId, items);\n// internally:\n// 1. inventoryClient.reserve(items)\n// 2. paymentClient.charge(userId, total)\n// 3. notificationClient.send(userId, \"Order confirmed\")\nresult.isSuccess() => true\n\n**Key insight:** Facade hides complexity — callers don't need to know about 3 services and their coordination.",
           "difficulty": "HARD",
           "pattern": "Facade / coordination",
           "hint1": "Each service method can throw a checked `ServiceException`. Catch payment failure, call inventory.release().",
@@ -428,12 +458,14 @@
             }
           ],
           "constraints": "On payment failure, inventory reservation must be released (compensating transaction).",
-          "editorial": "Facade hides the complexity of coordinating three services. The critical addition here is error compensation (Saga pattern): if payment fails after inventory is reserved, we must release the reservation to avoid stock being stuck. Without Facade, every checkout code path would need to implement this compensation logic. With Facade, it's centralised in one place — the single source of truth for the checkout flow."
+          "editorial": "Facade hides the complexity of coordinating three services. The critical addition here is error compensation (Saga pattern): if payment fails after inventory is reserved, we must release the reservation to avoid stock being stuck. Without Facade, every checkout code path would need to implement this compensation logic. With Facade, it's centralised in one place — the single source of truth for the checkout flow.",
+          "sampleInput": "facade.placeOrder(userId, items)",
+          "sampleOutput": "OrderResult{success=true}"
         },
         {
           "displayOrder": 17,
           "title": "Abstract Factory — Cross-Platform Dialogs",
-          "description": "Extend the Abstract Factory to support three OS themes: Windows, macOS, Linux. Each creates a `Dialog` component (modal/modeless) and a `Menu` component (menubar/contextmenu). A `Application` class takes a `GUIFactory` and builds its UI using only the factory — never mentioning concrete classes.",
+          "description": "Implement **Abstract Factory** for cross-platform dialog creation: `WindowsDialogFactory` and `MacDialogFactory` produce matching `Alert`, `Confirm`, and `Input` dialogs.\n\n**Example:**\nDialogFactory f = new MacDialogFactory();\nf.createAlert(\"Warning\").show() => \"[Mac Alert] Warning\"\nf.createConfirm(\"Are you sure?\").show() => \"[Mac Confirm] Are you sure?\"\n\n**Key insight:** Abstract Factory guarantees platform consistency — all widgets from one factory look and behave the same.",
           "difficulty": "HARD",
           "pattern": "Abstract Factory",
           "hint1": "Three factories: `WindowsFactory`, `MacFactory`, `LinuxFactory` each implementing `GUIFactory { Dialog createDialog(); Menu createMenu(); }`",
@@ -452,12 +484,14 @@
             }
           ],
           "constraints": "Application class must not contain any instanceof checks or OS-specific code.",
-          "editorial": "Abstract Factory ensures an entire product family is consistent. You cannot mix WinDialog with MacMenu — the factory produces a complete set. The Application is completely decoupled from concrete implementations — swap the factory and the entire look-and-feel changes. This is how Java Swing's LookAndFeel works and how database drivers are loaded via JDBC — DriverManager is the abstract factory, and each driver (MySQL, PostgreSQL) is a concrete factory."
+          "editorial": "Abstract Factory ensures an entire product family is consistent. You cannot mix WinDialog with MacMenu — the factory produces a complete set. The Application is completely decoupled from concrete implementations — swap the factory and the entire look-and-feel changes. This is how Java Swing's LookAndFeel works and how database drivers are loaded via JDBC — DriverManager is the abstract factory, and each driver (MySQL, PostgreSQL) is a concrete factory.",
+          "sampleInput": "new MacDialogFactory().createAlert(\"Warning\").show()",
+          "sampleOutput": "\"[Mac Alert] Warning\""
         },
         {
           "displayOrder": 18,
           "title": "Decorator — Input Validation Pipeline",
-          "description": "Build a validation pipeline using Decorator. `Validator<T>` interface has `ValidationResult validate(T input)`. Decorators: `NotNullValidator`, `MinLengthValidator(n)`, `MaxLengthValidator(n)`, `RegexValidator(pattern)`, `TrimmedValidator` (trims then delegates). Chain them to validate a username string.",
+          "description": "Implement **Decorator** for input validation: wrap a `DataProcessor` with `LengthValidator`, `FormatValidator`, `SanitizationDecorator`.\n\n**Example:**\nDataProcessor p = new SanitizationDecorator(\n    new FormatValidator(\n        new LengthValidator(baseProcessor, maxLen=100), pattern),\n    badChars);\np.process(\"<script>alert(1)</script>\")\n=> LengthValidator: OK (< 100 chars)\n=> FormatValidator: FAIL (invalid chars)\n=> throws ValidationException\n\n**Key insight:** Each decorator adds one responsibility — easy to add/remove/reorder validators without touching base or other decorators.",
           "difficulty": "HARD",
           "pattern": "Decorator / validation chain",
           "hint1": "`ValidationResult record(boolean valid, String errorMessage)` — use static factory methods `ok()` and `error(msg)`.",
@@ -488,12 +522,14 @@
             }
           ],
           "constraints": "Each decorator checks its own rule and delegates to inner validator first — fail fast on any violation.",
-          "editorial": "The decorator order determines what gets checked when. TrimmedValidator wraps everything — it normalises input before any other check sees it. Then inner validators run from innermost (NotNull) outward (MinLength → MaxLength → Regex). Fail-fast: each decorator checks the inner result first, returns immediately if already invalid. This is how Bean Validation (@NotNull, @Size, @Pattern annotations) works in Spring — multiple validators compose on a single field."
+          "editorial": "The decorator order determines what gets checked when. TrimmedValidator wraps everything — it normalises input before any other check sees it. Then inner validators run from innermost (NotNull) outward (MinLength → MaxLength → Regex). Fail-fast: each decorator checks the inner result first, returns immediately if already invalid. This is how Bean Validation (@NotNull, @Size, @Pattern annotations) works in Spring — multiple validators compose on a single field.",
+          "sampleInput": "process(\"<script>alert(1)</script>\")",
+          "sampleOutput": "throws ValidationException (format check)"
         },
         {
           "displayOrder": 19,
           "title": "Builder With Validation and Immutability",
-          "description": "Implement an immutable `User` class with Builder. Fields: `id` (UUID, auto-generated), `username` (3-20 chars, required), `email` (valid format, required), `age` (18-120, required), `roles` (Set<String>, default empty), `bio` (optional, max 500 chars). `build()` must validate ALL fields and report ALL errors (not just first).",
+          "description": "Implement a **Builder** with validation and producing an immutable result object.\n\n**Example:**\nHttpRequest req = new HttpRequest.Builder()\n    .method(\"GET\")\n    .url(\"https://api.example.com/users\")\n    .header(\"Authorization\", \"Bearer token123\")\n    .timeout(5000)\n    .build();\nreq.getMethod() => \"GET\"\nreq.getHeaders().put(\"X-New\",\"v\") => throws UnsupportedOperationException (immutable)\n\n**Key insight:** Builder accumulates mutable state; `build()` validates and creates an immutable value object.",
           "difficulty": "HARD",
           "pattern": "Builder / validation",
           "hint1": "Collect all validation errors in a `List<String>`. Throw `IllegalArgumentException` with all errors joined by newline.",
@@ -512,12 +548,14 @@
             }
           ],
           "constraints": "Report ALL validation errors, not just the first. User is immutable after build().",
-          "editorial": "Collecting all validation errors before throwing gives better UX — the user sees all problems at once instead of fix-one-reload-see-another. This is the same approach as Bean Validation's ConstraintViolationException which collects all @NotNull, @Size, @Email violations together. Immutability after build() is enforced by: (1) private constructor, (2) final fields, (3) unmodifiable collections, (4) no setters."
+          "editorial": "Collecting all validation errors before throwing gives better UX — the user sees all problems at once instead of fix-one-reload-see-another. This is the same approach as Bean Validation's ConstraintViolationException which collects all @NotNull, @Size, @Email violations together. Immutability after build() is enforced by: (1) private constructor, (2) final fields, (3) unmodifiable collections, (4) no setters.",
+          "sampleInput": "Builder().method(GET).url(...).build()",
+          "sampleOutput": "immutable HttpRequest; headers.put throws"
         },
         {
           "displayOrder": 20,
           "title": "Design Pattern Identifier",
-          "description": "Given code snippets, identify which design pattern is being used and explain why. Implement a `PatternAnalyzer` that stores pattern descriptions and matches code characteristics to patterns. Then implement examples of all three pattern categories (one each) in a single demo class showing Creational + Structural + Behavioral patterns working together in a real scenario: a plugin-based report generation system.",
+          "description": "Given a code snippet, identify which design pattern it demonstrates and explain why.\n\n**Example 1:**\n```java\ninterface Strategy { void execute(); }\nclass Context { Strategy s; void run() { s.execute(); } }\n```\n=> **Strategy** — behaviour encapsulated in interchangeable objects\n\n**Example 2:**\n```java\nclass Singleton { private static Singleton inst; static Singleton get() { if(inst==null) inst=new Singleton(); return inst; } }\n```\n=> **Singleton** — single instance, global access point\n\nImplement `identifyPattern(String code)` returning the pattern name.",
           "difficulty": "HARD",
           "pattern": "Multi-pattern system",
           "hint1": "System: ReportFactory (Factory Method) creates report generators. LoggingDecorator wraps them. Observers are notified when reports complete.",
@@ -536,7 +574,9 @@
             }
           ],
           "constraints": "Adding a new report format (XML) requires only registering a new factory entry — zero changes to ReportService, LoggingDecorator, or EventBus.",
-          "editorial": "This demo shows how patterns compose: Factory creates the right generator (Creational), Decorator wraps it with logging without subclassing (Structural), Observer decouples the notification logic from report generation (Behavioral). Adding XML is purely additive — one factory.register() call. This is the essence of Open/Closed Principle that all three patterns enable: the system is open for extension (new formats, new observers) but closed for modification (ReportService never changes)."
+          "editorial": "This demo shows how patterns compose: Factory creates the right generator (Creational), Decorator wraps it with logging without subclassing (Structural), Observer decouples the notification logic from report generation (Behavioral). Adding XML is purely additive — one factory.register() call. This is the essence of Open/Closed Principle that all three patterns enable: the system is open for extension (new formats, new observers) but closed for modification (ReportService never changes).",
+          "sampleInput": "code with Strategy interface",
+          "sampleOutput": "\"Strategy\""
         }
       ],
       "subCategory": "Design Patterns (VERY IMPORTANT)",

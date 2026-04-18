@@ -68,7 +68,7 @@
         {
           "displayOrder": 1,
           "title": "Generic Min/Max Finder",
-          "description": "Write a generic method findMinMax(List<T> list) where T extends Comparable<T>. Return a Pair<T,T> containing the minimum and maximum elements. Throw IllegalArgumentException if the list is empty. Also write findKth(List<T> list, int k) that returns the k-th smallest element (1-indexed).",
+          "description": "Implement `<T extends Comparable<T>> T min(T[] arr)` and `max(T[] arr)` that work for any Comparable type.\n\n**Example 1:**\nmin(new Integer[]{3,1,4,1,5}) => 1\nmax(new Integer[]{3,1,4,1,5}) => 5\n\n**Example 2:**\nmin(new String[]{\"banana\",\"apple\",\"cherry\"}) => \"apple\"\nmax(new String[]{\"banana\",\"apple\",\"cherry\"}) => \"cherry\"",
           "difficulty": "EASY",
           "pattern": "Bounded Type Parameter",
           "hint1": "T extends Comparable<T> allows calling a.compareTo(b).",
@@ -91,12 +91,14 @@
             }
           ],
           "constraints": "Single pass for findMinMax. T must implement Comparable.",
-          "editorial": "Iterate the list once tracking min and max with Comparator.comparingNaturalOrder() or T's compareTo(). Return a Pair<T,T>(min,max). For findKth: copy the list, sort it with Collections.sort() (requires Comparable), return index k-1. Throw IllegalArgumentException if k < 1 or k > size."
+          "editorial": "Iterate the list once tracking min and max with Comparator.comparingNaturalOrder() or T's compareTo(). Return a Pair<T,T>(min,max). For findKth: copy the list, sort it with Collections.sort() (requires Comparable), return index k-1. Throw IllegalArgumentException if k < 1 or k > size.",
+          "sampleInput": "min(new Integer[]{3,1,4,1,5})",
+          "sampleOutput": "1"
         },
         {
           "displayOrder": 2,
           "title": "Generic Swap and Reverse",
-          "description": "Write a generic method swap(T[] arr, int i, int j) that swaps elements at indices i and j. Also write reverse(T[] arr) that reverses the array in-place using swap. These should work for any reference type array: Integer[], String[], Double[].",
+          "description": "Implement generic `<T> void swap(T[] arr, int i, int j)` and `<T> void reverse(T[] arr)`.\n\n**Example 1:**\nInteger[] arr = {1,2,3,4,5}; swap(arr,0,4); => {5,2,3,4,1}\n\n**Example 2:**\nString[] s = {\"a\",\"b\",\"c\"}; reverse(s); => {\"c\",\"b\",\"a\"}\n\n**Key insight:** Generic methods write the logic once for all reference types — no casting, compile-time safety.",
           "difficulty": "EASY",
           "pattern": "Generic Methods",
           "hint1": "swap(arr,i,j): temp=arr[i]; arr[i]=arr[j]; arr[j]=temp.",
@@ -115,12 +117,14 @@
             }
           ],
           "constraints": "In-place operations. Works for any reference type array.",
-          "editorial": "Generic swap: T temp = arr[i]; arr[i] = arr[j]; arr[j] = temp. This works for any reference type T. Reverse: swap(arr, 0, arr.length-1), swap(arr, 1, arr.length-2), etc. — two-pointer approach, O(n/2) swaps. Note: you cannot create generic arrays (T[] arr = new T[n] is illegal) — pass an existing array."
+          "editorial": "Generic swap: T temp = arr[i]; arr[i] = arr[j]; arr[j] = temp. This works for any reference type T. Reverse: swap(arr, 0, arr.length-1), swap(arr, 1, arr.length-2), etc. — two-pointer approach, O(n/2) swaps. Note: you cannot create generic arrays (T[] arr = new T[n] is illegal) — pass an existing array.",
+          "sampleInput": "reverse(new String[]{\"a\",\"b\",\"c\"})",
+          "sampleOutput": "[\"c\",\"b\",\"a\"]"
         },
         {
           "displayOrder": 3,
           "title": "Generic Triple",
-          "description": "Create a generic immutable Triple<A,B,C> class with fields first, second, third. Add: a static factory of(a,b,c), a map1(Function<A,X>) that transforms only the first element returning Triple<X,B,C>, a toList() that returns List<Object>, and a static fromList(List<?>) factory that creates Triple from a 3-element list.",
+          "description": "Implement generic `Triple<A,B,C>` with three typed fields, a constructor, getters, `equals()`, `hashCode()`, `toString()`, and static factory `of(A,B,C)`.\n\n**Example:**\nTriple<String,Integer,Boolean> t = Triple.of(\"hello\", 42, true);\nt.getFirst() => \"hello\"\nt.getSecond() => 42\nt.getThird() => true\nt.toString() => \"(hello, 42, true)\"",
           "difficulty": "EASY",
           "pattern": "Generic Value Class",
           "hint1": "Triple<A,B,C> has three type parameters.",
@@ -143,12 +147,14 @@
             }
           ],
           "constraints": "Immutable — no setters. map1 returns new Triple.",
-          "editorial": "Generic Triple<A,B,C> with factory of(a,b,c) for cleaner syntax. mapFirst(fn): return new Triple<>(fn.apply(first), second, third). toList(): return List.of(first,second,third) — but the list type is List<Object> since A, B, C can differ. equals/hashCode: compare all three fields."
+          "editorial": "Generic Triple<A,B,C> with factory of(a,b,c) for cleaner syntax. mapFirst(fn): return new Triple<>(fn.apply(first), second, third). toList(): return List.of(first,second,third) — but the list type is List<Object> since A, B, C can differ. equals/hashCode: compare all three fields.",
+          "sampleInput": "Triple.of(\"hello\", 42, true).toString()",
+          "sampleOutput": "\"(hello, 42, true)\""
         },
         {
           "displayOrder": 4,
           "title": "Generic Frequency Counter",
-          "description": "Write a generic method frequency(List<T> items) that returns a Map<T,Integer> counting how many times each element appears. Also write topN(Map<T,Integer> freq, int n) that returns the top N most frequent elements as a List<T>.",
+          "description": "Implement `<T> Map<T,Long> frequency(List<T> items)` that counts occurrences of each element.\n\n**Example 1:**\nfrequency(List.of(\"a\",\"b\",\"a\",\"c\",\"b\",\"a\")) => {a=3, b=2, c=1}\n\n**Example 2:**\nfrequency(List.of(1,2,1,3,2,1)) => {1=3, 2=2, 3=1}\n\n**Key insight:** Generic frequency counter works for String, Integer, or any type — one implementation, infinite reuse.",
           "difficulty": "EASY",
           "pattern": "Generic Map Usage",
           "hint1": "frequency: map.merge(item, 1, Integer::sum).",
@@ -167,12 +173,14 @@
             }
           ],
           "constraints": "T must implement equals and hashCode.",
-          "editorial": "Use Map.merge(item, 1, Integer::sum) for clean frequency counting — one line per item. topK: entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).limit(k).collect(toList()). getMode(): same sorted stream, take first entry's key."
+          "editorial": "Use Map.merge(item, 1, Integer::sum) for clean frequency counting — one line per item. topK: entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).limit(k).collect(toList()). getMode(): same sorted stream, take first entry's key.",
+          "sampleInput": "frequency([\"a\",\"b\",\"a\",\"c\",\"b\",\"a\"])",
+          "sampleOutput": "{a=3, b=2, c=1}"
         },
         {
           "displayOrder": 5,
           "title": "Generic Binary Search Tree",
-          "description": "Implement a generic BST<T extends Comparable<T>> with insert(T), contains(T), inorder() returning List<T>, and size(). The tree stores values in sorted order. inorder() should return elements in ascending sorted order.",
+          "description": "Implement a generic `BST<T extends Comparable<T>>` with `insert(T)`, `contains(T)`, and `inOrder()` returning a sorted list.\n\n**Example:**\nBST<Integer> tree = new BST<>();\ntree.insert(5); tree.insert(3); tree.insert(7); tree.insert(1);\ntree.contains(3) => true\ntree.inOrder() => [1,3,5,7]\n\n**Key insight:** The `Comparable` bound lets you use `compareTo()` without knowing the concrete type.",
           "difficulty": "EASY",
           "pattern": "Generic Data Structure",
           "hint1": "Node<T> has T value, Node<T> left, right.",
@@ -195,12 +203,14 @@
             }
           ],
           "constraints": "T extends Comparable<T>. Skip duplicates.",
-          "editorial": "BST insert: compare new value with root. If less, go left; if greater, go right; if equal, no duplicate (return). contains: same traversal, return true if found. inorder: left subtree → root → right subtree — produces sorted output. Size: count recursively. Height: 1 + Math.max(leftHeight, rightHeight)."
+          "editorial": "BST insert: compare new value with root. If less, go left; if greater, go right; if equal, no duplicate (return). contains: same traversal, return true if found. inorder: left subtree → root → right subtree — produces sorted output. Size: count recursively. Height: 1 + Math.max(leftHeight, rightHeight).",
+          "sampleInput": "insert 5,3,7,1 then inOrder()",
+          "sampleOutput": "[1,3,5,7]"
         },
         {
           "displayOrder": 6,
           "title": "Wildcard Sum and Add",
-          "description": "Write sumList(List<? extends Number> numbers) that returns the sum of all numbers as a double — works for List<Integer>, List<Double>, List<Float>. Also write addToAll(List<? super Integer> list, List<Integer> values) that adds all values from the second list into the first.",
+          "description": "Use wildcards to write `double sumList(List<? extends Number> list)` that sums any list of numbers (Integer, Double, Long, etc.).\n\n**Example 1:**\nsumList(List.of(1,2,3)) => 6.0\nsumList(List.of(1.5, 2.5, 3.0)) => 7.0\n\n**Key insight:** `? extends Number` (upper bounded wildcard) allows reading from the list as `Number` — works for any subtype. Cannot add to it.",
           "difficulty": "EASY",
           "pattern": "Wildcard PECS",
           "hint1": "? extends Number allows reading as Number. Call number.doubleValue().",
@@ -223,12 +233,14 @@
             }
           ],
           "constraints": "PECS: sumList reads (producer extends), addToAll writes (consumer super).",
-          "editorial": "List<? extends Number> is an upper-bounded wildcard — you can read from it (get() returns Number) but cannot add to it (compiler rejects add()). sumList: iterate calling n.doubleValue() and accumulate. addNumbers with List<? super Integer> uses lower-bounded wildcard — you can add Integer to it."
+          "editorial": "List<? extends Number> is an upper-bounded wildcard — you can read from it (get() returns Number) but cannot add to it (compiler rejects add()). sumList: iterate calling n.doubleValue() and accumulate. addNumbers with List<? super Integer> uses lower-bounded wildcard — you can add Integer to it.",
+          "sampleInput": "sumList(List.of(1,2,3))",
+          "sampleOutput": "6.0"
         },
         {
           "displayOrder": 7,
           "title": "Generic Cache with Expiry",
-          "description": "Implement a generic Cache<K,V> where entries expire after a given TTL in milliseconds. put(K key, V value) stores with current timestamp. get(K key) returns Optional<V> — returns empty if expired or absent. evictExpired() removes all expired entries. size() returns active (non-expired) count.",
+          "description": "Implement `Cache<K,V>` with a TTL (time-to-live). `put(K key, V value, long ttlMs)` stores with expiry; `get(K key)` returns `Optional.empty()` if expired.\n\n**Example:**\ncache.put(\"token\", \"abc123\", 1000); // expires in 1 second\ncache.get(\"token\") => Optional.of(\"abc123\")\nThread.sleep(1100);\ncache.get(\"token\") => Optional.empty()",
           "difficulty": "MEDIUM",
           "pattern": "Generic Map with Metadata",
           "hint1": "Store Entry<V> objects containing the value and expiry time (System.currentTimeMillis()+ttl).",
@@ -251,12 +263,14 @@
             }
           ],
           "constraints": "TTL in milliseconds. get() does lazy eviction.",
-          "editorial": "Store entries as CacheEntry(V value, long expiryTime = System.currentTimeMillis() + ttl). get(): check if current time < expiryTime — return null if expired and remove. evictExpired(): removeIf on entries where expiryTime <= now. size() returns current active (non-expired) count."
+          "editorial": "Store entries as CacheEntry(V value, long expiryTime = System.currentTimeMillis() + ttl). get(): check if current time < expiryTime — return null if expired and remove. evictExpired(): removeIf on entries where expiryTime <= now. size() returns current active (non-expired) count.",
+          "sampleInput": "put with 1000ms TTL, get before and after expiry",
+          "sampleOutput": "before: Optional[abc123]; after: Optional.empty"
         },
         {
           "displayOrder": 8,
           "title": "Generic Graph — Adjacency Map",
-          "description": "Implement a generic Graph<V,E> where V is vertex type and E is edge weight type. Support: addVertex(V), addEdge(V from, V to, E weight), getNeighbors(V) returning Map<V,E>, hasVertex(V), hasEdge(V,V), bfs(V start) returning List<V>.",
+          "description": "Implement `Graph<T>` using `Map<T, List<T>>` adjacency map. Supports `addVertex(T)`, `addEdge(T from, T to)`, `neighbors(T)`, and `BFS(T start)`.\n\n**Example:**\nGraph<String> g = new Graph<>();\ng.addEdge(\"A\",\"B\"); g.addEdge(\"A\",\"C\"); g.addEdge(\"B\",\"D\");\ng.bfs(\"A\") => [\"A\",\"B\",\"C\",\"D\"]\ng.neighbors(\"A\") => [\"B\",\"C\"]",
           "difficulty": "MEDIUM",
           "pattern": "Generic Graph",
           "hint1": "Map<V, Map<V, E>> adjacency: outer key=vertex, inner map=neighbor to weight.",
@@ -279,12 +293,14 @@
             }
           ],
           "constraints": "Directed graph. V and E can be any types.",
-          "editorial": "Adjacency map: Map<V, Map<V, E>> adjacency. addEdge(from, to, weight): adjacency.get(from).put(to, weight). neighbors(v): adjacency.getOrDefault(v, Map.of()).keySet(). BFS: start from source, use Queue<V> and Set<V> visited, collect vertices in order. Dijkstra extends this with a priority queue."
+          "editorial": "Adjacency map: Map<V, Map<V, E>> adjacency. addEdge(from, to, weight): adjacency.get(from).put(to, weight). neighbors(v): adjacency.getOrDefault(v, Map.of()).keySet(). BFS: start from source, use Queue<V> and Set<V> visited, collect vertices in order. Dijkstra extends this with a priority queue.",
+          "sampleInput": "bfs(\"A\") on A->B, A->C, B->D",
+          "sampleOutput": "[\"A\",\"B\",\"C\",\"D\"]"
         },
         {
           "displayOrder": 9,
           "title": "Bounded Generic Statistics",
-          "description": "Write a NumberStats<T extends Number & Comparable<T>> class that takes a List<T>. Implement: mean() returning double, max() returning T, min() returning T, median() returning double, variance() returning double. Works for List<Integer>, List<Double>, List<Long>.",
+          "description": "Implement `Statistics<T extends Number>` with `mean()`, `max()`, `min()`, `variance()` over a list of numbers.\n\n**Example:**\nStatistics<Integer> s = new Statistics<>(List.of(2,4,4,4,5,5,7,9));\ns.mean() => 5.0\ns.variance() => 4.0\ns.max() => 9\ns.min() => 2",
           "difficulty": "MEDIUM",
           "pattern": "Multiple Bounds",
           "hint1": "T extends Number & Comparable<T> gives both doubleValue() and compareTo().",
@@ -307,12 +323,14 @@
             }
           ],
           "constraints": "T extends Number & Comparable<T>.",
-          "editorial": "T extends Number & Comparable<T>: both bounds required. mean(): sum all doubleValue() / size. min()/max(): stream().min/max(Comparator.naturalOrder()). median(): sort copy, middle element for odd size or average of two middle for even. standardDeviation(): sqrt(variance) where variance = mean of squared deviations."
+          "editorial": "T extends Number & Comparable<T>: both bounds required. mean(): sum all doubleValue() / size. min()/max(): stream().min/max(Comparator.naturalOrder()). median(): sort copy, middle element for odd size or average of two middle for even. standardDeviation(): sqrt(variance) where variance = mean of squared deviations.",
+          "sampleInput": "Statistics([2,4,4,4,5,5,7,9]).mean()",
+          "sampleOutput": "5.0"
         },
         {
           "displayOrder": 10,
           "title": "Generic Pipeline",
-          "description": "Implement a generic Pipeline<T> that chains transformations. start(T value) creates a pipeline; then(Function<T,T>) adds a step; execute() runs all steps and returns the final value; filter(Predicate<T>) returns Optional<T>.",
+          "description": "Implement `Pipeline<T>` with `pipe(Function<T,T>)` and `execute(T input)`. Stages are stored as `List<Function<T,T>>` and applied in order.\n\n**Example:**\nnew Pipeline<String>()\n    .pipe(String::trim)\n    .pipe(String::toUpperCase)\n    .pipe(s -> \"[\" + s + \"]\")\n    .execute(\"  hello  \")\n=> \"[HELLO]\"",
           "difficulty": "MEDIUM",
           "pattern": "Generic Fluent Pipeline",
           "hint1": "Store the value and a List<Function> of steps.",
@@ -335,12 +353,14 @@
             }
           ],
           "constraints": "Fluent API. then() returns this.",
-          "editorial": "Pipeline<T>: stores List<Function<T,T>> steps. then(fn) adds to list, returns this for chaining. execute(T input) applies each function in sequence using reduce or a for-loop. This is the Builder pattern plus functional composition. Similar to Stream intermediate operations but for same-type transformations."
+          "editorial": "Pipeline<T>: stores List<Function<T,T>> steps. then(fn) adds to list, returns this for chaining. execute(T input) applies each function in sequence using reduce or a for-loop. This is the Builder pattern plus functional composition. Similar to Stream intermediate operations but for same-type transformations.",
+          "sampleInput": "trim -> toUpperCase -> bracket on \"  hello  \"",
+          "sampleOutput": "\"[HELLO]\""
         },
         {
           "displayOrder": 11,
           "title": "Type-Safe Event Bus",
-          "description": "Build a type-safe EventBus where each event type is represented by a Class<T>. subscribe(Class<T> type, Consumer<T> handler) registers a handler; publish(T event) dispatches to all handlers for that event's type. Multiple handlers per type allowed. Also support unsubscribe(Class<T>, Consumer<T>).",
+          "description": "Implement a type-safe `EventBus<E>` where listeners are registered per event type using `Class<E>` as key.\n\n**Example:**\nEventBus bus = new EventBus();\nbus.subscribe(UserCreated.class, e -> System.out.println(\"User: \" + e.name()));\nbus.publish(new UserCreated(\"Alice\")) => prints \"User: Alice\"\nbus.publish(new OrderPlaced(\"O1\")) => no output (no subscriber)\n\n**Key insight:** `Class<E>` token is the key — dispatches only to listeners registered for that exact event type.",
           "difficulty": "MEDIUM",
           "pattern": "Typesafe Heterogeneous Consumer",
           "hint1": "Map<Class<?>, List<Consumer<?>>> handlers stores type to list of consumers.",
@@ -363,12 +383,14 @@
             }
           ],
           "constraints": "Type-safe. Multiple handlers per type allowed.",
-          "editorial": "Map<Class<?>, List<Consumer<?>>> handlers. subscribe(Class<T> type, Consumer<T> handler): add to handlers.get(type). publish(T event): get handlers for event.getClass(), cast each consumer to Consumer<T> (unchecked), call accept(event). The Class<T> key provides type-safe dispatch at registration time."
+          "editorial": "Map<Class<?>, List<Consumer<?>>> handlers. subscribe(Class<T> type, Consumer<T> handler): add to handlers.get(type). publish(T event): get handlers for event.getClass(), cast each consumer to Consumer<T> (unchecked), call accept(event). The Class<T> key provides type-safe dispatch at registration time.",
+          "sampleInput": "publish(new UserCreated(\"Alice\"))",
+          "sampleOutput": "\"User: Alice\""
         },
         {
           "displayOrder": 12,
           "title": "Generic Merge Sort",
-          "description": "Implement a generic mergeSort(List<T> list, Comparator<? super T> cmp) that sorts using merge sort algorithm. The comparator uses ? super T (PECS consumer) to allow a Comparator<Animal> to sort a List<Dog>. Return a new sorted list. Also implement mergeSort(List<T> list) for T extends Comparable<T>.",
+          "description": "Implement generic merge sort `<T extends Comparable<T>> List<T> mergeSort(List<T> list)` that works for any Comparable type.\n\n**Example 1:**\nmergeSort(List.of(3,1,4,1,5)) => [1,1,3,4,5]\n\n**Example 2:**\nmergeSort(List.of(\"banana\",\"apple\",\"cherry\")) => [\"apple\",\"banana\",\"cherry\"]\n\n**Key insight:** Generic merge sort uses `compareTo()` from the bound — one algorithm sorts integers, strings, or any Comparable.",
           "difficulty": "HARD",
           "pattern": "Generic Sorting Algorithm",
           "hint1": "Base case: list.size() <= 1 return as-is.",
@@ -387,12 +409,14 @@
             }
           ],
           "constraints": "O(n log n). Returns new list. Comparator uses ? super T.",
-          "editorial": "Merge sort: split list in half recursively until size 1. Merge two sorted halves with two-pointer comparison using cmp.compare(). Comparator<? super T> allows using a parent-type comparator on T — e.g., Comparator<Animal> works on List<Dog>. O(n log n) time, O(n) space."
+          "editorial": "Merge sort: split list in half recursively until size 1. Merge two sorted halves with two-pointer comparison using cmp.compare(). Comparator<? super T> allows using a parent-type comparator on T — e.g., Comparator<Animal> works on List<Dog>. O(n log n) time, O(n) space.",
+          "sampleInput": "mergeSort([\"banana\",\"apple\",\"cherry\"])",
+          "sampleOutput": "[\"apple\",\"banana\",\"cherry\"]"
         },
         {
           "displayOrder": 13,
           "title": "Generic LRU Cache",
-          "description": "Implement a generic LRUCache<K,V> with capacity limit. get(K key) returns Optional<V> and moves entry to most-recently-used position. put(K key, V value) adds entry; if at capacity, evicts least-recently-used. containsKey(K), size(), and evictedKeys() list of evicted keys in order.",
+          "description": "Implement generic `LRUCache<K,V>` with capacity limit using `LinkedHashMap` (access-order) or doubly-linked list + HashMap.\n\n**Example:**\nLRUCache<Integer,String> cache = new LRUCache<>(2);\ncache.put(1,\"a\"); cache.put(2,\"b\");\ncache.get(1) => \"a\" (1 is now most-recent)\ncache.put(3,\"c\"); // evicts key 2 (LRU)\ncache.get(2) => null",
           "difficulty": "HARD",
           "pattern": "Generic LinkedHashMap Cache",
           "hint1": "Extend LinkedHashMap<K,V> with accessOrder=true, override removeEldestEntry.",
@@ -411,12 +435,14 @@
             }
           ],
           "constraints": "LinkedHashMap accessOrder=true. Capacity strictly enforced.",
-          "editorial": "Use LinkedHashMap with access-order=true: new LinkedHashMap<>(capacity, 0.75f, true). Override removeEldestEntry to return size() > capacity. get() and put() automatically move accessed entries to the tail. get() returns Optional.ofNullable(map.get(key)). Track evicted keys with removeEldestEntry."
+          "editorial": "Use LinkedHashMap with access-order=true: new LinkedHashMap<>(capacity, 0.75f, true). Override removeEldestEntry to return size() > capacity. get() and put() automatically move accessed entries to the tail. get() returns Optional.ofNullable(map.get(key)). Track evicted keys with removeEldestEntry.",
+          "sampleInput": "put(1,a),put(2,b),get(1),put(3,c),get(2)",
+          "sampleOutput": "null"
         },
         {
           "displayOrder": 14,
           "title": "Generic Observable",
-          "description": "Implement a generic Observable<T> and Observer<T> interface. When value changes via set(T), all registered observers are notified with (oldValue, newValue). Also implement DerivedObservable<T,R> that observes an Observable<T> and transforms its value using Function<T,R>.",
+          "description": "Implement `Observable<T>` with `addObserver(Consumer<T>)` and `setValue(T)` — setting a value notifies all observers.\n\n**Example:**\nObservable<String> obs = new Observable<>();\nobs.addObserver(v -> System.out.println(\"A: \" + v));\nobs.addObserver(v -> System.out.println(\"B: \" + v));\nobs.setValue(\"hello\");\n=> \"A: hello\"\n=> \"B: hello\"",
           "difficulty": "HARD",
           "pattern": "Generic Observer Pattern",
           "hint1": "Observer<T>: void onChanged(T oldValue, T newValue).",
@@ -435,12 +461,14 @@
             }
           ],
           "constraints": "Type-safe observers. DerivedObservable auto-updates.",
-          "editorial": "Observable<T> holds a T value and List<Observer<T>>. set(T) updates value and notifies all observers calling observer.onValueChanged(old, new). DerivedObservable<T,R> implements Observer<T>, stores current R = transform(T), notifies its own observers. This is the Reactive pattern foundation."
+          "editorial": "Observable<T> holds a T value and List<Observer<T>>. set(T) updates value and notifies all observers calling observer.onValueChanged(old, new). DerivedObservable<T,R> implements Observer<T>, stores current R = transform(T), notifies its own observers. This is the Reactive pattern foundation.",
+          "sampleInput": "setValue(\"hello\") with 2 observers",
+          "sampleOutput": "\"A: hello\" / \"B: hello\""
         },
         {
           "displayOrder": 15,
           "title": "Type Token Registry",
-          "description": "Implement a MultiTypeRegistry that holds multiple typed registries keyed by Class<T>. getRegistry(Class<T>) returns TypeRegistry<T>. put(Class<T>, String key, T value) and get(Class<T>, String key) return T without casting. Demonstrate storing String, Integer, and User objects type-safely.",
+          "description": "Implement a `TypeRegistry` that maps `Class<T>` to `T` instances, providing type-safe retrieval without casting:\n\n**Example:**\nTypeRegistry r = new TypeRegistry();\nr.register(String.class, \"hello\");\nr.register(Integer.class, 42);\nr.get(String.class) => \"hello\" (no cast)\nr.get(Integer.class) => 42 (no cast)\nr.get(Double.class) => null\n\n**Key insight:** The token pattern — `Class<T>` key ensures the value retrieved matches the type `T`.",
           "difficulty": "HARD",
           "pattern": "Typesafe Heterogeneous Container",
           "hint1": "MultiTypeRegistry stores Map<Class<?>, TypeRegistry<?>>.",
@@ -463,12 +491,14 @@
             }
           ],
           "constraints": "No casting in caller code. Each type has isolated registry.",
-          "editorial": "Map<Class<?>, TypedRegistry<?>> registries. getRegistry(Class<T> type): return (TypedRegistry<T>) registries.computeIfAbsent(type, k -> new TypedRegistry<>()). The unchecked cast is safe by construction — we only put TypedRegistry<T> keyed by Class<T>. This is the type-safe heterogeneous container pattern (Bloch)."
+          "editorial": "Map<Class<?>, TypedRegistry<?>> registries. getRegistry(Class<T> type): return (TypedRegistry<T>) registries.computeIfAbsent(type, k -> new TypedRegistry<>()). The unchecked cast is safe by construction — we only put TypedRegistry<T> keyed by Class<T>. This is the type-safe heterogeneous container pattern (Bloch).",
+          "sampleInput": "r.get(String.class)",
+          "sampleOutput": "\"hello\" (no cast needed)"
         },
         {
           "displayOrder": 16,
           "title": "Generic Lazy Evaluation",
-          "description": "Implement Lazy<T> — a container that defers computation until first needed. Lazy(Supplier<T> supplier): stores supplier but doesn't evaluate. get() evaluates once and caches. isEvaluated(). map(Function<T,R>) returning Lazy<R> that is also lazy. flatMap(Function<T,Lazy<R>>) for chaining.",
+          "description": "Implement `Lazy<T>` that defers computation until first access:\n\n**Example:**\nLazy<String> lazy = new Lazy<>(() -> { System.out.println(\"computed\"); return \"hello\"; });\n// nothing printed yet\nSystem.out.println(lazy.get()); // => \"computed\" then \"hello\"\nSystem.out.println(lazy.get()); // => \"hello\" (no recomputation)\n\n**Key insight:** The supplier runs only once — subsequent `get()` returns the cached value.",
           "difficulty": "HARD",
           "pattern": "Generic Lazy Evaluation",
           "hint1": "private T cachedValue; private boolean evaluated = false.",
@@ -495,12 +525,14 @@
             }
           ],
           "constraints": "Compute once, cache forever. map/flatMap are lazy.",
-          "editorial": "Lazy<T>: store Supplier<T>, boolean evaluated = false, T value = null. get(): if (!evaluated) { value = supplier.get(); evaluated = true; } return value. map(f): return new Lazy<>(() -> f.apply(this.get())) — composition defers computation. ifPresent: if supplier doesn't return null, call consumer."
+          "editorial": "Lazy<T>: store Supplier<T>, boolean evaluated = false, T value = null. get(): if (!evaluated) { value = supplier.get(); evaluated = true; } return value. map(f): return new Lazy<>(() -> f.apply(this.get())) — composition defers computation. ifPresent: if supplier doesn't return null, call consumer.",
+          "sampleInput": "Lazy(() -> computeExpensiveValue()).get() x2",
+          "sampleOutput": "computed once, cached on subsequent calls"
         },
         {
           "displayOrder": 17,
           "title": "Generic Immutable List",
-          "description": "Implement a persistent generic ImmutableList<T> backed by an array. of(T... items) factory. get(int), size(), contains(T). prepend(T) returns new list with item at front. tail() without first element. concat(ImmutableList<T>) combined. filter(Predicate<T>), map(Function<T,R>) return new lists.",
+          "description": "Implement `ImmutableList<T>` backed by an array. Supports `get(int)`, `size()`, `add(T)` (returns new list), and `toList()`. No mutation of existing instance.\n\n**Example:**\nImmutableList<Integer> l1 = ImmutableList.of(1,2,3);\nImmutableList<Integer> l2 = l1.add(4);\nl1.size() => 3 (unchanged)\nl2.size() => 4\nl2.get(3) => 4",
           "difficulty": "HARD",
           "pattern": "Persistent Generic Data Structure",
           "hint1": "private final Object[] data. All operations return new ImmutableList.",
@@ -523,12 +555,14 @@
             }
           ],
           "constraints": "All operations return new ImmutableList. Original unchanged.",
-          "editorial": "Back with Object[] data. of(T... items): copy array. get(int i): (T) data[i] with unchecked cast. prepend(T item): new array of size+1, item at 0, copy rest. append: opposite. map(fn): iterate, apply fn to each, collect results into new Object[], wrap in new ImmutableList. contains: linear scan."
+          "editorial": "Back with Object[] data. of(T... items): copy array. get(int i): (T) data[i] with unchecked cast. prepend(T item): new array of size+1, item at 0, copy rest. append: opposite. map(fn): iterate, apply fn to each, collect results into new Object[], wrap in new ImmutableList. contains: linear scan.",
+          "sampleInput": "ImmutableList.of(1,2,3).add(4)",
+          "sampleOutput": "new list size=4; original size=3"
         },
         {
           "displayOrder": 18,
           "title": "Recursive Generic N-ary Tree",
-          "description": "Implement a generic NaryTree<T> where each node has T value and list of children. Methods: addChild(T) returning child node, find(T) returning Optional<NaryTree<T>>, depth(), size(), toList() BFS order, map(Function<T,R>) returning NaryTree<R>, fold(R identity, BiFunction<R,T,R>) to reduce all values.",
+          "description": "Implement `NaryTree<T>` where each node has a value and a `List<NaryTree<T>>` children. Methods: `add(T value)`, `findBFS(T target)`, `height()`.\n\n**Example:**\nNaryTree<String> root = new NaryTree<>(\"root\");\nroot.add(\"child1\"); root.add(\"child2\");\nroot.getChildren().get(0).add(\"grandchild\");\nroot.height() => 2\nroot.findBFS(\"grandchild\") => Optional[NaryTree{grandchild}]",
           "difficulty": "HARD",
           "pattern": "Recursive Generic Data Structure",
           "hint1": "NaryTree<T> has T value and List<NaryTree<T>> children.",
@@ -551,12 +585,14 @@
             }
           ],
           "constraints": "Recursive implementations. map() preserves tree structure.",
-          "editorial": "NaryTree<T>: T value, List<NaryTree<T>> children. addChild(T) creates child node and returns it for chaining. size(): 1 + sum of children sizes. depth(): 0 for no children, 1 + max child depth. stream(): flatten to Stream with Stream.concat of value stream and children's streams. fold: recursive accumulation."
+          "editorial": "NaryTree<T>: T value, List<NaryTree<T>> children. addChild(T) creates child node and returns it for chaining. size(): 1 + sum of children sizes. depth(): 0 for no children, 1 + max child depth. stream(): flatten to Stream with Stream.concat of value stream and children's streams. fold: recursive accumulation.",
+          "sampleInput": "root + 2 children + 1 grandchild: height()",
+          "sampleOutput": "2"
         },
         {
           "displayOrder": 19,
           "title": "Generic Maybe Monad",
-          "description": "Implement your own generic Maybe<T> monad. of(T value) wraps non-null; empty() for absent. map(Function<T,R>), flatMap(Function<T,Maybe<R>>), filter(Predicate<T>), orElse(T), orElseGet(Supplier<T>), ifPresent(Consumer<T>), isPresent(). Also implement Maybe.sequence(List<Maybe<T>>) that returns Maybe<List<T>> — present only if ALL elements are present.",
+          "description": "Implement `Maybe<T>` (like `Optional`) as a generic monad with `of(T)`, `empty()`, `map(Function)`, `flatMap(Function)`, `orElse(T)`.\n\n**Example:**\nMaybe.of(\"hello\")\n    .map(String::toUpperCase)\n    .map(s -> s + \"!\")\n    .orElse(\"nothing\")\n=> \"HELLO!\"\n\nMaybe.empty()\n    .map(String::toUpperCase)\n    .orElse(\"nothing\")\n=> \"nothing\"",
           "difficulty": "HARD",
           "pattern": "Generic Monad",
           "hint1": "sealed interface Maybe<T> permits Present<T>, Empty<T>.",
@@ -583,12 +619,14 @@
             }
           ],
           "constraints": "Java 21 sealed + records. sequence: all-or-nothing semantics.",
-          "editorial": "Maybe<T> wraps Optional internally or use a sealed interface. map(fn): if empty, return empty(); else return of(fn.apply(value)). flatMap(fn): if empty, return empty(); else return fn.apply(value). orElse/orElseGet: return value or default. sequence(List<Maybe<T>>): if any empty, return empty; else collect all values."
+          "editorial": "Maybe<T> wraps Optional internally or use a sealed interface. map(fn): if empty, return empty(); else return of(fn.apply(value)). flatMap(fn): if empty, return empty(); else return fn.apply(value). orElse/orElseGet: return value or default. sequence(List<Maybe<T>>): if any empty, return empty; else collect all values.",
+          "sampleInput": "Maybe.of(\"hello\").map(toUpperCase).map(+!).orElse(\"nothing\")",
+          "sampleOutput": "\"HELLO!\""
         },
         {
           "displayOrder": 20,
           "title": "Generic Persistent Map",
-          "description": "Implement a persistent (immutable) generic PersistentMap<K,V> backed by an array of buckets (simplified hash map). put(K key, V value) returns a NEW PersistentMap with the key added/updated. get(K key) returns Optional<V>. remove(K key) returns a new map without that key. All operations are non-destructive. containsKey(K), size(), keys() returning Set<K>.",
+          "description": "Implement a persistent (copy-on-write) `PersistentMap<K,V>` where `put(K,V)` returns a new map without modifying the original:\n\n**Example:**\nPersistentMap<String,Integer> m1 = PersistentMap.empty();\nPersistentMap<String,Integer> m2 = m1.put(\"a\", 1);\nPersistentMap<String,Integer> m3 = m2.put(\"b\", 2);\nm1.size() => 0\nm2.size() => 1\nm3.get(\"a\") => 1\nm3.get(\"b\") => 2",
           "difficulty": "HARD",
           "pattern": "Persistent Generic Data Structure",
           "hint1": "Store as an immutable List<Entry<K,V>> (simple linear scan is fine for learning).",
@@ -615,7 +653,9 @@
             }
           ],
           "constraints": "O(n) operations are fine. All operations return new map. Original never modified.",
-          "editorial": "Hash map with array of buckets (List<Entry<K,V>>[]). put(K,V): compute bucket = key.hashCode() % buckets.length, filter out existing key from that bucket, add new entry, return new PersistentMap with updated bucket. get(K): find entry in bucket. remove(K): filter entry out, return new map. All operations return new instances."
+          "editorial": "Hash map with array of buckets (List<Entry<K,V>>[]). put(K,V): compute bucket = key.hashCode() % buckets.length, filter out existing key from that bucket, add new entry, return new PersistentMap with updated bucket. get(K): find entry in bucket. remove(K): filter entry out, return new map. All operations return new instances.",
+          "sampleInput": "empty().put(\"a\",1).put(\"b\",2).get(\"a\")",
+          "sampleOutput": "1"
         }
       ],
       "subCategory": "Core Concepts",

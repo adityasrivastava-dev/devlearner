@@ -66,7 +66,7 @@
         {
           "displayOrder": 1,
           "title": "Climbing Stairs",
-          "description": "You are climbing a staircase. It takes n steps to reach the top. Each time you can climb 1 or 2 steps. How many distinct ways can you climb to the top?\n\n**Example:**\nn=2 → 2 (1+1, 2)\nn=3 → 3 (1+1+1, 1+2, 2+1)",
+          "description": "Count distinct ways to climb n stairs (1 or 2 steps at a time).\n\n**Example:**\nclimbStairs(2) => 2\nclimbStairs(3) => 3\nclimbStairs(5) => 8\n\n**Key insight:** dp[i] = dp[i-1] + dp[i-2]. Base cases: dp[1]=1, dp[2]=2. Fibonacci variant.",
           "difficulty": "EASY",
           "pattern": "Dynamic Programming",
           "hint1": "To reach step n, you came from step n-1 (one step) or step n-2 (two steps). How many ways can you reach each of those?",
@@ -76,12 +76,14 @@
           "solutionCode": "public class Solution {\n    public int climbStairs(int n) {\n        if (n <= 2) return n;\n        int prev2 = 1, prev1 = 2;\n        for (int i = 3; i <= n; i++) {\n            int curr = prev1 + prev2;\n            prev2 = prev1;\n            prev1 = curr;\n        }\n        return prev1;\n    }\n}",
           "testCases": "[{\"input\":\"2\",\"output\":\"2\"},{\"input\":\"3\",\"output\":\"3\"},{\"input\":\"5\",\"output\":\"8\"}]",
           "constraints": "1 ≤ n ≤ 45",
-          "editorial": "Fibonacci recurrence: ways(n) = ways(n-1) + ways(n-2). Base cases: n=1→1, n=2→2. Space-optimized O(1) using two variables. This is the simplest DP — the key insight is recognizing the recurrence relation."
+          "editorial": "Fibonacci recurrence: ways(n) = ways(n-1) + ways(n-2). Base cases: n=1→1, n=2→2. Space-optimized O(1) using two variables. This is the simplest DP — the key insight is recognizing the recurrence relation.",
+          "sampleInput": "5",
+          "sampleOutput": "8"
         },
         {
           "displayOrder": 2,
           "title": "House Robber",
-          "description": "You are a robber. Houses are in a line; you cannot rob two adjacent houses. Given nums[i] (money in each house), find the maximum amount you can rob.\n\n**Example:**\nInput: [1,2,3,1] → Output: 4 (rob 1 and 3)\nInput: [2,7,9,3,1] → Output: 12 (rob 2,9,1)",
+          "description": "Rob houses without robbing adjacent ones — maximize total stolen amount.\n\n**Example 1:**\nrob([1,2,3,1]) => 4 (rob house 1 and 3)\nrob([2,7,9,3,1]) => 12\n\n**Key insight:** dp[i] = max(dp[i-1], dp[i-2] + nums[i]). Can optimize to O(1) space with two variables.",
           "difficulty": "MEDIUM",
           "pattern": "Dynamic Programming",
           "hint1": "For each house i, you either rob it or skip it. What are the two choices, and what does each give you?",
@@ -91,12 +93,14 @@
           "solutionCode": "public class Solution {\n    public int rob(int[] nums) {\n        if (nums.length == 1) return nums[0];\n        int prev2 = 0, prev1 = 0;\n        for (int num : nums) {\n            int curr = Math.max(prev1, num + prev2);\n            prev2 = prev1;\n            prev1 = curr;\n        }\n        return prev1;\n    }\n}",
           "testCases": "[{\"input\":\"[1,2,3,1]\",\"output\":\"4\"},{\"input\":\"[2,7,9,3,1]\",\"output\":\"12\"},{\"input\":\"[2,1,1,2]\",\"output\":\"4\"}]",
           "constraints": "1 ≤ nums.length ≤ 100 | 0 ≤ nums[i] ≤ 400",
-          "editorial": "Standard DP: dp[i] = max(dp[i-1], nums[i] + dp[i-2]). Optimized to O(1) space using prev1 and prev2. Transition covers both cases: skip current (take prev1) or rob current (add nums[i] to prev2 — skipping the adjacent)."
+          "editorial": "Standard DP: dp[i] = max(dp[i-1], nums[i] + dp[i-2]). Optimized to O(1) space using prev1 and prev2. Transition covers both cases: skip current (take prev1) or rob current (add nums[i] to prev2 — skipping the adjacent).",
+          "sampleInput": "[2,7,9,3,1]",
+          "sampleOutput": "12"
         },
         {
           "displayOrder": 3,
           "title": "Coin Change",
-          "description": "Given an integer array coins (denominations) and an integer amount, return the fewest number of coins needed to make up that amount. Return -1 if impossible.\n\n**Example:**\ncoins=[1,5,11], amount=15 → Output: 3 (5+5+5)\ncoins=[2], amount=3 → Output: -1",
+          "description": "Find minimum number of coins to make target amount.\n\n**Example 1:**\ncoinChange([1,5,11], 15) => 3 (5+5+5)\ncoinChange([2], 3) => -1 (impossible)\n\n**Key insight:** dp[amount] = min coins to make 'amount'. For each coin, dp[i] = min(dp[i], dp[i-coin]+1).",
           "difficulty": "MEDIUM",
           "pattern": "Dynamic Programming",
           "hint1": "Think of dp[a] as the minimum coins for amount a. What's dp[0]? How does using one coin transform dp[a-coin] into dp[a]?",
@@ -106,12 +110,14 @@
           "solutionCode": "public class Solution {\n    public int coinChange(int[] coins, int amount) {\n        int[] dp = new int[amount + 1];\n        Arrays.fill(dp, amount + 1);\n        dp[0] = 0;\n        for (int coin : coins)\n            for (int a = coin; a <= amount; a++)\n                dp[a] = Math.min(dp[a], dp[a - coin] + 1);\n        return dp[amount] > amount ? -1 : dp[amount];\n    }\n}",
           "testCases": "[{\"input\":\"coins=[1,5,11], amount=15\",\"output\":\"3\"},{\"input\":\"coins=[2], amount=3\",\"output\":\"-1\"},{\"input\":\"coins=[1], amount=0\",\"output\":\"0\"}]",
           "constraints": "1 ≤ coins.length ≤ 12 | 1 ≤ coins[i] ≤ 2^31-1 | 0 ≤ amount ≤ 10^4",
-          "editorial": "Unbounded knapsack DP: forward loop allows using same coin multiple times. Sentinel amount+1 represents 'impossible' — always larger than any valid answer (max coins = amount ones). O(amount * coins.length) time, O(amount) space."
+          "editorial": "Unbounded knapsack DP: forward loop allows using same coin multiple times. Sentinel amount+1 represents 'impossible' — always larger than any valid answer (max coins = amount ones). O(amount * coins.length) time, O(amount) space.",
+          "sampleInput": "coins=[1,5,11], amount=15",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 4,
           "title": "Longest Increasing Subsequence",
-          "description": "Given an integer array nums, return the length of the longest strictly increasing subsequence.\n\n**Example:**\nInput: [10,9,2,5,3,7,101,18] → Output: 4 ([2,3,7,101])\nInput: [0,1,0,3,2,3] → Output: 4",
+          "description": "Find the length of the longest strictly increasing subsequence.\n\n**Example 1:**\nlis([10,9,2,5,3,7,101,18]) => 4 ([2,3,7,101])\nlis([0,1,0,3,2,3]) => 4\n\n**Key insight:** O(n log n): maintain a patience sorting array. Binary search for position of each element.",
           "difficulty": "MEDIUM",
           "pattern": "Dynamic Programming",
           "hint1": "dp[i] = length of LIS ending at index i. What's the base case? How do you build dp[i] from previous dp values?",
@@ -121,12 +127,14 @@
           "solutionCode": "public class Solution {\n    public int lengthOfLIS(int[] nums) {\n        int n = nums.length;\n        int[] dp = new int[n];\n        Arrays.fill(dp, 1);\n        int max = 1;\n        for (int i = 1; i < n; i++) {\n            for (int j = 0; j < i; j++)\n                if (nums[j] < nums[i]) dp[i] = Math.max(dp[i], dp[j] + 1);\n            max = Math.max(max, dp[i]);\n        }\n        return max;\n    }\n}",
           "testCases": "[{\"input\":\"[10,9,2,5,3,7,101,18]\",\"output\":\"4\"},{\"input\":\"[0,1,0,3,2,3]\",\"output\":\"4\"},{\"input\":\"[7,7,7,7,7]\",\"output\":\"1\"}]",
           "constraints": "1 ≤ nums.length ≤ 2500 | -10^4 ≤ nums[i] ≤ 10^4",
-          "editorial": "O(n²) DP: dp[i] = LIS ending at i. O(n log n) patience sort: maintain tails[] where tails[i] = smallest tail element of all IS of length i+1. Binary search for insertion point. The length of tails = LIS length."
+          "editorial": "O(n²) DP: dp[i] = LIS ending at i. O(n log n) patience sort: maintain tails[] where tails[i] = smallest tail element of all IS of length i+1. Binary search for insertion point. The length of tails = LIS length.",
+          "sampleInput": "[10,9,2,5,3,7,101,18]",
+          "sampleOutput": "4"
         },
         {
           "displayOrder": 5,
           "title": "Edit Distance",
-          "description": "Given two strings word1 and word2, return the minimum number of operations (insert, delete, replace) to convert word1 to word2.\n\n**Example:**\nword1='horse', word2='ros' → Output: 3\n(horse→rorse: replace h with r, rorse→rose: delete r, rose→ros: delete e)",
+          "description": "Find the minimum number of edit operations (insert, delete, replace) to transform word1 to word2.\n\n**Example 1:**\neditDistance(\"horse\", \"ros\") => 3\neditDistance(\"intention\", \"execution\") => 5\n\n**Key insight:** dp[i][j] = edit distance for word1[0..i] and word2[0..j]. If chars match, dp[i][j]=dp[i-1][j-1]; else 1+min(insert,delete,replace).",
           "difficulty": "HARD",
           "pattern": "Dynamic Programming",
           "hint1": "dp[i][j] = minimum operations to convert word1[0..i] to word2[0..j]. What are the base cases?",
@@ -136,12 +144,14 @@
           "solutionCode": "public class Solution {\n    public int minDistance(String word1, String word2) {\n        int m = word1.length(), n = word2.length();\n        int[] prev = new int[n + 1];\n        for (int j = 0; j <= n; j++) prev[j] = j;\n        for (int i = 1; i <= m; i++) {\n            int[] curr = new int[n + 1];\n            curr[0] = i;\n            for (int j = 1; j <= n; j++) {\n                if (word1.charAt(i-1) == word2.charAt(j-1)) curr[j] = prev[j-1];\n                else curr[j] = 1 + Math.min(prev[j-1], Math.min(prev[j], curr[j-1]));\n            }\n            prev = curr;\n        }\n        return prev[n];\n    }\n}",
           "testCases": "[{\"input\":\"word1='horse', word2='ros'\",\"output\":\"3\"},{\"input\":\"word1='intention', word2='execution'\",\"output\":\"5\"},{\"input\":\"word1='', word2=''\",\"output\":\"0\"}]",
           "constraints": "0 ≤ word1.length, word2.length ≤ 500 | Lowercase English letters",
-          "editorial": "Levenshtein distance: 2D DP with three transitions. Space-optimized to O(n) using rolling array — curr[j] depends on prev[j-1], prev[j], curr[j-1] which are all available in the 1D arrays. O(m*n) time, O(min(m,n)) space."
+          "editorial": "Levenshtein distance: 2D DP with three transitions. Space-optimized to O(n) using rolling array — curr[j] depends on prev[j-1], prev[j], curr[j-1] which are all available in the 1D arrays. O(m*n) time, O(min(m,n)) space.",
+          "sampleInput": "\"horse\", \"ros\"",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 6,
           "title": "Word Break",
-          "description": "Given a string s and a dictionary wordDict, return true if s can be segmented into a space-separated sequence of one or more dictionary words.\n\n**Example:**\ns='leetcode', wordDict=['leet','code'] → true\ns='applepenapple', wordDict=['apple','pen'] → true\ns='catsandog', wordDict=['cats','dog','sand','and','cat'] → false",
+          "description": "Determine if a string can be segmented into words from a dictionary.\n\n**Example 1:**\nwordBreak(\"leetcode\", [\"leet\",\"code\"]) => true\nwordBreak(\"catsandog\", [\"cats\",\"dog\",\"sand\",\"and\",\"cat\"]) => false\n\n**Key insight:** dp[i] = true if s[0..i] can be segmented. For each j < i, if dp[j] && s[j..i] in dict, dp[i]=true.",
           "difficulty": "MEDIUM",
           "pattern": "Dynamic Programming",
           "hint1": "dp[i] = can the first i characters of s be segmented? What does dp[0] equal?",
@@ -151,12 +161,14 @@
           "solutionCode": "public class Solution {\n    public boolean wordBreak(String s, List<String> wordDict) {\n        Set<String> dict = new HashSet<>(wordDict);\n        int n = s.length();\n        boolean[] dp = new boolean[n + 1];\n        dp[0] = true;\n        for (int i = 1; i <= n; i++)\n            for (int j = 0; j < i; j++)\n                if (dp[j] && dict.contains(s.substring(j, i))) { dp[i] = true; break; }\n        return dp[n];\n    }\n}",
           "testCases": "[{\"input\":\"s='leetcode', wordDict=['leet','code']\",\"output\":\"true\"},{\"input\":\"s='applepenapple', wordDict=['apple','pen']\",\"output\":\"true\"},{\"input\":\"s='catsandog', wordDict=['cats','dog','sand','and','cat']\",\"output\":\"false\"}]",
           "constraints": "1 ≤ s.length ≤ 300 | 1 ≤ wordDict.length ≤ 1000 | 1 ≤ wordDict[i].length ≤ 20 | All strings contain only lowercase letters | No duplicates in wordDict",
-          "editorial": "DP on string prefixes. dp[i] = can s[0..i] be segmented. Transition: find a split point j where dp[j] is true and s[j..i] is in the dictionary. Using HashSet for O(1) lookup. O(n² * L) where L = average word length (substring creation). Trie optimization reduces this."
+          "editorial": "DP on string prefixes. dp[i] = can s[0..i] be segmented. Transition: find a split point j where dp[j] is true and s[j..i] is in the dictionary. Using HashSet for O(1) lookup. O(n² * L) where L = average word length (substring creation). Trie optimization reduces this.",
+          "sampleInput": "\"leetcode\", [\"leet\",\"code\"]",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 7,
           "title": "Unique Paths",
-          "description": "A robot is on an m×n grid at the top-left corner. It can only move right or down. Count the number of unique paths to the bottom-right corner.\n\n**Example:**\nm=3, n=7 → Output: 28\nm=3, n=2 → Output: 3",
+          "description": "Count the number of unique paths from top-left to bottom-right of an m x n grid (only right and down moves).\n\n**Example 1:**\nuniquePaths(3,7) => 28\nuniquePaths(3,2) => 3\n\n**Key insight:** dp[i][j] = dp[i-1][j] + dp[i][j-1]. First row and column are all 1s. Or: C(m+n-2, m-1).",
           "difficulty": "MEDIUM",
           "pattern": "Dynamic Programming",
           "hint1": "How many ways can you reach cell (i, j)? What cells can you come from?",
@@ -166,12 +178,14 @@
           "solutionCode": "public class Solution {\n    public int uniquePaths(int m, int n) {\n        int[] dp = new int[n];\n        Arrays.fill(dp, 1);\n        for (int i = 1; i < m; i++)\n            for (int j = 1; j < n; j++)\n                dp[j] += dp[j - 1];\n        return dp[n - 1];\n    }\n}",
           "testCases": "[{\"input\":\"m=3, n=7\",\"output\":\"28\"},{\"input\":\"m=3, n=2\",\"output\":\"3\"},{\"input\":\"m=1, n=1\",\"output\":\"1\"}]",
           "constraints": "1 ≤ m, n ≤ 100",
-          "editorial": "Classic 2D DP reduced to 1D: dp[j] = paths to reach current row's column j. Adding dp[j-1] (from left) to existing dp[j] (from above — left over from previous row iteration). O(m*n) time, O(n) space. Mathematical formula: C(m+n-2, m-1) also works."
+          "editorial": "Classic 2D DP reduced to 1D: dp[j] = paths to reach current row's column j. Adding dp[j-1] (from left) to existing dp[j] (from above — left over from previous row iteration). O(m*n) time, O(n) space. Mathematical formula: C(m+n-2, m-1) also works.",
+          "sampleInput": "m=3, n=7",
+          "sampleOutput": "28"
         },
         {
           "displayOrder": 8,
           "title": "Longest Common Subsequence",
-          "description": "Given two strings text1 and text2, return the length of their longest common subsequence (LCS). A subsequence doesn't need to be contiguous.\n\n**Example:**\ntext1='abcde', text2='ace' → Output: 3 (ace)\ntext1='abc', text2='abc' → Output: 3\ntext1='abc', text2='def' → Output: 0",
+          "description": "Find the length of the longest common subsequence of two strings.\n\n**Example 1:**\nlcs(\"abcde\", \"ace\") => 3 (\"ace\")\nlcs(\"abc\", \"abc\") => 3\nlcs(\"abc\", \"def\") => 0\n\n**Key insight:** dp[i][j] = LCS of s1[0..i] and s2[0..j]. If chars match, dp[i][j]=dp[i-1][j-1]+1; else max(dp[i-1][j], dp[i][j-1]).",
           "difficulty": "MEDIUM",
           "pattern": "Dynamic Programming",
           "hint1": "dp[i][j] = LCS of text1[0..i] and text2[0..j]. What happens when text1[i] == text2[j]?",
@@ -181,12 +195,14 @@
           "solutionCode": "public class Solution {\n    public int longestCommonSubsequence(String text1, String text2) {\n        int m = text1.length(), n = text2.length();\n        int[] prev = new int[n + 1];\n        for (int i = 1; i <= m; i++) {\n            int[] curr = new int[n + 1];\n            for (int j = 1; j <= n; j++) {\n                if (text1.charAt(i-1) == text2.charAt(j-1)) curr[j] = prev[j-1] + 1;\n                else curr[j] = Math.max(prev[j], curr[j-1]);\n            }\n            prev = curr;\n        }\n        return prev[n];\n    }\n}",
           "testCases": "[{\"input\":\"text1='abcde', text2='ace'\",\"output\":\"3\"},{\"input\":\"text1='abc', text2='abc'\",\"output\":\"3\"},{\"input\":\"text1='abc', text2='def'\",\"output\":\"0\"}]",
           "constraints": "1 ≤ text1.length, text2.length ≤ 1000 | Lowercase English letters",
-          "editorial": "2D DP space-optimized to O(n) with two rolling rows. When characters match: extend from diagonal (prev[j-1]). When they don't match: take best from either skip (max of above or left). Foundation for git diff, DNA alignment, spell correction."
+          "editorial": "2D DP space-optimized to O(n) with two rolling rows. When characters match: extend from diagonal (prev[j-1]). When they don't match: take best from either skip (max of above or left). Foundation for git diff, DNA alignment, spell correction.",
+          "sampleInput": "\"abcde\", \"ace\"",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 9,
           "title": "Partition Equal Subset Sum",
-          "description": "Given an integer array nums, return true if you can partition it into two subsets with equal sum.\n\n**Example:**\nInput: [1,5,11,5] → Output: true ([1,5,5] and [11])\nInput: [1,2,3,5] → Output: false",
+          "description": "Determine if an array can be partitioned into two subsets with equal sum.\n\n**Example 1:**\ncanPartition([1,5,11,5]) => true ([1,5,5] and [11])\ncanPartition([1,2,3,5]) => false\n\n**Key insight:** Target = totalSum/2. DP: dp[j] = can we make sum j. For each num, update dp from target down.",
           "difficulty": "MEDIUM",
           "pattern": "Dynamic Programming",
           "hint1": "If total sum is odd, impossible. Otherwise, find if any subset sums to total/2 — this is a subset sum problem.",
@@ -196,12 +212,14 @@
           "solutionCode": "public class Solution {\n    public boolean canPartition(int[] nums) {\n        int total = 0;\n        for (int n : nums) total += n;\n        if (total % 2 != 0) return false;\n        int target = total / 2;\n        boolean[] dp = new boolean[target + 1];\n        dp[0] = true;\n        for (int num : nums)\n            for (int t = target; t >= num; t--)\n                dp[t] = dp[t] || dp[t - num];\n        return dp[target];\n    }\n}",
           "testCases": "[{\"input\":\"[1,5,11,5]\",\"output\":\"true\"},{\"input\":\"[1,2,3,5]\",\"output\":\"false\"},{\"input\":\"[1,1]\",\"output\":\"true\"}]",
           "constraints": "1 ≤ nums.length ≤ 200 | 1 ≤ nums[i] ≤ 100",
-          "editorial": "Subset sum DP: target = sum/2. Backward loop (0/1 knapsack pattern) ensures each element used once. O(n * target) time, O(target) space. Early termination possible: if dp[target] becomes true, return immediately."
+          "editorial": "Subset sum DP: target = sum/2. Backward loop (0/1 knapsack pattern) ensures each element used once. O(n * target) time, O(target) space. Early termination possible: if dp[target] becomes true, return immediately.",
+          "sampleInput": "[1,5,11,5]",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 10,
           "title": "Decode Ways",
-          "description": "A message encoded as digits can be decoded: 'A'=1, 'B'=2, ..., 'Z'=26. Given a string of digits, return the total number of ways to decode it.\n\n**Example:**\nInput: '12' → Output: 2 ('AB' or 'L')\nInput: '226' → Output: 3 ('BZ', 'VF', 'BBF' = 'BBF'... 'B'+'B'+'F'=226, 'B'+'Z'=226, 'V'+'F'=226)\nInput: '06' → Output: 0",
+          "description": "Count the number of ways to decode a string of digits to letters (1->A, ..., 26->Z).\n\n**Example 1:**\ndecodeWays(\"12\") => 2 (AB or L)\ndecodeWays(\"226\") => 3 (BBF, BZ, VF)\ndecodeWays(\"06\") => 0\n\n**Key insight:** dp[i] = dp[i-1] (single digit) + dp[i-2] (two-digit if 10-26). Guard against leading zeros.",
           "difficulty": "MEDIUM",
           "pattern": "Dynamic Programming",
           "hint1": "dp[i] = number of ways to decode first i characters. What are the transitions?",
@@ -211,12 +229,14 @@
           "solutionCode": "public class Solution {\n    public int numDecodings(String s) {\n        int n = s.length();\n        int prev2 = 1, prev1 = s.charAt(0) != '0' ? 1 : 0;\n        for (int i = 2; i <= n; i++) {\n            int curr = 0;\n            int oneDigit = s.charAt(i-1) - '0';\n            int twoDigit = Integer.parseInt(s.substring(i-2, i));\n            if (oneDigit >= 1) curr += prev1;          // single digit valid\n            if (twoDigit >= 10 && twoDigit <= 26) curr += prev2; // two digits valid\n            prev2 = prev1; prev1 = curr;\n        }\n        return prev1;\n    }\n}",
           "testCases": "[{\"input\":\"'12'\",\"output\":\"2\"},{\"input\":\"'226'\",\"output\":\"3\"},{\"input\":\"'06'\",\"output\":\"0\"},{\"input\":\"'11106'\",\"output\":\"2\"}]",
           "constraints": "1 ≤ s.length ≤ 100 | s contains only digits | s may contain leading zeros",
-          "editorial": "Two-state DP (climbing stairs variant): dp[i] depends only on dp[i-1] and dp[i-2], so use two variables. Key edge cases: '0' alone is invalid (no single-digit decode), two-digit must be 10-26. O(n) time, O(1) space."
+          "editorial": "Two-state DP (climbing stairs variant): dp[i] depends only on dp[i-1] and dp[i-2], so use two variables. Key edge cases: '0' alone is invalid (no single-digit decode), two-digit must be 10-26. O(n) time, O(1) space.",
+          "sampleInput": "\"226\"",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 11,
           "title": "Burst Balloons",
-          "description": "Given an array of balloons nums, each with a number. Burst all balloons. When you burst balloon i, you gain nums[i-1] * nums[i] * nums[i+1] coins (use 1 if out of bounds). Return the maximum coins obtainable.\n\n**Example:**\nInput: [3,1,5,8] → Output: 167\n(Burst 1: 3*1*5=15, Burst 5: 3*5*8=120, Burst 3: 3*8*1=24, Burst 8: 1*8*1=8 → 15+120+24+8=167... optimal order gives 167)",
+          "description": "You have a row of balloons with numbers. Burst all of them. Bursting balloon i gives coins = left * nums[i] * right. Maximize coins.\n\n**Example:**\nburst([3,1,5,8]) => 167\n(burst 1: 3*1*5=15; burst 5: 3*5*8=120; burst 3: 1*3*8=24; burst 8: 1*8*1=8; total=167)\n\n**Key insight:** Interval DP — dp[l][r] = max coins from bursting all balloons between l and r.",
           "difficulty": "HARD",
           "pattern": "Dynamic Programming",
           "hint1": "Thinking about which balloon to burst FIRST leads to complex state (because neighbors change). Try thinking about which balloon to burst LAST in a range.",
@@ -226,7 +246,9 @@
           "solutionCode": "public class Solution {\n    public int maxCoins(int[] nums) {\n        int n = nums.length;\n        int[] arr = new int[n + 2];\n        arr[0] = arr[n + 1] = 1;\n        for (int i = 0; i < n; i++) arr[i + 1] = nums[i];\n        int m = n + 2;\n        int[][] dp = new int[m][m];\n        // len = number of open slots between i and j\n        for (int len = 2; len < m; len++) {\n            for (int i = 0; i + len < m; i++) {\n                int j = i + len;\n                for (int k = i + 1; k < j; k++) {\n                    dp[i][j] = Math.max(dp[i][j],\n                        dp[i][k] + arr[i] * arr[k] * arr[j] + dp[k][j]);\n                }\n            }\n        }\n        return dp[0][m - 1];\n    }\n}",
           "testCases": "[{\"input\":\"[3,1,5,8]\",\"output\":\"167\"},{\"input\":\"[1,5]\",\"output\":\"10\"},{\"input\":\"[1]\",\"output\":\"1\"}]",
           "constraints": "1 ≤ nums.length ≤ 300 | 0 ≤ nums[i] ≤ 100",
-          "editorial": "Interval DP: dp[i][j] = max coins in open interval (i,j). 'Last balloon k' reversal avoids the state explosion of 'first burst' thinking. Padding with boundary 1s handles the boundary cases cleanly. O(n³) time, O(n²) space."
+          "editorial": "Interval DP: dp[i][j] = max coins in open interval (i,j). 'Last balloon k' reversal avoids the state explosion of 'first burst' thinking. Padding with boundary 1s handles the boundary cases cleanly. O(n³) time, O(n²) space.",
+          "sampleInput": "[3,1,5,8]",
+          "sampleOutput": "167"
         }
       ],
       "subCategory": "Dynamic Programming (MOST IMPORTANT)",

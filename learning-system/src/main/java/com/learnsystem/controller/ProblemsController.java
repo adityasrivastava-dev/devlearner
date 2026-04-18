@@ -91,19 +91,30 @@ public class ProblemsController {
     // ── Filter metadata ───────────────────────────────────────────────────────
 
     @GetMapping("/filters")
+    @Transactional(readOnly = true)
     public ResponseEntity<Map<String, Object>> getFilters() {
-        List<String> categories = Arrays.stream(Topic.Category.values())
-                .map(Enum::name)
-                .collect(Collectors.toList());
-
         List<String> difficulties = List.of("EASY", "MEDIUM", "HARD");
 
-        List<String> patterns = problemRepo.findDistinctPatterns();
+        // Pattern tags with counts: [{name, count}] sorted by count desc
+        List<Map<String, Object>> patternCounts = problemRepo.findPatternCounts().stream()
+                .map(row -> { Map<String,Object> m = new LinkedHashMap<>(); m.put("name", (String)row[0]); m.put("count", (Long)row[1]); return m; })
+                .collect(Collectors.toList());
+
+        // Category pills with counts: [{name, count}] sorted by count desc
+        List<Map<String, Object>> categoryCounts = problemRepo.findCategoryCounts().stream()
+                .map(row -> { Map<String,Object> m = new LinkedHashMap<>(); m.put("name", (String)row[0]); m.put("count", (Long)row[1]); return m; })
+                .collect(Collectors.toList());
+
+        // Legacy flat lists (kept for backward compat)
+        List<String> patterns    = patternCounts.stream().map(m -> (String)m.get("name")).collect(Collectors.toList());
+        List<String> categories  = categoryCounts.stream().map(m -> (String)m.get("name")).collect(Collectors.toList());
 
         Map<String, Object> filters = new LinkedHashMap<>();
-        filters.put("categories",   categories);
-        filters.put("difficulties", difficulties);
-        filters.put("patterns",     patterns);
+        filters.put("categories",    categories);
+        filters.put("difficulties",  difficulties);
+        filters.put("patterns",      patterns);
+        filters.put("patternCounts", patternCounts);
+        filters.put("categoryCounts", categoryCounts);
         return ResponseEntity.ok(filters);
     }
 

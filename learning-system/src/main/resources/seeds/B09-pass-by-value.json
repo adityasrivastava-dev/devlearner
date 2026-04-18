@@ -69,7 +69,7 @@
         {
           "displayOrder": 1,
           "title": "Predict the Output — Primitive Swap",
-          "description": "Given the following code, predict what is printed:\n\n```java\npublic class Q1 {\n    static void swap(int a, int b) {\n        int t = a; a = b; b = t;\n        System.out.println(a + \" \" + b);\n    }\n    public static void main(String[] args) {\n        int x = 5, y = 10;\n        swap(x, y);\n        System.out.println(x + \" \" + y);\n    }\n}\n```\n\nImplement a method `predictOutput()` that returns a String[] of the two lines printed.",
+          "description": "Predict what the following code prints, then implement `predictOutput()` returning a `String[]` of the two lines:\n\n```java\nstatic void swap(int a, int b) {\n    int t = a; a = b; b = t;\n    System.out.println(a + \" \" + b);\n}\npublic static void main(String[] args) {\n    int x = 5, y = 10;\n    swap(x, y);\n    System.out.println(x + \" \" + y);\n}\n```\n\n**Key insight:** Java passes primitives by value — `a` and `b` inside `swap()` are copies. Swapping them has no effect on `x` and `y` in `main`.",
           "difficulty": "EASY",
           "pattern": "Pass by Value - Primitive",
           "hint1": "Inside swap(), a and b are local copies — swapping them doesn't affect x and y.",
@@ -88,12 +88,14 @@
             }
           ],
           "constraints": "Conceptual — no input needed.",
-          "editorial": "swap()'s local copies a and b are swapped (prints 10 5). But x and y in main() are primitives in a separate stack frame — never touched. They print 5 10 unchanged."
+          "editorial": "swap()'s local copies a and b are swapped (prints 10 5). But x and y in main() are primitives in a separate stack frame — never touched. They print 5 10 unchanged.",
+          "sampleInput": "x = 5, y = 10",
+          "sampleOutput": "[\"10 5\", \"5 10\"]"
         },
         {
           "displayOrder": 2,
           "title": "Working Swap Using Array",
-          "description": "Implement `swapInArray(int[] arr, int i, int j)` that swaps elements at indices i and j. This works because you're mutating through a reference, not trying to swap primitive variables.",
+          "description": "Implement `swapInArray(int[] arr, int i, int j)` that swaps elements at indices `i` and `j` **in-place**. Arrays are passed by reference in Java, so mutations inside the method are visible to the caller.\n\n**Example 1:**\nInput: arr = [1,2,3,4,5], i = 0, j = 4\nOutput: [5,2,3,4,1]\n\n**Example 2:**\nInput: arr = [10,20], i = 0, j = 1\nOutput: [20,10]\n\n**Key insight:** Unlike primitives, array mutations inside a method ARE visible outside — the reference is copied, but both point to the same underlying array.",
           "difficulty": "EASY",
           "pattern": "Array Mutation via Reference",
           "hint1": "Access arr[i] and arr[j] — both go through the reference to the same heap array.",
@@ -116,12 +118,14 @@
             }
           ],
           "constraints": "0 <= i, j < arr.length",
-          "editorial": "Array elements are on the heap; arr is a reference. arr[i] navigates to the real heap element and modifies it. The caller's array variable still points to the same array — it sees the mutation immediately."
+          "editorial": "Array elements are on the heap; arr is a reference. arr[i] navigates to the real heap element and modifies it. The caller's array variable still points to the same array — it sees the mutation immediately.",
+          "sampleInput": "arr = [1,2,3,4,5], i = 0, j = 4",
+          "sampleOutput": "[5,2,3,4,1]"
         },
         {
           "displayOrder": 3,
           "title": "Does This Modify the Original? — String",
-          "description": "Will calling `appendSuffix(str, \" World\")` modify the original String variable? Implement `doesModify()` that returns false if the original is unchanged, or implement `appendSuffix` correctly to actually change what the caller sees (hint: you can't — return the new value instead).\n\nImplement `String appendSuffix(String s, String suffix)` that returns the concatenated result.",
+          "description": "Will calling `appendSuffix(str, \" World\")` modify the original `String` variable? Implement the method and demonstrate that `String` is **immutable** — the method must **return** the new string instead.\n\n```java\nString s = \"Hello\";\nappendSuffix(s, \" World\");\nSystem.out.println(s); // What prints?\n```\n\n**Example:**\nInput: str = \"Hello\", suffix = \" World\"\nMethod returns: \"Hello World\"\nOriginal variable after call: \"Hello\" (unchanged)\n\n**Key insight:** Strings are immutable. Even though the reference is passed, you cannot mutate the String object itself.",
           "difficulty": "EASY",
           "pattern": "String Immutability + Pass by Value",
           "hint1": "String is immutable — s + suffix creates a new String object.",
@@ -144,12 +148,14 @@
             }
           ],
           "constraints": "s and suffix are non-null.",
-          "editorial": "Strings are immutable + passed by value. Even if you wrote s = s + suffix inside the method, that reassigns the local copy only. Returning the new String is the correct Java idiom."
+          "editorial": "Strings are immutable + passed by value. Even if you wrote s = s + suffix inside the method, that reassigns the local copy only. Returning the new String is the correct Java idiom.",
+          "sampleInput": "str = \"Hello\", suffix = \" World\"",
+          "sampleOutput": "\"Hello World\""
         },
         {
           "displayOrder": 4,
           "title": "Increment Counter Via Wrapper",
-          "description": "Java can't increment a primitive through a method call. Implement `increment(int[] counter)` that increments counter[0] by 1. Then implement the same using AtomicInteger. Demonstrate both work for a caller that needs the incremented value.",
+          "description": "Java can't increment a primitive through a method call. Implement `increment(int[] counter)` that increments `counter[0]` — using a single-element array as a **mutable wrapper** to simulate pass-by-reference.\n\n**Example 1:**\nInput: counter = [0], call increment(counter) three times\nOutput: counter[0] = 3\n\n**Example 2:**\nInput: counter = [10], call increment(counter) once\nOutput: counter[0] = 11\n\n**Key insight:** `int[] counter` — the array object is shared; `counter[0]++` mutates the shared object, which is visible to the caller.",
           "difficulty": "EASY",
           "pattern": "Mutable Wrapper for Pass-by-Value Workaround",
           "hint1": "Use int[] counter = {0}; then pass it to increment(). The method modifies counter[0].",
@@ -168,12 +174,14 @@
             }
           ],
           "constraints": "No constraints.",
-          "editorial": "counter[0]++ navigates through the array reference to the heap element and mutates it — visible to caller. AtomicInteger is a mutable wrapper around int with thread-safe operations. Both work because you're mutating an object, not trying to reassign a primitive parameter."
+          "editorial": "counter[0]++ navigates through the array reference to the heap element and mutates it — visible to caller. AtomicInteger is a mutable wrapper around int with thread-safe operations. Both work because you're mutating an object, not trying to reassign a primitive parameter.",
+          "sampleInput": "counter = [0], increment x3",
+          "sampleOutput": "counter[0] = 3"
         },
         {
           "displayOrder": 5,
           "title": "Trace Reference Aliasing",
-          "description": "Given code that creates aliasing (two variables pointing to same object), predict the output:\n\n```java\nList<Integer> a = new ArrayList<>(List.of(1,2,3));\nList<Integer> b = a;  // b aliases a\nb.add(4);\nSystem.out.println(a.size());\n\nList<Integer> c = new ArrayList<>(a); // c is a copy\nc.add(5);\nSystem.out.println(a.size());\n```\n\nImplement `predictSizes()` returning int[] of the two sizes printed.",
+          "description": "Predict the output of the aliasing code below, then implement `predictSizes()` returning `int[]` of the two sizes printed:\n\n```java\nList<Integer> a = new ArrayList<>(List.of(1,2,3));\nList<Integer> b = a;        // b aliases a\nb.add(4);\nSystem.out.println(a.size());  // Line 1\n\nList<Integer> c = new ArrayList<>(a); // c is a copy\nc.add(5);\nSystem.out.println(a.size());  // Line 2\n```\n\n**Key insight:** `b = a` — both variables point to the **same** object. `new ArrayList<>(a)` creates an independent copy.",
           "difficulty": "EASY",
           "pattern": "Reference Aliasing",
           "hint1": "b = a makes b and a point to the same ArrayList object.",
@@ -188,12 +196,14 @@
             }
           ],
           "constraints": "Conceptual — predict, don't compute.",
-          "editorial": "b=a creates aliasing: both point to the same heap object. b.add(4) modifies that object — a sees size 4. new ArrayList<>(a) creates a defensive copy — c and a are now independent objects. c.add(5) only changes c."
+          "editorial": "b=a creates aliasing: both point to the same heap object. b.add(4) modifies that object — a sees size 4. new ArrayList<>(a) creates a defensive copy — c and a are now independent objects. c.add(5) only changes c.",
+          "sampleInput": "a = [1,2,3]",
+          "sampleOutput": "[4, 4]"
         },
         {
           "displayOrder": 6,
           "title": "Reverse Array In-Place",
-          "description": "Implement `reverse(int[] arr)` that reverses the array in-place. Since arrays are passed by reference copy, mutations to arr[i] are visible to the caller. Verify by printing the original array after calling reverse.",
+          "description": "Implement `reverse(int[] arr)` that reverses the array **in-place** using two pointers. Since arrays are passed by reference in Java, the change is visible to the caller without returning anything.\n\n**Example 1:**\nInput: [1,2,3,4,5]\nOutput: [5,4,3,2,1]\n\n**Example 2:**\nInput: [1,2]\nOutput: [2,1]\n\n**Example 3:**\nInput: [42]\nOutput: [42]\n\n**Key insight:** The method receives a reference to the array — in-place mutations (arr[i] = ...) are visible to the caller.",
           "difficulty": "EASY",
           "pattern": "In-Place Array Mutation",
           "hint1": "Use two pointers: left=0, right=arr.length-1.",
@@ -220,12 +230,14 @@
             }
           ],
           "constraints": "0 <= arr.length <= 10^5",
-          "editorial": "Two-pointer approach swaps from outside in. O(n/2) swaps, O(1) space. Works in-place because arr[i] mutations go through the reference to the real heap array."
+          "editorial": "Two-pointer approach swaps from outside in. O(n/2) swaps, O(1) space. Works in-place because arr[i] mutations go through the reference to the real heap array.",
+          "sampleInput": "[1,2,3,4,5]",
+          "sampleOutput": "[5,4,3,2,1]"
         },
         {
           "displayOrder": 7,
           "title": "Return Modified String (Builder Pattern)",
-          "description": "Implement `buildGreeting(String name, String title, int year)` that constructs and returns: `'Dear Dr. {name}, Welcome to class of {year}!'`. Use StringBuilder internally. Demonstrate that String parameters are not modified.",
+          "description": "Implement `buildGreeting(String name, String title, int year)` that constructs and **returns** a formatted greeting string. Since String is immutable, the only way to produce a modified string from a method is to return it.\n\n**Example 1:**\nInput: name = \"Alice\", title = \"Dr\", year = 2024\nOutput: \"Welcome, Dr. Alice! Class of 2024.\"\n\n**Example 2:**\nInput: name = \"Bob\", title = \"Mr\", year = 2023\nOutput: \"Welcome, Mr. Bob! Class of 2023.\"\n\n**Key insight:** Use `StringBuilder` internally for efficient concatenation, then return `.toString()`.",
           "difficulty": "MEDIUM",
           "pattern": "StringBuilder Pattern / Return New Value",
           "hint1": "Create a StringBuilder inside the method and append to it.",
@@ -244,12 +256,14 @@
             }
           ],
           "constraints": "name and title are non-null, non-empty. year > 0.",
-          "editorial": "StringBuilder is mutable — append() modifies the internal buffer. Each append() returns the same StringBuilder (fluent API), enabling chaining. Return sb.toString() creates the final immutable String. Never use String + in loops — each + creates a new String object."
+          "editorial": "StringBuilder is mutable — append() modifies the internal buffer. Each append() returns the same StringBuilder (fluent API), enabling chaining. Return sb.toString() creates the final immutable String. Never use String + in loops — each + creates a new String object.",
+          "sampleInput": "name=\"Alice\", title=\"Dr\", year=2024",
+          "sampleOutput": "\"Welcome, Dr. Alice! Class of 2024.\""
         },
         {
           "displayOrder": 8,
           "title": "Fill Array From Method",
-          "description": "Implement `fillFibonacci(int[] arr)` that fills the given array with Fibonacci numbers starting from F(0). The method should work in-place (no return value). Prove it works by printing arr from the caller.",
+          "description": "Implement `fillFibonacci(int[] arr)` that fills the given array with Fibonacci numbers starting from F(0)=0, F(1)=1. The array is mutated in-place — no return value needed.\n\n**Example 1:**\nInput: arr = new int[6]\nOutput: arr = [0,1,1,2,3,5]\n\n**Example 2:**\nInput: arr = new int[8]\nOutput: arr = [0,1,1,2,3,5,8,13]\n\n**Key insight:** Passing the array lets the method fill it directly. The caller sees the populated array because both hold a reference to the same object.",
           "difficulty": "MEDIUM",
           "pattern": "In-Place Fill via Reference",
           "hint1": "arr[0]=0, arr[1]=1, then arr[i] = arr[i-1] + arr[i-2].",
@@ -272,12 +286,14 @@
             }
           ],
           "constraints": "1 <= arr.length <= 45 (fits in int)",
-          "editorial": "Fill in-place using the relation F(n) = F(n-1) + F(n-2). The method has no return value because it mutates through the reference — the caller's array is the same heap object."
+          "editorial": "Fill in-place using the relation F(n) = F(n-1) + F(n-2). The method has no return value because it mutates through the reference — the caller's array is the same heap object.",
+          "sampleInput": "arr = new int[6]",
+          "sampleOutput": "[0,1,1,2,3,5]"
         },
         {
           "displayOrder": 9,
           "title": "Accumulate Strings Into StringBuilder Parameter",
-          "description": "Implement `appendWords(StringBuilder sb, String[] words, String separator)` that appends all words to sb joined by separator. The caller should see the updated StringBuilder after the call. Verify this works and explain why it does.",
+          "description": "Implement `appendWords(StringBuilder sb, String[] words, String separator)` that appends all words to `sb` separated by `separator`. `StringBuilder` is **mutable** — changes are visible to the caller without returning.\n\n**Example 1:**\nInput: sb = \"\", words = [\"foo\",\"bar\",\"baz\"], separator = \", \"\nOutput: sb = \"foo, bar, baz\"\n\n**Example 2:**\nInput: sb = \"prefix-\", words = [\"a\",\"b\"], separator = \"-\"\nOutput: sb = \"prefix-a-b\"\n\n**Key insight:** Unlike String, StringBuilder is mutable — `sb.append(...)` modifies the shared object in-place.",
           "difficulty": "MEDIUM",
           "pattern": "Mutable Object Mutation via Reference",
           "hint1": "StringBuilder is mutable — sb.append() modifies the real object.",
@@ -296,12 +312,14 @@
             }
           ],
           "constraints": "words.length >= 0. separator is non-null.",
-          "editorial": "sb.append() calls on the parameter work because sb is a copy of the reference pointing to the SAME StringBuilder heap object. Mutations go through the reference and affect the real object. The method is effectively 'consuming' the caller's StringBuilder — a common Java pattern for building output in recursive algorithms."
+          "editorial": "sb.append() calls on the parameter work because sb is a copy of the reference pointing to the SAME StringBuilder heap object. Mutations go through the reference and affect the real object. The method is effectively 'consuming' the caller's StringBuilder — a common Java pattern for building output in recursive algorithms.",
+          "sampleInput": "sb=\"\", words=[\"foo\",\"bar\",\"baz\"], sep=\", \"",
+          "sampleOutput": "sb = \"foo, bar, baz\""
         },
         {
           "displayOrder": 10,
           "title": "Clone vs Shallow Copy — Reference Trap",
-          "description": "Implement `shallowCopy(int[][] matrix)` that returns a new int[][] where the outer array is a copy but inner arrays are shared. Then `deepCopy(int[][] matrix)` where both outer and inner arrays are independent copies. Demonstrate the difference.",
+          "description": "Implement `shallowCopy(int[][] matrix)` that returns a **new** `int[][]` where the outer array is a new object, but the inner row arrays are **shared** (not copied). Demonstrate the shallow copy trap.\n\n**Example:**\nInput: matrix = [[1,2],[3,4]]\nshallowCopy returns: new int[][] pointing to same rows\n\nAfter: copy[0][0] = 99\nmatrix[0][0] is also 99 (shared row!)\ncopy[0] = new int[]{7,8} does NOT affect matrix[0] (outer array is independent).\n\n**Key insight:** Shallow copy duplicates the outer array but shares references to inner arrays.",
           "difficulty": "MEDIUM",
           "pattern": "Shallow vs Deep Copy",
           "hint1": "Shallow: new int[matrix.length][], then copy references: copy[i] = matrix[i].",
@@ -320,12 +338,14 @@
             }
           ],
           "constraints": "matrix is non-null, non-jagged (all rows same length).",
-          "editorial": "Shallow copy creates a new outer array but copies the row references — both outer arrays share the same inner arrays. Deep copy creates new inner arrays too — fully independent. This is the source of many bugs when 'copying' 2D arrays in Java."
+          "editorial": "Shallow copy creates a new outer array but copies the row references — both outer arrays share the same inner arrays. Deep copy creates new inner arrays too — fully independent. This is the source of many bugs when 'copying' 2D arrays in Java.",
+          "sampleInput": "matrix = [[1,2],[3,4]], modify copy[0][0]=99",
+          "sampleOutput": "matrix[0][0] = 99 (shared row mutated)"
         },
         {
           "displayOrder": 11,
           "title": "Accumulate Sum Using Counter Object",
-          "description": "Create a mutable `Counter` class with a `value` field. Implement `sumIntoCounter(Counter c, int[] nums)` that adds all nums to c.value in-place. Demonstrate that the caller sees the updated count. Then compare with trying to do the same with a plain int parameter.",
+          "description": "Create a mutable `Counter` class with a `value` field. Implement `sumIntoCounter(Counter c, int[] nums)` that adds all elements of `nums` to `c.value`. Since `Counter` is a mutable object, changes persist after the method returns.\n\n**Example 1:**\nInput: c = Counter(0), nums = [1,2,3,4,5]\nOutput: c.value = 15\n\n**Example 2:**\nInput: c = Counter(10), nums = [5,5]\nOutput: c.value = 20\n\n**Key insight:** Object field mutations (`c.value += x`) are visible to the caller because both hold a reference to the same Counter object.",
           "difficulty": "MEDIUM",
           "pattern": "Mutable Object as Output Parameter",
           "hint1": "Counter is an object — its 'value' field can be mutated through the reference.",
@@ -348,12 +368,14 @@
             }
           ],
           "constraints": "nums is non-null.",
-          "editorial": "c.value += n navigates through c (a copied reference) to the real Counter object on the heap and modifies its field. This is a real mutation — visible to caller. This pattern appears in recursive tree algorithms: pass a Counter and increment it at each node."
+          "editorial": "c.value += n navigates through c (a copied reference) to the real Counter object on the heap and modifies its field. This is a real mutation — visible to caller. This pattern appears in recursive tree algorithms: pass a Counter and increment it at each node.",
+          "sampleInput": "c = Counter(0), nums = [1,2,3,4,5]",
+          "sampleOutput": "c.value = 15"
         },
         {
           "displayOrder": 12,
           "title": "Matrix Fill In-Place",
-          "description": "Implement `fillMultiplicationTable(int[][] matrix)` that fills matrix[i][j] = (i+1)*(j+1) in-place for a given n×n matrix. The caller should see the filled matrix after the call.",
+          "description": "Implement `fillMultiplicationTable(int[][] matrix)` that fills `matrix[i][j] = (i+1) * (j+1)` in-place. The 2D array is passed by reference, so the caller sees the filled matrix without a return value.\n\n**Example:**\nInput: matrix = new int[3][3]\nOutput:\n[[1,2,3],\n [2,4,6],\n [3,6,9]]\n\n**Key insight:** The outer array reference is passed by value, but it points to the same 2D array — mutations to elements are visible to the caller.",
           "difficulty": "MEDIUM",
           "pattern": "2D Array Mutation via Reference",
           "hint1": "matrix[i][j] = (i+1)*(j+1) for 0-indexed i and j.",
@@ -372,12 +394,14 @@
             }
           ],
           "constraints": "matrix is square, 1 <= n <= 100.",
-          "editorial": "matrix is a reference to the 2D array on the heap. matrix[i][j] = ... navigates through two references (outer array → row array → element) and modifies in-place. The caller's matrix variable still points to the same object and sees all changes."
+          "editorial": "matrix is a reference to the 2D array on the heap. matrix[i][j] = ... navigates through two references (outer array → row array → element) and modifies in-place. The caller's matrix variable still points to the same object and sees all changes.",
+          "sampleInput": "new int[3][3]",
+          "sampleOutput": "[[1,2,3],[2,4,6],[3,6,9]]"
         },
         {
           "displayOrder": 13,
           "title": "Implement Pair Swap Using Return",
-          "description": "Since Java can't swap primitives via method parameters, implement `swapPair(int a, int b)` that returns an int[] of {b, a}. Then use it to swap two variables in main. This is the idiomatic Java way to 'return' multiple values.",
+          "description": "Since Java can't swap two primitives via method parameters, implement `swapPair(int a, int b)` that **returns** an `int[]` of `{b, a}` — the caller unpacks the result.\n\n**Example 1:**\nInput: a = 5, b = 10\nOutput: [10, 5]\nUsage: int[] r = swapPair(x, y); x = r[0]; y = r[1];\n\n**Example 2:**\nInput: a = -3, b = 7\nOutput: [7, -3]\n\n**Key insight:** No language trick can swap caller-side primitives. The clean Java solution is to return the swapped values and let the caller reassign.",
           "difficulty": "HARD",
           "pattern": "Return Multiple Values as Array",
           "hint1": "return new int[]{b, a}; — simply reverse the two values.",
@@ -396,12 +420,14 @@
             }
           ],
           "constraints": "a and b fit in int.",
-          "editorial": "Return the swapped pair as int[]{b, a}. The caller unpacks it manually. This is the Java equivalent of multiple return values in Python/Go. Records (Java 14+) give names to the returned values: Pair(first=b, second=a) is self-documenting."
+          "editorial": "Return the swapped pair as int[]{b, a}. The caller unpacks it manually. This is the Java equivalent of multiple return values in Python/Go. Records (Java 14+) give names to the returned values: Pair(first=b, second=a) is self-documenting.",
+          "sampleInput": "a = 5, b = 10",
+          "sampleOutput": "[10, 5]"
         },
         {
           "displayOrder": 14,
           "title": "Deep vs Shallow — Object List Copy",
-          "description": "Given a `Person` class with a mutable `name` field, implement `shallowCopyList(List<Person>)` and `deepCopyList(List<Person>)`. Demonstrate that modifying a Person in the shallow copy affects the original, but not in the deep copy.",
+          "description": "Given a `Person` class with a mutable `name` field, implement `shallowCopyList(List<Person> list)` that returns a **new List** containing the **same Person objects** (not clones).\n\nDemonstrate the trap: mutating `copy.get(0).name` also changes `original.get(0).name`.\n\n**Example:**\noriginal = [Person(\"Alice\"), Person(\"Bob\")]\ncopy = shallowCopyList(original)\ncopy.get(0).name = \"Zara\"\n=> original.get(0).name is also \"Zara\"\n\n**Key insight:** Shallow copy duplicates the list structure but shares object references — mutating a contained object is visible through both lists.",
           "difficulty": "HARD",
           "pattern": "Deep Copy of Object List",
           "hint1": "Shallow: new ArrayList<>(original) — new list, same Person references.",
@@ -420,12 +446,14 @@
             }
           ],
           "constraints": "list is non-null.",
-          "editorial": "new ArrayList<>(list) creates a new ArrayList but copies the Person references — shallow copy. Mutating p.name through a shallow copy reference changes the original. Deep copy creates new Person objects — fully independent. This distinction is critical for defensive programming and immutability."
+          "editorial": "new ArrayList<>(list) creates a new ArrayList but copies the Person references — shallow copy. Mutating p.name through a shallow copy reference changes the original. Deep copy creates new Person objects — fully independent. This distinction is critical for defensive programming and immutability.",
+          "sampleInput": "original = [Person(\"Alice\"), Person(\"Bob\")], copy[0].name = \"Zara\"",
+          "sampleOutput": "original.get(0).name = \"Zara\""
         },
         {
           "displayOrder": 15,
           "title": "Tree Node Sum — Accumulate via Object",
-          "description": "Given a binary tree, implement `sumTree(TreeNode root, int[] total)` that accumulates the sum of all node values into total[0] using DFS. The int[] wrapper is needed because we can't increment a primitive across recursive calls.",
+          "description": "Given a binary tree, implement `sumTree(TreeNode root, int[] total)` that accumulates the sum of all node values into `total[0]`. Use a single-element int array as a **mutable accumulator** passed through recursion.\n\n**Example 1:**\nInput: tree = [1,2,3], total = [0]\nOutput: total[0] = 6\n\n**Example 2:**\nInput: tree = [4,2,6,1,3,5,7], total = [0]\nOutput: total[0] = 28\n\n**Key insight:** `int total` can't accumulate across recursive calls without return values. `int[] total` shares state across all stack frames.",
           "difficulty": "HARD",
           "pattern": "Recursive Accumulation via Reference",
           "hint1": "Base case: root == null → return.",
@@ -448,12 +476,14 @@
             }
           ],
           "constraints": "1 <= nodes <= 10^4. Node values fit in int.",
-          "editorial": "total[0] += root.val navigates through the int[] reference to the actual element. All recursive calls share the SAME int[] object on the heap — mutations accumulate correctly. Alternative: return int from the recursive method and sum up (cleaner). int[] workaround is needed in lambdas and anonymous classes where you can't return values."
+          "editorial": "total[0] += root.val navigates through the int[] reference to the actual element. All recursive calls share the SAME int[] object on the heap — mutations accumulate correctly. Alternative: return int from the recursive method and sum up (cleaner). int[] workaround is needed in lambdas and anonymous classes where you can't return values.",
+          "sampleInput": "tree = [1,2,3], total = [0]",
+          "sampleOutput": "total[0] = 6"
         },
         {
           "displayOrder": 16,
           "title": "Rotate Array In-Place",
-          "description": "Implement `rotate(int[] nums, int k)` that rotates the array to the right by k steps in-place. Use the reversal algorithm: reverse all, reverse first k, reverse rest. Verify the caller sees the result.",
+          "description": "Implement `rotate(int[] nums, int k)` that rotates the array **right** by `k` steps in-place using the triple-reverse technique. Handle `k > nums.length` by using `k % nums.length`.\n\n**Example 1:**\nInput: nums = [1,2,3,4,5,6,7], k = 3\nOutput: [5,6,7,1,2,3,4]\n\n**Example 2:**\nInput: nums = [1,2,3], k = 4\nOutput: [3,1,2]\nExplanation: k % 3 = 1 effective rotation.\n\n**Key insight:** Triple-reverse: reverse all, reverse first k, reverse last n-k. O(n) time, O(1) space.",
           "difficulty": "HARD",
           "pattern": "In-Place Array Rotation",
           "hint1": "k = k % nums.length to handle k >= nums.length.",
@@ -476,12 +506,14 @@
             }
           ],
           "constraints": "1 <= nums.length <= 10^5. 0 <= k <= 10^5.",
-          "editorial": "Reversal trick: reverse all (7654321), reverse first k=3 (5674321 → 5671234 → actually 5671234)... More precisely: [1234567] → reverse all → [7654321] → reverse [0,k-1]=[0,2] → [5674321] → reverse [k,n-1]=[3,6] → [5671234]. In-place, O(n) time, O(1) space. Classic LeetCode #189."
+          "editorial": "Reversal trick: reverse all (7654321), reverse first k=3 (5674321 → 5671234 → actually 5671234)... More precisely: [1234567] → reverse all → [7654321] → reverse [0,k-1]=[0,2] → [5674321] → reverse [k,n-1]=[3,6] → [5671234]. In-place, O(n) time, O(1) space. Classic LeetCode #189.",
+          "sampleInput": "nums = [1,2,3,4,5,6,7], k = 3",
+          "sampleOutput": "[5,6,7,1,2,3,4]"
         },
         {
           "displayOrder": 17,
           "title": "Longest Common Prefix — Mutating Result Holder",
-          "description": "Find the longest common prefix string among an array of strings. Implement using a String[] result holder passed to a recursive helper. The helper should update result[0] as it narrows down the prefix.",
+          "description": "Find the longest common prefix among an array of strings. Implement using a `String[] result` holder (single-element array) mutated inside a helper method — demonstrating pass-by-reference for object state.\n\n**Example 1:**\nInput: [\"flower\",\"flow\",\"flight\"]\nOutput: \"fl\"\n\n**Example 2:**\nInput: [\"dog\",\"racecar\",\"car\"]\nOutput: \"\"\n\n**Key insight:** `result[0]` is a mutable slot — the helper modifies it in-place, and the change is visible to the caller. Same pattern as using a mutable wrapper class.",
           "difficulty": "HARD",
           "pattern": "Recursive Result via Reference Holder",
           "hint1": "Start with result[0] = strs[0] (the full first string as initial prefix).",
@@ -504,12 +536,14 @@
             }
           ],
           "constraints": "1 <= strs.length <= 200. 0 <= strs[i].length <= 200.",
-          "editorial": "result[0] is a String reference inside a String[] holder. Each recursive call can reassign result[0] to a shorter prefix — this change is visible to all calls because they all hold a reference to the same String[] object. Pure recursion without a holder would require returning the prefix at each level."
+          "editorial": "result[0] is a String reference inside a String[] holder. Each recursive call can reassign result[0] to a shorter prefix — this change is visible to all calls because they all hold a reference to the same String[] object. Pure recursion without a holder would require returning the prefix at each level.",
+          "sampleInput": "[\"flower\",\"flow\",\"flight\"]",
+          "sampleOutput": "\"fl\""
         },
         {
           "displayOrder": 18,
           "title": "Graph DFS — Visited Array Mutation",
-          "description": "Implement DFS on an adjacency list graph using a boolean[] visited array passed to the recursive DFS helper. Count the number of nodes visited starting from node 0. The visited[] array is shared across all recursive calls.",
+          "description": "Implement DFS on an adjacency list graph using a `boolean[] visited` array passed to the recursive helper. The shared `visited` array prevents revisiting nodes across all recursion levels.\n\n**Example:**\nInput: graph = {0:[1,2], 1:[3], 2:[3], 3:[]}, start = 0\nDFS visit order: 0, 1, 3, 2 (or similar depth-first order)\nvisited after DFS: [true, true, true, true]\n\n**Key insight:** `visited` is a reference — all recursive calls share the same array. Marking `visited[node] = true` in one call is visible to all callers up the stack.",
           "difficulty": "HARD",
           "pattern": "DFS with Shared Visited Array",
           "hint1": "visited[node] = true before recursing into neighbors.",
@@ -528,12 +562,14 @@
             }
           ],
           "constraints": "0 <= nodes <= 10^4. Graph may be disconnected.",
-          "editorial": "visited[] and count[] are arrays on the heap, shared across all recursive DFS calls. visited[node] = true marks the node across all frames. count[0]++ accumulates the count. Both mutations are visible globally because all frames hold references to the same heap arrays."
+          "editorial": "visited[] and count[] are arrays on the heap, shared across all recursive DFS calls. visited[node] = true marks the node across all frames. count[0]++ accumulates the count. Both mutations are visible globally because all frames hold references to the same heap arrays.",
+          "sampleInput": "graph = {0:[1,2], 1:[3], 2:[3], 3:[]}, start = 0",
+          "sampleOutput": "visited = [true, true, true, true]"
         },
         {
           "displayOrder": 19,
           "title": "Flatten Nested List Into Result List",
-          "description": "Given a nested structure of integers (an Object that is either an Integer or a List<Object>), implement `flatten(Object input, List<Integer> result)` that recursively flattens all integers into result. The List is mutated in place.",
+          "description": "Given a nested structure where each element is either an `Integer` or a `List<Object>`, flatten it into a `List<Integer>` result. Pass the result list into the recursive helper — it accumulates integers in-place.\n\n**Example 1:**\nInput: [1, [2, [3, 4], 5]]\nOutput: [1, 2, 3, 4, 5]\n\n**Example 2:**\nInput: [[1, 2], [3, [4, 5]]]\nOutput: [1, 2, 3, 4, 5]\n\n**Key insight:** Passing the List to each recursive call shares the same result list — `result.add(x)` from any depth appends to the single output list.",
           "difficulty": "HARD",
           "pattern": "Recursive Mutation of Shared List",
           "hint1": "If input is Integer, add it to result directly.",
@@ -556,12 +592,14 @@
             }
           ],
           "constraints": "Nesting depth <= 10. Values fit in int.",
-          "editorial": "result is a List<Integer> on the heap, shared across all recursive calls. result.add(i) mutates the same list — all levels of recursion see each other's additions. Pattern matching instanceof (Java 16+) makes the type check clean."
+          "editorial": "result is a List<Integer> on the heap, shared across all recursive calls. result.add(i) mutates the same list — all levels of recursion see each other's additions. Pattern matching instanceof (Java 16+) makes the type check clean.",
+          "sampleInput": "[1, [2, [3, 4], 5]]",
+          "sampleOutput": "[1, 2, 3, 4, 5]"
         },
         {
           "displayOrder": 20,
           "title": "Implement Object Pool Using Reference Semantics",
-          "description": "Implement a simple `ObjectPool<T>` with `acquire()` and `release(T obj)` methods. The pool holds reusable objects. Demonstrate that acquiring the same object and modifying it through two different 'variables' reflects on both — because they hold the same reference.",
+          "description": "Implement a simple `ObjectPool<T>` with `acquire()` (returns a pooled object or null if empty) and `release(T obj)` (returns object to the pool). Use a `List<T>` as backing store.\n\n**Example:**\nPool initialized with [\"conn1\", \"conn2\"]\nacquire() => \"conn1\"\nacquire() => \"conn2\"\nacquire() => null (pool empty)\nrelease(\"conn1\")\nacquire() => \"conn1\"\n\n**Key insight:** The pool list is a shared mutable object. `acquire()` removes from it; `release()` adds back. All callers share the same pool state via reference semantics.",
           "difficulty": "HARD",
           "pattern": "Reference Identity in Object Pool",
           "hint1": "Pool stores a Queue<T> of available objects.",
@@ -580,7 +618,9 @@
             }
           ],
           "constraints": "Pool is not thread-safe (single-threaded use).",
-          "editorial": "The pool stores references to objects. acquire() returns a reference to the same heap object. a.append('Hello') mutates it. release(a) puts the reference back in the queue. b = pool.acquire() gives you that same reference — b.toString() shows 'Hello' because a and b pointed to the same object. Real object pools (like database connection pools, Netty ByteBuf pool) work exactly this way."
+          "editorial": "The pool stores references to objects. acquire() returns a reference to the same heap object. a.append('Hello') mutates it. release(a) puts the reference back in the queue. b = pool.acquire() gives you that same reference — b.toString() shows 'Hello' because a and b pointed to the same object. Real object pools (like database connection pools, Netty ByteBuf pool) work exactly this way.",
+          "sampleInput": "pool=[\"conn1\",\"conn2\"], acquire, acquire, acquire",
+          "sampleOutput": "[\"conn1\", \"conn2\", null]"
         }
       ],
       "subCategory": "Language Basics",

@@ -7,11 +7,24 @@ import { SkeletonTableRow } from '../../components/shared/Skeleton';
 import styles from './ProblemsPage.module.css';
 
 const PAGE_SIZE = 20;
+const PATTERN_COLLAPSE_COUNT = 12;
+
+const CATEGORY_LABELS = {
+  JAVA:          'Java',
+  ADVANCED_JAVA: 'Advanced Java',
+  SPRING_BOOT:   'Spring Boot',
+  DSA:           'DSA',
+  MYSQL:         'MySQL',
+  AWS:           'AWS',
+  SYSTEM_DESIGN: 'System Design',
+  TESTING:       'Testing',
+};
 
 export default function ProblemsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [patternsExpanded, setPatternsExpanded] = useState(false);
 
   // ── Filter state driven by URL ───────────────────────────────────────────────
   const filters = useMemo(() => ({
@@ -25,7 +38,7 @@ export default function ProblemsPage() {
   const [searchInput, setSearchInput] = useState(() => searchParams.get('search') || '');
 
   // ── Filter metadata ──────────────────────────────────────────────────────────
-  const { data: meta = { categories: [], patterns: [] } } = useQuery({
+  const { data: meta = { patternCounts: [], categoryCounts: [], patterns: [], categories: [] } } = useQuery({
     queryKey: QUERY_KEYS.problemFilters,
     queryFn:  problemsApi.getFilters,
     staleTime: 60 * 60 * 1000,
@@ -84,6 +97,13 @@ export default function ProblemsPage() {
     [problems, solvedSet]
   );
 
+  const visiblePatterns = useMemo(() => {
+    const all = meta.patternCounts || [];
+    return patternsExpanded ? all : all.slice(0, PATTERN_COLLAPSE_COUNT);
+  }, [meta.patternCounts, patternsExpanded]);
+
+  const hasMorePatterns = (meta.patternCounts?.length || 0) > PATTERN_COLLAPSE_COUNT;
+
   // ── Handlers ─────────────────────────────────────────────────────────────────
   const setFilter = useCallback((key, value) => {
     setSearchParams((prev) => {
@@ -135,9 +155,8 @@ export default function ProblemsPage() {
         </div>
       </div>
 
-      {/* ── Filters ─────────────────────────────────────────────────────────── */}
-      <div className={styles.filterBar}>
-        {/* Search */}
+      {/* ── Top filter row: search + difficulty + clear ──────────────────────── */}
+      <div className={styles.topFilterBar}>
         <form onSubmit={handleSearch} className={styles.searchForm}>
           <div className={styles.searchWrap}>
             <span className={styles.searchIcon}>🔍</span>
@@ -154,7 +173,6 @@ export default function ProblemsPage() {
           </div>
         </form>
 
-        {/* Difficulty pills */}
         <div className={styles.diffPills}>
           {['', 'EASY', 'MEDIUM', 'HARD'].map((d) => (
             <button
@@ -167,29 +185,70 @@ export default function ProblemsPage() {
           ))}
         </div>
 
-        {/* Category */}
-        <select className={styles.select} value={filters.category}
-          onChange={(e) => setFilter('category', e.target.value)}>
-          <option value="">All Topics</option>
-          {meta.categories.map((c) => (
-            <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>
-          ))}
-        </select>
-
-        {/* Pattern */}
-        {meta.patterns.length > 0 && (
-          <select className={styles.select} value={filters.pattern}
-            onChange={(e) => setFilter('pattern', e.target.value)}>
-            <option value="">All Patterns</option>
-            {meta.patterns.map((p) => <option key={p} value={p}>{p}</option>)}
-          </select>
-        )}
-
-        {/* Clear */}
         {hasActiveFilter && (
-          <button className={styles.clearBtn} onClick={clearAll}>✕ Clear</button>
+          <button className={styles.clearBtn} onClick={clearAll}>✕ Clear all</button>
         )}
       </div>
+
+      {/* ── Pattern tags row ────────────────────────────────────────────────── */}
+      {(meta.patternCounts?.length > 0) && (
+        <div className={styles.tagSection}>
+          <div className={styles.tagRow}>
+            <button
+              className={`${styles.tagPill} ${!filters.pattern ? styles.tagPillActive : ''}`}
+              onClick={() => setFilter('pattern', '')}
+            >
+              All Patterns
+            </button>
+            {visiblePatterns.map((pt) => (
+              <button
+                key={pt.name}
+                className={`${styles.tagPill} ${filters.pattern === pt.name ? styles.tagPillActive : ''}`}
+                onClick={() => setFilter('pattern', filters.pattern === pt.name ? '' : pt.name)}
+              >
+                {pt.name}
+                <span className={styles.tagCount}>{pt.count}</span>
+              </button>
+            ))}
+            {hasMorePatterns && (
+              <button
+                className={styles.expandBtn}
+                onClick={() => setPatternsExpanded((v) => !v)}
+              >
+                {patternsExpanded
+                  ? '⌃ Collapse'
+                  : `Expand ∨ ${meta.patternCounts.length - PATTERN_COLLAPSE_COUNT} more`}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Category / topic pills row ───────────────────────────────────────── */}
+      {(meta.categoryCounts?.length > 0) && (
+        <div className={styles.categorySection}>
+          <div className={styles.categoryRow}>
+            <button
+              className={`${styles.catPill} ${!filters.category ? styles.catPillActive : ''}`}
+              onClick={() => setFilter('category', '')}
+            >
+              <span className={styles.catIcon}>⊞</span>
+              All Topics
+            </button>
+            {meta.categoryCounts.map((cat) => (
+              <button
+                key={cat.name}
+                className={`${styles.catPill} ${filters.category === cat.name ? styles.catPillActive : ''}`}
+                onClick={() => setFilter('category', filters.category === cat.name ? '' : cat.name)}
+              >
+                <span className={styles.catIcon}>{getCatIcon(cat.name)}</span>
+                {CATEGORY_LABELS[cat.name] || cat.name.replace(/_/g, ' ')}
+                <span className={styles.catCount}>{cat.count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Table ───────────────────────────────────────────────────────────── */}
       <div className={`${styles.tableWrap} ${isFetching ? styles.fetching : ''}`}>
@@ -271,7 +330,17 @@ export default function ProblemsPage() {
                         {p.difficulty ? p.difficulty[0] + p.difficulty.slice(1).toLowerCase() : '—'}
                       </span>
                     </td>
-                    <td>{p.pattern && <span className={styles.patternChip}>{p.pattern}</span>}</td>
+                    <td>
+                      {p.pattern && (
+                        <button
+                          className={`${styles.patternChip} ${filters.pattern === p.pattern ? styles.patternChipActive : ''}`}
+                          onClick={(e) => { e.stopPropagation(); setFilter('pattern', filters.pattern === p.pattern ? '' : p.pattern); }}
+                          title={`Filter by: ${p.pattern}`}
+                        >
+                          {p.pattern}
+                        </button>
+                      )}
+                    </td>
                     <td><span className={styles.topicLabel} title={p.topicTitle}>{p.topicTitle}</span></td>
                   </tr>
                 );
@@ -316,6 +385,14 @@ export default function ProblemsPage() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+function getCatIcon(cat) {
+  const icons = {
+    JAVA: '☕', ADVANCED_JAVA: '⚡', SPRING_BOOT: '🌱',
+    DSA: '🌳', MYSQL: '🗄', AWS: '☁', SYSTEM_DESIGN: '🏗', TESTING: '🧪',
+  };
+  return icons[cat] || '📁';
+}
 
 function buildPageRange(current, total) {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i);

@@ -69,7 +69,7 @@
         {
           "displayOrder": 1,
           "title": "Thread-Safe Counter",
-          "description": "Implement a `SafeCounter` class with `increment()`, `decrement()`, `reset()`, and `getCount()` methods. It must be thread-safe — correct results under concurrent access from multiple threads. Implement using `synchronized`, then again using `AtomicInteger`. Compare both.",
+          "description": "Implement a thread-safe counter using `AtomicInteger` or `synchronized`.\n\n**Example:**\nCounter c = new AtomicCounter();\n10 threads each call increment() 1000 times concurrently.\nc.get() => 10000 (no lost updates)\n\n**Key insight:** `count++` is not atomic — read, increment, write can interleave. `AtomicInteger.incrementAndGet()` is a single atomic CAS operation.",
           "difficulty": "EASY",
           "pattern": "Thread safety / AtomicInteger",
           "hint1": "Version 1: mark all methods `synchronized` — only one thread executes at a time.",
@@ -84,12 +84,14 @@
             }
           ],
           "constraints": "No lost updates under concurrent access.",
-          "editorial": "synchronized on instance methods acquires the monitor on 'this' — only one thread inside any synchronized method at a time. AtomicInteger.incrementAndGet() uses a hardware CAS instruction — faster than synchronized for simple counters because it avoids lock overhead. For complex multi-step operations, synchronized is still needed."
+          "editorial": "synchronized on instance methods acquires the monitor on 'this' — only one thread inside any synchronized method at a time. AtomicInteger.incrementAndGet() uses a hardware CAS instruction — faster than synchronized for simple counters because it avoids lock overhead. For complex multi-step operations, synchronized is still needed.",
+          "sampleInput": "10 threads * increment(1000x) each",
+          "sampleOutput": "10000"
         },
         {
           "displayOrder": 2,
           "title": "Producer-Consumer With BlockingQueue",
-          "description": "Implement a producer-consumer system. Producer generates integers 1..N. Consumer processes each integer (prints it). Use `LinkedBlockingQueue` with capacity 5. One producer thread, two consumer threads. Producer signals consumers when done using a sentinel value (-1).",
+          "description": "Implement producer-consumer using `BlockingQueue<Integer>`. Producer puts items; consumer polls and processes them.\n\n**Example:**\nBlockingQueue<Integer> queue = new LinkedBlockingQueue<>(10);\nproducer puts 1..5\nconsumer takes: [1,2,3,4,5]\n\n**Key insight:** `put()` blocks when queue is full; `take()` blocks when empty — no manual `wait()`/`notify()` needed. `BlockingQueue` handles all coordination.",
           "difficulty": "EASY",
           "pattern": "BlockingQueue producer-consumer",
           "hint1": "`LinkedBlockingQueue<Integer>(5)` — blocks put() when full, blocks take() when empty.",
@@ -104,12 +106,14 @@
             }
           ],
           "constraints": "Queue capacity = 5 (backpressure). One sentinel per consumer.",
-          "editorial": "BlockingQueue.put() blocks when full (backpressure on the producer). take() blocks when empty (consumer waits for work). The sentinel pattern (-1 per consumer) is the standard shutdown mechanism. Using -1 per consumer ensures each consumer gets exactly one shutdown signal — if you put one sentinel for two consumers, one consumer might take it and the other blocks forever."
+          "editorial": "BlockingQueue.put() blocks when full (backpressure on the producer). take() blocks when empty (consumer waits for work). The sentinel pattern (-1 per consumer) is the standard shutdown mechanism. Using -1 per consumer ensures each consumer gets exactly one shutdown signal — if you put one sentinel for two consumers, one consumer might take it and the other blocks forever.",
+          "sampleInput": "producer puts 1-5, consumer takes all",
+          "sampleOutput": "consumer receives [1,2,3,4,5]"
         },
         {
           "displayOrder": 3,
           "title": "Deadlock Detection — Show and Fix",
-          "description": "The given code has a deadlock: T1 locks A then B; T2 locks B then A. Demonstrate the deadlock (both threads block forever), then fix it by enforcing a consistent lock ordering. Verify the fix works.",
+          "description": "Demonstrate a deadlock: two threads lock resources in opposite order. Then fix it by enforcing a consistent lock ordering.\n\n**Deadlock:**\nThread1: lock(A) then lock(B)\nThread2: lock(B) then lock(A)\n=> both block forever\n\n**Fix:**\nBoth threads: lock(A) then lock(B) (same order)\n=> no deadlock\n\n**Key insight:** Deadlocks require four conditions (mutual exclusion, hold-and-wait, no-preemption, circular wait). Removing any one prevents deadlock.",
           "difficulty": "EASY",
           "pattern": "Deadlock detection and fix",
           "hint1": "Deadlock condition: T1 acquires lockA, T2 acquires lockB, then each waits for the other.",
@@ -124,12 +128,14 @@
             }
           ],
           "constraints": "No sleep() in the fix. Lock order must be consistent.",
-          "editorial": "Deadlock requires four conditions: mutual exclusion, hold-and-wait, no preemption, circular wait. Breaking any one prevents deadlock. Consistent lock ordering eliminates circular wait — the cheapest fix. Alternatively, tryLock(timeout) breaks hold-and-wait: if you can't get the second lock within a timeout, release the first and retry."
+          "editorial": "Deadlock requires four conditions: mutual exclusion, hold-and-wait, no preemption, circular wait. Breaking any one prevents deadlock. Consistent lock ordering eliminates circular wait — the cheapest fix. Alternatively, tryLock(timeout) breaks hold-and-wait: if you can't get the second lock within a timeout, release the first and retry.",
+          "sampleInput": "two threads, opposite lock order",
+          "sampleOutput": "deadlock detected; fix: consistent lock order"
         },
         {
           "displayOrder": 4,
           "title": "Parallel Merge Sort",
-          "description": "Implement parallel merge sort using `ForkJoinPool` and `RecursiveAction`. Split arrays larger than a threshold (1000) into two halves and sort them in parallel. Merge the sorted halves. Compare sequential vs parallel timing on a 1M element array.",
+          "description": "Implement parallel merge sort using `RecursiveTask<int[]>` from `ForkJoinPool`.\n\n**Example:**\nint[] arr = {38,27,43,3,9,82,10};\nnew ForkJoinPool().invoke(new MergeSortTask(arr))\n=> [3,9,10,27,38,43,82]\n\n**Key insight:** Split array in half, fork both halves, join results, merge. ForkJoin uses work-stealing — idle threads steal tasks from busy threads.",
           "difficulty": "EASY",
           "pattern": "ForkJoin RecursiveAction",
           "hint1": "Extend `RecursiveAction` (no return value). Override `compute()`.",
@@ -144,12 +150,14 @@
             }
           ],
           "constraints": "Threshold=1000. Arrays.sort() for base case (faster than manual sort for small arrays).",
-          "editorial": "RecursiveAction has no return value — it sorts in place. Fork left half async, compute right half on current thread, join left, merge. The merge step must happen after both halves are sorted — after join(). Threshold 1000 is empirically good — below this, task creation overhead exceeds the parallelism benefit."
+          "editorial": "RecursiveAction has no return value — it sorts in place. Fork left half async, compute right half on current thread, join left, merge. The merge step must happen after both halves are sorted — after join(). Threshold 1000 is empirically good — below this, task creation overhead exceeds the parallelism benefit.",
+          "sampleInput": "[38,27,43,3,9,82,10]",
+          "sampleOutput": "[3,9,10,27,38,43,82]"
         },
         {
           "displayOrder": 5,
           "title": "Async HTTP Chain With CompletableFuture",
-          "description": "Simulate an async microservice call chain: (1) fetch user ID → (2) fetch user profile → (3) fetch user's orders → (4) compute total order value. Each step is a simulated async call (sleep + return). Chain using `CompletableFuture` without blocking between steps.",
+          "description": "Chain async operations with `CompletableFuture`: fetch user -> fetch user's orders -> compute total.\n\n**Example:**\nCompletableFuture.supplyAsync(() -> fetchUser(1))\n    .thenApply(user -> fetchOrders(user.id))\n    .thenApply(orders -> orders.stream().mapToDouble(Order::total).sum())\n    .get()\n=> 350.0\n\n**Key insight:** `thenApply` chains synchronous transforms. `thenCompose` chains async futures. `.get()` blocks for the final result.",
           "difficulty": "EASY",
           "pattern": "CompletableFuture thenCompose chain",
           "hint1": "`CompletableFuture.supplyAsync(() -> fetchUserId())` starts the chain.",
@@ -164,12 +172,14 @@
             }
           ],
           "constraints": "Use thenCompose for async steps — not thenApply (which would nest CFs).",
-          "editorial": "thenCompose is flatMap for CompletableFuture — when the next step itself is async (returns a CF), thenCompose unwraps it. thenApply wraps the result in another CF (giving CF<CF<T>>). The chain runs sequentially step by step (~90ms total = 20+30+40ms) — each step starts when the previous finishes. For independent steps, use supplyAsync in parallel and combine with allOf."
+          "editorial": "thenCompose is flatMap for CompletableFuture — when the next step itself is async (returns a CF), thenCompose unwraps it. thenApply wraps the result in another CF (giving CF<CF<T>>). The chain runs sequentially step by step (~90ms total = 20+30+40ms) — each step starts when the previous finishes. For independent steps, use supplyAsync in parallel and combine with allOf.",
+          "sampleInput": "fetchUser(1) -> fetchOrders -> sum totals",
+          "sampleOutput": "350.0"
         },
         {
           "displayOrder": 6,
           "title": "Rate Limiter — Token Bucket",
-          "description": "Implement a `RateLimiter` that allows at most `N` requests per second using the token bucket algorithm. `acquire()` blocks until a token is available. Tokens are added at a fixed rate. Demonstrate with 10 requests at a rate of 5/second.",
+          "description": "Implement a token bucket rate limiter: allows up to N requests per second. Tokens refill at a fixed rate; requests consume tokens.\n\n**Example:**\nlimiter = RateLimiter(tokensPerSecond=5)\nlimiter.tryAcquire() x5 => all true (tokens available)\nlimiter.tryAcquire() => false (bucket empty)\nwait 200ms\nlimiter.tryAcquire() => true (1 token refilled)\n\n**Key insight:** Track `lastRefillTime` and compute tokens earned since then. Use `synchronized` or `AtomicLong` for thread safety.",
           "difficulty": "EASY",
           "pattern": "Rate limiting / Semaphore",
           "hint1": "Use `Semaphore(N)` where N is the burst capacity. A background thread adds tokens (releases permits) at the rate.",
@@ -184,12 +194,14 @@
             }
           ],
           "constraints": "Semaphore permits cap at tokensPerSecond — don't release beyond capacity.",
-          "editorial": "Semaphore is a counting permit — acquire() decrements (blocks at 0), release() increments. Token bucket: semaphore starts full, acquire() consumes tokens, background task refills up to capacity every second. Cap the refill at capacity (tokensPerSecond - availablePermits()) to prevent unbounded permit accumulation during idle periods. Guava's RateLimiter uses a similar algorithm."
+          "editorial": "Semaphore is a counting permit — acquire() decrements (blocks at 0), release() increments. Token bucket: semaphore starts full, acquire() consumes tokens, background task refills up to capacity every second. Cap the refill at capacity (tokensPerSecond - availablePermits()) to prevent unbounded permit accumulation during idle periods. Guava's RateLimiter uses a similar algorithm.",
+          "sampleInput": "5 rapid requests then 6th",
+          "sampleOutput": "first 5: true; 6th: false"
         },
         {
           "displayOrder": 7,
           "title": "Dining Philosophers",
-          "description": "Implement the Dining Philosophers problem: 5 philosophers sit around a table with 5 forks. Each philosopher needs both adjacent forks to eat. Implement a deadlock-free solution. Use `ReentrantLock` with consistent lock ordering (lowest fork ID first).",
+          "description": "Implement the dining philosophers problem with 5 philosophers, 5 forks. Avoid deadlock using a resource hierarchy or a waiter (arbiter) approach.\n\n**Solution (resource hierarchy):**\nEach philosopher picks up the lower-numbered fork first.\nPhilosopher 4 (last): picks fork 4 then fork 0 — breaks the cycle.\n\n**Example:**\nAll 5 philosophers eat without deadlock for 5 seconds.\n\n**Key insight:** Circular wait is broken by never holding a higher-numbered fork while waiting for a lower-numbered one.",
           "difficulty": "MEDIUM",
           "pattern": "Deadlock-free lock ordering",
           "hint1": "Each fork is a `ReentrantLock`. Philosopher i needs fork[i] and fork[(i+1)%5].",
@@ -204,12 +216,14 @@
             }
           ],
           "constraints": "No deadlock. No starvation in this simple version.",
-          "editorial": "Without ordering, philosopher 0 grabs fork 0 and waits for fork 1; philosopher 1 grabs fork 1 and waits for fork 2; ... philosopher 4 grabs fork 4 and waits for fork 0 — circular wait. The fix: always acquire the lower-numbered fork first. Philosopher 4 (needs forks 4 and 0) now acquires fork 0 first, competing directly with philosopher 0 — circular dependency broken."
+          "editorial": "Without ordering, philosopher 0 grabs fork 0 and waits for fork 1; philosopher 1 grabs fork 1 and waits for fork 2; ... philosopher 4 grabs fork 4 and waits for fork 0 — circular wait. The fix: always acquire the lower-numbered fork first. Philosopher 4 (needs forks 4 and 0) now acquires fork 0 first, competing directly with philosopher 0 — circular dependency broken.",
+          "sampleInput": "5 philosophers, 5 forks, run for 5 seconds",
+          "sampleOutput": "all eat without deadlock"
         },
         {
           "displayOrder": 8,
           "title": "Non-Blocking Queue With CAS",
-          "description": "Implement a simple non-blocking (lock-free) queue using `AtomicReference` and CAS. Support `enqueue(T)` and `dequeue()` (returns null if empty). Use a singly-linked list with atomic head/tail pointers. This is the Michael-Scott queue algorithm.",
+          "description": "Implement a non-blocking queue using CAS (compare-and-swap) via `AtomicReference`.\n\n**Example:**\nNBQueue<Integer> q = new NBQueue<>();\nq.enqueue(1); q.enqueue(2); q.enqueue(3);\nq.dequeue() => 1\nq.dequeue() => 2\n\n**Key insight:** Michael-Scott non-blocking queue: `tail.next` CAS to enqueue, `head.next` CAS to dequeue. No locks — threads retry on CAS failure.",
           "difficulty": "MEDIUM",
           "pattern": "Lock-free / AtomicReference CAS",
           "hint1": "Node<T> has `T value` and `AtomicReference<Node<T>> next`. Head and tail are `AtomicReference<Node<T>>`.",
@@ -224,12 +238,14 @@
             }
           ],
           "constraints": "No locks anywhere. CAS-based linearizable queue.",
-          "editorial": "Michael-Scott queue: dummy sentinel node simplifies edge cases. Enqueue CAS-swaps null into the tail's next pointer. The 'help advance stale tail' pattern means a thread that sees tail pointing to a non-last node helps advance it before inserting — ensures tail is always at or one step behind the last node. ConcurrentLinkedQueue in Java uses this same algorithm."
+          "editorial": "Michael-Scott queue: dummy sentinel node simplifies edge cases. Enqueue CAS-swaps null into the tail's next pointer. The 'help advance stale tail' pattern means a thread that sees tail pointing to a non-last node helps advance it before inserting — ensures tail is always at or one step behind the last node. ConcurrentLinkedQueue in Java uses this same algorithm.",
+          "sampleInput": "enqueue(1,2,3), dequeue twice",
+          "sampleOutput": "[1, 2]"
         },
         {
           "displayOrder": 9,
           "title": "ForkJoin Fibonacci",
-          "description": "Implement Fibonacci(n) using `ForkJoinPool` and `RecursiveTask<Long>`. For n <= 10, compute directly (base case). For larger n, fork fib(n-1) and compute fib(n-2) on the current thread, then join and add. Compare with sequential recursive Fibonacci.",
+          "description": "Compute Fibonacci(40) using `ForkJoinPool` with memoization to avoid redundant work.\n\n**Example:**\nnew ForkJoinPool().invoke(new FibTask(10)) => 55\nnew ForkJoinPool().invoke(new FibTask(40)) => 102334155\n\n**Key insight:** Without memoization, ForkJoin Fibonacci has exponential tasks. `ConcurrentHashMap` memoization prunes the tree — same result, far fewer forks.",
           "difficulty": "MEDIUM",
           "pattern": "ForkJoin RecursiveTask",
           "hint1": "`RecursiveTask<Long>` — override `compute()` returning `Long`.",
@@ -244,12 +260,14 @@
             }
           ],
           "constraints": "Base case threshold = 10 to avoid task explosion.",
-          "editorial": "Without a base case threshold, fib(40) creates ~2^40 tasks — catastrophic overhead. Threshold of 10 means ~2^30 fewer tasks. The fork-join pattern: fork n-1 asynchronously, compute n-2 on current thread, join n-1. This exposes as much parallelism as available cores can use without creating excessive tasks."
+          "editorial": "Without a base case threshold, fib(40) creates ~2^40 tasks — catastrophic overhead. Threshold of 10 means ~2^30 fewer tasks. The fork-join pattern: fork n-1 asynchronously, compute n-2 on current thread, join n-1. This exposes as much parallelism as available cores can use without creating excessive tasks.",
+          "sampleInput": "FibTask(10)",
+          "sampleOutput": "55"
         },
         {
           "displayOrder": 10,
           "title": "Thread-Safe LRU Cache",
-          "description": "Implement a thread-safe `LRUCache<K,V>` with `get(K)` and `put(K,V)`. Uses `LinkedHashMap` access-order for LRU eviction. Must be safe for concurrent access. Return null for cache misses. Constructor takes capacity.",
+          "description": "Implement a thread-safe LRU cache using `ReentrantReadWriteLock` — concurrent reads, exclusive writes.\n\n**Example:**\ncache = ThreadSafeLRU(capacity=3);\n// concurrent gets from 10 threads — all use read lock\ncache.get(\"key\") => \"value\"\n// puts use write lock\ncache.put(\"newKey\", \"newValue\") => evicts LRU if full\n\n**Key insight:** Read-write lock allows multiple simultaneous readers but exclusive writers — higher throughput for read-heavy caches.",
           "difficulty": "MEDIUM",
           "pattern": "Thread-safe LRU / synchronized",
           "hint1": "`LinkedHashMap<K,V>(cap, 0.75f, true)` with `removeEldestEntry` override for LRU.",
@@ -264,12 +282,14 @@
             }
           ],
           "constraints": "synchronized on get and put — LinkedHashMap is not thread-safe.",
-          "editorial": "LinkedHashMap access-order: get() moves the accessed entry to the tail. removeEldestEntry evicts the head (LRU) when size exceeds capacity. synchronized on both get and put prevents concurrent modification — LinkedHashMap modifies its internal linked list on every get(), which is not thread-safe. For high concurrency, use ConcurrentHashMap with a separate doubly-linked list for order tracking (more complex but avoids a global lock)."
+          "editorial": "LinkedHashMap access-order: get() moves the accessed entry to the tail. removeEldestEntry evicts the head (LRU) when size exceeds capacity. synchronized on both get and put prevents concurrent modification — LinkedHashMap modifies its internal linked list on every get(), which is not thread-safe. For high concurrency, use ConcurrentHashMap with a separate doubly-linked list for order tracking (more complex but avoids a global lock).",
+          "sampleInput": "get(key) from 10 concurrent threads",
+          "sampleOutput": "all return correct value, no data corruption"
         },
         {
           "displayOrder": 11,
           "title": "CountDownLatch — Parallel Service Initialisation",
-          "description": "Simulate 5 services starting in parallel. The main thread waits until ALL services are ready before proceeding. Each service takes a random time (50-150ms) to start. Use `CountDownLatch`. Also implement a second variant where the main thread continues as soon as ANY one service is ready using `CyclicBarrier` approach.",
+          "description": "Use `CountDownLatch` to wait for N services to initialize before starting the main application.\n\n**Example:**\nCountDownLatch latch = new CountDownLatch(3);\nnew Thread(() -> { initDB(); latch.countDown(); }).start();\nnew Thread(() -> { initCache(); latch.countDown(); }).start();\nnew Thread(() -> { initQueue(); latch.countDown(); }).start();\nlatch.await(); // blocks until all 3 count down\nSystem.out.println(\"All services ready\");\n\n**Key insight:** `await()` blocks until count reaches zero. One-time use — cannot reset.",
           "difficulty": "MEDIUM",
           "pattern": "CountDownLatch / CyclicBarrier",
           "hint1": "`CountDownLatch latch = new CountDownLatch(5)` — main calls `latch.await()`, each service calls `latch.countDown()`.",
@@ -284,12 +304,14 @@
             }
           ],
           "constraints": "Total time ~= slowest service, not sum of all services.",
-          "editorial": "CountDownLatch: initialised with count N. countDown() decrements by 1. await() blocks until count reaches 0. Unlike join(), it decouples the waiter from the thread — any thread can call countDown(). The parallel init time equals the slowest service, not their sum — 5 services × 100ms avg = 100ms instead of 500ms. CountDownLatch cannot be reset; use CyclicBarrier for reusable barriers."
+          "editorial": "CountDownLatch: initialised with count N. countDown() decrements by 1. await() blocks until count reaches 0. Unlike join(), it decouples the waiter from the thread — any thread can call countDown(). The parallel init time equals the slowest service, not their sum — 5 services × 100ms avg = 100ms instead of 500ms. CountDownLatch cannot be reset; use CyclicBarrier for reusable barriers.",
+          "sampleInput": "3 init threads, await() in main",
+          "sampleOutput": "\"All services ready\" after all 3 complete"
         },
         {
           "displayOrder": 12,
           "title": "Semaphore — Connection Pool",
-          "description": "Implement a `ConnectionPool` using `Semaphore` to limit concurrent database connections to `maxConnections`. `acquire()` blocks until a connection slot is available (with a timeout). `release()` frees the slot. Simulate 10 threads competing for 3 connection slots.",
+          "description": "Implement a database connection pool using `Semaphore(maxConnections)`.\n\n**Example:**\npool = ConnectionPool(maxConnections=3)\nThread1: acquire => connection1\nThread2: acquire => connection2\nThread3: acquire => connection3\nThread4: acquire => blocks until one is released\nThread1 releases => Thread4 unblocks\n\n**Key insight:** `semaphore.acquire()` decrements the permit count; `semaphore.release()` increments it. Threads block when permits reach zero.",
           "difficulty": "MEDIUM",
           "pattern": "Semaphore resource pool",
           "hint1": "`Semaphore semaphore = new Semaphore(maxConnections)` — permits = available connections.",
@@ -304,12 +326,14 @@
             }
           ],
           "constraints": "Fair semaphore (FIFO). release() always called — no permits leaked.",
-          "editorial": "Semaphore(max, true): the fair=true flag ensures FIFO ordering — threads acquire in the order they called tryAcquire. Without fairness, a thread might starve if others keep arriving. 10 threads × 200ms use / 3 slots = ~3.3 rounds × 200ms = ~660ms total. 500ms timeout allows batches to complete. HikariCP connection pool uses a Semaphore for connection counting."
+          "editorial": "Semaphore(max, true): the fair=true flag ensures FIFO ordering — threads acquire in the order they called tryAcquire. Without fairness, a thread might starve if others keep arriving. 10 threads × 200ms use / 3 slots = ~3.3 rounds × 200ms = ~660ms total. 500ms timeout allows batches to complete. HikariCP connection pool uses a Semaphore for connection counting.",
+          "sampleInput": "4 threads, pool size 3",
+          "sampleOutput": "thread 4 blocks until release"
         },
         {
           "displayOrder": 13,
           "title": "Read-Write Lock — Cache With High Read Contention",
-          "description": "Implement a `ReadWriteCache<K,V>` using `ReentrantReadWriteLock`. Multiple threads can read concurrently (shared read lock). Only one thread can write (exclusive write lock). Demonstrate that reads don't block each other but writes block both reads and other writes.",
+          "description": "Implement a cache with `ReadWriteLock` — many concurrent readers, exclusive writer on cache miss.\n\n**Example:**\n100 threads reading cached data — all hold read lock simultaneously\n1 thread writes on miss — acquires write lock, all readers block\n\n**Key insight:** `ReentrantReadWriteLock` — `readLock().lock()` allows concurrency; `writeLock().lock()` is exclusive. Dramatically better than `synchronized` for read-heavy workloads.",
           "difficulty": "HARD",
           "pattern": "ReadWriteLock",
           "hint1": "`ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock()`. Read: `rwLock.readLock().lock()`. Write: `rwLock.writeLock().lock()`.",
@@ -324,12 +348,14 @@
             }
           ],
           "constraints": "Read lock allows concurrent readers. Write lock is exclusive.",
-          "editorial": "ReadWriteLock: multiple threads hold the read lock simultaneously — reads are parallel. The write lock is exclusive — blocks all reads and other writes. Ideal when reads dominate (cache hit rate > 80%). Downgrade: you can downgrade write lock to read lock by acquiring read, then releasing write. Cannot upgrade read to write — would cause deadlock."
+          "editorial": "ReadWriteLock: multiple threads hold the read lock simultaneously — reads are parallel. The write lock is exclusive — blocks all reads and other writes. Ideal when reads dominate (cache hit rate > 80%). Downgrade: you can downgrade write lock to read lock by acquiring read, then releasing write. Cannot upgrade read to write — would cause deadlock.",
+          "sampleInput": "100 concurrent readers, 1 writer on miss",
+          "sampleOutput": "readers all proceed; writer blocks readers during update"
         },
         {
           "displayOrder": 14,
           "title": "Thread Pool With Bounded Queue and Rejection",
-          "description": "Create a `ThreadPoolExecutor` with 2 core threads, 4 max threads, 60s keep-alive, a bounded queue of size 3. Use `CallerRunsPolicy` as the rejection handler (caller thread executes the rejected task). Submit 10 tasks and observe which thread executes each.",
+          "description": "Implement a bounded thread pool with a custom rejection policy when the queue is full.\n\n**Example:**\npool = new ThreadPoolExecutor(2, 4, 60s, new ArrayBlockingQueue<>(5), new CallerRunsPolicy());\nsubmit 20 tasks rapidly\n=> pool runs up to 4 threads\n=> queue holds up to 5\n=> remaining tasks run on caller thread (CallerRunsPolicy)\n\n**Key insight:** Rejection policies: AbortPolicy (throw), CallerRunsPolicy (run on caller), DiscardPolicy (silently drop), DiscardOldestPolicy (drop oldest queued).",
           "difficulty": "HARD",
           "pattern": "ThreadPoolExecutor tuning",
           "hint1": "`new ThreadPoolExecutor(2, 4, 60L, SECONDS, new LinkedBlockingQueue<>(3), new CallerRunsPolicy())`",
@@ -344,12 +370,14 @@
             }
           ],
           "constraints": "CallerRunsPolicy — rejected tasks run on main thread, slowing submission naturally (backpressure).",
-          "editorial": "ThreadPoolExecutor decision tree: tasks 1-2 → core threads. Tasks 3-5 → queue (capacity 3). Tasks 6-8 → new threads up to max 4. Tasks 9-10 → queue full, max threads reached → CallerRunsPolicy runs on the submitting thread. CallerRunsPolicy is elegant backpressure: slows the producer naturally when the pool is saturated, without throwing exceptions. Compare with AbortPolicy (throws RejectedExecutionException) or DiscardPolicy (silently drops)."
+          "editorial": "ThreadPoolExecutor decision tree: tasks 1-2 → core threads. Tasks 3-5 → queue (capacity 3). Tasks 6-8 → new threads up to max 4. Tasks 9-10 → queue full, max threads reached → CallerRunsPolicy runs on the submitting thread. CallerRunsPolicy is elegant backpressure: slows the producer naturally when the pool is saturated, without throwing exceptions. Compare with AbortPolicy (throws RejectedExecutionException) or DiscardPolicy (silently drops).",
+          "sampleInput": "submit 20 tasks to pool(2,4) with queue(5)",
+          "sampleOutput": "excess tasks run on caller thread (CallerRunsPolicy)"
         },
         {
           "displayOrder": 15,
           "title": "Phaser — Multi-Phase Parallel Computation",
-          "description": "Use `Phaser` to coordinate a 3-phase computation: 5 workers each process data in Phase 1, then synchronise, process in Phase 2, synchronise again, then Phase 3. All workers must complete each phase before any proceeds to the next. Print phase transitions.",
+          "description": "Use `Phaser` for a multi-phase parallel computation where all threads must complete phase N before any starts phase N+1.\n\n**Example:**\nPhaser phaser = new Phaser(3); // 3 parties\nThreads: each runs phase1(), then phaser.arriveAndAwaitAdvance(), then phase2()\n=> all finish phase1 before any starts phase2\n\n**Key insight:** `Phaser` is like a reusable `CountDownLatch`. `arriveAndAwaitAdvance()` is the barrier — thread blocks until all parties arrive.",
           "difficulty": "HARD",
           "pattern": "Phaser multi-phase",
           "hint1": "`Phaser phaser = new Phaser(5)` — 5 registered parties. `phaser.arriveAndAwaitAdvance()` marks arrival and waits.",
@@ -364,12 +392,14 @@
             }
           ],
           "constraints": "All workers must finish each phase before any starts the next.",
-          "editorial": "Phaser is a reusable barrier — unlike CountDownLatch (single use) it advances through phases. onAdvance() is called after all parties arrive — override to print transitions or stop the phaser. arriveAndDeregister() reduces the party count — when it reaches 0, the phaser terminates. Unlike CyclicBarrier, Phaser supports dynamic registration/deregistration of parties."
+          "editorial": "Phaser is a reusable barrier — unlike CountDownLatch (single use) it advances through phases. onAdvance() is called after all parties arrive — override to print transitions or stop the phaser. arriveAndDeregister() reduces the party count — when it reaches 0, the phaser terminates. Unlike CyclicBarrier, Phaser supports dynamic registration/deregistration of parties.",
+          "sampleInput": "3 threads, 2-phase computation with barrier",
+          "sampleOutput": "all complete phase1 before any starts phase2"
         },
         {
           "displayOrder": 16,
           "title": "Concurrent HashMap — Parallel Word Count",
-          "description": "Given a large list of sentences, count word frequencies in parallel using `ConcurrentHashMap.merge()` and a parallel stream. Compare with a sequential HashMap approach. Verify correctness and measure speedup.",
+          "description": "Count word frequency in a large text using parallel streams and `ConcurrentHashMap`.\n\n**Example:**\nconcurrentWordCount(bigText)\n=> {\"the\":1000, \"java\":500, ...}\n\n**Key insight:** `ConcurrentHashMap.merge(word, 1L, Long::sum)` is atomic. Using `groupingByConcurrent` in a parallel stream is equivalent and cleaner.",
           "difficulty": "HARD",
           "pattern": "ConcurrentHashMap parallel",
           "hint1": "`ConcurrentHashMap<String, Integer>` — thread-safe, no external synchronisation needed.",
@@ -384,12 +414,14 @@
             }
           ],
           "constraints": "ConcurrentHashMap.merge() is atomic — safe for parallel forEach.",
-          "editorial": "ConcurrentHashMap.merge(key, 1, Integer::sum) is a single atomic operation — no external synchronisation needed. HashMap.merge() in a parallelStream is NOT safe (race condition). The parallel version splits the sentence list across CPU cores, each core building partial counts into the shared ConcurrentHashMap. merge() uses fine-grained segment locking internally."
+          "editorial": "ConcurrentHashMap.merge(key, 1, Integer::sum) is a single atomic operation — no external synchronisation needed. HashMap.merge() in a parallelStream is NOT safe (race condition). The parallel version splits the sentence list across CPU cores, each core building partial counts into the shared ConcurrentHashMap. merge() uses fine-grained segment locking internally.",
+          "sampleInput": "parallel word count on \"the cat the cat java\"",
+          "sampleOutput": "{the=2, cat=2, java=1}"
         },
         {
           "displayOrder": 17,
           "title": "Exchanger — Two-Thread Data Swap",
-          "description": "Use `Exchanger<T>` to implement a pipeline where a producer thread fills a buffer and a consumer thread processes it. They exchange buffers at each step — the producer gets an empty buffer, the consumer gets a full one. Produce and consume 3 batches of 5 integers each.",
+          "description": "Use `Exchanger<T>` for two threads to swap data at a synchronization point.\n\n**Example:**\nExchanger<String> exchanger = new Exchanger<>();\nThread1: produces \"data from T1\", calls exchange() => receives \"data from T2\"\nThread2: produces \"data from T2\", calls exchange() => receives \"data from T1\"\n\n**Key insight:** Both threads block at `exchanger.exchange()` until the other arrives — then they swap values atomically.",
           "difficulty": "HARD",
           "pattern": "Exchanger buffer swap",
           "hint1": "`Exchanger<List<Integer>> exchanger = new Exchanger<>()` — both threads call `exchange(buffer)`.",
@@ -404,12 +436,14 @@
             }
           ],
           "constraints": "Exchanger synchronises exactly two threads — blocks until both call exchange().",
-          "editorial": "Exchanger is a synchronisation point for exactly two threads. Both call exchange(v) — each gets the other's value. Used for double-buffering pipelines: producer fills buffer A, consumer processes buffer B, then they swap. This eliminates allocation overhead (reuse buffers) and naturally paces the producer to the consumer's speed."
+          "editorial": "Exchanger is a synchronisation point for exactly two threads. Both call exchange(v) — each gets the other's value. Used for double-buffering pipelines: producer fills buffer A, consumer processes buffer B, then they swap. This eliminates allocation overhead (reuse buffers) and naturally paces the producer to the consumer's speed.",
+          "sampleInput": "T1 sends \"A\", T2 sends \"B\", both call exchange()",
+          "sampleOutput": "T1 receives \"B\", T2 receives \"A\""
         },
         {
           "displayOrder": 18,
           "title": "CompletableFuture — Timeout and Cancellation",
-          "description": "Implement `fetchWithTimeout(Callable<T> task, long timeoutMs)` that runs a task asynchronously and cancels it if it doesn't complete within `timeoutMs`. Return `Optional<T>` — the result if successful, empty if timed out. Use `orTimeout()` (Java 9+) or manual `completeOnTimeout()`.",
+          "description": "Add timeout and cancellation to a `CompletableFuture`.\n\n**Example:**\nCompletableFuture.supplyAsync(() -> slowAPI())\n    .orTimeout(500, TimeUnit.MILLISECONDS)\n    .exceptionally(e -> \"timeout fallback\")\n    .get()\n=> if slowAPI takes > 500ms: \"timeout fallback\"\n=> if fast: actual result\n\n**Key insight:** `.orTimeout()` (Java 9+) completes the future exceptionally with `TimeoutException` after the delay.",
           "difficulty": "HARD",
           "pattern": "CompletableFuture timeout",
           "hint1": "`CompletableFuture.supplyAsync(supplier).orTimeout(timeout, TimeUnit.MILLISECONDS)` — completes exceptionally on timeout.",
@@ -428,12 +462,14 @@
             }
           ],
           "constraints": "Task thread continues running even after timeout (no forceful interruption in this impl).",
-          "editorial": "completeOnTimeout(defaultValue, timeout, unit) completes the future normally with the default value if it hasn't completed by the timeout. orTimeout() completes exceptionally with TimeoutException instead. Optional.ofNullable wraps null into empty(). Note: the background task continues executing even after timeout — for true cancellation, use Future.cancel(true) to interrupt the thread."
+          "editorial": "completeOnTimeout(defaultValue, timeout, unit) completes the future normally with the default value if it hasn't completed by the timeout. orTimeout() completes exceptionally with TimeoutException instead. Optional.ofNullable wraps null into empty(). Note: the background task continues executing even after timeout — for true cancellation, use Future.cancel(true) to interrupt the thread.",
+          "sampleInput": "slowAPI() takes 1s, timeout=500ms",
+          "sampleOutput": "\"timeout fallback\""
         },
         {
           "displayOrder": 19,
           "title": "Volatile vs Synchronized — Visibility Test",
-          "description": "Write a test that demonstrates the visibility problem: without `volatile`, a reader thread may never see a flag set by another thread (it reads a stale cached value). Fix with `volatile`. Then show that `volatile` is NOT sufficient for compound operations — demonstrate the race condition with volatile++.",
+          "description": "Demonstrate the difference between `volatile` (visibility) and `synchronized` (atomicity + visibility):\n\n**Volatile:**\nvolatile boolean running = true;\nThread1 sets running=false\nThread2 sees the update (visibility guaranteed)\nBut: volatile int count; count++ is NOT atomic\n\n**Synchronized:**\nsynchronized void increment() { count++; } // atomic + visible\n\n**Example:**\nShow count loss with volatile, correct count with synchronized.",
           "difficulty": "HARD",
           "pattern": "JMM visibility / volatile limits",
           "hint1": "Without volatile: reader thread caches `running = true` in register, never checks main memory. Loop may run forever.",
@@ -452,12 +488,14 @@
             }
           ],
           "constraints": "Demonstrates the JMM visibility guarantee and its limitations.",
-          "editorial": "volatile guarantees: (1) reads always go to main memory — no stale CPU cache. (2) writes immediately go to main memory and are visible to all threads. volatile does NOT guarantee: atomicity for read-modify-write sequences. volatile++ is still three ops: read(0) → add(1) → write(1). Two threads can both read 0, both add 1, both write 1 — lost update. Use AtomicInteger for safe concurrent increment."
+          "editorial": "volatile guarantees: (1) reads always go to main memory — no stale CPU cache. (2) writes immediately go to main memory and are visible to all threads. volatile does NOT guarantee: atomicity for read-modify-write sequences. volatile++ is still three ops: read(0) → add(1) → write(1). Two threads can both read 0, both add 1, both write 1 — lost update. Use AtomicInteger for safe concurrent increment.",
+          "sampleInput": "10 threads increment volatile int 1000x each",
+          "sampleOutput": "< 10000 (lost updates with volatile)"
         },
         {
           "displayOrder": 20,
           "title": "Virtual Threads — Project Loom (Java 21)",
-          "description": "Demonstrate Java 21 Virtual Threads: create 10,000 virtual threads each doing a blocking operation (Thread.sleep). Compare with platform threads — virtual threads don't block OS threads. Show that 10,000 virtual threads complete in the time of ONE sleep, while 10,000 platform threads would require a huge pool.",
+          "description": "Implement a simple task executor using Java 21 **virtual threads** (`Thread.ofVirtual()`) to handle thousands of concurrent I/O tasks.\n\n**Example:**\ntry (var exec = Executors.newVirtualThreadPerTaskExecutor()) {\n    for (int i = 0; i < 10000; i++) {\n        int id = i;\n        exec.submit(() -> simulateIO(id));\n    }\n} // all 10000 tasks complete\n\n**Key insight:** Virtual threads are cheap (KB vs MB) — 10000 virtual threads vs 10000 platform threads would OOM. Virtual threads block without consuming OS threads.",
           "difficulty": "HARD",
           "pattern": "Virtual threads Project Loom",
           "hint1": "`Thread.ofVirtual().start(runnable)` creates a virtual thread. Or `Executors.newVirtualThreadPerTaskExecutor()`.",
@@ -476,7 +514,9 @@
             }
           ],
           "constraints": "Requires Java 21+. Virtual threads are JVM-managed lightweight threads.",
-          "editorial": "Virtual threads (Project Loom, Java 21) are JVM-managed threads multiplexed onto a small pool of OS 'carrier' threads. When a virtual thread blocks (Thread.sleep, I/O), the JVM parks it and frees the carrier thread for another virtual thread — no OS thread blocked. 10,000 virtual threads sleeping 100ms complete in ~100ms because they all sleep concurrently on a handful of carriers. This makes the thread-per-request model viable again for high-concurrency servers (Spring Boot 3.2+ enables virtual threads for HTTP requests)."
+          "editorial": "Virtual threads (Project Loom, Java 21) are JVM-managed threads multiplexed onto a small pool of OS 'carrier' threads. When a virtual thread blocks (Thread.sleep, I/O), the JVM parks it and frees the carrier thread for another virtual thread — no OS thread blocked. 10,000 virtual threads sleeping 100ms complete in ~100ms because they all sleep concurrently on a handful of carriers. This makes the thread-per-request model viable again for high-concurrency servers (Spring Boot 3.2+ enables virtual threads for HTTP requests).",
+          "sampleInput": "10000 tasks with newVirtualThreadPerTaskExecutor()",
+          "sampleOutput": "all 10000 complete without OOM"
         }
       ],
       "subCategory": "Multithreading (Core Level)",

@@ -65,7 +65,9 @@
             "aws ecs describe-tasks shows stopCode and stoppedReason",
             "CloudWatch Logs: /ecs/{task-family} group, look for exit code and error messages",
             "ECS console → Service → Events tab shows deployment and task stop reasons"
-          ]
+          ],
+          "sampleInput": "Task cycles: starts → 20s → stops → restarts",
+          "sampleOutput": "Cause 1: Missing startPeriod — health checks fire at t=10s, Spring Boot not ready, 3 failures in 30s → task killed. Fix: add startPeriod=60. Cause 2: OOM kill — memory limit too low, JVM exceeds it. Check: CloudWatch Logs for OOMKilled. Cause 3: App crash (exception in startup). Check: CloudWatch Lo"
         },
         {
           "title": "Design ECS Architecture for Microservices",
@@ -87,7 +89,9 @@
             "ALB listener rules with path-pattern conditions route to different target groups",
             "Task role least privilege: UserService only needs DynamoDB read, OrderService needs read+write",
             "NotificationService long-running service handles webhooks; scheduled ECS task handles bulk nightly sends"
-          ]
+          ],
+          "sampleInput": "3 services, shared ALB, independent scaling",
+          "sampleOutput": "1 ALB, 3 listener rules (/api/users/*, /api/orders/*, /api/notifications/*) → 3 target groups → 3 ECS Services. UserService: min=4,max=40 (read-heavy). OrderService: min=2,max=20. NotificationService: min=1,max=5 + EventBridge scheduled task for nightly batch. Each task definition: separate taskRole"
         }
       ],
       "subCategory": "DevOps & Containers",
@@ -147,7 +151,9 @@
             "CodeBuild IAM role needs: ecr:GetAuthorizationToken, ecr:BatchCheckLayerAvailability, ecr:InitiateLayerUpload, ecr:UploadLayerPart, ecr:CompleteLayerUpload, ecr:PutImage",
             "Managed policy: AmazonEC2ContainerRegistryPowerUser covers all ECR push operations",
             "PrivilegedMode: true is required for docker build/push — without it, Docker daemon is not available"
-          ]
+          ],
+          "sampleInput": "docker push fails: no basic auth credentials",
+          "sampleOutput": "Cause 1: CodeBuild service role missing ecr:GetAuthorizationToken + ecr:BatchCheckLayerAvailability + ecr:PutImage permissions. Fix: attach ECR push policy to CodeBuild role. Cause 2: ECR login command output not piped correctly — 'aws ecr get-login-password | docker login' must use --password-stdin"
         },
         {
           "title": "Design a Multi-Environment Pipeline",
@@ -169,7 +175,9 @@
             "Test stage: CodeBuild project that runs pytest/newman against the deployed URL, exit 1 on failure",
             "ECS CodeDeploy blue/green (via CodeDeploy) adds automatic rollback if post-deploy canary test fails",
             "Pipeline can have multiple actions in one stage running in parallel (e.g., unit tests + static analysis simultaneously)"
-          ]
+          ],
+          "sampleInput": "Source → Build → Deploy Dev → Integration Tests → Manual Approval → Deploy Prod",
+          "sampleOutput": "Stage 1: Source (GitHub main). Stage 2: Build + unit tests (CodeBuild). Stage 3: Deploy to Dev ECS. Stage 4: Integration Tests (CodeBuild runs newman/pytest against dev URL). Stage 5: Deploy to Staging ECS. Stage 6: Integration Tests against staging. Stage 7: Manual Approval. Stage 8: Deploy to Prod"
         }
       ],
       "subCategory": "DevOps & Containers",
@@ -241,7 +249,9 @@
             "aws cloudformation describe-change-set shows which properties trigger replacement",
             "RDS replacement triggers: changing DBInstanceClass, engine version (major), DBName, MasterUsername",
             "Workaround: create new RDS instance manually, migrate data, update CloudFormation to import the new instance"
-          ]
+          ],
+          "sampleInput": "Change set: Replace RDSInstance",
+          "sampleOutput": "DANGER: RDS replacement deletes old instance (data lost unless backed up) and creates new with different endpoint. Action: 1. Take manual RDS snapshot. 2. Update app to handle new endpoint (change set will fail if endpoint is hardcoded). 3. Consider using RDS Blue/Green deployments instead of CloudF"
         },
         {
           "title": "Set Up CloudWatch Alarm for ECS Service Health",
@@ -263,7 +273,9 @@
             "ECS Container Insights must be enabled on the cluster to get RunningTaskCount metric",
             "Dimensions: [{Name:ClusterName,Value:my-cluster},{Name:ServiceName,Value:devlearner-api-service}]",
             "TreatMissingData=breaching: if no metric data, assume tasks are not running (conservative approach for critical alarms)"
-          ]
+          ],
+          "sampleInput": "ECS desired count=2, alert if running tasks < 2",
+          "sampleOutput": "put_metric_alarm: MetricName=RunningTaskCount, Namespace=ECS/ContainerInsights, Threshold=2, ComparisonOperator=LessThanThreshold, EvaluationPeriods=1, Period=60"
         },
         {
           "title": "Debug High CloudWatch Costs",
@@ -285,7 +297,9 @@
             "aws logs describe-log-groups | jq '.logGroups[] | select(.retentionInDays == null)' finds log groups without retention",
             "PutMetricData: max 1000 MetricData items per call — batch to reduce API call frequency",
             "aws ec2 describe-instances --filters 'Name=monitoring-state,Values=enabled' finds detailed monitoring instances"
-          ]
+          ],
+          "sampleInput": "47 log groups, no retention. Lambda: 10 PutMetricData per invocation × 1M invocations. 200 EC2 detailed monitoring.",
+          "sampleOutput": "Fix 1: Set 30-day retention on all log groups (delete old data: saves ~$100/mo if accumulating for years). Fix 2: Lambda: batch 10 metrics into 1 PutMetricData call (max 1000 data points per call) — same cost but more efficient. Fix 3: Disable detailed monitoring on non-critical EC2 instances: 200 ×"
         }
       ],
       "subCategory": "Monitoring",

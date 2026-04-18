@@ -66,7 +66,7 @@
         {
           "displayOrder": 1,
           "title": "Sort an Array (Implement Merge Sort)",
-          "description": "Given an array of integers nums, sort the array in ascending order and return it. Implement merge sort (O(n log n) time, O(n) space).\n\n**Example:**\nInput: [5,2,3,1] → Output: [1,2,3,5]\nInput: [5,1,1,2,0,0] → Output: [0,0,1,1,2,5]",
+          "description": "Sort an array of integers by implementing merge sort.\n\n**Example:**\nsortArray([5,2,3,1]) => [1,2,3,5]\nsortArray([5,1,1,2,0,0]) => [0,0,1,1,2,5]\n\n**Key insight:** Divide array in half, recursively sort each half, merge sorted halves. O(n log n) time, O(n) space.",
           "difficulty": "MEDIUM",
           "pattern": "Divide and Conquer",
           "hint1": "Merge sort has two phases. What are they? When does the recursion stop?",
@@ -76,12 +76,14 @@
           "solutionCode": "public class Solution {\n    public int[] sortArray(int[] nums) {\n        mergeSort(nums, 0, nums.length - 1);\n        return nums;\n    }\n    private void mergeSort(int[] arr, int l, int r) {\n        if (l >= r) return;\n        int mid = l + (r - l) / 2;\n        mergeSort(arr, l, mid);\n        mergeSort(arr, mid + 1, r);\n        merge(arr, l, mid, r);\n    }\n    private void merge(int[] arr, int l, int mid, int r) {\n        int[] temp = Arrays.copyOfRange(arr, l, r + 1);\n        int i = 0, j = mid - l + 1, k = l;\n        while (i <= mid - l && j <= r - l) {\n            if (temp[i] <= temp[j]) arr[k++] = temp[i++];\n            else arr[k++] = temp[j++];\n        }\n        while (i <= mid - l) arr[k++] = temp[i++];\n        while (j <= r - l)   arr[k++] = temp[j++];\n    }\n}",
           "testCases": "[{\"input\":\"[5,2,3,1]\",\"output\":\"[1,2,3,5]\"},{\"input\":\"[5,1,1,2,0,0]\",\"output\":\"[0,0,1,1,2,5]\"}]",
           "constraints": "1 ≤ nums.length ≤ 5*10^4 | -5*10^4 ≤ nums[i] ≤ 5*10^4",
-          "editorial": "Merge sort: O(n log n) time, O(n) space (temp arrays during merge). Stable sort — equal elements maintain relative order. T(n) = 2T(n/2) + O(n) → O(n log n) by Master Theorem (case 2: a=2, b=2, f(n)=n)."
+          "editorial": "Merge sort: O(n log n) time, O(n) space (temp arrays during merge). Stable sort — equal elements maintain relative order. T(n) = 2T(n/2) + O(n) → O(n log n) by Master Theorem (case 2: a=2, b=2, f(n)=n).",
+          "sampleInput": "[5,2,3,1]",
+          "sampleOutput": "[1,2,3,5]"
         },
         {
           "displayOrder": 2,
           "title": "Merge Intervals",
-          "description": "Given an array of intervals where intervals[i] = [start, end], merge all overlapping intervals and return the non-overlapping result.\n\n**Example:**\nInput: [[1,3],[2,6],[8,10],[15,18]] → Output: [[1,6],[8,10],[15,18]]\nInput: [[1,4],[4,5]] → Output: [[1,5]]",
+          "description": "Merge overlapping intervals.\n\n**Example 1:**\nmerge([[1,3],[2,6],[8,10],[15,18]]) => [[1,6],[8,10],[15,18]]\nmerge([[1,4],[4,5]]) => [[1,5]]\n\n**Key insight:** Sort by start. If current.start <= last.end, merge (extend end). Otherwise add new interval.",
           "difficulty": "MEDIUM",
           "pattern": "Sorting",
           "hint1": "If intervals are sorted by start time, which intervals can overlap with the current one?",
@@ -91,12 +93,14 @@
           "solutionCode": "public class Solution {\n    public int[][] merge(int[][] intervals) {\n        Arrays.sort(intervals, Comparator.comparingInt(a -> a[0]));\n        List<int[]> result = new ArrayList<>();\n        int[] curr = intervals[0];\n        for (int i = 1; i < intervals.length; i++) {\n            if (intervals[i][0] <= curr[1]) curr[1] = Math.max(curr[1], intervals[i][1]);\n            else { result.add(curr); curr = intervals[i]; }\n        }\n        result.add(curr);\n        return result.toArray(new int[0][]);\n    }\n}",
           "testCases": "[{\"input\":\"[[1,3],[2,6],[8,10],[15,18]]\",\"output\":\"[[1,6],[8,10],[15,18]]\"},{\"input\":\"[[1,4],[4,5]]\",\"output\":\"[[1,5]\"}]",
           "constraints": "1 ≤ intervals.length ≤ 10^4 | intervals[i].length == 2 | 0 ≤ start ≤ end ≤ 10^4",
-          "editorial": "Sort by start: O(n log n). Single pass merge: O(n). Overlap condition: next.start <= current.end. Merge by extending current.end to max(current.end, next.end). Total: O(n log n)."
+          "editorial": "Sort by start: O(n log n). Single pass merge: O(n). Overlap condition: next.start <= current.end. Merge by extending current.end to max(current.end, next.end). Total: O(n log n).",
+          "sampleInput": "[[1,3],[2,6],[8,10],[15,18]]",
+          "sampleOutput": "[[1,6],[8,10],[15,18]]"
         },
         {
           "displayOrder": 3,
           "title": "Count of Smaller Numbers After Self",
-          "description": "Given an integer array nums, return an array counts where counts[i] is the number of smaller elements to the right of nums[i].\n\n**Example:**\nInput: [5,2,6,1] → Output: [2,1,1,0]\n(5 has 2 smaller to right: 2,1. 2 has 1: 1. 6 has 1: 1. 1 has 0.)",
+          "description": "For each number in an array, count how many smaller numbers are to its right.\n\n**Example:**\ncountSmaller([5,2,6,1]) => [2,1,1,0]\n\n**Key insight:** Modified merge sort — during merge, count how many right-half elements go before each left-half element.",
           "difficulty": "HARD",
           "pattern": "Divide and Conquer",
           "hint1": "Brute force is O(n²). Can the merge step of merge sort count inversions?",
@@ -106,12 +110,14 @@
           "solutionCode": "public class Solution {\n    private int[] counts, indices;\n\n    public List<Integer> countSmaller(int[] nums) {\n        int n = nums.length;\n        counts  = new int[n];\n        indices = new int[n];\n        for (int i = 0; i < n; i++) indices[i] = i;\n        mergeSort(nums, indices, 0, n - 1);\n        List<Integer> result = new ArrayList<>();\n        for (int c : counts) result.add(c);\n        return result;\n    }\n\n    private void mergeSort(int[] nums, int[] idx, int l, int r) {\n        if (l >= r) return;\n        int mid = l + (r - l) / 2;\n        mergeSort(nums, idx, l, mid);\n        mergeSort(nums, idx, mid + 1, r);\n        merge(nums, idx, l, mid, r);\n    }\n\n    private void merge(int[] nums, int[] idx, int l, int mid, int r) {\n        int[] temp = new int[r - l + 1];\n        int i = l, j = mid + 1, k = 0, rightCount = 0;\n        while (i <= mid && j <= r) {\n            if (nums[idx[j]] < nums[idx[i]]) {\n                rightCount++;\n                temp[k++] = idx[j++];\n            } else {\n                counts[idx[i]] += rightCount;\n                temp[k++] = idx[i++];\n            }\n        }\n        while (i <= mid) { counts[idx[i]] += rightCount; temp[k++] = idx[i++]; }\n        while (j <= r) temp[k++] = idx[j++];\n        System.arraycopy(temp, 0, idx, l, temp.length);\n    }\n}",
           "testCases": "[{\"input\":\"[5,2,6,1]\",\"output\":\"[2,1,1,0]\"},{\"input\":\"[-1]\",\"output\":\"[0]\"},{\"input\":\"[-1,-1]\",\"output\":\"[0,0]\"}]",
           "constraints": "1 ≤ nums.length ≤ 10^5 | -10^4 ≤ nums[i] ≤ 10^4",
-          "editorial": "Modified merge sort tracking original indices. During merge, when a right-side element is chosen over left-side elements, ALL remaining left-side elements are larger → increment their counts. O(n log n) time, O(n) space."
+          "editorial": "Modified merge sort tracking original indices. During merge, when a right-side element is chosen over left-side elements, ALL remaining left-side elements are larger → increment their counts. O(n log n) time, O(n) space.",
+          "sampleInput": "[5,2,6,1]",
+          "sampleOutput": "[2,1,1,0]"
         },
         {
           "displayOrder": 4,
           "title": "Meeting Rooms II",
-          "description": "Given an array of meeting time intervals [start, end], find the minimum number of conference rooms required.\n\n**Example:**\nInput: [[0,30],[5,10],[15,20]] → Output: 2\nInput: [[7,10],[2,4]] → Output: 1",
+          "description": "Find the minimum number of conference rooms needed to schedule all meetings.\n\n**Example 1:**\nmeetingRooms([[0,30],[5,10],[15,20]]) => 2\nmeetingRooms([[7,10],[2,4]]) => 1\n\n**Key insight:** Sort by start. Min-heap of end times — if current start >= heap.peek(), reuse room; else add room.",
           "difficulty": "MEDIUM",
           "pattern": "Sorting",
           "hint1": "Sort meetings by start time. For each meeting, can it use an existing free room?",
@@ -121,12 +127,14 @@
           "solutionCode": "public class Solution {\n    public int minMeetingRooms(int[][] intervals) {\n        Arrays.sort(intervals, Comparator.comparingInt(a -> a[0]));\n        PriorityQueue<Integer> endTimes = new PriorityQueue<>();\n        for (int[] interval : intervals) {\n            if (!endTimes.isEmpty() && endTimes.peek() <= interval[0])\n                endTimes.poll(); // room freed\n            endTimes.offer(interval[1]);\n        }\n        return endTimes.size();\n    }\n}",
           "testCases": "[{\"input\":\"[[0,30],[5,10],[15,20]]\",\"output\":\"2\"},{\"input\":\"[[7,10],[2,4]]\",\"output\":\"1\"}]",
           "constraints": "0 ≤ intervals.length ≤ 10^4 | intervals[i].length == 2 | 0 ≤ start < end ≤ 10^6",
-          "editorial": "Greedy with min-heap of end times: sort by start (O(n log n)), then process each meeting. If earliest-ending room is free (peek <= current start), reuse it. Heap size = rooms in use = answer. O(n log n) time, O(n) space."
+          "editorial": "Greedy with min-heap of end times: sort by start (O(n log n)), then process each meeting. If earliest-ending room is free (peek <= current start), reuse it. Heap size = rooms in use = answer. O(n log n) time, O(n) space.",
+          "sampleInput": "[[0,30],[5,10],[15,20]]",
+          "sampleOutput": "2"
         },
         {
           "displayOrder": 5,
           "title": "Largest Number",
-          "description": "Given a list of non-negative integers nums, arrange them such that they form the largest number and return it as a string.\n\n**Example:**\nInput: [10,2] → Output: '210'\nInput: [3,30,34,5,9] → Output: '9534330'",
+          "description": "Given a list of non-negative integers, arrange them to form the largest number.\n\n**Example 1:**\nlargestNumber([10,2]) => \"210\"\nlargestNumber([3,30,34,5,9]) => \"9534330\"\n\n**Key insight:** Custom comparator: compare `a+b` vs `b+a` as strings. Sort descending by this comparator.",
           "difficulty": "MEDIUM",
           "pattern": "Sorting",
           "hint1": "How do you decide which of two numbers should come first? Is 9 > 30, so 930 > 309 — yes. Is 3 > 30? 330 vs 303 → 330, so 3 > 30 in this ordering.",
@@ -136,12 +144,14 @@
           "solutionCode": "public class Solution {\n    public String largestNumber(int[] nums) {\n        String[] strs = new String[nums.length];\n        for (int i = 0; i < nums.length; i++) strs[i] = String.valueOf(nums[i]);\n        Arrays.sort(strs, (a, b) -> (b + a).compareTo(a + b));\n        if (strs[0].equals(\"0\")) return \"0\";\n        return String.join(\"\", strs);\n    }\n}",
           "testCases": "[{\"input\":\"[10,2]\",\"output\":\"210\"},{\"input\":\"[3,30,34,5,9]\",\"output\":\"9534330\"},{\"input\":\"[0,0]\",\"output\":\"0\"}]",
           "constraints": "1 ≤ nums.length ≤ 100 | 0 ≤ nums[i] ≤ 10^9",
-          "editorial": "Custom comparator: (a, b) → compare strings (b+a) vs (a+b). This creates a total ordering consistent with which concatenation is larger. Proof: this comparator is transitive — if a>b and b>c then a>c in this ordering. O(n log n * L) where L = average number length."
+          "editorial": "Custom comparator: (a, b) → compare strings (b+a) vs (a+b). This creates a total ordering consistent with which concatenation is larger. Proof: this comparator is transitive — if a>b and b>c then a>c in this ordering. O(n log n * L) where L = average number length.",
+          "sampleInput": "[3,30,34,5,9]",
+          "sampleOutput": "\"9534330\""
         },
         {
           "displayOrder": 6,
           "title": "Sort Colors (Dutch National Flag)",
-          "description": "Given an array nums with only 0s, 1s, and 2s, sort it in-place in one pass without using sort().\n\n**Example:**\nInput: [2,0,2,1,1,0] → Output: [0,0,1,1,2,2]\nInput: [2,0,1] → Output: [0,1,2]",
+          "description": "Sort an array of 0s, 1s, and 2s in-place in one pass (Dutch National Flag).\n\n**Example:**\nsortColors([2,0,2,1,1,0]) => [0,0,1,1,2,2]\n\n**Key insight:** Three pointers: low, mid, high. Swap 0s to front, 2s to back, 1s stay in middle.",
           "difficulty": "MEDIUM",
           "pattern": "Two Pointer",
           "hint1": "Three-way partitioning. Use three pointers for three zones: [0..low-1] = all 0s, [low..mid-1] = all 1s, [high+1..n-1] = all 2s.",
@@ -151,12 +161,14 @@
           "solutionCode": "public class Solution {\n    public void sortColors(int[] nums) {\n        int low = 0, mid = 0, high = nums.length - 1;\n        while (mid <= high) {\n            if (nums[mid] == 0) { swap(nums, low++, mid++); }\n            else if (nums[mid] == 2) { swap(nums, mid, high--); }\n            else { mid++; }\n        }\n    }\n    private void swap(int[] a, int i, int j) { int t = a[i]; a[i] = a[j]; a[j] = t; }\n}",
           "testCases": "[{\"input\":\"[2,0,2,1,1,0]\",\"output\":\"[0,0,1,1,2,2]\"},{\"input\":\"[2,0,1]\",\"output\":\"[0,1,2]\"},{\"input\":\"[0]\",\"output\":\"[0]\"}]",
           "constraints": "1 ≤ nums.length ≤ 300 | nums[i] is 0, 1, or 2",
-          "editorial": "Dutch National Flag (Dijkstra 1976). O(n) single pass, O(1) space. Three invariants maintained: [0..low-1]=0s, [low..mid-1]=1s, [high+1..n-1]=2s, [mid..high]=unknown. Stop when mid > high (no more unknown region)."
+          "editorial": "Dutch National Flag (Dijkstra 1976). O(n) single pass, O(1) space. Three invariants maintained: [0..low-1]=0s, [low..mid-1]=1s, [high+1..n-1]=2s, [mid..high]=unknown. Stop when mid > high (no more unknown region).",
+          "sampleInput": "[2,0,2,1,1,0]",
+          "sampleOutput": "[0,0,1,1,2,2]"
         },
         {
           "displayOrder": 7,
           "title": "Sort Characters by Frequency",
-          "description": "Given a string s, sort it in decreasing order of character frequency. If multiple valid answers exist, return any.\n\n**Example:**\nInput: 'tree' → Output: 'eert' or 'eetr'\nInput: 'cccaaa' → Output: 'cccaaa' or 'aaaccc'\nInput: 'Aabb' → Output: 'bbAa' or 'bbaA'",
+          "description": "Sort characters in a string by their frequency (most frequent first).\n\n**Example 1:**\nfrequencySort(\"tree\") => \"eert\" or \"eetr\"\nfrequencySort(\"cccaaa\") => \"cccaaa\" or \"aaaccc\"\n\n**Key insight:** Build frequency map, sort by frequency descending, build result string.",
           "difficulty": "MEDIUM",
           "pattern": "Sorting",
           "hint1": "Count frequencies. Then sort by frequency (descending). How do you rebuild the string?",
@@ -166,12 +178,14 @@
           "solutionCode": "public class Solution {\n    public String frequencySort(String s) {\n        Map<Character, Integer> freq = new HashMap<>();\n        for (char c : s.toCharArray()) freq.merge(c, 1, Integer::sum);\n        PriorityQueue<Map.Entry<Character, Integer>> pq =\n            new PriorityQueue<>((a, b) -> b.getValue() - a.getValue());\n        pq.addAll(freq.entrySet());\n        StringBuilder sb = new StringBuilder();\n        while (!pq.isEmpty()) {\n            Map.Entry<Character, Integer> e = pq.poll();\n            sb.append(String.valueOf(e.getKey()).repeat(e.getValue()));\n        }\n        return sb.toString();\n    }\n}",
           "testCases": "[{\"input\":\"'tree'\",\"output\":\"'eert'\"},{\"input\":\"'cccaaa'\",\"output\":\"'cccaaa'\"},{\"input\":\"'Aabb'\",\"output\":\"'bbAa'\"}]",
           "constraints": "1 ≤ s.length ≤ 5*10^5 | s consists of uppercase/lowercase letters and digits",
-          "editorial": "Count + max-heap: O(n + k log k) where k = unique chars. Bucket sort: O(n) — create array of size n+1, buckets[freq] = list of chars. Iterate from high to low frequency for O(n) total. String.repeat() for clean char multiplication."
+          "editorial": "Count + max-heap: O(n + k log k) where k = unique chars. Bucket sort: O(n) — create array of size n+1, buckets[freq] = list of chars. Iterate from high to low frequency for O(n) total. String.repeat() for clean char multiplication.",
+          "sampleInput": "\"tree\"",
+          "sampleOutput": "\"eert\""
         },
         {
           "displayOrder": 8,
           "title": "Sort Linked List (Merge Sort)",
-          "description": "Given the head of a linked list, return the list sorted in ascending order. Do it in O(n log n) time and O(1) space.\n\n**Example:**\nInput: [4,2,1,3] → Output: [1,2,3,4]\nInput: [-1,5,3,4,0] → Output: [-1,0,3,4,5]",
+          "description": "Sort a linked list using merge sort in O(n log n) time and O(1) extra space.\n\n**Example:**\nInput: 4->2->1->3\nOutput: 1->2->3->4\n\n**Key insight:** Find middle (slow/fast pointer), split, sort each half, merge. Bottom-up merge sort achieves O(1) space.",
           "difficulty": "MEDIUM",
           "pattern": "Divide and Conquer",
           "hint1": "Merge sort on a linked list: split → sort each half → merge. How do you split a linked list in half?",
@@ -181,12 +195,14 @@
           "solutionCode": "public class Solution {\n    public ListNode sortList(ListNode head) {\n        if (head == null || head.next == null) return head;\n        // Find middle\n        ListNode slow = head, fast = head.next;\n        while (fast != null && fast.next != null) { slow = slow.next; fast = fast.next.next; }\n        ListNode mid = slow.next; slow.next = null; // split\n        // Sort both halves\n        ListNode left = sortList(head);\n        ListNode right = sortList(mid);\n        // Merge\n        ListNode dummy = new ListNode(0), tail = dummy;\n        while (left != null && right != null) {\n            if (left.val <= right.val) { tail.next = left; left = left.next; }\n            else { tail.next = right; right = right.next; }\n            tail = tail.next;\n        }\n        tail.next = left != null ? left : right;\n        return dummy.next;\n    }\n}",
           "testCases": "[{\"input\":\"[4,2,1,3]\",\"output\":\"[1,2,3,4]\"},{\"input\":\"[-1,5,3,4,0]\",\"output\":\"[-1,0,3,4,5]\"},{\"input\":\"[]\",\"output\":\"[]\"}]",
           "constraints": "0 ≤ number of nodes ≤ 5*10^4 | -10^5 ≤ Node.val ≤ 10^5",
-          "editorial": "Merge sort on linked list: O(n log n) time, O(log n) recursive stack space. Bottom-up iterative merge sort achieves O(1) space. fast=head.next (not head) ensures slow lands at first middle for even-length lists — allows clean split."
+          "editorial": "Merge sort on linked list: O(n log n) time, O(log n) recursive stack space. Bottom-up iterative merge sort achieves O(1) space. fast=head.next (not head) ensures slow lands at first middle for even-length lists — allows clean split.",
+          "sampleInput": "4->2->1->3",
+          "sampleOutput": "1->2->3->4"
         },
         {
           "displayOrder": 9,
           "title": "Kth Smallest Element in a Sorted Matrix",
-          "description": "Given an n×n matrix where each row and column is sorted in ascending order, return the kth smallest element.\n\n**Example:**\nmatrix=[[1,5,9],[10,11,13],[12,13,15]], k=8 → Output: 13",
+          "description": "Find the kth smallest element in an n x n matrix where each row and column is sorted.\n\n**Example 1:**\nmatrix=[[1,5,9],[10,11,13],[12,13,15]], k=8 => 13\n\n**Key insight:** Min-heap initialized with first column. Pop k times, push next element in that row.",
           "difficulty": "MEDIUM",
           "pattern": "Heap",
           "hint1": "The matrix's sorted rows suggest a merge-K-sorted approach. Or use binary search on the value range.",
@@ -196,12 +212,14 @@
           "solutionCode": "public class Solution {\n    public int kthSmallest(int[][] matrix, int k) {\n        int n = matrix.length;\n        // [value, row, col]\n        PriorityQueue<int[]> minHeap = new PriorityQueue<>(Comparator.comparingInt(a -> a[0]));\n        for (int r = 0; r < n; r++) minHeap.offer(new int[]{matrix[r][0], r, 0});\n        for (int i = 0; i < k - 1; i++) {\n            int[] curr = minHeap.poll();\n            if (curr[2] + 1 < n) minHeap.offer(new int[]{matrix[curr[1]][curr[2]+1], curr[1], curr[2]+1});\n        }\n        return minHeap.poll()[0];\n    }\n}",
           "testCases": "[{\"input\":\"matrix=[[1,5,9],[10,11,13],[12,13,15]], k=8\",\"output\":\"13\"},{\"input\":\"matrix=[[1,2],[1,3]], k=2\",\"output\":\"1\"}]",
           "constraints": "n == matrix.length == matrix[i].length | 1 ≤ n ≤ 300 | -10^9 ≤ matrix[i][j] ≤ 10^9 | Each row and column is sorted | 1 ≤ k ≤ n²",
-          "editorial": "Min-heap approach: O(k log n). Binary search approach: O(n log(max-min)) where count(mid) uses the column-sorted property to count ≤ mid in O(n). Binary search is O(n log(val_range)) and doesn't depend on k."
+          "editorial": "Min-heap approach: O(k log n). Binary search approach: O(n log(max-min)) where count(mid) uses the column-sorted property to count ≤ mid in O(n). Binary search is O(n log(val_range)) and doesn't depend on k.",
+          "sampleInput": "[[1,5,9],[10,11,13],[12,13,15]], k=8",
+          "sampleOutput": "13"
         },
         {
           "displayOrder": 10,
           "title": "Maximum Gap",
-          "description": "Given an unsorted array, find the maximum difference between successive elements in the sorted form. Return 0 if the array contains less than 2 elements.\n\nSolve in O(n) time and space.\n\n**Example:**\nInput: [3,6,9,1] → Output: 3 (sorted: [1,3,6,9], max gap = 3)\nInput: [10] → Output: 0",
+          "description": "Find the maximum gap between successive elements in a sorted version of an unsorted array in O(n) time.\n\n**Example 1:**\nmaximumGap([3,6,9,1]) => 3\nmaximumGap([10]) => 0\n\n**Key insight:** Bucket sort — divide range into n-1 buckets. Maximum gap must span across at least one empty bucket.",
           "difficulty": "HARD",
           "pattern": "Sorting",
           "hint1": "If we sort, max gap is O(n log n). The constraint is O(n). Think about bucket sort / pigeonhole principle.",
@@ -211,12 +229,14 @@
           "solutionCode": "public class Solution {\n    public int maximumGap(int[] nums) {\n        if (nums.length < 2) return 0;\n        int n = nums.length;\n        int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE;\n        for (int x : nums) { min = Math.min(min, x); max = Math.max(max, x); }\n        if (min == max) return 0;\n        int bucketSize = Math.max(1, (max - min) / (n - 1));\n        int bucketCount = (max - min) / bucketSize + 1;\n        int[] bMin = new int[bucketCount], bMax = new int[bucketCount];\n        Arrays.fill(bMin, Integer.MAX_VALUE); Arrays.fill(bMax, Integer.MIN_VALUE);\n        for (int x : nums) {\n            int b = (x - min) / bucketSize;\n            bMin[b] = Math.min(bMin[b], x); bMax[b] = Math.max(bMax[b], x);\n        }\n        int maxGap = 0, prevMax = min;\n        for (int i = 0; i < bucketCount; i++) {\n            if (bMin[i] == Integer.MAX_VALUE) continue; // empty bucket\n            maxGap = Math.max(maxGap, bMin[i] - prevMax);\n            prevMax = bMax[i];\n        }\n        return maxGap;\n    }\n}",
           "testCases": "[{\"input\":\"[3,6,9,1]\",\"output\":\"3\"},{\"input\":\"[10]\",\"output\":\"0\"},{\"input\":\"[1,1,1,1]\",\"output\":\"0\"}]",
           "constraints": "1 ≤ nums.length ≤ 10^5 | 0 ≤ nums[i] ≤ 10^9",
-          "editorial": "Bucket sort / pigeonhole: O(n) time and space. Key insight: with n-1 gaps among n sorted elements, at least one gap ≥ (max-min)/(n-1). Buckets of this size guarantee the maximum gap spans bucket boundaries. Store only min/max per bucket — the intra-bucket gap is always ≤ bucket size."
+          "editorial": "Bucket sort / pigeonhole: O(n) time and space. Key insight: with n-1 gaps among n sorted elements, at least one gap ≥ (max-min)/(n-1). Buckets of this size guarantee the maximum gap spans bucket boundaries. Store only min/max per bucket — the intra-bucket gap is always ≤ bucket size.",
+          "sampleInput": "[3,6,9,1]",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 11,
           "title": "Wiggle Sort II",
-          "description": "Given an integer array nums, reorder it such that nums[0] < nums[1] > nums[2] < nums[3]... (strict inequalities). A valid arrangement is always guaranteed.\n\n**Example:**\nInput: [1,5,1,1,6,4] → Output: [1,6,1,5,1,4] (or [1,4,1,5,1,6])\nInput: [1,3,2,2,3,1] → Output: [2,3,1,3,1,2]",
+          "description": "Rearrange array so that nums[0] < nums[1] > nums[2] < nums[3]... (wiggle sort with large/small alternation).\n\n**Example:**\nwiggleSort([1,5,1,1,6,4]) => [1,6,1,5,1,4]\nwiggleSort([1,3,2,2,3,1]) => [2,3,1,3,1,2]\n\n**Key insight:** Find the median (nth_element), then 3-way partition, interleave.",
           "difficulty": "MEDIUM",
           "pattern": "Sorting",
           "hint1": "Simple approach: sort the array, then interleave smaller half at even indices and larger half at odd indices. Why does naive interleaving fail?",
@@ -226,12 +246,14 @@
           "solutionCode": "public class Solution {\n    public void wiggleSort(int[] nums) {\n        int n = nums.length;\n        int[] sorted = nums.clone();\n        Arrays.sort(sorted);\n        int mid = (n - 1) / 2;\n        int hi = n - 1;\n        // Fill odd indices from n-1 downward (largest values)\n        for (int i = 1; i < n; i += 2) nums[i] = sorted[hi--];\n        // Fill even indices from mid downward (smaller values)\n        for (int i = 0; i < n; i += 2) nums[i] = sorted[mid--];\n    }\n}",
           "testCases": "[{\"input\":\"[1,5,1,1,6,4]\",\"output\":\"valid wiggle arrangement\"},{\"input\":\"[1,3,2,2,3,1]\",\"output\":\"valid wiggle arrangement\"}]",
           "constraints": "1 ≤ nums.length ≤ 5*10^4 | 0 ≤ nums[i] ≤ 4999",
-          "editorial": "Sort then interleave from the right. Split at mid: smaller half = sorted[0..mid], larger half = sorted[mid+1..n-1]. Place larger half at odd positions (descending from end), smaller half at even positions (descending from mid). Filling right-to-left ensures duplicate elements in the median region don't end up adjacent. O(n log n) time, O(n) space."
+          "editorial": "Sort then interleave from the right. Split at mid: smaller half = sorted[0..mid], larger half = sorted[mid+1..n-1]. Place larger half at odd positions (descending from end), smaller half at even positions (descending from mid). Filling right-to-left ensures duplicate elements in the median region don't end up adjacent. O(n log n) time, O(n) space.",
+          "sampleInput": "[1,5,1,1,6,4]",
+          "sampleOutput": "[1,6,1,5,1,4]"
         },
         {
           "displayOrder": 12,
           "title": "Pancake Sorting",
-          "description": "Given an array arr, perform pancake flips to sort it. A pancake flip of size k reverses the first k elements. Return the sequence of k values for each flip performed to sort the array. Any valid answer is accepted (sequence length ≤ 10*n).\n\n**Example:**\nInput: [3,2,4,1] → Output: [4,2,4,3] (flip first 4, flip first 2, flip first 4, flip first 3)",
+          "description": "Sort an array using pancake flipping — at each step, reverse a prefix of length k.\n\n**Example:**\npancakeSort([3,2,4,1]) => flip operations that sort to [1,2,3,4]\nOutput: list of k values for each flip\n\n**Key insight:** Find max, flip it to front, flip to its target position. Repeat for n-1, n-2... 1.",
           "difficulty": "MEDIUM",
           "pattern": "Sorting",
           "hint1": "Think about selection sort: to place the largest element in its correct position, you need at most 2 flips. Can you generalize?",
@@ -241,7 +263,9 @@
           "solutionCode": "public class Solution {\n    public List<Integer> pancakeSort(int[] arr) {\n        List<Integer> result = new ArrayList<>();\n        int n = arr.length;\n        for (int size = n; size > 1; size--) {\n            // Find position of maximum element in arr[0..size-1]\n            int maxIdx = 0;\n            for (int i = 1; i < size; i++)\n                if (arr[i] > arr[maxIdx]) maxIdx = i;\n            if (maxIdx == size - 1) continue; // already in place\n            // Flip max to front (if not already there)\n            if (maxIdx != 0) {\n                result.add(maxIdx + 1);\n                reverse(arr, 0, maxIdx);\n            }\n            // Flip max to its correct position\n            result.add(size);\n            reverse(arr, 0, size - 1);\n        }\n        return result;\n    }\n\n    private void reverse(int[] arr, int l, int r) {\n        while (l < r) { int tmp = arr[l]; arr[l++] = arr[r]; arr[r--] = tmp; }\n    }\n}",
           "testCases": "[{\"input\":\"[3,2,4,1]\",\"output\":\"valid sequence of pancake flips that sorts the array\"},{\"input\":\"[1,2,3]\",\"output\":\"[]\"}]",
           "constraints": "1 ≤ arr.length ≤ 100 | 1 ≤ arr[i] ≤ arr.length | All integers in arr are unique",
-          "editorial": "Pancake selection sort: O(n²) time, O(n) output. For each size from n to 2: find max in arr[0..size-1], flip it to front (if needed), flip to position size-1. At most 2 flips per iteration × n iterations = at most 2n flips total (within 10n constraint). Each flip reverses a prefix — simulated with standard two-pointer reverse."
+          "editorial": "Pancake selection sort: O(n²) time, O(n) output. For each size from n to 2: find max in arr[0..size-1], flip it to front (if needed), flip to position size-1. At most 2 flips per iteration × n iterations = at most 2n flips total (within 10n constraint). Each flip reverses a prefix — simulated with standard two-pointer reverse.",
+          "sampleInput": "[3,2,4,1]",
+          "sampleOutput": "[4,2,4,3] (flip lengths to sort)"
         }
       ],
       "subCategory": "Sorting Algorithms",

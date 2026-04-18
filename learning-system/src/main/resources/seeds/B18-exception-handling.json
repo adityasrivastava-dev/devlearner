@@ -69,7 +69,7 @@
         {
           "displayOrder": 1,
           "title": "Safe parseInt Wrapper",
-          "description": "Implement `safeParseInt(String s)` returning `Optional<Integer>` — `Optional.of(n)` on success, `Optional.empty()` on any parse failure. Must handle null input without throwing.",
+          "description": "Implement `safeParseInt(String s)` that returns an `Optional<Integer>` — returns the parsed value or `Optional.empty()` if the string is not a valid integer.\n\n**Example 1:**\nsafeParseInt(\"42\") => Optional[42]\nsafeParseInt(\"-7\") => Optional[-7]\nsafeParseInt(\"abc\") => Optional.empty()\nsafeParseInt(\"\") => Optional.empty()",
           "difficulty": "EASY",
           "pattern": "Exception to Optional",
           "hint1": "Wrap `Integer.parseInt(s)` in try-catch for NumberFormatException.",
@@ -92,12 +92,14 @@
             }
           ],
           "constraints": "Never throws. Handles null.",
-          "editorial": "Catching NumberFormatException converts the exception-based API to Optional. NullPointerException is also caught because Integer.parseInt(null) throws NPE. This pattern is common for parsing user input where 'invalid' is an expected state — not exceptional."
+          "editorial": "Catching NumberFormatException converts the exception-based API to Optional. NullPointerException is also caught because Integer.parseInt(null) throws NPE. This pattern is common for parsing user input where 'invalid' is an expected state — not exceptional.",
+          "sampleInput": "safeParseInt(\"abc\")",
+          "sampleOutput": "Optional.empty()"
         },
         {
           "displayOrder": 2,
           "title": "Custom ValidationException",
-          "description": "Create `ValidationException(String field, String message)` extending `RuntimeException` with a `getField()` getter. Write `validateAge(int age)` throwing it if age is outside [0, 150].",
+          "description": "Create a custom `ValidationException extends RuntimeException` with a list of error messages. Throw it when multiple fields are invalid.\n\n**Example:**\nvalidateUser(\"\", \"not-email\", -5)\n=> throws ValidationException with errors:\n   [\"Name required\", \"Invalid email\", \"Age must be positive\"]\n\nvalidationException.getErrors() => [\"Name required\", \"Invalid email\", \"Age must be positive\"]",
           "difficulty": "EASY",
           "pattern": "Custom Unchecked Exception",
           "hint1": "ValidationException extends RuntimeException — no throws declaration needed.",
@@ -112,12 +114,14 @@
             }
           ],
           "constraints": "Extends RuntimeException.",
-          "editorial": "Custom exceptions carry domain-specific data. The field name enables UI code to highlight the right form input. Extending RuntimeException avoids polluting call signatures."
+          "editorial": "Custom exceptions carry domain-specific data. The field name enables UI code to highlight the right form input. Extending RuntimeException avoids polluting call signatures.",
+          "sampleInput": "validateUser(\"\", \"not-email\", -5)",
+          "sampleOutput": "ValidationException: [Name required, Invalid email, Age must be positive]"
         },
         {
           "displayOrder": 3,
           "title": "Stack With EmptyStackException",
-          "description": "Implement `SimpleStack<T>` with `push(T)`, `pop()`, `peek()`, `isEmpty()`. `pop()` and `peek()` throw `java.util.EmptyStackException` when empty.",
+          "description": "Implement a `Stack<T>` that throws custom `EmptyStackException` on `pop()` and `peek()` when empty.\n\n**Example:**\nStack<Integer> s = new Stack<>();\ns.push(1); s.pop() => 1;\ns.pop() => throws EmptyStackException(\"Stack is empty\")\ns.peek() => throws EmptyStackException(\"Stack is empty\")\n\n**Key insight:** Custom exceptions communicate domain intent better than generic `RuntimeException`.",
           "difficulty": "EASY",
           "pattern": "Exception for Precondition Violation",
           "hint1": "Back with ArrayList. EmptyStackException is a RuntimeException.",
@@ -132,12 +136,14 @@
             }
           ],
           "constraints": "Use java.util.EmptyStackException.",
-          "editorial": "EmptyStackException signals a precondition violation — calling pop() on an empty stack is a programming error. Unchecked because callers should check isEmpty() first."
+          "editorial": "EmptyStackException signals a precondition violation — calling pop() on an empty stack is a programming error. Unchecked because callers should check isEmpty() first.",
+          "sampleInput": "pop() on empty stack",
+          "sampleOutput": "throws EmptyStackException(\"Stack is empty\")"
         },
         {
           "displayOrder": 4,
           "title": "Finally Block Order Prediction",
-          "description": "Predict the exact output when finally has a return statement. What does `withReturn()` print and return? Does the original exception survive when finally does NOT throw?",
+          "description": "Predict the output — `finally` always runs, even after `return`:\n\n```java\nstatic String test() {\n    try { return \"try\"; }\n    finally { System.out.println(\"finally\"); }\n}\nSystem.out.println(test());\n```\n\n**Output:**\nfinally\ntry\n\n**Key insight:** `finally` executes before the return value is delivered. If `finally` has its own `return`, it overrides the `try` return.",
           "difficulty": "EASY",
           "pattern": "Finally Execution Order",
           "hint1": "finally runs before the method actually returns — even when try has a return.",
@@ -156,12 +162,14 @@
             }
           ],
           "constraints": "Conceptual prediction.",
-          "editorial": "finally always runs before the method returns or exception propagates. A return in finally overrides the try's return — silently discarding it. Bad practice. In withThrow: finally prints but does NOT suppress the exception — original propagates."
+          "editorial": "finally always runs before the method returns or exception propagates. A return in finally overrides the try's return — silently discarding it. Bad practice. In withThrow: finally prints but does NOT suppress the exception — original propagates.",
+          "sampleInput": "test() with return in try, println in finally",
+          "sampleOutput": "\"finally\"\n\"try\""
         },
         {
           "displayOrder": 5,
           "title": "Resource Leak Detector",
-          "description": "Show that without try-with-resources, a thrown exception causes a resource leak (`isOpen()` stays `true`). Show with TWR, `close()` is always called even on exception.",
+          "description": "Demonstrate a resource leak: opening a file without try-with-resources may leave it open on exception. Refactor to use try-with-resources.\n\n**Before (leaky):**\nFileReader r = new FileReader(\"file.txt\");\nthrowsException(); // r never closed\n\n**After (safe):**\ntry (FileReader r = new FileReader(\"file.txt\")) {\n    throwsException();\n} // r.close() called even on exception\n\nImplement `safeRead(String path)` using try-with-resources.",
           "difficulty": "EASY",
           "pattern": "Try-with-Resources vs Manual",
           "hint1": "Without TWR: exception jumps to catch, skipping any close() not in a finally.",
@@ -180,12 +188,14 @@
             }
           ],
           "constraints": "Resource implements AutoCloseable.",
-          "editorial": "Without TWR, an exception jumps to catch, skipping close(). With TWR, the compiler generates a finally block calling close() before the exception propagates. Every I/O resource must use TWR."
+          "editorial": "Without TWR, an exception jumps to catch, skipping close(). With TWR, the compiler generates a finally block calling close() before the exception propagates. Every I/O resource must use TWR.",
+          "sampleInput": "safeRead(\"missing.txt\")",
+          "sampleOutput": "throws FileNotFoundException (resource still closed)"
         },
         {
           "displayOrder": 6,
           "title": "Null-Safe Method Chain",
-          "description": "Implement `getNested(Outer obj)` safely navigating `obj.middle().inner().value()`, returning `\"[null]\"` if any link is null. Implement both try-catch NPE and Optional chaining versions.",
+          "description": "Implement `nullSafeChain(User user)` that safely navigates `user.getAddress().getCity().toUpperCase()` without NPE using `Optional` chaining.\n\n**Example 1:**\nnullSafeChain(User{address: Address{city: \"london\"}}) => \"LONDON\"\n\n**Example 2:**\nnullSafeChain(User{address: null}) => \"UNKNOWN\"\n\n**Example 3:**\nnullSafeChain(null) => \"UNKNOWN\"",
           "difficulty": "EASY",
           "pattern": "NPE Prevention",
           "hint1": "Version 1: wrap in try-catch NullPointerException.",
@@ -204,12 +214,14 @@
             }
           ],
           "constraints": "Both versions handle null at any level.",
-          "editorial": "Try-catch for NPE is 'exception as flow control' — acceptable but not idiomatic. Optional chaining makes nullability explicit at each step and short-circuits on empty."
+          "editorial": "Try-catch for NPE is 'exception as flow control' — acceptable but not idiomatic. Optional chaining makes nullability explicit at each step and short-circuits on empty.",
+          "sampleInput": "nullSafeChain(User{address=null})",
+          "sampleOutput": "\"UNKNOWN\""
         },
         {
           "displayOrder": 7,
           "title": "Retry With Exponential Backoff",
-          "description": "Implement `retry(Callable<T> op, int maxAttempts, long baseDelayMs)` that retries on RuntimeException up to maxAttempts times with exponential backoff. Throws the last exception if all attempts fail.",
+          "description": "Implement `retryWithBackoff(Supplier<T> operation, int maxAttempts)` that retries on exception with exponential backoff (100ms, 200ms, 400ms...).\n\n**Example:**\nretryWithBackoff(() -> callFlakyAPI(), 3)\n=> attempt 1: fails\n=> waits 100ms, attempt 2: fails\n=> waits 200ms, attempt 3: succeeds => returns result\n\nIf all attempts fail, throws the last exception.\n\n**Key insight:** Exponential backoff prevents thundering herd — each retry waits 2x longer.",
           "difficulty": "MEDIUM",
           "pattern": "Exception-Driven Retry",
           "hint1": "Loop attempt=1..maxAttempts. Catch RuntimeException into `lastException`.",
@@ -224,12 +236,14 @@
             }
           ],
           "constraints": "maxAttempts >= 1. Exponential delay doubles each attempt.",
-          "editorial": "Retry with exponential backoff is fundamental to resilient distributed systems. Delay doubles: baseDelayMs * 2^(attempt-1) = 10ms, 20ms, 40ms. Last exception preserved and re-thrown. Add random jitter in production to avoid thundering herd."
+          "editorial": "Retry with exponential backoff is fundamental to resilient distributed systems. Delay doubles: baseDelayMs * 2^(attempt-1) = 10ms, 20ms, 40ms. Last exception preserved and re-thrown. Add random jitter in production to avoid thundering herd.",
+          "sampleInput": "flaky API, maxAttempts=3, succeeds on 3rd",
+          "sampleOutput": "returns result after 2 retries"
         },
         {
           "displayOrder": 8,
           "title": "Exception Aggregator — Collect All Errors",
-          "description": "Implement `validateAll(Map<String,String> fields, Map<String,Predicate<String>> rules)` that validates ALL fields and collects every violation into a single `AggregateException`.",
+          "description": "Implement `validateAll(User user)` that collects **all** validation errors instead of failing on the first:\n\n**Example:**\nvalidateAll(User{name=\"\", email=\"bad\", age=-1})\n=> ValidationException{\n     errors: [\"Name required\", \"Invalid email\", \"Age must be positive\"]\n   }\n\n**Key insight:** Don't throw on first error — accumulate all errors in a list and throw once at the end. Much better UX.",
           "difficulty": "MEDIUM",
           "pattern": "Error Aggregation",
           "hint1": "Loop all fields, test each rule. Add error strings to List<String> errors.",
@@ -244,12 +258,14 @@
             }
           ],
           "constraints": "All rules checked even after first failure.",
-          "editorial": "Fail-all instead of fail-fast: all rules run, all errors collected. Users get actionable feedback about every problem at once. Spring's BindingResult and Jakarta Bean Validation use this pattern."
+          "editorial": "Fail-all instead of fail-fast: all rules run, all errors collected. Users get actionable feedback about every problem at once. Spring's BindingResult and Jakarta Bean Validation use this pattern.",
+          "sampleInput": "validateAll(User{name=\"\", email=\"bad\", age=-1})",
+          "sampleOutput": "3 errors collected in one exception"
         },
         {
           "displayOrder": 9,
           "title": "Checked-to-Unchecked Lambda Wrapper",
-          "description": "Write `CheckedFunction<T,R>` (functional interface declaring `throws Exception`) and `sneaky(CheckedFunction<T,R>)` that wraps it as a regular `Function<T,R>` catching Exception and rethrowing as RuntimeException.",
+          "description": "Lambdas can't throw checked exceptions. Implement `CheckedSupplier<T>` and a wrapper `wrap(CheckedSupplier<T>)` that converts checked exceptions to unchecked:\n\n**Example:**\nSupplier<String> safe = wrap(() -> Files.readString(Path.of(\"file.txt\")));\nsafe.get() // throws RuntimeException wrapping IOException if file missing\n\n**Key insight:** This pattern is common in Stream pipelines where lambdas must not throw checked exceptions.",
           "difficulty": "MEDIUM",
           "pattern": "Checked Exception in Lambda",
           "hint1": "@FunctionalInterface interface CheckedFunction<T,R> { R apply(T t) throws Exception; }",
@@ -268,12 +284,14 @@
             }
           ],
           "constraints": "Original accessible via getCause().",
-          "editorial": "Java lambdas cannot throw checked exceptions. The sneaky wrapper converts checked to unchecked transparently. Vavr's CheckedFunction and Lombok's @SneakyThrows use this pattern."
+          "editorial": "Java lambdas cannot throw checked exceptions. The sneaky wrapper converts checked to unchecked transparently. Vavr's CheckedFunction and Lombok's @SneakyThrows use this pattern.",
+          "sampleInput": "wrap(() -> Files.readString(missingFile)).get()",
+          "sampleOutput": "throws RuntimeException wrapping IOException"
         },
         {
           "displayOrder": 10,
           "title": "Bank Transfer With Rollback",
-          "description": "Implement `transfer(Account from, Account to, double amount)` where if debit succeeds but credit fails, the debit is rolled back. Account state must be consistent after any failure.",
+          "description": "Implement `transfer(Account from, Account to, double amount)` that is transactionally safe: if `to.deposit()` fails after `from.withdraw()`, the withdrawal must be rolled back.\n\n**Example 1:**\nfrom.balance=500, transfer(from, to, 100) succeeds\n=> from.balance=400, to.balance+=100\n\n**Example 2:**\nto.deposit() throws exception\n=> from.balance restored to 500 (rollback)\n\n**Key insight:** Catch the exception, restore original state, then re-throw.",
           "difficulty": "MEDIUM",
           "pattern": "Exception-Safe Transaction",
           "hint1": "Call from.debit(amount) first — if it throws, no state changed.",
@@ -292,12 +310,14 @@
             }
           ],
           "constraints": "Account state consistent after any failure.",
-          "editorial": "Exception-safe: debit first — if it throws, no state changed. If credit fails (rollback debit). Leave objects in a valid state even when exceptions occur."
+          "editorial": "Exception-safe: debit first — if it throws, no state changed. If credit fails (rollback debit). Leave objects in a valid state even when exceptions occur.",
+          "sampleInput": "transfer fails on deposit",
+          "sampleOutput": "from.balance restored (rollback)"
         },
         {
           "displayOrder": 11,
           "title": "Exception Translation Layer",
-          "description": "DataRepository.findById() throws checked DataException. UserService.getUser() must translate it to unchecked ServiceException preserving the cause chain.",
+          "description": "Implement an **exception translation layer**: catch low-level `SQLException` and re-throw as domain-specific `DataAccessException` with a user-friendly message.\n\n**Example:**\ntry { jdbcCall(); }\ncatch (SQLException e) {\n    throw new DataAccessException(\"Failed to load user\", e);\n}\n\nDataAccessException.getCause() => original SQLException\nDataAccessException.getMessage() => \"Failed to load user\"\n\n**Key insight:** Preserve the cause chain (`super(message, cause)`) — never swallow exceptions.",
           "difficulty": "MEDIUM",
           "pattern": "Exception Translation",
           "hint1": "UserService.getUser(): catch DataException, throw new ServiceException(msg, e).",
@@ -312,12 +332,14 @@
             }
           ],
           "constraints": "getCause() must return DataException.",
-          "editorial": "Exception translation: each layer converts infrastructure exceptions to domain exceptions. Full chain preserved for logging. This is Spring's DataAccessException pattern."
+          "editorial": "Exception translation: each layer converts infrastructure exceptions to domain exceptions. Full chain preserved for logging. This is Spring's DataAccessException pattern.",
+          "sampleInput": "jdbcCall() throws SQLException",
+          "sampleOutput": "throws DataAccessException(cause=SQLException)"
         },
         {
           "displayOrder": 12,
           "title": "Simple Circuit Breaker",
-          "description": "Implement CircuitBreaker wrapping a Supplier<T>. After `threshold` consecutive failures opens the circuit, throwing CircuitOpenException without calling supplier. After resetTimeMs, half-opens to allow one test call.",
+          "description": "Implement a simple **circuit breaker**: after `N` consecutive failures, the circuit opens and all calls fail-fast without executing. Resets after a timeout.\n\n**States:** CLOSED (normal) -> OPEN (failing fast) -> HALF_OPEN (testing recovery)\n\n**Example:**\ncb = CircuitBreaker(failureThreshold=3, resetTimeoutMs=1000)\nfailure x3 => circuit OPEN\ncb.call(() -> api()) => throws CircuitOpenException (no call made)\nafter 1s => HALF_OPEN, next call attempted",
           "difficulty": "MEDIUM",
           "pattern": "Circuit Breaker",
           "hint1": "States: CLOSED, OPEN, HALF_OPEN. Track consecutiveFailures.",
@@ -332,12 +354,14 @@
             }
           ],
           "constraints": "Opens after exactly threshold consecutive failures.",
-          "editorial": "Circuit breaker protects against cascading failures. After threshold failures it opens — failing fast. After resetMs it half-opens to test recovery. Resilience4j and Spring Cloud Circuit Breaker implement this pattern."
+          "editorial": "Circuit breaker protects against cascading failures. After threshold failures it opens — failing fast. After resetMs it half-opens to test recovery. Resilience4j and Spring Cloud Circuit Breaker implement this pattern.",
+          "sampleInput": "3 failures then call()",
+          "sampleOutput": "throws CircuitOpenException"
         },
         {
           "displayOrder": 13,
           "title": "Structured Error Tree",
-          "description": "Build `ValidationContext` that collects errors in a tree structure with named sub-contexts. `ctx.child(\"address\").addError(msg)` creates nested errors. Print with indentation.",
+          "description": "Build a tree of validation errors with nested causes:\n\n```\nValidationException: Form invalid\n  FieldError: name -> \"Name required\"\n  FieldError: address.city -> \"City too short\"\n  FieldError: address.zip -> \"Invalid zip format\"\n```\n\nImplement `ErrorTree` with nested `FieldError` children. `printTree(0)` renders indented output.\n\n**Example:**\nerrorTree.printTree(0)\n=> \"Form invalid\"\n=> \"  name: Name required\"\n=> \"  address.city: City too short\"",
           "difficulty": "HARD",
           "pattern": "Hierarchical Error Collection",
           "hint1": "ValidationContext: String name, List<String> errors, Map<String,ValidationContext> children (LinkedHashMap).",
@@ -352,12 +376,14 @@
             }
           ],
           "constraints": "Tree preserves insertion order.",
-          "editorial": "Hierarchical error collection mirrors the domain object graph. Used in Spring's BindingResult for nested objects and Jakarta Bean Validation's ConstraintViolation paths."
+          "editorial": "Hierarchical error collection mirrors the domain object graph. Used in Spring's BindingResult for nested objects and Jakarta Bean Validation's ConstraintViolation paths.",
+          "sampleInput": "errorTree.printTree(0)",
+          "sampleOutput": "Form invalid / name: Name required / ..."
         },
         {
           "displayOrder": 14,
           "title": "Async Exception Propagation",
-          "description": "Implement `runAllOrFail(List<Callable<String>> tasks)` using CompletableFuture — returns all results if all succeed, or throws AggregateException with all failures. Wait for all tasks regardless.",
+          "description": "Demonstrate that exceptions from `CompletableFuture` are wrapped in `ExecutionException`. Use `.exceptionally()` to recover gracefully.\n\n**Example:**\nCompletableFuture.supplyAsync(() -> { throw new RuntimeException(\"fail\"); })\n    .exceptionally(e -> \"default\")\n    .get() => \"default\"\n\n**Key insight:** `.exceptionally(fn)` catches the wrapped exception and returns a fallback — equivalent of catch for async pipelines.",
           "difficulty": "HARD",
           "pattern": "Concurrent Exception Handling",
           "hint1": "Create CompletableFuture.supplyAsync for each task.",
@@ -376,12 +402,14 @@
             }
           ],
           "constraints": "Wait for all tasks even if some fail.",
-          "editorial": "Join each future independently to collect all failures. Unlike allOf().join() which throws on first failure, this pattern gives a full picture of concurrent failures."
+          "editorial": "Join each future independently to collect all failures. Unlike allOf().join() which throws on first failure, this pattern gives a full picture of concurrent failures.",
+          "sampleInput": "supplyAsync(throw) .exceptionally(e->\"default\") .get()",
+          "sampleOutput": "\"default\""
         },
         {
           "displayOrder": 15,
           "title": "Exception-Safe Builder With Deferred Validation",
-          "description": "Implement `QueryBuilder` with setters that accept any value (no validation) and `build()` that validates everything atomically, throwing `BuildException(List<String>)` if any constraint fails.",
+          "description": "Implement a builder where `build()` is deferred and validation only runs at build time — not at each setter call.\n\n**Example 1:**\nnew OrderBuilder().item(\"book\",10).shipping(\"123 Main\").build() => Order (valid)\n\n**Example 2:**\nnew OrderBuilder().shipping(\"123 Main\").build()\n=> throws IllegalStateException(\"At least one item required\")\n\n**Key insight:** Deferred validation collects all errors in `build()` — avoids premature failure on partially-constructed objects.",
           "difficulty": "HARD",
           "pattern": "Deferred Validation Builder",
           "hint1": "Setters: from(table), where(cond), limit(n), orderBy(col) — just store, no validation.",
@@ -400,12 +428,14 @@
             }
           ],
           "constraints": "No validation in setters.",
-          "editorial": "Deferred validation: setters are data-entry only. build() validates everything atomically and reports all errors at once. Better UX than fail-fast builders."
+          "editorial": "Deferred validation: setters are data-entry only. build() validates everything atomically and reports all errors at once. Better UX than fail-fast builders.",
+          "sampleInput": "OrderBuilder.shipping(\"123 Main\").build() (no items)",
+          "sampleOutput": "throws IllegalStateException(\"At least one item required\")"
         },
         {
           "displayOrder": 16,
           "title": "Multi-Step Transaction Rollback",
-          "description": "Implement `executeTransaction(List<Step>)` where each Step has execute() and rollback(). On failure, roll back completed steps in REVERSE order. Rollback exceptions are added as suppressed.",
+          "description": "Implement a multi-step transaction where each step can fail and prior steps must roll back:\n\nSteps: deductInventory -> chargePayment -> sendConfirmation\n\n**Example:**\nchargeFails => deductInventory rolled back\nsendConfirmationFails => both deductInventory and chargePayment rolled back\n\nImplement using a `Deque<Runnable>` rollback stack — push compensating action after each successful step.",
           "difficulty": "HARD",
           "pattern": "Saga / Compensating Transactions",
           "hint1": "Track completed steps in Deque<Step>. On step failure, record exception and break.",
@@ -420,12 +450,14 @@
             }
           ],
           "constraints": "Rollback in reverse order. Rollback exceptions added as suppressed.",
-          "editorial": "Saga pattern: each step has a compensating rollback. addSuppressed() preserves rollback failures without overshadowing the root cause. Used in distributed transactions and microservice choreography."
+          "editorial": "Saga pattern: each step has a compensating rollback. addSuppressed() preserves rollback failures without overshadowing the root cause. Used in distributed transactions and microservice choreography.",
+          "sampleInput": "step 2 fails",
+          "sampleOutput": "step 1 rolled back; exception rethrown"
         },
         {
           "displayOrder": 17,
           "title": "REST API Exception Hierarchy",
-          "description": "Design base `ApiException(int status, String code, String message)` with subclasses: `BadRequestException(400)`, `UnauthorizedException(401)`, `NotFoundException(404)`, `ConflictException(409)`. Add `ExceptionMapper.toResponse(ApiException)` returning a Map.",
+          "description": "Create a REST API exception hierarchy:\n- `ApiException(int statusCode, String message)` — base\n- `NotFoundException extends ApiException` — 404\n- `BadRequestException extends ApiException` — 400\n- `UnauthorizedException extends ApiException` — 401\n\n**Example:**\nthrow new NotFoundException(\"User 42 not found\")\n=> exception.getStatusCode() = 404\n=> exception.getMessage() = \"User 42 not found\"",
           "difficulty": "HARD",
           "pattern": "API Exception Hierarchy",
           "hint1": "ApiException stores status, code, message. Subclasses set status in super().",
@@ -448,12 +480,14 @@
             }
           ],
           "constraints": "Each subclass sets its own HTTP status code.",
-          "editorial": "REST API exception hierarchy maps domain errors to HTTP status codes without instanceof chains. Spring's @ControllerAdvice + @ExceptionHandler does exactly this. Each exception type carries its own status."
+          "editorial": "REST API exception hierarchy maps domain errors to HTTP status codes without instanceof chains. Spring's @ControllerAdvice + @ExceptionHandler does exactly this. Each exception type carries its own status.",
+          "sampleInput": "new NotFoundException(\"User 42 not found\")",
+          "sampleOutput": "statusCode=404, message=\"User 42 not found\""
         },
         {
           "displayOrder": 18,
           "title": "Custom Stack Trace Filter",
-          "description": "Implement `filteredStackTrace(Throwable t, String filter)` returning only stack trace elements where className.contains(filter). Format each as `ClassName.method(File:line)`. Recursively include the cause chain.",
+          "description": "Implement `filterStackTrace(Throwable t, String... packagePrefixes)` that returns a new exception with only stack frames matching the given packages — removes framework noise.\n\n**Example:**\ne = new RuntimeException()\ne.getStackTrace() has 20 frames (Spring, JDK, etc.)\nfilterStackTrace(e, \"com.myapp\") => exception with only myapp frames\n\n**Key insight:** `t.setStackTrace(filtered)` replaces the trace — useful for cleaner logs in production.",
           "difficulty": "HARD",
           "pattern": "Stack Trace Manipulation",
           "hint1": "t.getStackTrace() returns StackTraceElement[]. Filter by element.getClassName().contains(filter).",
@@ -468,12 +502,14 @@
             }
           ],
           "constraints": "Include cause chain recursively.",
-          "editorial": "Stack trace filtering shows only application frames, hiding framework noise. t.getStackTrace() returns full array. Filter by class name. Used in Logback's package condensing to turn 30-line traces into 3 meaningful lines."
+          "editorial": "Stack trace filtering shows only application frames, hiding framework noise. t.getStackTrace() returns full array. Filter by class name. Used in Logback's package condensing to turn 30-line traces into 3 meaningful lines.",
+          "sampleInput": "filterStackTrace(e, \"com.myapp\")",
+          "sampleOutput": "stack frames with only com.myapp prefix"
         },
         {
           "displayOrder": 19,
           "title": "Exception Serialization",
-          "description": "Create `SerializableException` with `errorCode` and `timestamp` fields, and a `transient` `sessionId`. Serialize to byte array and deserialize back. Verify that non-transient fields survive and transient fields are null.",
+          "description": "Implement `SerializableException` that can be serialized to JSON and reconstructed:\n\n**Example:**\nSerializableException e = new SerializableException(\"Not found\", 404);\nString json = e.toJson();\n// => {\"message\":\"Not found\",\"code\":404,\"type\":\"SerializableException\"}\nSerializableException restored = SerializableException.fromJson(json);\nrestored.getMessage() => \"Not found\"\nrestored.getCode() => 404",
           "difficulty": "HARD",
           "pattern": "Exception Serialization",
           "hint1": "Exception already implements Serializable. Declare serialVersionUID = 1L.",
@@ -488,12 +524,14 @@
             }
           ],
           "constraints": "serialVersionUID must be declared. transient field is null after round-trip.",
-          "editorial": "Exception implements Serializable, so custom exceptions are serializable if fields are too. serialVersionUID prevents InvalidClassException on class changes. transient fields are not written to the stream — null after deserialization. Used when exceptions travel over the wire (Java RMI, distributed caching)."
+          "editorial": "Exception implements Serializable, so custom exceptions are serializable if fields are too. serialVersionUID prevents InvalidClassException on class changes. transient fields are not written to the stream — null after deserialization. Used when exceptions travel over the wire (Java RMI, distributed caching).",
+          "sampleInput": "toJson() then fromJson()",
+          "sampleOutput": "{\"message\":\"Not found\",\"code\":404}"
         },
         {
           "displayOrder": 20,
           "title": "Global Exception Handler Registry",
-          "description": "Implement `GlobalExceptionHandler` that maps exception types to response handlers without instanceof chains. Walking getSuperclass() finds the most specific handler. Register handlers for ValidationException → 400, NotFoundException → 404, RuntimeException → 500.",
+          "description": "Implement a global `ExceptionHandlerRegistry` that maps exception types to handlers:\n\n**Example:**\nregistry.register(NotFoundException.class, e -> log(\"404: \" + e.getMessage()));\nregistry.register(RuntimeException.class, e -> log(\"Runtime: \" + e.getMessage()));\nregistry.handle(new NotFoundException(\"missing\")) => calls NotFoundException handler\nregistry.handle(new IllegalArgumentException(\"bad\")) => falls back to RuntimeException handler\n\n**Key insight:** Walk the class hierarchy to find the most specific registered handler.",
           "difficulty": "HARD",
           "pattern": "Polymorphic Handler Registry",
           "hint1": "Map<Class<?>, Function<Exception, Response>> handlers — keyed by exception class.",
@@ -516,7 +554,9 @@
             }
           ],
           "constraints": "No instanceof chains in handle().",
-          "editorial": "Polymorphic dispatch without instanceof: Map keyed by exception class, walking getSuperclass() up the hierarchy. Most specific match wins. This is how Spring's @ExceptionHandler resolution works — it maintains a map by exception type and resolves the most specific match."
+          "editorial": "Polymorphic dispatch without instanceof: Map keyed by exception class, walking getSuperclass() up the hierarchy. Most specific match wins. This is how Spring's @ExceptionHandler resolution works — it maintains a map by exception type and resolves the most specific match.",
+          "sampleInput": "handle(new NotFoundException(\"missing\"))",
+          "sampleOutput": "\"404: missing\""
         }
       ],
       "subCategory": "Exception Handling",

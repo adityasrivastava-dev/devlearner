@@ -69,7 +69,7 @@
         {
           "displayOrder": 1,
           "title": "Filter Even Numbers",
-          "description": "Given `List<Integer> numbers`, return a new list containing only even numbers, in their original order, using streams.",
+          "description": "Use `Stream.filter()` to return only even numbers from a list.\n\n**Example 1:**\nfilterEvens([1,2,3,4,5,6]) => [2,4,6]\n\n**Example 2:**\nfilterEvens([1,3,5]) => []\n\n**Key insight:** `stream.filter(n -> n % 2 == 0).collect(toList())` — filter is lazy; elements are only processed when a terminal operation runs.",
           "difficulty": "EASY",
           "pattern": "Stream filter",
           "hint1": "Use `.stream().filter(n -> n % 2 == 0)`.",
@@ -92,12 +92,14 @@
             }
           ],
           "constraints": "Input list is non-null. May be empty.",
-          "editorial": "filter() is a stateless intermediate operation — it passes each element through the predicate and drops elements that return false. n % 2 == 0 is the standard even check. The original list is never modified — streams are non-destructive."
+          "editorial": "filter() is a stateless intermediate operation — it passes each element through the predicate and drops elements that return false. n % 2 == 0 is the standard even check. The original list is never modified — streams are non-destructive.",
+          "sampleInput": "[1,2,3,4,5,6]",
+          "sampleOutput": "[2,4,6]"
         },
         {
           "displayOrder": 2,
           "title": "Map Names to Uppercase",
-          "description": "Given `List<String> names`, return a new list with every name converted to uppercase using stream's `map()` operation.",
+          "description": "Use `Stream.map()` to convert a list of names to uppercase.\n\n**Example 1:**\ntoUpperCase([\"alice\",\"bob\",\"charlie\"]) => [\"ALICE\",\"BOB\",\"CHARLIE\"]\n\n**Example 2:**\ntoUpperCase([]) => []\n\n**Key insight:** `stream.map(String::toUpperCase)` — map transforms each element independently. Method reference `String::toUpperCase` is equivalent to `s -> s.toUpperCase()`.",
           "difficulty": "EASY",
           "pattern": "Stream map",
           "hint1": "Use `.map(String::toUpperCase)` — a method reference.",
@@ -116,12 +118,14 @@
             }
           ],
           "constraints": "Names are non-null strings.",
-          "editorial": "map() transforms each element independently — it is a stateless intermediate operation. String::toUpperCase is an instance method reference on the stream element (equivalent to s -> s.toUpperCase()). map() produces a Stream<String> → collect into List<String>."
+          "editorial": "map() transforms each element independently — it is a stateless intermediate operation. String::toUpperCase is an instance method reference on the stream element (equivalent to s -> s.toUpperCase()). map() produces a Stream<String> → collect into List<String>.",
+          "sampleInput": "[\"alice\",\"bob\",\"charlie\"]",
+          "sampleOutput": "[\"ALICE\",\"BOB\",\"CHARLIE\"]"
         },
         {
           "displayOrder": 3,
           "title": "Sum With reduce()",
-          "description": "Given `List<Integer> numbers`, compute the sum using `stream().reduce()`. Return 0 for an empty list. Also compute the product using reduce.",
+          "description": "Use `Stream.reduce()` to sum a list of integers.\n\n**Example 1:**\nsum([1,2,3,4,5]) => 15\n\n**Example 2:**\nsum([]) => 0 (identity value)\n\n**Example 3:**\nsum([10,20,30]) => 60\n\n**Key insight:** `stream.reduce(0, Integer::sum)` — identity is the starting value (0 for sum). Also achievable with `mapToInt().sum()`.",
           "difficulty": "EASY",
           "pattern": "Stream reduce",
           "hint1": "`reduce(0, Integer::sum)` — identity 0, accumulator sums two ints.",
@@ -144,12 +148,14 @@
             }
           ],
           "constraints": "Numbers fit in int for sum, long for product.",
-          "editorial": "reduce(identity, accumulator) folds the stream into a single value. The identity is the neutral element (0 for sum, 1 for product). For sum, mapToInt().sum() is more idiomatic and avoids boxing. For product use long to avoid overflow — 10 elements of value 10 already overflows int."
+          "editorial": "reduce(identity, accumulator) folds the stream into a single value. The identity is the neutral element (0 for sum, 1 for product). For sum, mapToInt().sum() is more idiomatic and avoids boxing. For product use long to avoid overflow — 10 elements of value 10 already overflows int.",
+          "sampleInput": "[1,2,3,4,5]",
+          "sampleOutput": "15"
         },
         {
           "displayOrder": 4,
           "title": "Group Students by Grade",
-          "description": "Given a list of `Student(String name, int score)`, group them into three grade buckets using `Collectors.groupingBy()`: `A` (score >= 90), `B` (score >= 75), `C` (score < 75). Return `Map<String, List<Student>>`.",
+          "description": "Use `Collectors.groupingBy()` to group students by grade (A/B/C/F).\n\n**Example:**\ngroupByGrade([Student(Alice,92), Student(Bob,75), Student(Charlie,88), Student(Dave,61)])\n=> {A=[Alice,Charlie], B=[Bob], D=[Dave]}\n\n**Key insight:** `stream.collect(Collectors.groupingBy(Student::getGrade))` — groups elements by a classifier function into a Map.",
           "difficulty": "EASY",
           "pattern": "Collectors.groupingBy",
           "hint1": "Define a helper method `grade(Student s)` returning 'A', 'B', or 'C'.",
@@ -164,12 +170,14 @@
             }
           ],
           "constraints": "Score range 0–100.",
-          "editorial": "groupingBy classifies each element by a key function and accumulates elements with the same key into a List. The default downstream collector is Collectors.toList(). The result Map may be missing keys for grades with no students — use getOrDefault(key, List.of()) when accessing."
+          "editorial": "groupingBy classifies each element by a key function and accumulates elements with the same key into a List. The default downstream collector is Collectors.toList(). The result Map may be missing keys for grades with no students — use getOrDefault(key, List.of()) when accessing.",
+          "sampleInput": "[Alice(92),Bob(75),Charlie(88),Dave(61)]",
+          "sampleOutput": "{A=[Alice,Charlie], B=[Bob], D=[Dave]}"
         },
         {
           "displayOrder": 5,
           "title": "Find First Matching Element",
-          "description": "Given `List<String> words`, find the first word that starts with the letter 'J' (case-insensitive) and has length > 3. Return `Optional<String>`. If none found, return `Optional.empty()`.",
+          "description": "Use `Stream.findFirst()` to return the first element matching a predicate.\n\n**Example 1:**\nfindFirstEven([1,3,5,4,6]) => Optional[4]\n\n**Example 2:**\nfindFirstEven([1,3,5]) => Optional.empty()\n\n**Key insight:** `findFirst()` short-circuits — stops processing as soon as a match is found. Returns `Optional` to handle the empty case safely.",
           "difficulty": "EASY",
           "pattern": "Stream findFirst / filter",
           "hint1": "Chain `.filter()` conditions then call `.findFirst()`.",
@@ -188,12 +196,14 @@
             }
           ],
           "constraints": "Words are non-null. List may be empty.",
-          "editorial": "findFirst() is a short-circuit terminal — it stops processing as soon as one element passes all filters. Returns Optional to force callers to handle the 'no match' case. findAny() is an alternative that works better with parallelStream() but has non-deterministic order."
+          "editorial": "findFirst() is a short-circuit terminal — it stops processing as soon as one element passes all filters. Returns Optional to force callers to handle the 'no match' case. findAny() is an alternative that works better with parallelStream() but has non-deterministic order.",
+          "sampleInput": "[1,3,5,4,6]",
+          "sampleOutput": "Optional[4]"
         },
         {
           "displayOrder": 6,
           "title": "Count Distinct Words",
-          "description": "Given a sentence string, split it into words (split on whitespace), convert to lowercase, remove punctuation (keep only letters), and return the count of distinct words using streams.",
+          "description": "Count distinct words in a sentence using streams.\n\n**Example 1:**\ncountDistinctWords(\"the cat sat on the mat the cat\") => 5\n\n**Example 2:**\ncountDistinctWords(\"\") => 0\n\n**Key insight:** `Arrays.stream(sentence.split(\" \")).distinct().count()` — `distinct()` removes duplicates using `equals()`.",
           "difficulty": "EASY",
           "pattern": "Stream distinct / count",
           "hint1": "`sentence.split(\"\\\\s+\")` splits on any whitespace.",
@@ -212,12 +222,14 @@
             }
           ],
           "constraints": "Sentence is non-null. Case-insensitive distinct.",
-          "editorial": "distinct() removes duplicates by calling equals() — so lowercase() must happen before distinct(). filter(!isEmpty) handles punctuation-only tokens. count() is a terminal that returns long. This pipeline shows how streams eliminate the need for a manual Set<String> accumulator."
+          "editorial": "distinct() removes duplicates by calling equals() — so lowercase() must happen before distinct(). filter(!isEmpty) handles punctuation-only tokens. count() is a terminal that returns long. This pipeline shows how streams eliminate the need for a manual Set<String> accumulator.",
+          "sampleInput": "\"the cat sat on the mat the cat\"",
+          "sampleOutput": "5"
         },
         {
           "displayOrder": 7,
           "title": "Flatten Nested Lists With flatMap",
-          "description": "Given `List<List<Integer>> nested`, use `flatMap` to flatten it into a single `List<Integer>` containing all elements in order. Then return the sum of all elements.",
+          "description": "Use `flatMap()` to flatten a `List<List<Integer>>` into a single `List<Integer>`.\n\n**Example 1:**\nflatten([[1,2],[3,4],[5]]) => [1,2,3,4,5]\n\n**Example 2:**\nflatten([[\"a\",\"b\"],[\"c\"]]) => [\"a\",\"b\",\"c\"]\n\n**Key insight:** `stream.flatMap(Collection::stream)` — `flatMap` maps each element to a stream, then flattens all streams into one.",
           "difficulty": "MEDIUM",
           "pattern": "flatMap",
           "hint1": "`.flatMap(List::stream)` converts each inner list to a stream and merges all.",
@@ -232,12 +244,14 @@
             }
           ],
           "constraints": "Inner lists may be empty.",
-          "editorial": "flatMap(List::stream) is equivalent to flatMap(list -> list.stream()). It converts each inner list into a stream and concatenates all sub-streams into one. map() would give Stream<List<Integer>> (nested); flatMap gives Stream<Integer> (flat). mapToInt().sum() avoids boxing overhead compared to reduce(0, Integer::sum)."
+          "editorial": "flatMap(List::stream) is equivalent to flatMap(list -> list.stream()). It converts each inner list into a stream and concatenates all sub-streams into one. map() would give Stream<List<Integer>> (nested); flatMap gives Stream<Integer> (flat). mapToInt().sum() avoids boxing overhead compared to reduce(0, Integer::sum).",
+          "sampleInput": "[[1,2],[3,4],[5]]",
+          "sampleOutput": "[1,2,3,4,5]"
         },
         {
           "displayOrder": 8,
           "title": "Top N Elements By Comparator",
-          "description": "Given `List<Product> products` where `Product(String name, double price)`, return the top N most expensive products as a list, sorted by price descending. Use streams.",
+          "description": "Return the top N elements sorted by a comparator using streams.\n\n**Example:**\ntopN([Student(Alice,92), Student(Bob,75), Student(Charlie,88)], n=2, byGpa)\n=> [Alice(92), Charlie(88)]\n\n**Key insight:** `stream.sorted(comparator.reversed()).limit(n).collect(toList())` — sort descending, take first N.",
           "difficulty": "MEDIUM",
           "pattern": "Stream sorted + limit",
           "hint1": "Sort descending: `Comparator.comparingDouble(Product::price).reversed()`.",
@@ -252,12 +266,14 @@
             }
           ],
           "constraints": "n <= products.size(). Products non-null.",
-          "editorial": "sorted() is a stateful intermediate operation — it must buffer all elements before outputting any. reversed() flips the natural ascending order. limit(n) is a short-circuit intermediate — it caps the output. For very large lists where you only need top-N, a PriorityQueue approach is O(n log k) vs sorted's O(n log n), but streams make the code cleaner for typical sizes."
+          "editorial": "sorted() is a stateful intermediate operation — it must buffer all elements before outputting any. reversed() flips the natural ascending order. limit(n) is a short-circuit intermediate — it caps the output. For very large lists where you only need top-N, a PriorityQueue approach is O(n log k) vs sorted's O(n log n), but streams make the code cleaner for typical sizes.",
+          "sampleInput": "[Alice(92),Bob(75),Charlie(88)], n=2",
+          "sampleOutput": "[Alice(92),Charlie(88)]"
         },
         {
           "displayOrder": 9,
           "title": "Word Frequency Map",
-          "description": "Given a list of words, build a `Map<String, Long>` of word frequencies using `Collectors.groupingBy` with a counting downstream collector. Then find the most frequent word.",
+          "description": "Build a word frequency map from a string using `Collectors.groupingBy` + `counting`.\n\n**Example:**\nwordFrequency(\"to be or not to be\")\n=> {to=2, be=2, or=1, not=1}\n\n**Key insight:** `stream.collect(Collectors.groupingBy(w->w, Collectors.counting()))` — group by identity, count each group.",
           "difficulty": "MEDIUM",
           "pattern": "Collectors.groupingBy + counting",
           "hint1": "`Collectors.groupingBy(Function.identity(), Collectors.counting())`.",
@@ -272,12 +288,14 @@
             }
           ],
           "constraints": "Words non-null. At least one word.",
-          "editorial": "groupingBy(identity(), counting()) counts occurrences of each unique word. Function.identity() returns the word itself as the key. To find the maximum, stream the entry set and use max(comparingByValue()) — returns Optional<Entry<String,Long>>, so .map(Entry::getKey) extracts just the word."
+          "editorial": "groupingBy(identity(), counting()) counts occurrences of each unique word. Function.identity() returns the word itself as the key. To find the maximum, stream the entry set and use max(comparingByValue()) — returns Optional<Entry<String,Long>>, so .map(Entry::getKey) extracts just the word.",
+          "sampleInput": "\"to be or not to be\"",
+          "sampleOutput": "{to=2, be=2, or=1, not=1}"
         },
         {
           "displayOrder": 10,
           "title": "Partition Adults and Minors",
-          "description": "Given `List<Person> persons` with `name` and `age`, use `Collectors.partitioningBy` to split into adults (age >= 18) and minors. Return `Map<Boolean, List<String>>` where the value is a list of names (not Person objects).",
+          "description": "Use `Collectors.partitioningBy()` to split a list into two groups.\n\n**Example:**\npartitionAdults([Person(Alice,17), Person(Bob,25), Person(Charlie,16), Person(Dave,30)])\n=> {false=[Alice,Charlie], true=[Bob,Dave]}\n\n**Key insight:** `partitioningBy` always returns a `Map<Boolean, List<T>>` — exactly two buckets: matching and non-matching.",
           "difficulty": "MEDIUM",
           "pattern": "Collectors.partitioningBy + mapping",
           "hint1": "`Collectors.partitioningBy(predicate, downstream)` — downstream processes each partition.",
@@ -292,12 +310,14 @@
             }
           ],
           "constraints": "Always produces both true and false keys (partitioningBy guarantees this).",
-          "editorial": "partitioningBy always produces both keys (true and false) even if one partition is empty — unlike groupingBy which only creates keys for observed values. The downstream Collectors.mapping applies a transform before collecting — here extracting just the name. This avoids a post-processing map step."
+          "editorial": "partitioningBy always produces both keys (true and false) even if one partition is empty — unlike groupingBy which only creates keys for observed values. The downstream Collectors.mapping applies a transform before collecting — here extracting just the name. This avoids a post-processing map step.",
+          "sampleInput": "[Alice(17),Bob(25),Charlie(16),Dave(30)]",
+          "sampleOutput": "{false=[Alice,Charlie], true=[Bob,Dave]}"
         },
         {
           "displayOrder": 11,
           "title": "Stream of Primitives — IntStream Statistics",
-          "description": "Given an int array, use `IntStream` to compute: sum, average, min, max, and count — all in a single pass using `IntStream.summaryStatistics()`. Also generate an IntStream range and collect it.",
+          "description": "Use `IntStream` to compute statistics over an int array.\n\n**Example:**\nint[] data = {4,2,8,6,10};\nIntStream.of(data).average() => OptionalDouble[6.0]\nIntStream.of(data).sum() => 30\nIntStream.of(data).max() => OptionalInt[10]\nIntStream.of(data).min() => OptionalInt[2]\n\n**Key insight:** Primitive streams (`IntStream`, `LongStream`, `DoubleStream`) avoid boxing overhead and provide math operations.",
           "difficulty": "MEDIUM",
           "pattern": "IntStream / primitive streams",
           "hint1": "`Arrays.stream(arr)` gives an `IntStream` directly — no boxing.",
@@ -316,12 +336,14 @@
             }
           ],
           "constraints": "arr non-empty for stats. range: start < end.",
-          "editorial": "Primitive streams (IntStream, LongStream, DoubleStream) avoid boxing overhead. summaryStatistics() computes count, sum, min, max, average in a single pass — more efficient than five separate terminal operations. IntStream.range(a,b) is exclusive-end; rangeClosed(a,b) is inclusive. .boxed() converts IntStream to Stream<Integer> for collection into a List."
+          "editorial": "Primitive streams (IntStream, LongStream, DoubleStream) avoid boxing overhead. summaryStatistics() computes count, sum, min, max, average in a single pass — more efficient than five separate terminal operations. IntStream.range(a,b) is exclusive-end; rangeClosed(a,b) is inclusive. .boxed() converts IntStream to Stream<Integer> for collection into a List.",
+          "sampleInput": "IntStream.of(4,2,8,6,10)",
+          "sampleOutput": "sum=30, avg=6.0, max=10, min=2"
         },
         {
           "displayOrder": 12,
           "title": "Collectors.joining — Build a Formatted String",
-          "description": "Given `List<String> items`, use `Collectors.joining` to produce: (1) comma-separated string, (2) bracketed with delimiter, (3) a SQL IN clause like `WHERE name IN ('Alice','Bob','Carol')`.",
+          "description": "Use `Collectors.joining()` to build a formatted string from a list.\n\n**Example 1:**\njoin([\"Alice\",\"Bob\",\"Charlie\"], \", \", \"[\", \"]\") => \"[Alice, Bob, Charlie]\"\n\n**Example 2:**\njoin([\"a\",\"b\",\"c\"], \" | \", \"\", \"\") => \"a | b | c\"\n\n**Key insight:** `Collectors.joining(delimiter, prefix, suffix)` — builds a single string from stream elements with separators.",
           "difficulty": "MEDIUM",
           "pattern": "Collectors.joining",
           "hint1": "`Collectors.joining(\", \")` — delimiter only.",
@@ -344,12 +366,14 @@
             }
           ],
           "constraints": "Items are non-null strings.",
-          "editorial": "Collectors.joining operates on Stream<String> — map to String first if needed. The three-argument form takes delimiter, prefix, suffix. An empty stream with prefix/suffix still produces 'prefix + suffix' (e.g., '[]'). More efficient than manual StringBuilder loops as the Collector manages internal StringJoiner."
+          "editorial": "Collectors.joining operates on Stream<String> — map to String first if needed. The three-argument form takes delimiter, prefix, suffix. An empty stream with prefix/suffix still produces 'prefix + suffix' (e.g., '[]'). More efficient than manual StringBuilder loops as the Collector manages internal StringJoiner.",
+          "sampleInput": "[\"Alice\",\"Bob\",\"Charlie\"], delimiter=\", \", prefix=\"[\", suffix=\"]\"",
+          "sampleOutput": "\"[Alice, Bob, Charlie]\""
         },
         {
           "displayOrder": 13,
           "title": "Compose Predicates Dynamically",
-          "description": "Build a `ProductFilter` class that lets callers add multiple filter criteria at runtime (min price, max price, category, name contains). Each criterion is a `Predicate<Product>` composed with `and()`. Apply the composed predicate to filter a product list.",
+          "description": "Compose predicates dynamically using `Predicate.and()`, `or()`, `negate()`.\n\n**Example:**\nPredicate<Integer> isEven = n -> n % 2 == 0;\nPredicate<Integer> isPositive = n -> n > 0;\nPredicate<Integer> combined = isEven.and(isPositive);\nList.of(-2,3,4,-5,6).stream().filter(combined).collect(toList()) => [4,6]\n\n**Key insight:** Predicate composition builds complex filters from simple reusable parts — no nested if/else.",
           "difficulty": "HARD",
           "pattern": "Predicate composition",
           "hint1": "Store predicates in `List<Predicate<Product>>`. Start with `Predicate.not(Objects::isNull)` as base.",
@@ -364,12 +388,14 @@
             }
           ],
           "constraints": "All filter methods are optional — calling none returns all products.",
-          "editorial": "Predicate.and() short-circuits — if an early predicate fails, later ones are skipped. Starting with `p -> true` as the base identity means zero filters = all pass. This is the Specification/Criteria pattern used by Spring Data's Specification<T> for JPA query building."
+          "editorial": "Predicate.and() short-circuits — if an early predicate fails, later ones are skipped. Starting with `p -> true` as the base identity means zero filters = all pass. This is the Specification/Criteria pattern used by Spring Data's Specification<T> for JPA query building.",
+          "sampleInput": "isEven.and(isPositive) on [-2,3,4,-5,6]",
+          "sampleOutput": "[4,6]"
         },
         {
           "displayOrder": 14,
           "title": "Multi-Level groupingBy",
-          "description": "Given `List<Employee(name, department, city, salary)>`, use nested `Collectors.groupingBy` to build a `Map<String, Map<String, Double>>` where the outer key is department, the inner key is city, and the value is the average salary for that department+city combination.",
+          "description": "Use nested `Collectors.groupingBy()` to group by two levels: first by department, then by seniority.\n\n**Example:**\ngroupByDeptAndLevel([Employee(Alice,Eng,Senior), Employee(Bob,Eng,Junior), Employee(Charlie,HR,Senior)])\n=> {Engineering={Senior=[Alice], Junior=[Bob]}, HR={Senior=[Charlie]}}\n\n**Key insight:** `groupingBy(dept, groupingBy(level))` creates `Map<String, Map<String, List<Employee>>>` — multi-dimensional grouping.",
           "difficulty": "HARD",
           "pattern": "Nested groupingBy",
           "hint1": "`Collectors.groupingBy(dept, Collectors.groupingBy(city, averagingDouble(salary)))`.",
@@ -388,12 +414,14 @@
             }
           ],
           "constraints": "All fields non-null.",
-          "editorial": "Nested groupingBy: outer key partitions into departments, inner key partitions each department group into cities, downstream averagingDouble computes the average per city group. This produces a two-level Map without any explicit loops or mutation. The pattern extends to three or more levels by nesting further."
+          "editorial": "Nested groupingBy: outer key partitions into departments, inner key partitions each department group into cities, downstream averagingDouble computes the average per city group. This produces a two-level Map without any explicit loops or mutation. The pattern extends to three or more levels by nesting further.",
+          "sampleInput": "[Alice(Eng,Senior), Bob(Eng,Junior), Charlie(HR,Senior)]",
+          "sampleOutput": "{Engineering={Senior=[Alice],Junior=[Bob]}, HR={Senior=[Charlie]}}"
         },
         {
           "displayOrder": 15,
           "title": "Custom Collector — Running Statistics",
-          "description": "Implement a custom `Collector<Integer, ?, RunningStats>` that computes count, sum, min, max, and average in a single stream pass. `RunningStats` is a mutable accumulator. Use `Collector.of()`.",
+          "description": "Implement a custom `Collector<Integer, ?, RunningStats>` that computes count, sum, mean, and variance in one pass.\n\n**Example:**\nList.of(2,4,4,4,5,5,7,9).stream().collect(new RunningStatsCollector())\n=> RunningStats{count=8, sum=40, mean=5.0, variance=4.0}\n\n**Key insight:** Custom collectors implement `Supplier`, `Accumulator`, `Combiner`, and `Finisher` — enables arbitrary reduction logic.",
           "difficulty": "HARD",
           "pattern": "Custom Collector",
           "hint1": "RunningStats: fields count, sum, min, max. Supplier: `RunningStats::new`.",
@@ -408,12 +436,14 @@
             }
           ],
           "constraints": "Non-empty list.",
-          "editorial": "Collector.of(supplier, accumulator, combiner, finisher, characteristics). IDENTITY_FINISH means the finisher is the identity function — the accumulator IS the result. The combiner merges two partial accumulators for parallel correctness. This avoids five separate terminal operations (five passes) by doing everything in one pass."
+          "editorial": "Collector.of(supplier, accumulator, combiner, finisher, characteristics). IDENTITY_FINISH means the finisher is the identity function — the accumulator IS the result. The combiner merges two partial accumulators for parallel correctness. This avoids five separate terminal operations (five passes) by doing everything in one pass.",
+          "sampleInput": "[2,4,4,4,5,5,7,9].stream().collect(RunningStatsCollector)",
+          "sampleOutput": "mean=5.0, variance=4.0"
         },
         {
           "displayOrder": 16,
           "title": "Infinite Stream With limit()",
-          "description": "Use `Stream.iterate()` and `Stream.generate()` to create infinite streams. Generate: (1) Fibonacci numbers (first 10), (2) random integers between 1-100 (take first 5 that are > 50), (3) powers of 2 up to 1024.",
+          "description": "Generate an infinite stream with `Stream.iterate()` or `Stream.generate()` and limit it.\n\n**Example 1:**\nStream.iterate(1, n->n*2).limit(8).collect(toList()) => [1,2,4,8,16,32,64,128]\n\n**Example 2:**\nStream.generate(Math::random).limit(3).count() => 3\n\n**Key insight:** Infinite streams are lazy — nothing is computed until `limit()` or another terminal operation constrains them.",
           "difficulty": "HARD",
           "pattern": "Infinite stream / Stream.iterate",
           "hint1": "`Stream.iterate(new long[]{0,1}, f -> new long[]{f[1], f[0]+f[1]})` — state as array.",
@@ -432,12 +462,14 @@
             }
           ],
           "constraints": "Never collect an infinite stream without limit() or takeWhile().",
-          "editorial": "Stream.iterate(seed, fn) generates seed, fn(seed), fn(fn(seed))... infinitely. limit(n) caps it. Stream.generate(supplier) calls the supplier repeatedly. takeWhile(predicate) stops at the first false (Java 9+) — correct for monotonically changing sequences. Always pair infinite streams with a short-circuit: limit, takeWhile, findFirst, or anyMatch."
+          "editorial": "Stream.iterate(seed, fn) generates seed, fn(seed), fn(fn(seed))... infinitely. limit(n) caps it. Stream.generate(supplier) calls the supplier repeatedly. takeWhile(predicate) stops at the first false (Java 9+) — correct for monotonically changing sequences. Always pair infinite streams with a short-circuit: limit, takeWhile, findFirst, or anyMatch.",
+          "sampleInput": "Stream.iterate(1, n->n*2).limit(8)",
+          "sampleOutput": "[1,2,4,8,16,32,64,128]"
         },
         {
           "displayOrder": 17,
           "title": "Parallel Word Count",
-          "description": "Given a large list of sentences, count the total occurrences of each word across all sentences using a parallel stream pipeline. Return `Map<String, Long>`. Words should be lowercased and punctuation stripped. Compare sequential vs parallel performance.",
+          "description": "Count word frequency in a large file using a parallel stream.\n\n**Example:**\nMap<String,Long> freq = Files.lines(path)\n    .parallel()\n    .flatMap(line -> Arrays.stream(line.split(\"\\\\s+\")))\n    .collect(Collectors.groupingByConcurrent(w->w, Collectors.counting()));\n\n**Key insight:** Use `groupingByConcurrent` (not `groupingBy`) with parallel streams — it's thread-safe. `parallel()` splits the stream across CPU cores.",
           "difficulty": "HARD",
           "pattern": "Parallel stream / ConcurrentMap",
           "hint1": "Use `parallelStream()` → `flatMap(sentence -> Arrays.stream(sentence.split(...)))` → `collect(groupingByConcurrent(...))`.",
@@ -456,12 +488,14 @@
             }
           ],
           "constraints": "Use groupingByConcurrent for parallel safety.",
-          "editorial": "groupingBy (non-concurrent) collects into a regular HashMap which is not thread-safe for parallel streams — use groupingByConcurrent which uses a ConcurrentHashMap. flatMap expands each sentence into individual words before the parallel collector processes them. The order of words in the map is non-deterministic but counts are correct."
+          "editorial": "groupingBy (non-concurrent) collects into a regular HashMap which is not thread-safe for parallel streams — use groupingByConcurrent which uses a ConcurrentHashMap. flatMap expands each sentence into individual words before the parallel collector processes them. The order of words in the map is non-deterministic but counts are correct.",
+          "sampleInput": "parallel word count on multi-line text",
+          "sampleOutput": "Map<word, count> with all words counted"
         },
         {
           "displayOrder": 18,
           "title": "Stream Pipeline — SQL-Style JOIN",
-          "description": "Given `List<Order>(orderId, customerId, amount)` and `List<Customer>(customerId, name)`, simulate a SQL JOIN using streams: return `List<String>` of `'CustomerName: $amount'` for every order, sorted by amount descending.",
+          "description": "Simulate a SQL JOIN using streams: join `orders` with `customers` on `customerId`.\n\n**Example:**\njoin(customers, orders, Customer::getId, Order::getCustomerId, (c,o) -> c.name+\":\"+o.product)\n=> [\"Alice:Book\", \"Alice:Pen\", \"Bob:Laptop\"]\n\n**Key insight:** `orders.stream().flatMap(o -> customers.stream().filter(c->c.getId()==o.getCustomerId()).map(c->combine(c,o)))` — nested stream join, O(n*m).",
           "difficulty": "HARD",
           "pattern": "Stream join simulation",
           "hint1": "Build a `Map<Integer, String>` of customerId→name first (O(1) lookup).",
@@ -476,12 +510,14 @@
             }
           ],
           "constraints": "No order references an unknown customer in this test. Handle with getOrDefault.",
-          "editorial": "The efficient stream join pattern: build a Map from the smaller collection first (O(n)), then stream the larger collection doing O(1) lookups. Never nested-loop join in streams — that would be O(n²). This is exactly how SQL hash joins work — build a hash table on the smaller side, probe it for each row of the larger side."
+          "editorial": "The efficient stream join pattern: build a Map from the smaller collection first (O(n)), then stream the larger collection doing O(1) lookups. Never nested-loop join in streams — that would be O(n²). This is exactly how SQL hash joins work — build a hash table on the smaller side, probe it for each row of the larger side.",
+          "sampleInput": "join customers[Alice,Bob] with orders[Book@1,Pen@1,Laptop@2]",
+          "sampleOutput": "[\"Alice:Book\", \"Alice:Pen\", \"Bob:Laptop\"]"
         },
         {
           "displayOrder": 19,
           "title": "Lazy Evaluation — peek() and Short-Circuit",
-          "description": "Demonstrate stream laziness: (1) use `peek()` to show which elements are actually processed when `findFirst()` is used. (2) Show that `limit()` stops iteration early. (3) Show that `count()` on a filtered stream does NOT short-circuit — it processes all elements.",
+          "description": "Use `peek()` to inspect stream elements without consuming them, and demonstrate short-circuit with `anyMatch()`.\n\n**Example:**\nList.of(1,3,5,4,7).stream()\n    .peek(n -> System.out.println(\"checking: \"+n))\n    .anyMatch(n -> n % 2 == 0)\n=> prints \"checking: 1\", \"checking: 3\", \"checking: 5\", \"checking: 4\"\n=> stops at 4 (short-circuit)\n=> returns true\n\n**Key insight:** `anyMatch` stops as soon as a match is found — elements after are never processed.",
           "difficulty": "HARD",
           "pattern": "Stream laziness / peek",
           "hint1": "`peek(e -> System.out.println('processing: '+e))` logs elements that actually flow through.",
@@ -500,12 +536,14 @@
             }
           ],
           "constraints": "Conceptual demonstration — output varies by peek() placement.",
-          "editorial": "peek() is a non-interfering, stateless intermediate op for debugging — it receives each element as it flows through. findFirst() is short-circuit: only elements 1, 2, 3 are tested for divisibility by 3; elements 4–10 are never touched. count() is NOT short-circuit — even though many filtered elements are discarded, the filter must test every element to know how many pass."
+          "editorial": "peek() is a non-interfering, stateless intermediate op for debugging — it receives each element as it flows through. findFirst() is short-circuit: only elements 1, 2, 3 are tested for divisibility by 3; elements 4–10 are never touched. count() is NOT short-circuit — even though many filtered elements are discarded, the filter must test every element to know how many pass.",
+          "sampleInput": "[1,3,5,4,7].stream().peek(print).anyMatch(isEven)",
+          "sampleOutput": "prints 1,3,5,4 then returns true (stops at 4)"
         },
         {
           "displayOrder": 20,
           "title": "Build a Query DSL With Method Chaining and Streams",
-          "description": "Implement a fluent `QueryBuilder<T>` that wraps a `List<T>` and provides chainable stream operations: `filter(Predicate)`, `map(Function)`, `sortBy(Comparator)`, `limit(int)`, `skip(int)`, `distinct()`. Execute with `toList()` or `count()`. Internally build and apply a stream pipeline.",
+          "description": "Build a fluent query DSL using method chaining and streams:\n\n**Example:**\nnew Query<Employee>(employees)\n    .where(e -> e.getSalary() > 50000)\n    .orderBy(Comparator.comparing(Employee::getName))\n    .limit(5)\n    .select(Employee::getName)\n    .toList()\n=> [\"Alice\", \"Charlie\", \"Eve\"] (top 5 high-earners by name)\n\n**Key insight:** Each method stores a predicate/comparator and returns `this`. `toList()` triggers the stream pipeline.",
           "difficulty": "HARD",
           "pattern": "Fluent API over Streams",
           "hint1": "Store a `Stream<T>` field. Each method reassigns: `this.stream = stream.filter(pred); return this;`",
@@ -524,7 +562,9 @@
             }
           ],
           "constraints": "A QueryBuilder can only be terminal-called once (streams are not reusable).",
-          "editorial": "Storing and reassigning the Stream<T> field is valid because stream operations return new stream objects. map() must return a new QueryBuilder<R> (different type parameter) rather than reassigning this. This pattern mirrors how Spring Data's QueryDSL Predicates, jOOQ's DSL, and even Java's own Stream API itself are implemented — a fluent builder that lazily accumulates operations and executes them at the terminal call."
+          "editorial": "Storing and reassigning the Stream<T> field is valid because stream operations return new stream objects. map() must return a new QueryBuilder<R> (different type parameter) rather than reassigning this. This pattern mirrors how Spring Data's QueryDSL Predicates, jOOQ's DSL, and even Java's own Stream API itself are implemented — a fluent builder that lazily accumulates operations and executes them at the terminal call.",
+          "sampleInput": "where(salary>50k).orderBy(name).limit(5).select(name)",
+          "sampleOutput": "[\"Alice\", \"Charlie\", \"Eve\"]"
         }
       ],
       "subCategory": "Java 8+ Features",

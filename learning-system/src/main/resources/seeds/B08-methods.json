@@ -68,7 +68,7 @@
         {
           "displayOrder": 1,
           "title": "Factorial (Recursive and Iterative)",
-          "description": "Implement factorial(n) both recursively and iteratively. Return the result. Handle n=0 (0! = 1). Use long to avoid overflow.",
+          "description": "Implement `factorial(n)` **both recursively and iteratively**. Return the factorial result. Handle n=0 (returns 1 by definition).\n\n**Example 1:**\nInput: n = 5\nOutput: 120\nExplanation: 5! = 5 * 4 * 3 * 2 * 1 = 120.\n\n**Example 2:**\nInput: n = 0\nOutput: 1\nExplanation: 0! = 1 by convention.\n\n**Example 3:**\nInput: n = 10\nOutput: 3628800",
           "difficulty": "EASY",
           "pattern": "Recursion / Iteration",
           "hint1": "Base case: factorial(0) = 1, factorial(1) = 1.",
@@ -95,12 +95,14 @@
             }
           ],
           "constraints": "0 <= n <= 20 (20! fits in long)",
-          "editorial": "Classic recursion intro. Base case n<=1 returns 1. Recursive multiplies n by factorial(n-1). Stack depth = n. Iterative is O(1) stack space. For n > 20, use BigInteger."
+          "editorial": "Classic recursion intro. Base case n<=1 returns 1. Recursive multiplies n by factorial(n-1). Stack depth = n. Iterative is O(1) stack space. For n > 20, use BigInteger.",
+          "sampleInput": "5",
+          "sampleOutput": "120"
         },
         {
           "displayOrder": 2,
           "title": "Power Function (Fast Exponentiation)",
-          "description": "Implement pow(x, n) — raise x to the power n. Handle negative n. Must be O(log n), not O(n).",
+          "description": "Implement `pow(x, n)` — raise `x` to the power `n`. Handle negative exponents. Must run in **O(log n)** using fast exponentiation (repeated squaring).\n\n**Example 1:**\nInput: x = 2.0, n = 10\nOutput: 1024.0\n\n**Example 2:**\nInput: x = 2.0, n = -2\nOutput: 0.25\nExplanation: 2^(-2) = 1 / (2^2) = 0.25.\n\n**Example 3:**\nInput: x = 2.1, n = 3\nOutput: 9.261",
           "difficulty": "EASY",
           "pattern": "Divide and Conquer Recursion",
           "hint1": "If n is even: pow(x, n) = pow(x*x, n/2).",
@@ -127,12 +129,14 @@
             }
           ],
           "constraints": "-100.0 < x < 100.0. -2^31 <= n <= 2^31-1. x != 0 when n < 0.",
-          "editorial": "Fast exponentiation halves n on each call → O(log n) multiplications. Cast n to long before negating to handle Integer.MIN_VALUE (-2^31 has no positive int counterpart). Recursion depth = O(log n)."
+          "editorial": "Fast exponentiation halves n on each call → O(log n) multiplications. Cast n to long before negating to handle Integer.MIN_VALUE (-2^31 has no positive int counterpart). Recursion depth = O(log n).",
+          "sampleInput": "x = 2.0, n = 10",
+          "sampleOutput": "1024.0"
         },
         {
           "displayOrder": 3,
           "title": "GCD and LCM",
-          "description": "Implement gcd(a, b) using Euclid's algorithm (recursive), and lcm(a, b) = a * b / gcd(a, b).",
+          "description": "Implement `gcd(a, b)` using **Euclid's algorithm** (recursive), and `lcm(a, b) = a * b / gcd(a, b)`.\n\n**Example 1:**\nInput: a = 48, b = 18\nOutput: gcd = 6, lcm = 144\nExplanation: gcd(48,18) = gcd(18,12) = gcd(12,6) = gcd(6,0) = 6.\n\n**Example 2:**\nInput: a = 4, b = 6\nOutput: gcd = 2, lcm = 12\n\n**Example 3:**\nInput: a = 7, b = 5\nOutput: gcd = 1, lcm = 35",
           "difficulty": "EASY",
           "pattern": "Euclidean Algorithm",
           "hint1": "Euclid's: gcd(a, b) = gcd(b, a % b). Base case: gcd(a, 0) = a.",
@@ -159,12 +163,14 @@
             }
           ],
           "constraints": "0 <= a, b <= 10^9",
-          "editorial": "Euclid's algorithm: gcd(a,b) = gcd(b, a%b) because any divisor of a and b also divides a%b. Terminates in O(log min(a,b)) steps. LCM: divide before multiplying to avoid overflow."
+          "editorial": "Euclid's algorithm: gcd(a,b) = gcd(b, a%b) because any divisor of a and b also divides a%b. Terminates in O(log min(a,b)) steps. LCM: divide before multiplying to avoid overflow.",
+          "sampleInput": "a = 48, b = 18",
+          "sampleOutput": "gcd = 6, lcm = 144"
         },
         {
           "displayOrder": 4,
           "title": "Sum of Digits (Recursive)",
-          "description": "Recursively compute the sum of digits of a non-negative integer n without using loops or string conversion.",
+          "description": "Recursively compute the **sum of digits** of a non-negative integer `n` without converting to a string. Use the modulo and division operators only.\n\n**Example 1:**\nInput: n = 493\nOutput: 16\nExplanation: 4 + 9 + 3 = 16.\n\n**Example 2:**\nInput: n = 0\nOutput: 0\n\n**Example 3:**\nInput: n = 9999\nOutput: 36\nExplanation: 9 + 9 + 9 + 9 = 36.",
           "difficulty": "EASY",
           "pattern": "Recursion on Number",
           "hint1": "Extract last digit with n % 10.",
@@ -191,12 +197,14 @@
             }
           ],
           "constraints": "0 <= n <= 10^9",
-          "editorial": "Classic digit recursion: sum last digit + recurse on rest. Base case when n is single digit. Recursion depth = number of digits = O(log n)."
+          "editorial": "Classic digit recursion: sum last digit + recurse on rest. Base case when n is single digit. Recursion depth = number of digits = O(log n).",
+          "sampleInput": "493",
+          "sampleOutput": "16"
         },
         {
           "displayOrder": 5,
           "title": "Overloaded Calculator",
-          "description": "Create a Calculator class with overloaded add() methods: add(int, int), add(double, double), add(int, int, int). Return appropriate types.",
+          "description": "Create a `Calculator` class with **overloaded** `add()` methods: `add(int, int)`, `add(double, double)`, and `add(String, String)` (concatenation). Demonstrate method overloading — same method name, different parameter types.\n\n**Example 1:**\nadd(2, 3) => 5\n\n**Example 2:**\nadd(2.5, 3.5) => 6.0\n\n**Example 3:**\nadd(\"Hello, \", \"World!\") => \"Hello, World!\"",
           "difficulty": "EASY",
           "pattern": "Method Overloading",
           "hint1": "Three separate methods with the same name but different parameter lists.",
@@ -219,12 +227,14 @@
             }
           ],
           "constraints": "Inputs fit in int/double ranges.",
-          "editorial": "Demonstrates overloading: same method name, different signatures. Compiler resolves at compile time based on argument types. Three-arg version delegates to two-arg — demonstrates method reuse."
+          "editorial": "Demonstrates overloading: same method name, different signatures. Compiler resolves at compile time based on argument types. Three-arg version delegates to two-arg — demonstrates method reuse.",
+          "sampleInput": "add(2, 3)",
+          "sampleOutput": "5"
         },
         {
           "displayOrder": 6,
           "title": "Flatten Nested Array (Varargs)",
-          "description": "Write a method sum(int... nums) that accepts any number of integers and returns their sum. Also write a method that accepts multiple int arrays and sums all elements.",
+          "description": "Write a method `sum(int... nums)` using **varargs** that accepts any number of integers and returns their sum. Also write `max(int first, int... rest)` that returns the maximum across all arguments.\n\n**Example 1:**\nsum(1, 2, 3, 4, 5) => 15\n\n**Example 2:**\nsum() => 0\nExplanation: Zero arguments; sum of empty list is 0.\n\n**Example 3:**\nmax(3, 1, 4, 1, 5, 9, 2, 6) => 9",
           "difficulty": "EASY",
           "pattern": "Varargs",
           "hint1": "Varargs: int... nums — treated as int[] inside the method.",
@@ -247,12 +257,14 @@
             }
           ],
           "constraints": "All values fit in int. Max 100 arguments.",
-          "editorial": "Varargs compiles to array parameter. Can pass zero arguments (empty array) or many. Can also pass an existing array directly. Varargs must be the last parameter. sumArrays uses varargs of int[] — two nested for-each loops."
+          "editorial": "Varargs compiles to array parameter. Can pass zero arguments (empty array) or many. Can also pass an existing array directly. Varargs must be the last parameter. sumArrays uses varargs of int[] — two nested for-each loops.",
+          "sampleInput": "sum(1, 2, 3, 4, 5)",
+          "sampleOutput": "15"
         },
         {
           "displayOrder": 7,
           "title": "Binary Search (Recursive)",
-          "description": "Implement recursive binary search on a sorted array. Return the index of target, or -1 if not found.",
+          "description": "Implement **recursive binary search** on a sorted array. Return the index of `target`, or `-1` if not found. Pass `low` and `high` as parameters on each recursive call.\n\n**Example 1:**\nInput: nums = [-1,0,3,5,9,12], target = 9\nOutput: 4\nExplanation: 9 is at index 4.\n\n**Example 2:**\nInput: nums = [-1,0,3,5,9,12], target = 2\nOutput: -1\nExplanation: 2 is not in the array.",
           "difficulty": "MEDIUM",
           "pattern": "Divide and Conquer",
           "hint1": "Helper method with lo and hi bounds. Base case: lo > hi → not found.",
@@ -279,12 +291,14 @@
             }
           ],
           "constraints": "Array is sorted. 1 <= arr.length <= 10^5. Values fit in int.",
-          "editorial": "Recursive binary search: divide in half each call. Use lo + (hi-lo)/2 instead of (lo+hi)/2 to avoid integer overflow. Recursion depth = O(log n). The helper method pattern (public wrapper + private recursive) is idiomatic Java."
+          "editorial": "Recursive binary search: divide in half each call. Use lo + (hi-lo)/2 instead of (lo+hi)/2 to avoid integer overflow. Recursion depth = O(log n). The helper method pattern (public wrapper + private recursive) is idiomatic Java.",
+          "sampleInput": "nums = [-1,0,3,5,9,12], target = 9",
+          "sampleOutput": "4"
         },
         {
           "displayOrder": 8,
           "title": "Merge Sort Implementation",
-          "description": "Implement merge sort on an integer array. Use a recursive divide-and-conquer approach. Return the sorted array.",
+          "description": "Implement **merge sort** on an integer array using recursive divide-and-conquer. Split the array in half, recursively sort each half, then merge them. O(n log n) time, O(n) space.\n\n**Example 1:**\nInput: [38,27,43,3,9,82,10]\nOutput: [3,9,10,27,38,43,82]\n\n**Example 2:**\nInput: [5,1,4,2,8]\nOutput: [1,2,4,5,8]\n\n**Example 3:**\nInput: [1]\nOutput: [1]",
           "difficulty": "MEDIUM",
           "pattern": "Divide and Conquer",
           "hint1": "Split the array in half, recursively sort each half.",
@@ -311,12 +325,14 @@
             }
           ],
           "constraints": "0 <= arr.length <= 10^5. Values fit in int.",
-          "editorial": "Merge sort: O(n log n) time, O(n) space. Divide: split at midpoint. Conquer: recursive calls. Combine: merge two sorted halves. The recursion tree has O(log n) levels, each level does O(n) work. Stable sort — equal elements maintain relative order."
+          "editorial": "Merge sort: O(n log n) time, O(n) space. Divide: split at midpoint. Conquer: recursive calls. Combine: merge two sorted halves. The recursion tree has O(log n) levels, each level does O(n) work. Stable sort — equal elements maintain relative order.",
+          "sampleInput": "[38,27,43,3,9,82,10]",
+          "sampleOutput": "[3,9,10,27,38,43,82]"
         },
         {
           "displayOrder": 9,
           "title": "Flood Fill (DFS Recursion)",
-          "description": "Given an image (2D int array), a starting pixel (sr, sc), and a new color, perform flood fill. Change all connected pixels of the original color to the new color.",
+          "description": "Given a 2D image (int matrix), starting pixel `(sr, sc)`, and a `newColor`, perform a **flood fill**: change the starting pixel's color and all connected pixels of the same original color to `newColor`. Connectivity is 4-directional.\n\n**Example 1:**\nInput: image = [[1,1,1],[1,1,0],[1,0,1]], sr=1, sc=1, newColor=2\nOutput: [[2,2,2],[2,2,0],[2,0,1]]\n\n**Example 2:**\nInput: image = [[0,0,0],[0,0,0]], sr=0, sc=0, newColor=2\nOutput: [[2,2,2],[2,2,2]]",
           "difficulty": "MEDIUM",
           "pattern": "DFS Recursion on Grid",
           "hint1": "DFS from (sr, sc). Change color, then recurse in 4 directions.",
@@ -339,12 +355,14 @@
             }
           ],
           "constraints": "m == image.length. n == image[i].length. 1 <= m, n <= 50. 0 <= image[i][j], color < 2^16.",
-          "editorial": "DFS flood fill: change pixel, then recurse in 4 directions. Early return on bounds check and wrong color. Critical: check orig != color before starting to avoid marking all same-color pixels when color doesn't change. O(m*n) time."
+          "editorial": "DFS flood fill: change pixel, then recurse in 4 directions. Early return on bounds check and wrong color. Critical: check orig != color before starting to avoid marking all same-color pixels when color doesn't change. O(m*n) time.",
+          "sampleInput": "image=[[1,1,1],[1,1,0],[1,0,1]], sr=1, sc=1, newColor=2",
+          "sampleOutput": "[[2,2,2],[2,2,0],[2,0,1]]"
         },
         {
           "displayOrder": 10,
           "title": "Generate All Subsets (Power Set)",
-          "description": "Given an integer array nums with unique elements, return all possible subsets (the power set). Include the empty subset.",
+          "description": "Given an integer array `nums` with unique elements, return **all possible subsets** (the power set). The solution set must not contain duplicate subsets. Return subsets in any order.\n\n**Example 1:**\nInput: [1,2,3]\nOutput: [[],[1],[2],[1,2],[3],[1,3],[2,3],[1,2,3]]\n\n**Example 2:**\nInput: [0]\nOutput: [[],[0]]\nExplanation: Two subsets: empty set and {0}.",
           "difficulty": "MEDIUM",
           "pattern": "Backtracking / Recursive Subsets",
           "hint1": "For each element, you either include it or don't — 2^n subsets total.",
@@ -367,12 +385,14 @@
             }
           ],
           "constraints": "1 <= nums.length <= 10. All nums are unique.",
-          "editorial": "Backtracking: add current list to result at every node (not just leaves). For loop starting at 'start' prevents duplicates. Add element, recurse, remove element (backtrack). 2^n subsets, O(n * 2^n) time to copy all lists."
+          "editorial": "Backtracking: add current list to result at every node (not just leaves). For loop starting at 'start' prevents duplicates. Add element, recurse, remove element (backtrack). 2^n subsets, O(n * 2^n) time to copy all lists.",
+          "sampleInput": "[1,2,3]",
+          "sampleOutput": "[[],[1],[2],[1,2],[3],[1,3],[2,3],[1,2,3]]"
         },
         {
           "displayOrder": 11,
           "title": "Climbing Stairs (Memoized)",
-          "description": "You can climb 1 or 2 steps at a time. How many distinct ways to climb n stairs? Use memoization.",
+          "description": "You can climb 1 or 2 steps at a time. Return the number of **distinct ways** to climb `n` stairs. Use **memoization** (top-down DP) to avoid redundant recomputation.\n\n**Example 1:**\nInput: n = 2\nOutput: 2\nExplanation: (1+1) or (2) — two distinct ways.\n\n**Example 2:**\nInput: n = 3\nOutput: 3\nExplanation: (1+1+1), (1+2), (2+1) — three ways.\n\n**Example 3:**\nInput: n = 5\nOutput: 8",
           "difficulty": "MEDIUM",
           "pattern": "Memoized Recursion / DP",
           "hint1": "ways(n) = ways(n-1) + ways(n-2) — same structure as Fibonacci.",
@@ -399,12 +419,14 @@
             }
           ],
           "constraints": "1 <= n <= 45",
-          "editorial": "Identical to Fibonacci recurrence. Memoized: each subproblem solved once → O(n). The memo array is passed by reference — all recursive calls share the same cache. Demonstrate the pattern: check cache → compute → store → return."
+          "editorial": "Identical to Fibonacci recurrence. Memoized: each subproblem solved once → O(n). The memo array is passed by reference — all recursive calls share the same cache. Demonstrate the pattern: check cache → compute → store → return.",
+          "sampleInput": "5",
+          "sampleOutput": "8"
         },
         {
           "displayOrder": 12,
           "title": "Permutations of Array",
-          "description": "Given an array of distinct integers, return all possible permutations.",
+          "description": "Given an array of **distinct** integers, return all possible **permutations**. Use backtracking: at each step pick an unused element, place it, recurse, then backtrack.\n\n**Example 1:**\nInput: [1,2,3]\nOutput: [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]\n\n**Example 2:**\nInput: [0,1]\nOutput: [[0,1],[1,0]]\n\n**Example 3:**\nInput: [1]\nOutput: [[1]]",
           "difficulty": "MEDIUM",
           "pattern": "Backtracking with Swap",
           "hint1": "For each position, swap it with every element to its right.",
@@ -427,12 +449,14 @@
             }
           ],
           "constraints": "1 <= nums.length <= 6. -10 <= nums[i] <= 10. All distinct.",
-          "editorial": "Swap-based permutation: fix current position by swapping it with each remaining element, recurse for the next position, then swap back. Produces n! permutations. O(n * n!) time to generate all."
+          "editorial": "Swap-based permutation: fix current position by swapping it with each remaining element, recurse for the next position, then swap back. Produces n! permutations. O(n * n!) time to generate all.",
+          "sampleInput": "[1,2,3]",
+          "sampleOutput": "[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]"
         },
         {
           "displayOrder": 13,
           "title": "Memoized Coin Change",
-          "description": "Given coins and a target amount, find the minimum number of coins needed to make the amount. Return -1 if impossible. Use top-down memoization.",
+          "description": "Given an array of coin denominations and a target `amount`, find the **minimum number of coins** needed to make up that amount using **memoization**. Return -1 if the amount cannot be made.\n\n**Example 1:**\nInput: coins = [1,5,11], amount = 15\nOutput: 3\nExplanation: 5 + 5 + 5 = 15 (three coins).\n\n**Example 2:**\nInput: coins = [2], amount = 3\nOutput: -1\nExplanation: Cannot make 3 with only 2-denomination coins.",
           "difficulty": "HARD",
           "pattern": "Top-Down DP (Memoization)",
           "hint1": "minCoins(amount) = 1 + min(minCoins(amount - coin) for coin in coins).",
@@ -459,12 +483,14 @@
             }
           ],
           "constraints": "1 <= coins.length <= 12. 1 <= coins[i] <= 2^31-1. 0 <= amount <= 10^4.",
-          "editorial": "Top-down DP: dp(amount) = 1 + min over all coins. Use -2 sentinel for unvisited (to distinguish from -1=impossible and 0=base case). For each coin, subtract and recurse. If the sub-result is -1 (impossible), skip. O(amount * |coins|) time."
+          "editorial": "Top-down DP: dp(amount) = 1 + min over all coins. Use -2 sentinel for unvisited (to distinguish from -1=impossible and 0=base case). For each coin, subtract and recurse. If the sub-result is -1 (impossible), skip. O(amount * |coins|) time.",
+          "sampleInput": "coins = [1,5,11], amount = 15",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 14,
           "title": "Mutual Recursion — Even/Odd Checker",
-          "description": "Implement isEven(n) and isOdd(n) using mutual recursion (isEven calls isOdd and vice versa). No modulo or bitwise operators allowed.",
+          "description": "Implement `isEven(n)` and `isOdd(n)` using **mutual recursion**: `isEven` calls `isOdd` and vice versa, without using the `%` operator. Base cases: isEven(0)=true, isOdd(0)=false.\n\n**Example 1:**\nInput: isEven(4)\nOutput: true\nExplanation: isEven(4) -> isOdd(3) -> isEven(2) -> isOdd(1) -> isEven(0) = true.\n\n**Example 2:**\nInput: isOdd(3)\nOutput: true\n\n**Example 3:**\nInput: isEven(7)\nOutput: false",
           "difficulty": "HARD",
           "pattern": "Mutual Recursion",
           "hint1": "isEven(0) = true, isOdd(0) = false (base cases).",
@@ -491,12 +517,14 @@
             }
           ],
           "constraints": "0 <= |n| <= 100 (stack depth bounded). Demonstrate concept.",
-          "editorial": "Mutual recursion: two functions call each other. isEven(n) = isOdd(n-1) because n is even iff n-1 is odd. Stack depth = n, so only works for small n in Java. Demonstrates the concept but use n%2 in practice."
+          "editorial": "Mutual recursion: two functions call each other. isEven(n) = isOdd(n-1) because n is even iff n-1 is odd. Stack depth = n, so only works for small n in Java. Demonstrates the concept but use n%2 in practice.",
+          "sampleInput": "isEven(4)",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 15,
           "title": "Recursive Tree Maximum Depth",
-          "description": "Given a binary tree, find its maximum depth (number of nodes along the longest root-to-leaf path).",
+          "description": "Given a binary tree, find its **maximum depth** — the number of nodes along the longest root-to-leaf path. Use recursive DFS.\n\n**Example 1:**\nInput: [3,9,20,null,null,15,7]\nOutput: 3\nExplanation: The longest path is 3->20->15 or 3->20->7 (depth 3).\n\n**Example 2:**\nInput: [1,null,2]\nOutput: 2\n\n**Example 3:**\nInput: []\nOutput: 0",
           "difficulty": "HARD",
           "pattern": "Tree Recursion",
           "hint1": "maxDepth(null) = 0 (base case).",
@@ -523,12 +551,14 @@
             }
           ],
           "constraints": "0 <= number of nodes <= 10^4. -100 <= Node.val <= 100.",
-          "editorial": "Tree recursion: null node has depth 0. Non-null node has depth 1 + max of subtree depths. This is the most elegant recursive solution. O(n) time — each node visited once. Stack depth = tree height = O(log n) for balanced, O(n) worst case."
+          "editorial": "Tree recursion: null node has depth 0. Non-null node has depth 1 + max of subtree depths. This is the most elegant recursive solution. O(n) time — each node visited once. Stack depth = tree height = O(log n) for balanced, O(n) worst case.",
+          "sampleInput": "[3,9,20,null,null,15,7]",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 16,
           "title": "Decode Ways (Memoized)",
-          "description": "A string of digits can be decoded like: '1'→A, '2'→B, ..., '26'→Z. Count the number of ways to decode a string. Use memoized recursion.",
+          "description": "A string of digits can be decoded: '1'->A, '2'->B, ..., '26'->Z. Count the number of ways to decode it using **memoization**. '0' has no valid single-digit mapping.\n\n**Example 1:**\nInput: \"12\"\nOutput: 2\nExplanation: \"AB\" (1,2) or \"L\" (12) — two ways.\n\n**Example 2:**\nInput: \"226\"\nOutput: 3\nExplanation: \"BZ\" (2,26), \"VF\" (22,6), \"BBF\" (2,2,6).\n\n**Example 3:**\nInput: \"06\"\nOutput: 0\nExplanation: '0' cannot be decoded.",
           "difficulty": "HARD",
           "pattern": "Memoized DP on String",
           "hint1": "dp(i) = number of ways to decode s[i..n-1].",
@@ -555,12 +585,14 @@
             }
           ],
           "constraints": "1 <= s.length <= 100. s contains only digits.",
-          "editorial": "Top-down DP: at each index, try 1-digit and 2-digit decodings. A digit starting with '0' is invalid (no A=0). Two-digit decode valid only if 10-26. Memoize to avoid re-exploring same suffix. O(n) time and space."
+          "editorial": "Top-down DP: at each index, try 1-digit and 2-digit decodings. A digit starting with '0' is invalid (no A=0). Two-digit decode valid only if 10-26. Memoize to avoid re-exploring same suffix. O(n) time and space.",
+          "sampleInput": "\"226\"",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 17,
           "title": "Recursive Maze Solver",
-          "description": "Given a 2D maze (0=open, 1=wall), find if there's a path from (0,0) to (m-1,n-1). Mark the path. Use recursion with backtracking.",
+          "description": "Given a 2D maze where `0` = open and `1` = wall, find if there is a path from top-left `(0,0)` to bottom-right `(m-1,n-1)` using **recursive DFS**. Move in 4 directions; mark visited cells to avoid cycles.\n\n**Example 1:**\nInput: [[0,0,0],[1,1,0],[1,1,0]]\nOutput: true\nExplanation: Path: (0,0)->(0,1)->(0,2)->(1,2)->(2,2).\n\n**Example 2:**\nInput: [[0,1],[1,0]]\nOutput: false\nExplanation: Both paths are blocked by walls.",
           "difficulty": "HARD",
           "pattern": "Backtracking on Grid",
           "hint1": "Mark current cell as visited (e.g., 2) before recursing.",
@@ -583,12 +615,14 @@
             }
           ],
           "constraints": "1 <= m, n <= 10. maze[i][j] is 0 or 1. maze[0][0] = maze[m-1][n-1] = 0.",
-          "editorial": "Backtracking: mark as part of path (2), try all directions, if successful return true. If stuck, unmark and return false. The early exit with `||` short-circuits once a path is found. O(4^(m*n)) worst case but much better in practice due to pruning."
+          "editorial": "Backtracking: mark as part of path (2), try all directions, if successful return true. If stuck, unmark and return false. The early exit with `||` short-circuits once a path is found. O(4^(m*n)) worst case but much better in practice due to pruning.",
+          "sampleInput": "[[0,0,0],[1,1,0],[1,1,0]]",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 18,
           "title": "Number of Islands (DFS)",
-          "description": "Given a 2D grid of '1's (land) and '0's (water), count the number of islands. An island is surrounded by water and formed by connecting adjacent lands horizontally/vertically.",
+          "description": "Given a 2D grid of `'1'` (land) and `'0'` (water), count the number of **islands**. An island is a group of adjacent land cells connected horizontally or vertically. Use DFS to sink each island after counting it.\n\n**Example 1:**\nInput: [[\"1\",\"1\",\"0\"],[\"0\",\"1\",\"0\"],[\"0\",\"0\",\"1\"]]\nOutput: 2\n\n**Example 2:**\nInput: [[\"1\",\"1\",\"1\"],[\"0\",\"1\",\"0\"],[\"1\",\"1\",\"1\"]]\nOutput: 1\nExplanation: All land cells are connected.",
           "difficulty": "HARD",
           "pattern": "DFS / BFS on Grid",
           "hint1": "Iterate through the grid. When you find '1', it's a new island — increment count and DFS to mark all connected land.",
@@ -611,12 +645,14 @@
             }
           ],
           "constraints": "m == grid.length. n == grid[i].length. 1 <= m, n <= 300.",
-          "editorial": "DFS on grid: each DFS call from an unvisited '1' explores one entire island, marking all cells visited. Count increments once per DFS root. O(m*n) time — each cell visited at most once. Modifies the grid; copy it first if preservation needed."
+          "editorial": "DFS on grid: each DFS call from an unvisited '1' explores one entire island, marking all cells visited. Count increments once per DFS root. O(m*n) time — each cell visited at most once. Modifies the grid; copy it first if preservation needed.",
+          "sampleInput": "[[\"1\",\"1\",\"0\"],[\"0\",\"1\",\"0\"],[\"0\",\"0\",\"1\"]]",
+          "sampleOutput": "2"
         },
         {
           "displayOrder": 19,
           "title": "Function Composition and Higher-Order Methods",
-          "description": "Write a method `compose(Function<Integer,Integer> f, Function<Integer,Integer> g)` that returns a new function that applies g first, then f. Also implement `applyN(Function<Integer,Integer> f, int n, int x)` that applies f n times to x.",
+          "description": "Write a method `compose(Function<Integer,Integer> f, Function<Integer,Integer> g)` that returns a new function equivalent to `f(g(x))`. Demonstrate higher-order functions and Java's `Function` interface.\n\n**Example 1:**\nf = x -> x * 2, g = x -> x + 3\ncompose(f, g).apply(5) => 16\nExplanation: g(5)=8, f(8)=16.\n\n**Example 2:**\nf = x -> x * x, g = x -> x + 1\ncompose(f, g).apply(4) => 25\nExplanation: g(4)=5, f(5)=25.",
           "difficulty": "HARD",
           "pattern": "Functional Interfaces / Higher-Order Functions",
           "hint1": "compose: return x -> f.apply(g.apply(x)) as a lambda.",
@@ -643,12 +679,14 @@
             }
           ],
           "constraints": "0 <= n <= 20. Functions are well-defined for given inputs.",
-          "editorial": "Function composition: lambda captures f and g. applyN: recursive with base n=0 returning identity. applyN is tail-recursive in this form (accumulates with each f.apply). Demonstrates Java's Function<T,R> interface and lambda closures."
+          "editorial": "Function composition: lambda captures f and g. applyN: recursive with base n=0 returning identity. applyN is tail-recursive in this form (accumulates with each f.apply). Demonstrates Java's Function<T,R> interface and lambda closures.",
+          "sampleInput": "f = x->x*2, g = x->x+3, x = 5",
+          "sampleOutput": "16"
         },
         {
           "displayOrder": 20,
           "title": "Recursive Descent Parser for Boolean Expressions",
-          "description": "Parse and evaluate a boolean expression string: 't' (true), 'f' (false), '!(expr)', '&(e1,e2,...)', '|(e1,e2,...)'.",
+          "description": "Parse and evaluate a **boolean expression** string: `'t'`=true, `'f'`=false, `'!(expr)'`=NOT, `'&(e1,e2,...)'`=AND, `'|(e1,e2,...)'`=OR. Expressions can be arbitrarily nested.\n\n**Example 1:**\nInput: \"!(f)\"\nOutput: true\nExplanation: NOT false = true.\n\n**Example 2:**\nInput: \"&(t,f)\"\nOutput: false\nExplanation: AND(true,false) = false.\n\n**Example 3:**\nInput: \"|(f,&(t,t))\"\nOutput: true\nExplanation: OR(false, AND(true,true)) = OR(false,true) = true.",
           "difficulty": "HARD",
           "pattern": "Recursive Descent Parsing",
           "hint1": "Use a global index. parseBool() reads one complete boolean expression.",
@@ -675,7 +713,9 @@
             }
           ],
           "constraints": "1 <= expression.length <= 2*10^4. expression is a valid expression.",
-          "editorial": "Recursive descent: parse() consumes one complete expression. For operators with multiple args, loop consuming subexpressions until ')' is reached. Short-circuit could be applied for '&' (stop at first false) and '|' (stop at first true). O(n) time — each char consumed exactly once."
+          "editorial": "Recursive descent: parse() consumes one complete expression. For operators with multiple args, loop consuming subexpressions until ')' is reached. Short-circuit could be applied for '&' (stop at first false) and '|' (stop at first true). O(n) time — each char consumed exactly once.",
+          "sampleInput": "\"|(f,&(t,t))\"",
+          "sampleOutput": "true"
         }
       ],
       "subCategory": "Language Basics",

@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Count Word Frequencies Using Map",
-          "description": "Given a sentence string, count the frequency of each word (case-insensitive). Return as a Map<String, Integer> sorted by word alphabetically.",
+          "description": "Count word frequencies from a list of strings using `HashMap<String, Integer>`.\n\n**Example:**\ncountWords([\"apple\",\"banana\",\"apple\",\"cherry\",\"banana\",\"apple\"])\n=> {apple=3, banana=2, cherry=1}\n\n**Key insight:** `map.merge(word, 1, Integer::sum)` atomically increments count. `getOrDefault` is the alternative.",
           "difficulty": "EASY",
           "pattern": "HashMap + autoboxing",
           "hint1": "Split the string on \\s+ and lowercase each word.",
@@ -43,12 +43,14 @@
           "hint3": "Use a TreeMap so keys are naturally sorted.",
           "starterCode": "import java.util.*;\n\npublic class Q1 {\n    public static Map<String, Integer> wordCount(String sentence) {\n        // TODO\n        return new TreeMap<>();\n    }\n    public static void main(String[] args) {\n        System.out.println(wordCount(\"the cat sat on the mat the cat\"));\n        // {cat=2, mat=1, on=1, sat=1, the=3}\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q1 {\n    public static Map<String, Integer> wordCount(String sentence) {\n        Map<String, Integer> freq = new TreeMap<>();\n        for (String w : sentence.toLowerCase().split(\"\\\\s+\"))\n            freq.put(w, freq.getOrDefault(w, 0) + 1);\n        return freq;\n    }\n    public static void main(String[] args) {\n        System.out.println(wordCount(\"the cat sat on the mat the cat\"));\n    }\n}",
-          "testCases": "the cat sat on the mat the cat\n{cat=2, mat=1, on=1, sat=1, the=3}"
+          "testCases": "the cat sat on the mat the cat\n{cat=2, mat=1, on=1, sat=1, the=3}",
+          "sampleInput": "[\"apple\",\"banana\",\"apple\",\"cherry\",\"banana\",\"apple\"]",
+          "sampleOutput": "{apple=3, banana=2, cherry=1}"
         },
         {
           "displayOrder": 2,
           "title": "Day Type Classifier with Enum",
-          "description": "Define a `DayType` enum with values WEEKDAY, WEEKEND. Write `classify(String day)` that takes a day name (e.g. 'Monday') and returns the DayType. Saturday and Sunday are WEEKEND, rest are WEEKDAY. Throw IllegalArgumentException for unknown day names.",
+          "description": "Create a `DayType` enum with values MONDAY–SUNDAY. Implement `classify(DayType day)` returning \"Weekend\" or \"Weekday\".\n\n**Example:**\nclassify(DayType.SATURDAY) => \"Weekend\"\nclassify(DayType.MONDAY) => \"Weekday\"\nclassify(DayType.SUNDAY) => \"Weekend\"\n\n**Key insight:** Enums work naturally in `switch` expressions — each case is a compile-time constant.",
           "difficulty": "EASY",
           "pattern": "Enum, switch",
           "hint1": "Define an enum DayType { WEEKDAY, WEEKEND }.",
@@ -56,12 +58,14 @@
           "hint3": "Throw new IllegalArgumentException for default case.",
           "starterCode": "public class Q2 {\n    enum DayType { WEEKDAY, WEEKEND }\n\n    public static DayType classify(String day) {\n        // TODO\n        return DayType.WEEKDAY;\n    }\n    public static void main(String[] args) {\n        System.out.println(classify(\"Saturday\")); // WEEKEND\n        System.out.println(classify(\"Monday\"));   // WEEKDAY\n    }\n}",
           "solutionCode": "public class Q2 {\n    enum DayType { WEEKDAY, WEEKEND }\n\n    public static DayType classify(String day) {\n        return switch (day.toUpperCase()) {\n            case \"SATURDAY\", \"SUNDAY\" -> DayType.WEEKEND;\n            case \"MONDAY\",\"TUESDAY\",\"WEDNESDAY\",\"THURSDAY\",\"FRIDAY\" -> DayType.WEEKDAY;\n            default -> throw new IllegalArgumentException(\"Unknown day: \" + day);\n        };\n    }\n    public static void main(String[] args) {\n        System.out.println(classify(\"Saturday\")); // WEEKEND\n        System.out.println(classify(\"Monday\"));   // WEEKDAY\n    }\n}",
-          "testCases": "Saturday\nWEEKEND\nMonday\nWEEKDAY"
+          "testCases": "Saturday\nWEEKEND\nMonday\nWEEKDAY",
+          "sampleInput": "classify(DayType.SATURDAY)",
+          "sampleOutput": "\"Weekend\""
         },
         {
           "displayOrder": 3,
           "title": "Integer Cache Comparison",
-          "description": "Without running code, predict whether `a == b` is true or false for: (1) Integer a=100, b=100; (2) Integer a=200, b=200; (3) Integer a=Integer.valueOf(50), b=Integer.valueOf(50). Write a program that prints the actual results and explain why.",
+          "description": "Demonstrate the Integer autoboxing cache: `Integer.valueOf(n)` caches values in the range [-128, 127].\n\n**Example:**\nInteger a = 100; Integer b = 100;\na == b => true (cached)\nInteger c = 200; Integer d = 200;\nc == d => false (outside cache, new objects)\na.equals(b) => true (always)\nc.equals(d) => true (always)\n\n**Key insight:** Never use `==` to compare Integer objects — always use `.equals()` or `intValue()`.",
           "difficulty": "EASY",
           "pattern": "Integer cache, object identity vs equality",
           "hint1": "Java caches Integer instances from -128 to 127.",
@@ -69,7 +73,9 @@
           "hint3": "== compares object references, not values.",
           "starterCode": "public class Q3 {\n    public static void main(String[] args) {\n        Integer a1 = 100, b1 = 100;\n        Integer a2 = 200, b2 = 200;\n        Integer a3 = Integer.valueOf(50), b3 = Integer.valueOf(50);\n        // Print reference equality and value equality for each pair\n        // TODO\n    }\n}",
           "solutionCode": "public class Q3 {\n    public static void main(String[] args) {\n        Integer a1 = 100, b1 = 100;\n        System.out.println(\"100 == 100  ref: \" + (a1 == b1));      // true  (cached)\n        System.out.println(\"100 equals: \" + a1.equals(b1));        // true\n\n        Integer a2 = 200, b2 = 200;\n        System.out.println(\"200 == 200  ref: \" + (a2 == b2));      // false (not cached)\n        System.out.println(\"200 equals: \" + a2.equals(b2));        // true\n\n        Integer a3 = Integer.valueOf(50), b3 = Integer.valueOf(50);\n        System.out.println(\"50 valueOf ref: \" + (a3 == b3));       // true  (cache)\n    }\n}",
-          "testCases": "100 == 100  ref: true\n200 == 200  ref: false\n50 valueOf ref: true"
+          "testCases": "100 == 100  ref: true\n200 == 200  ref: false\n50 valueOf ref: true",
+          "sampleInput": "Integer a=127; Integer b=127; a==b",
+          "sampleOutput": "true"
         }
       ]
     }

@@ -99,7 +99,9 @@
             "Two separate Resource entries needed for ListBucket vs GetObject",
             "Effect: Allow, never omit the Effect field",
             "Test with IAM Policy Simulator before applying to real user"
-          ]
+          ],
+          "sampleInput": "User wants to: list buckets, list prod-data contents, download files from prod-data",
+          "sampleOutput": "IAM policy with 3 statements: ListAllMyBuckets on *, ListBucket on bucket ARN, GetObject on bucket/* ARN"
         },
         {
           "title": "Calculate EC2 Cost for a Production Setup",
@@ -121,7 +123,9 @@
             "On-demand hours = 24 * days * instance_count",
             "Batch hours = 8 * days",
             "Reserved savings only apply to always-on instances, not intermittent batch"
-          ]
+          ],
+          "sampleInput": "2x t3.large 24/7 for 3 months + 1x m5.xlarge 8h/day for 1 month",
+          "sampleOutput": "t3.large: 2 * $0.0832 * 2160 = $359.42 | m5.xlarge: $0.192 * 240 = $46.08 | Total: $405.50"
         },
         {
           "title": "S3 Lifecycle Policy Design",
@@ -143,7 +147,9 @@
             "StorageClass values: STANDARD_IA, GLACIER, DEEP_ARCHIVE",
             "Filter.Prefix limits rule to specific object path prefix",
             "Days are from object creation date"
-          ]
+          ],
+          "sampleInput": "Logs in prefix 'application-logs/'",
+          "sampleOutput": "3-rule lifecycle: Transition to STANDARD_IA at 30 days, GLACIER at 90 days, Expiration at 365 days"
         },
         {
           "title": "VPC CIDR Planning",
@@ -165,7 +171,9 @@
             "Start with /16 VPC for plenty of room",
             "Use /24 for app and public subnets (251 usable IPs each)",
             "Use /27 for DB subnets (27 IPs sufficient for small DB fleets)"
-          ]
+          ],
+          "sampleInput": "VPC: 10.0.0.0/16 (65k IPs), plan 6 subnets",
+          "sampleOutput": "Public-1a: 10.0.1.0/24, Public-1b: 10.0.2.0/24, App-1a: 10.0.10.0/24, App-1b: 10.0.11.0/24, DB-1a: 10.0.20.0/27, DB-1b: 10.0.21.0/27"
         },
         {
           "title": "Security Group Rule Design",
@@ -187,7 +195,9 @@
             "Use security group IDs as source, not IP ranges (dynamic IPs change on restart)",
             "Security groups are stateful — no explicit outbound rules needed for return traffic",
             "sg-db referencing sg-app means: allow only traffic from instances with sg-app attached"
-          ]
+          ],
+          "sampleInput": "3-tier: ALB → App servers → RDS MySQL",
+          "sampleOutput": "sg-alb: 80+443 from 0.0.0.0/0 | sg-app: 8080 from sg-alb | sg-db: 3306 from sg-app"
         },
         {
           "title": "IAM Role Trust Policy for EC2",
@@ -209,7 +219,9 @@
             "Trust policy goes in the AssumeRolePolicyDocument field",
             "Permission policy is a separate managed or inline policy attached to the role",
             "Resource ARN for SSM: arn:aws:ssm:region:account:parameter/app/*"
-          ]
+          ],
+          "sampleInput": "EC2 instance needs to read app config from SSM and write app logs to CloudWatch",
+          "sampleOutput": "Trust policy: {Principal: {Service: ec2.amazonaws.com}, Action: sts:AssumeRole} | Permission policy: Allow ssm:GetParameter* + logs:* on specific resources"
         },
         {
           "title": "S3 Presigned URL Use Case",
@@ -231,7 +243,9 @@
             "Backend generates presigned URL, returns it to frontend",
             "Frontend uses fetch/axios to PUT directly to S3 URL with Content-Type header",
             "Advantages: no bandwidth cost on your servers, S3 scales infinitely"
-          ]
+          ],
+          "sampleInput": "User wants to upload profile.jpg to s3://user-uploads/user-42/profile.jpg",
+          "sampleOutput": "aws s3 presign s3://user-uploads/user-42/profile.jpg --expires-in 600"
         },
         {
           "title": "Multi-AZ High Availability Design",
@@ -254,7 +268,9 @@
             "ALB health checks detect unhealthy instances within 30-60 seconds",
             "ASG desired count stays the same — it just launches in available AZs",
             "RDS failover changes the endpoint DNS — application must not cache the IP, use the DNS endpoint"
-          ]
+          ],
+          "sampleInput": "AZ us-east-1a fails completely",
+          "sampleOutput": "Auto-recovered: ALB re-routes, ASG launches 2 new instances in 1b, RDS fails over to standby. Manual: single-node Redis in 1a is down until AZ recovers — 1b receives 100% load"
         },
         {
           "title": "Cost Optimization: Spot Instances for Batch",
@@ -276,7 +292,9 @@
             "Spot savings vary by region and instance type — check AWS Spot Price History",
             "Use Spot Instance Advisor to see interruption frequency",
             "Mix On-Demand (base) + Spot (burst) in ASG for best risk/cost balance"
-          ]
+          ],
+          "sampleInput": "c5.2xlarge, 4h/night, 30 nights",
+          "sampleOutput": "On-demand: 120h * $0.34 = $40.80/month | Spot: 120h * $0.10 = $12.00/month | Savings: $28.80 (71%)"
         },
         {
           "title": "VPC Flow Logs Troubleshooting",
@@ -298,7 +316,9 @@
             "Security Groups check first — most common cause",
             "NACLs are stateless: need explicit outbound rule for response traffic (ephemeral ports 1024-65535)",
             "Use VPC Reachability Analyzer to automatically trace the network path"
-          ]
+          ],
+          "sampleInput": "Flow log entry: srcaddr=10.0.2.10 dstaddr=10.0.3.50 dstport=3306 action=REJECT",
+          "sampleOutput": "Check: 1. sg-db inbound allows 3306 from sg-app? 2. sg-app outbound allows 3306? 3. DB subnet NACL inbound allows 3306? 4. DB subnet NACL outbound allows ephemeral ports (1024-65535)? 5. Is RDS endpoint/port correct in app config?"
         }
       ],
       "subCategory": "Core Services",

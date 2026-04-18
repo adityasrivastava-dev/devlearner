@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Age Calculator",
-          "description": "Write `calculateAge(String dob)` that accepts a date string in format 'yyyy-MM-dd' and returns the age in years as of today.",
+          "description": "Calculate a person's age in years from their birth date to today using `java.time.LocalDate` and `Period`.\n\n**Example:**\ncalculateAge(LocalDate.of(1990, 5, 15)) => 34 (if today is 2024-11-01)\ncalculateAge(LocalDate.of(2000, 12, 31)) => 23\n\n**Key insight:** `Period.between(birthDate, LocalDate.now()).getYears()` — Period handles month/day boundaries correctly.",
           "difficulty": "EASY",
           "pattern": "LocalDate, Period",
           "hint1": "Parse the string with LocalDate.parse(dob).",
@@ -43,12 +43,14 @@
           "hint3": "Return period.getYears().",
           "starterCode": "import java.time.*;\n\npublic class Q1 {\n    public static int calculateAge(String dob) {\n        // TODO\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(calculateAge(\"1995-06-15\")); // depends on today\n    }\n}",
           "solutionCode": "import java.time.*;\n\npublic class Q1 {\n    public static int calculateAge(String dob) {\n        LocalDate birth = LocalDate.parse(dob);\n        return Period.between(birth, LocalDate.now()).getYears();\n    }\n    public static void main(String[] args) {\n        System.out.println(calculateAge(\"1995-06-15\"));\n    }\n}",
-          "testCases": "provide a fixed past date and verify output is positive integer"
+          "testCases": "provide a fixed past date and verify output is positive integer",
+          "sampleInput": "calculateAge(LocalDate.of(1990, 5, 15))",
+          "sampleOutput": "34"
         },
         {
           "displayOrder": 2,
           "title": "Convert IST to UTC",
-          "description": "Given a datetime string in format 'yyyy-MM-dd HH:mm' representing IST (Asia/Kolkata), return the equivalent UTC time as a string in the same format.",
+          "description": "Convert a datetime from IST (India Standard Time, UTC+5:30) to UTC using `ZonedDateTime`.\n\n**Example:**\nconvertToUTC(\"2024-01-15T14:30:00\", \"Asia/Kolkata\")\n=> 2024-01-15T09:00:00Z\n\nconvertToUTC(\"2024-06-01T00:00:00\", \"Asia/Kolkata\")\n=> 2024-05-31T18:30:00Z\n\n**Key insight:** `ZonedDateTime.of(dt, ZoneId.of(\"Asia/Kolkata\")).withZoneSameInstant(ZoneOffset.UTC)`",
           "difficulty": "EASY",
           "pattern": "ZonedDateTime, timezone conversion",
           "hint1": "Parse into LocalDateTime, then create ZonedDateTime at IST zone.",
@@ -56,12 +58,14 @@
           "hint3": "Format back to string with the same DateTimeFormatter.",
           "starterCode": "import java.time.*;\nimport java.time.format.*;\n\npublic class Q2 {\n    public static String istToUtc(String istDateTime) {\n        // TODO\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(istToUtc(\"2024-06-15 14:30\")); // 2024-06-15 09:00\n    }\n}",
           "solutionCode": "import java.time.*;\nimport java.time.format.*;\n\npublic class Q2 {\n    static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm\");\n    public static String istToUtc(String istDateTime) {\n        LocalDateTime ldt = LocalDateTime.parse(istDateTime, FMT);\n        ZonedDateTime ist = ldt.atZone(ZoneId.of(\"Asia/Kolkata\"));\n        ZonedDateTime utc = ist.withZoneSameInstant(ZoneOffset.UTC);\n        return utc.toLocalDateTime().format(FMT);\n    }\n    public static void main(String[] args) {\n        System.out.println(istToUtc(\"2024-06-15 14:30\")); // 2024-06-15 09:00\n    }\n}",
-          "testCases": "2024-06-15 14:30\n2024-06-15 09:00"
+          "testCases": "2024-06-15 14:30\n2024-06-15 09:00",
+          "sampleInput": "\"2024-01-15T14:30:00\" IST to UTC",
+          "sampleOutput": "2024-01-15T09:00:00Z"
         },
         {
           "displayOrder": 3,
           "title": "Days Until Next Birthday",
-          "description": "Given a birthday as 'MM-dd' (e.g. '06-15'), calculate how many days until the next occurrence of that birthday from today. If today IS the birthday, return 0.",
+          "description": "Calculate how many days until a person's next birthday from today.\n\n**Example:**\nIf today is 2024-11-01 and birthday is May 15:\ndaysUntilNextBirthday(MonthDay.of(5, 15)) => 196\n\nIf birthday is today:\ndaysUntilNextBirthday(MonthDay.now()) => 0 (or 365 next year)\n\n**Key insight:** Find next occurrence of the birthday month/day at or after today. Use `MonthDay` to strip the year.",
           "difficulty": "MEDIUM",
           "pattern": "LocalDate arithmetic, year wrapping",
           "hint1": "Build the birthday in the current year with LocalDate.of(year, month, day).",
@@ -69,7 +73,9 @@
           "hint3": "Use ChronoUnit.DAYS.between(today, nextBirthday).",
           "starterCode": "import java.time.*;\nimport java.time.format.*;\nimport java.time.temporal.*;\n\npublic class Q3 {\n    public static long daysUntilBirthday(String mmdd) {\n        // TODO\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(daysUntilBirthday(\"12-25\")); // days until next Dec 25\n    }\n}",
           "solutionCode": "import java.time.*;\nimport java.time.temporal.*;\n\npublic class Q3 {\n    public static long daysUntilBirthday(String mmdd) {\n        String[] parts = mmdd.split(\"-\");\n        int month = Integer.parseInt(parts[0]), day = Integer.parseInt(parts[1]);\n        LocalDate today = LocalDate.now();\n        LocalDate next = LocalDate.of(today.getYear(), month, day);\n        if (next.isBefore(today)) next = next.plusYears(1);\n        return ChronoUnit.DAYS.between(today, next);\n    }\n    public static void main(String[] args) {\n        System.out.println(daysUntilBirthday(\"12-25\"));\n    }\n}",
-          "testCases": "returns non-negative long"
+          "testCases": "returns non-negative long",
+          "sampleInput": "daysUntilNextBirthday(MonthDay.of(5,15)) from 2024-11-01",
+          "sampleOutput": "196"
         }
       ]
     }

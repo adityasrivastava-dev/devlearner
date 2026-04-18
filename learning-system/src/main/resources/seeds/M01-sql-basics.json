@@ -72,7 +72,7 @@
         {
           "displayOrder": 1,
           "title": "Recyclable and Low Fat Products",
-          "description": "Find the ids of products that are both low fat and recyclable.\n\n**Table: Products**\n| Column | Type |\n|--------|------|\n| product_id | int |\n| low_fats | enum('Y','N') |\n| recyclable | enum('Y','N') |\n\n**Example:**\nInput: Products = [[0,'Y','N'],[1,'Y','Y'],[2,'N','Y'],[3,'Y','Y'],[4,'N','N']]\nOutput: [[1],[3]]",
+          "description": "Find all products that are both low fat (`low_fats = 'Y'`) AND recyclable (`recyclable = 'Y'`).\n\n**Table: Products**\n```\nproduct_id | low_fats | recyclable\n-----------+----------+-----------\n0          | Y        | N\n1          | Y        | Y\n2          | N        | Y\n3          | Y        | Y\n4          | N        | N\n```\n\n**Expected:** [1, 3]\n\n**Key insight:** Use `WHERE low_fats = 'Y' AND recyclable = 'Y'`.",
           "difficulty": "EASY",
           "pattern": "SELECT WHERE",
           "hint1": "You need both conditions to be true simultaneously. What operator joins two conditions where both must be true?",
@@ -82,12 +82,14 @@
           "solutionCode": "SELECT product_id\nFROM Products\nWHERE low_fats = 'Y'\n  AND recyclable = 'Y';",
           "testCases": "[{\"input\":\"Products=[[0,'Y','N'],[1,'Y','Y'],[2,'N','Y'],[3,'Y','Y'],[4,'N','N']]\",\"output\":\"[[1],[3]]\"}]",
           "constraints": "The number of rows in Products will be in range [1, 100].",
-          "editorial": "Simple AND filter: WHERE low_fats = 'Y' AND recyclable = 'Y'. Both conditions must be true. O(n) table scan; with indexes on both columns O(log n) per condition."
+          "editorial": "Simple AND filter: WHERE low_fats = 'Y' AND recyclable = 'Y'. Both conditions must be true. O(n) table scan; with indexes on both columns O(log n) per condition.",
+          "sampleInput": "Products table above",
+          "sampleOutput": "[1, 3]"
         },
         {
           "displayOrder": 2,
           "title": "Find Customer Referee",
-          "description": "Find the names of customers NOT referred by customer with id = 2.\n\n**Table: Customer**\n| Column | Type |\n|--------|------|\n| id | int |\n| name | varchar |\n| referee_id | int (nullable) |\n\n**Example:**\nInput: Customer = [[1,'Will',null],[2,'Jane',null],[3,'Alex',2],[4,'Bill',null],[5,'Zack',1],[6,'Mark',2]]\nOutput: [['Will'],['Jane'],['Bill'],['Zack']]",
+          "description": "Find customers not referred by customer id = 2. Include customers with NULL referee_id.\n\n**Table: Customer**\n```\nid | name   | referee_id\n---+--------+-----------\n1  | Will   | NULL\n2  | Jane   | NULL\n3  | Alex   | 2\n4  | Bill   | NULL\n5  | Zack   | 1\n6  | Mark   | 2\n```\n\n**Expected:** [Will, Jane, Bill, Zack]\n\n**Key insight:** `WHERE referee_id != 2 OR referee_id IS NULL` — NULL comparisons require `IS NULL`.",
           "difficulty": "EASY",
           "pattern": "SELECT WHERE NULL",
           "hint1": "referee_id can be NULL. Does `referee_id != 2` include NULL rows? Think about how SQL handles NULL comparisons.",
@@ -97,12 +99,14 @@
           "solutionCode": "SELECT name\nFROM Customer\nWHERE referee_id != 2\n   OR referee_id IS NULL;",
           "testCases": "[{\"input\":\"Customer=[[1,'Will',null],[2,'Jane',null],[3,'Alex',2],[4,'Bill',null],[5,'Zack',1],[6,'Mark',2]]\",\"output\":\"[['Will'],['Jane'],['Bill'],['Zack']]\"}]",
           "constraints": "1 ≤ rows ≤ 10^4",
-          "editorial": "Key trap: NULL != 2 evaluates to NULL (unknown), not TRUE — so WHERE referee_id != 2 silently drops NULL rows. Fix: add OR referee_id IS NULL. Alternative: WHERE COALESCE(referee_id, 0) != 2."
+          "editorial": "Key trap: NULL != 2 evaluates to NULL (unknown), not TRUE — so WHERE referee_id != 2 silently drops NULL rows. Fix: add OR referee_id IS NULL. Alternative: WHERE COALESCE(referee_id, 0) != 2.",
+          "sampleInput": "Customer table above",
+          "sampleOutput": "[Will, Jane, Bill, Zack]"
         },
         {
           "displayOrder": 3,
           "title": "Big Countries",
-          "description": "A country is big if it has an area of at least 3 million km² or population of at least 25 million. Find the name, population, and area of big countries.\n\n**Table: World**\n| Column | Type |\n|--------|------|\n| name | varchar |\n| continent | varchar |\n| area | int |\n| population | int |\n| gdp | bigint |\n\n**Example:**\nInput: World = [['Afghanistan','Asia',652230,25500100,20343000000],['Albania','Europe',28748,2831741,12960000000]]\nOutput: [['Afghanistan',25500100,652230]]",
+          "description": "Find countries with area >= 3,000,000 OR population >= 25,000,000.\n\n**Table: World**\n```\nname        | continent | area    | population | gdp\nAfghanistan | Asia      | 652230  | 25500100   | 20343000\nAlbania     | Europe    | 28748   | 2831741    | 12960000\nAlgeria     | Africa    | 2381741 | 37100000   | 188681000\n```\n\n**Expected:** Afghanistan, Algeria (pop >= 25M or area >= 3M)\n\n**Key insight:** `WHERE area >= 3000000 OR population >= 25000000`.",
           "difficulty": "EASY",
           "pattern": "SELECT WHERE OR",
           "hint1": "Use OR to match countries satisfying EITHER condition (area OR population threshold).",
@@ -112,12 +116,14 @@
           "solutionCode": "SELECT name, population, area\nFROM World\nWHERE area >= 3000000\n   OR population >= 25000000;",
           "testCases": "[{\"input\":\"World=[['Afghanistan','Asia',652230,25500100,20343000000],['Albania','Europe',28748,2831741,12960000000]]\",\"output\":\"[['Afghanistan',25500100,652230]]\"}]",
           "constraints": "1 ≤ rows ≤ 10^4",
-          "editorial": "OR: at least one condition must be true. AND requires both. Here area OR population — either threshold qualifies a country."
+          "editorial": "OR: at least one condition must be true. AND requires both. Here area OR population — either threshold qualifies a country.",
+          "sampleInput": "World table above",
+          "sampleOutput": "[Afghanistan, Algeria]"
         },
         {
           "displayOrder": 4,
           "title": "Department Highest Salary",
-          "description": "Find employees who have the highest salary in their department.\n\n**Table: Employee**\n| id | name | salary | departmentId |\n\n**Table: Department**\n| id | name |\n\n**Example:**\nEmployee: [[1,'Joe',70000,1],[2,'Jim',90000,1],[3,'Henry',80000,2],[4,'Sam',60000,2],[5,'Max',90000,1]]\nDepartment: [[1,'IT'],[2,'Sales']]\nOutput: [['IT','Jim',90000],['IT','Max',90000],['Sales','Henry',80000]]",
+          "description": "Find employees with the highest salary in each department.\n\n**Tables: Employee, Department**\nEmployee: (id, name, salary, departmentId)\nDepartment: (id, name)\n\n**Example:**\nIT dept: Max=90000 → Joe\nSales dept: Max=70000 → Henry\n\n**Key insight:** `JOIN` departments, then use subquery or window function: `WHERE (departmentId, salary) IN (SELECT departmentId, MAX(salary) FROM Employee GROUP BY departmentId)`.",
           "difficulty": "MEDIUM",
           "pattern": "GROUP BY Subquery",
           "hint1": "You need the maximum salary per department. How do you get the max salary for each department?",
@@ -127,12 +133,14 @@
           "solutionCode": "SELECT d.name AS Department, e.name AS Employee, e.salary AS Salary\nFROM Employee e\nJOIN Department d ON e.departmentId = d.id\nWHERE (e.departmentId, e.salary) IN (\n    SELECT departmentId, MAX(salary)\n    FROM Employee\n    GROUP BY departmentId\n);",
           "testCases": "[{\"input\":\"Employee=[[1,'Joe',70000,1],[2,'Jim',90000,1],[3,'Henry',80000,2],[4,'Sam',60000,2],[5,'Max',90000,1]], Department=[[1,'IT'],[2,'Sales']]\",\"output\":\"[['IT','Jim',90000],['IT','Max',90000],['Sales','Henry',80000]]\"}]",
           "constraints": "1 ≤ rows ≤ 10^4",
-          "editorial": "Subquery gets (departmentId, maxSalary) pairs. Outer query filters employees matching those pairs. Multiple employees can tie for max. Alternative: window function RANK() OVER (PARTITION BY departmentId ORDER BY salary DESC) = 1."
+          "editorial": "Subquery gets (departmentId, maxSalary) pairs. Outer query filters employees matching those pairs. Multiple employees can tie for max. Alternative: window function RANK() OVER (PARTITION BY departmentId ORDER BY salary DESC) = 1.",
+          "sampleInput": "IT dept salaries: [90000, 85000, 70000]",
+          "sampleOutput": "Joe (IT, 90000), Henry (Sales, 70000)"
         },
         {
           "displayOrder": 5,
           "title": "Consecutive Numbers",
-          "description": "Find all numbers that appear at least three times consecutively in the Logs table.\n\n**Table: Logs**\n| id (auto-increment) | num |\n\n**Example:**\nInput: Logs = [[1,1],[2,1],[3,1],[4,2],[5,1],[6,2],[7,2]]\nOutput: [[1]] — only 1 appears three times in a row (rows 1,2,3).",
+          "description": "Find all numbers that appear at least 3 times consecutively.\n\n**Table: Logs**\n```\nid | num\n1  | 1\n2  | 1\n3  | 1\n4  | 2\n5  | 1\n6  | 2\n7  | 2\n```\n\n**Expected:** [1] (appears 3 consecutive times at rows 1-3)\n\n**Key insight:** Self-join: `WHERE l1.num = l2.num AND l2.num = l3.num AND l1.id = l2.id-1 AND l2.id = l3.id-1`.",
           "difficulty": "MEDIUM",
           "pattern": "Self Join",
           "hint1": "You need to compare a row with the row 1 ahead and 2 ahead. How can you reference the same table three times?",
@@ -142,12 +150,14 @@
           "solutionCode": "SELECT DISTINCT l1.num AS ConsecutiveNums\nFROM Logs l1\nJOIN Logs l2 ON l1.id + 1 = l2.id\nJOIN Logs l3 ON l2.id + 1 = l3.id\nWHERE l1.num = l2.num\n  AND l2.num = l3.num;",
           "testCases": "[{\"input\":\"Logs=[[1,1],[2,1],[3,1],[4,2],[5,1],[6,2],[7,2]]\",\"output\":\"[[1]]\"}]",
           "constraints": "1 ≤ rows ≤ 10^4",
-          "editorial": "Self-join: reference the same table three times with different aliases. id+1 links consecutive rows. All three nums must match. DISTINCT removes duplicates if a number appears consecutively in multiple places."
+          "editorial": "Self-join: reference the same table three times with different aliases. id+1 links consecutive rows. All three nums must match. DISTINCT removes duplicates if a number appears consecutively in multiple places.",
+          "sampleInput": "Logs table above",
+          "sampleOutput": "[1]"
         },
         {
           "displayOrder": 6,
           "title": "Nth Highest Salary",
-          "description": "Write a SQL function to get the Nth highest salary from the Employee table. If there is no Nth highest salary, return null.\n\n**Example:**\nEmployee = [[1,100],[2,200],[3,300]] → getNthHighestSalary(2) → 200\nEmployee = [[1,100]] → getNthHighestSalary(2) → null",
+          "description": "Find the Nth highest salary from an Employee table. Return NULL if fewer than N distinct salaries exist.\n\n**Example (N=2):**\nSalaries: [300, 200, 100] → 2nd highest = 200\nSalaries: [100] → 2nd highest = NULL\n\n**Key insight:** `SELECT DISTINCT salary FROM Employee ORDER BY salary DESC LIMIT 1 OFFSET N-1`. Use `IFNULL` to return NULL when result is empty.",
           "difficulty": "MEDIUM",
           "pattern": "LIMIT OFFSET",
           "hint1": "Use ORDER BY salary DESC to rank. How do you skip N-1 salaries and take just the Nth?",
@@ -157,12 +167,14 @@
           "solutionCode": "CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT\nBEGIN\n  DECLARE M INT;\n  SET M = N - 1;\n  RETURN (\n    SELECT DISTINCT salary\n    FROM Employee\n    ORDER BY salary DESC\n    LIMIT 1 OFFSET M\n  );\nEND",
           "testCases": "[{\"input\":\"Employee=[[1,100],[2,200],[3,300]], N=2\",\"output\":\"200\"},{\"input\":\"Employee=[[1,100]], N=2\",\"output\":\"null\"}]",
           "constraints": "1 ≤ rows ≤ 10^4",
-          "editorial": "LIMIT 1 OFFSET N-1: skip N-1 rows, return 1. DISTINCT handles duplicate salaries (if two people earn 200, that's still the 2nd-highest salary level). Returns NULL automatically when OFFSET exceeds result count."
+          "editorial": "LIMIT 1 OFFSET N-1: skip N-1 rows, return 1. DISTINCT handles duplicate salaries (if two people earn 200, that's still the 2nd-highest salary level). Returns NULL automatically when OFFSET exceeds result count.",
+          "sampleInput": "getNthHighestSalary(2), salaries=[300,200,100]",
+          "sampleOutput": "200"
         },
         {
           "displayOrder": 7,
           "title": "Game Play Analysis I",
-          "description": "Find the first login date for each player.\n\n**Table: Activity**\n| player_id | device_id | event_date | games_played |\n(player_id, event_date) is the primary key\n\n**Example:**\nActivity = [[1,2,'2016-03-01',5],[1,2,'2016-05-02',6],[2,3,'2017-06-25',1],[3,1,'2016-03-02',0],[3,4,'2018-07-03',5]]\nOutput: [[1,'2016-03-01'],[2,'2017-06-25'],[3,'2016-03-02']]",
+          "description": "Find the first login date for each player.\n\n**Table: Activity**\n```\nplayer_id | device_id | event_date | games_played\n1         | 2         | 2016-03-01 | 5\n1         | 2         | 2016-05-02 | 6\n2         | 3         | 2017-06-25 | 1\n3         | 1         | 2016-03-02 | 0\n```\n\n**Expected:** player 1 → 2016-03-01, player 2 → 2017-06-25, player 3 → 2016-03-02\n\n**Key insight:** `SELECT player_id, MIN(event_date) AS first_login FROM Activity GROUP BY player_id`.",
           "difficulty": "EASY",
           "pattern": "GROUP BY MIN",
           "hint1": "You need the minimum (earliest) event_date per player. What aggregate function finds the minimum?",
@@ -172,12 +184,14 @@
           "solutionCode": "SELECT player_id, MIN(event_date) AS first_login\nFROM Activity\nGROUP BY player_id;",
           "testCases": "[{\"input\":\"Activity=[[1,2,'2016-03-01',5],[1,2,'2016-05-02',6],[2,3,'2017-06-25',1],[3,1,'2016-03-02',0],[3,4,'2018-07-03',5]]\",\"output\":\"[[1,'2016-03-01'],[2,'2017-06-25'],[3,'2016-03-02']]\"}]",
           "constraints": "1 ≤ rows ≤ 10^4",
-          "editorial": "GROUP BY player_id collapses all activity rows per player into one. MIN(event_date) selects the earliest date within each player's group. O(n) scan."
+          "editorial": "GROUP BY player_id collapses all activity rows per player into one. MIN(event_date) selects the earliest date within each player's group. O(n) scan.",
+          "sampleInput": "Activity table above",
+          "sampleOutput": "{1: 2016-03-01, 2: 2017-06-25, 3: 2016-03-02}"
         },
         {
           "displayOrder": 8,
           "title": "Classes with More than 5 Students",
-          "description": "Find all classes that have at least 5 students.\n\n**Table: Courses**\n| student | class |\n\n**Example:**\nCourses = [['A','Math'],['B','English'],['C','Math'],['D','Biology'],['E','Math'],['F','Computer'],['G','Math'],['H','Math'],['I','Math']]\nOutput: [['Math']]",
+          "description": "Find all classes with at least 5 students.\n\n**Table: Courses**\n```\nstudent | class\nA       | Math\nB       | English\nC       | Math\nD       | Biology\nE       | Math\nF       | Computer\nG       | Math\nH       | Math\nI       | Math\n```\n\n**Expected:** [Math] (6 students)\n\n**Key insight:** `GROUP BY class HAVING COUNT(student) >= 5`.",
           "difficulty": "EASY",
           "pattern": "GROUP BY HAVING",
           "hint1": "Count students per class using GROUP BY. Then filter classes with >= 5 students. Use WHERE or HAVING?",
@@ -187,12 +201,14 @@
           "solutionCode": "SELECT class\nFROM Courses\nGROUP BY class\nHAVING COUNT(student) >= 5;",
           "testCases": "[{\"input\":\"Courses=[['A','Math'],['B','English'],['C','Math'],['D','Biology'],['E','Math'],['F','Computer'],['G','Math'],['H','Math'],['I','Math']]\",\"output\":\"[['Math']]\"}]",
           "constraints": "1 ≤ rows ≤ 10^4",
-          "editorial": "GROUP BY class, then HAVING COUNT >= 5. HAVING filters AFTER grouping — the only way to filter by aggregate values."
+          "editorial": "GROUP BY class, then HAVING COUNT >= 5. HAVING filters AFTER grouping — the only way to filter by aggregate values.",
+          "sampleInput": "Courses table above",
+          "sampleOutput": "[Math]"
         },
         {
           "displayOrder": 9,
           "title": "Employees Earning More than Managers",
-          "description": "Find employees who earn more than their managers.\n\n**Table: Employee**\n| id | name | salary | managerId |\n\n**Example:**\nEmployee = [[1,'Joe',70000,3],[2,'Henry',80000,4],[3,'Sam',60000,null],[4,'Max',90000,null]]\nOutput: [['Joe']] — Joe(70000) earns more than Sam(60000) his manager.",
+          "description": "Find employees earning more than their managers.\n\n**Table: Employee**\n```\nid | name  | salary | managerId\n1  | Joe   | 70000  | 3\n2  | Henry | 80000  | 4\n3  | Sam   | 60000  | NULL\n4  | Max   | 90000  | NULL\n```\n\n**Expected:** [Joe] (70000 > Sam's 60000)\n\n**Key insight:** Self-join: `FROM Employee e1 JOIN Employee e2 ON e1.managerId = e2.id WHERE e1.salary > e2.salary`.",
           "difficulty": "EASY",
           "pattern": "Self Join",
           "hint1": "You need to compare each employee's salary with their manager's salary. Both are in the same table. How do you join a table to itself?",
@@ -202,12 +218,14 @@
           "solutionCode": "SELECT e.name AS Employee\nFROM Employee e\nJOIN Employee m ON e.managerId = m.id\nWHERE e.salary > m.salary;",
           "testCases": "[{\"input\":\"Employee=[[1,'Joe',70000,3],[2,'Henry',80000,4],[3,'Sam',60000,null],[4,'Max',90000,null]]\",\"output\":\"[['Joe']]\"}]",
           "constraints": "1 ≤ rows ≤ 10^4",
-          "editorial": "Self-join: JOIN Employee to itself with different aliases (e=employee, m=manager). This pairs each employee with their manager on the same row. WHERE e.salary > m.salary filters for the interesting cases."
+          "editorial": "Self-join: JOIN Employee to itself with different aliases (e=employee, m=manager). This pairs each employee with their manager on the same row. WHERE e.salary > m.salary filters for the interesting cases.",
+          "sampleInput": "Employee table above",
+          "sampleOutput": "[Joe]"
         },
         {
           "displayOrder": 10,
           "title": "Delete Duplicate Emails",
-          "description": "Delete all duplicate emails, keeping only the one with the smallest id for each email.\n\n**Table: Person**\n| id | email |\n\n**Example:**\nPerson = [[1,'john@example.com'],[2,'bob@example.com'],[3,'john@example.com']]\nAfter delete: Person = [[1,'john@example.com'],[2,'bob@example.com']]",
+          "description": "Delete all duplicate email entries, keeping only the row with the smallest id.\n\n**Table: Person (before)**\n```\nid | email\n1  | john@example.com\n2  | bob@example.com\n3  | john@example.com\n```\n\n**After delete:** rows with id 1 and 2 remain (id 3 deleted as duplicate of id 1)\n\n**Key insight:** `DELETE p1 FROM Person p1 JOIN Person p2 ON p1.email = p2.email WHERE p1.id > p2.id`.",
           "difficulty": "EASY",
           "pattern": "DELETE Self Join",
           "hint1": "Which rows should be deleted? Those where the same email exists with a SMALLER id. How do you compare a row to another row with the same email?",
@@ -217,7 +235,9 @@
           "solutionCode": "DELETE p1\nFROM Person p1\nJOIN Person p2\n  ON p1.email = p2.email\n  AND p1.id > p2.id;",
           "testCases": "[{\"input\":\"Person=[[1,'john@example.com'],[2,'bob@example.com'],[3,'john@example.com']]\",\"output\":\"Person=[[1,'john@example.com'],[2,'bob@example.com']]\"}]",
           "constraints": "1 ≤ rows ≤ 10^4",
-          "editorial": "Self-join pairs duplicates: p1 and p2 share the same email, p1 has a larger id (so p1 is the duplicate to delete). DELETE p1 removes all such rows. Non-duplicate rows have no p2 match → not deleted."
+          "editorial": "Self-join pairs duplicates: p1 and p2 share the same email, p1 has a larger id (so p1 is the duplicate to delete). DELETE p1 removes all such rows. Non-duplicate rows have no p2 match → not deleted.",
+          "sampleInput": "Person table with duplicate john@example.com at ids 1,3",
+          "sampleOutput": "id=3 deleted; rows 1,2 remain"
         }
       ],
       "subCategory": "Basics",

@@ -69,7 +69,7 @@
         {
           "displayOrder": 1,
           "title": "Identify Output — Stack vs Heap",
-          "description": "Given the following code, identify what is stored on the stack and what is stored on the heap for each variable:\n\n```java\npublic class Q1 {\n    static int staticVal = 100;\n    public static void main(String[] args) {\n        int a = 5;\n        double b = 3.14;\n        String s = \"hello\";\n        int[] arr = new int[]{1, 2, 3};\n        System.out.println(a + b);\n    }\n}\n```\n\nWrite a method `describeStorage()` that returns a Map<String, String> mapping each variable name to either 'stack' or 'heap'.",
+          "description": "Predict which variables live on the stack vs heap, then verify with a short program:\n\n```java\nvoid demo() {\n    int x = 5;                  // stack primitive\n    String s = \"hello\";         // stack ref; string in heap (pool)\n    int[] arr = new int[3];     // stack ref; array in heap\n    Object o = new Object();    // stack ref; object in heap\n}\n```\n\nImplement `classifyMemory()` returning a `Map<String, String>` mapping variable name to \"stack\" or \"heap\".",
           "difficulty": "EASY",
           "pattern": "JVM Memory Model",
           "hint1": "Primitive types (int, double, boolean, etc.) are stored directly on the stack when they are local variables.",
@@ -84,12 +84,14 @@
             }
           ],
           "constraints": "No constraints — conceptual exercise. Focus on correct classification.",
-          "editorial": "Primitives (int, double, boolean) stored directly in the stack frame. Object references are on the stack, but the object itself is on the heap. Static fields live in the Method Area (Metaspace). int[] is an object — the array is on the heap, only the reference variable is on the stack."
+          "editorial": "Primitives (int, double, boolean) stored directly in the stack frame. Object references are on the stack, but the object itself is on the heap. Static fields live in the Method Area (Metaspace). int[] is an object — the array is on the heap, only the reference variable is on the stack.",
+          "sampleInput": "classifyMemory()",
+          "sampleOutput": "{x:stack, s:heap, arr:heap, o:heap}"
         },
         {
           "displayOrder": 2,
           "title": "ClassLoader Chain Traversal",
-          "description": "Write a method `printClassLoaderChain(Class<?> clazz)` that prints the full ClassLoader hierarchy for a given class, from the class's own loader up to the Bootstrap loader (null).\n\nExample output for `String.class`:\n```\nBootstrap ClassLoader (null)\n```\n\nExample output for a user class:\n```\nAppClassLoader -> PlatformClassLoader -> Bootstrap (null)\n```",
+          "description": "Traverse the ClassLoader delegation chain for a given class: App ClassLoader -> Platform ClassLoader -> Bootstrap ClassLoader.\n\n**Example:**\nString.class.getClassLoader() => null (Bootstrap — native, not a Java object)\nArrayList.class.getClassLoader() => PlatformClassLoader\nMyApp.class.getClassLoader() => AppClassLoader\n\nImplement `printClassLoaderChain(Class<?> cls)` that prints each loader in the chain.",
           "difficulty": "EASY",
           "pattern": "ClassLoader API",
           "hint1": "Use clazz.getClassLoader() to get the loader. Then call .getParent() repeatedly.",
@@ -108,12 +110,14 @@
             }
           ],
           "constraints": "Handle the case where getClassLoader() returns null immediately (Bootstrap-loaded classes).",
-          "editorial": "Walk the chain with getParent() in a while loop. Null signals the Bootstrap ClassLoader (written in C — has no Java representation). Collect names using getClass().getName() or the literal 'Bootstrap'. Join with ' -> '."
+          "editorial": "Walk the chain with getParent() in a while loop. Null signals the Bootstrap ClassLoader (written in C — has no Java representation). Collect names using getClass().getName() or the literal 'Bootstrap'. Join with ' -> '.",
+          "sampleInput": "printClassLoaderChain(String.class)",
+          "sampleOutput": "null (Bootstrap ClassLoader)"
         },
         {
           "displayOrder": 3,
           "title": "Count GC-Eligible Objects",
-          "description": "Analyze the following code and determine how many objects become eligible for garbage collection after `process()` returns:\n\n```java\npublic class Q3 {\n    static String KEEP = \"static\";\n    \n    static void process() {\n        String a = new String(\"alpha\");\n        String b = new String(\"beta\");\n        String c = a;              // c points to same object as a\n        a = null;\n        String d = new String(\"delta\");\n        List<String> list = new ArrayList<>();\n        list.add(b);\n        // method returns here\n    }\n}\n```\n\nWrite a method that returns the count of objects eligible for GC after `process()` returns.",
+          "description": "Count how many objects become GC-eligible after each statement:\n\n```java\nString a = new String(\"x\"); // 1 object\na = new String(\"y\");        // 1 now GC-eligible (\"x\" object)\na = null;                   // 1 now GC-eligible (\"y\" object)\n```\n\nImplement `countGcEligible(String[] steps)` returning the count after each step.",
           "difficulty": "EASY",
           "pattern": "GC Reachability Analysis",
           "hint1": "After process() returns, all local variables (a, b, c, d, list) go out of scope.",
@@ -128,12 +132,14 @@
             }
           ],
           "constraints": "Consider only objects explicitly created with 'new' in the process() method.",
-          "editorial": "After process() returns, all local references (sb, a, b, c, list) are gone. Objects they pointed to have no remaining strong reference — they are GC-eligible. Static fields (KEEP) are GC roots and are never eligible. Count every heap object that has no remaining path from a GC root."
+          "editorial": "After process() returns, all local references (sb, a, b, c, list) are gone. Objects they pointed to have no remaining strong reference — they are GC-eligible. Static fields (KEEP) are GC roots and are never eligible. Count every heap object that has no remaining path from a GC root.",
+          "sampleInput": "steps: create, reassign, null",
+          "sampleOutput": "[0, 1, 2]"
         },
         {
           "displayOrder": 4,
           "title": "JVM Version Detection",
-          "description": "Write a method `getJvmInfo()` that returns a formatted string with: (1) the Java version, (2) the JVM vendor, (3) the JVM name, and (4) whether the current runtime is a JRE-only or full JDK installation. Format: `'Java 17.0.2 | GraalVM CE | OpenJDK 64-Bit | JDK'`",
+          "description": "Detect the current JVM version and print major features available.\n\n**Example:**\nSystem.getProperty(\"java.version\") => \"21.0.1\"\nSystem.getProperty(\"java.vm.name\") => \"Java HotSpot(TM) 64-Bit Server VM\"\nRuntime.version().feature() => 21\n\nImplement `getJvmInfo()` returning Map with: version, vmName, vendor, maxHeapMB.",
           "difficulty": "EASY",
           "pattern": "System Properties API",
           "hint1": "Java system properties contain all JVM metadata. Use System.getProperty(key).",
@@ -148,12 +154,14 @@
             }
           ],
           "constraints": "Must use System.getProperty() API only. Output format: 'version | vendor | vmName | JDK/JRE'.",
-          "editorial": "System.getProperty() reads JVM system properties at runtime. 'java.version', 'java.vendor', 'java.home' are always set. To detect JDK vs JRE, check for the presence of 'tools.jar' or try Class.forName('com.sun.tools.javac.Main')."
+          "editorial": "System.getProperty() reads JVM system properties at runtime. 'java.version', 'java.vendor', 'java.home' are always set. To detect JDK vs JRE, check for the presence of 'tools.jar' or try Class.forName('com.sun.tools.javac.Main').",
+          "sampleInput": "getJvmInfo()",
+          "sampleOutput": "{version:\"21.0.1\", vmName:\"...\", maxHeapMB:256}"
         },
         {
           "displayOrder": 5,
           "title": "Object Reference Equality vs Value Equality",
-          "description": "Write a method `compareStrings()` that demonstrates the difference between == (reference equality) and .equals() (value equality) for Strings, explaining why `new String(\"abc\") == new String(\"abc\")` is false but `\"abc\" == \"abc\"` is true.",
+          "description": "Demonstrate `==` (reference equality) vs `.equals()` (value equality) for objects:\n\n**Example:**\nString a = new String(\"hello\");\nString b = new String(\"hello\");\na == b => false (different objects)\na.equals(b) => true (same content)\n\nString c = \"hello\"; String d = \"hello\";\nc == d => true (same interned constant)\n\nImplement `compareStrings()` showing all four cases.",
           "difficulty": "EASY",
           "pattern": "String Pool / Heap",
           "hint1": "String literals are interned into the String Pool on the heap. Same literal text → same object reference.",
@@ -176,12 +184,14 @@
             }
           ],
           "constraints": "Demonstrate all three cases. Do not use String.intern().",
-          "editorial": "String literals with the same value are interned — 'abc' and 'abc' are the same object in the String Pool, so == is true. new String('abc') creates a distinct heap object — == is false. .equals() compares content and returns true for all three. This is the most common Java equality trap."
+          "editorial": "String literals with the same value are interned — 'abc' and 'abc' are the same object in the String Pool, so == is true. new String('abc') creates a distinct heap object — == is false. .equals() compares content and returns true for all three. This is the most common Java equality trap.",
+          "sampleInput": "new String(\"hello\") == new String(\"hello\")",
+          "sampleOutput": "false"
         },
         {
           "displayOrder": 6,
           "title": "StackOverflowError — Recursion Depth Limit",
-          "description": "Write a method `maxRecursionDepth()` that determines the maximum recursion depth before a StackOverflowError occurs on the current JVM. The method should catch the error and return the depth at which it occurred.",
+          "description": "Demonstrate `StackOverflowError` by finding the max safe recursion depth:\n\n```java\nstatic int depth = 0;\nstatic void recurse() { depth++; recurse(); }\ntry { recurse(); } catch (StackOverflowError e) { /* depth is max */ }\n```\n\nImplement `findStackLimit()` returning the approximate max depth.\n\n**Key insight:** Each frame takes ~100-200 bytes. Default stack is 512KB-1MB. Typical limit: 5000-20000 frames.",
           "difficulty": "EASY",
           "pattern": "JVM Stack Limits",
           "hint1": "Use a recursive method that increments a counter and passes it recursively.",
@@ -196,12 +206,14 @@
             }
           ],
           "constraints": "Must catch StackOverflowError (not Exception). Return value should be > 1000 on any standard JVM.",
-          "editorial": "Catch StackOverflowError (extends Error, not Exception) and return the depth counter. Frame size depends on local variables — add more locals to reduce max depth. Default JVM stack size is 512KB-1MB per thread; increase with -Xss. Typical values: 5,000–20,000 frames."
+          "editorial": "Catch StackOverflowError (extends Error, not Exception) and return the depth counter. Frame size depends on local variables — add more locals to reduce max depth. Default JVM stack size is 512KB-1MB per thread; increase with -Xss. Typical values: 5,000–20,000 frames.",
+          "sampleInput": "findStackLimit()",
+          "sampleOutput": "~8000 (JVM-dependent)"
         },
         {
           "displayOrder": 7,
           "title": "Simulate Simple Class Loading Order",
-          "description": "In Java, static initializers and static fields are initialized in textual order when a class is first loaded. Given the following class, predict and verify the initialization order:\n\n```java\nclass Order {\n    static int A = initA();\n    static int B = 20;\n    static int C = A + B;\n    static { System.out.println(\"Static block: A=\" + A + \" B=\" + B + \" C=\" + C); }\n    static int initA() { System.out.println(\"initA called\"); return 10; }\n}\n```\n\nWrite the `Order` class and a main method that triggers class loading and captures the printed output order.",
+          "description": "Demonstrate the order of static initializers when classes are loaded:\n\n```java\nclass A { static { System.out.println(\"A loaded\"); } }\nclass B extends A { static { System.out.println(\"B loaded\"); } }\nnew B();\n```\nOutput: \"A loaded\" then \"B loaded\"\n\nImplement `demonstrateClassInit()` returning `String[]` of the initialization order.",
           "difficulty": "MEDIUM",
           "pattern": "Class Loading / Static Initialization",
           "hint1": "Static fields and static blocks are executed in TOP-TO-BOTTOM textual order when the class is first accessed.",
@@ -224,12 +236,14 @@
             }
           ],
           "constraints": "Do not reorder fields. Output must match the textual initialization order exactly.",
-          "editorial": "Static fields and static initializer blocks execute in textual (top-to-bottom) order when the class is first loaded. A static block reads/writes fields declared above it — fields below are not yet initialized. The JVM holds the class initialization lock, preventing concurrent initialization."
+          "editorial": "Static fields and static initializer blocks execute in textual (top-to-bottom) order when the class is first loaded. A static block reads/writes fields declared above it — fields below are not yet initialized. The JVM holds the class initialization lock, preventing concurrent initialization.",
+          "sampleInput": "new B() where B extends A",
+          "sampleOutput": "[\"A loaded\", \"B loaded\"]"
         },
         {
           "displayOrder": 8,
           "title": "WeakReference vs StrongReference",
-          "description": "Demonstrate the difference between a strong reference and a WeakReference in terms of GC eligibility. Write a method that:\n1. Creates an object with a strong reference — verify it survives GC\n2. Creates an object with only a WeakReference — verify it is collected after GC hint\n\nReturn true if the WeakReference returns null after GC (object collected).",
+          "description": "Demonstrate that `WeakReference` objects are collected by GC while `StrongReference` objects are not:\n\n**Example:**\nObject strong = new Object();\nWeakReference<Object> weak = new WeakReference<>(new Object());\nSystem.gc();\nweak.get() => null (collected)\nstrong != null => true (not collected)\n\nImplement `demonstrateWeakRef()` returning whether the weak ref was collected.",
           "difficulty": "MEDIUM",
           "pattern": "Reference Types / GC",
           "hint1": "java.lang.ref.WeakReference<T> holds a weak reference — GC can collect the referent even if the WeakReference object itself still exists.",
@@ -244,12 +258,14 @@
             }
           ],
           "constraints": "Use java.lang.ref.WeakReference. Note: System.gc() is not guaranteed — test may occasionally return false.",
-          "editorial": "WeakReference allows GC to collect the referent when no strong reference exists. After nulling the strong reference and calling System.gc(), weakRef.get() returns null — the object was collected. Strong references always prevent GC regardless of gc() hints."
+          "editorial": "WeakReference allows GC to collect the referent when no strong reference exists. After nulling the strong reference and calling System.gc(), weakRef.get() returns null — the object was collected. Strong references always prevent GC regardless of gc() hints.",
+          "sampleInput": "WeakReference after System.gc()",
+          "sampleOutput": "weak.get() = null"
         },
         {
           "displayOrder": 9,
           "title": "JVM Flag Impact — Measure Heap Usage",
-          "description": "Write a method `measureHeapUsage()` that allocates 10,000 String objects, then measures and returns the approximate heap memory used (in bytes) using Runtime.getRuntime(). The method should print heap usage before and after allocation.",
+          "description": "Measure heap usage before and after allocating a large array using `Runtime.getRuntime()`:\n\n```java\nlong before = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();\nbyte[] arr = new byte[1024 * 1024 * 10]; // 10MB\nlong after = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();\nSystem.out.println(\"Delta: \" + (after - before) / 1024 / 1024 + \"MB\");\n```\n\nImplement `measureHeapDelta(int sizeMB)` returning the actual heap delta in bytes.",
           "difficulty": "MEDIUM",
           "pattern": "Runtime Memory API",
           "hint1": "Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() gives used heap bytes.",
@@ -264,12 +280,14 @@
             }
           ],
           "constraints": "Heap delta should be > 100,000 bytes for 10,000 String allocations.",
-          "editorial": "Runtime.getRuntime().totalMemory() - freeMemory() gives approximate used heap. Call gc() before measuring for a cleaner baseline. Retain references in a List to prevent premature GC. The difference between before and after allocation approximates the heap cost of those objects."
+          "editorial": "Runtime.getRuntime().totalMemory() - freeMemory() gives approximate used heap. Call gc() before measuring for a cleaner baseline. Retain references in a List to prevent premature GC. The difference between before and after allocation approximates the heap cost of those objects.",
+          "sampleInput": "measureHeapDelta(10)",
+          "sampleOutput": "~10MB delta"
         },
         {
           "displayOrder": 10,
           "title": "Custom ClassLoader — Load Class from Bytes",
-          "description": "Implement a `ByteArrayClassLoader` that extends ClassLoader and can load a class from a provided byte array (pre-compiled bytecode). The loader should:\n1. Accept class name and byte[] in constructor\n2. Override findClass() to call defineClass() with the byte array\n3. Return an instance of the loaded class",
+          "description": "Implement a custom `ClassLoader` that loads a class from a `byte[]` instead of the filesystem:\n\n**Example:**\nbyte[] classBytes = compileClass(\"Hello\");\nCustomClassLoader loader = new CustomClassLoader();\nClass<?> cls = loader.defineClassFromBytes(\"Hello\", classBytes);\ncls.getDeclaredMethod(\"greet\").invoke(cls.newInstance()) => \"Hello from custom loader!\"",
           "difficulty": "MEDIUM",
           "pattern": "Custom ClassLoader",
           "hint1": "Extend ClassLoader and override findClass(String name).",
@@ -284,12 +302,14 @@
             }
           ],
           "constraints": "Must extend ClassLoader and override findClass(). Must call defineClass() with the byte array.",
-          "editorial": "Override findClass(String name) and call defineClass(name, bytes, 0, bytes.length). The parent-delegation model means loadClass() delegates to parent first — findClass() is only called when parent fails. defineClass() registers the Class object in this loader's namespace."
+          "editorial": "Override findClass(String name) and call defineClass(name, bytes, 0, bytes.length). The parent-delegation model means loadClass() delegates to parent first — findClass() is only called when parent fails. defineClass() registers the Class object in this loader's namespace.",
+          "sampleInput": "defineClassFromBytes(\"Hello\", bytes)",
+          "sampleOutput": "\"Hello from custom loader!\""
         },
         {
           "displayOrder": 11,
           "title": "Metaspace OOM — Dynamic Class Generation",
-          "description": "Demonstrate (in a controlled way) how loading too many classes can exhaust Metaspace. Write a method that dynamically generates and loads simple classes in a loop, counting how many can be loaded before OutOfMemoryError: Metaspace. Use a small Metaspace limit (-XX:MaxMetaspaceSize=10m) for testing.\n\nNote: This is a diagnostic exercise — return the count when OOM occurs.",
+          "description": "Simulate Metaspace exhaustion by generating thousands of dynamic classes with `ByteBuddy` or `javax.tools`:\n\n**Example:**\nfor (int i = 0; i < 100000; i++) generateClass(\"Dyn\" + i);\n=> eventually: java.lang.OutOfMemoryError: Metaspace\n\nImplement `simulateMetaspaceOOM(int classCount)` that catches OOM and reports how many classes were loaded.\n\n**Key insight:** Each class definition consumes Metaspace. `-XX:MaxMetaspaceSize=64m` to reproduce faster.",
           "difficulty": "MEDIUM",
           "pattern": "Metaspace / JVM Memory Areas",
           "hint1": "Use javax.tools.JavaCompiler or ASM library to generate class bytecode dynamically in a loop.",
@@ -304,12 +324,14 @@
             }
           ],
           "constraints": "Conceptual exercise. Run with -XX:MaxMetaspaceSize=10m in real test. Must catch OutOfMemoryError.",
-          "editorial": "Each ClassLoader instance maintains its own namespace. Create a fresh ByteClassLoader per class to bypass caching — otherwise loadClass() returns the same cached class. Track classes in a List to prevent GC. Metaspace fills when the list grows, as each Class object consumes Metaspace."
+          "editorial": "Each ClassLoader instance maintains its own namespace. Create a fresh ByteClassLoader per class to bypass caching — otherwise loadClass() returns the same cached class. Track classes in a List to prevent GC. Metaspace fills when the list grows, as each Class object consumes Metaspace.",
+          "sampleInput": "generateClass x 100000",
+          "sampleOutput": "OOM after ~N classes (Metaspace full)"
         },
         {
           "displayOrder": 12,
           "title": "Thread-Local Storage Demo",
-          "description": "Implement a `RequestContext` class using ThreadLocal to store a per-thread request ID. Write:\n1. A static ThreadLocal<String> field for requestId\n2. `setRequestId(String id)` and `getRequestId()` methods\n3. A demo showing two threads with different requestIds that don't interfere with each other",
+          "description": "Demonstrate `ThreadLocal<T>` where each thread gets its own copy of a value:\n\n**Example:**\nThreadLocal<String> local = new ThreadLocal<>();\nThread1: local.set(\"T1-data\"); local.get() => \"T1-data\"\nThread2: local.set(\"T2-data\"); local.get() => \"T2-data\"\n// T1 still sees \"T1-data\" — no interference\n\nImplement `threadLocalDemo()` showing isolation between 3 threads.",
           "difficulty": "MEDIUM",
           "pattern": "ThreadLocal / JVM Thread Memory",
           "hint1": "Use ThreadLocal<String> as a static field. Each thread gets its own isolated copy.",
@@ -332,12 +354,14 @@
             }
           ],
           "constraints": "Must use ThreadLocal. Must call remove() after use to prevent memory leaks in thread pools.",
-          "editorial": "ThreadLocal.set() stores value in the current thread's internal map (Thread.threadLocals). remove() clears it — essential to prevent memory leaks in thread-pool environments (Tomcat, Spring) where threads are reused. Each thread sees its own isolated value."
+          "editorial": "ThreadLocal.set() stores value in the current thread's internal map (Thread.threadLocals). remove() clears it — essential to prevent memory leaks in thread-pool environments (Tomcat, Spring) where threads are reused. Each thread sees its own isolated value.",
+          "sampleInput": "3 threads each set their own ThreadLocal value",
+          "sampleOutput": "each thread reads its own value"
         },
         {
           "displayOrder": 13,
           "title": "JVM Shutdown Hook",
-          "description": "Register a JVM shutdown hook that prints a cleanup message when the JVM exits normally (via System.exit() or program completion). Write a program that:\n1. Registers a shutdown hook thread\n2. Performs some work\n3. Calls System.exit(0)\n4. Verifies the hook runs before JVM terminates",
+          "description": "Register a JVM shutdown hook that runs cleanup code when the JVM exits:\n\n**Example:**\nRuntime.getRuntime().addShutdownHook(new Thread(() -> {\n    System.out.println(\"Shutdown: closing resources\");\n    closeConnections();\n}));\nSystem.exit(0);\n=> \"Shutdown: closing resources\" (printed before JVM exits)\n\nImplement `registerShutdownHook(Runnable cleanup)` and verify it runs on exit.",
           "difficulty": "MEDIUM",
           "pattern": "Runtime / JVM Lifecycle",
           "hint1": "Use Runtime.getRuntime().addShutdownHook(Thread hook) to register a shutdown hook.",
@@ -356,12 +380,14 @@
             }
           ],
           "constraints": "Must use Runtime.getRuntime().addShutdownHook(). Hook must complete before JVM fully exits.",
-          "editorial": "Runtime.getRuntime().addShutdownHook(new Thread(...)) registers a hook that runs when the JVM shuts down normally. Hooks execute concurrently — add synchronization if needed. SIGKILL (-9) bypasses hooks. Good for closing DB connections, flushing buffers."
+          "editorial": "Runtime.getRuntime().addShutdownHook(new Thread(...)) registers a hook that runs when the JVM shuts down normally. Hooks execute concurrently — add synchronization if needed. SIGKILL (-9) bypasses hooks. Good for closing DB connections, flushing buffers.",
+          "sampleInput": "registerShutdownHook(() -> print(\"bye\")) then System.exit(0)",
+          "sampleOutput": "\"bye\" printed before exit"
         },
         {
           "displayOrder": 14,
           "title": "JVM Flags Parser",
-          "description": "Write a method `getJvmFlags()` that reads and returns a list of JVM arguments active for the current process using the ManagementFactory API. Filter and return only flags that start with '-X' or '-XX'.",
+          "description": "Parse JVM flags from the command line arguments into a `Map<String, String>`:\n\n**Example:**\nInput: \"-Xmx512m -Xms256m -XX:+UseG1GC -Dapp.env=prod\"\nOutput: {Xmx:\"512m\", Xms:\"256m\", \"XX:+UseG1GC\":\"true\", \"app.env\":\"prod\"}\n\nImplement `parseJvmFlags(String[] args)` returning the map.",
           "difficulty": "MEDIUM",
           "pattern": "ManagementFactory / JMX",
           "hint1": "Use ManagementFactory.getRuntimeMXBean().getInputArguments() to get all JVM arguments.",
@@ -376,12 +402,14 @@
             }
           ],
           "constraints": "Must use ManagementFactory.getRuntimeMXBean(). Run with -Xmx256m -Xss512k to see flags in output.",
-          "editorial": "ManagementFactory.getRuntimeMXBean().getInputArguments() returns JVM arguments passed at startup (-Xmx, -XX:+UseG1GC, etc.). Useful for diagnostics endpoints and health checks. Note: some JVM flags are not exposed this way — use -XX:+PrintFlagsFinal for the full list."
+          "editorial": "ManagementFactory.getRuntimeMXBean().getInputArguments() returns JVM arguments passed at startup (-Xmx, -XX:+UseG1GC, etc.). Useful for diagnostics endpoints and health checks. Note: some JVM flags are not exposed this way — use -XX:+PrintFlagsFinal for the full list.",
+          "sampleInput": "[\"-Xmx512m\", \"-Xms256m\", \"-XX:+UseG1GC\", \"-Dapp.env=prod\"]",
+          "sampleOutput": "{Xmx:512m, Xms:256m, UseG1GC:true, app.env:prod}"
         },
         {
           "displayOrder": 15,
           "title": "Class Initialization Deadlock Detection",
-          "description": "Two classes A and B have static initializers that reference each other (circular dependency). Explain and demonstrate how the JVM handles this and what happens. Write a test that shows the behavior and explain why one class may see an uninitialized state of the other.",
+          "description": "Demonstrate class initialization deadlock: two classes with static initializers that reference each other can cause a deadlock during loading.\n\n```java\nclass A { static B b = new B(); }\nclass B { static A a = new A(); }\n```\n\nExplain why this deadlocks and how to fix it (lazy initialization pattern).\n\nImplement `detectCircularInit()` that identifies classes with mutual static dependencies.",
           "difficulty": "HARD",
           "pattern": "Class Initialization / JVM Locking",
           "hint1": "The JVM uses a per-class lock during static initialization. If Thread-1 initializes A (which triggers B), and Thread-2 initializes B (which triggers A) simultaneously — deadlock.",
@@ -400,12 +428,14 @@
             }
           ],
           "constraints": "Circular static initialization is a REAL Java pitfall. Output must demonstrate the partial-initialization anomaly.",
-          "editorial": "Circular static initialization: A's static block references B, B's static block references A. The JVM class init lock prevents true deadlock, but A may observe B's fields at default values (0/null/false) before B's initializer runs. This is undefined initialization order — avoid circular static dependencies."
+          "editorial": "Circular static initialization: A's static block references B, B's static block references A. The JVM class init lock prevents true deadlock, but A may observe B's fields at default values (0/null/false) before B's initializer runs. This is undefined initialization order — avoid circular static dependencies.",
+          "sampleInput": "class A -> B, class B -> A in static init",
+          "sampleOutput": "deadlock detected (circular dependency)"
         },
         {
           "displayOrder": 16,
           "title": "GC-Safe Singleton with Lazy Initialization",
-          "description": "Implement a thread-safe Singleton using the 'Initialization-on-Demand Holder' (IODH) idiom. This leverages the JVM's class loading guarantees to ensure thread safety WITHOUT explicit synchronization.\n\nAlso implement a comparison showing why double-checked locking (DCL) without volatile is broken on the JVM.",
+          "description": "Implement a GC-safe Singleton using `WeakReference` so it can be garbage collected when not in use, then recreated on next access:\n\n**Example:**\nWeakSingleton s1 = WeakSingleton.getInstance(); // creates\nSystem.gc();\nWeakSingleton s2 = WeakSingleton.getInstance(); // may recreate\ns1 == s2 => false if GC collected s1\n\n**Key insight:** Contrast with regular Singleton — here memory is released when no strong references exist.",
           "difficulty": "HARD",
           "pattern": "Singleton / Class Loading / Memory Model",
           "hint1": "IODH: put the singleton instance in a private static inner class. The inner class is loaded lazily (only when getInstance() is called) and class loading is inherently thread-safe.",
@@ -424,12 +454,14 @@
             }
           ],
           "constraints": "IODH must use a static nested class as the holder. Fixed DCL must use volatile keyword.",
-          "editorial": "IODH leverages the JVM guarantee that class initialization is thread-safe and happens exactly once. The nested Holder class is not loaded until getInstance() is first called — giving lazy initialization without any synchronization overhead. Enum singleton is even simpler but less flexible."
+          "editorial": "IODH leverages the JVM guarantee that class initialization is thread-safe and happens exactly once. The nested Holder class is not loaded until getInstance() is first called — giving lazy initialization without any synchronization overhead. Enum singleton is even simpler but less flexible.",
+          "sampleInput": "getInstance() -> gc() -> getInstance()",
+          "sampleOutput": "may return different instance after GC"
         },
         {
           "displayOrder": 17,
           "title": "JVM Memory Leak Simulation and Fix",
-          "description": "Write a program that demonstrates a classic Java memory leak (a growing static collection), measures heap growth over time, and then shows the fixed version using cache eviction.\n\nThe leaky version should show heap growing with each 'request'. The fixed version should cap memory usage.",
+          "description": "Simulate a memory leak via a static collection that grows without bound. Then fix it.\n\n**Leak:**\n```java\nstatic Map<String, byte[]> cache = new HashMap<>();\nvoid handle(String id) { cache.put(id, new byte[1024*1024]); } // never removed\n```\n\n**Fix:** Use `WeakHashMap`, `SoftReference`, or explicit `cache.remove(id)`.\n\nImplement both versions and measure heap growth over 100 calls.",
           "difficulty": "HARD",
           "pattern": "Memory Leak / GC Roots",
           "hint1": "Classic leak: static Map<String, Object> cache that only adds, never removes. Objects added are GC roots via the static field.",
@@ -448,12 +480,14 @@
             }
           ],
           "constraints": "Leaky version must show 10,000 entries. Fixed version must cap at MAX (1000) entries using removeEldestEntry.",
-          "editorial": "Static Map is a GC root — all values are permanently reachable and never collected. Fix: cap with LinkedHashMap(capacity, 0.75f, true) overriding removeEldestEntry. WeakHashMap keys are collected when no other strong reference exists — good when the key itself is the lifetime indicator."
+          "editorial": "Static Map is a GC root — all values are permanently reachable and never collected. Fix: cap with LinkedHashMap(capacity, 0.75f, true) overriding removeEldestEntry. WeakHashMap keys are collected when no other strong reference exists — good when the key itself is the lifetime indicator.",
+          "sampleInput": "100 calls to handle() with HashMap",
+          "sampleOutput": "heap grows 100MB; WeakHashMap: GC reclaims"
         },
         {
           "displayOrder": 18,
           "title": "JVM Heap Dump Analysis Simulation",
-          "description": "Write a diagnostic class `HeapAnalyzer` that simulates heap analysis by:\n1. Creating 5 different object types with different counts and sizes\n2. Using reflection to inspect objects at runtime\n3. Reporting a 'top memory consumers' summary sorted by total bytes\n\nThis simulates what tools like Eclipse MAT or jmap do when analyzing heap dumps.",
+          "description": "Simulate JVM heap dump analysis: record all live objects by type and size, then report the top 5 largest types.\n\n**Example:**\nHeapDump dump = HeapDump.take();\ndump.getTopByMemory(5)\n=> [(byte[], 50MB), (char[], 20MB), (String, 15MB), ...]\n\nImplement using reflection and `Runtime.totalMemory() - freeMemory()` to estimate per-type usage.",
           "difficulty": "HARD",
           "pattern": "Reflection / Runtime Analysis",
           "hint1": "Use a Map<String, Long> to track className -> totalBytes. Instrument allocations manually.",
@@ -472,12 +506,14 @@
             }
           ],
           "constraints": "Must use Java record for ObjectStats. Must sort by totalBytes() descending. Must include 5+ object types.",
-          "editorial": "Track per-class counts and bytes-each. Sort by total bytes (count * bytesEach) descending. ObjectStats as a record gives free equals/hashCode/toString. The pattern mirrors jmap -histo output which shows live objects by class, count, and total bytes — critical for OOM diagnosis."
+          "editorial": "Track per-class counts and bytes-each. Sort by total bytes (count * bytesEach) descending. ObjectStats as a record gives free equals/hashCode/toString. The pattern mirrors jmap -histo output which shows live objects by class, count, and total bytes — critical for OOM diagnosis.",
+          "sampleInput": "HeapDump.take().getTopByMemory(5)",
+          "sampleOutput": "[(byte[],50MB),(String,15MB),(int[],10MB),...]"
         },
         {
           "displayOrder": 19,
           "title": "JVM Tiered Compilation Benchmark",
-          "description": "Write a proper JMH-style micro-benchmark (manual implementation without JMH dependency) that demonstrates JIT warm-up. The benchmark should:\n1. Run a computation method 100,000 times\n2. Track execution time in 10 batches of 10,000 calls\n3. Show time decreasing as JIT optimizes the method\n4. Report a summary showing cold vs warm performance",
+          "description": "Benchmark JVM tiered compilation: run the same method 10,000 times and measure throughput improvement as JIT kicks in.\n\n**Example:**\nRun computePrime(10000) in a loop:\n- Iterations 1-100: ~5ms each (interpreted)\n- Iterations 1000-2000: ~0.5ms (C1 JIT)\n- Iterations 5000+: ~0.05ms (C2 optimized)\n\nImplement `tieredBenchmark(Runnable task, int warmup, int measure)` returning ops/sec.",
           "difficulty": "HARD",
           "pattern": "JIT Compilation / Benchmarking",
           "hint1": "Divide iterations into batches and measure each batch with System.nanoTime().",
@@ -492,12 +528,14 @@
             }
           ],
           "constraints": "Must use volatile blackhole sink. Must show at least 10 batches. Cold batch should be measurably slower than hot batch.",
-          "editorial": "Batch calls rather than measuring per-call to reduce System.nanoTime() overhead (each call ~25ns). Use a volatile blackhole field to prevent dead-code elimination. Expect 10-100x speedup after JIT warm-up. Report median not mean — JIT spikes make means misleading."
+          "editorial": "Batch calls rather than measuring per-call to reduce System.nanoTime() overhead (each call ~25ns). Use a volatile blackhole field to prevent dead-code elimination. Expect 10-100x speedup after JIT warm-up. Report median not mean — JIT spikes make means misleading.",
+          "sampleInput": "tieredBenchmark(prime check, warmup=5000, measure=1000)",
+          "sampleOutput": "throughput increases 10-100x after warmup"
         },
         {
           "displayOrder": 20,
           "title": "Build a Minimal JVM Emulator",
-          "description": "Implement a simple stack-based virtual machine that mimics how the JVM executes bytecode. Your emulator should support these instructions:\n- PUSH n (push integer n onto stack)\n- POP (pop and discard top of stack)\n- ADD (pop two, push sum)\n- MUL (pop two, push product)\n- STORE var (pop and store in named variable)\n- LOAD var (push variable value onto stack)\n- PRINT (pop and print top of stack)\n\nExecute a program that computes (3 + 4) * 2 and prints the result.",
+          "description": "Build a minimal JVM emulator that executes simple bytecode instructions: `ICONST`, `ILOAD`, `ISTORE`, `IADD`, `ISUB`, `IMUL`, `IRETURN`.\n\n**Example:**\n// Bytecode for: int x=2; int y=3; return x+y;\nbytecode = [ICONST_2, ISTORE_0, ICONST_3, ISTORE_1, ILOAD_0, ILOAD_1, IADD, IRETURN]\nnew MiniJVM().execute(bytecode) => 5\n\n**Key insight:** JVM is a stack machine — ILOAD pushes to operand stack; IADD pops two, pushes result.",
           "difficulty": "HARD",
           "pattern": "Stack Machine / JVM Internals",
           "hint1": "Use a Deque<Integer> as the operand stack (LIFO). Use a Map<String,Integer> as the local variable table.",
@@ -516,7 +554,9 @@
             }
           ],
           "constraints": "Must support all 7 opcodes. Stack must be LIFO. Variables stored in HashMap. Must produce correct results for both test cases.",
-          "editorial": "Stack-based VM: PUSH puts value on deque, ADD pops two and pushes sum, STORE pops into variable map, LOAD pushes from map, PRINT pops and prints. This is exactly how the JVM operand stack works. Deque<Integer> as the stack with push/pop on same end gives LIFO semantics."
+          "editorial": "Stack-based VM: PUSH puts value on deque, ADD pops two and pushes sum, STORE pops into variable map, LOAD pushes from map, PRINT pops and prints. This is exactly how the JVM operand stack works. Deque<Integer> as the stack with push/pop on same end gives LIFO semantics.",
+          "sampleInput": "[ICONST_2, ISTORE_0, ICONST_3, ISTORE_1, ILOAD_0, ILOAD_1, IADD, IRETURN]",
+          "sampleOutput": "5"
         }
       ],
       "subCategory": "JVM Internals (Interview Critical)",

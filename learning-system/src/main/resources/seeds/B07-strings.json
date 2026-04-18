@@ -68,7 +68,7 @@
         {
           "displayOrder": 1,
           "title": "Reverse a String",
-          "description": "Reverse a string s in-place (given as char array). Do not allocate extra space.",
+          "description": "Reverse a string `s` **in-place** where `s` is given as a character array. Do not allocate extra space for another array.\n\n**Example 1:**\nInput: s = ['h','e','l','l','o']\nOutput: ['o','l','l','e','h']\n\n**Example 2:**\nInput: s = ['H','a','n','n','a','h']\nOutput: ['h','a','n','n','a','H']",
           "difficulty": "EASY",
           "pattern": "Two Pointers",
           "hint1": "Use two pointers starting at both ends.",
@@ -91,12 +91,14 @@
             }
           ],
           "constraints": "1 <= s.length <= 10^5. s[i] is a printable ASCII character.",
-          "editorial": "Classic two-pointer swap. O(n) time, O(1) space. XOR swap without temp: s[l] ^= s[r]; s[r] ^= s[l]; s[l] ^= s[r]; — valid but less readable."
+          "editorial": "Classic two-pointer swap. O(n) time, O(1) space. XOR swap without temp: s[l] ^= s[r]; s[r] ^= s[l]; s[l] ^= s[r]; — valid but less readable.",
+          "sampleInput": "['h','e','l','l','o']",
+          "sampleOutput": "['o','l','l','e','h']"
         },
         {
           "displayOrder": 2,
           "title": "Valid Anagram",
-          "description": "Given two strings s and t, return true if t is an anagram of s (same characters, same frequencies, possibly different order).",
+          "description": "Given two strings `s` and `t`, return `true` if `t` is an anagram of `s` — both strings contain the same characters with the same frequencies.\n\n**Example 1:**\nInput: s = \"anagram\", t = \"nagaram\"\nOutput: true\n\n**Example 2:**\nInput: s = \"rat\", t = \"car\"\nOutput: false\nExplanation: Different characters — 'r','a','t' vs 'c','a','r'.",
           "difficulty": "EASY",
           "pattern": "Character Frequency",
           "hint1": "An anagram has the same character frequencies. Count characters in s and t.",
@@ -119,12 +121,14 @@
             }
           ],
           "constraints": "1 <= s.length, t.length <= 5*10^4. s and t consist of lowercase letters.",
-          "editorial": "Frequency array approach: O(n) time, O(1) space. First check lengths to early-exit. Increment for s, decrement for t — if anagram, all slots return to 0."
+          "editorial": "Frequency array approach: O(n) time, O(1) space. First check lengths to early-exit. Increment for s, decrement for t — if anagram, all slots return to 0.",
+          "sampleInput": "s = \"anagram\", t = \"nagaram\"",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 3,
           "title": "Valid Palindrome",
-          "description": "Given a string, determine if it's a palindrome considering only alphanumeric characters and ignoring case.",
+          "description": "Given a string `s`, return `true` if it is a palindrome — ignoring non-alphanumeric characters and case differences.\n\n**Example 1:**\nInput: \"A man, a plan, a canal: Panama\"\nOutput: true\nExplanation: After filtering: \"amanaplanacanalpanama\" — reads the same forwards and backwards.\n\n**Example 2:**\nInput: \"race a car\"\nOutput: false\nExplanation: Filtered: \"raceacar\" — not a palindrome.",
           "difficulty": "EASY",
           "pattern": "Two Pointers + Character Filtering",
           "hint1": "Use two pointers. Skip non-alphanumeric characters.",
@@ -147,12 +151,14 @@
             }
           ],
           "constraints": "1 <= s.length <= 2*10^5. s consists of printable ASCII characters.",
-          "editorial": "Two-pointer approach with inner while loops to skip non-alphanumeric chars. Compare lowercase. O(n) time, O(1) space. The inner while loops don't add to overall complexity — total character advances = O(n)."
+          "editorial": "Two-pointer approach with inner while loops to skip non-alphanumeric chars. Compare lowercase. O(n) time, O(1) space. The inner while loops don't add to overall complexity — total character advances = O(n).",
+          "sampleInput": "\"A man, a plan, a canal: Panama\"",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 4,
           "title": "Longest Common Prefix",
-          "description": "Find the longest common prefix string among an array of strings. Return empty string if none.",
+          "description": "Find the **longest common prefix** string shared by all strings in an array. Return an empty string `\"\"` if no common prefix exists.\n\n**Example 1:**\nInput: [\"flower\",\"flow\",\"flight\"]\nOutput: \"fl\"\nExplanation: \"fl\" is the longest prefix all three strings share.\n\n**Example 2:**\nInput: [\"dog\",\"racecar\",\"car\"]\nOutput: \"\"\nExplanation: No common prefix among the three strings.",
           "difficulty": "EASY",
           "pattern": "Vertical Scanning",
           "hint1": "Take the first string as the reference prefix.",
@@ -175,12 +181,14 @@
             }
           ],
           "constraints": "1 <= strs.length <= 200. 0 <= strs[i].length <= 200. Lowercase letters only.",
-          "editorial": "Horizontal scanning: take first string as prefix, shorten it until each other string starts with it. O(S) where S = total chars. Alternative: vertical scanning (compare column by column)."
+          "editorial": "Horizontal scanning: take first string as prefix, shorten it until each other string starts with it. O(S) where S = total chars. Alternative: vertical scanning (compare column by column).",
+          "sampleInput": "[\"flower\",\"flow\",\"flight\"]",
+          "sampleOutput": "\"fl\""
         },
         {
           "displayOrder": 5,
           "title": "Count and Say",
-          "description": "The count-and-say sequence: '1' → '11' (one 1) → '21' (two 1s) → '1211' (one 2, one 1). Generate the nth term.",
+          "description": "The count-and-say sequence is defined as: `1` → `\"11\"` (one 1) → `\"21\"` (two 1s) → `\"1211\"` (one 2, one 1) → ... Given `n`, return the nth term of the sequence.\n\n**Example 1:**\nInput: n = 1\nOutput: \"1\"\n\n**Example 2:**\nInput: n = 4\nOutput: \"1211\"\nExplanation: Term 1→\"1\", 2→\"11\", 3→\"21\", 4→\"1211\" (one 2, one 1).\n\n**Example 3:**\nInput: n = 5\nOutput: \"111221\"",
           "difficulty": "EASY",
           "pattern": "StringBuilder + Run-Length Encoding",
           "hint1": "Start with '1' and generate each subsequent term from the previous.",
@@ -203,12 +211,14 @@
             }
           ],
           "constraints": "1 <= n <= 30",
-          "editorial": "Run-length encoding of the previous string. Nested while loop: outer advances j to next different character, inner counts the run. O(2^n) string length in worst case but bounded for n<=30."
+          "editorial": "Run-length encoding of the previous string. Nested while loop: outer advances j to next different character, inner counts the run. O(2^n) string length in worst case but bounded for n<=30.",
+          "sampleInput": "4",
+          "sampleOutput": "\"1211\""
         },
         {
           "displayOrder": 6,
           "title": "Roman Numeral to Integer using StringBuilder",
-          "description": "Build a method that takes an integer (1-3999) and converts it to a Roman numeral string using StringBuilder.",
+          "description": "Convert an integer in the range `[1, 3999]` to its **Roman numeral** representation. Roman numerals use subtractive notation: IV=4, IX=9, XL=40, XC=90, CD=400, CM=900.\n\n**Example 1:**\nInput: 3\nOutput: \"III\"\n\n**Example 2:**\nInput: 1994\nOutput: \"MCMXCIV\"\nExplanation: M=1000, CM=900, XC=90, IV=4.\n\n**Example 3:**\nInput: 58\nOutput: \"LVIII\"\nExplanation: L=50, V=5, III=3.",
           "difficulty": "EASY",
           "pattern": "Greedy + StringBuilder",
           "hint1": "Create two arrays: values[] and symbols[]. Use the same index in both.",
@@ -235,12 +245,14 @@
             }
           ],
           "constraints": "1 <= num <= 3999",
-          "editorial": "Greedy: always subtract the largest fitting Roman value. Include all subtractive combinations (CM, CD, XC, XL, IX, IV) in the values array so they're handled naturally. O(1) since number is bounded."
+          "editorial": "Greedy: always subtract the largest fitting Roman value. Include all subtractive combinations (CM, CD, XC, XL, IX, IV) in the values array so they're handled naturally. O(1) since number is bounded.",
+          "sampleInput": "1994",
+          "sampleOutput": "\"MCMXCIV\""
         },
         {
           "displayOrder": 7,
           "title": "Minimum Window Substring",
-          "description": "Given strings s and t, find the minimum window in s that contains all characters of t. Return empty string if none.",
+          "description": "Given strings `s` and `t`, find the **minimum window substring** of `s` that contains all characters in `t` (including duplicates). Return `\"\"` if no such window exists.\n\n**Example 1:**\nInput: s = \"ADOBECODEBANC\", t = \"ABC\"\nOutput: \"BANC\"\nExplanation: \"BANC\" is the smallest window containing A, B, and C.\n\n**Example 2:**\nInput: s = \"a\", t = \"a\"\nOutput: \"a\"\n\n**Example 3:**\nInput: s = \"a\", t = \"aa\"\nOutput: \"\"\nExplanation: t requires two 'a's but s has only one.",
           "difficulty": "MEDIUM",
           "pattern": "Sliding Window + Character Count",
           "hint1": "Use a frequency map for t characters. Use a sliding window on s.",
@@ -263,12 +275,14 @@
             }
           ],
           "constraints": "1 <= s.length, t.length <= 10^5. s and t consist of uppercase/lowercase letters.",
-          "editorial": "Variable sliding window with character frequency tracking. 'formed' tracks how many distinct chars have met their required count. Use int[128] arrays (ASCII) for O(1) lookup. O(|s| + |t|) time."
+          "editorial": "Variable sliding window with character frequency tracking. 'formed' tracks how many distinct chars have met their required count. Use int[128] arrays (ASCII) for O(1) lookup. O(|s| + |t|) time.",
+          "sampleInput": "s = \"ADOBECODEBANC\", t = \"ABC\"",
+          "sampleOutput": "\"BANC\""
         },
         {
           "displayOrder": 8,
           "title": "Group Anagrams",
-          "description": "Given an array of strings, group the anagrams together. Each group can be in any order.",
+          "description": "Given an array of strings `strs`, group the **anagrams** together. Each group can appear in any order.\n\n**Example 1:**\nInput: [\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]\nOutput: [[\"bat\"],[\"nat\",\"tan\"],[\"ate\",\"eat\",\"tea\"]]\nExplanation: Strings sharing the same sorted characters are anagrams of each other.\n\n**Example 2:**\nInput: [\"\"]\nOutput: [[\"\"]]\n\n**Example 3:**\nInput: [\"a\"]\nOutput: [[\"a\"]]",
           "difficulty": "MEDIUM",
           "pattern": "HashMap with Sorted Key",
           "hint1": "Anagrams have the same sorted character form (e.g., 'eat', 'tea', 'ate' all sort to 'aet').",
@@ -291,12 +305,14 @@
             }
           ],
           "constraints": "1 <= strs.length <= 10^4. 0 <= strs[i].length <= 100. Lowercase letters.",
-          "editorial": "Sort each string to create a canonical key. computeIfAbsent initializes the list if absent. O(n * k log k) where k = max string length. Alternative O(n*k) key: use count array '#0a1b2c...' as string key."
+          "editorial": "Sort each string to create a canonical key. computeIfAbsent initializes the list if absent. O(n * k log k) where k = max string length. Alternative O(n*k) key: use count array '#0a1b2c...' as string key.",
+          "sampleInput": "[\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]",
+          "sampleOutput": "[[\"bat\"],[\"nat\",\"tan\"],[\"ate\",\"eat\",\"tea\"]]"
         },
         {
           "displayOrder": 9,
           "title": "Longest Substring Without Repeating Characters",
-          "description": "Find the length of the longest substring without repeating characters.",
+          "description": "Given a string `s`, find the length of the **longest substring without repeating characters**.\n\n**Example 1:**\nInput: \"abcabcbb\"\nOutput: 3\nExplanation: \"abc\" is the longest substring without repeating characters.\n\n**Example 2:**\nInput: \"bbbbb\"\nOutput: 1\nExplanation: The answer is \"b\", with length 1.\n\n**Example 3:**\nInput: \"pwwkew\"\nOutput: 3\nExplanation: \"wke\" has length 3; note that \"pwke\" is a subsequence, not a substring.",
           "difficulty": "MEDIUM",
           "pattern": "Sliding Window + HashSet",
           "hint1": "Use a sliding window with a HashSet to track current window characters.",
@@ -323,12 +339,14 @@
             }
           ],
           "constraints": "0 <= s.length <= 5*10^4. s consists of English letters, digits, symbols, spaces.",
-          "editorial": "Optimized sliding window: instead of shrinking one step at a time, jump left directly to lastSeen[c]+1 when a duplicate is found. int[128] for ASCII characters. O(n) time, O(1) space (bounded alphabet)."
+          "editorial": "Optimized sliding window: instead of shrinking one step at a time, jump left directly to lastSeen[c]+1 when a duplicate is found. int[128] for ASCII characters. O(n) time, O(1) space (bounded alphabet).",
+          "sampleInput": "\"abcabcbb\"",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 10,
           "title": "String to Integer (atoi)",
-          "description": "Implement atoi: convert a string to a 32-bit signed integer. Handle leading whitespace, sign, overflow, and invalid characters.",
+          "description": "Implement `atoi` which converts a string to a 32-bit signed integer. Rules: skip leading whitespace, handle optional `+`/`-` sign, read digits until a non-digit or end, clamp to `[Integer.MIN_VALUE, Integer.MAX_VALUE]`.\n\n**Example 1:**\nInput: \"42\"\nOutput: 42\n\n**Example 2:**\nInput: \"   -042\"\nOutput: -42\nExplanation: Leading spaces ignored, leading zeros ignored.\n\n**Example 3:**\nInput: \"1337c0d3\"\nOutput: 1337\nExplanation: Stops at the non-digit 'c'.",
           "difficulty": "MEDIUM",
           "pattern": "String Parsing + Overflow Handling",
           "hint1": "Step 1: skip leading whitespace. Step 2: read optional sign. Step 3: read digits.",
@@ -355,12 +373,14 @@
             }
           ],
           "constraints": "0 <= s.length <= 200. s consists of printable ASCII.",
-          "editorial": "Four phases: whitespace skip, sign, digits, stop on non-digit. Overflow check before multiplication: `result > (MAX_VALUE - digit) / 10`. This handles the boundary case where result would exceed int range. O(n) time."
+          "editorial": "Four phases: whitespace skip, sign, digits, stop on non-digit. Overflow check before multiplication: `result > (MAX_VALUE - digit) / 10`. This handles the boundary case where result would exceed int range. O(n) time.",
+          "sampleInput": "\"   -042\"",
+          "sampleOutput": "-42"
         },
         {
           "displayOrder": 11,
           "title": "Decode String",
-          "description": "Given encoded string like '3[a2[c]]', decode it to 'accaccacc'. Brackets can be nested.",
+          "description": "Given an encoded string like `\"3[a2[c]]\"`, decode it and return the expanded string. The encoding rule: `k[encoded_string]` means `encoded_string` repeated exactly `k` times. Brackets can be nested.\n\n**Example 1:**\nInput: \"3[a2[c]]\"\nOutput: \"accaccacc\"\nExplanation: 2[c]→\"cc\", then 3[a+cc]→\"accaccacc\".\n\n**Example 2:**\nInput: \"2[abc]3[cd]ef\"\nOutput: \"abcabccdcdcdef\"\n\n**Example 3:**\nInput: \"abc3[cd]xyz\"\nOutput: \"abccdcdcdxyz\"",
           "difficulty": "MEDIUM",
           "pattern": "Stack-based String Building",
           "hint1": "Use two stacks: one for counts (k), one for strings built so far.",
@@ -383,12 +403,14 @@
             }
           ],
           "constraints": "1 <= s.length <= 30. s consists of lowercase letters, digits, and brackets. Guaranteed valid.",
-          "editorial": "Stack approach: when we see '[', save current state (count + built string). When we see ']', pop and repeat. k = k*10 + digit handles multi-digit numbers. O(maxNested * length) time."
+          "editorial": "Stack approach: when we see '[', save current state (count + built string). When we see ']', pop and repeat. k = k*10 + digit handles multi-digit numbers. O(maxNested * length) time.",
+          "sampleInput": "\"3[a2[c]]\"",
+          "sampleOutput": "\"accaccacc\""
         },
         {
           "displayOrder": 12,
           "title": "Word Break",
-          "description": "Given string s and dictionary wordDict, determine if s can be segmented into space-separated sequence of dictionary words.",
+          "description": "Given string `s` and a dictionary `wordDict`, return `true` if `s` can be segmented into one or more space-separated words that all exist in the dictionary.\n\n**Example 1:**\nInput: s = \"leetcode\", wordDict = [\"leet\",\"code\"]\nOutput: true\nExplanation: \"leet\" + \"code\" = \"leetcode\".\n\n**Example 2:**\nInput: s = \"applepenapple\", wordDict = [\"apple\",\"pen\"]\nOutput: true\nExplanation: \"apple\" + \"pen\" + \"apple\".\n\n**Example 3:**\nInput: s = \"catsandog\", wordDict = [\"cats\",\"dog\",\"sand\",\"and\",\"cat\"]\nOutput: false",
           "difficulty": "MEDIUM",
           "pattern": "DP + String Matching",
           "hint1": "dp[i] = true if s[0..i-1] can be segmented.",
@@ -411,12 +433,14 @@
             }
           ],
           "constraints": "1 <= s.length <= 300. 1 <= wordDict.length <= 1000.",
-          "editorial": "DP: dp[i] = can we reach position i. For each i, try all j where dp[j]=true and s[j..i] is a word. O(n²) time with HashSet lookup. Break early when dp[i] is set. Optimized: only try j where s.length() <= max word length."
+          "editorial": "DP: dp[i] = can we reach position i. For each i, try all j where dp[j]=true and s[j..i] is a word. O(n²) time with HashSet lookup. Break early when dp[i] is set. Optimized: only try j where s.length() <= max word length.",
+          "sampleInput": "s = \"leetcode\", wordDict = [\"leet\",\"code\"]",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 13,
           "title": "Implement strStr (KMP)",
-          "description": "Implement strStr(haystack, needle): return index of first occurrence of needle in haystack, or -1 if not found. Must be O(n+m) — implement KMP.",
+          "description": "Implement `strStr(haystack, needle)` using **KMP** algorithm: return the index of the first occurrence of `needle` in `haystack`, or `-1` if not found. Return `0` if `needle` is empty.\n\n**Example 1:**\nInput: haystack = \"sadbutsad\", needle = \"sad\"\nOutput: 0\nExplanation: \"sad\" occurs first at index 0.\n\n**Example 2:**\nInput: haystack = \"leetcode\", needle = \"leeto\"\nOutput: -1\nExplanation: \"leeto\" does not appear in \"leetcode\".",
           "difficulty": "HARD",
           "pattern": "KMP String Search",
           "hint1": "Build the LPS (failure function) array from the needle.",
@@ -439,12 +463,14 @@
             }
           ],
           "constraints": "0 <= haystack.length, needle.length <= 5*10^4.",
-          "editorial": "KMP in O(n+m). The LPS table allows the algorithm to skip redundant comparisons. When a mismatch occurs at needle[j], fall back to needle[lps[j-1]] — the longest proper prefix that's also a suffix. Never goes back in haystack."
+          "editorial": "KMP in O(n+m). The LPS table allows the algorithm to skip redundant comparisons. When a mismatch occurs at needle[j], fall back to needle[lps[j-1]] — the longest proper prefix that's also a suffix. Never goes back in haystack.",
+          "sampleInput": "haystack = \"sadbutsad\", needle = \"sad\"",
+          "sampleOutput": "0"
         },
         {
           "displayOrder": 14,
           "title": "Palindrome Partitioning",
-          "description": "Given a string s, partition it such that every substring is a palindrome. Return all possible palindrome partitions.",
+          "description": "Given a string `s`, partition it such that **every substring** in the partition is a palindrome. Return **all possible** palindrome partitioning results.\n\n**Example 1:**\nInput: \"aab\"\nOutput: [[\"a\",\"a\",\"b\"],[\"aa\",\"b\"]]\nExplanation: Both \"a\"/\"a\"/\"b\" and \"aa\"/\"b\" are valid palindrome partitions.\n\n**Example 2:**\nInput: \"a\"\nOutput: [[\"a\"]]\n\n**Example 3:**\nInput: \"aba\"\nOutput: [[\"a\",\"b\",\"a\"],[\"aba\"]]",
           "difficulty": "HARD",
           "pattern": "Backtracking + Palindrome Check",
           "hint1": "Use backtracking: at each position, try all substrings starting here that are palindromes.",
@@ -467,12 +493,14 @@
             }
           ],
           "constraints": "1 <= s.length <= 16. s consists of lowercase letters.",
-          "editorial": "DP precomputes all palindrome substrings in O(n²). Backtracking then only tries palindromic prefixes. The DP recurrence: isPalin[i][j] = same endpoints and inner is also palindrome (or length <= 2). Bottom-up from short to long. O(n * 2^n) time for backtracking part."
+          "editorial": "DP precomputes all palindrome substrings in O(n²). Backtracking then only tries palindromic prefixes. The DP recurrence: isPalin[i][j] = same endpoints and inner is also palindrome (or length <= 2). Bottom-up from short to long. O(n * 2^n) time for backtracking part.",
+          "sampleInput": "\"aab\"",
+          "sampleOutput": "[[\"a\",\"a\",\"b\"],[\"aa\",\"b\"]]"
         },
         {
           "displayOrder": 15,
           "title": "Regular Expression Matching",
-          "description": "Implement regex matching with '.' (any char) and '*' (zero or more of preceding element).",
+          "description": "Implement regex matching with two special characters: `.` matches any single character, `*` matches zero or more of the preceding element. The match must cover the **entire** input string.\n\n**Example 1:**\nInput: s = \"aa\", p = \"a*\"\nOutput: true\nExplanation: 'a*' matches zero or more 'a' — here it matches \"aa\".\n\n**Example 2:**\nInput: s = \"ab\", p = \".*\"\nOutput: true\nExplanation: \".*\" matches any sequence of characters.\n\n**Example 3:**\nInput: s = \"aab\", p = \"c*a*b\"\nOutput: true\nExplanation: c*=0 c's, a*=2 a's, b=b.",
           "difficulty": "HARD",
           "pattern": "DP on 2D Grid",
           "hint1": "dp[i][j] = does s[0..i-1] match p[0..j-1].",
@@ -499,12 +527,14 @@
             }
           ],
           "constraints": "1 <= s.length <= 20. 1 <= p.length <= 30. s contains only lowercase. p contains lowercase, '.', '*'.",
-          "editorial": "2D DP: dp[i][j] = s[0..i-1] matches p[0..j-1]. For '*': zero occurrence (dp[i][j-2]) or one-more (dp[i-1][j] if chars match). The key insight: '*' must be treated with its preceding character as a unit. O(m*n) time and space."
+          "editorial": "2D DP: dp[i][j] = s[0..i-1] matches p[0..j-1]. For '*': zero occurrence (dp[i][j-2]) or one-more (dp[i-1][j] if chars match). The key insight: '*' must be treated with its preceding character as a unit. O(m*n) time and space.",
+          "sampleInput": "s = \"aa\", p = \"a*\"",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 16,
           "title": "Longest Palindromic Substring",
-          "description": "Find the longest palindromic substring in a string. Return any one if multiple of same length.",
+          "description": "Find the **longest palindromic substring** in string `s`. A palindrome reads the same forwards and backwards. Return any one if multiple exist with the same maximum length.\n\n**Example 1:**\nInput: \"babad\"\nOutput: \"bab\"\nExplanation: \"aba\" is also valid. Both have length 3.\n\n**Example 2:**\nInput: \"cbbd\"\nOutput: \"bb\"\nExplanation: \"bb\" is the longest palindromic substring.\n\n**Example 3:**\nInput: \"racecar\"\nOutput: \"racecar\"",
           "difficulty": "HARD",
           "pattern": "Expand Around Center",
           "hint1": "For each index, try to expand a palindrome centered at that index.",
@@ -531,12 +561,14 @@
             }
           ],
           "constraints": "1 <= s.length <= 1000. s consists of digits and letters.",
-          "editorial": "Expand-around-center: O(n²) time, O(1) space. Each center expands outward while chars match. Two expansions per center (odd + even). After expansion, l and r have moved one step too far (mismatch), so palindrome length = r - l - 1, start = l + 1. Manacher's algorithm achieves O(n) but is complex."
+          "editorial": "Expand-around-center: O(n²) time, O(1) space. Each center expands outward while chars match. Two expansions per center (odd + even). After expansion, l and r have moved one step too far (mismatch), so palindrome length = r - l - 1, start = l + 1. Manacher's algorithm achieves O(n) but is complex.",
+          "sampleInput": "\"babad\"",
+          "sampleOutput": "\"bab\""
         },
         {
           "displayOrder": 17,
           "title": "Interleaving String",
-          "description": "Given s1, s2, s3, determine if s3 is formed by an interleaving of s1 and s2.",
+          "description": "Given strings `s1`, `s2`, and `s3`, return `true` if `s3` is formed by an **interleaving** of `s1` and `s2`. An interleaving preserves the relative order of characters from each string.\n\n**Example 1:**\nInput: s1 = \"aabcc\", s2 = \"dbbca\", s3 = \"aadbbcbcac\"\nOutput: true\n\n**Example 2:**\nInput: s1 = \"aabcc\", s2 = \"dbbca\", s3 = \"aadbbbaccc\"\nOutput: false\n\n**Example 3:**\nInput: s1 = \"\", s2 = \"\", s3 = \"\"\nOutput: true",
           "difficulty": "HARD",
           "pattern": "2D DP on Strings",
           "hint1": "dp[i][j] = can s3[0..i+j-1] be formed by interleaving s1[0..i-1] and s2[0..j-1].",
@@ -559,12 +591,14 @@
             }
           ],
           "constraints": "0 <= s1.length, s2.length <= 100. s3.length == s1.length + s2.length.",
-          "editorial": "2D DP where dp[i][j] represents using i chars from s1 and j chars from s2 to form s3[0..i+j-1]. A char from s3 can come from s1 OR s2. O(m*n) time and space."
+          "editorial": "2D DP where dp[i][j] represents using i chars from s1 and j chars from s2 to form s3[0..i+j-1]. A char from s3 can come from s1 OR s2. O(m*n) time and space.",
+          "sampleInput": "s1 = \"aabcc\", s2 = \"dbbca\", s3 = \"aadbbcbcac\"",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 18,
           "title": "Wildcard Matching",
-          "description": "Implement wildcard pattern matching with '?' (match any single character) and '*' (match any sequence including empty).",
+          "description": "Implement wildcard pattern matching: `?` matches any single character, `*` matches any sequence of characters (including empty). The match must cover the **entire** input string.\n\n**Example 1:**\nInput: s = \"aa\", p = \"*\"\nOutput: true\nExplanation: '*' matches the entire string.\n\n**Example 2:**\nInput: s = \"cb\", p = \"?a\"\nOutput: false\nExplanation: '?' matches 'c', but 'a' ≠ 'b'.\n\n**Example 3:**\nInput: s = \"adceb\", p = \"*a*b\"\nOutput: true",
           "difficulty": "HARD",
           "pattern": "DP — Wildcard vs Regex",
           "hint1": "dp[i][j] = does s[0..i-1] match p[0..j-1].",
@@ -591,12 +625,14 @@
             }
           ],
           "constraints": "0 <= s.length, p.length <= 2000. s contains lowercase letters. p contains lowercase, '?', '*'.",
-          "editorial": "Simpler than regex DP: '*' matches empty (skip with dp[i][j-1]) or one char (use with dp[i-1][j]). '?' matches exactly one char (like exact match). Initialize first column: stars can match empty. O(m*n) time and space."
+          "editorial": "Simpler than regex DP: '*' matches empty (skip with dp[i][j-1]) or one char (use with dp[i-1][j]). '?' matches exactly one char (like exact match). Initialize first column: stars can match empty. O(m*n) time and space.",
+          "sampleInput": "s = \"adceb\", p = \"*a*b\"",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 19,
           "title": "Shortest Palindrome (Add to Front)",
-          "description": "Find the shortest palindrome by adding characters to the front of the string. Equivalent to finding the longest palindromic prefix.",
+          "description": "Find the **shortest palindrome** that can be created by adding characters only to the **front** of the string. Equivalently, find the longest palindromic prefix and prepend the reverse of the remaining suffix.\n\n**Example 1:**\nInput: \"aacecaaa\"\nOutput: \"aaacecaaa\"\nExplanation: Add one 'a' to the front.\n\n**Example 2:**\nInput: \"abcd\"\nOutput: \"dcbabcd\"\nExplanation: The longest palindromic prefix is \"a\"; prepend reverse of \"bcd\" = \"dcb\".",
           "difficulty": "HARD",
           "pattern": "KMP on Combined String",
           "hint1": "The answer is: (suffix that's not part of palindromic prefix, reversed) + s.",
@@ -623,12 +659,14 @@
             }
           ],
           "constraints": "0 <= s.length <= 5*10^4. s consists of lowercase letters.",
-          "editorial": "Key insight: the longest palindromic prefix of s has length = KMP failure function value of the last char in s+'#'+rev(s). The '#' separator prevents spurious matches. The characters not in the palindromic prefix are prepended in reverse. O(n) time using KMP."
+          "editorial": "Key insight: the longest palindromic prefix of s has length = KMP failure function value of the last char in s+'#'+rev(s). The '#' separator prevents spurious matches. The characters not in the palindromic prefix are prepended in reverse. O(n) time using KMP.",
+          "sampleInput": "\"aacecaaa\"",
+          "sampleOutput": "\"aaacecaaa\""
         },
         {
           "displayOrder": 20,
           "title": "Edit Distance (Levenshtein)",
-          "description": "Given two strings word1 and word2, return the minimum number of operations (insert, delete, replace a character) to convert word1 to word2.",
+          "description": "Given two strings `word1` and `word2`, return the **minimum number of operations** (insert, delete, or replace a single character) to convert `word1` into `word2` — the Levenshtein distance.\n\n**Example 1:**\nInput: word1 = \"horse\", word2 = \"ros\"\nOutput: 3\nExplanation: horse → rorse (replace h→r) → rose (delete r) → ros (delete e).\n\n**Example 2:**\nInput: word1 = \"intention\", word2 = \"execution\"\nOutput: 5",
           "difficulty": "HARD",
           "pattern": "Classic 2D DP",
           "hint1": "dp[i][j] = min ops to convert word1[0..i-1] to word2[0..j-1].",
@@ -655,7 +693,9 @@
             }
           ],
           "constraints": "0 <= word1.length, word2.length <= 500. Words consist of lowercase letters.",
-          "editorial": "Classic DP. dp[0][j]=j (j insertions to build word2 from empty). dp[i][0]=i (i deletions). Transition: same char → inherit diagonal. Different → 1 + best of three operations. O(m*n) time and space. Space can be reduced to O(min(m,n)) with rolling array."
+          "editorial": "Classic DP. dp[0][j]=j (j insertions to build word2 from empty). dp[i][0]=i (i deletions). Transition: same char → inherit diagonal. Different → 1 + best of three operations. O(m*n) time and space. Space can be reduced to O(min(m,n)) with rolling array.",
+          "sampleInput": "word1 = \"horse\", word2 = \"ros\"",
+          "sampleOutput": "3"
         }
       ],
       "subCategory": "Core Concepts",

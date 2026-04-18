@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "SQL Injection Prevention",
-          "description": "The method below is vulnerable to SQL injection. Rewrite it using PreparedStatement.\n```java\nstatic List<String> findUsersByName(Connection conn, String name) throws SQLException {\n    Statement stmt = conn.createStatement();\n    ResultSet rs = stmt.executeQuery(\"SELECT email FROM users WHERE name='\" + name + \"'\");\n    ...\n}\n```\nAlso: what happens if name = `' OR '1'='1`?",
+          "description": "Demonstrate SQL injection vulnerability and fix it with `PreparedStatement`.\n\n**Vulnerable:**\n```java\nString query = \"SELECT * FROM users WHERE name = '\" + input + \"'\";\n// input = \"'; DROP TABLE users; --\" => catastrophic!\n```\n\n**Safe:**\n```java\nPreparedStatement ps = conn.prepareStatement(\"SELECT * FROM users WHERE name = ?\");\nps.setString(1, input); // parameterized, safe\n```\n\n**Key insight:** PreparedStatement separates code from data — user input can never be interpreted as SQL.",
           "difficulty": "EASY",
           "pattern": "PreparedStatement, SQL injection prevention",
           "hint1": "Use conn.prepareStatement(\"SELECT email FROM users WHERE name=?\").",
@@ -43,12 +43,14 @@
           "hint3": "With string concat, name=\\\"' OR '1'='1\\\" returns all users. PreparedStatement treats it as a literal string.",
           "starterCode": "import java.sql.*;\nimport java.util.*;\n\npublic class Q1 {\n    // Fix this vulnerable method:\n    static List<String> findUsersByName(Connection conn, String name) throws SQLException {\n        List<String> emails = new ArrayList<>();\n        Statement stmt = conn.createStatement();\n        ResultSet rs = stmt.executeQuery(\"SELECT email FROM users WHERE name='\" + name + \"'\");\n        while (rs.next()) emails.add(rs.getString(\"email\"));\n        return emails;\n    }\n\n    // Also explain what happens with: name = \"' OR '1'='1\"\n    public static void main(String[] args) {\n        System.out.println(\"Injection input: ' OR '1'='1\");\n        System.out.println(\"Resulting SQL: SELECT email FROM users WHERE name='' OR '1'='1'\");\n        System.out.println(\"Effect: returns ALL emails\");\n    }\n}",
           "solutionCode": "import java.sql.*;\nimport java.util.*;\n\npublic class Q1 {\n    // Fixed: PreparedStatement\n    static List<String> findUsersByName(Connection conn, String name) throws SQLException {\n        List<String> emails = new ArrayList<>();\n        String sql = \"SELECT email FROM users WHERE name = ?\";\n        try (PreparedStatement ps = conn.prepareStatement(sql)) {\n            ps.setString(1, name); // driver escapes — ' OR '1'='1 treated as literal\n            try (ResultSet rs = ps.executeQuery()) {\n                while (rs.next()) emails.add(rs.getString(\"email\"));\n            }\n        }\n        return emails;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Injection input: ' OR '1'='1\");\n        System.out.println(\"PreparedStatement: treated as literal string, no rows match\");\n        System.out.println(\"Safe: no injection possible\");\n    }\n}",
-          "testCases": "Injection input: ' OR '1'='1\nPreparedStatement: treated as literal string, no rows match\nSafe: no injection possible"
+          "testCases": "Injection input: ' OR '1'='1\nPreparedStatement: treated as literal string, no rows match\nSafe: no injection possible",
+          "sampleInput": "input = \"'; DROP TABLE users; --\"",
+          "sampleOutput": "PreparedStatement: safe (treated as literal string)"
         },
         {
           "displayOrder": 2,
           "title": "JDBC Batch Insert",
-          "description": "Implement `batchInsert(Connection conn, List<String> tags)` that inserts all tags into a `tags(name VARCHAR)` table using a single batch (not N separate inserts). Print the number of rows inserted.",
+          "description": "Insert 1000 records efficiently using JDBC batch insert instead of individual inserts.\n\n**Example:**\n// Slow: 1000 round trips\nfor (User u : users) stmt.executeUpdate(insert(u));\n\n// Fast: 1 round trip\nfor (User u : users) { ps.setString(1,u.name); ps.setInt(2,u.age); ps.addBatch(); }\nps.executeBatch(); // sends all 1000 in one call\n\n**Key insight:** Each `executeUpdate()` is a network round trip. `executeBatch()` bundles all into one — 10-100x faster for bulk inserts.",
           "difficulty": "EASY",
           "pattern": "JDBC batch, PreparedStatement",
           "hint1": "Use prepareStatement, then loop calling addBatch() for each item.",
@@ -56,12 +58,14 @@
           "hint3": "Wrap in a transaction (setAutoCommit false) for atomicity — all or nothing.",
           "starterCode": "import java.sql.*;\nimport java.util.*;\n\npublic class Q2 {\n    static int batchInsert(Connection conn, List<String> tags) throws SQLException {\n        // TODO: insert all tags in one batch\n        return 0;\n    }\n\n    public static void main(String[] args) {\n        // Simulated test (no real DB needed for logic review)\n        System.out.println(\"Batch insert would insert: 5 rows\");\n    }\n}",
           "solutionCode": "import java.sql.*;\nimport java.util.*;\n\npublic class Q2 {\n    static int batchInsert(Connection conn, List<String> tags) throws SQLException {\n        conn.setAutoCommit(false);\n        String sql = \"INSERT INTO tags (name) VALUES (?)\";\n        try (PreparedStatement ps = conn.prepareStatement(sql)) {\n            for (String tag : tags) {\n                ps.setString(1, tag);\n                ps.addBatch();\n            }\n            int[] results = ps.executeBatch(); // single round-trip\n            conn.commit();\n            return results.length;\n        } catch (SQLException e) {\n            conn.rollback();\n            throw e;\n        } finally {\n            conn.setAutoCommit(true);\n        }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Batch insert would insert: 5 rows\");\n    }\n}",
-          "testCases": "Batch insert would insert: 5 rows"
+          "testCases": "Batch insert would insert: 5 rows",
+          "sampleInput": "batch insert 1000 users",
+          "sampleOutput": "1 executeBatch() call vs 1000 executeUpdate() calls"
         },
         {
           "displayOrder": 3,
           "title": "Connection Pool Sizing Calculation",
-          "description": "Given: a Spring Boot app with 4 CPU cores, average query time of 5ms, expected 500 req/sec peak. Answer:\n1. What is the optimal HikariCP pool size? (use formula: pool size = (core_count * 2) + effective_spindle_count)\n2. What is the maximum throughput with that pool size (connections * 1000ms/5ms)?\n3. What spring.datasource.hikari.* properties would you set?",
+          "description": "Calculate the optimal connection pool size for a given workload:\n\n**Formula (HikariCP recommendation):**\npool_size = (cpu_cores * 2) + effective_spindle_count\n\n**Example:**\ncalculatePoolSize(cores=4, spindleCount=1) => 9\ncalculatePoolSize(cores=8, spindleCount=1) => 17\n\n**Rule of thumb:** More connections != better. Too many connections cause context switching overhead. Most services need 5-20 connections.",
           "difficulty": "MEDIUM",
           "pattern": "Connection pool sizing, HikariCP configuration",
           "hint1": "HikariCP formula: pool = (cores * 2) + 1. For SSD/cloud DB, spindle count = 0.",
@@ -69,7 +73,9 @@
           "hint3": "Set maximum-pool-size, connection-timeout (don't let it queue too long), and max-lifetime (< MySQL wait_timeout).",
           "starterCode": "public class Q3 {\n    public static void main(String[] args) {\n        int cpuCores = 4;\n        int avgQueryMs = 5;\n        int targetRps = 500;\n\n        // Q1: Optimal pool size\n        int poolSize = 0; // TODO\n\n        // Q2: Max throughput with this pool\n        double maxRps = 0; // TODO\n\n        System.out.println(\"Pool size: \" + poolSize);\n        System.out.println(\"Max RPS: \" + maxRps);\n        System.out.println(\"Sufficient for 500 rps? \" + (maxRps >= targetRps));\n\n        // Q3: Print the properties\n        System.out.println(\"spring.datasource.hikari.maximum-pool-size=\" + poolSize);\n        System.out.println(\"spring.datasource.hikari.connection-timeout=5000\");\n        System.out.println(\"spring.datasource.hikari.max-lifetime=1800000\");\n    }\n}",
           "solutionCode": "public class Q3 {\n    public static void main(String[] args) {\n        int cpuCores = 4;\n        int avgQueryMs = 5;\n        int targetRps = 500;\n\n        // Q1: (cores * 2) + 1, no spinning disks (SSD/cloud)\n        int poolSize = (cpuCores * 2) + 1; // 9\n\n        // Q2: each connection handles 1000ms / 5ms = 200 req/s\n        double maxRps = poolSize * (1000.0 / avgQueryMs); // 9 * 200 = 1800\n\n        System.out.println(\"Pool size: \" + poolSize);          // 9\n        System.out.println(\"Max RPS: \" + maxRps);              // 1800.0\n        System.out.println(\"Sufficient for 500 rps? \" + (maxRps >= targetRps)); // true\n\n        System.out.println(\"spring.datasource.hikari.maximum-pool-size=\" + poolSize);\n        System.out.println(\"spring.datasource.hikari.connection-timeout=5000\");\n        System.out.println(\"spring.datasource.hikari.max-lifetime=1800000\");\n    }\n}",
-          "testCases": "Pool size: 9\nMax RPS: 1800.0\nSufficient for 500 rps? true\nspring.datasource.hikari.maximum-pool-size=9\nspring.datasource.hikari.connection-timeout=5000\nspring.datasource.hikari.max-lifetime=1800000"
+          "testCases": "Pool size: 9\nMax RPS: 1800.0\nSufficient for 500 rps? true\nspring.datasource.hikari.maximum-pool-size=9\nspring.datasource.hikari.connection-timeout=5000\nspring.datasource.hikari.max-lifetime=1800000",
+          "sampleInput": "calculatePoolSize(cores=4, spindleCount=1)",
+          "sampleOutput": "9"
         }
       ]
     }

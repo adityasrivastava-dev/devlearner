@@ -72,7 +72,7 @@
         {
           "displayOrder": 1,
           "title": "Combine Two Tables",
-          "description": "Report first name, last name, city, and state for each person regardless of whether an address exists.\n\n**Table: Person** (personId, lastName, firstName)\n**Table: Address** (addressId, personId, city, state)\n\n**Example:**\nPerson = [[1,'Wang','Allen'],[2,'Alice','Bob']]\nAddress = [[1,2,'New York City','New York'],[2,3,'Leetcode','California']]\nOutput: [['Allen','Wang',null,null],['Bob','Alice','New York City','New York']]",
+          "description": "Find customers who never placed an order.\n\n**Tables: Customers(id, name), Orders(id, customerId)**\n```\nCustomers: [(1,Joe),(2,Henry),(3,Sam),(4,Max)]\nOrders: [(1, customerId=3), (2, customerId=1)]\n```\n\n**Expected:** [Henry, Max] (ids 2, 4 have no orders)\n\n**Key insight:** `LEFT JOIN Orders ON c.id = o.customerId WHERE o.id IS NULL` — or use `NOT IN (SELECT customerId FROM Orders)`.",
           "difficulty": "EASY",
           "pattern": "LEFT JOIN",
           "hint1": "You want ALL persons even if they have no address. Which JOIN type keeps all left-table rows?",
@@ -82,12 +82,14 @@
           "solutionCode": "SELECT p.firstName, p.lastName, a.city, a.state\nFROM Person p\nLEFT JOIN Address a\n    ON p.personId = a.personId;",
           "testCases": "[{\"input\":\"Person=[[1,'Wang','Allen'],[2,'Alice','Bob']], Address=[[1,2,'NYC','NY']]\",\"output\":\"[['Allen','Wang',null,null],['Bob','Alice','NYC','NY']]\"}]",
           "constraints": "1 ≤ rows ≤ 1000",
-          "editorial": "LEFT JOIN keeps all Person rows. Address rows without a matching Person are ignored. Person rows without an Address get NULL for city/state."
+          "editorial": "LEFT JOIN keeps all Person rows. Address rows without a matching Person are ignored. Person rows without an Address get NULL for city/state.",
+          "sampleInput": "Customers=[Joe,Henry,Sam,Max]; Orders reference Sam,Joe",
+          "sampleOutput": "[Henry, Max]"
         },
         {
           "displayOrder": 2,
           "title": "Customers Who Never Order",
-          "description": "Find all customers who never placed any order.\n\n**Table: Customers** (id, name)\n**Table: Orders** (id, customerId)\n\n**Example:**\nCustomers = [[1,'Joe'],[2,'Henry'],[3,'Sam'],[4,'Max']]\nOrders = [[1,3],[2,1]]\nOutput: [['Henry'],['Max']]",
+          "description": "For each department, find employees who have the top 3 salaries (including ties).\n\n**Example:**\nIT dept salaries: 90000(Joe), 85000(Will), 70000(Henry), 65000(Max)\nTop 3: Joe(90k), Will(85k), Henry(70k)\n\n**Key insight:** `WHERE (SELECT COUNT(DISTINCT salary) FROM Employee e2 WHERE e2.salary > e1.salary AND e2.departmentId = e1.departmentId) < 3`.",
           "difficulty": "EASY",
           "pattern": "LEFT JOIN NULL Check",
           "hint1": "Use LEFT JOIN to include all customers. How do you find customers with NO matching order?",
@@ -97,12 +99,14 @@
           "solutionCode": "SELECT c.name AS Customers\nFROM Customers c\nLEFT JOIN Orders o ON c.id = o.customerId\nWHERE o.id IS NULL;",
           "testCases": "[{\"input\":\"Customers=[[1,'Joe'],[2,'Henry'],[3,'Sam'],[4,'Max']], Orders=[[1,3],[2,1]]\",\"output\":\"[['Henry'],['Max']]\"}]",
           "constraints": "1 ≤ rows ≤ 10^4",
-          "editorial": "LEFT JOIN keeps all customers. WHERE o.id IS NULL filters to only those with no matching order. This is the 'anti-join' pattern: LEFT JOIN + WHERE right.pk IS NULL."
+          "editorial": "LEFT JOIN keeps all customers. WHERE o.id IS NULL filters to only those with no matching order. This is the 'anti-join' pattern: LEFT JOIN + WHERE right.pk IS NULL.",
+          "sampleInput": "IT salaries: [90000,85000,70000,65000]",
+          "sampleOutput": "[Joe(90k), Will(85k), Henry(70k)]"
         },
         {
           "displayOrder": 3,
           "title": "Rising Temperature",
-          "description": "Find all dates' ids with higher temperature than the previous day.\n\n**Table: Weather** (id, recordDate, temperature)\n\n**Example:**\nWeather = [[1,'2015-01-01',10],[2,'2015-01-02',25],[3,'2015-01-03',20],[4,'2015-01-04',30]]\nOutput: [[2],[4]]",
+          "description": "Find the second highest salary. Return NULL if it doesn't exist.\n\n**Example 1:**\nSalaries: [100, 200, 300] → 200\n\n**Example 2:**\nSalaries: [100] → NULL\n\n**Key insight:** `SELECT MAX(salary) FROM Employee WHERE salary < (SELECT MAX(salary) FROM Employee)`. Wrap in IFNULL for the NULL case.",
           "difficulty": "EASY",
           "pattern": "Self Join Date",
           "hint1": "You need to compare each row to the previous day's row. The previous day is recordDate - 1. How do you join a row to the previous day's row?",
@@ -112,12 +116,14 @@
           "solutionCode": "SELECT w1.id\nFROM Weather w1\nJOIN Weather w2\n    ON w1.recordDate = DATEADD(w2.recordDate, INTERVAL 1 DAY)\nWHERE w1.temperature > w2.temperature;",
           "testCases": "[{\"input\":\"Weather=[[1,'2015-01-01',10],[2,'2015-01-02',25],[3,'2015-01-03',20],[4,'2015-01-04',30]]\",\"output\":\"[[2],[4]]\"}]",
           "constraints": "1 ≤ rows ≤ 10^5",
-          "editorial": "Self-join on dates: pair each row with the row from the previous day using date arithmetic. WHERE w1.temperature > w2.temperature keeps only warmer days."
+          "editorial": "Self-join on dates: pair each row with the row from the previous day using date arithmetic. WHERE w1.temperature > w2.temperature keeps only warmer days.",
+          "sampleInput": "Salaries: [100, 200, 300]",
+          "sampleOutput": "200"
         },
         {
           "displayOrder": 4,
           "title": "Employee Bonus",
-          "description": "Report the name and bonus amount for each employee whose bonus is less than 1000 OR who has no bonus record.\n\n**Table: Employee** (empId, name, supervisor, salary)\n**Table: Bonus** (empId, bonus)\n\n**Example:**\nEmployee = [[3,'Brad',null,4000],[1,'John',3,10000],[2,'Dan',3,10000],[4,'Thomas',3,10000]]\nBonus = [[2,500],[4,2000]]\nOutput: [['Brad',null],['John',null],['Dan',500]]",
+          "description": "Given a `trips` table and `users` table, find the cancellation rate by unbanned users for Oct 1-2 2013.\n\n**Formula:** cancelled_trips / total_trips, rounded to 2 decimal places.\n\n**Key insight:** JOIN to filter banned users (`users.banned = 'No'` for both client and driver). Group by day. Use SUM(CASE WHEN status LIKE 'cancelled%' THEN 1 ELSE 0 END) / COUNT(*).",
           "difficulty": "EASY",
           "pattern": "LEFT JOIN NULL OR Condition",
           "hint1": "Some employees have no bonus record at all. Use LEFT JOIN to include employees without any bonus entry.",
@@ -127,12 +133,14 @@
           "solutionCode": "SELECT e.name, b.bonus\nFROM Employee e\nLEFT JOIN Bonus b ON e.empId = b.empId\nWHERE b.bonus < 1000\n   OR b.bonus IS NULL;",
           "testCases": "[{\"input\":\"Employee=[[3,'Brad',null,4000],[1,'John',3,10000],[2,'Dan',3,10000],[4,'Thomas',3,10000]], Bonus=[[2,500],[4,2000]]\",\"output\":\"[['Brad',null],['John',null],['Dan',500]]\"}]",
           "constraints": "1 ≤ rows ≤ 10^4",
-          "editorial": "LEFT JOIN keeps employees without bonus records. WHERE b.bonus < 1000 OR b.bonus IS NULL: the OR handles both cases. Thomas has bonus=2000 → excluded."
+          "editorial": "LEFT JOIN keeps employees without bonus records. WHERE b.bonus < 1000 OR b.bonus IS NULL: the OR handles both cases. Thomas has bonus=2000 → excluded.",
+          "sampleInput": "Trips on 2013-10-01, 2013-10-02 with some cancellations",
+          "sampleOutput": "{2013-10-01: 0.33, 2013-10-02: 0.00}"
         },
         {
           "displayOrder": 5,
           "title": "Second Highest Salary",
-          "description": "Find the second highest distinct salary. Return null if no second highest salary exists.\n\n**Table: Employee** (id, salary)\n\n**Example:**\nEmployee = [[1,100],[2,200],[3,300]] → Output: 200\nEmployee = [[1,100]] → Output: null",
+          "description": "Find managers with at least 5 direct reports.\n\n**Table: Employee(id, name, department, managerId)**\n\n**Example:**\nIf John manages 5+ employees, output John.\n\n**Key insight:** `SELECT name FROM Employee WHERE id IN (SELECT managerId FROM Employee GROUP BY managerId HAVING COUNT(*) >= 5)`.",
           "difficulty": "MEDIUM",
           "pattern": "Subquery MAX",
           "hint1": "Find the maximum salary that is less than the overall maximum salary. How do you exclude the maximum using a subquery?",
@@ -142,12 +150,14 @@
           "solutionCode": "SELECT (\n    SELECT MAX(salary)\n    FROM Employee\n    WHERE salary < (\n        SELECT MAX(salary)\n        FROM Employee\n    )\n) AS SecondHighestSalary;",
           "testCases": "[{\"input\":\"Employee=[[1,100],[2,200],[3,300]]\",\"output\":\"200\"},{\"input\":\"Employee=[[1,100]]\",\"output\":\"null\"}]",
           "constraints": "1 ≤ rows ≤ 10^4",
-          "editorial": "Inner subquery gets the maximum salary. Outer MAX finds the highest salary below that (= 2nd highest). Wrapping in SELECT returns NULL naturally when no second highest exists. DISTINCT handles ties."
+          "editorial": "Inner subquery gets the maximum salary. Outer MAX finds the highest salary below that (= 2nd highest). Wrapping in SELECT returns NULL naturally when no second highest exists. DISTINCT handles ties.",
+          "sampleInput": "Employee table where John manages 5 people",
+          "sampleOutput": "[John]"
         },
         {
           "displayOrder": 6,
           "title": "Managers with at Least 5 Direct Reports",
-          "description": "Find managers with at least 5 direct reports.\n\n**Table: Employee** (id, name, department, managerId)\n\n**Example:**\nEmployee = [[101,'John',null],[102,'Dan',101],[103,'James',101],[104,'Amy',101],[105,'Anne',101],[106,'Ron',101]]\nOutput: [['John']]",
+          "description": "Report the median salary for each company.\n\n**Key insight:** The median is the middle value when sorted. For even count, average the two middle values.\n\nUse variables: `SET @row_num := 0; SET @total := 0;` with subqueries to assign row numbers and total counts per company, then filter where row_num is in the median position.",
           "difficulty": "MEDIUM",
           "pattern": "GROUP BY HAVING JOIN",
           "hint1": "Count direct reports per manager using GROUP BY managerId. Filter managers with COUNT >= 5. Then join to get the manager's name.",
@@ -157,12 +167,14 @@
           "solutionCode": "SELECT e.name\nFROM Employee e\nWHERE e.id IN (\n    SELECT managerId\n    FROM Employee\n    WHERE managerId IS NOT NULL\n    GROUP BY managerId\n    HAVING COUNT(*) >= 5\n);",
           "testCases": "[{\"input\":\"Employee=[[101,'John',null],[102,'Dan',101],[103,'James',101],[104,'Amy',101],[105,'Anne',101],[106,'Ron',101]]\",\"output\":\"[['John']]\"}]",
           "constraints": "1 ≤ rows ≤ 10^4",
-          "editorial": "Subquery: GROUP BY managerId, HAVING COUNT >= 5 gives manager IDs with enough reports. Outer query finds names for those IDs. WHERE managerId IS NOT NULL avoids grouping NULL managerId."
+          "editorial": "Subquery: GROUP BY managerId, HAVING COUNT >= 5 gives manager IDs with enough reports. Outer query finds names for those IDs. WHERE managerId IS NOT NULL avoids grouping NULL managerId.",
+          "sampleInput": "Company A salaries: [1000, 2000, 3000]",
+          "sampleOutput": "Company A: 2000"
         },
         {
           "displayOrder": 7,
           "title": "Students and Examinations",
-          "description": "Find the number of times each student attended each exam. Include all student-subject pairs even if the student never attended that subject's exam.\n\n**Table: Students** (student_id, student_name)\n**Table: Subjects** (subject_name)\n**Table: Examinations** (student_id, subject_name)\n\n**Example:**\nStudents=[[1,'Alice'],[2,'Bob']], Subjects=[['Math'],['Physics']]\nExaminations=[[1,'Math'],[1,'Math'],[1,'Physics'],[2,'Math']]\nOutput: [[1,'Alice','Math',2],[1,'Alice','Physics',1],[2,'Bob','Math',1],[2,'Bob','Physics',0]]",
+          "description": "Find all people who have never bought anything, i.e., appear in Person but not in Orders by email.\n\n**Tables:** Person(personId, lastName, firstName, email), Orders(orderId, orderDate, empId)\n\n**Key insight:** Use `NOT EXISTS` or `LEFT JOIN ... WHERE orderId IS NULL`. Filter by matching email between Person and Orders tables.",
           "difficulty": "EASY",
           "pattern": "CROSS JOIN LEFT JOIN GROUP BY",
           "hint1": "You need all combinations of students × subjects (even if no exam). What JOIN creates all combinations?",
@@ -172,12 +184,14 @@
           "solutionCode": "SELECT\n    s.student_id,\n    s.student_name,\n    sub.subject_name,\n    COUNT(e.student_id) AS attended_exams\nFROM Students s\nCROSS JOIN Subjects sub\nLEFT JOIN Examinations e\n    ON s.student_id = e.student_id\n    AND sub.subject_name = e.subject_name\nGROUP BY s.student_id, s.student_name, sub.subject_name\nORDER BY s.student_id, sub.subject_name;",
           "testCases": "[{\"input\":\"Students=[[1,'Alice'],[2,'Bob']], Subjects=[['Math'],['Physics']], Examinations=[[1,'Math'],[1,'Math'],[1,'Physics'],[2,'Math']]\",\"output\":\"[[1,'Alice','Math',2],[1,'Alice','Physics',1],[2,'Bob','Math',1],[2,'Bob','Physics',0]]\"}]",
           "constraints": "1 ≤ rows ≤ 10^4",
-          "editorial": "CROSS JOIN creates all student-subject pairs (Cartesian product). LEFT JOIN Examinations adds attendance data. COUNT(e.student_id) counts non-NULL matches (0 when LEFT JOIN produces NULL = no attendance)."
+          "editorial": "CROSS JOIN creates all student-subject pairs (Cartesian product). LEFT JOIN Examinations adds attendance data. COUNT(e.student_id) counts non-NULL matches (0 when LEFT JOIN produces NULL = no attendance).",
+          "sampleInput": "Person with 4 rows; Orders references 2 of them",
+          "sampleOutput": "2 people who never ordered"
         },
         {
           "displayOrder": 8,
           "title": "Product Sales Analysis III",
-          "description": "Find the first year each product was sold and its price and quantity in that year.\n\n**Table: Sales** (sale_id, product_id, year, quantity, price)\n**Table: Product** (product_id, product_name)\n\n**Example:**\nSales=[[1,100,2008,10,5000],[2,100,2009,12,5000],[7,200,2011,15,9000]]\nOutput: [[100,2008,10,5000],[200,2011,15,9000]]",
+          "description": "Find the total sales amount by year and product. Include all products even if they had no sales in a year.\n\n**Tables:** Product(product_id, product_name), Sales(sale_id, product_id, year, quantity, price)\n\n**Key insight:** `RIGHT JOIN` or `LEFT JOIN` with Product as the base. `GROUP BY product_id, year`. Use `COALESCE(SUM(quantity*price), 0)` for missing years.",
           "difficulty": "MEDIUM",
           "pattern": "Subquery GROUP BY MIN",
           "hint1": "You need the row with the minimum year per product. Subquery: find MIN(year) per product_id. Then join back to get quantity and price.",
@@ -187,12 +201,14 @@
           "solutionCode": "SELECT product_id, year AS first_year, quantity, price\nFROM Sales\nWHERE (product_id, year) IN (\n    SELECT product_id, MIN(year)\n    FROM Sales\n    GROUP BY product_id\n);",
           "testCases": "[{\"input\":\"Sales=[[1,100,2008,10,5000],[2,100,2009,12,5000],[7,200,2011,15,9000]]\",\"output\":\"[[100,2008,10,5000],[200,2011,15,9000]]\"}]",
           "constraints": "1 ≤ rows ≤ 10^5",
-          "editorial": "Subquery gets (product_id, MIN year) per product. Outer query matches both product_id AND year — tuple IN. This correctly handles multiple products with different first years."
+          "editorial": "Subquery gets (product_id, MIN year) per product. Outer query matches both product_id AND year — tuple IN. This correctly handles multiple products with different first years.",
+          "sampleInput": "Product A: sold in 2018,2019; Product B: only 2019",
+          "sampleOutput": "Product A total by year, Product B 0 in 2018"
         },
         {
           "displayOrder": 9,
           "title": "Average Selling Price",
-          "description": "Find the average selling price for each product. Round to 2 decimal places.\n\n**Table: Prices** (product_id, start_date, end_date, price) — price for product in a date range\n**Table: UnitsSold** (product_id, purchase_date, units)\n\n**Example:**\nPrices=[[1,'2019-02-17','2019-02-28',5],[1,'2019-03-01','2019-03-22',20],[2,'2019-02-01','2019-02-20',15]]\nUnitsSold=[[1,'2019-02-25',100],[1,'2019-03-01',15],[2,'2019-02-10',200]]\nOutput: [[1,6.96],[2,15.00]]",
+          "description": "Find users who logged in every day for at least N consecutive days.\n\n**Table:** Logins(user_id, login_date)\n\n**Key insight:** Use `ROW_NUMBER()` window function partitioned by user_id ordered by login_date. Subtract row number from date — consecutive dates produce the same 'group'. Count group sizes >= N.",
           "difficulty": "MEDIUM",
           "pattern": "JOIN Date Range SUM/AVG",
           "hint1": "Each sale needs the applicable price (where purchase_date falls within start_date and end_date). How do you join on a date range?",
@@ -202,12 +218,14 @@
           "solutionCode": "SELECT\n    u.product_id,\n    ROUND(SUM(p.price * u.units) / SUM(u.units), 2) AS average_price\nFROM UnitsSold u\nJOIN Prices p\n    ON u.product_id = p.product_id\n    AND u.purchase_date BETWEEN p.start_date AND p.end_date\nGROUP BY u.product_id;",
           "testCases": "[{\"input\":\"Prices=[[1,'2019-02-17','2019-02-28',5],[1,'2019-03-01','2019-03-22',20]], UnitsSold=[[1,'2019-02-25',100],[1,'2019-03-01',15]]\",\"output\":\"[[1,6.96]]\"}]",
           "constraints": "1 ≤ rows ≤ 10^4",
-          "editorial": "Range join: ON purchase_date BETWEEN start_date AND end_date finds the price active at the time of sale. Weighted average: SUM(price * units) / SUM(units). ROUND to 2 decimals."
+          "editorial": "Range join: ON purchase_date BETWEEN start_date AND end_date finds the price active at the time of sale. Weighted average: SUM(price * units) / SUM(units). ROUND to 2 decimals.",
+          "sampleInput": "User 1 logged in: 2020-01-01 through 2020-01-05",
+          "sampleOutput": "User 1 has 5 consecutive days"
         },
         {
           "displayOrder": 10,
           "title": "Last Person to Fit in the Bus",
-          "description": "A queue of people are getting on a bus. The bus has a weight limit of 1000kg. Find the person_name of the last person who can fit on the bus without exceeding 1000kg.\n\n**Table: Queue** (person_id, person_name, weight, turn)\n\n**Example:**\nQueue=[[5,'Alice',250,1],[4,'Bob',175,5],[3,'Alex',350,2],[6,'John Cena',400,3],[1,'Winston',500,6],[2,'Marie',200,4]]\nOutput: [['John Cena']]",
+          "description": "Given a transactions table, find the customers who spent more than the average across all customers.\n\n**Table:** Transactions(transaction_id, customer_id, amount)\n\n**Key insight:** `HAVING SUM(amount) > (SELECT AVG(total) FROM (SELECT SUM(amount) total FROM Transactions GROUP BY customer_id) t)`. Subquery computes per-customer totals; outer query filters above average.",
           "difficulty": "MEDIUM",
           "pattern": "Self Join Running Sum",
           "hint1": "Sort people by their turn order. Compute cumulative weight up to each person. Find the last person where cumulative weight <= 1000.",
@@ -217,7 +235,9 @@
           "solutionCode": "SELECT q1.person_name\nFROM Queue q1\nJOIN Queue q2 ON q1.turn >= q2.turn\nGROUP BY q1.person_id, q1.person_name, q1.turn\nHAVING SUM(q2.weight) <= 1000\nORDER BY q1.turn DESC\nLIMIT 1;",
           "testCases": "[{\"input\":\"Queue=[[5,'Alice',250,1],[4,'Bob',175,5],[3,'Alex',350,2],[6,'John Cena',400,3],[1,'Winston',500,6],[2,'Marie',200,4]]\",\"output\":\"[['John Cena']]\"}]",
           "constraints": "1 ≤ rows ≤ 1000 | total weight ≤ 10^6",
-          "editorial": "Self-join: for each person q1 at turn T, join all q2 with turn <= T (everyone boarding before or at the same time). SUM(q2.weight) = cumulative weight at that point. HAVING <= 1000 filters valid boarding points. ORDER BY turn DESC LIMIT 1 takes the last valid one."
+          "editorial": "Self-join: for each person q1 at turn T, join all q2 with turn <= T (everyone boarding before or at the same time). SUM(q2.weight) = cumulative weight at that point. HAVING <= 1000 filters valid boarding points. ORDER BY turn DESC LIMIT 1 takes the last valid one.",
+          "sampleInput": "Customer totals: [1000, 2000, 3000] → avg=2000",
+          "sampleOutput": "Customer with 3000 total"
         }
       ],
       "subCategory": "Queries",

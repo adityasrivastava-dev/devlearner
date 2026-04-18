@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Parallel API Aggregation",
-          "description": "Simulate fetching data from 3 'microservices' in parallel: getUsername(userId), getUserEmail(userId), getUserAge(userId) — each takes 200ms. Use CompletableFuture to run all three simultaneously and combine results into a Map<String,Object>. Print total time taken.",
+          "description": "Fetch data from 3 independent APIs in parallel and combine the results.\n\n**Example:**\nCompletableFuture<User> userFuture = CompletableFuture.supplyAsync(() -> fetchUser(1));\nCompletableFuture<List<Order>> ordersFuture = CompletableFuture.supplyAsync(() -> fetchOrders(1));\nCompletableFuture<Profile> profileFuture = CompletableFuture.supplyAsync(() -> fetchProfile(1));\n\nCompletableFuture.allOf(userFuture, ordersFuture, profileFuture).join();\nAggregatedResult result = combine(userFuture.get(), ordersFuture.get(), profileFuture.get());\n\n**Key insight:** `allOf` waits for all; `anyOf` waits for first. Parallel fetches cut total time from 3x to 1x serial latency.",
           "difficulty": "MEDIUM",
           "pattern": "CompletableFuture.allOf, parallel execution",
           "hint1": "Start all 3 CFs immediately (don't chain sequentially).",
@@ -43,12 +43,14 @@
           "hint3": "After allOf, call .join() on each individual CF to get its result.",
           "starterCode": "import java.util.*;\nimport java.util.concurrent.*;\n\npublic class Q1 {\n    static CompletableFuture<String> getUsername(int id) {\n        return CompletableFuture.supplyAsync(() -> { sleep(200); return \"Alice\"; });\n    }\n    static CompletableFuture<String> getEmail(int id) {\n        return CompletableFuture.supplyAsync(() -> { sleep(200); return \"alice@example.com\"; });\n    }\n    static CompletableFuture<Integer> getAge(int id) {\n        return CompletableFuture.supplyAsync(() -> { sleep(200); return 30; });\n    }\n    static void sleep(long ms) { try { Thread.sleep(ms); } catch (Exception e) {} }\n\n    public static void main(String[] args) {\n        long start = System.currentTimeMillis();\n        // TODO: run all 3 in parallel, combine results\n        System.out.println(\"Time: \" + (System.currentTimeMillis() - start) + \"ms\");\n        // Should be ~200ms, not ~600ms\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.concurrent.*;\n\npublic class Q1 {\n    static CompletableFuture<String> getUsername(int id) {\n        return CompletableFuture.supplyAsync(() -> { sleep(200); return \"Alice\"; });\n    }\n    static CompletableFuture<String> getEmail(int id) {\n        return CompletableFuture.supplyAsync(() -> { sleep(200); return \"alice@example.com\"; });\n    }\n    static CompletableFuture<Integer> getAge(int id) {\n        return CompletableFuture.supplyAsync(() -> { sleep(200); return 30; });\n    }\n    static void sleep(long ms) { try { Thread.sleep(ms); } catch (Exception e) {} }\n\n    public static void main(String[] args) {\n        long start = System.currentTimeMillis();\n        var cfName  = getUsername(1);\n        var cfEmail = getEmail(1);\n        var cfAge   = getAge(1);\n\n        CompletableFuture.allOf(cfName, cfEmail, cfAge).join();\n\n        Map<String,Object> user = new LinkedHashMap<>();\n        user.put(\"name\",  cfName.join());\n        user.put(\"email\", cfEmail.join());\n        user.put(\"age\",   cfAge.join());\n\n        System.out.println(user);\n        System.out.println(\"Time: \" + (System.currentTimeMillis() - start) + \"ms (~200ms)\");\n    }\n}",
-          "testCases": "{name=Alice, email=alice@example.com, age=30}\nTime: ~200ms"
+          "testCases": "{name=Alice, email=alice@example.com, age=30}\nTime: ~200ms",
+          "sampleInput": "3 parallel API calls, combine results",
+          "sampleOutput": "AggregatedResult with all 3 fields"
         },
         {
           "displayOrder": 2,
           "title": "Async with Timeout and Fallback",
-          "description": "Write an async operation that fetches data but times out after 150ms. If it times out or fails, return a fallback value. Use completeOnTimeout (Java 9+) or orTimeout.",
+          "description": "Add a timeout and fallback to a `CompletableFuture`:\n\n**Example:**\nCompletableFuture.supplyAsync(() -> slowExternalAPI())\n    .orTimeout(500, TimeUnit.MILLISECONDS)  // fail after 500ms\n    .exceptionally(e -> getDefaultValue())  // return fallback on any error\n    .get()\n=> If slow API takes >500ms: returns getDefaultValue()\n=> If fast: returns actual result\n\n**Key insight:** `.orTimeout()` completes exceptionally with `TimeoutException`. `.exceptionally()` catches all exceptions.",
           "difficulty": "MEDIUM",
           "pattern": "CompletableFuture timeout, exceptionally",
           "hint1": "cf.completeOnTimeout(fallback, 150, TimeUnit.MILLISECONDS) completes with fallback if not done in time.",
@@ -56,12 +58,14 @@
           "hint3": "Chain .exceptionally after orTimeout to provide fallback.",
           "starterCode": "import java.util.concurrent.*;\n\npublic class Q2 {\n    static CompletableFuture<String> slowFetch(int delayMs) {\n        return CompletableFuture.supplyAsync(() -> {\n            try { Thread.sleep(delayMs); } catch (Exception e) {}\n            return \"real data\";\n        });\n    }\n\n    public static void main(String[] args) {\n        // Fast fetch (100ms) with 150ms timeout → should succeed\n        // Slow fetch (300ms) with 150ms timeout → should use fallback\n        // TODO\n    }\n}",
           "solutionCode": "import java.util.concurrent.*;\n\npublic class Q2 {\n    static CompletableFuture<String> slowFetch(int delayMs) {\n        return CompletableFuture.supplyAsync(() -> {\n            try { Thread.sleep(delayMs); } catch (Exception e) {}\n            return \"real data\";\n        });\n    }\n\n    public static void main(String[] args) {\n        // Fast: 100ms < 150ms timeout → real data\n        String fast = slowFetch(100)\n            .completeOnTimeout(\"fallback data\", 150, TimeUnit.MILLISECONDS)\n            .join();\n        System.out.println(\"Fast: \" + fast); // real data\n\n        // Slow: 300ms > 150ms timeout → fallback\n        String slow = slowFetch(300)\n            .completeOnTimeout(\"fallback data\", 150, TimeUnit.MILLISECONDS)\n            .join();\n        System.out.println(\"Slow: \" + slow); // fallback data\n\n        // Alternative with exception:\n        String withEx = slowFetch(300)\n            .orTimeout(150, TimeUnit.MILLISECONDS)\n            .exceptionally(ex -> \"cached: fallback\")\n            .join();\n        System.out.println(\"orTimeout: \" + withEx);\n    }\n}",
-          "testCases": "Fast: real data\nSlow: fallback data\norTimeout: cached: fallback"
+          "testCases": "Fast: real data\nSlow: fallback data\norTimeout: cached: fallback",
+          "sampleInput": "slowAPI() >500ms with orTimeout(500ms)",
+          "sampleOutput": "getDefaultValue() returned"
         },
         {
           "displayOrder": 3,
           "title": "Sequential vs Parallel Time Comparison",
-          "description": "Write two versions of fetching data from 4 'services' (each taking 100ms): (1) sequential using .thenCompose chain, (2) parallel using allOf. Measure and print the time for each. The parallel version should take ~100ms vs ~400ms sequential.",
+          "description": "Compare sequential vs parallel execution time for 5 independent tasks each taking 200ms:\n\n**Sequential:**\ntask1() + task2() + ... + task5() = ~1000ms\n\n**Parallel:**\nCompletableFuture.allOf(cf1, cf2, cf3, cf4, cf5).join() = ~200ms\n\nImplement `compareExecutionTime()` returning `{sequential_ms, parallel_ms}` and verify parallel is ~5x faster.\n\n**Key insight:** `supplyAsync` uses the ForkJoinPool — tasks run on separate threads concurrently.",
           "difficulty": "EASY",
           "pattern": "Sequential vs parallel async",
           "hint1": "Sequential: cf1.thenCompose(...).thenCompose(...).thenCompose(...) — each waits for previous.",
@@ -69,7 +73,9 @@
           "hint3": "Use System.currentTimeMillis() before and after .join() to measure.",
           "starterCode": "import java.util.*;\nimport java.util.concurrent.*;\nimport java.util.stream.*;\n\npublic class Q3 {\n    static CompletableFuture<String> fetch(String name) {\n        return CompletableFuture.supplyAsync(() -> {\n            try { Thread.sleep(100); } catch (Exception e) {}\n            return name + \"-data\";\n        });\n    }\n\n    public static void main(String[] args) {\n        String[] services = {\"UserSvc\", \"OrderSvc\", \"ProductSvc\", \"NotifSvc\"};\n        // TODO: sequential version, measure time\n        // TODO: parallel version, measure time\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.concurrent.*;\nimport java.util.stream.*;\n\npublic class Q3 {\n    static CompletableFuture<String> fetch(String name) {\n        return CompletableFuture.supplyAsync(() -> {\n            try { Thread.sleep(100); } catch (Exception e) {}\n            return name + \"-data\";\n        });\n    }\n\n    public static void main(String[] args) {\n        String[] services = {\"UserSvc\", \"OrderSvc\", \"ProductSvc\", \"NotifSvc\"};\n\n        // Sequential (~400ms)\n        long t1 = System.currentTimeMillis();\n        List<String> seq = new ArrayList<>();\n        CompletableFuture<Void> chain = CompletableFuture.completedFuture(null);\n        for (String s : services) {\n            chain = chain.thenCompose(v -> fetch(s).thenAccept(seq::add));\n        }\n        chain.join();\n        System.out.println(\"Sequential: \" + (System.currentTimeMillis()-t1) + \"ms → \" + seq);\n\n        // Parallel (~100ms)\n        long t2 = System.currentTimeMillis();\n        List<CompletableFuture<String>> cfs = Arrays.stream(services)\n            .map(Q3::fetch).collect(Collectors.toList());\n        CompletableFuture.allOf(cfs.toArray(new CompletableFuture[0])).join();\n        List<String> par = cfs.stream().map(CompletableFuture::join).collect(Collectors.toList());\n        System.out.println(\"Parallel:   \" + (System.currentTimeMillis()-t2) + \"ms → \" + par);\n    }\n}",
-          "testCases": "Sequential: ~400ms\nParallel:   ~100ms"
+          "testCases": "Sequential: ~400ms\nParallel:   ~100ms",
+          "sampleInput": "5 tasks * 200ms each: sequential vs parallel",
+          "sampleOutput": "{sequential:~1000ms, parallel:~200ms}"
         }
       ]
     }

@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Custom Repository Query with Pagination",
-          "description": "Given a Product entity with fields: id (Long), name (String), category (String), price (double). Write a Spring Data JPA repository method `findByCategoryOrderByPriceAsc(String category, Pageable pageable)` that returns a Page<Product>. Show how to call it with PageRequest.",
+          "description": "Map a bidirectional OneToMany / ManyToOne relationship and avoid the N+1 query problem.\n\n```java\n@Entity class Order {\n    @Id @GeneratedValue Long id;\n    @ManyToOne(fetch = FetchType.LAZY)\n    @JoinColumn(name = \"customer_id\")\n    Customer customer;\n    @OneToMany(mappedBy = \"order\", cascade = CascadeType.ALL)\n    List<OrderItem> items;\n}\n```\n\n**N+1 Problem:**\n```java\n// BAD: 1 query for orders + N queries for each order's items\nList<Order> orders = orderRepo.findAll();\norders.forEach(o -> o.getItems().size()); // N lazy loads\n```\n\n**Fix — JOIN FETCH:**\n```java\n@Query(\"SELECT o FROM Order o JOIN FETCH o.items WHERE o.customer.id = :cid\")\nList<Order> findWithItems(@Param(\"cid\") Long customerId);\n```\n\n**Key insight:** Lazy loading = N+1. `JOIN FETCH` = single query with JOIN. Always use `JOIN FETCH` or `@EntityGraph` for known associations.",
           "difficulty": "EASY",
           "pattern": "Spring Data derived queries, pagination",
           "hint1": "Method name follows Spring Data convention: findBy + FieldName + OrderBy + FieldName + Asc.",
@@ -43,12 +43,14 @@
           "hint3": "Call with PageRequest.of(pageNumber, pageSize, Sort.by('price')).",
           "starterCode": "import org.springframework.data.domain.*;\nimport org.springframework.data.jpa.repository.JpaRepository;\nimport jakarta.persistence.*;\n\n@Entity\nclass Product {\n    @Id @GeneratedValue Long id;\n    String name, category;\n    double price;\n}\n\ninterface ProductRepository extends JpaRepository<Product, Long> {\n    // TODO: add findByCategoryOrderByPriceAsc(String category, Pageable pageable)\n}\n\n// Usage:\n// Pageable pageable = PageRequest.of(0, 10);\n// Page<Product> page = repo.findByCategoryOrderByPriceAsc(\"electronics\", pageable);",
           "solutionCode": "import org.springframework.data.domain.*;\nimport org.springframework.data.jpa.repository.*;\nimport jakarta.persistence.*;\n\n@Entity\nclass Product {\n    @Id @GeneratedValue Long id;\n    String name, category;\n    double price;\n}\n\ninterface ProductRepository extends JpaRepository<Product, Long> {\n    Page<Product> findByCategoryOrderByPriceAsc(String category, Pageable pageable);\n\n    // Alternative with @Query:\n    @Query(\"SELECT p FROM Product p WHERE p.category = :cat AND p.price < :maxPrice\")\n    List<Product> findAffordable(@org.springframework.data.repository.query.Param(\"cat\") String cat,\n                                  @org.springframework.data.repository.query.Param(\"maxPrice\") double maxPrice);\n}\n\n// Usage:\n// Pageable p = PageRequest.of(0, 10); // page 0, 10 items\n// Page<Product> page = repo.findByCategoryOrderByPriceAsc(\"electronics\", p);\n// page.getContent().forEach(prod -> System.out.println(prod.name));\n// System.out.println(\"Total: \" + page.getTotalElements());",
-          "testCases": "Returns Page<Product> filtered by category, sorted by price ascending"
+          "testCases": "Returns Page<Product> filtered by category, sorted by price ascending",
+          "sampleInput": "findAll() on 100 orders each with 5 items (lazy loading)",
+          "sampleOutput": "Without fix: 101 queries. With JOIN FETCH: 1 query."
         },
         {
           "displayOrder": 2,
           "title": "Detect and Fix N+1",
-          "description": "Given Department with a List<Employee> (LAZY). The following service method has N+1. Identify it and write the fixed version using JOIN FETCH.\n\n```java\nList<Department> depts = deptRepo.findAll();\nfor (Department d : depts) { \n  System.out.println(d.name + \": \" + d.employees.size()); \n}\n```",
+          "description": "Use Spring Data JPA custom queries and projections.\n\n```java\n// Interface projection — only fetch needed columns:\npublic interface UserSummary {\n    String getName();\n    String getEmail();\n}\n\n@Repository\npublic interface UserRepository extends JpaRepository<User, Long> {\n    // Derived query:\n    List<User> findByRoleAndActiveTrue(Role role);\n\n    // Custom JPQL:\n    @Query(\"SELECT u FROM User u WHERE u.createdAt > :since ORDER BY u.createdAt DESC\")\n    Page<User> findRecentUsers(@Param(\"since\") LocalDateTime since, Pageable pageable);\n\n    // Projection:\n    List<UserSummary> findByDepartmentId(Long deptId);\n}\n```\n\n**Key insight:** Projections fetch only specified columns — faster than full entity load. Derived queries auto-generate SQL from method names.",
           "difficulty": "MEDIUM",
           "pattern": "N+1 detection, JOIN FETCH",
           "hint1": "findAll() = 1 query for departments. d.employees.size() for each dept = N queries.",
@@ -56,12 +58,14 @@
           "hint3": "DISTINCT prevents duplicate Department rows from the join.",
           "starterCode": "import org.springframework.data.jpa.repository.*;\nimport jakarta.persistence.*;\nimport java.util.*;\n\n@Entity class Department {\n    @Id @GeneratedValue Long id;\n    String name;\n    @OneToMany(mappedBy=\"dept\", fetch=FetchType.LAZY) List<Employee> employees = new ArrayList<>();\n}\n@Entity class Employee {\n    @Id @GeneratedValue Long id; String name;\n    @ManyToOne @JoinColumn(name=\"dept_id\") Department dept;\n}\n\ninterface DepartmentRepository extends JpaRepository<Department, Long> {\n    // TODO: add N+1-free query method\n}\n// Show the bad code and then the fixed code with JOIN FETCH",
           "solutionCode": "import org.springframework.data.jpa.repository.*;\nimport jakarta.persistence.*;\nimport java.util.*;\n\n@Entity class Department {\n    @Id @GeneratedValue Long id;\n    String name;\n    @OneToMany(mappedBy=\"dept\", fetch=FetchType.LAZY) List<Employee> employees = new ArrayList<>();\n}\n@Entity class Employee {\n    @Id @GeneratedValue Long id; String name;\n    @ManyToOne @JoinColumn(name=\"dept_id\") Department dept;\n}\n\ninterface DepartmentRepository extends JpaRepository<Department, Long> {\n    // BAD: findAll() + d.employees.size() = 1 + N queries\n\n    // GOOD: one query with JOIN FETCH\n    @Query(\"SELECT DISTINCT d FROM Department d LEFT JOIN FETCH d.employees\")\n    List<Department> findAllWithEmployees();\n}\n// Usage: repo.findAllWithEmployees() → single SQL:\n// SELECT DISTINCT d.*, e.* FROM departments d LEFT JOIN employees e ON e.dept_id = d.id",
-          "testCases": "findAllWithEmployees() generates 1 SQL query instead of 1+N"
+          "testCases": "findAllWithEmployees() generates 1 SQL query instead of 1+N",
+          "sampleInput": "findByDepartmentId(5) — department has 1000 users",
+          "sampleOutput": "SELECT name, email FROM users WHERE department_id=5 (only 2 columns, not SELECT *)"
         },
         {
           "displayOrder": 3,
           "title": "Optimistic Locking with @Version",
-          "description": "Implement optimistic locking on a BankAccount entity. Two concurrent updates both read balance=1000. First updates to 1200, second tries to update to 800. With @Version, the second update should throw OptimisticLockException. Demonstrate this scenario.",
+          "description": "Implement optimistic locking with @Version to handle concurrent updates.\n\n```java\n@Entity class Product {\n    @Id Long id;\n    String name;\n    int stock;\n    @Version Long version; // auto-managed by JPA\n}\n\n// Concurrent update scenario:\n// Thread A reads: product {stock=10, version=1}\n// Thread B reads: product {stock=10, version=1}\n// Thread A saves: stock=9, version becomes 2 (OK)\n// Thread B tries to save stock=9 with version=1:\n//   → OptimisticLockException: version mismatch!\n\n// Handle:\ntry {\n    productRepo.save(product);\n} catch (OptimisticLockException e) {\n    // Reload and retry\n    product = productRepo.findById(id).get();\n    product.setStock(product.getStock() - 1);\n    productRepo.save(product);\n}\n```\n\n**Key insight:** `@Version` adds `WHERE version=N` to UPDATE/DELETE. No DB-level locks — optimistic (assumes low contention). Throws on conflict instead of blocking.",
           "difficulty": "HARD",
           "pattern": "@Version, optimistic locking, concurrency control",
           "hint1": "Add @Version Long version; field to the entity.",
@@ -69,7 +73,9 @@
           "hint3": "Simulate: load entity twice (two separate EntityManager sessions), update first, then try to update second — second should fail.",
           "starterCode": "import jakarta.persistence.*;\n\n@Entity\npublic class BankAccount {\n    @Id @GeneratedValue Long id;\n    String owner;\n    double balance;\n    // TODO: add @Version field\n}\n// Show how OptimisticLockException is thrown when two concurrent saves conflict",
           "solutionCode": "import jakarta.persistence.*;\n\n@Entity\npublic class BankAccount {\n    @Id @GeneratedValue Long id;\n    String owner;\n    double balance;\n\n    @Version // Hibernate adds: WHERE id=? AND version=? to every UPDATE\n    Long version;\n}\n\n// Scenario (pseudocode):\n// Transaction 1: account = find(1); account.balance = 1200; save(); // sets version=1\n// Transaction 2: account = find(1); // reads version=0\n//                account.balance = 800;\n//                save(); // UPDATE ... WHERE id=1 AND version=0 → 0 rows updated\n//                        // → throws OptimisticLockException\n//\n// In Spring: catch OptimisticLockingFailureException, retry or return 409 Conflict to client\n//\n// vs Pessimistic: @Lock(LockModeType.PESSIMISTIC_WRITE) → SELECT FOR UPDATE (blocks other readers)\n// Use optimistic when conflicts are rare; pessimistic when conflicts are frequent",
-          "testCases": "Second concurrent update throws OptimisticLockException"
+          "testCases": "Second concurrent update throws OptimisticLockException",
+          "sampleInput": "Two threads concurrently decrement stock from 10 (version=1)",
+          "sampleOutput": "First update: version=2 OK. Second: OptimisticLockException (stale version=1)"
         }
       ]
     }

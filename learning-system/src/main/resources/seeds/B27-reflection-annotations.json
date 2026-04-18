@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Find All @Deprecated Methods",
-          "description": "Write a method `findDeprecatedMethods(Class<?> clz)` that returns a list of method names in the given class that are annotated with @Deprecated.",
+          "description": "Use reflection to find all methods annotated with `@Deprecated` in a given class.\n\n**Example:**\nfindDeprecated(OldApi.class)\n=> [\"OldApi.oldMethod1()\", \"OldApi.oldMethod2(String)\"]\n\n```java\nfor (Method m : cls.getDeclaredMethods()) {\n    if (m.isAnnotationPresent(Deprecated.class)) list.add(m.getName());\n}\n```",
           "difficulty": "EASY",
           "pattern": "Reflection, annotation inspection",
           "hint1": "Use clz.getDeclaredMethods() to get all methods.",
@@ -43,12 +43,14 @@
           "hint3": "Collect matching method names into a List<String>.",
           "starterCode": "import java.lang.reflect.*;\nimport java.util.*;\n\npublic class Q1 {\n    static class LegacyService {\n        @Deprecated public void oldMethod() {}\n        public void newMethod() {}\n        @Deprecated public void anotherOld() {}\n    }\n\n    public static List<String> findDeprecatedMethods(Class<?> clz) {\n        // TODO\n        return new ArrayList<>();\n    }\n\n    public static void main(String[] args) {\n        System.out.println(findDeprecatedMethods(LegacyService.class));\n        // [oldMethod, anotherOld]\n    }\n}",
           "solutionCode": "import java.lang.reflect.*;\nimport java.util.*;\n\npublic class Q1 {\n    static class LegacyService {\n        @Deprecated public void oldMethod() {}\n        public void newMethod() {}\n        @Deprecated public void anotherOld() {}\n    }\n\n    public static List<String> findDeprecatedMethods(Class<?> clz) {\n        List<String> result = new ArrayList<>();\n        for (Method m : clz.getDeclaredMethods())\n            if (m.isAnnotationPresent(Deprecated.class))\n                result.add(m.getName());\n        return result;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(findDeprecatedMethods(LegacyService.class));\n    }\n}",
-          "testCases": "[oldMethod, anotherOld]"
+          "testCases": "[oldMethod, anotherOld]",
+          "sampleInput": "findDeprecated(OldApi.class)",
+          "sampleOutput": "[\"oldMethod1\", \"oldMethod2\"]"
         },
         {
           "displayOrder": 2,
           "title": "Simple JSON Serializer Using Reflection",
-          "description": "Write `toJson(Object obj)` that uses reflection to serialize a simple POJO into a JSON string. Only handle String, int, and boolean field types. Format: {\"fieldName\":\"value\",...}",
+          "description": "Serialize an object to JSON using reflection — iterate `getDeclaredFields()` and build `{\"key\":\"value\"}` pairs.\n\n**Example:**\nclass Person { String name = \"Alice\"; int age = 30; }\ntoJson(new Person()) => {\"name\":\"Alice\",\"age\":30}\n\n**Key insight:** `field.setAccessible(true)` allows reading private fields. Use `field.get(obj)` to get the value.",
           "difficulty": "MEDIUM",
           "pattern": "Reflection field inspection",
           "hint1": "Use getDeclaredFields(), setAccessible(true), field.get(obj).",
@@ -56,12 +58,14 @@
           "hint3": "Join fields with comma, wrap in {}.",
           "starterCode": "import java.lang.reflect.*;\nimport java.util.*;\n\npublic class Q2 {\n    static class Product { String name; int price; boolean available;\n        Product(String n, int p, boolean a) { name=n; price=p; available=a; } }\n\n    public static String toJson(Object obj) throws IllegalAccessException {\n        // TODO\n        return \"{}\";\n    }\n    public static void main(String[] args) throws Exception {\n        System.out.println(toJson(new Product(\"Laptop\", 999, true)));\n        // {\"name\":\"Laptop\",\"price\":999,\"available\":true}\n    }\n}",
           "solutionCode": "import java.lang.reflect.*;\nimport java.util.*;\n\npublic class Q2 {\n    static class Product { String name; int price; boolean available;\n        Product(String n, int p, boolean a) { name=n; price=p; available=a; } }\n\n    public static String toJson(Object obj) throws IllegalAccessException {\n        StringBuilder sb = new StringBuilder(\"{\");\n        Field[] fields = obj.getClass().getDeclaredFields();\n        for (int i = 0; i < fields.length; i++) {\n            fields[i].setAccessible(true);\n            sb.append('\"').append(fields[i].getName()).append('\"').append(':');\n            Object val = fields[i].get(obj);\n            if (val instanceof String) sb.append('\"').append(val).append('\"');\n            else sb.append(val);\n            if (i < fields.length - 1) sb.append(',');\n        }\n        return sb.append('}').toString();\n    }\n    public static void main(String[] args) throws Exception {\n        System.out.println(toJson(new Product(\"Laptop\", 999, true)));\n    }\n}",
-          "testCases": "{\"name\":\"Laptop\",\"price\":999,\"available\":true}"
+          "testCases": "{\"name\":\"Laptop\",\"price\":999,\"available\":true}",
+          "sampleInput": "toJson(new Person{name=Alice, age=30})",
+          "sampleOutput": "{\"name\":\"Alice\",\"age\":30}"
         },
         {
           "displayOrder": 3,
           "title": "Custom @Log Annotation Method Timer",
-          "description": "Define a @Log annotation with RUNTIME retention and TARGET METHOD. Write a proxy/wrapper that intercepts calls to methods annotated with @Log and prints '[MethodName] executed in Xms'. For simplicity, wrap one specific method call manually.",
+          "description": "Create a `@Log` annotation and use reflection to automatically time annotated methods.\n\n**Example:**\n@Log\npublic String findUser(int id) { ... }\n\n// Aspect/proxy intercepts:\n\"findUser(42) executed in 15ms\"\n\nUse `java.lang.reflect.Proxy` or a simple `MethodInterceptor` pattern to measure and log execution time.",
           "difficulty": "MEDIUM",
           "pattern": "Custom annotation, reflection invoke timing",
           "hint1": "Define @interface Log with @Retention(RUNTIME) @Target(METHOD).",
@@ -69,7 +73,9 @@
           "hint3": "Check isAnnotationPresent(Log.class) before timing.",
           "starterCode": "import java.lang.annotation.*;\nimport java.lang.reflect.*;\n\npublic class Q3 {\n    @Retention(RetentionPolicy.RUNTIME)\n    @Target(ElementType.METHOD)\n    @interface Log {}\n\n    static class Service {\n        @Log\n        public String process(String input) throws InterruptedException {\n            Thread.sleep(50);\n            return input.toUpperCase();\n        }\n        public String skip(String input) { return input; }\n    }\n\n    public static Object timedInvoke(Object target, String methodName, Object... args) throws Exception {\n        // TODO: find method, check @Log, time it, invoke it\n        return null;\n    }\n\n    public static void main(String[] args) throws Exception {\n        Service svc = new Service();\n        timedInvoke(svc, \"process\", \"hello\");\n        timedInvoke(svc, \"skip\", \"world\");\n    }\n}",
           "solutionCode": "import java.lang.annotation.*;\nimport java.lang.reflect.*;\n\npublic class Q3 {\n    @Retention(RetentionPolicy.RUNTIME)\n    @Target(ElementType.METHOD)\n    @interface Log {}\n\n    static class Service {\n        @Log\n        public String process(String input) throws InterruptedException {\n            Thread.sleep(50); return input.toUpperCase();\n        }\n        public String skip(String input) { return input; }\n    }\n\n    public static Object timedInvoke(Object target, String methodName, Object... args) throws Exception {\n        Method method = target.getClass().getMethod(methodName, String.class);\n        if (method.isAnnotationPresent(Log.class)) {\n            long start = System.currentTimeMillis();\n            Object result = method.invoke(target, args);\n            System.out.println(\"[\" + methodName + \"] executed in \" + (System.currentTimeMillis()-start) + \"ms → \" + result);\n            return result;\n        }\n        return method.invoke(target, args);\n    }\n\n    public static void main(String[] args) throws Exception {\n        Service svc = new Service();\n        timedInvoke(svc, \"process\", \"hello\"); // [process] executed in ~50ms → HELLO\n        timedInvoke(svc, \"skip\",    \"world\"); // no log\n    }\n}",
-          "testCases": "[process] executed in ~50ms → HELLO"
+          "testCases": "[process] executed in ~50ms → HELLO",
+          "sampleInput": "findUser(42) with @Log annotation",
+          "sampleOutput": "\"findUser(42) executed in 15ms\""
         }
       ]
     }

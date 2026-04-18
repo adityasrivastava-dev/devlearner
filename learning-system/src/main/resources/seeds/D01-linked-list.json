@@ -66,7 +66,7 @@
         {
           "displayOrder": 1,
           "title": "Reverse a Linked List",
-          "description": "Given the head of a singly linked list, reverse the list and return the reversed list.\n\n**Example:**\nInput: 1→2→3→4→5\nOutput: 5→4→3→2→1\n\n**Example 2:**\nInput: 1→2\nOutput: 2→1",
+          "description": "Reverse a singly linked list iteratively or recursively.\n\n**Example 1:**\nInput: 1->2->3->4->5\nOutput: 5->4->3->2->1\n\n**Example 2:**\nInput: 1->2\nOutput: 2->1\n\n**Key insight:** Three pointers: prev=null, curr=head, next. Each step: save next, point curr->prev, advance prev and curr.",
           "difficulty": "EASY",
           "pattern": "Two Pointer",
           "hint1": "Use three pointers: prev, curr, and next. What does 'next' need to save before you break curr.next?",
@@ -76,12 +76,14 @@
           "solutionCode": "public class Solution {\n    public ListNode reverseList(ListNode head) {\n        ListNode prev = null, curr = head;\n        while (curr != null) {\n            ListNode next = curr.next;\n            curr.next = prev;\n            prev = curr;\n            curr = next;\n        }\n        return prev;\n    }\n}",
           "testCases": "[{\"input\":\"[1,2,3,4,5]\",\"output\":\"[5,4,3,2,1]\"},{\"input\":\"[1,2]\",\"output\":\"[2,1]\"},{\"input\":\"[]\",\"output\":\"[]\"}]",
           "constraints": "0 ≤ number of nodes ≤ 5000 | -5000 ≤ Node.val ≤ 5000",
-          "editorial": "Iterative: maintain prev=null, curr=head. In each step save curr.next, flip curr.next=prev, advance both. O(n) time, O(1) space. Recursive: reverse(head.next), then head.next.next=head, head.next=null. O(n) space from call stack."
+          "editorial": "Iterative: maintain prev=null, curr=head. In each step save curr.next, flip curr.next=prev, advance both. O(n) time, O(1) space. Recursive: reverse(head.next), then head.next.next=head, head.next=null. O(n) space from call stack.",
+          "sampleInput": "1->2->3->4->5",
+          "sampleOutput": "5->4->3->2->1"
         },
         {
           "displayOrder": 2,
           "title": "Detect Cycle in Linked List",
-          "description": "Given the head of a linked list, determine if the linked list has a cycle. A cycle exists if there is some node in the list that can be reached again by continuously following the next pointer.\n\n**Example:**\nInput: head = [3,2,0,-4], pos = 1 (tail connects to node at index 1)\nOutput: true\n\n**Example 2:**\nInput: head = [1,2], pos = -1 (no cycle)\nOutput: false",
+          "description": "Detect if a linked list has a cycle using Floyd's fast/slow pointer algorithm.\n\n**Example 1:**\n1->2->3->4->2 (cycle back to node 2) => true\n\n**Example 2:**\n1->2->3->null => false\n\n**Key insight:** Slow moves 1 step, fast moves 2. If they ever meet, there's a cycle. If fast reaches null, no cycle. O(n) time, O(1) space.",
           "difficulty": "EASY",
           "pattern": "Two Pointer",
           "hint1": "Can you use two pointers moving at different speeds? What happens if one moves twice as fast?",
@@ -91,12 +93,14 @@
           "solutionCode": "public class Solution {\n    public boolean hasCycle(ListNode head) {\n        ListNode slow = head, fast = head;\n        while (fast != null && fast.next != null) {\n            slow = slow.next;\n            fast = fast.next.next;\n            if (slow == fast) return true;\n        }\n        return false;\n    }\n}",
           "testCases": "[{\"input\":\"head=[3,2,0,-4], pos=1\",\"output\":\"true\"},{\"input\":\"head=[1,2], pos=-1\",\"output\":\"false\"},{\"input\":\"head=[1], pos=-1\",\"output\":\"false\"}]",
           "constraints": "0 ≤ number of nodes ≤ 10^4 | -10^5 ≤ Node.val ≤ 10^5",
-          "editorial": "Floyd's Cycle Detection: O(n) time, O(1) space. slow moves 1 step, fast moves 2. If cycle exists, fast laps slow and they meet inside the cycle. Alternative: HashSet of visited nodes — O(n) space."
+          "editorial": "Floyd's Cycle Detection: O(n) time, O(1) space. slow moves 1 step, fast moves 2. If cycle exists, fast laps slow and they meet inside the cycle. Alternative: HashSet of visited nodes — O(n) space.",
+          "sampleInput": "1->2->3->4->2 (cycle)",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 3,
           "title": "Find Middle of Linked List",
-          "description": "Given the head of a singly linked list, return the middle node. If there are two middle nodes, return the second middle node.\n\n**Example:**\nInput: [1,2,3,4,5] → Output: node 3\nInput: [1,2,3,4,5,6] → Output: node 4 (second middle)",
+          "description": "Find the middle node of a linked list. If even length, return the second middle.\n\n**Example 1:**\n1->2->3->4->5 => node 3\n\n**Example 2:**\n1->2->3->4 => node 3 (second middle)\n\n**Key insight:** Slow/fast pointers — when fast reaches end, slow is at middle.",
           "difficulty": "EASY",
           "pattern": "Two Pointer",
           "hint1": "Can you reach the middle in one pass without knowing the length?",
@@ -106,12 +110,14 @@
           "solutionCode": "public class Solution {\n    public ListNode middleNode(ListNode head) {\n        ListNode slow = head, fast = head;\n        while (fast != null && fast.next != null) {\n            slow = slow.next;\n            fast = fast.next.next;\n        }\n        return slow;\n    }\n}",
           "testCases": "[{\"input\":\"[1,2,3,4,5]\",\"output\":\"[3,4,5]\"},{\"input\":\"[1,2,3,4,5,6]\",\"output\":\"[4,5,6]\"}]",
           "constraints": "1 ≤ number of nodes ≤ 100 | 1 ≤ Node.val ≤ 100",
-          "editorial": "Runner technique: fast at 2x speed. When fast hits the end, slow is at floor(n/2)+1 — which is exactly the second middle for even-length lists. O(n) time, O(1) space."
+          "editorial": "Runner technique: fast at 2x speed. When fast hits the end, slow is at floor(n/2)+1 — which is exactly the second middle for even-length lists. O(n) time, O(1) space.",
+          "sampleInput": "1->2->3->4->5",
+          "sampleOutput": "node 3"
         },
         {
           "displayOrder": 4,
           "title": "Merge Two Sorted Lists",
-          "description": "Merge two sorted linked lists and return it as a sorted list.\n\n**Example:**\nInput: l1 = [1,2,4], l2 = [1,3,4]\nOutput: [1,1,2,3,4,4]",
+          "description": "Merge two sorted linked lists into one sorted list.\n\n**Example 1:**\nInput: 1->2->4 and 1->3->4\nOutput: 1->1->2->3->4->4\n\n**Example 2:**\nInput: [] and [0]\nOutput: 0\n\n**Key insight:** Dummy head simplifies edge cases. Compare heads, attach smaller, advance that pointer.",
           "difficulty": "EASY",
           "pattern": "Two Pointer",
           "hint1": "Use a dummy head node to avoid special-casing the head of the merged list.",
@@ -121,12 +127,14 @@
           "solutionCode": "public class Solution {\n    public ListNode mergeTwoLists(ListNode l1, ListNode l2) {\n        ListNode dummy = new ListNode(0), tail = dummy;\n        while (l1 != null && l2 != null) {\n            if (l1.val <= l2.val) { tail.next = l1; l1 = l1.next; }\n            else { tail.next = l2; l2 = l2.next; }\n            tail = tail.next;\n        }\n        tail.next = (l1 != null) ? l1 : l2;\n        return dummy.next;\n    }\n}",
           "testCases": "[{\"input\":\"l1=[1,2,4], l2=[1,3,4]\",\"output\":\"[1,1,2,3,4,4]\"},{\"input\":\"l1=[], l2=[]\",\"output\":\"[]\"},{\"input\":\"l1=[], l2=[0]\",\"output\":\"[0]\"}]",
           "constraints": "0 ≤ length of each list ≤ 50 | -100 ≤ Node.val ≤ 100 | Both lists are sorted in non-decreasing order",
-          "editorial": "Dummy head simplifies code — no special case for empty result. Iteratively pick smaller head. After loop, at most one list remains — attach entire tail. O(m+n) time, O(1) space."
+          "editorial": "Dummy head simplifies code — no special case for empty result. Iteratively pick smaller head. After loop, at most one list remains — attach entire tail. O(m+n) time, O(1) space.",
+          "sampleInput": "1->2->4 and 1->3->4",
+          "sampleOutput": "1->1->2->3->4->4"
         },
         {
           "displayOrder": 5,
           "title": "Remove Nth Node From End",
-          "description": "Given the head of a linked list, remove the nth node from the end of the list and return its head.\n\n**Example:**\nInput: head = [1,2,3,4,5], n = 2\nOutput: [1,2,3,5]  (removed 4, which is 2nd from end)",
+          "description": "Remove the nth node from the end of a linked list in one pass.\n\n**Example 1:**\nInput: 1->2->3->4->5, n=2\nOutput: 1->2->3->5\n\n**Example 2:**\nInput: [1], n=1\nOutput: []\n\n**Key insight:** Two pointers gap of n. When fast reaches end, slow.next is the node to remove.",
           "difficulty": "MEDIUM",
           "pattern": "Two Pointer",
           "hint1": "Can you find the nth from end in one pass? How would two pointers with a gap of n help?",
@@ -136,12 +144,14 @@
           "solutionCode": "public class Solution {\n    public ListNode removeNthFromEnd(ListNode head, int n) {\n        ListNode dummy = new ListNode(0);\n        dummy.next = head;\n        ListNode slow = dummy, fast = dummy;\n        for (int i = 0; i <= n; i++) fast = fast.next;\n        while (fast != null) { slow = slow.next; fast = fast.next; }\n        slow.next = slow.next.next; // skip nth from end\n        return dummy.next;\n    }\n}",
           "testCases": "[{\"input\":\"head=[1,2,3,4,5], n=2\",\"output\":\"[1,2,3,5]\"},{\"input\":\"head=[1], n=1\",\"output\":\"[]\"},{\"input\":\"head=[1,2], n=1\",\"output\":\"[1]\"}]",
           "constraints": "1 ≤ number of nodes ≤ 30 | 0 ≤ Node.val ≤ 100 | 1 ≤ n ≤ number of nodes",
-          "editorial": "Two-pointer with n+1 gap (advance fast n+1 steps, not n, because we need slow to stop at the node BEFORE the one to delete). Dummy node handles head deletion cleanly. O(n) time, O(1) space."
+          "editorial": "Two-pointer with n+1 gap (advance fast n+1 steps, not n, because we need slow to stop at the node BEFORE the one to delete). Dummy node handles head deletion cleanly. O(n) time, O(1) space.",
+          "sampleInput": "1->2->3->4->5, n=2",
+          "sampleOutput": "1->2->3->5"
         },
         {
           "displayOrder": 6,
           "title": "Check if Linked List is Palindrome",
-          "description": "Given the head of a singly linked list, return true if it is a palindrome.\n\n**Example:**\nInput: [1,2,2,1] → Output: true\nInput: [1,2] → Output: false",
+          "description": "Check if a linked list is a palindrome in O(n) time and O(1) space.\n\n**Example 1:**\n1->2->2->1 => true\n1->2->3->2->1 => true\n1->2 => false\n\n**Key insight:** Find middle, reverse second half, compare with first half, restore.",
           "difficulty": "MEDIUM",
           "pattern": "Two Pointer",
           "hint1": "How can you compare the first half with the second half without using extra space?",
@@ -151,12 +161,14 @@
           "solutionCode": "public class Solution {\n    public boolean isPalindrome(ListNode head) {\n        ListNode slow = head, fast = head;\n        while (fast != null && fast.next != null) {\n            slow = slow.next; fast = fast.next.next;\n        }\n        ListNode rev = reverse(slow);\n        ListNode p1 = head, p2 = rev;\n        while (p2 != null) {\n            if (p1.val != p2.val) return false;\n            p1 = p1.next; p2 = p2.next;\n        }\n        return true;\n    }\n    private ListNode reverse(ListNode head) {\n        ListNode prev = null, curr = head;\n        while (curr != null) { ListNode next = curr.next; curr.next = prev; prev = curr; curr = next; }\n        return prev;\n    }\n}",
           "testCases": "[{\"input\":\"[1,2,2,1]\",\"output\":\"true\"},{\"input\":\"[1,2]\",\"output\":\"false\"},{\"input\":\"[1]\",\"output\":\"true\"}]",
           "constraints": "1 ≤ number of nodes ≤ 10^5 | 0 ≤ Node.val ≤ 9",
-          "editorial": "Three phases: find middle O(n), reverse second half O(n), compare O(n). Total O(n) time, O(1) space. The in-place reversal is the key — avoid the O(n) array approach."
+          "editorial": "Three phases: find middle O(n), reverse second half O(n), compare O(n). Total O(n) time, O(1) space. The in-place reversal is the key — avoid the O(n) array approach.",
+          "sampleInput": "1->2->2->1",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 7,
           "title": "Add Two Numbers as Linked Lists",
-          "description": "Two non-empty linked lists represent two non-negative integers in reverse order (ones digit first). Add the numbers and return the sum as a linked list.\n\n**Example:**\nInput: l1 = [2,4,3], l2 = [5,6,4]\nOutput: [7,0,8]  (342 + 465 = 807)",
+          "description": "Add two numbers represented as reversed linked lists (each node = one digit).\n\n**Example:**\nInput: (2->4->3) + (5->6->4)\nRepresents: 342 + 465 = 807\nOutput: 7->0->8\n\n**Key insight:** Process digit by digit with carry. Create new node for each sum. Don't forget final carry node.",
           "difficulty": "MEDIUM",
           "pattern": "Simulation",
           "hint1": "Simulate grade-school addition: add corresponding digits plus carry. What do you output if both lists are exhausted but carry is 1?",
@@ -166,12 +178,14 @@
           "solutionCode": "public class Solution {\n    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {\n        ListNode dummy = new ListNode(0), curr = dummy;\n        int carry = 0;\n        while (l1 != null || l2 != null || carry != 0) {\n            int sum = carry;\n            if (l1 != null) { sum += l1.val; l1 = l1.next; }\n            if (l2 != null) { sum += l2.val; l2 = l2.next; }\n            carry = sum / 10;\n            curr.next = new ListNode(sum % 10);\n            curr = curr.next;\n        }\n        return dummy.next;\n    }\n}",
           "testCases": "[{\"input\":\"l1=[2,4,3], l2=[5,6,4]\",\"output\":\"[7,0,8]\"},{\"input\":\"l1=[9,9,9], l2=[1]\",\"output\":\"[0,0,0,1]\"},{\"input\":\"l1=[0], l2=[0]\",\"output\":\"[0]\"}]",
           "constraints": "1 ≤ number of nodes ≤ 100 | 0 ≤ Node.val ≤ 9 | No leading zeros except the number 0 itself",
-          "editorial": "Simulate addition column by column. The `|| carry != 0` in the loop condition handles the final carry digit (e.g., 999 + 1 = 1000). O(max(m,n)) time and space."
+          "editorial": "Simulate addition column by column. The `|| carry != 0` in the loop condition handles the final carry digit (e.g., 999 + 1 = 1000). O(max(m,n)) time and space.",
+          "sampleInput": "2->4->3 and 5->6->4",
+          "sampleOutput": "7->0->8"
         },
         {
           "displayOrder": 8,
           "title": "LRU Cache",
-          "description": "Design a data structure that follows the LRU (Least Recently Used) cache eviction policy.\n\nImplement LRUCache(int capacity), int get(int key), void put(int key, int value).\n- get: Return value if key exists, else -1. Mark as recently used.\n- put: Insert or update. If capacity exceeded, evict the LRU item.\n\nBoth operations must be O(1).",
+          "description": "Design an LRU Cache with O(1) `get(key)` and `put(key, value)`. Evict least recently used when over capacity.\n\n**Example:**\ncache = LRUCache(2)\nput(1,1), put(2,2), get(1) => 1\nput(3,3) // evicts key 2\nget(2) => -1\n\n**Key insight:** HashMap + doubly linked list. Map gives O(1) access; list maintains recency order.",
           "difficulty": "HARD",
           "pattern": "Design",
           "hint1": "You need O(1) lookup AND O(1) delete-from-any-position AND O(1) insert-at-front. Which data structures give you each?",
@@ -181,12 +195,14 @@
           "solutionCode": "class LRUCache {\n    private Map<Integer, Node> map = new HashMap<>();\n    private int capacity;\n    private Node head = new Node(0, 0), tail = new Node(0, 0);\n\n    static class Node {\n        int key, val; Node prev, next;\n        Node(int k, int v) { key = k; val = v; }\n    }\n\n    public LRUCache(int capacity) {\n        this.capacity = capacity;\n        head.next = tail; tail.prev = head;\n    }\n\n    public int get(int key) {\n        if (!map.containsKey(key)) return -1;\n        Node node = map.get(key);\n        remove(node); addToFront(node);\n        return node.val;\n    }\n\n    public void put(int key, int value) {\n        if (map.containsKey(key)) { remove(map.get(key)); }\n        Node node = new Node(key, value);\n        addToFront(node); map.put(key, node);\n        if (map.size() > capacity) {\n            Node lru = tail.prev;\n            remove(lru); map.remove(lru.key);\n        }\n    }\n\n    private void remove(Node n) { n.prev.next = n.next; n.next.prev = n.prev; }\n    private void addToFront(Node n) { n.next = head.next; n.prev = head; head.next.prev = n; head.next = n; }\n}",
           "testCases": "[{\"input\":\"LRUCache(2): put(1,1), put(2,2), get(1), put(3,3), get(2), put(4,4), get(1), get(3), get(4)\",\"output\":\"1, -1, -1, 3, 4\"}]",
           "constraints": "1 ≤ capacity ≤ 3000 | 0 ≤ key ≤ 10^4 | 0 ≤ value ≤ 10^5 | At most 2*10^5 calls to get and put",
-          "editorial": "HashMap + Doubly Linked List. HashMap gives O(1) key lookup. DLL gives O(1) move-to-front and O(1) remove-from-tail. Dummy sentinel head/tail nodes eliminate null checks. Classic system design + DSA hybrid problem."
+          "editorial": "HashMap + Doubly Linked List. HashMap gives O(1) key lookup. DLL gives O(1) move-to-front and O(1) remove-from-tail. Dummy sentinel head/tail nodes eliminate null checks. Classic system design + DSA hybrid problem.",
+          "sampleInput": "capacity=2, put(1,1),put(2,2),get(1),put(3,3),get(2)",
+          "sampleOutput": "-1"
         },
         {
           "displayOrder": 9,
           "title": "Copy List with Random Pointer",
-          "description": "A linked list is given where each node has a `next` pointer and a `random` pointer (can point to any node or null). Return a deep copy of the list.\n\n**Example:**\nInput: [[7,null],[13,0],[11,4],[10,2],[1,0]]\n(each pair is [val, random_index])\nOutput: Deep copy with same structure",
+          "description": "Clone a linked list where each node has `next` and a `random` pointer.\n\n**Example:**\nNode 1: next->2, random->2\nNode 2: next->null, random->2\n=> Deep copy with same structure\n\n**Key insight:** Two passes: (1) create copy nodes interleaved, (2) set random pointers, (3) separate lists.",
           "difficulty": "MEDIUM",
           "pattern": "Two Pointer",
           "hint1": "The challenge is random pointers — you can't set them until all nodes are created. How do you map old nodes to new nodes?",
@@ -196,12 +212,14 @@
           "solutionCode": "public class Solution {\n    public Node copyRandomList(Node head) {\n        if (head == null) return null;\n        Map<Node, Node> map = new HashMap<>();\n        Node curr = head;\n        while (curr != null) { map.put(curr, new Node(curr.val)); curr = curr.next; }\n        curr = head;\n        while (curr != null) {\n            map.get(curr).next   = map.get(curr.next);\n            map.get(curr).random = map.get(curr.random);\n            curr = curr.next;\n        }\n        return map.get(head);\n    }\n}",
           "testCases": "[{\"input\":\"[[7,null],[13,0],[11,4],[10,2],[1,0]]\",\"output\":\"[[7,null],[13,0],[11,4],[10,2],[1,0]]\"},{\"input\":\"[]\",\"output\":\"[]\"}]",
           "constraints": "0 ≤ n ≤ 1000 | -10^4 ≤ Node.val ≤ 10^4 | Node.random is null or points to some node in the list",
-          "editorial": "Two-pass HashMap: O(n) time, O(n) space. Pass 1 creates all clone nodes. Pass 2 wires next and random using the map. O(1) space alternative: interleave clones between original nodes (weave technique), set randoms, then unweave."
+          "editorial": "Two-pass HashMap: O(n) time, O(n) space. Pass 1 creates all clone nodes. Pass 2 wires next and random using the map. O(1) space alternative: interleave clones between original nodes (weave technique), set randoms, then unweave.",
+          "sampleInput": "[1,random=2]->[2,random=2]",
+          "sampleOutput": "deep copy with same pointers"
         },
         {
           "displayOrder": 10,
           "title": "Flatten a Multilevel Doubly Linked List",
-          "description": "A doubly linked list may have nodes with a `child` pointer to another doubly linked list. Flatten the list so all nodes appear in a single-level list. The child list should be inserted between the node and its next.\n\n**Example:**\n1 - 2 - 3 - 4 - 5\n        |child\n        7 - 8 - 9\nOutput: 1 - 2 - 3 - 7 - 8 - 9 - 4 - 5",
+          "description": "Flatten a multilevel doubly linked list where nodes may have a child list.\n\n**Example:**\n1 - 2 - 3 - 4 - 5 - 6\n        |   (child)\n        7 - 8 - 9 - 10\n\nOutput: 1-2-3-7-8-9-10-4-5-6\n\n**Key insight:** At each node with a child: insert child list between current and next.",
           "difficulty": "MEDIUM",
           "pattern": "Simulation",
           "hint1": "When you find a node with a child, you need to splice the child list between the current node and its next. What information do you need to save before unlinking?",
@@ -211,7 +229,9 @@
           "solutionCode": "public class Solution {\n    public Node flatten(Node head) {\n        Node curr = head;\n        while (curr != null) {\n            if (curr.child != null) {\n                Node child = curr.child;\n                Node next  = curr.next;\n                // Find tail of child list\n                Node tail = child;\n                while (tail.next != null) tail = tail.next;\n                // Splice: curr → child → (end of child) → next\n                curr.next  = child;  child.prev = curr;\n                tail.next  = next;   if (next != null) next.prev = tail;\n                curr.child = null;\n            }\n            curr = curr.next;\n        }\n        return head;\n    }\n}",
           "testCases": "[{\"input\":\"1-2-3-4, 3 has child 7-8-9\",\"output\":\"1-2-3-7-8-9-4\"},{\"input\":\"[]\",\"output\":\"[]\"}]",
           "constraints": "0 ≤ n ≤ 1000 | 1 ≤ Node.val ≤ 10^5",
-          "editorial": "Iterative in-place: when child found, find child's tail O(child length), splice. Total O(n) since each node visited at most twice. Stack-based approach: O(n) time, O(depth) space — push next before following child."
+          "editorial": "Iterative in-place: when child found, find child's tail O(child length), splice. Total O(n) since each node visited at most twice. Stack-based approach: O(n) time, O(depth) space — push next before following child.",
+          "sampleInput": "1->2->3->4 with child 7->8->9 at node 3",
+          "sampleOutput": "1->2->3->7->8->9->4"
         }
       ],
       "subCategory": "Linked List",

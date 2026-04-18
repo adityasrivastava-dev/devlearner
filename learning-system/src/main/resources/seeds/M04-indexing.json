@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Identify Missing Indexes",
-          "description": "Given these slow queries on a `products` table (id, name, category, price, seller_id, created_at), identify which indexes to create for each:\n1. WHERE category='electronics' ORDER BY price ASC\n2. WHERE seller_id=42 AND price < 100\n3. SELECT name, price WHERE category='books' (covering)\n4. WHERE created_at >= '2024-01-01'",
+          "description": "Design and explain a composite index for a `users` table queried by `(country, age, created_at)`.\n\n**Scenario:**\n```sql\nSELECT * FROM users\nWHERE country = 'IN' AND age BETWEEN 18 AND 30\nORDER BY created_at DESC;\n```\n\n**Create the index:**\n```sql\nCREATE INDEX idx_country_age_created ON users(country, age, created_at);\n```\n\n**Key insight:** Leftmost prefix rule — `country` must come first (equality), then `age` (range), then `created_at` (sort). Switching order breaks index use.",
           "difficulty": "EASY",
           "pattern": "Index design",
           "hint1": "ORDER BY column should be in the index to avoid filesort.",
@@ -43,12 +43,14 @@
           "hint3": "Equality columns before range columns in composite index.",
           "starterCode": "-- For each query, write the CREATE INDEX statement:\n\n-- Query 1: WHERE category='electronics' ORDER BY price ASC\n-- Answer:\n\n-- Query 2: WHERE seller_id=42 AND price < 100\n-- Answer:\n\n-- Query 3: SELECT name, price WHERE category='books' (covering index)\n-- Answer:\n\n-- Query 4: WHERE created_at >= '2024-01-01'\n-- Answer:",
           "solutionCode": "-- Query 1: category equality + price order\nCREATE INDEX idx_cat_price ON products(category, price);\n-- category filters rows, price is pre-sorted within category → no filesort\n\n-- Query 2: seller_id equality + price range\nCREATE INDEX idx_seller_price ON products(seller_id, price);\n-- equality (seller_id) before range (price) — leftmost prefix rule\n\n-- Query 3: covering index for SELECT name, price WHERE category\nCREATE INDEX idx_cat_covering ON products(category, name, price);\n-- Extra: Using index in EXPLAIN — zero heap access for this query\n\n-- Query 4: range on created_at\nCREATE INDEX idx_created ON products(created_at);\n-- Simple single-column range index",
-          "testCases": "INDEX(category, price)\nINDEX(seller_id, price)\nINDEX(category, name, price)\nINDEX(created_at)"
+          "testCases": "INDEX(category, price)\nINDEX(seller_id, price)\nINDEX(category, name, price)\nINDEX(created_at)",
+          "sampleInput": "Query: country='IN' AND age BETWEEN 18 AND 30 ORDER BY created_at",
+          "sampleOutput": "INDEX(country, age, created_at) — all 3 columns used"
         },
         {
           "displayOrder": 2,
           "title": "Index-Breaking Query Rewrites",
-          "description": "Each query below breaks index usage. Rewrite to enable the index:\n1. WHERE YEAR(created_at) = 2024 (index on created_at)\n2. WHERE LOWER(email) = 'alice@example.com' (index on email)\n3. WHERE id + 1 = 43 (index on id)\n4. WHERE status != 'CANCELLED' (index on status)",
+          "description": "Identify and fix index misuse in a slow query.\n\n**Slow query:**\n```sql\nSELECT * FROM orders WHERE YEAR(created_at) = 2023;\n```\n\n**Problem:** Function on indexed column `created_at` prevents index use.\n\n**Fix:**\n```sql\nSELECT * FROM orders\nWHERE created_at >= '2023-01-01' AND created_at < '2024-01-01';\n```\n\n**Key insight:** Never wrap indexed columns in functions. Rewrite to use range predicates so MySQL can use the B-tree index.",
           "difficulty": "EASY",
           "pattern": "SQL query rewriting, index-friendly patterns",
           "hint1": "Replace functions with range conditions on the raw column.",
@@ -56,12 +58,14 @@
           "hint3": "id+1=43 → id=42. status!='X' has low cardinality — index unlikely to help anyway.",
           "starterCode": "-- Rewrite each query to be index-friendly:\n\n-- 1. YEAR(created_at) = 2024\n-- Rewrite:\n\n-- 2. LOWER(email) = 'alice@example.com'\n-- Rewrite:\n\n-- 3. id + 1 = 43\n-- Rewrite:\n\n-- 4. status != 'CANCELLED'\n-- Note about this one:",
           "solutionCode": "-- 1. Range on column (no function)\nWHERE created_at >= '2024-01-01' AND created_at < '2025-01-01';\n-- Uses index on created_at ✓\n\n-- 2. Store email lowercase in DB; compare directly\nWHERE email = 'alice@example.com';\n-- (Or use email VARCHAR COLLATE utf8mb4_general_ci for case-insensitive)\n-- Uses index on email ✓\n\n-- 3. Move constant to other side\nWHERE id = 42;\n-- Uses primary key index ✓\n\n-- 4. status != 'CANCELLED'\n-- Low-cardinality column — index rarely helps for NOT equals\n-- If needed: rewrite as IN list of valid statuses\nWHERE status IN ('PENDING', 'PROCESSING', 'COMPLETED');\n-- May use index if low % of rows match",
-          "testCases": "All 4 rewrites avoid functions on indexed columns"
+          "testCases": "All 4 rewrites avoid functions on indexed columns",
+          "sampleInput": "YEAR(created_at) = 2023",
+          "sampleOutput": "Rewrite to range: created_at >= '2023-01-01' AND created_at < '2024-01-01'"
         },
         {
           "displayOrder": 3,
           "title": "Design Indexes for E-Commerce Queries",
-          "description": "Design indexes for an `orders` table (id, user_id, product_id, status, amount, created_at) to optimize:\n1. User's order history (user orders sorted by date)\n2. Admin dashboard (pending orders sorted by amount desc)\n3. Monthly revenue report (sum of amounts in date range)\n4. Product popularity (count of orders per product)",
+          "description": "Explain covering index vs full table scan using EXPLAIN.\n\n**Setup:**\n```sql\nCREATE INDEX idx_cover ON orders(customer_id, total_amount);\nSELECT customer_id, SUM(total_amount)\nFROM orders\nGROUP BY customer_id;\n```\n\n**EXPLAIN shows:** `Using index` — no row lookup needed; all data in the index.\n\n**Key insight:** A covering index contains ALL columns needed by the query. MySQL satisfies the query entirely from the index pages, avoiding expensive row lookups. `Extra: Using index` in EXPLAIN confirms it.",
           "difficulty": "MEDIUM",
           "pattern": "Multi-query index design",
           "hint1": "Query 1: WHERE user_id + ORDER BY created_at → composite (user_id, created_at).",
@@ -69,7 +73,9 @@
           "hint3": "Query 3: range on created_at, aggregate → just created_at index. Query 4: FK index on product_id.",
           "starterCode": "-- Design indexes for all 4 query patterns:\n-- orders(id PK, user_id, product_id, status, amount, created_at)\n\n-- Query 1: SELECT * FROM orders WHERE user_id=? ORDER BY created_at DESC\n\n-- Query 2: SELECT * FROM orders WHERE status='PENDING' ORDER BY amount DESC LIMIT 100\n\n-- Query 3: SELECT SUM(amount) FROM orders WHERE created_at BETWEEN ? AND ?\n\n-- Query 4: SELECT product_id, COUNT(*) FROM orders GROUP BY product_id",
           "solutionCode": "-- Query 1: user orders by date\nCREATE INDEX idx_user_date ON orders(user_id, created_at DESC);\n-- Covers WHERE user_id + ORDER BY created_at in one index\n\n-- Query 2: admin pending orders\nCREATE INDEX idx_status_amount ON orders(status, amount DESC);\n-- WHERE status='PENDING' → index range, already sorted by amount\n\n-- Query 3: revenue range query\nCREATE INDEX idx_date_amount ON orders(created_at, amount);\n-- Range on created_at, covering amount for SUM → no heap\n\n-- Query 4: product grouping\nCREATE INDEX idx_product ON orders(product_id);\n-- Allows GROUP BY product_id using index instead of full scan\n\n-- Summary: 4 queries → 4 targeted indexes\n-- Trade-off: each index slows INSERT/UPDATE slightly → acceptable for read-heavy reporting",
-          "testCases": "INDEX(user_id, created_at)\nINDEX(status, amount)\nINDEX(created_at, amount)\nINDEX(product_id)"
+          "testCases": "INDEX(user_id, created_at)\nINDEX(status, amount)\nINDEX(created_at, amount)\nINDEX(product_id)",
+          "sampleInput": "EXPLAIN SELECT customer_id, SUM(total_amount) FROM orders GROUP BY customer_id",
+          "sampleOutput": "Extra: Using index (covering index used, no row lookup)"
         }
       ]
     }

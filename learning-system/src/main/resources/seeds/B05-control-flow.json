@@ -68,7 +68,7 @@
         {
           "displayOrder": 1,
           "title": "FizzBuzz Classic",
-          "description": "Print numbers 1 to n. For multiples of 3 print 'Fizz', multiples of 5 print 'Buzz', multiples of both print 'FizzBuzz', otherwise print the number. Return results as a List<String>.",
+          "description": "Print numbers 1 to n. For multiples of 3 print \"Fizz\", for multiples of 5 print \"Buzz\", for multiples of both print \"FizzBuzz\".\n\n**Example (n=15):**\n1, 2, Fizz, 4, Buzz, Fizz, 7, 8, Fizz, Buzz, 11, Fizz, 13, 14, FizzBuzz\n\nReturn as `List<String>`.",
           "difficulty": "EASY",
           "pattern": "Conditional Logic",
           "hint1": "Check divisibility by 15 first (both 3 and 5), then 3, then 5.",
@@ -91,12 +91,14 @@
             }
           ],
           "constraints": "1 <= n <= 10^4",
-          "editorial": "Check % 15 first to catch both divisors. The order matters — if you check % 3 before % 15, a multiple of 15 would print 'Fizz' instead of 'FizzBuzz'. O(n) time, O(n) space."
+          "editorial": "Check % 15 first to catch both divisors. The order matters — if you check % 3 before % 15, a multiple of 15 would print 'Fizz' instead of 'FizzBuzz'. O(n) time, O(n) space.",
+          "sampleInput": "fizzBuzz(15)",
+          "sampleOutput": "[\"1\",\"2\",\"Fizz\",\"4\",\"Buzz\",\"Fizz\",\"7\",\"8\",\"Fizz\",\"Buzz\",\"11\",\"Fizz\",\"13\",\"14\",\"FizzBuzz\"]"
         },
         {
           "displayOrder": 2,
           "title": "Count Digits in a Number",
-          "description": "Given an integer n (may be negative), count the number of digits it contains. Do not use String conversion.",
+          "description": "Count the number of digits in a non-negative integer `n` without converting to a String.\n\n**Example 1:**\ncountDigits(0) => 1\ncountDigits(9) => 1\ncountDigits(12345) => 5\ncountDigits(1000000) => 7\n\n**Key insight:** Divide by 10 until n == 0, counting iterations. Handle n=0 as a special case (has 1 digit).",
           "difficulty": "EASY",
           "pattern": "Loop + Division",
           "hint1": "Repeatedly divide by 10 until the number becomes 0.",
@@ -123,12 +125,14 @@
             }
           ],
           "constraints": "Integer.MIN_VALUE <= n <= Integer.MAX_VALUE",
-          "editorial": "Use Math.abs and cast to long before taking abs value — Math.abs(Integer.MIN_VALUE) overflows in int. Divide by 10 in a while loop, counting iterations. O(log₁₀ n) time."
+          "editorial": "Use Math.abs and cast to long before taking abs value — Math.abs(Integer.MIN_VALUE) overflows in int. Divide by 10 in a while loop, counting iterations. O(log₁₀ n) time.",
+          "sampleInput": "countDigits(12345)",
+          "sampleOutput": "5"
         },
         {
           "displayOrder": 3,
           "title": "Sum of Digits Until Single Digit",
-          "description": "Given a non-negative integer n, repeatedly sum its digits until the result is a single digit. Return the result. (Digital root problem)",
+          "description": "Repeatedly sum the digits of a number until a single digit remains.\n\n**Example 1:**\ndigitalRoot(493) => 7 (4+9+3=16 -> 1+6=7)\ndigitalRoot(9999) => 9\ndigitalRoot(0) => 0\n\n**Key insight:** Mathematical shortcut: `digitalRoot(n) = 1 + (n-1) % 9` for n>0. Or iterate: keep summing digits until single digit.",
           "difficulty": "EASY",
           "pattern": "do-while / Math Formula",
           "hint1": "Use a do-while loop to keep summing until the number is < 10.",
@@ -155,12 +159,14 @@
             }
           ],
           "constraints": "0 <= n <= 10^7",
-          "editorial": "Nested while loops: outer checks if n >= 10, inner sums digits. Alternatively, digital root has O(1) formula: for n>0, answer is 1 + (n-1) % 9. Both approaches are valid."
+          "editorial": "Nested while loops: outer checks if n >= 10, inner sums digits. Alternatively, digital root has O(1) formula: for n>0, answer is 1 + (n-1) % 9. Both approaches are valid.",
+          "sampleInput": "digitalRoot(493)",
+          "sampleOutput": "7"
         },
         {
           "displayOrder": 4,
           "title": "Reverse a Number",
-          "description": "Given a 32-bit signed integer x, return x with its digits reversed. If the reversed integer overflows, return 0.",
+          "description": "Reverse the digits of an integer, handling negative numbers and trailing zeros.\n\n**Example 1:**\nreverse(123) => 321\nreverse(-456) => -654\nreverse(120) => 21 (trailing zero dropped)\nreverse(1534236469) => 0 (overflow: result > Integer.MAX_VALUE)\n\n**Key insight:** Extract digits with `% 10` and `/ 10`. Check for overflow before final multiplication.",
           "difficulty": "EASY",
           "pattern": "While Loop + Overflow Check",
           "hint1": "Extract last digit with x % 10, then remove it with x / 10.",
@@ -187,12 +193,14 @@
             }
           ],
           "constraints": "-2^31 <= x <= 2^31 - 1",
-          "editorial": "Use long to avoid overflow during computation. The while loop extracts digits using % 10 and builds result with * 10 + digit. Java's % operator on negative numbers returns a negative remainder, so the sign is preserved naturally."
+          "editorial": "Use long to avoid overflow during computation. The while loop extracts digits using % 10 and builds result with * 10 + digit. Java's % operator on negative numbers returns a negative remainder, so the sign is preserved naturally.",
+          "sampleInput": "reverse(123)",
+          "sampleOutput": "321"
         },
         {
           "displayOrder": 5,
           "title": "Pattern Printing — Right Triangle",
-          "description": "Given n, print a right triangle of stars. Row i has i stars (1-indexed). Return the pattern as a single String with newlines.",
+          "description": "Print a right triangle pattern of `*` with n rows using nested loops:\n\n**Example (n=4):**\n```\n*\n**\n***\n****\n```\n\nReturn as `List<String>`, one string per row.",
           "difficulty": "EASY",
           "pattern": "Nested Loops",
           "hint1": "Use a nested for loop: outer iterates rows (1 to n), inner prints stars.",
@@ -215,12 +223,14 @@
             }
           ],
           "constraints": "1 <= n <= 50",
-          "editorial": "Classic nested loop pattern. Outer loop row i runs from 1 to n. Inner loop runs i times printing '*'. Always use StringBuilder for string concatenation inside loops — String + operator in a loop is O(n²)."
+          "editorial": "Classic nested loop pattern. Outer loop row i runs from 1 to n. Inner loop runs i times printing '*'. Always use StringBuilder for string concatenation inside loops — String + operator in a loop is O(n²).",
+          "sampleInput": "rightTriangle(4)",
+          "sampleOutput": "[\"*\",\"**\",\"***\",\"****\"]"
         },
         {
           "displayOrder": 6,
           "title": "First Non-Repeating Character",
-          "description": "Given a string, find the first character that does not repeat. Return its index, or -1 if none exists. Use control flow to exit early once found.",
+          "description": "Find the first non-repeating character in a string and return its index. Return -1 if none.\n\n**Example 1:**\nfirstUnique(\"leetcode\") => 0 ('l' appears once)\nfirstUnique(\"loveleetcode\") => 2 ('v')\nfirstUnique(\"aabb\") => -1\n\n**Key insight:** Two passes: first build frequency map, then scan left-to-right for first char with count=1.",
           "difficulty": "EASY",
           "pattern": "Linear Search + Early Exit",
           "hint1": "First pass: count frequency of each character using an int array of size 26.",
@@ -247,12 +257,14 @@
             }
           ],
           "constraints": "1 <= s.length <= 10^5. s consists of only lowercase letters.",
-          "editorial": "Two-pass O(n) solution. First pass builds frequency array. Second pass uses early return (control flow) to exit the loop as soon as the first unique character is found. The early return is an important control flow pattern — avoid using boolean flags when a return suffices."
+          "editorial": "Two-pass O(n) solution. First pass builds frequency array. Second pass uses early return (control flow) to exit the loop as soon as the first unique character is found. The early return is an important control flow pattern — avoid using boolean flags when a return suffices.",
+          "sampleInput": "firstUnique(\"leetcode\")",
+          "sampleOutput": "0"
         },
         {
           "displayOrder": 7,
           "title": "Collatz Sequence Counter",
-          "description": "Given a positive integer n, apply Collatz rules until reaching 1: if n is even, n = n/2; if n is odd, n = 3n+1. Count the number of steps. This is the famous unsolved Collatz conjecture.",
+          "description": "Count how many steps the **Collatz sequence** takes to reach 1 starting from n:\n- If n is even: n = n/2\n- If n is odd: n = 3n + 1\n\n**Example:**\ncollatzSteps(6) => 8 (6->3->10->5->16->8->4->2->1)\ncollatzSteps(1) => 0\ncollatzSteps(27) => 111\n\n**Key insight:** Collatz conjecture — always reaches 1 (unproven for all n, but true for all tested n).",
           "difficulty": "MEDIUM",
           "pattern": "While Loop + Mathematical Rule",
           "hint1": "Use a while loop: continue while n != 1.",
@@ -279,12 +291,14 @@
             }
           ],
           "constraints": "1 <= n <= 10^6 (conjecture holds for all tested values up to 2^68)",
-          "editorial": "Straightforward while loop. The interesting aspect is that nobody has proved this always terminates (Collatz conjecture), yet it does for all practical inputs. Use long to handle intermediate values that exceed Integer.MAX_VALUE (e.g., n=3 → 3*3+1=10, but for larger n, 3n+1 can overflow int)."
+          "editorial": "Straightforward while loop. The interesting aspect is that nobody has proved this always terminates (Collatz conjecture), yet it does for all practical inputs. Use long to handle intermediate values that exceed Integer.MAX_VALUE (e.g., n=3 → 3*3+1=10, but for larger n, 3n+1 can overflow int).",
+          "sampleInput": "collatzSteps(6)",
+          "sampleOutput": "8"
         },
         {
           "displayOrder": 8,
           "title": "Jump Game — Can Reach End",
-          "description": "Given an array of non-negative integers nums, each element represents your max jump length. Starting at index 0, determine if you can reach the last index.",
+          "description": "Given an array of non-negative integers where each element represents the max jump length at that position, determine if you can reach the last index.\n\n**Example 1:**\ncanJump([2,3,1,1,4]) => true\ncanJump([3,2,1,0,4]) => false (stuck at index 3)\n\n**Key insight:** Track `maxReach` — the farthest index reachable. If current index > maxReach at any point, return false.",
           "difficulty": "MEDIUM",
           "pattern": "Greedy + Control Flow",
           "hint1": "Track the maximum reachable index as you iterate.",
@@ -311,12 +325,14 @@
             }
           ],
           "constraints": "1 <= nums.length <= 10^4. 0 <= nums[i] <= 10^5",
-          "editorial": "Greedy: track maxReach = furthest index reachable so far. The early exit `if (i > maxReach) return false` is a key control flow optimization. Early return when maxReach covers the end also saves iterations. O(n) time, O(1) space."
+          "editorial": "Greedy: track maxReach = furthest index reachable so far. The early exit `if (i > maxReach) return false` is a key control flow optimization. Early return when maxReach covers the end also saves iterations. O(n) time, O(1) space.",
+          "sampleInput": "[3,2,1,0,4]",
+          "sampleOutput": "false"
         },
         {
           "displayOrder": 9,
           "title": "Spiral Order Matrix Traversal",
-          "description": "Given an m x n matrix, return all elements in spiral order (right → down → left → up, repeat). Demonstrate control flow with directional iteration.",
+          "description": "Return elements of an `m x n` matrix in **spiral order** (right -> down -> left -> up, repeat).\n\n**Example:**\nInput: [[1,2,3],[4,5,6],[7,8,9]]\nOutput: [1,2,3,6,9,8,7,4,5]\n\n**Key insight:** Maintain four boundaries (top, bottom, left, right). After each direction pass, shrink the corresponding boundary.",
           "difficulty": "MEDIUM",
           "pattern": "Boundary Shrinking + Directional Loop",
           "hint1": "Maintain four boundaries: top, bottom, left, right. Shrink them after each traversal pass.",
@@ -339,12 +355,14 @@
             }
           ],
           "constraints": "m == matrix.length, n == matrix[i].length. 1 <= m, n <= 10",
-          "editorial": "Four directional passes with boundary shrinking. The `if (top <= bottom)` guards prevent re-traversing already-seen rows when the matrix has odd number of rows. O(m*n) time — each element visited exactly once."
+          "editorial": "Four directional passes with boundary shrinking. The `if (top <= bottom)` guards prevent re-traversing already-seen rows when the matrix has odd number of rows. O(m*n) time — each element visited exactly once.",
+          "sampleInput": "[[1,2,3],[4,5,6],[7,8,9]]",
+          "sampleOutput": "[1,2,3,6,9,8,7,4,5]"
         },
         {
           "displayOrder": 10,
           "title": "Longest Consecutive Sequence in Loop",
-          "description": "Given an array of integers, find the length of the longest consecutive sequence (e.g., [1,2,3,4]). Use O(n) time — demonstrate loop control with a HashSet.",
+          "description": "Find the length of the longest consecutive sequence in an unsorted array.\n\n**Example 1:**\nlongestConsecutive([100,4,200,1,3,2]) => 4 ([1,2,3,4])\nlongestConsecutive([0,3,7,2,5,8,4,6,0,1]) => 9\n\n**Key insight:** Add all to a `HashSet`. For each n where `n-1` is NOT in the set (start of sequence), count how far the sequence extends. O(n) overall.",
           "difficulty": "MEDIUM",
           "pattern": "HashSet + Sequence Detection",
           "hint1": "Add all numbers to a HashSet for O(1) lookup.",
@@ -371,12 +389,14 @@
             }
           ],
           "constraints": "0 <= nums.length <= 10^5. -10^9 <= nums[i] <= 10^9",
-          "editorial": "Key insight: only start counting from sequence beginnings (where n-1 is absent). The outer for loop only triggers the inner while loop O(n) total times across all sequences — so overall O(n) despite nested loops. The while loop is the control flow mechanism for extending the current sequence."
+          "editorial": "Key insight: only start counting from sequence beginnings (where n-1 is absent). The outer for loop only triggers the inner while loop O(n) total times across all sequences — so overall O(n) despite nested loops. The while loop is the control flow mechanism for extending the current sequence.",
+          "sampleInput": "[100,4,200,1,3,2]",
+          "sampleOutput": "4"
         },
         {
           "displayOrder": 11,
           "title": "Switch Expression — Roman to Integer",
-          "description": "Convert a Roman numeral string to an integer. Use a switch expression to map characters to values and control flow to handle subtraction cases.",
+          "description": "Use Java's `switch` expression (Java 14+) to convert Roman numerals to integers.\n\n**Example:**\nromanToInt(\"III\") => 3\nromanToInt(\"IV\") => 4\nromanToInt(\"IX\") => 9\nromanToInt(\"LVIII\") => 58\nromanToInt(\"MCMXCIV\") => 1994\n\n**Key insight:** If current symbol < next symbol, subtract it (IV=4); otherwise add it. Use `switch` expression for clean symbol-to-value mapping.",
           "difficulty": "MEDIUM",
           "pattern": "Switch + Lookahead Control Flow",
           "hint1": "Map each Roman letter to its value using a switch expression.",
@@ -403,12 +423,14 @@
             }
           ],
           "constraints": "1 <= s.length <= 15. s contains only I,V,X,L,C,D,M.",
-          "editorial": "Switch expression cleanly maps characters to values. The lookahead (i+1 < length) control flow handles subtraction. The ternary for next value is a concise conditional. O(n) time — single pass through the string."
+          "editorial": "Switch expression cleanly maps characters to values. The lookahead (i+1 < length) control flow handles subtraction. The ternary for next value is a concise conditional. O(n) time — single pass through the string.",
+          "sampleInput": "romanToInt(\"MCMXCIV\")",
+          "sampleOutput": "1994"
         },
         {
           "displayOrder": 12,
           "title": "Nested Loop — Print Prime Numbers up to N",
-          "description": "Print all prime numbers up to n using a nested loop (Sieve of Eratosthenes). Demonstrate break/continue for optimization.",
+          "description": "Print all prime numbers up to n using the Sieve of Eratosthenes.\n\n**Example:**\nprimesUpTo(20) => [2,3,5,7,11,13,17,19]\nprimesUpTo(10) => [2,3,5,7]\n\n**Key insight:** Mark composites by crossing off multiples of each prime p starting from p^2. O(n log log n) time.",
           "difficulty": "MEDIUM",
           "pattern": "Sieve / Nested Loop Optimization",
           "hint1": "A number is prime if no integer from 2 to sqrt(n) divides it evenly.",
@@ -435,12 +457,14 @@
             }
           ],
           "constraints": "1 <= n <= 10^6",
-          "editorial": "Sieve of Eratosthenes: for each prime i, mark i², i²+i, i²+2i, ... as composite. Start marking from i² because smaller multiples were already marked by smaller primes. 'continue' skips composites efficiently. O(n log log n) time — much better than O(n√n) trial division."
+          "editorial": "Sieve of Eratosthenes: for each prime i, mark i², i²+i, i²+2i, ... as composite. Start marking from i² because smaller multiples were already marked by smaller primes. 'continue' skips composites efficiently. O(n log log n) time — much better than O(n√n) trial division.",
+          "sampleInput": "primesUpTo(20)",
+          "sampleOutput": "[2,3,5,7,11,13,17,19]"
         },
         {
           "displayOrder": 13,
           "title": "Multi-Level Break with Labeled Loops — Word Search",
-          "description": "Given a 2D character board and a word, determine if the word exists in the board (horizontal/vertical adjacency only). Use labeled break to abort DFS branches.",
+          "description": "Search for a word in a 2D character grid where the word can go in any of 4 or 8 directions. Use labeled break to exit nested loops on find.\n\n**Example:**\ngrid = [[A,B,C],[D,E,F],[G,H,I]]\nwordSearch(grid, \"BEH\") => true (B->E->H, going down)\nwordSearch(grid, \"CEG\") => false\n\n**Key insight:** Labeled `break outer;` exits multiple nested loops at once — cleaner than a flag variable.",
           "difficulty": "HARD",
           "pattern": "DFS + Backtracking + Labeled Control Flow",
           "hint1": "Use DFS recursion: at each cell, check if board[r][c] == word.charAt(index).",
@@ -463,12 +487,14 @@
             }
           ],
           "constraints": "m == board.length, n == board[i].length. 1 <= m,n <= 6. 1 <= word.length <= 15.",
-          "editorial": "Backtracking DFS with visited marking. The 'early return true' inside the direction loop is the labeled-break equivalent — once a valid path is found, no need to explore other directions. Restore board[r][c] on backtrack. O(m*n*4^L) worst case where L = word length."
+          "editorial": "Backtracking DFS with visited marking. The 'early return true' inside the direction loop is the labeled-break equivalent — once a valid path is found, no need to explore other directions. Restore board[r][c] on backtrack. O(m*n*4^L) worst case where L = word length.",
+          "sampleInput": "wordSearch([[A,B,C],[D,E,F],[G,H,I]], \"BEH\")",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 14,
           "title": "Iterator Implementation — Range Iterator",
-          "description": "Implement a RangeIterator class that iterates from start to end (exclusive) with a given step. It must implement Iterator<Integer>. Demonstrate control flow in hasNext()/next().",
+          "description": "Implement a `RangeIterator(int start, int end, int step)` that implements `Iterator<Integer>`.\n\n**Example:**\nIterator<Integer> it = new RangeIterator(1, 10, 2);\nwhile(it.hasNext()) System.out.print(it.next() + \" \");\n=> 1 3 5 7 9\n\nRangeIterator(0, 5, 1) => 0 1 2 3 4\n\n**Key insight:** `hasNext()` checks if current < end; `next()` returns current then advances by step.",
           "difficulty": "HARD",
           "pattern": "Iterator Pattern + State Machine",
           "hint1": "Store current position as state. hasNext() checks if current < end (for positive step).",
@@ -491,12 +517,14 @@
             }
           ],
           "constraints": "step != 0. All values fit in int.",
-          "editorial": "Iterator pattern encapsulates loop state. hasNext() uses ternary to handle both positive and negative steps. next() must validate state and throw NoSuchElementException — this is the contract defined by java.util.Iterator. The state machine: current advances by step on each call to next()."
+          "editorial": "Iterator pattern encapsulates loop state. hasNext() uses ternary to handle both positive and negative steps. next() must validate state and throw NoSuchElementException — this is the contract defined by java.util.Iterator. The state machine: current advances by step on each call to next().",
+          "sampleInput": "RangeIterator(1, 10, 2)",
+          "sampleOutput": "[1,3,5,7,9]"
         },
         {
           "displayOrder": 15,
           "title": "Validate Balanced Brackets using Switch",
-          "description": "Given a string of brackets, determine if it's valid (properly opened and closed). Use a switch expression to map closing to opening brackets.",
+          "description": "Validate balanced brackets using a `switch` statement to classify each character.\n\n**Example:**\nisBalanced(\"()[]{}\") => true\nisBalanced(\"([)]\") => false\nisBalanced(\"{[()]}\") => true\nisBalanced(\"(\") => false\n\n**Key insight:** Push opening brackets onto a stack; on closing bracket, pop and check match using `switch`.",
           "difficulty": "HARD",
           "pattern": "Stack + Switch Expression",
           "hint1": "Use a Stack<Character>. For opening brackets, push onto stack.",
@@ -527,12 +555,14 @@
             }
           ],
           "constraints": "0 <= s.length <= 10^4. s consists of only '()[]{}'.",
-          "editorial": "Nested switch expressions: outer switch dispatches on character type (opener vs closer), inner switch expression maps closer to expected opener. Early return false on mismatch. Final check: stack must be empty (all openers were matched). O(n) time, O(n) space."
+          "editorial": "Nested switch expressions: outer switch dispatches on character type (opener vs closer), inner switch expression maps closer to expected opener. Early return false on mismatch. Final check: stack must be empty (all openers were matched). O(n) time, O(n) space.",
+          "sampleInput": "isBalanced(\"{[()]}\")",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 16,
           "title": "Infinite Loop Detector — Floyd's Cycle",
-          "description": "Given a function int f(int x) and a starting value x0, detect if repeatedly applying f creates a cycle. Return the cycle start and length. (Floyd's tortoise and hare algorithm)",
+          "description": "Detect a cycle in a linked list using **Floyd's Cycle Detection** (fast and slow pointers).\n\n**Example:**\nhasCycle(1->2->3->4->2 cycle) => true\nhasCycle(1->2->3->null) => false\n\n**Key insight:** Slow pointer moves 1 step; fast pointer moves 2 steps. If they meet, there's a cycle. If fast reaches null, no cycle.",
           "difficulty": "HARD",
           "pattern": "Two-Pointer Loop + Cycle Detection",
           "hint1": "Use slow (advances 1 step) and fast (advances 2 steps) pointers in a while loop.",
@@ -551,12 +581,14 @@
             }
           ],
           "constraints": "f must eventually cycle. x0 is within int range.",
-          "editorial": "Floyd's algorithm uses two while loops: phase 1 (find meeting point), phase 2 (find cycle start), phase 3 (measure length). Time O(λ+μ) where λ=cycle length, μ=tail length. Space O(1) — only two pointers. The key insight: at the meeting point, slow has traveled μ+λ-r and fast traveled μ+λ+r (with r = remainder), so resetting one to start and advancing both at speed 1 brings them to the cycle entry."
+          "editorial": "Floyd's algorithm uses two while loops: phase 1 (find meeting point), phase 2 (find cycle start), phase 3 (measure length). Time O(λ+μ) where λ=cycle length, μ=tail length. Space O(1) — only two pointers. The key insight: at the meeting point, slow has traveled μ+λ-r and fast traveled μ+λ+r (with r = remainder), so resetting one to start and advancing both at speed 1 brings them to the cycle entry.",
+          "sampleInput": "hasCycle(1->2->3->4->2 cycle)",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 17,
           "title": "Recursive Descent — Evaluate Math Expression",
-          "description": "Evaluate a mathematical expression string containing +, -, *, /, (, ) and integers. Implement a recursive descent parser. No built-in eval allowed.",
+          "description": "Implement a recursive descent parser that evaluates simple math expressions with `+`, `-`, `*`, `/`, and parentheses.\n\n**Grammar:**\nexpr = term (('+' | '-') term)*\nterm = factor (('*' | '/') factor)*\nfactor = number | '(' expr ')'\n\n**Example:**\nevaluate(\"2*(3+4)\") => 14\nevaluate(\"10-2*3\") => 4\nevaluate(\"(1+2)*(3+4)\") => 21",
           "difficulty": "HARD",
           "pattern": "Recursive Descent Parser",
           "hint1": "Use a global index (or pass by wrapper). Parse expression → term → factor recursively.",
@@ -583,12 +615,14 @@
             }
           ],
           "constraints": "1 <= s.length <= 3*10^4. Valid expression with integers and +-*/().",
-          "editorial": "Recursive descent is the most readable parsing technique. Grammar: E→T((+|-)T)*, T→F((*|/)F)*, F→num|(E). Each level of recursion handles one precedence level. The while loops inside parseExpression and parseTerm handle left-associativity. pos is a shared mutable index — the state threading through the recursion."
+          "editorial": "Recursive descent is the most readable parsing technique. Grammar: E→T((+|-)T)*, T→F((*|/)F)*, F→num|(E). Each level of recursion handles one precedence level. The while loops inside parseExpression and parseTerm handle left-associativity. pos is a shared mutable index — the state threading through the recursion.",
+          "sampleInput": "evaluate(\"2*(3+4)\")",
+          "sampleOutput": "14"
         },
         {
           "displayOrder": 18,
           "title": "N-Queens — Count Solutions with Pruning",
-          "description": "Place N queens on an N×N board such that no two queens attack each other. Count all valid arrangements. Use control flow (continue/break) to prune invalid branches.",
+          "description": "Count the number of solutions to the **N-Queens problem** using backtracking with pruning.\n\n**Example:**\nnQueens(4) => 2\nnQueens(8) => 92\nnQueens(1) => 1\n\n**Key insight:** For each row, try each column. Use three sets (columns, diagonals, anti-diagonals) to check validity in O(1). Prune early if any set conflicts.",
           "difficulty": "HARD",
           "pattern": "Backtracking + Constraint Propagation",
           "hint1": "Use three boolean arrays: cols[], diag1[] (r-c+n), diag2[] (r+c) to track attacks.",
@@ -615,12 +649,14 @@
             }
           ],
           "constraints": "1 <= n <= 9",
-          "editorial": "Three attack-tracking arrays replace O(n²) conflict checking. The 'continue' in the for loop is the pruning mechanism — it skips attacked columns without nesting another if. Backtracking: set → recurse → unset. O(n!) worst case but heavily pruned in practice. The diagonal formulas: row-col+n is unique per anti-diagonal, row+col per main diagonal."
+          "editorial": "Three attack-tracking arrays replace O(n²) conflict checking. The 'continue' in the for loop is the pruning mechanism — it skips attacked columns without nesting another if. Backtracking: set → recurse → unset. O(n!) worst case but heavily pruned in practice. The diagonal formulas: row-col+n is unique per anti-diagonal, row+col per main diagonal.",
+          "sampleInput": "nQueens(4)",
+          "sampleOutput": "2"
         },
         {
           "displayOrder": 19,
           "title": "State Machine — Traffic Light Controller",
-          "description": "Implement a TrafficLight class with states RED → GREEN → YELLOW → RED (with configurable durations). Use a switch expression in the tick() method. tick() advances by one second and transitions state when duration expires.",
+          "description": "Implement a traffic light state machine that cycles STOP -> GO -> SLOW -> STOP using enums and switch.\n\n**Example:**\nTrafficLight light = new TrafficLight();\nlight.getState() => STOP\nlight.next() => GO\nlight.next() => SLOW\nlight.next() => STOP (back to start)\n\n**Key insight:** `switch(currentState)` returns the next state — clean state transitions without if/else chains.",
           "difficulty": "HARD",
           "pattern": "State Machine + Switch Expression",
           "hint1": "Store current state as an enum (RED, GREEN, YELLOW) and timeRemaining counter.",
@@ -643,12 +679,14 @@
             }
           ],
           "constraints": "All durations >= 1. tick() called sequentially.",
-          "editorial": "Two switch expressions: one for state transition (RED→GREEN→YELLOW→RED), one for duration lookup. Switch expressions without default work when all enum cases are covered — the compiler enforces exhaustiveness. State machine pattern: state × event → (newState, action). The if (timeRemaining == 0) is the event trigger."
+          "editorial": "Two switch expressions: one for state transition (RED→GREEN→YELLOW→RED), one for duration lookup. Switch expressions without default work when all enum cases are covered — the compiler enforces exhaustiveness. State machine pattern: state × event → (newState, action). The if (timeRemaining == 0) is the event trigger.",
+          "sampleInput": "STOP.next().next().next()",
+          "sampleOutput": "STOP"
         },
         {
           "displayOrder": 20,
           "title": "Optimal Loop Structure — Minimum Path Sum in Grid",
-          "description": "Given an m×n grid of non-negative integers, find the path from top-left to bottom-right (only right or down moves) that minimizes the sum of all numbers along the path.",
+          "description": "Find the minimum path sum from top-left to bottom-right of a grid, moving only right or down. Use dynamic programming.\n\n**Example 1:**\nminPathSum([[1,3,1],[1,5,1],[4,2,1]]) => 7 (1->3->1->1->1)\n\n**Example 2:**\nminPathSum([[1,2,3],[4,5,6]]) => 12 (1->2->3->6)\n\n**Key insight:** `dp[i][j] = grid[i][j] + min(dp[i-1][j], dp[i][j-1])`. First row and column have only one direction.",
           "difficulty": "HARD",
           "pattern": "Dynamic Programming + Nested Loops",
           "hint1": "Use a 2D DP array where dp[i][j] = min cost to reach cell (i,j).",
@@ -675,7 +713,9 @@
             }
           ],
           "constraints": "m == grid.length, n == grid[i].length. 1 <= m, n <= 200. 0 <= grid[i][j] <= 100.",
-          "editorial": "Three separate loop blocks: initialize first row (left-only movement), first column (top-only movement), then fill the rest with min of top and left. The nested loop structure reflects the grid's topology. O(m*n) time and space. Space can be optimized to O(n) by reusing a 1D array (overwrite in-place)."
+          "editorial": "Three separate loop blocks: initialize first row (left-only movement), first column (top-only movement), then fill the rest with min of top and left. The nested loop structure reflects the grid's topology. O(m*n) time and space. Space can be optimized to O(n) by reusing a 1D array (overwrite in-place).",
+          "sampleInput": "[[1,3,1],[1,5,1],[4,2,1]]",
+          "sampleOutput": "7"
         }
       ],
       "subCategory": "Language Basics",

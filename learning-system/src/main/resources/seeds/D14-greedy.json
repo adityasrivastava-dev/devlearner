@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Assign Cookies",
-          "description": "You have children with greed factors g[] and cookies with sizes s[]. Assign at most one cookie per child. A child is content if s[j] >= g[i]. Maximize the number of content children.",
+          "description": "Assign cookies to children: each child has a greed factor, each cookie a size. Assign one cookie per child, only if size >= greed. Maximize number of content children.\n\n**Example 1:**\nassignCookies([1,2,3], [1,1]) => 1\nassignCookies([1,2], [1,2,3]) => 2\n\n**Key insight:** Sort both. Use two pointers — give the smallest sufficient cookie to each child.",
           "difficulty": "EASY",
           "pattern": "Greedy, two pointers on sorted arrays",
           "hint1": "Sort both arrays. Try to satisfy the least greedy child with the smallest sufficient cookie.",
@@ -43,12 +43,14 @@
           "hint3": "If cookie too small, advance cookie pointer only (try next bigger cookie).",
           "starterCode": "import java.util.*;\n\npublic class Q1 {\n    public static int findContentChildren(int[] g, int[] s) {\n        // TODO O(n log n)\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(findContentChildren(new int[]{1,2,3}, new int[]{1,1}));     // 1\n        System.out.println(findContentChildren(new int[]{1,2}, new int[]{1,2,3}));     // 2\n        System.out.println(findContentChildren(new int[]{10,9,8,7}, new int[]{5,6,7,8})); // 2\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q1 {\n    public static int findContentChildren(int[] g, int[] s) {\n        Arrays.sort(g);\n        Arrays.sort(s);\n        int child = 0, cookie = 0;\n        while (child < g.length && cookie < s.length) {\n            if (s[cookie] >= g[child]) child++; // cookie satisfies child\n            cookie++; // try next cookie either way\n        }\n        return child;\n    }\n    public static void main(String[] args) {\n        System.out.println(findContentChildren(new int[]{1,2,3}, new int[]{1,1}));\n        System.out.println(findContentChildren(new int[]{1,2}, new int[]{1,2,3}));\n        System.out.println(findContentChildren(new int[]{10,9,8,7}, new int[]{5,6,7,8}));\n    }\n}",
-          "testCases": "1\n2\n2"
+          "testCases": "1\n2\n2",
+          "sampleInput": "greed=[1,2,3], cookies=[1,1]",
+          "sampleOutput": "1"
         },
         {
           "displayOrder": 2,
           "title": "Jump Game — Can You Reach the End?",
-          "description": "Given array nums where nums[i] is the max jump length from position i, return true if you can reach the last index starting from index 0.",
+          "description": "Given jump lengths at each position, determine if you can reach the last index.\n\n**Example 1:**\ncanJump([2,3,1,1,4]) => true\ncanJump([3,2,1,0,4]) => false\n\n**Key insight:** Track `maxReach`. If current index > maxReach at any point, return false. Update maxReach = max(maxReach, i + nums[i]).",
           "difficulty": "EASY",
           "pattern": "Greedy, maxReach tracking",
           "hint1": "Track maxReach = furthest index reachable so far.",
@@ -56,12 +58,14 @@
           "hint3": "maxReach = max(maxReach, i + nums[i]) at each step.",
           "starterCode": "public class Q2 {\n    public static boolean canJump(int[] nums) {\n        // TODO O(n)\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(canJump(new int[]{2,3,1,1,4})); // true\n        System.out.println(canJump(new int[]{3,2,1,0,4})); // false\n        System.out.println(canJump(new int[]{0}));          // true\n    }\n}",
           "solutionCode": "public class Q2 {\n    public static boolean canJump(int[] nums) {\n        int maxReach = 0;\n        for (int i = 0; i < nums.length; i++) {\n            if (i > maxReach) return false;\n            maxReach = Math.max(maxReach, i + nums[i]);\n        }\n        return true;\n    }\n    public static void main(String[] args) {\n        System.out.println(canJump(new int[]{2,3,1,1,4})); // true\n        System.out.println(canJump(new int[]{3,2,1,0,4})); // false\n        System.out.println(canJump(new int[]{0}));          // true\n    }\n}",
-          "testCases": "true\nfalse\ntrue"
+          "testCases": "true\nfalse\ntrue",
+          "sampleInput": "[3,2,1,0,4]",
+          "sampleOutput": "false"
         },
         {
           "displayOrder": 3,
           "title": "Non-Overlapping Intervals — Minimum Removals",
-          "description": "Given an array of intervals, find the minimum number of intervals to remove to make the rest non-overlapping.",
+          "description": "Remove the minimum number of intervals so the remaining intervals are non-overlapping.\n\n**Example 1:**\neraseOverlapIntervals([[1,2],[2,3],[3,4],[1,3]]) => 1 (remove [1,3])\neraseOverlapIntervals([[1,2],[1,2],[1,2]]) => 2\n\n**Key insight:** Sort by end time. Keep intervals with earliest end. If overlap, remove the one with later end (greedy: keep earliest end = most room for future).",
           "difficulty": "MEDIUM",
           "pattern": "Greedy, sort by end time, activity selection",
           "hint1": "Sort by end time. Greedily keep as many non-overlapping intervals as possible.",
@@ -69,7 +73,9 @@
           "hint3": "Answer = total intervals - count of kept intervals.",
           "starterCode": "import java.util.*;\n\npublic class Q3 {\n    public static int eraseOverlapIntervals(int[][] intervals) {\n        // TODO O(n log n)\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(eraseOverlapIntervals(new int[][]{{1,2},{2,3},{3,4},{1,3}})); // 1\n        System.out.println(eraseOverlapIntervals(new int[][]{{1,2},{1,2},{1,2}}));       // 2\n        System.out.println(eraseOverlapIntervals(new int[][]{{1,2},{2,3}}));             // 0\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q3 {\n    public static int eraseOverlapIntervals(int[][] intervals) {\n        if (intervals.length == 0) return 0;\n        Arrays.sort(intervals, (a, b) -> a[1] - b[1]); // sort by end\n        int keep = 1, lastEnd = intervals[0][1];\n        for (int i = 1; i < intervals.length; i++) {\n            if (intervals[i][0] >= lastEnd) { // non-overlapping\n                keep++;\n                lastEnd = intervals[i][1];\n            }\n            // else: overlapping → remove (don't count)\n        }\n        return intervals.length - keep;\n    }\n    public static void main(String[] args) {\n        System.out.println(eraseOverlapIntervals(new int[][]{{1,2},{2,3},{3,4},{1,3}}));\n        System.out.println(eraseOverlapIntervals(new int[][]{{1,2},{1,2},{1,2}}));\n        System.out.println(eraseOverlapIntervals(new int[][]{{1,2},{2,3}}));\n    }\n}",
-          "testCases": "1\n2\n0"
+          "testCases": "1\n2\n0",
+          "sampleInput": "[[1,2],[2,3],[3,4],[1,3]]",
+          "sampleOutput": "1"
         }
       ]
     }

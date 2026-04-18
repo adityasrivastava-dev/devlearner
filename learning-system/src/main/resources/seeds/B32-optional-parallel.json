@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Optional Chain — User Address Extraction",
-          "description": "Given a User object that may have null address, null city, or null country, write a method `getFormattedAddress(User user)` that returns \"City, Country\" if both are present, \"City\" if only city is present, or \"Address Unknown\" if neither. Use Optional chains only — no if/null checks.",
+          "description": "Safely extract a city from a nullable user object chain using `Optional`:\n\n**Example:**\nUser user = getUser(1); // may return null or have null address/city\nString city = Optional.ofNullable(user)\n    .map(User::getAddress)\n    .map(Address::getCity)\n    .orElse(\"Unknown\");\n\ngetCity(null) => \"Unknown\"\ngetCity(User{address=null}) => \"Unknown\"\ngetCity(User{Address{city=null}}) => \"Unknown\"\ngetCity(User{Address{city=\"NYC\"}}) => \"NYC\"",
           "difficulty": "EASY",
           "pattern": "Optional.map, orElse, filter",
           "hint1": "Optional.ofNullable(user).map(u -> u.address) — each step returns Optional.",
@@ -43,12 +43,14 @@
           "hint3": "orElse(\"Address Unknown\") as the final fallback.",
           "starterCode": "import java.util.*;\n\npublic class Q1 {\n    record Address(String city, String country) {}\n    record User(String name, Address address) {}\n\n    static String getFormattedAddress(User user) {\n        // TODO: no if/null checks — use Optional only\n        return \"\";\n    }\n\n    public static void main(String[] args) {\n        System.out.println(getFormattedAddress(new User(\"A\", new Address(\"Mumbai\", \"India\")))); // Mumbai, India\n        System.out.println(getFormattedAddress(new User(\"B\", new Address(\"London\", null))));   // London\n        System.out.println(getFormattedAddress(new User(\"C\", null)));                          // Address Unknown\n        System.out.println(getFormattedAddress(null));                                          // Address Unknown\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q1 {\n    record Address(String city, String country) {}\n    record User(String name, Address address) {}\n\n    static String getFormattedAddress(User user) {\n        Optional<Address> addrOpt = Optional.ofNullable(user).map(User::address);\n        Optional<String> city    = addrOpt.map(Address::city).filter(s -> !s.isBlank());\n        Optional<String> country = addrOpt.map(Address::country).filter(s -> !s.isBlank());\n\n        if (city.isEmpty()) return \"Address Unknown\";\n        return city.get() + country.map(c -> \", \" + c).orElse(\"\");\n    }\n\n    public static void main(String[] args) {\n        System.out.println(getFormattedAddress(new User(\"A\", new Address(\"Mumbai\", \"India\"))));\n        System.out.println(getFormattedAddress(new User(\"B\", new Address(\"London\", null))));\n        System.out.println(getFormattedAddress(new User(\"C\", null)));\n        System.out.println(getFormattedAddress(null));\n    }\n}",
-          "testCases": "Mumbai, India\nLondon\nAddress Unknown\nAddress Unknown"
+          "testCases": "Mumbai, India\nLondon\nAddress Unknown\nAddress Unknown",
+          "sampleInput": "getCity(User{address=null})",
+          "sampleOutput": "\"Unknown\""
         },
         {
           "displayOrder": 2,
           "title": "Parallel Word Frequency Count",
-          "description": "Given a large list of words (100k+), use parallel streams to count the total number of words that start with a vowel. Compare result with sequential stream to verify correctness.",
+          "description": "Count word frequency in a large text using a parallel stream.\n\n**Example:**\nMap<String,Long> freq = Arrays.stream(bigText.split(\"\\\\s+\"))\n    .parallel()\n    .collect(Collectors.groupingByConcurrent(w -> w.toLowerCase(), Collectors.counting()));\n\nParallel vs sequential on 1M words: parallel ~3x faster on 4-core machine.\n\n**Key insight:** Use `groupingByConcurrent` (thread-safe) not `groupingBy` with parallel streams.",
           "difficulty": "EASY",
           "pattern": "Parallel stream, filter + count",
           "hint1": "Use .parallelStream().filter(...).count() — thread-safe terminal operation.",
@@ -56,12 +58,14 @@
           "hint3": "Run both sequential and parallel and verify the counts match.",
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q2 {\n    static long countVowelWords(List<String> words, boolean parallel) {\n        // TODO: filter words starting with vowel, return count\n        // use parallel stream when parallel=true\n        return 0;\n    }\n\n    public static void main(String[] args) {\n        List<String> words = Arrays.asList(\n            \"apple\", \"banana\", \"orange\", \"grape\", \"elderberry\",\n            \"fig\", \"avocado\", \"blueberry\", \"cherry\", \"apricot\"\n        );\n        long seq = countVowelWords(words, false);\n        long par = countVowelWords(words, true);\n        System.out.println(\"Sequential: \" + seq); // 4 (apple, orange, elderberry, avocado, apricot)\n        System.out.println(\"Parallel:   \" + par);\n        System.out.println(\"Match: \" + (seq == par));\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q2 {\n    static long countVowelWords(List<String> words, boolean parallel) {\n        Stream<String> stream = parallel ? words.parallelStream() : words.stream();\n        return stream\n            .filter(w -> !w.isEmpty() && \"aeiou\".indexOf(Character.toLowerCase(w.charAt(0))) >= 0)\n            .count();\n    }\n\n    public static void main(String[] args) {\n        List<String> words = Arrays.asList(\n            \"apple\", \"banana\", \"orange\", \"grape\", \"elderberry\",\n            \"fig\", \"avocado\", \"blueberry\", \"cherry\", \"apricot\"\n        );\n        long seq = countVowelWords(words, false);\n        long par = countVowelWords(words, true);\n        System.out.println(\"Sequential: \" + seq);\n        System.out.println(\"Parallel:   \" + par);\n        System.out.println(\"Match: \" + (seq == par));\n    }\n}",
-          "testCases": "Sequential: 5\nParallel:   5\nMatch: true"
+          "testCases": "Sequential: 5\nParallel:   5\nMatch: true",
+          "sampleInput": "parallel word count on \"the cat the cat java\"",
+          "sampleOutput": "{the=2, cat=2, java=1}"
         },
         {
           "displayOrder": 3,
           "title": "Fix the Broken Parallel Stream",
-          "description": "The code below has a race condition in the parallel stream. Identify the problem and fix it using the correct stream aggregation approach.\n```java\nList<Integer> results = new ArrayList<>();\nnumbers.parallelStream().map(n -> n * 2).forEach(results::add); // broken!\n```\nFix so that results contains all doubled values correctly.",
+          "description": "Identify and fix a broken parallel stream that produces non-deterministic results:\n\n**Broken:**\n```java\nList<Integer> result = new ArrayList<>();\nnumbers.parallelStream().forEach(n -> result.add(n)); // NOT thread-safe!\n```\n\n**Fix options:**\n1. `collect(toList())` instead of `forEach` + mutable list\n2. Use `CopyOnWriteArrayList` or synchronized list\n3. Use `.sequential()` for side-effect operations\n\nFixed: `numbers.parallelStream().collect(Collectors.toList())`",
           "difficulty": "MEDIUM",
           "pattern": "Parallel stream, thread-safe collection, Collectors.toList",
           "hint1": "ArrayList is not thread-safe — concurrent add() causes lost updates and ConcurrentModificationException.",
@@ -69,7 +73,9 @@
           "hint3": "Never use shared mutable state in parallel stream operations. Use terminal collectors instead.",
           "starterCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q3 {\n    static List<Integer> doubleAll(List<Integer> numbers) {\n        // BUG: ArrayList not thread-safe under parallel stream\n        List<Integer> results = new ArrayList<>();\n        numbers.parallelStream().map(n -> n * 2).forEach(results::add);\n        return results;\n    }\n\n    public static void main(String[] args) {\n        List<Integer> input = IntStream.rangeClosed(1, 10).boxed().collect(Collectors.toList());\n        List<Integer> output = doubleAll(input);\n        Collections.sort(output);\n        System.out.println(output); // must be [2,4,6,8,10,12,14,16,18,20]\n        System.out.println(\"Size: \" + output.size()); // must be 10\n    }\n}",
           "solutionCode": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Q3 {\n    static List<Integer> doubleAll(List<Integer> numbers) {\n        // FIX: use collect() — parallel stream safely combines partial results\n        return numbers.parallelStream()\n            .map(n -> n * 2)\n            .collect(Collectors.toList()); // thread-safe aggregation\n    }\n\n    public static void main(String[] args) {\n        List<Integer> input = IntStream.rangeClosed(1, 10).boxed().collect(Collectors.toList());\n        List<Integer> output = doubleAll(input);\n        Collections.sort(output);\n        System.out.println(output);\n        System.out.println(\"Size: \" + output.size());\n    }\n}",
-          "testCases": "[2, 4, 6, 8, 10, 12, 14, 16, 18, 20]\nSize: 10"
+          "testCases": "[2, 4, 6, 8, 10, 12, 14, 16, 18, 20]\nSize: 10",
+          "sampleInput": "parallelStream().forEach(result::add) on ArrayList",
+          "sampleOutput": "Fix: use .collect(Collectors.toList())"
         }
       ]
     }

@@ -69,7 +69,7 @@
         {
           "displayOrder": 1,
           "title": "Classify Variables — Stack or Heap",
-          "description": "For the following code, classify each named variable as 'stack-ref', 'stack-primitive', 'heap', or 'method-area':\n\n```java\npublic class Q1 {\n    static int counter = 0;    // (A)\n    int instanceField = 42;    // (B)\n\n    void method() {\n        int local = 5;         // (C)\n        String msg = \"hi\";     // (D) — the variable\n        // and the String object   (E)\n        int[] arr = new int[3]; // (F) — the variable\n        // and the array object     (G)\n    }\n}\n```\n\nImplement `classify()` returning a Map of label to location.",
+          "description": "For the code below, classify each named variable as `stack-primitive`, `stack-ref`, or `heap-object`:\n\n```java\npublic void demo() {\n    int x = 42;                    // (a)\n    String s = \"hello\";            // (b)\n    int[] arr = new int[]{1,2,3};  // (c)\n    Object obj = new Object();     // (d)\n}\n```\n\nImplement `classify()` returning a `String[]` with one label per variable.\n\n**Answer:** (a) stack-primitive, (b) stack-ref + heap-object (interned), (c) stack-ref + heap-object, (d) stack-ref + heap-object.",
           "difficulty": "EASY",
           "pattern": "JVM Memory Regions",
           "hint1": "Static fields live in the Method Area (Metaspace). Instance fields live on the heap inside the object.",
@@ -84,12 +84,14 @@
             }
           ],
           "constraints": "Conceptual classification exercise.",
-          "editorial": "Static fields → Method Area (Metaspace). Instance fields → heap (stored inside the object). Local primitives → stack (directly in frame). Local reference variables → stack (hold addresses). Actual objects → heap. String literals → String Pool (subset of heap since Java 7)."
+          "editorial": "Static fields → Method Area (Metaspace). Instance fields → heap (stored inside the object). Local primitives → stack (directly in frame). Local reference variables → stack (hold addresses). Actual objects → heap. String literals → String Pool (subset of heap since Java 7).",
+          "sampleInput": "int x=42; String s=\"hello\"; int[] arr=new int[]{1,2,3}; Object obj=new Object();",
+          "sampleOutput": "[\"stack-primitive\", \"stack-ref\", \"stack-ref\", \"stack-ref\"]"
         },
         {
           "displayOrder": 2,
           "title": "Predict the Error Type",
-          "description": "For each scenario below, predict whether it throws StackOverflowError, OutOfMemoryError, or runs fine:\n\nA) `void infinite() { infinite(); }` called once\nB) `new byte[Integer.MAX_VALUE]` — allocate ~2GB array\nC) `countdown(1000)` where countdown has a proper base case at 0\nD) `for(;;) list.add(new byte[1024])` — unbounded list growth\n\nImplement `predict()` returning String[] of A,B,C,D outcomes.",
+          "description": "For each scenario, predict whether it throws `StackOverflowError`, `OutOfMemoryError`, or neither:\n\n1. `void inf() { inf(); }` — unbounded recursion\n2. `List<byte[]> l = new ArrayList<>(); while(true) l.add(new byte[1024*1024]);` — unbounded heap\n3. `for(int i=0;i<1000;i++) new Object();` — short-lived objects\n\nImplement `predict()` returning `String[]` with one result per scenario.\n\n**Key insight:** Deep call stacks blow the thread stack (StackOverflow). Retaining unlimited objects blows the heap (OutOfMemory). Short-lived, non-retained objects are GC'd safely.",
           "difficulty": "EASY",
           "pattern": "Error Diagnosis",
           "hint1": "Infinite recursion = StackOverflowError (stack frames fill up).",
@@ -104,12 +106,14 @@
             }
           ],
           "constraints": "Conceptual — assume default JVM settings.",
-          "editorial": "StackOverflowError: stack size exhausted by call frames. OutOfMemoryError: heap size exhausted by objects. C: 1000 recursion depth is well within default stack limits (~5000+). D: unbounded list growth will exhaust -Xmx heap."
+          "editorial": "StackOverflowError: stack size exhausted by call frames. OutOfMemoryError: heap size exhausted by objects. C: 1000 recursion depth is well within default stack limits (~5000+). D: unbounded list growth will exhaust -Xmx heap.",
+          "sampleInput": "3 scenarios: infinite recursion, unbounded list growth, 1000 throwaway objects",
+          "sampleOutput": "[\"StackOverflowError\", \"OutOfMemoryError\", \"neither\"]"
         },
         {
           "displayOrder": 3,
           "title": "Count Heap Allocations",
-          "description": "Count how many distinct objects are allocated on the heap in this snippet:\n\n```java\nString a = \"hello\";            // (1)\nString b = \"hello\";            // (2)\nString c = new String(\"hello\"); // (3)\nint[] arr = new int[]{1,2,3};  // (4)\nInteger x = 200;               // (5) — autoboxing\nInteger y = 100;               // (6) — autoboxing with cache\nInteger z = 100;               // (7) — same cached Integer\n```\n\nReturn the count of distinct heap objects created by lines 1–7.",
+          "description": "Count how many distinct objects are allocated on the **heap** in this snippet:\n\n```java\nString a = \"hello\";            // string pool\nString b = new String(\"hello\"); // new heap object\nint[] arr = new int[3];        // heap array\nObject o = new Object();       // heap object\nInteger i = 42;                // autoboxed — heap object\n```\n\nImplement `countHeapAllocations()` returning the count.\n\n**Answer:** 4 — `b` (new String), `arr`, `o`, and autoboxed `i`. `\"hello\"` literal reuses the string pool (1 object, possibly shared).",
           "difficulty": "EASY",
           "pattern": "Heap Allocation Analysis",
           "hint1": "String literals 'hello' in (1) and (2) refer to the SAME String Pool object — 1 object total.",
@@ -124,12 +128,14 @@
             }
           ],
           "constraints": "Assume standard JVM Integer cache range is -128 to 127.",
-          "editorial": "String Pool deduplication means literals sharing the same content share one object. new String() always creates a new object. Integer cache (-128 to 127): Integer.valueOf() returns the same cached object for values in range, new object for values outside."
+          "editorial": "String Pool deduplication means literals sharing the same content share one object. new String() always creates a new object. Integer cache (-128 to 127): Integer.valueOf() returns the same cached object for values in range, new object for values outside.",
+          "sampleInput": "String a=\"hello\"; String b=new String(\"hello\"); int[] arr=new int[3]; Object o=new Object(); Integer i=42;",
+          "sampleOutput": "4"
         },
         {
           "displayOrder": 4,
           "title": "Iterative Fibonacci to Avoid Stack Overflow",
-          "description": "Recursive Fibonacci for large n causes StackOverflowError (exponential call depth). Implement iterative `fibonacci(int n)` that computes F(n) in O(n) time and O(1) space, safe for n up to 90.",
+          "description": "Recursive Fibonacci for large `n` causes `StackOverflowError` due to exponential call depth. Implement `fibIterative(int n)` using only O(1) extra space.\n\n**Example 1:**\nInput: n = 10\nOutput: 55\n\n**Example 2:**\nInput: n = 50\nOutput: 12586269025\n\n**Example 3:**\nInput: n = 0\nOutput: 0\n\n**Key insight:** Each recursive call pushes a frame on the thread stack. For n=10000 the stack overflows. The iterative version uses two variables — constant stack space, runs forever.",
           "difficulty": "EASY",
           "pattern": "Iterative vs Recursive — Stack Safety",
           "hint1": "Keep only the previous two values: prev2=F(n-2), prev1=F(n-1), current=F(n).",
@@ -156,12 +162,14 @@
             }
           ],
           "constraints": "0 <= n <= 90",
-          "editorial": "Iterative: uses O(1) stack space (1 stack frame total). Recursive: O(n) stack depth for linear recursion, O(2^n) for naive recursive Fibonacci. For any deep recursion, consider converting to iterative or memoized form."
+          "editorial": "Iterative: uses O(1) stack space (1 stack frame total). Recursive: O(n) stack depth for linear recursion, O(2^n) for naive recursive Fibonacci. For any deep recursion, consider converting to iterative or memoized form.",
+          "sampleInput": "10",
+          "sampleOutput": "55"
         },
         {
           "displayOrder": 5,
           "title": "Object Reachability — Will It Be GC'd?",
-          "description": "For each scenario, determine if the object becomes GC-eligible after the shown point:\n\nA) `Object a = new Object(); a = null;` — after a=null\nB) `List<Object> list = new ArrayList<>(); Object b = new Object(); list.add(b); b = null;` — after b=null\nC) `static Object GLOBAL = new Object();` — during normal execution\nD) `Object d = new Object(); WeakReference<Object> wr = new WeakReference<>(d); d = null;` — after d=null\n\nReturn String[] of 'GC-eligible' or 'Not GC-eligible' for A, B, C, D.",
+          "description": "For each scenario, determine if the object becomes **GC-eligible** after the marked line:\n\n1. `Object o = new Object(); o = null;` — after `o = null`\n2. `List<Object> list = ...; list.add(obj); list = null;` — after `list = null`\n3. `static List<Object> cache = new ArrayList<>(); cache.add(obj);` — after method returns\n\nImplement `isGcEligible()` returning `boolean[]`.\n\n**Answers:** true (no references left), false (list still referenced by obj references inside? no — list is null but obj still in old list... actually list = null makes the list unreachable if nothing else holds it), false (static field keeps it alive forever).",
           "difficulty": "EASY",
           "pattern": "GC Reachability",
           "hint1": "An object is GC-eligible when NO strong references point to it.",
@@ -176,12 +184,14 @@
             }
           ],
           "constraints": "Conceptual.",
-          "editorial": "GC traces from roots (stack, statics, JNI). A: no more references after null. B: list holds strong ref — not eligible. C: static = GC root = always reachable. D: WeakReference doesn't count as strong — when only weak refs remain, object is eligible."
+          "editorial": "GC traces from roots (stack, statics, JNI). A: no more references after null. B: list holds strong ref — not eligible. C: static = GC root = always reachable. D: WeakReference doesn't count as strong — when only weak refs remain, object is eligible.",
+          "sampleInput": "3 scenarios: o=null, list=null, static cache",
+          "sampleOutput": "[true, true, false]"
         },
         {
           "displayOrder": 6,
           "title": "Fix the StackOverflowError — Power Function",
-          "description": "The following recursive power function has a bug that causes StackOverflowError for certain inputs. Find and fix it:\n\n```java\nstatic double power(double base, int exp) {\n    if (exp == 0) return 1;\n    if (exp > 0) return base * power(base, exp - 1);\n    return 1 / power(base, -exp); // BUG HERE\n}\n```\n\nFix the bug and implement correctly. power(2, -3) should return 0.125.",
+          "description": "The following recursive power function causes `StackOverflowError` for certain inputs. Find and fix the bug:\n\n```java\nstatic double pow(double x, int n) {\n    if (n == 0) return 1;\n    return x * pow(x, n - 1); // bug for negative n\n}\n```\n\nFixed `pow(x, n)` must handle **negative** `n` correctly without infinite recursion.\n\n**Example 1:** pow(2.0, -3) => 0.125\n**Example 2:** pow(3.0, 4) => 81.0\n\n**Fix:** Add base case for `n < 0`: return `1.0 / pow(x, -n)`.",
           "difficulty": "EASY",
           "pattern": "Recursion Bug Fix",
           "hint1": "For negative exp: the current code calls power(base, -exp) which for exp=-3 gives power(base, 3) — that's fine.",
@@ -204,12 +214,14 @@
             }
           ],
           "constraints": "-30 <= exp <= 30. base != 0.",
-          "editorial": "The fix: for negative exponents, flip the base (1/base) and recurse with positive exp. Optionally use fast exponentiation (divide exp by 2 each step) for O(log n) depth instead of O(n)."
+          "editorial": "The fix: for negative exponents, flip the base (1/base) and recurse with positive exp. Optionally use fast exponentiation (divide exp by 2 each step) for O(log n) depth instead of O(n).",
+          "sampleInput": "x = 2.0, n = -3",
+          "sampleOutput": "0.125"
         },
         {
           "displayOrder": 7,
           "title": "Find Max Recursion Depth",
-          "description": "Implement `findMaxRecursionDepth()` that determines the maximum safe recursion depth on the current JVM. Catch StackOverflowError when it occurs and return the depth reached. Run it and report the result.",
+          "description": "Implement `findMaxRecursionDepth()` that determines the **maximum safe recursion depth** on the current JVM by counting how deep a recursive call can go before `StackOverflowError` is thrown. Catch the error and return the depth reached.\n\n**Example output:** (depends on JVM stack size, typically 5000–20000)\nInput: (none)\nOutput: e.g. 8743\n\n**Key insight:** Each stack frame consumes memory. The default thread stack is 512KB–1MB. Catching `StackOverflowError` is valid — it's an `Error`, not an `Exception`, but is catchable.",
           "difficulty": "MEDIUM",
           "pattern": "Stack Depth Measurement",
           "hint1": "Recursive helper that increments a depth counter each call.",
@@ -224,12 +236,14 @@
             }
           ],
           "constraints": "StackOverflowError is a Throwable — it can be caught.",
-          "editorial": "Each recursive call adds a frame. When stack is full, JVM throws StackOverflowError. Catching it in the deepest call returns that depth. Default -Xss on most JVMs gives 5,000-20,000 frames depending on frame size. Increase with -Xss2m for deeper recursion."
+          "editorial": "Each recursive call adds a frame. When stack is full, JVM throws StackOverflowError. Catching it in the deepest call returns that depth. Default -Xss on most JVMs gives 5,000-20,000 frames depending on frame size. Increase with -Xss2m for deeper recursion.",
+          "sampleInput": "(none — JVM-dependent)",
+          "sampleOutput": "~8000 (varies by JVM stack size)"
         },
         {
           "displayOrder": 8,
           "title": "StringBuilder vs String Performance",
-          "description": "Implement two versions of building a string from an array: `concatWithPlus(String[] parts)` using + operator, and `concatWithSB(String[] parts)` using StringBuilder. Measure and compare their performance for n=10000 parts. Return which is faster.",
+          "description": "Implement two versions of joining a `String[]` into one string:\n1. `concatWithPlus(String[] parts)` — using `+` in a loop (creates a new String object per iteration)\n2. `concatWithBuilder(String[] parts)` — using `StringBuilder` (one buffer, no intermediate objects)\n\nReturn the final string from both. Benchmark shows StringBuilder is **O(n)** vs `+` which is **O(n²)**.\n\n**Example:**\nInput: [\"a\",\"b\",\"c\",\"d\",\"e\"]\nOutput: \"abcde\"\n\n**Key insight:** `s += parts[i]` allocates a new String each iteration — n allocations of growing size. StringBuilder appends in-place.",
           "difficulty": "MEDIUM",
           "pattern": "Heap Allocation Optimization",
           "hint1": "String + creates a new object each iteration — O(n²) total bytes copied.",
@@ -244,12 +258,14 @@
             }
           ],
           "constraints": "parts.length = 5000. Each part is a short string.",
-          "editorial": "String + in loop: each iteration creates and copies a new String. For n parts of avg length L: O(n²L) total byte copies. StringBuilder: internal char[] doubles on overflow (amortized O(1) per append), O(nL) total. At n=5000, the difference is dramatic: 100-1000x faster."
+          "editorial": "String + in loop: each iteration creates and copies a new String. For n parts of avg length L: O(n²L) total byte copies. StringBuilder: internal char[] doubles on overflow (amortized O(1) per append), O(nL) total. At n=5000, the difference is dramatic: 100-1000x faster.",
+          "sampleInput": "[\"a\",\"b\",\"c\",\"d\",\"e\"]",
+          "sampleOutput": "\"abcde\""
         },
         {
           "displayOrder": 9,
           "title": "Implement LRU Cache (Bounded Heap Use)",
-          "description": "Implement a `LRUCache<K,V>` with a maximum size. When the cache is full and a new entry is added, evict the least recently used entry. Use LinkedHashMap with access-order mode.",
+          "description": "Implement `LRUCache<K,V>` with a maximum capacity. On `put()` when full, evict the **least recently used** entry. `get()` counts as a use.\n\n**Example:**\ncache = LRUCache(2)\nput(1,1), put(2,2)\nget(1) => 1\nput(3,3) — evicts key 2 (LRU)\nget(2) => -1 (evicted)\nget(3) => 3\n\n**Key insight:** Use `LinkedHashMap` with `accessOrder=true`, or a custom doubly-linked list + HashMap. Bounded size means bounded heap — prevents unbounded memory growth.",
           "difficulty": "MEDIUM",
           "pattern": "Bounded Cache — Heap Management",
           "hint1": "Extend LinkedHashMap and override removeEldestEntry to evict when size > capacity.",
@@ -264,12 +280,14 @@
             }
           ],
           "constraints": "1 <= capacity <= 1000.",
-          "editorial": "LinkedHashMap with accessOrder=true maintains nodes in access order (LRU at head, MRU at tail). removeEldestEntry is called after each put() — return true to evict. This is the standard Java LRU cache pattern, O(1) get/put. LeetCode #146 uses the same approach."
+          "editorial": "LinkedHashMap with accessOrder=true maintains nodes in access order (LRU at head, MRU at tail). removeEldestEntry is called after each put() — return true to evict. This is the standard Java LRU cache pattern, O(1) get/put. LeetCode #146 uses the same approach.",
+          "sampleInput": "capacity=2, put(1,1), put(2,2), get(1), put(3,3), get(2)",
+          "sampleOutput": "get(2) = -1"
         },
         {
           "displayOrder": 10,
           "title": "Detect Memory Leak — Static Collection Growth",
-          "description": "The following code has a memory leak. Identify the leak and fix it:\n\n```java\nclass EventBus {\n    static List<EventListener> listeners = new ArrayList<>();\n    static void register(EventListener l) { listeners.add(l); }\n    static void unregister(EventListener l) { /* empty — bug! */ }\n    static void publish(String event) {\n        for (EventListener l : listeners) l.onEvent(event);\n    }\n}\n```\n\nFix the `unregister` method and explain why the leak exists.",
+          "description": "The following code has a **memory leak** — identify it and fix it:\n\n```java\nclass EventBus {\n    static List<Runnable> listeners = new ArrayList<>();\n    static void register(Runnable r) { listeners.add(r); }\n}\n// Callers register lambdas but never deregister\n```\n\nThe leak: `listeners` is static and grows forever — registered objects are never removed.\n\n**Fix:** Add `static void deregister(Runnable r) { listeners.remove(r); }` and always call it in a `finally` block or use `WeakReference<Runnable>`.\n\n**Key insight:** Static collections that grow without bounds are the #1 Java memory leak pattern.",
           "difficulty": "MEDIUM",
           "pattern": "Memory Leak Detection and Fix",
           "hint1": "Static list holds strong references to all registered listeners — GC cannot collect them.",
@@ -284,12 +302,14 @@
             }
           ],
           "constraints": "No thread safety needed.",
-          "editorial": "The leak: static List holds strong references to listeners. Empty unregister() means listeners accumulate forever. Fix: listeners.remove(l). Also copy the list before iterating (ConcurrentModificationException prevention). In real systems, use WeakReference<EventListener> so listeners can be GC'd if not held elsewhere."
+          "editorial": "The leak: static List holds strong references to listeners. Empty unregister() means listeners accumulate forever. Fix: listeners.remove(l). Also copy the list before iterating (ConcurrentModificationException prevention). In real systems, use WeakReference<EventListener> so listeners can be GC'd if not held elsewhere.",
+          "sampleInput": "register 10000 listeners, never deregister",
+          "sampleOutput": "Fix: add deregister() or use WeakReference"
         },
         {
           "displayOrder": 11,
           "title": "Merge Two Sorted Arrays In-Place",
-          "description": "Implement `merge(int[] nums1, int m, int[] nums2, int n)` that merges nums2 into nums1 in-place. nums1 has extra space at the end (total length m+n). Classic in-place merge using three pointers from the back.",
+          "description": "Implement `merge(int[] nums1, int m, int[] nums2, int n)` that merges `nums2` into `nums1` **in-place**. `nums1` has length `m+n`; the last `n` slots are zero-padded. Use O(1) extra space by filling from the back.\n\n**Example 1:**\nInput: nums1=[1,2,3,0,0,0] m=3, nums2=[2,5,6] n=3\nOutput: [1,2,2,3,5,6]\n\n**Example 2:**\nInput: nums1=[1] m=1, nums2=[] n=0\nOutput: [1]\n\n**Key insight:** Merge from the end — no extra allocation needed. Compare nums1[m-1] and nums2[n-1], place the larger at position m+n-1.",
           "difficulty": "MEDIUM",
           "pattern": "In-Place Array Merge",
           "hint1": "Place merged result from the end of nums1 backwards to avoid overwriting unread values.",
@@ -312,12 +332,14 @@
             }
           ],
           "constraints": "0 <= m, n <= 200. nums1.length == m+n.",
-          "editorial": "Fill from right to left — largest values first. This avoids overwriting nums1's unprocessed data. O(m+n) time, O(1) extra space. LeetCode #88. The in-place mutation works because nums1 has extra capacity at the end."
+          "editorial": "Fill from right to left — largest values first. This avoids overwriting nums1's unprocessed data. O(m+n) time, O(1) extra space. LeetCode #88. The in-place mutation works because nums1 has extra capacity at the end.",
+          "sampleInput": "nums1=[1,2,3,0,0,0] m=3, nums2=[2,5,6] n=3",
+          "sampleOutput": "[1,2,2,3,5,6]"
         },
         {
           "displayOrder": 12,
           "title": "Memory-Efficient Large Dataset Processing",
-          "description": "Process a large array of integers without loading all results into memory at once. Implement `streamingMax(int[][] chunks)` where chunks is an array of sub-arrays. Find the maximum value across all chunks using O(1) extra space (no extra array for all values).",
+          "description": "Process a large array of integers **without storing all results** in memory at once. Implement `processStream(int[] data, int windowSize)` that returns the running average for each window of `windowSize` elements, computed with O(1) extra space.\n\n**Example:**\nInput: data=[1,2,3,4,5], windowSize=3\nOutput: [2.0, 3.0, 4.0]\nExplanation: avg(1,2,3)=2.0, avg(2,3,4)=3.0, avg(3,4,5)=4.0.\n\n**Key insight:** Sliding window — subtract the outgoing element and add the incoming one. No need to store all window elements.",
           "difficulty": "MEDIUM",
           "pattern": "O(1) Space Processing",
           "hint1": "Keep a single `int maxSoFar` variable — never store all values.",
@@ -336,12 +358,14 @@
             }
           ],
           "constraints": "At least one chunk. Each chunk is non-empty.",
-          "editorial": "Streaming processing: keep only the maximum seen so far. O(1) extra memory regardless of total data size. This pattern is essential for big data — imagine processing 1TB of data in 1MB chunks: the full dataset can't fit in heap, but a single int can."
+          "editorial": "Streaming processing: keep only the maximum seen so far. O(1) extra memory regardless of total data size. This pattern is essential for big data — imagine processing 1TB of data in 1MB chunks: the full dataset can't fit in heap, but a single int can.",
+          "sampleInput": "data=[1,2,3,4,5], windowSize=3",
+          "sampleOutput": "[2.0, 3.0, 4.0]"
         },
         {
           "displayOrder": 13,
           "title": "Stack-Based Iterative DFS",
-          "description": "Implement DFS on a graph iteratively using an explicit Stack<Integer> (avoiding recursive StackOverflow for very deep graphs). Count and return visited nodes from a start node.",
+          "description": "Implement **iterative DFS** on a graph using an explicit `Stack<Integer>` instead of recursion, avoiding the risk of `StackOverflowError` on deep graphs.\n\n**Example:**\nInput: graph = {0:[1,2], 1:[3], 2:[3], 3:[]}, start = 0\nOutput: visited order = [0, 2, 3, 1] (LIFO stack order)\n\n**Key insight:** Replace the call stack with a heap-allocated `Stack<Integer>`. Push neighbors, pop and visit. The heap can hold far more than the thread stack — safe for graphs with millions of nodes.",
           "difficulty": "HARD",
           "pattern": "Explicit Stack to Replace Recursion",
           "hint1": "Push start node onto stack. While stack not empty: pop node, mark visited, push unvisited neighbors.",
@@ -360,12 +384,14 @@
             }
           ],
           "constraints": "0 <= nodes <= 10^5. Graph may have cycles.",
-          "editorial": "Explicit stack on heap can hold millions of items (bounded by heap). Call stack limited to ~5000-20000 frames. For deep trees/graphs, always prefer iterative with explicit stack. ArrayDeque is faster than Stack (Stack is synchronized)."
+          "editorial": "Explicit stack on heap can hold millions of items (bounded by heap). Call stack limited to ~5000-20000 frames. For deep trees/graphs, always prefer iterative with explicit stack. ArrayDeque is faster than Stack (Stack is synchronized).",
+          "sampleInput": "graph={0:[1,2],1:[3],2:[3],3:[]}, start=0",
+          "sampleOutput": "[0, 2, 3, 1]"
         },
         {
           "displayOrder": 14,
           "title": "Memory Pool — Pre-allocate Objects",
-          "description": "Implement a simple object pool for StringBuilder objects. Pre-allocate N StringBuilders at start. acquire() returns one from pool; release(sb) resets and returns it. Avoids repeated allocation/GC of StringBuilders in a high-throughput system.",
+          "description": "Implement a simple **object pool** for `StringBuilder` objects. Pre-allocate `N` instances at startup. `acquire()` returns a cleared instance from the pool; `release(sb)` returns it. Avoids repeated allocation/GC pressure for high-throughput scenarios.\n\n**Example:**\npool = StringBuilderPool(3)\nsb1 = acquire() => empty StringBuilder\nsb1.append(\"hello\")\nrelease(sb1)\nsb2 = acquire() => same object, cleared\nsb2.length() => 0\n\n**Key insight:** Object pools reduce GC pressure by reusing objects instead of allocating new ones per request.",
           "difficulty": "HARD",
           "pattern": "Object Pool — Heap Management",
           "hint1": "Pool is a Deque<StringBuilder>. Pre-fill with N empty StringBuilders.",
@@ -380,12 +406,14 @@
             }
           ],
           "constraints": "Single-threaded use.",
-          "editorial": "Object pools reduce allocation/GC overhead by reusing objects. Key: reset the object state on release (sb.setLength(0)). Used in: Netty ByteBuf pool, database connection pools, thread pools. The heap cost is fixed (N objects), avoiding repeated GC of short-lived objects in hot paths."
+          "editorial": "Object pools reduce allocation/GC overhead by reusing objects. Key: reset the object state on release (sb.setLength(0)). Used in: Netty ByteBuf pool, database connection pools, thread pools. The heap cost is fixed (N objects), avoiding repeated GC of short-lived objects in hot paths.",
+          "sampleInput": "pool size=3, acquire, append, release, acquire",
+          "sampleOutput": "reacquired sb.length() = 0"
         },
         {
           "displayOrder": 15,
           "title": "Trampoline — Tail Recursion Without Stack Overflow",
-          "description": "Implement a trampoline to evaluate deeply-recursive functions without stack overflow. A trampoline repeatedly calls a thunk (lambda that returns either a result or the next thunk) until it gets a value.\n\nImplement `trampoline(Supplier<Object> thunk)` and use it to compute factorial(100000) without StackOverflow.",
+          "description": "Implement a **trampoline** to evaluate deeply recursive functions without stack overflow. A trampoline repeatedly calls a function that returns either a result or another thunk (lambda) to call next.\n\n**Example — trampolined factorial:**\ntrampoline(factThunk(5)) => 120\ntrampoline(factThunk(100000)) => large number (no StackOverflow)\n\n**Key insight:** Each 'recursive' call returns a `Supplier` (thunk) instead of calling itself. The trampoline loop runs on the heap, never growing the call stack beyond 1 frame.",
           "difficulty": "HARD",
           "pattern": "Trampoline / Tail Call Optimization",
           "hint1": "A Thunk is either a Supplier<Object> (next step) or a final value.",
@@ -404,12 +432,14 @@
             }
           ],
           "constraints": "n >= 0. Use BigInteger for large values.",
-          "editorial": "Trampoline converts recursion to iteration: instead of calling the next step, return it as a lambda. The loop calls it. Only ONE stack frame used at a time — deep recursion without StackOverflow. This is how Clojure, Scala implement tail call optimization in JVM. Java doesn't natively support TCO — trampoline is the workaround."
+          "editorial": "Trampoline converts recursion to iteration: instead of calling the next step, return it as a lambda. The loop calls it. Only ONE stack frame used at a time — deep recursion without StackOverflow. This is how Clojure, Scala implement tail call optimization in JVM. Java doesn't natively support TCO — trampoline is the workaround.",
+          "sampleInput": "factThunk(5)",
+          "sampleOutput": "120"
         },
         {
           "displayOrder": 16,
           "title": "Count Objects in Generations",
-          "description": "Explain with code why short-lived objects are cheap in Java's generational GC. Implement `shortLivedAllocation()` that creates and discards 1 million local objects within a loop body, and `longLivedAllocation()` that stores them in a list. Compare approximate GC impact.",
+          "description": "Implement `allocateShortLived(int n)` that creates `n` objects, uses them, and discards them — demonstrating why short-lived objects are **cheap** in Java's generational GC. Then implement `allocateLongLived(int n)` that stores them in a static list.\n\n**Example:**\nallocateShortLived(1_000_000) — fast, no GC pressure\nallocateLongLived(1_000_000) — builds up old-gen, triggers full GC\n\n**Key insight:** Young-gen collection (minor GC) is very fast — it only scans live young objects. Short-lived objects die in Eden and are reclaimed cheaply with no promotion to old-gen.",
           "difficulty": "HARD",
           "pattern": "Generational GC Understanding",
           "hint1": "Short-lived objects (created and unreferenced within a loop iteration) stay in Young Gen — minor GC is fast.",
@@ -424,12 +454,14 @@
             }
           ],
           "constraints": "Results vary by JVM/GC settings.",
-          "editorial": "Generational hypothesis: most objects die young. Young Gen (Eden + Survivor) is small and cheap to collect — minor GC < 1ms typical. Short-lived objects never leave Young Gen. Long-lived objects promoted to Old Gen (Tenured) — Full GC = stop-the-world pause. Design principle: allocate freely in hot paths (GC handles it) but don't retain objects longer than needed."
+          "editorial": "Generational hypothesis: most objects die young. Young Gen (Eden + Survivor) is small and cheap to collect — minor GC < 1ms typical. Short-lived objects never leave Young Gen. Long-lived objects promoted to Old Gen (Tenured) — Full GC = stop-the-world pause. Design principle: allocate freely in hot paths (GC handles it) but don't retain objects longer than needed.",
+          "sampleInput": "n = 1_000_000",
+          "sampleOutput": "short-lived: no OOM; long-lived: potential OOM"
         },
         {
           "displayOrder": 17,
           "title": "Implement Stack Using Heap Array (Bounded)",
-          "description": "Implement a bounded `ArrayStack<T>` using a fixed-size array on the heap. Demonstrate push, pop, peek, isEmpty, isFull. The fixed size avoids unbounded heap growth.",
+          "description": "Implement a bounded `ArrayStack<T>` using a fixed-size array. Operations: `push(T)` (throws if full), `pop()` (throws if empty), `peek()`, `isEmpty()`, `isFull()`.\n\n**Example:**\nstack = ArrayStack(3)\npush(1), push(2), push(3)\npush(4) => throws StackFullException\npop() => 3\npop() => 2\npeek() => 1\n\n**Key insight:** Fixed-size array means bounded heap — no unbounded growth. The array is allocated once; elements are stored by index. Unlike `java.util.Stack`, this has predictable memory usage.",
           "difficulty": "HARD",
           "pattern": "Heap Array as Stack Backing Store",
           "hint1": "Use Object[] data = new Object[capacity] and an int top = -1.",
@@ -444,12 +476,14 @@
             }
           ],
           "constraints": "capacity >= 1.",
-          "editorial": "data[top--] = null is crucial: without it, the array holds references to popped objects — they can't be GC'd (logical leak). This is why ArrayList.remove() also sets the slot to null. Fixed-size stack guarantees O(1) amortized operations and bounded heap usage."
+          "editorial": "data[top--] = null is crucial: without it, the array holds references to popped objects — they can't be GC'd (logical leak). This is why ArrayList.remove() also sets the slot to null. Fixed-size stack guarantees O(1) amortized operations and bounded heap usage.",
+          "sampleInput": "capacity=3, push(1),push(2),push(3),push(4)",
+          "sampleOutput": "push(4) throws StackFullException"
         },
         {
           "displayOrder": 18,
           "title": "Escape Analysis — Stack vs Heap Allocation Hint",
-          "description": "Write two methods: `doesEscape()` where a created object is returned (escapes — must be on heap), and `doesNotEscape()` where a created object is only used locally (JIT can stack-allocate via escape analysis). Use the JVM flag -XX:+PrintEscapeAnalysis (conceptual — explain in comments).",
+          "description": "Write two methods demonstrating **escape analysis**:\n1. `doesEscape()` — creates and **returns** an object (it escapes; JVM must heap-allocate)\n2. `doesNotEscape()` — creates an object used only locally, never returned or stored (JVM may stack-allocate via escape analysis)\n\nReturn a description of where each object is likely allocated.\n\n**Key insight:** The JVM's escape analysis can stack-allocate objects that don't escape the method scope — faster allocation and no GC overhead. Objects that escape (returned, stored in fields) must go to the heap.",
           "difficulty": "HARD",
           "pattern": "JVM Escape Analysis",
           "hint1": "Escape analysis: if an object doesn't escape the method, JVM can allocate it on the stack.",
@@ -468,12 +502,14 @@
             }
           ],
           "constraints": "Conceptual + functional.",
-          "editorial": "Escape analysis (JVM flag -XX:+DoEscapeAnalysis, default ON) detects if objects escape the method. Non-escaping objects can be stack-allocated (fast) or have their fields scalar-replaced (no object at all). This is why small value objects (Point, Rectangle) in math-heavy code are nearly free — JIT eliminates heap allocation entirely."
+          "editorial": "Escape analysis (JVM flag -XX:+DoEscapeAnalysis, default ON) detects if objects escape the method. Non-escaping objects can be stack-allocated (fast) or have their fields scalar-replaced (no object at all). This is why small value objects (Point, Rectangle) in math-heavy code are nearly free — JIT eliminates heap allocation entirely.",
+          "sampleInput": "doesEscape() vs doesNotEscape()",
+          "sampleOutput": "doesEscape: heap; doesNotEscape: stack (JVM optimized)"
         },
         {
           "displayOrder": 19,
           "title": "Memory-Efficient Matrix Transpose In-Place",
-          "description": "Transpose a square matrix in-place. Only O(1) extra memory is allowed — no copying to a new matrix. Swap matrix[i][j] with matrix[j][i] for i < j.",
+          "description": "Transpose a square matrix **in-place** using O(1) extra space — swap `matrix[i][j]` with `matrix[j][i]` for all `i < j`.\n\n**Example 1:**\nInput:\n[[1,2,3],\n [4,5,6],\n [7,8,9]]\nOutput:\n[[1,4,7],\n [2,5,8],\n [3,6,9]]\n\n**Example 2:**\nInput: [[1,2],[3,4]]\nOutput: [[1,3],[2,4]]\n\n**Key insight:** Only the upper triangle needs to be iterated. Each swap touches exactly 2 cells — no temp array needed.",
           "difficulty": "HARD",
           "pattern": "O(1) Space In-Place Matrix Mutation",
           "hint1": "Only iterate upper triangle: outer i from 0 to n-1, inner j from i+1 to n-1.",
@@ -492,12 +528,14 @@
             }
           ],
           "constraints": "Square matrix, n >= 1.",
-          "editorial": "In-place transpose: swap upper and lower triangles. O(n²/2) swaps, O(1) extra space. Non-square transpose requires O(m*n) extra space — cannot be done truly in-place. This O(1) space principle applies broadly: prefer to mutate through existing references rather than allocating new structures."
+          "editorial": "In-place transpose: swap upper and lower triangles. O(n²/2) swaps, O(1) extra space. Non-square transpose requires O(m*n) extra space — cannot be done truly in-place. This O(1) space principle applies broadly: prefer to mutate through existing references rather than allocating new structures.",
+          "sampleInput": "[[1,2,3],[4,5,6],[7,8,9]]",
+          "sampleOutput": "[[1,4,7],[2,5,8],[3,6,9]]"
         },
         {
           "displayOrder": 20,
           "title": "OutOfMemoryError — Heap Dump Analysis Simulation",
-          "description": "Write a program that deliberately causes OutOfMemoryError, catches it, and reports the heap state at the time of the error. Use Runtime to measure heap usage before and at OOM. Implement `causeOOM(int chunkSizeKB)` which allocates chunks until OOM.",
+          "description": "Write a method that deliberately fills the heap until `OutOfMemoryError`, catches it, and reports the approximate heap size consumed. Use `Runtime.getRuntime()` to query memory stats before and after.\n\n**Example output:**\nHeap before: ~256MB free\nAllocated ~180MB before OOM\nCaught: java.lang.OutOfMemoryError: Java heap space\n\n**Key insight:** `OutOfMemoryError` is catchable (it's a `Throwable`). After catching it, some memory is freed (the large array reference is gone). `Runtime.totalMemory() - Runtime.freeMemory()` gives current heap usage.",
           "difficulty": "HARD",
           "pattern": "OOM Handling and Heap Metrics",
           "hint1": "Allocate in a loop: list.add(new byte[chunkSizeKB * 1024]);",
@@ -512,7 +550,9 @@
             }
           ],
           "constraints": "Run with -Xmx64m for quick OOM. OutOfMemoryError is an Error — can be caught.",
-          "editorial": "OutOfMemoryError is a subclass of Error (not Exception) — but can be caught. After catching OOM, the JVM may be in an unstable state — only log and exit in production. Use -XX:+HeapDumpOnOutOfMemoryError to automatically capture heap dump on OOM. Analyze with Eclipse MAT to find the largest object graph causing the leak."
+          "editorial": "OutOfMemoryError is a subclass of Error (not Exception) — but can be caught. After catching OOM, the JVM may be in an unstable state — only log and exit in production. Use -XX:+HeapDumpOnOutOfMemoryError to automatically capture heap dump on OOM. Analyze with Eclipse MAT to find the largest object graph causing the leak.",
+          "sampleInput": "(runs until OOM)",
+          "sampleOutput": "OutOfMemoryError caught after ~N MB allocated"
         }
       ],
       "subCategory": "JVM Internals (Interview Critical)",

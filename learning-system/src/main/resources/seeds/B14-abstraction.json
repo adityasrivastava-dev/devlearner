@@ -69,7 +69,7 @@
         {
           "displayOrder": 1,
           "title": "Create an Abstract Vehicle",
-          "description": "Create abstract class `Vehicle` with fields `make`, `year`, `fuelLevel`, concrete methods `refuel(double)` and `getStatus()`, and abstract method `drive(int km)`. Extend as `Car` and `Truck` — each reduces fuelLevel at a different rate in drive(). Verify both share refuel() without reimplementing it.",
+          "description": "Create `abstract class Vehicle` with `String fuelType`, a constructor, and `abstract double fuelEfficiency()`. Extend with `Car(double mpg)` and `Truck(double mpg, double loadFactor)`.\n\n**Example 1:**\nnew Car(35.0).fuelEfficiency() => 35.0\n\n**Example 2:**\nnew Truck(20.0, 0.8).fuelEfficiency() => 16.0 (mpg * loadFactor)\n\n**Key insight:** Abstract classes define shared state + partial implementation. Subclasses must fill in the abstract method.",
           "difficulty": "EASY",
           "pattern": "Abstract Class — Shared State and Behaviour",
           "hint1": "Vehicle: `protected double fuelLevel = 100;` and `void refuel(double amt) { fuelLevel = Math.min(100, fuelLevel+amt); }`",
@@ -88,12 +88,14 @@
             }
           ],
           "constraints": "fuelLevel cannot exceed 100.",
-          "editorial": "Abstract class holds fuelLevel field and refuel() — shared by all vehicles. drive() is abstract — each subclass defines its own fuel consumption rate. Subclasses inherit refuel() for free — no duplication. This is the primary reason to choose abstract class over interface: shared mutable state."
+          "editorial": "Abstract class holds fuelLevel field and refuel() — shared by all vehicles. drive() is abstract — each subclass defines its own fuel consumption rate. Subclasses inherit refuel() for free — no duplication. This is the primary reason to choose abstract class over interface: shared mutable state.",
+          "sampleInput": "new Truck(20.0, 0.8).fuelEfficiency()",
+          "sampleOutput": "16.0"
         },
         {
           "displayOrder": 2,
           "title": "Interface With Default Method",
-          "description": "Create interface `Greetable` with abstract `String getName()` and default method `greet()` that prints `'Hello, I am {getName()}'`. Implement `Student` and `Teacher` classes. Verify that both get the greet() behaviour without duplicating the print logic.",
+          "description": "Create a `Greetable` interface with `default String greet(String name)` returning `\"Hello, \" + name`. Implement `FormalGreeter` that overrides it to return `\"Good day, \" + name`.\n\n**Example 1:**\nnew FormalGreeter().greet(\"Alice\") => \"Good day, Alice\"\n\n**Example 2:**\nnew InformalGreeter().greet(\"Bob\") => \"Hello, Bob\" (uses default)\n\n**Key insight:** Default methods let interfaces evolve without breaking existing implementations.",
           "difficulty": "EASY",
           "pattern": "Interface Default Method",
           "hint1": "`interface Greetable { String getName(); default void greet() { System.out.println(\"Hello, I am \" + getName()); } }`",
@@ -112,12 +114,14 @@
             }
           ],
           "constraints": "greet() defined only in interface.",
-          "editorial": "The default method greet() is written once in the interface and calls getName() — an abstract method. At runtime, getName() dispatches to the implementing class. Both Student and Teacher get greet() for free without code duplication."
+          "editorial": "The default method greet() is written once in the interface and calls getName() — an abstract method. At runtime, getName() dispatches to the implementing class. Both Student and Teacher get greet() for free without code duplication.",
+          "sampleInput": "new FormalGreeter().greet(\"Alice\")",
+          "sampleOutput": "\"Good day, Alice\""
         },
         {
           "displayOrder": 3,
           "title": "Cannot Instantiate Abstract Class",
-          "description": "Demonstrate that trying `new Animal()` where Animal is abstract gives a compile error. Show the correct approach: create a concrete subclass `Dog` that provides the implementation. Return the error message (as a String for this exercise) when you try to conceptually instantiate the abstract.",
+          "description": "Show that abstract classes cannot be instantiated directly:\n\n```java\nabstract class Shape { abstract double area(); }\nnew Shape(); // => compile error\n```\n\nAlso show anonymous class instantiation as a workaround:\n```java\nShape s = new Shape() { double area() { return 0; } }; // OK\n```\n\nImplement `demonstrateAbstract()` returning the area of the anonymous shape.",
           "difficulty": "EASY",
           "pattern": "Abstract Class Instantiation Rules",
           "hint1": "Attempting `new Animal()` gives: `Animal is abstract; cannot be instantiated`",
@@ -136,12 +140,14 @@
             }
           ],
           "constraints": "Cannot instantiate abstract Animal directly.",
-          "editorial": "Abstract classes cannot be instantiated directly — they represent incomplete blueprints. The JVM would not know which implementation to use for abstract methods. Concrete subclasses or anonymous subclasses (providing all abstract implementations) can be instantiated."
+          "editorial": "Abstract classes cannot be instantiated directly — they represent incomplete blueprints. The JVM would not know which implementation to use for abstract methods. Concrete subclasses or anonymous subclasses (providing all abstract implementations) can be instantiated.",
+          "sampleInput": "new Shape() { double area() { return 42.0; } }.area()",
+          "sampleOutput": "42.0"
         },
         {
           "displayOrder": 4,
           "title": "Interface Static Method",
-          "description": "Create interface `MathUtils` with static method `clamp(int value, int min, int max)` returning the value clamped to [min, max]. Add static method `lerp(double a, double b, double t)` for linear interpolation. Show these are called on the interface directly, not on an instance.",
+          "description": "Create interface `MathUtils` with a `static int square(int n)` method. Call it directly on the interface without an instance.\n\n**Example:**\nMathUtils.square(5) => 25\nMathUtils.square(0) => 0\n\n**Key insight:** Interface static methods belong to the interface itself, not any implementing class — they cannot be overridden or inherited by implementing classes.",
           "difficulty": "EASY",
           "pattern": "Interface Static Methods",
           "hint1": "`interface MathUtils { static int clamp(int v, int min, int max) { return Math.max(min, Math.min(max, v)); } }`",
@@ -168,12 +174,14 @@
             }
           ],
           "constraints": "Must call on interface type, not on instance.",
-          "editorial": "Interface static methods (Java 8+) are utility functions tightly related to the interface concept. They cannot be overridden by implementing classes (unlike default methods). Called via InterfaceName.method(). Used in Comparator.comparing(), Predicate.not(), Collections.unmodifiableList()."
+          "editorial": "Interface static methods (Java 8+) are utility functions tightly related to the interface concept. They cannot be overridden by implementing classes (unlike default methods). Called via InterfaceName.method(). Used in Comparator.comparing(), Predicate.not(), Collections.unmodifiableList().",
+          "sampleInput": "MathUtils.square(5)",
+          "sampleOutput": "25"
         },
         {
           "displayOrder": 5,
           "title": "Abstract Method Forces Subclass Implementation",
-          "description": "Create abstract `Validator` with abstract `boolean isValid(String input)` and concrete `validate(String input)` that calls isValid() and prints a result message. Create `EmailValidator` and `PhoneValidator` that each implement isValid() with their own logic. Demonstrate that forgetting to implement isValid() in a concrete class gives a compile error.",
+          "description": "Create abstract `DataValidator` with `abstract boolean validate(String input)`. Subclasses `EmailValidator` and `PhoneValidator` must implement `validate()`.\n\n**Example:**\nnew EmailValidator().validate(\"user@example.com\") => true\nnew EmailValidator().validate(\"not-an-email\") => false\nnew PhoneValidator().validate(\"+1-800-555-0100\") => true\n\n**Key insight:** Abstract methods are a contract — the compiler enforces that every concrete subclass provides an implementation.",
           "difficulty": "EASY",
           "pattern": "Abstract Method Contract",
           "hint1": "validate() template: `if (isValid(input)) print valid else print invalid`.",
@@ -196,12 +204,14 @@
             }
           ],
           "constraints": "No regex for email — use contains().",
-          "editorial": "Abstract method isValid() forces every concrete subclass to provide validation logic. validate() in the abstract class is the shared template — calls isValid() polymorphically. Forgetting to implement isValid() in a concrete subclass → compile error: 'class EmailValidator is not abstract and does not override abstract method isValid()'."
+          "editorial": "Abstract method isValid() forces every concrete subclass to provide validation logic. validate() in the abstract class is the shared template — calls isValid() polymorphically. Forgetting to implement isValid() in a concrete subclass → compile error: 'class EmailValidator is not abstract and does not override abstract method isValid()'.",
+          "sampleInput": "new EmailValidator().validate(\"user@example.com\")",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 6,
           "title": "Abstract Class Constructor Chain",
-          "description": "Create abstract `Account(String id, double balance)` with concrete `deposit()`, `withdraw()`, and abstract `interestRate()`, `calculateInterest()`. Extend as `SavingsAccount` and `CheckingAccount` — each with different interest logic. Show that both call super(id, balance) in their constructors.",
+          "description": "Show that an abstract class constructor runs before the subclass constructor:\n\n```java\nabstract class Base { Base() { System.out.println(\"Base init\"); setup(); } abstract void setup(); }\nclass Child extends Base { String name; Child() { super(); name = \"child\"; } void setup() { System.out.println(\"setup called, name=\" + name); } }\nnew Child();\n```\nOutput: \"Base init\" -> \"setup called, name=null\" -> then Child sets name.\n\n**Key insight:** Abstract class constructors run first — don't call overridable methods from a constructor (fields not yet initialised).",
           "difficulty": "EASY",
           "pattern": "Abstract Class Constructor",
           "hint1": "SavingsAccount: `SavingsAccount(String id, double b) { super(id, b); }`",
@@ -220,12 +230,14 @@
             }
           ],
           "constraints": "super(id, balance) must be called in each subclass constructor.",
-          "editorial": "Abstract classes can have constructors — called via super() from subclass constructors. This initialises shared state (id, balance) in one place. deposit() and withdraw() are shared concrete methods. interestRate() and calculateInterest() are abstract — each account type defines its own rates."
+          "editorial": "Abstract classes can have constructors — called via super() from subclass constructors. This initialises shared state (id, balance) in one place. deposit() and withdraw() are shared concrete methods. interestRate() and calculateInterest() are abstract — each account type defines its own rates.",
+          "sampleInput": "new Child()",
+          "sampleOutput": "\"Base init\"\n\"setup called, name=null\""
         },
         {
           "displayOrder": 7,
           "title": "Implement Comparable — Natural Order Abstraction",
-          "description": "Create `Employee(String name, double salary, String department)` implementing `Comparable<Employee>`. Natural order: by salary descending. Override equals/hashCode consistently. Sort a list and verify the order. Also demonstrate `Comparator` for an alternate ordering by name.",
+          "description": "Implement `Comparable<Product>` for natural ordering by price ascending:\n\n**Example:**\nList<Product> list = new ArrayList<>(List.of(new Product(\"B\",20), new Product(\"A\",10)));\nCollections.sort(list);\nlist.get(0).getName() => \"A\" (cheapest first)\n\nAlso add a `Comparator.comparing(Product::getName)` for name-order.\n\n**Key insight:** `Comparable` = natural order (one per class). `Comparator` = alternate order (many possible).",
           "difficulty": "MEDIUM",
           "pattern": "Comparable Interface",
           "hint1": "`compareTo`: `return Double.compare(other.salary, this.salary)` for descending.",
@@ -244,12 +256,14 @@
             }
           ],
           "constraints": "Comparable defines natural order.",
-          "editorial": "Comparable<T> defines the natural ordering — used by Collections.sort(), Arrays.sort(), TreeSet, and TreeMap without extra arguments. Comparator provides external/alternate orderings. The contract: compareTo returns negative if this < other, 0 if equal, positive if this > other."
+          "editorial": "Comparable<T> defines the natural ordering — used by Collections.sort(), Arrays.sort(), TreeSet, and TreeMap without extra arguments. Comparator provides external/alternate orderings. The contract: compareTo returns negative if this < other, 0 if equal, positive if this > other.",
+          "sampleInput": "[Product(B,$20), Product(A,$10)] sorted",
+          "sampleOutput": "[Product(A,$10), Product(B,$20)]"
         },
         {
           "displayOrder": 8,
           "title": "Abstract Factory — Product Creation",
-          "description": "Create abstract `UIFactory` with abstract `createButton()` and `createTextField()` returning `Button` and `TextField` interfaces. Implement `DarkThemeFactory` and `LightThemeFactory`. Show that switching the factory changes the entire UI theme without modifying client code.",
+          "description": "Implement **Abstract Factory**: `UIFactory` interface with `createButton()` and `createCheckbox()`. `WindowsFactory` and `MacFactory` return platform-specific widgets.\n\n**Example:**\nUIFactory f = new WindowsFactory();\nf.createButton().render() => \"Windows Button\"\nf.createCheckbox().render() => \"Windows Checkbox\"\n\nUIFactory f2 = new MacFactory();\nf2.createButton().render() => \"Mac Button\"\n\n**Key insight:** Abstract Factory ensures all products from a factory are compatible with each other.",
           "difficulty": "MEDIUM",
           "pattern": "Abstract Factory Pattern",
           "hint1": "interface Button { void render(); } interface TextField { void render(); }",
@@ -268,12 +282,14 @@
             }
           ],
           "constraints": "renderUI() must not reference DarkThemeFactory or LightThemeFactory directly.",
-          "editorial": "Abstract Factory: an abstract class defining the 'factory contract' — what families of related objects to create. Concrete factories (Dark, Light) create matching sets of components. Client code depends only on UIFactory + interfaces — switching themes means swapping the factory. Used in JDBC (DriverManager creates Connection, Statement, ResultSet for each database), AWT/Swing L&F."
+          "editorial": "Abstract Factory: an abstract class defining the 'factory contract' — what families of related objects to create. Concrete factories (Dark, Light) create matching sets of components. Client code depends only on UIFactory + interfaces — switching themes means swapping the factory. Used in JDBC (DriverManager creates Connection, Statement, ResultSet for each database), AWT/Swing L&F.",
+          "sampleInput": "new WindowsFactory().createButton().render()",
+          "sampleOutput": "\"Windows Button\""
         },
         {
           "displayOrder": 9,
           "title": "Multiple Interface Implementation",
-          "description": "Create interfaces `Saveable` (with `save()`) and `Printable` (with `print()`). Create class `Document` that implements both. Show that Document can be stored in `List<Saveable>` and `List<Printable>` separately, and that processing both lists calls the correct method.",
+          "description": "Create a class `FlyingFish` that implements both `Flyable` and `Swimmable` interfaces:\n\n**Example:**\nFlyingFish ff = new FlyingFish();\nff.fly() => \"FlyingFish soars\"\nff.swim() => \"FlyingFish dives\"\n\nFlyable f = ff; f.fly(); // works\nSwimmable s = ff; s.swim(); // works\n\n**Key insight:** A class can implement multiple interfaces — Java's safe answer to multiple inheritance. No ambiguity since interfaces define contracts, not state.",
           "difficulty": "MEDIUM",
           "pattern": "Multiple Interface Types",
           "hint1": "Document implements Saveable, Printable.",
@@ -292,12 +308,14 @@
             }
           ],
           "constraints": "The same Document objects in both lists.",
-          "editorial": "One object (Document) satisfies multiple interface types. It can be stored and processed as Saveable or Printable — each list sees only the methods of its interface. The same physical objects are viewed through different lenses. This is the power of multiple interface implementation."
+          "editorial": "One object (Document) satisfies multiple interface types. It can be stored and processed as Saveable or Printable — each list sees only the methods of its interface. The same physical objects are viewed through different lenses. This is the power of multiple interface implementation.",
+          "sampleInput": "new FlyingFish().fly()",
+          "sampleOutput": "\"FlyingFish soars\""
         },
         {
           "displayOrder": 10,
           "title": "Abstract Class Preventing Wrong Instantiation",
-          "description": "Create abstract `DatabaseConnection` with abstract `connect()`, `disconnect()`, and concrete `executeQuery(String sql)` that validates sql and calls connect(). Extend as `MySQLConnection` and `PostgreSQLConnection`. Show that code written against the abstract type works for both databases.",
+          "description": "Demonstrate that abstract classes prevent wrong instantiation. `AbstractPayment` validates that `amount > 0` in its constructor; subclasses cannot bypass this.\n\n**Example:**\nnew CreditPayment(-100) => throws IllegalArgumentException(\"Amount must be positive\")\nnew CreditPayment(50).process() => \"Processing credit $50.00\"\n\n**Key insight:** Shared validation in the abstract constructor runs for every subclass — a single enforcement point.",
           "difficulty": "MEDIUM",
           "pattern": "Abstract Class as API",
           "hint1": "executeQuery: validate sql not blank, print 'Executing on {dbType}: {sql}', call connect().",
@@ -316,12 +334,14 @@
             }
           ],
           "constraints": "executeQuery defined only in abstract class.",
-          "editorial": "executeQuery contains shared validation and logging. connect() is abstract — each database has its own connection logic. Code iterating DatabaseConnection[] works for any database without knowing the concrete type. This is how JDBC's java.sql.Connection abstraction works — application code is database-agnostic."
+          "editorial": "executeQuery contains shared validation and logging. connect() is abstract — each database has its own connection logic. Code iterating DatabaseConnection[] works for any database without knowing the concrete type. This is how JDBC's java.sql.Connection abstraction works — application code is database-agnostic.",
+          "sampleInput": "new CreditPayment(-100)",
+          "sampleOutput": "throws IllegalArgumentException"
         },
         {
           "displayOrder": 11,
           "title": "Sealed Interface — Restricted Abstraction",
-          "description": "Define `sealed interface Shape permits Circle, Rectangle, Triangle`. Each record implements Shape. Use pattern matching switch in `describe(Shape s)` for an exhaustive match. Show the compiler ensures all cases are covered.",
+          "description": "Create a `sealed interface Shape` (Java 17) permitting `Circle`, `Rectangle`, `Triangle`. Use `switch` with pattern matching for exhaustive area calculation.\n\n**Example:**\ndouble area(Shape s) {\n    return switch(s) {\n        case Circle c -> Math.PI*c.r()*c.r();\n        case Rectangle r -> r.w()*r.h();\n        case Triangle t -> 0.5*t.b()*t.h();\n    };\n}\narea(new Circle(3)) => 28.27\n\n**Key insight:** Sealed + pattern matching = exhaustive switch checked at compile time. No default needed.",
           "difficulty": "MEDIUM",
           "pattern": "Sealed Interface",
           "hint1": "`sealed interface Shape permits Circle, Rectangle, Triangle {}`",
@@ -344,12 +364,14 @@
             }
           ],
           "constraints": "Java 17+. No default case in switch.",
-          "editorial": "Sealed interfaces restrict which classes can implement them. The compiler knows all permitted subtypes, making the switch exhaustive — no default needed (compile error if a case is missing). This combines abstraction (interface contract) with closed-world assumption (finite subtypes). Used for algebraic data types, AST nodes."
+          "editorial": "Sealed interfaces restrict which classes can implement them. The compiler knows all permitted subtypes, making the switch exhaustive — no default needed (compile error if a case is missing). This combines abstraction (interface contract) with closed-world assumption (finite subtypes). Used for algebraic data types, AST nodes.",
+          "sampleInput": "area(new Circle(3))",
+          "sampleOutput": "28.27"
         },
         {
           "displayOrder": 12,
           "title": "Layered Abstraction — Service Over Repository",
-          "description": "Create interface `UserRepository` with `findById(int)` and `save(User)`. Create `InMemoryUserRepository` implementing it. Create abstract class `UserService` that takes a UserRepository in its constructor and has concrete `getUser(int id)` and abstract `processUser(User u)`. Implement `ReportUserService` with a specific processUser implementation.",
+          "description": "Build a layered abstraction: `UserRepository` interface -> `UserService` depends only on the interface -> `MySqlUserRepository` implements it.\n\n**Example:**\nUserService svc = new UserService(new MySqlUserRepository());\nsvc.findByEmail(\"alice@example.com\") => User{name='Alice'}\n\nSwap implementation:\nnew UserService(new InMemoryUserRepository()) — no changes to UserService\n\n**Key insight:** Depend on abstractions (interfaces), not concretions. Swapping implementations requires zero changes to higher layers.",
           "difficulty": "MEDIUM",
           "pattern": "Layered Abstraction / Dependency Injection",
           "hint1": "UserService constructor: `UserService(UserRepository repo) { this.repo = repo; }`",
@@ -368,12 +390,14 @@
             }
           ],
           "constraints": "UserService must use UserRepository interface, not InMemoryUserRepository.",
-          "editorial": "Layered abstraction: UserRepository hides storage details (in-memory, database). UserService hides business logic and depends only on the interface. ReportUserService provides the specific action. Swapping InMemoryUserRepository for a JPA repository requires no changes to UserService or ReportUserService. This is Spring's architecture pattern exactly."
+          "editorial": "Layered abstraction: UserRepository hides storage details (in-memory, database). UserService hides business logic and depends only on the interface. ReportUserService provides the specific action. Swapping InMemoryUserRepository for a JPA repository requires no changes to UserService or ReportUserService. This is Spring's architecture pattern exactly.",
+          "sampleInput": "UserService with InMemoryRepo.findByEmail(\"alice@example.com\")",
+          "sampleOutput": "User{name='Alice'}"
         },
         {
           "displayOrder": 13,
           "title": "Interface Evolution — Adding Default Methods",
-          "description": "Simulate interface evolution: original `Logger` interface with `log(String msg)`. Ten classes already implement it. Show that adding a `default void logError(String msg)` and `default void logInfo(String msg)` to Logger does NOT break existing implementations. Create two existing classes and one new class that overrides logError.",
+          "description": "Add a `default` method to an existing interface without breaking existing implementations:\n\n```java\ninterface Formatter { String format(String s); }\n// Add later:\ndefault String formatAll(List<String> items) {\n    return items.stream().map(this::format).collect(joining(\", \"));\n}\n```\n\n**Example:**\nnew UpperFormatter().formatAll(List.of(\"a\",\"b\",\"c\")) => \"A, B, C\"\n\n**Key insight:** `default` methods allow interface evolution without breaking existing implementations — the key tool for backwards-compatible API changes.",
           "difficulty": "HARD",
           "pattern": "Interface Evolution With Default Methods",
           "hint1": "Add `default void logError(String msg) { log('[ERROR] ' + msg); }` to Logger.",
@@ -396,12 +420,14 @@
             }
           ],
           "constraints": "SimpleLogger is unchanged — no new methods added to it.",
-          "editorial": "Default methods solve the interface evolution problem. Before Java 8, adding a method to an interface broke all existing implementations. Default methods provide a fallback — existing classes get the default behaviour automatically. New classes can override for custom behaviour. This is how Java added forEach() to Iterable and stream() to Collection without breaking all existing implementations."
+          "editorial": "Default methods solve the interface evolution problem. Before Java 8, adding a method to an interface broke all existing implementations. Default methods provide a fallback — existing classes get the default behaviour automatically. New classes can override for custom behaviour. This is how Java added forEach() to Iterable and stream() to Collection without breaking all existing implementations.",
+          "sampleInput": "new UpperFormatter().formatAll([\"a\",\"b\",\"c\"])",
+          "sampleOutput": "\"A, B, C\""
         },
         {
           "displayOrder": 14,
           "title": "Abstract Builder With Validation",
-          "description": "Create abstract `Builder<T>` with final `build()` that calls abstract `validate()` first, then `construct()`. `validate()` throws if required fields are missing. `construct()` creates the object. Implement `PersonBuilder` and `CarBuilder`. Show that build() always validates before constructing.",
+          "description": "Implement `abstract class FormBuilder` with abstract `validateFields()` and `submitForm()`. `build()` calls both in order. Subclass `LoginFormBuilder` validates email+password fields.\n\n**Example:**\nnew LoginFormBuilder(\"user@example.com\", \"pass123\").build()\n=> validates OK\n=> \"Login form submitted\"\n\nnew LoginFormBuilder(\"\", \"pass\").build()\n=> throws ValidationException(\"Email required\")",
           "difficulty": "HARD",
           "pattern": "Abstract Builder / Template Method",
           "hint1": "abstract class Builder<T> { final T build() { validate(); return construct(); } abstract void validate(); abstract T construct(); }",
@@ -424,12 +450,14 @@
             }
           ],
           "constraints": "build() is final in Builder — cannot be overridden.",
-          "editorial": "Abstract Builder with Template Method: build() is the invariant algorithm (validate then construct). Subclasses provide the variable parts. Making build() final ensures validation always runs — no subclass can bypass it. This guarantees safety across all builder types."
+          "editorial": "Abstract Builder with Template Method: build() is the invariant algorithm (validate then construct). Subclasses provide the variable parts. Making build() final ensures validation always runs — no subclass can bypass it. This guarantees safety across all builder types.",
+          "sampleInput": "new LoginFormBuilder(\"\", \"pass\").build()",
+          "sampleOutput": "throws ValidationException(\"Email required\")"
         },
         {
           "displayOrder": 15,
           "title": "Abstract Iterator",
-          "description": "Create abstract `AbstractIterator<T>` implementing `java.util.Iterator<T>`. Provide concrete `hasNext()` using an abstract `int currentIndex()` and `int totalSize()`. Subclasses implement `T getElement(int index)`, `totalSize()`, and a mutable `currentIndex`. Show both `ArrayIterator` and `RangeIterator` work through the same abstract base.",
+          "description": "Create abstract `Iterator<T>` with `abstract boolean hasNext()` and `abstract T next()`. Implement `RangeIterator(int start, int end)` iterating integers from start to end-1.\n\n**Example:**\nIterator<Integer> it = new RangeIterator(1, 4);\nwhile (it.hasNext()) System.out.print(it.next() + \" \");\n=> 1 2 3\n\n**Key insight:** Abstract Iterator defines the contract; concrete class provides the data source. The consumer only uses the abstract API.",
           "difficulty": "HARD",
           "pattern": "Abstract Iterator / Template Method",
           "hint1": "hasNext(): `return currentIndex() < totalSize();`",
@@ -448,12 +476,14 @@
             }
           ],
           "constraints": "AbstractIterator must not know about the concrete data source.",
-          "editorial": "Abstract Iterator: hasNext() and next() are the template — subclasses provide totalSize(), currentIndex(), advanceAndGet(), getElement(). The abstract class handles the iteration contract; each subclass handles its own data source. This is how AbstractList provides iterator() for any indexed list."
+          "editorial": "Abstract Iterator: hasNext() and next() are the template — subclasses provide totalSize(), currentIndex(), advanceAndGet(), getElement(). The abstract class handles the iteration contract; each subclass handles its own data source. This is how AbstractList provides iterator() for any indexed list.",
+          "sampleInput": "RangeIterator(1,4) iterated",
+          "sampleOutput": "1 2 3"
         },
         {
           "displayOrder": 16,
           "title": "Diamond Problem — Interface Default Conflict",
-          "description": "Create interfaces `A` and `B` both with `default String hello() { return \"Hello from A/B\"; }`. Interface `C` extends both A and B. Show the conflict when a class implements C. Resolve it by overriding hello() in the implementing class. Also show resolution by calling `A.super.hello()`.",
+          "description": "Two interfaces provide conflicting `default` methods with the same signature. The implementing class must override to resolve the **diamond problem**:\n\n```java\ninterface A { default String greet() { return \"Hello from A\"; } }\ninterface B { default String greet() { return \"Hello from B\"; } }\nclass C implements A, B {\n    public String greet() { return A.super.greet() + \" and \" + B.super.greet(); }\n}\nnew C().greet() => \"Hello from A and Hello from B\"\n```",
           "difficulty": "HARD",
           "pattern": "Diamond Problem Resolution",
           "hint1": "class Impl implements C must override hello() — compile error otherwise.",
@@ -472,12 +502,14 @@
             }
           ],
           "constraints": "C itself does not override hello().",
-          "editorial": "Diamond problem: A and B both provide hello(). When Impl implements C (which extends both), the compiler cannot decide which default to use — it forces an explicit override. `A.super.hello()` explicitly calls A's default, bypassing the diamond ambiguity. This is Java 8's explicit solution: conflicts must be resolved by the class, never silently."
+          "editorial": "Diamond problem: A and B both provide hello(). When Impl implements C (which extends both), the compiler cannot decide which default to use — it forces an explicit override. `A.super.hello()` explicitly calls A's default, bypassing the diamond ambiguity. This is Java 8's explicit solution: conflicts must be resolved by the class, never silently.",
+          "sampleInput": "new C().greet()",
+          "sampleOutput": "\"Hello from A and Hello from B\""
         },
         {
           "displayOrder": 17,
           "title": "Generic Abstract Class",
-          "description": "Create generic abstract class `Repository<T, ID>` with abstract `save(T entity)`, `findById(ID id)`, `delete(ID id)`, and concrete `saveAll(List<T> entities)` that loops and calls save(). Implement `InMemoryProductRepository` and `InMemoryOrderRepository`. Verify saveAll() works for both without reimplementing.",
+          "description": "Create `abstract class Container<T>` with abstract `void add(T item)` and `abstract T get(int index)`. Extend with `TypedList<T>` backed by `ArrayList<T>`.\n\n**Example:**\nContainer<String> c = new TypedList<>();\nc.add(\"hello\");\nc.add(\"world\");\nc.get(0) => \"hello\"\nc.get(1) => \"world\"\n\n**Key insight:** Generic abstract classes let you define type-safe skeletons — subclasses inherit the type parameter.",
           "difficulty": "HARD",
           "pattern": "Generic Abstract Repository",
           "hint1": "abstract class Repository<T, ID> { abstract void save(T e); abstract Optional<T> findById(ID id); void saveAll(List<T> list) { list.forEach(this::save); } }",
@@ -496,12 +528,14 @@
             }
           ],
           "constraints": "saveAll() defined only in abstract class.",
-          "editorial": "Generic abstract Repository provides saveAll() once for all repositories. Each concrete repository implements save(), findById(), delete() for its specific type. Type safety is enforced by generics — ProductRepository can never save an Order. This is Spring Data JPA's CrudRepository architecture in miniature."
+          "editorial": "Generic abstract Repository provides saveAll() once for all repositories. Each concrete repository implements save(), findById(), delete() for its specific type. Type safety is enforced by generics — ProductRepository can never save an Order. This is Spring Data JPA's CrudRepository architecture in miniature.",
+          "sampleInput": "Container<String>.add(\"hello\").get(0)",
+          "sampleOutput": "\"hello\""
         },
         {
           "displayOrder": 18,
           "title": "Abstract Class and Interface Combination",
-          "description": "Design a payment system: interface `Auditable` with `String getAuditLog()`. Abstract class `Payment` with state (amount, currency), concrete `getReceipt()`, and abstract `process()`. `CreditCardPayment` extends Payment and implements Auditable. Show it can be processed as Payment and audited as Auditable.",
+          "description": "Create `abstract class Animal` with concrete `breathe()` and abstract `speak()`. Then interface `Trainable` with `train()`. `Dog` extends `Animal` and implements `Trainable`.\n\n**Example:**\nDog d = new Dog();\nd.breathe() => \"breathing...\"\nd.speak() => \"Woof!\"\nd.train() => \"Dog trained\"\n\n**Key insight:** Abstract class + interface together: abstract class provides shared state/implementation; interface adds capability contracts.",
           "difficulty": "HARD",
           "pattern": "Abstract Class + Interface Combination",
           "hint1": "abstract class Payment { double amount; String currency; abstract void process(); String getReceipt() { return String.format('%s %.2f', currency, amount); } }",
@@ -524,12 +558,14 @@
             }
           ],
           "constraints": "Same object used as Payment and Auditable.",
-          "editorial": "Combining abstract class and interface: Payment holds state (amount, currency) and shared concrete method (getReceipt). CreditCardPayment implements the abstract process() and adds the Auditable capability. The same object is usable through both types. This is how Spring's @Transactional works — a service is both a business component (extends AbstractService) and a TransactionCapable (implements the proxy interface)."
+          "editorial": "Combining abstract class and interface: Payment holds state (amount, currency) and shared concrete method (getReceipt). CreditCardPayment implements the abstract process() and adds the Auditable capability. The same object is usable through both types. This is how Spring's @Transactional works — a service is both a business component (extends AbstractService) and a TransactionCapable (implements the proxy interface).",
+          "sampleInput": "new Dog().speak()",
+          "sampleOutput": "\"Woof!\""
         },
         {
           "displayOrder": 19,
           "title": "Abstract Recursive Structure — File System",
-          "description": "Model a file system: abstract class `FileSystemEntry` with `name`, `size()`, `toString(String indent)`. `File` is a leaf with fixed size. `Directory` contains a List<FileSystemEntry> and size() = sum of children's sizes. Print the tree showing sizes.",
+          "description": "Model a file system where `FileSystemNode` is abstract with `getName()` and `abstract long size()`. `File(long bytes)` and `Directory(List<FileSystemNode> children)` extend it. Directory size = sum of children.\n\n**Example:**\nDirectory root = new Directory(\"root\", List.of(\n    new File(\"a.txt\", 100),\n    new Directory(\"sub\", List.of(new File(\"b.txt\", 200)))));\nroot.size() => 300\n\n**Key insight:** Recursive structure — Directory.size() calls size() on each child, which may itself be a Directory.",
           "difficulty": "HARD",
           "pattern": "Composite / Abstract Recursive",
           "hint1": "abstract class FileSystemEntry { String name; abstract long size(); abstract void print(String indent); }",
@@ -544,12 +580,14 @@
             }
           ],
           "constraints": "No instanceof in size() or print().",
-          "editorial": "Composite pattern via abstract class: File and Directory both extend FileSystemEntry. Directory.size() recursively calls size() on children polymorphically — File returns bytes, Directory sums recursively. No instanceof needed — each type knows its own size computation. Identical to java.io.File (length() works differently for files vs dirs)."
+          "editorial": "Composite pattern via abstract class: File and Directory both extend FileSystemEntry. Directory.size() recursively calls size() on children polymorphically — File returns bytes, Directory sums recursively. No instanceof needed — each type knows its own size computation. Identical to java.io.File (length() works differently for files vs dirs).",
+          "sampleInput": "root with File(100) + Dir(File(200))",
+          "sampleOutput": "300"
         },
         {
           "displayOrder": 20,
           "title": "Fluent Abstract Builder Chain",
-          "description": "Create a fluent abstract builder where `AbstractBuilder<B, T>` provides `self()` returning type B (for return type covariance) and final `build()`. `PersonBuilder` and `EmployeeBuilder` (which extends PersonBuilder) use this to enable fluent chains that return the correct concrete builder type without casting.",
+          "description": "Create `abstract class QueryBuilder` with chainable abstract methods `select()`, `from()`, `where()`. Each returns `this`. `SqlQueryBuilder` and `NoSqlQueryBuilder` implement concrete versions.\n\n**Example:**\nnew SqlQueryBuilder()\n    .select(\"name,email\")\n    .from(\"users\")\n    .where(\"age > 18\")\n    .build()\n=> \"SELECT name,email FROM users WHERE age > 18\"\n\n**Key insight:** Fluent abstract builder — the chain stays typed to the subclass via covariant returns.",
           "difficulty": "HARD",
           "pattern": "Fluent Generic Builder with Self Type",
           "hint1": "`abstract class AbstractBuilder<B extends AbstractBuilder<B,T>, T> { abstract B self(); final T build() { validate(); return construct(); } }`",
@@ -568,7 +606,9 @@
             }
           ],
           "constraints": "No casting when calling name().age() on EmployeeBuilder.",
-          "editorial": "Fluent builder with self type: `B extends AbstractBuilder<B,T>` is a recursive generic bound — ensures self() returns the concrete builder type. name() and age() return B (the concrete type) — so on EmployeeBuilder they return EmployeeBuilder, enabling fluent chaining with company() without casting. Used in Lombok @Builder, Protobuf builders, and test data factories."
+          "editorial": "Fluent builder with self type: `B extends AbstractBuilder<B,T>` is a recursive generic bound — ensures self() returns the concrete builder type. name() and age() return B (the concrete type) — so on EmployeeBuilder they return EmployeeBuilder, enabling fluent chaining with company() without casting. Used in Lombok @Builder, Protobuf builders, and test data factories.",
+          "sampleInput": "SqlQueryBuilder.select(\"name\").from(\"users\").where(\"age>18\").build()",
+          "sampleOutput": "\"SELECT name FROM users WHERE age > 18\""
         }
       ],
       "subCategory": "OOP (VERY IMPORTANT)",

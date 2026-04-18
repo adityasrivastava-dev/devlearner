@@ -66,7 +66,7 @@
         {
           "displayOrder": 1,
           "title": "Maximum Depth of Binary Tree",
-          "description": "Given the root of a binary tree, return its maximum depth (number of nodes along the longest path from root to farthest leaf).\n\n**Example:**\nTree: [3,9,20,null,null,15,7]\nOutput: 3",
+          "description": "Find the maximum depth (height) of a binary tree.\n\n**Example 1:**\nTree: [3,9,20,null,null,15,7] => 3\nTree: [1,null,2] => 2\n\n**Key insight:** `1 + max(depth(left), depth(right))`. Base case: null => 0.",
           "difficulty": "EASY",
           "pattern": "Tree DFS",
           "hint1": "What is the depth of a null node? What is the depth of a leaf node?",
@@ -76,12 +76,14 @@
           "solutionCode": "public class Solution {\n    public int maxDepth(TreeNode root) {\n        if (root == null) return 0;\n        return 1 + Math.max(maxDepth(root.left), maxDepth(root.right));\n    }\n}",
           "testCases": "[{\"input\":\"[3,9,20,null,null,15,7]\",\"output\":\"3\"},{\"input\":\"[1,null,2]\",\"output\":\"2\"},{\"input\":\"[]\",\"output\":\"0\"}]",
           "constraints": "0 ≤ number of nodes ≤ 10^4 | -100 ≤ Node.val ≤ 100",
-          "editorial": "Classic post-order recursion. O(n) time (visits every node once), O(h) space (recursion stack, h = height). Iterative BFS alternative: count levels using queue size tracking."
+          "editorial": "Classic post-order recursion. O(n) time (visits every node once), O(h) space (recursion stack, h = height). Iterative BFS alternative: count levels using queue size tracking.",
+          "sampleInput": "[3,9,20,null,null,15,7]",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 2,
           "title": "Invert Binary Tree",
-          "description": "Given the root of a binary tree, invert the tree (mirror it) and return its root.\n\n**Example:**\nInput:  [4,2,7,1,3,6,9]\nOutput: [4,7,2,9,6,3,1]",
+          "description": "Invert a binary tree (mirror it).\n\n**Example:**\nInput: [4,2,7,1,3,6,9]\nOutput: [4,7,2,9,6,3,1]\n\n**Key insight:** Swap left and right children at each node, recursively. One line: `node.left, node.right = invert(node.right), invert(node.left)`",
           "difficulty": "EASY",
           "pattern": "Tree DFS",
           "hint1": "What does inverting a tree mean at the node level? What needs to swap?",
@@ -91,12 +93,14 @@
           "solutionCode": "public class Solution {\n    public TreeNode invertTree(TreeNode root) {\n        if (root == null) return null;\n        TreeNode temp = root.left;\n        root.left  = invertTree(root.right);\n        root.right = invertTree(temp);\n        return root;\n    }\n}",
           "testCases": "[{\"input\":\"[4,2,7,1,3,6,9]\",\"output\":\"[4,7,2,9,6,3,1]\"},{\"input\":\"[2,1,3]\",\"output\":\"[2,3,1]\"},{\"input\":\"[]\",\"output\":\"[]\"}]",
           "constraints": "0 ≤ number of nodes ≤ 100 | -100 ≤ Node.val ≤ 100",
-          "editorial": "At each node, swap left and right, then recursively process. O(n) time and space. The recursive call on the right uses the original left (saved in temp) to avoid losing it after the swap."
+          "editorial": "At each node, swap left and right, then recursively process. O(n) time and space. The recursive call on the right uses the original left (saved in temp) to avoid losing it after the swap.",
+          "sampleInput": "[4,2,7,1,3,6,9]",
+          "sampleOutput": "[4,7,2,9,6,3,1]"
         },
         {
           "displayOrder": 3,
           "title": "Validate Binary Search Tree",
-          "description": "Given the root of a binary tree, determine if it is a valid Binary Search Tree (BST).\n\nA valid BST: left subtree < node < right subtree (for ALL descendants, not just immediate children).\n\n**Example:**\nInput: [5,1,4,null,null,3,6] → false (4 < 5, but 3 is in the right subtree and 3 < 5)",
+          "description": "Validate if a binary tree is a valid BST: left subtree < node < right subtree at every node.\n\n**Example 1:**\n[2,1,3] => true\n[5,1,4,null,null,3,6] => false (right child 4 < root 5)\n\n**Key insight:** Pass min/max bounds down the recursion. Each node must be strictly within (min, max).",
           "difficulty": "MEDIUM",
           "pattern": "Tree DFS",
           "hint1": "Checking only immediate children is not enough. A node in the left subtree must be smaller than ALL its ancestors, not just its parent.",
@@ -106,12 +110,14 @@
           "solutionCode": "public class Solution {\n    public boolean isValidBST(TreeNode root) {\n        return validate(root, Long.MIN_VALUE, Long.MAX_VALUE);\n    }\n    private boolean validate(TreeNode node, long min, long max) {\n        if (node == null) return true;\n        if (node.val <= min || node.val >= max) return false;\n        return validate(node.left, min, node.val)\n            && validate(node.right, node.val, max);\n    }\n}",
           "testCases": "[{\"input\":\"[2,1,3]\",\"output\":\"true\"},{\"input\":\"[5,1,4,null,null,3,6]\",\"output\":\"false\"},{\"input\":\"[5,4,6,null,null,3,7]\",\"output\":\"false\"}]",
           "constraints": "1 ≤ number of nodes ≤ 10^4 | -2^31 ≤ Node.val ≤ 2^31 - 1 | Use Long for bounds to handle Integer.MIN/MAX values",
-          "editorial": "The key insight: each node has a valid range inherited from ancestors. Use Long bounds (not int) because node values can be Integer.MIN_VALUE or Integer.MAX_VALUE. Alternative: in-order traversal should be strictly increasing — check that."
+          "editorial": "The key insight: each node has a valid range inherited from ancestors. Use Long bounds (not int) because node values can be Integer.MIN_VALUE or Integer.MAX_VALUE. Alternative: in-order traversal should be strictly increasing — check that.",
+          "sampleInput": "[5,1,4,null,null,3,6]",
+          "sampleOutput": "false"
         },
         {
           "displayOrder": 4,
           "title": "Lowest Common Ancestor of BST",
-          "description": "Given a BST and two nodes p and q, find their Lowest Common Ancestor (LCA). The LCA is the lowest node that has both p and q as descendants.\n\n**Example:**\nBST = [6,2,8,0,4,7,9,null,null,3,5]\nLCA(2,8) = 6\nLCA(2,4) = 2",
+          "description": "Find the Lowest Common Ancestor of two nodes in a BST.\n\n**Example 1:**\nBST: [6,2,8,0,4,7,9], p=2, q=8 => 6\np=2, q=4 => 2\n\n**Key insight:** In BST, if both p and q < node, go left. If both > node, go right. Otherwise, current node is LCA.",
           "difficulty": "MEDIUM",
           "pattern": "Tree DFS",
           "hint1": "How does the BST property help? If both p and q are smaller than current node, where must the LCA be?",
@@ -121,12 +127,14 @@
           "solutionCode": "public class Solution {\n    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {\n        while (root != null) {\n            if (p.val < root.val && q.val < root.val)\n                root = root.left;\n            else if (p.val > root.val && q.val > root.val)\n                root = root.right;\n            else\n                return root; // split point = LCA\n        }\n        return null;\n    }\n}",
           "testCases": "[{\"input\":\"root=[6,2,8,0,4,7,9], p=2, q=8\",\"output\":\"6\"},{\"input\":\"root=[6,2,8,0,4,7,9], p=2, q=4\",\"output\":\"2\"}]",
           "constraints": "2 ≤ number of nodes ≤ 10^5 | -10^9 ≤ Node.val ≤ 10^9 | All values are unique | p and q are different nodes that exist in the BST",
-          "editorial": "BST LCA is iterative and O(log n) for balanced trees. The split point where p and q diverge to different sides is the LCA. For general binary tree LCA (not BST), recurse both sides and return the node where both sides are non-null."
+          "editorial": "BST LCA is iterative and O(log n) for balanced trees. The split point where p and q diverge to different sides is the LCA. For general binary tree LCA (not BST), recurse both sides and return the node where both sides are non-null.",
+          "sampleInput": "BST=[6,2,8,0,4,7,9], p=2, q=8",
+          "sampleOutput": "6"
         },
         {
           "displayOrder": 5,
           "title": "Binary Tree Level Order Traversal",
-          "description": "Given the root of a binary tree, return the level order traversal of its nodes' values (left to right, level by level).\n\n**Example:**\nInput: [3,9,20,null,null,15,7]\nOutput: [[3],[9,20],[15,7]]",
+          "description": "Return nodes of a binary tree level by level (BFS).\n\n**Example:**\nInput: [3,9,20,null,null,15,7]\nOutput: [[3],[9,20],[15,7]]\n\n**Key insight:** BFS with queue. Process each level by recording queue size at level start, then dequeue exactly that many nodes.",
           "difficulty": "MEDIUM",
           "pattern": "Tree BFS",
           "hint1": "Use a Queue. How do you know when one level ends and the next begins?",
@@ -136,12 +144,14 @@
           "solutionCode": "public class Solution {\n    public List<List<Integer>> levelOrder(TreeNode root) {\n        List<List<Integer>> result = new ArrayList<>();\n        if (root == null) return result;\n        Queue<TreeNode> queue = new LinkedList<>();\n        queue.offer(root);\n        while (!queue.isEmpty()) {\n            int size = queue.size();\n            List<Integer> level = new ArrayList<>();\n            for (int i = 0; i < size; i++) {\n                TreeNode node = queue.poll();\n                level.add(node.val);\n                if (node.left  != null) queue.offer(node.left);\n                if (node.right != null) queue.offer(node.right);\n            }\n            result.add(level);\n        }\n        return result;\n    }\n}",
           "testCases": "[{\"input\":\"[3,9,20,null,null,15,7]\",\"output\":\"[[3],[9,20],[15,7]]\"},{\"input\":\"[1]\",\"output\":\"[[1]]\"},{\"input\":\"[]\",\"output\":\"[]\"}]",
           "constraints": "0 ≤ number of nodes ≤ 2000 | -1000 ≤ Node.val ≤ 1000",
-          "editorial": "BFS with level tracking: snapshot queue.size() at start of each while iteration to know the level boundary. O(n) time, O(n) space (queue holds at most one full level at a time, which can be n/2 nodes)."
+          "editorial": "BFS with level tracking: snapshot queue.size() at start of each while iteration to know the level boundary. O(n) time, O(n) space (queue holds at most one full level at a time, which can be n/2 nodes).",
+          "sampleInput": "[3,9,20,null,null,15,7]",
+          "sampleOutput": "[[3],[9,20],[15,7]]"
         },
         {
           "displayOrder": 6,
           "title": "Diameter of Binary Tree",
-          "description": "Given the root of a binary tree, return the length of the diameter (longest path between any two nodes). The path does not need to pass through the root.\n\n**Example:**\nInput: [1,2,3,4,5]\nOutput: 3 (path: 4→2→1→3 or 5→2→1→3)",
+          "description": "Find the diameter of a binary tree — longest path between any two nodes (may not pass through root).\n\n**Example:**\nTree: [1,2,3,4,5] => 3 (path 4->2->1->3 or 5->2->1->3)\n\n**Key insight:** At each node, diameter through it = depth(left) + depth(right). Track global maximum.",
           "difficulty": "MEDIUM",
           "pattern": "Tree DFS",
           "hint1": "The diameter through a node = leftHeight + rightHeight. The overall diameter = max diameter across all nodes.",
@@ -151,12 +161,14 @@
           "solutionCode": "public class Solution {\n    private int maxDiameter = 0;\n    public int diameterOfBinaryTree(TreeNode root) {\n        height(root);\n        return maxDiameter;\n    }\n    private int height(TreeNode node) {\n        if (node == null) return 0;\n        int left  = height(node.left);\n        int right = height(node.right);\n        maxDiameter = Math.max(maxDiameter, left + right);\n        return 1 + Math.max(left, right);\n    }\n}",
           "testCases": "[{\"input\":\"[1,2,3,4,5]\",\"output\":\"3\"},{\"input\":\"[1,2]\",\"output\":\"1\"},{\"input\":\"[1]\",\"output\":\"0\"}]",
           "constraints": "1 ≤ number of nodes ≤ 10^4 | -100 ≤ Node.val ≤ 100",
-          "editorial": "Tree DP pattern: the helper returns height but also updates a global side-effect (maxDiameter). The diameter at each node = leftHeight + rightHeight. O(n) time, O(h) space. This 'return one thing, update another' pattern appears in many tree problems."
+          "editorial": "Tree DP pattern: the helper returns height but also updates a global side-effect (maxDiameter). The diameter at each node = leftHeight + rightHeight. O(n) time, O(h) space. This 'return one thing, update another' pattern appears in many tree problems.",
+          "sampleInput": "[1,2,3,4,5]",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 7,
           "title": "Serialize and Deserialize Binary Tree",
-          "description": "Design an algorithm to serialize (encode) a binary tree to a string and deserialize (decode) it back.\n\n**Example:**\nInput tree: [1,2,3,null,null,4,5]\nSerialized: '1,2,null,null,3,4,null,null,5,null,null'\nDeserialized: same tree structure",
+          "description": "Serialize a binary tree to a string and deserialize it back.\n\n**Example:**\nserialize([1,2,3,null,null,4,5]) => \"1,2,null,null,3,4,null,null,5,null,null\"\ndeserialize(str) => same tree\n\n**Key insight:** Pre-order DFS with null markers. Deserialization uses a queue of tokens.",
           "difficulty": "HARD",
           "pattern": "Tree DFS",
           "hint1": "Choose a traversal order that can uniquely reconstruct the tree. Which traversal works for this?",
@@ -166,12 +178,14 @@
           "solutionCode": "public class Codec {\n    public String serialize(TreeNode root) {\n        if (root == null) return \"null\";\n        return root.val + \",\" + serialize(root.left) + \",\" + serialize(root.right);\n    }\n    private int idx = 0;\n    public TreeNode deserialize(String data) {\n        idx = 0;\n        return helper(data.split(\",\"));\n    }\n    private TreeNode helper(String[] vals) {\n        if (idx >= vals.length || vals[idx].equals(\"null\")) { idx++; return null; }\n        TreeNode node = new TreeNode(Integer.parseInt(vals[idx++]));\n        node.left  = helper(vals);\n        node.right = helper(vals);\n        return node;\n    }\n}",
           "testCases": "[{\"input\":\"[1,2,3,null,null,4,5]\",\"output\":\"[1,2,3,null,null,4,5]\"}]",
           "constraints": "0 ≤ number of nodes ≤ 10^4 | -1000 ≤ Node.val ≤ 1000",
-          "editorial": "Pre-order with null markers uniquely reconstructs the tree. The idx variable advances through the flattened array in sync with the recursive reconstruction. O(n) time and space for both operations."
+          "editorial": "Pre-order with null markers uniquely reconstructs the tree. The idx variable advances through the flattened array in sync with the recursive reconstruction. O(n) time and space for both operations.",
+          "sampleInput": "serialize then deserialize [1,2,3,null,null,4,5]",
+          "sampleOutput": "inorder = [2,1,4,3,5]"
         },
         {
           "displayOrder": 8,
           "title": "Binary Tree Maximum Path Sum",
-          "description": "A path in a binary tree is a sequence of nodes where each pair of adjacent nodes has an edge. The path does not need to pass through the root. Find the maximum sum of any path.\n\n**Example:**\nInput: [-10,9,20,null,null,15,7]\nOutput: 42 (path: 15→20→7)",
+          "description": "Find the maximum path sum in a binary tree. A path can start and end at any node.\n\n**Example 1:**\n[1,2,3] => 6 (2->1->3)\n[-10,9,20,null,null,15,7] => 42 (15->20->7)\n\n**Key insight:** At each node, max gain going up = node.val + max(0, left_gain, right_gain). Track global max = node + left_gain + right_gain.",
           "difficulty": "HARD",
           "pattern": "Tree DFS",
           "hint1": "The max path through a node uses: left contribution + node.val + right contribution. But can a contribution be negative?",
@@ -181,12 +195,14 @@
           "solutionCode": "public class Solution {\n    private int maxSum = Integer.MIN_VALUE;\n    public int maxPathSum(TreeNode root) {\n        gain(root);\n        return maxSum;\n    }\n    private int gain(TreeNode node) {\n        if (node == null) return 0;\n        int leftGain  = Math.max(0, gain(node.left));\n        int rightGain = Math.max(0, gain(node.right));\n        maxSum = Math.max(maxSum, leftGain + node.val + rightGain);\n        return node.val + Math.max(leftGain, rightGain);\n    }\n}",
           "testCases": "[{\"input\":\"[1,2,3]\",\"output\":\"6\"},{\"input\":\"[-10,9,20,null,null,15,7]\",\"output\":\"42\"},{\"input\":\"[-3]\",\"output\":\"-3\"}]",
           "constraints": "1 ≤ number of nodes ≤ 3*10^4 | -1000 ≤ Node.val ≤ 1000",
-          "editorial": "Tree DP: gain(node) returns the maximum path sum starting at node going downward (can only go one direction — either left or right, not both, since it's a path to a parent). Internally, we consider the full path through the node (left + node + right) and update global max. O(n) time and space."
+          "editorial": "Tree DP: gain(node) returns the maximum path sum starting at node going downward (can only go one direction — either left or right, not both, since it's a path to a parent). Internally, we consider the full path through the node (left + node + right) and update global max. O(n) time and space.",
+          "sampleInput": "[-10,9,20,null,null,15,7]",
+          "sampleOutput": "42"
         },
         {
           "displayOrder": 9,
           "title": "Path Sum II",
-          "description": "Given the root of a binary tree and a target sum, return all root-to-leaf paths where the sum of node values equals targetSum.\n\n**Example:**\nTree: [5,4,8,11,null,13,4,7,2,null,null,5,1], targetSum=22\nOutput: [[5,4,11,2],[5,8,4,5]]",
+          "description": "Find all root-to-leaf paths that sum to a target value.\n\n**Example:**\nTree=[5,4,8,11,null,13,4,7,2,null,null,5,1], targetSum=22\nOutput: [[5,4,11,2],[5,8,4,5]]\n\n**Key insight:** DFS with running sum. When leaf is reached and sum == target, record the path. Backtrack after returning.",
           "difficulty": "MEDIUM",
           "pattern": "Tree DFS",
           "hint1": "This is a path enumeration problem. You need to track the current path and add it to results when you reach a valid leaf.",
@@ -196,12 +212,14 @@
           "solutionCode": "public class Solution {\n    public List<List<Integer>> pathSum(TreeNode root, int targetSum) {\n        List<List<Integer>> result = new ArrayList<>();\n        dfs(root, targetSum, new ArrayList<>(), result);\n        return result;\n    }\n    private void dfs(TreeNode node, int rem, List<Integer> path, List<List<Integer>> res) {\n        if (node == null) return;\n        path.add(node.val);\n        if (node.left == null && node.right == null && rem == node.val)\n            res.add(new ArrayList<>(path));\n        dfs(node.left,  rem - node.val, path, res);\n        dfs(node.right, rem - node.val, path, res);\n        path.remove(path.size() - 1); // backtrack\n    }\n}",
           "testCases": "[{\"input\":\"root=[5,4,8,11,null,13,4,7,2,null,null,5,1], targetSum=22\",\"output\":\"[[5,4,11,2],[5,8,4,5]]\"},{\"input\":\"root=[1,2,3], targetSum=5\",\"output\":\"[]\"}]",
           "constraints": "0 ≤ number of nodes ≤ 5000 | -1000 ≤ Node.val ≤ 1000 | -1000 ≤ targetSum ≤ 1000",
-          "editorial": "DFS backtracking: add node → recurse → remove node. Only record paths at leaves where remaining sum == node.val. O(n) time, O(n) space for path + output. Deep copy the path before adding to results — otherwise all entries point to the same mutated list."
+          "editorial": "DFS backtracking: add node → recurse → remove node. Only record paths at leaves where remaining sum == node.val. O(n) time, O(n) space for path + output. Deep copy the path before adding to results — otherwise all entries point to the same mutated list.",
+          "sampleInput": "[5,4,8,11,null,13,4,7,2,null,null,5,1], target=22",
+          "sampleOutput": "[[5,4,11,2],[5,8,4,5]]"
         },
         {
           "displayOrder": 10,
           "title": "Binary Tree Zigzag Level Order Traversal",
-          "description": "Given the root of a binary tree, return the zigzag level order traversal of its nodes' values. Level 1 goes left→right, level 2 right→left, alternating.\n\n**Example:**\nInput: [3,9,20,null,null,15,7]\nOutput: [[3],[20,9],[15,7]]",
+          "description": "Return binary tree level-order traversal in zigzag order (left-to-right, then right-to-left, alternating).\n\n**Example:**\n[3,9,20,null,null,15,7] => [[3],[20,9],[15,7]]\n\n**Key insight:** BFS level-order, but every other level reverse the result list before appending.",
           "difficulty": "MEDIUM",
           "pattern": "Tree BFS",
           "hint1": "This is level-order traversal with alternating direction. How do you efficiently reverse alternate levels?",
@@ -211,12 +229,14 @@
           "solutionCode": "public class Solution {\n    public List<List<Integer>> zigzagLevelOrder(TreeNode root) {\n        List<List<Integer>> result = new ArrayList<>();\n        if (root == null) return result;\n        Queue<TreeNode> queue = new LinkedList<>();\n        queue.offer(root);\n        boolean leftToRight = true;\n        while (!queue.isEmpty()) {\n            int size = queue.size();\n            LinkedList<Integer> level = new LinkedList<>();\n            for (int i = 0; i < size; i++) {\n                TreeNode node = queue.poll();\n                if (leftToRight) level.addLast(node.val);\n                else level.addFirst(node.val);\n                if (node.left  != null) queue.offer(node.left);\n                if (node.right != null) queue.offer(node.right);\n            }\n            result.add(level);\n            leftToRight = !leftToRight;\n        }\n        return result;\n    }\n}",
           "testCases": "[{\"input\":\"[3,9,20,null,null,15,7]\",\"output\":\"[[3],[20,9],[15,7]]\"},{\"input\":\"[1]\",\"output\":\"[[1]]\"},{\"input\":\"[1,2,3,4,null,null,5]\",\"output\":\"[[1],[3,2],[4,5]]\"}]",
           "constraints": "0 ≤ number of nodes ≤ 2000 | -100 ≤ Node.val ≤ 100",
-          "editorial": "BFS with LinkedList as level collector — addLast() for L→R, addFirst() for R→L. Toggle direction after each level. O(n) time, O(n) space (queue holds at most n/2 nodes at one time)."
+          "editorial": "BFS with LinkedList as level collector — addLast() for L→R, addFirst() for R→L. Toggle direction after each level. O(n) time, O(n) space (queue holds at most n/2 nodes at one time).",
+          "sampleInput": "[3,9,20,null,null,15,7]",
+          "sampleOutput": "[[3],[20,9],[15,7]]"
         },
         {
           "displayOrder": 11,
           "title": "Count Complete Tree Nodes",
-          "description": "Given the root of a complete binary tree, return the number of nodes. A complete binary tree is filled at every level except the last, which is filled from left to right.\n\n**Example:**\nInput: [1,2,3,4,5,6] → Output: 6\n\nDo better than O(n).",
+          "description": "Count the total number of nodes in a complete binary tree in O(log^2 n) time.\n\n**Example:**\n[1,2,3,4,5,6] => 6\n\n**Key insight:** For a complete binary tree, compute left height and right height. If equal, left subtree is perfect (2^h - 1 nodes). Recurse into the non-perfect subtree only.",
           "difficulty": "MEDIUM",
           "pattern": "Tree DFS",
           "hint1": "Brute force is O(n). A complete binary tree has a special property — can you use it to avoid visiting every node?",
@@ -226,12 +246,14 @@
           "solutionCode": "public class Solution {\n    public int countNodes(TreeNode root) {\n        if (root == null) return 0;\n        int leftH = 0, rightH = 0;\n        TreeNode l = root, r = root;\n        while (l != null) { leftH++;  l = l.left;  }\n        while (r != null) { rightH++; r = r.right; }\n        if (leftH == rightH) return (1 << leftH) - 1; // perfect: 2^h - 1\n        return 1 + countNodes(root.left) + countNodes(root.right);\n    }\n}",
           "testCases": "[{\"input\":\"[1,2,3,4,5,6]\",\"output\":\"6\"},{\"input\":\"[]\",\"output\":\"0\"},{\"input\":\"[1]\",\"output\":\"1\"}]",
           "constraints": "0 ≤ number of nodes ≤ 5*10^4 | -10^4 ≤ Node.val ≤ 10^4 | The tree is guaranteed to be complete",
-          "editorial": "O(log²n): at each level, O(log n) to compute heights, O(log n) recursion depth. When leftH == rightH, left subtree is a perfect binary tree — count without traversal using 2^h-1. Either left or right subtree is always perfect in a complete tree."
+          "editorial": "O(log²n): at each level, O(log n) to compute heights, O(log n) recursion depth. When leftH == rightH, left subtree is a perfect binary tree — count without traversal using 2^h-1. Either left or right subtree is always perfect in a complete tree.",
+          "sampleInput": "[1,2,3,4,5,6]",
+          "sampleOutput": "6"
         },
         {
           "displayOrder": 12,
           "title": "Binary Tree Cameras",
-          "description": "Place cameras on some nodes of a binary tree. Each camera monitors its parent, itself, and its children. Find the minimum number of cameras needed to monitor all nodes.\n\n**Example:**\nInput: [0,0,null,0,0] → Output: 1\nInput: [0,0,null,0,null,0,null,null,0] → Output: 2",
+          "description": "Place the minimum number of cameras on tree nodes such that every node is monitored. A camera monitors its parent, itself, and its children.\n\n**Example 1:**\n[0,0,null,0,0] => 1\n[0,0,null,0,null,0,null,null,0] => 2\n\n**Key insight:** Greedy post-order DFS. Install camera at parent of unmonitored leaf — covers more nodes.",
           "difficulty": "HARD",
           "pattern": "Tree DFS",
           "hint1": "Greedy insight: it's always better to place cameras as high as possible (at parents rather than leaves). Try placing cameras bottom-up.",
@@ -241,7 +263,9 @@
           "solutionCode": "public class Solution {\n    private int cameras = 0;\n    // 0=not covered, 1=has camera, 2=covered\n    public int minCameraCover(TreeNode root) {\n        if (dfs(root) == 0) cameras++; // root not covered → add camera\n        return cameras;\n    }\n    private int dfs(TreeNode node) {\n        if (node == null) return 2; // null nodes are 'covered' by default\n        int left  = dfs(node.left);\n        int right = dfs(node.right);\n        if (left == 0 || right == 0) { cameras++; return 1; } // child not covered\n        if (left == 1 || right == 1) return 2; // covered by child's camera\n        return 0; // not yet covered — let parent handle\n    }\n}",
           "testCases": "[{\"input\":\"[0,0,null,0,0]\",\"output\":\"1\"},{\"input\":\"[0,0,null,0,null,0,null,null,0]\",\"output\":\"2\"}]",
           "constraints": "1 ≤ number of nodes ≤ 1000 | Node.val == 0",
-          "editorial": "Greedy post-order: leaves never get cameras (parent is better placement). Return states: 0=uncovered (force parent to add camera), 1=has camera, 2=covered. If root is still uncovered after DFS, add one more camera. O(n) time, O(h) space."
+          "editorial": "Greedy post-order: leaves never get cameras (parent is better placement). Return states: 0=uncovered (force parent to add camera), 1=has camera, 2=covered. If root is still uncovered after DFS, add one more camera. O(n) time, O(h) space.",
+          "sampleInput": "[0,0,null,0,0]",
+          "sampleOutput": "1"
         }
       ],
       "subCategory": "Trees",

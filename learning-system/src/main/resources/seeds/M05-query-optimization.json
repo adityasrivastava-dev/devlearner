@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Identify the Slow Query Problem",
-          "description": "Given this EXPLAIN output for a query on a 5M-row orders table, identify all problems and write the fix:\n```\nid: 1, type: ALL, key: NULL, rows: 5000000\nExtra: Using where; Using filesort\nQuery: SELECT * FROM orders WHERE MONTH(created_at)=3 AND status='PENDING' ORDER BY amount DESC\n```",
+          "description": "Optimize a slow query using EXPLAIN and index hints.\n\n**Slow query:**\n```sql\nSELECT * FROM orders o\nJOIN customers c ON o.customer_id = c.id\nWHERE c.country = 'US' AND o.status = 'PENDING'\nORDER BY o.created_at;\n```\n\n**Steps:**\n1. Run `EXPLAIN` to find full table scans\n2. Add `INDEX(country)` on customers, `INDEX(status, created_at)` on orders\n3. Verify with `EXPLAIN` again: `type` should change from `ALL` to `ref`\n\n**Key insight:** Look for `type=ALL` and `rows` estimate in EXPLAIN. Composite index on (status, created_at) allows both filtering and sorting.",
           "difficulty": "EASY",
           "pattern": "EXPLAIN analysis, index design",
           "hint1": "type=ALL + key=NULL = full table scan. Find why index isn't used.",
@@ -43,12 +43,14 @@
           "hint3": "SELECT * prevents covering index. Add composite index on (status, created_at, amount).",
           "starterCode": "-- Given slow query:\nSELECT * FROM orders\nWHERE MONTH(created_at) = 3\n  AND status = 'PENDING'\nORDER BY amount DESC;\n\n-- EXPLAIN shows: type=ALL, key=NULL, rows=5000000, Extra='Using where; Using filesort'\n\n-- Q1: What are the 3 problems?\n-- Answer:\n\n-- Q2: Rewrite the query to be index-friendly\n-- Answer:\n\n-- Q3: What index would you create?\n-- Answer:",
           "solutionCode": "-- Q1: Three problems:\n-- 1. MONTH(created_at) → function on column → index cannot be used\n-- 2. No composite index for (status, created_at) → full table scan\n-- 3. SELECT * → covering index impossible → heap fetch for every row\n\n-- Q2: Rewrite (assuming March 2024 is intended, use parameter)\nSELECT id, user_id, amount, created_at FROM orders\nWHERE status = 'PENDING'\n  AND created_at >= '2024-03-01'\n  AND created_at  < '2024-04-01'\nORDER BY amount DESC;\n-- Equality on status first (high selectivity), range on created_at, no function\n\n-- Q3: Composite covering index\nCREATE INDEX idx_status_created_amount\n    ON orders(status, created_at, amount);\n-- WHERE status='PENDING' (equality) → range on created_at → amount for ORDER BY\n-- EXPLAIN should show: type=range, key=idx_status_created_amount, Extra='Using index'",
-          "testCases": "Index: idx_status_created_amount on (status, created_at, amount)\nQuery uses range scan not full scan\nNo filesort with covering index"
+          "testCases": "Index: idx_status_created_amount on (status, created_at, amount)\nQuery uses range scan not full scan\nNo filesort with covering index",
+          "sampleInput": "EXPLAIN SELECT * FROM orders JOIN customers ON ... WHERE country='US' AND status='PENDING'",
+          "sampleOutput": "After index: type=ref, rows reduced from 100000 to ~500"
         },
         {
           "displayOrder": 2,
           "title": "Rewrite Correlated Subquery as JOIN",
-          "description": "Rewrite this correlated subquery as a JOIN to avoid N separate executions:\n```sql\nSELECT u.name,\n  (SELECT COUNT(*) FROM submissions s WHERE s.user_id = u.id AND s.status='ACCEPTED') AS solved\nFROM users u\nWHERE u.active = 1;\n```",
+          "description": "Rewrite a correlated subquery as a JOIN for better performance.\n\n**Correlated subquery (slow — runs once per row):**\n```sql\nSELECT * FROM employees e\nWHERE salary > (SELECT AVG(salary) FROM employees WHERE department_id = e.department_id);\n```\n\n**Optimized with JOIN:**\n```sql\nSELECT e.* FROM employees e\nJOIN (SELECT department_id, AVG(salary) avg_sal FROM employees GROUP BY department_id) dept_avg\nON e.department_id = dept_avg.department_id\nWHERE e.salary > dept_avg.avg_sal;\n```\n\n**Key insight:** Correlated subquery executes once per row = O(n²). Derived table pre-computes all dept averages once = O(n).",
           "difficulty": "EASY",
           "pattern": "Correlated subquery to JOIN, GROUP BY",
           "hint1": "Replace the subquery with a LEFT JOIN to submissions filtered by status.",
@@ -56,12 +58,14 @@
           "hint3": "GROUP BY u.id to aggregate. WHERE on users stays as-is.",
           "starterCode": "-- Original (slow — correlated subquery):\nSELECT u.name,\n    (SELECT COUNT(*) FROM submissions s WHERE s.user_id = u.id AND s.status='ACCEPTED') AS solved\nFROM users u\nWHERE u.active = 1;\n\n-- Rewrite as JOIN:\n-- Answer:",
           "solutionCode": "-- Rewritten as LEFT JOIN + GROUP BY:\nSELECT u.name, COUNT(s.id) AS solved\nFROM users u\nLEFT JOIN submissions s\n    ON s.user_id = u.id\n    AND s.status = 'ACCEPTED'   -- filter BEFORE join (not in WHERE)\nWHERE u.active = 1\nGROUP BY u.id, u.name\nORDER BY solved DESC;\n\n-- Why LEFT JOIN: users with 0 solved submissions still appear (COUNT = 0)\n-- COUNT(s.id) not COUNT(*): NULLs from LEFT JOIN are ignored by COUNT(col)\n-- Filter s.status in ON clause (not WHERE) to keep users with 0 matches",
-          "testCases": "Returns all active users with their accepted submission count (0 if none)"
+          "testCases": "Returns all active users with their accepted submission count (0 if none)",
+          "sampleInput": "Correlated subquery comparing salary to dept average",
+          "sampleOutput": "Rewritten as JOIN with derived table — single scan instead of N scans"
         },
         {
           "displayOrder": 3,
           "title": "Pagination Query Optimization",
-          "description": "The deep pagination query below is slow for large offsets:\n```sql\nSELECT * FROM problems ORDER BY id LIMIT 20 OFFSET 100000;\n```\nExplain why it's slow and rewrite using cursor-based (keyset) pagination.",
+          "description": "Use query cache and pagination best practices to optimize paginated queries.\n\n**Slow pagination:**\n```sql\nSELECT * FROM products ORDER BY id LIMIT 100 OFFSET 1000000;\n```\n\n**Problem:** MySQL scans and discards 1M rows.\n\n**Fast keyset pagination:**\n```sql\nSELECT * FROM products WHERE id > :last_seen_id ORDER BY id LIMIT 100;\n```\n\n**Key insight:** `OFFSET` forces a full scan up to the offset position. Keyset pagination uses the index directly — O(1) regardless of page depth.",
           "difficulty": "MEDIUM",
           "pattern": "Cursor-based pagination, keyset pagination",
           "hint1": "OFFSET N scans and discards N rows before returning results — O(N) work for each page.",
@@ -69,7 +73,9 @@
           "hint3": "Keyset uses the PK index directly — O(log n + page_size) regardless of depth.",
           "starterCode": "-- SLOW: deep pagination\nSELECT * FROM problems ORDER BY id LIMIT 20 OFFSET 100000;\n-- Problem: MySQL scans 100020 rows, discards 100000\n\n-- Q1: Why is OFFSET slow?\n-- Answer:\n\n-- Q2: Rewrite using cursor-based pagination (assume lastSeenId = 5000)\n-- Answer:\n\n-- Q3: What is the complexity difference?\n-- Answer:",
           "solutionCode": "-- Q1: Why OFFSET is slow:\n-- MySQL must scan and discard OFFSET rows before returning LIMIT rows.\n-- OFFSET 100000 → reads 100020 rows, returns 20. Gets slower linearly with offset.\n\n-- Q2: Cursor-based pagination (keyset)\n-- First page:\nSELECT id, title, difficulty FROM problems\nORDER BY id\nLIMIT 20;\n-- Returns ids 1..20. Save last id = 20.\n\n-- Next page (lastSeenId = 20):\nSELECT id, title, difficulty FROM problems\nWHERE id > 20          -- cursor: start after last seen\nORDER BY id\nLIMIT 20;\n-- Uses PK index: O(log n) seek + 20 reads — same cost regardless of page depth\n\n-- Q3: Complexity comparison:\n-- OFFSET: O(offset + limit) — page 5000 is 100x slower than page 1\n-- Keyset: O(log n + limit) — constant regardless of depth\n-- Trade-off: keyset cannot jump to arbitrary page (no 'go to page 500')",
-          "testCases": "Keyset pagination is O(log n + limit) vs OFFSET O(offset + limit)"
+          "testCases": "Keyset pagination is O(log n + limit) vs OFFSET O(offset + limit)",
+          "sampleInput": "LIMIT 100 OFFSET 1000000",
+          "sampleOutput": "Rewrite as: WHERE id > last_seen_id LIMIT 100 (O(1) vs O(n))"
         }
       ]
     }

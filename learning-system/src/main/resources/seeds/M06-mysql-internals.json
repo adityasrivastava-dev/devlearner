@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Explain MVCC Snapshot Behavior",
-          "description": "Given the following transaction sequence, predict what each SELECT returns and explain why:\n```sql\n-- Initial: accounts table has row (id=1, balance=1000)\n-- Session A: START TRANSACTION;\n-- Session A: SELECT balance FROM accounts WHERE id=1;  -- Q1\n-- Session B: UPDATE accounts SET balance=2000 WHERE id=1; COMMIT;\n-- Session A: SELECT balance FROM accounts WHERE id=1;  -- Q2\n-- Session A: COMMIT;\n-- Session A: SELECT balance FROM accounts WHERE id=1;  -- Q3\n```\nWhat does Q1, Q2, Q3 return under REPEATABLE READ (default)?",
+          "description": "Explain InnoDB's MVCC (Multi-Version Concurrency Control) and how it handles read consistency.\n\n**Scenario:**\nTransaction A reads row X (value=100).\nTransaction B updates row X to 200 and commits.\nTransaction A reads row X again — still sees 100.\n\n**How MVCC works:**\n- Each row has hidden columns: `DB_TRX_ID`, `DB_ROLL_PTR`\n- Old versions stored in undo log\n- Read view snapshot taken at transaction start\n- Consistent reads use snapshot — never blocked by writers\n\n**Key insight:** Writers don't block readers; readers don't block writers. Snapshots are per-transaction (REPEATABLE READ) or per-statement (READ COMMITTED).",
           "difficulty": "EASY",
           "pattern": "MVCC, transaction isolation, snapshot read",
           "hint1": "REPEATABLE READ: snapshot is taken at the first SELECT in the transaction.",
@@ -43,12 +43,14 @@
           "hint3": "Q3 is after COMMIT — new transaction, fresh snapshot → sees latest committed value.",
           "starterCode": "-- Predict the output:\n-- Q1 returns: ?\n-- Q2 returns: ? (Session B committed 2000 between Q1 and Q2)\n-- Q3 returns: ? (after Session A committed)\n\n-- Explain WHY using MVCC concepts:\n-- Answer:",
           "solutionCode": "-- Q1 returns: 1000\n-- (Session A reads the current committed value)\n\n-- Q2 returns: 1000\n-- REPEATABLE READ: MVCC snapshot taken at Q1 (first read in transaction)\n-- Session B's UPDATE committed 2000, but Session A sees its snapshot\n-- The undo log retains the old version (1000) for Session A\n\n-- Q3 returns: 2000\n-- Session A committed → transaction ended → old snapshot discarded\n-- New auto-committed SELECT takes a fresh snapshot\n-- Sees the latest committed value: 2000\n\n-- Summary of MVCC behavior:\n-- Each transaction sees a consistent view of the DB as of its snapshot timestamp\n-- Writers create new row versions in undo log; readers follow the version chain\n-- Isolation is achieved WITHOUT locking readers → high concurrency",
-          "testCases": "Q1: 1000\nQ2: 1000\nQ3: 2000"
+          "testCases": "Q1: 1000\nQ2: 1000\nQ3: 2000",
+          "sampleInput": "Txn A: READ(x=100); Txn B: UPDATE x=200 COMMIT; Txn A: READ(x=?)",
+          "sampleOutput": "100 (REPEATABLE READ isolation — snapshot from txn start)"
         },
         {
           "displayOrder": 2,
           "title": "Buffer Pool Sizing Calculation",
-          "description": "A production server has 32GB RAM. The MySQL instance runs only MySQL (no other apps). Answer:\n1. What is the recommended innodb_buffer_pool_size?\n2. If the working dataset is 20GB, what hit rate should you expect?\n3. What command shows current buffer pool hit rate?\n4. What innodb_buffer_pool_instances value is recommended?",
+          "description": "Demonstrate InnoDB deadlock detection and resolution.\n\n**Deadlock scenario:**\n```\nTxn A: LOCK row 1, wait for row 2\nTxn B: LOCK row 2, wait for row 1\n```\n\nInnoDB detects this cycle and rolls back the transaction with the smaller undo log (cheaper to rollback).\n\n**Key insight:**\n- InnoDB has automatic deadlock detection — no need to set lock_wait_timeout for most cases\n- Always acquire locks in the same order to prevent deadlocks\n- `SHOW ENGINE INNODB STATUS` shows the last deadlock\n- Deadlock victim gets `ERROR 1213: Deadlock found`",
           "difficulty": "EASY",
           "pattern": "InnoDB tuning, buffer pool",
           "hint1": "Recommended: 70-80% of total RAM for dedicated MySQL server.",
@@ -56,12 +58,14 @@
           "hint3": "SHOW STATUS LIKE 'Innodb_buffer_pool%' shows reads vs hits. instances = pool_size / 1GB.",
           "starterCode": "public class Q2 {\n    public static void main(String[] args) {\n        long totalRamGB = 32;\n\n        // Q1: recommended buffer pool size\n        long bufferPoolGB = 0; // TODO\n\n        // Q2: expected hit rate if working dataset = 20GB\n        long workingDatasetGB = 20;\n        String hitRate = \"\"; // TODO\n\n        // Q3: command to check hit rate\n        String command = \"\"; // TODO\n\n        // Q4: buffer pool instances\n        int instances = 0; // TODO: pool_size / 1GB\n\n        System.out.println(\"Buffer pool: \" + bufferPoolGB + \"GB\");\n        System.out.println(\"Expected hit rate: \" + hitRate);\n        System.out.println(\"Monitor command: \" + command);\n        System.out.println(\"Instances: \" + instances);\n    }\n}",
           "solutionCode": "public class Q2 {\n    public static void main(String[] args) {\n        long totalRamGB = 32;\n\n        // Q1: 75% of RAM for dedicated MySQL\n        long bufferPoolGB = (long)(totalRamGB * 0.75); // 24GB\n\n        // Q2: buffer pool (24GB) > working dataset (20GB) → near 100% hit rate\n        long workingDatasetGB = 20;\n        String hitRate = bufferPoolGB >= workingDatasetGB\n            ? \">99% (entire working set fits in buffer pool)\"\n            : \"~\" + (100 * bufferPoolGB / workingDatasetGB) + \"% (partial caching)\";\n\n        // Q3: monitor hit rate\n        String command = \"SHOW STATUS LIKE 'Innodb_buffer_pool_read%'\";\n        // Innodb_buffer_pool_reads = physical disk reads (misses)\n        // Innodb_buffer_pool_read_requests = total logical reads\n        // Hit rate = 1 - (reads / read_requests)\n\n        // Q4: 1 instance per GB recommended (max 64)\n        int instances = (int) Math.min(bufferPoolGB, 64); // 24\n\n        System.out.println(\"Buffer pool: \" + bufferPoolGB + \"GB\");\n        System.out.println(\"Expected hit rate: \" + hitRate);\n        System.out.println(\"Monitor command: \" + command);\n        System.out.println(\"Instances: \" + instances);\n    }\n}",
-          "testCases": "Buffer pool: 24GB\nExpected hit rate: >99% (entire working set fits in buffer pool)\nMonitor command: SHOW STATUS LIKE 'Innodb_buffer_pool_read%'\nInstances: 24"
+          "testCases": "Buffer pool: 24GB\nExpected hit rate: >99% (entire working set fits in buffer pool)\nMonitor command: SHOW STATUS LIKE 'Innodb_buffer_pool_read%'\nInstances: 24",
+          "sampleInput": "Txn A locks row1, Txn B locks row2; both try to lock the other",
+          "sampleOutput": "One transaction rolled back (ERROR 1213); other proceeds"
         },
         {
           "displayOrder": 3,
           "title": "Deadlock Prevention — Lock Ordering",
-          "description": "Two stored procedures both transfer money between accounts but lock rows in different orders, causing deadlocks. Rewrite both to use consistent lock ordering to eliminate deadlocks.",
+          "description": "Explain the InnoDB buffer pool and its impact on query performance.\n\n**Key concepts:**\n- Buffer pool caches data + index pages in memory\n- Default size: 128MB (production: 70-80% of RAM)\n- LRU algorithm with young/old sub-lists\n- `innodb_buffer_pool_size` is the most important InnoDB config\n\n**Monitoring:**\n```sql\nSHOW STATUS LIKE 'Innodb_buffer_pool_read%';\n-- Innodb_buffer_pool_reads: physical disk reads\n-- Innodb_buffer_pool_read_requests: total reads\n-- Hit rate = 1 - (reads/read_requests) — should be > 99%\n```\n\n**Key insight:** If hit rate < 99%, increase buffer pool. Each page fault = disk I/O = 100x slower than memory.",
           "difficulty": "MEDIUM",
           "pattern": "Deadlock prevention, lock ordering, SELECT FOR UPDATE",
           "hint1": "Always acquire locks in ascending order of account ID.",
@@ -69,7 +73,9 @@
           "hint3": "If from_id < to_id, lock from_id first. Otherwise lock to_id first.",
           "starterCode": "-- Procedure 1 (causes deadlock): locks from_account first\nDELIMITER //\nCREATE PROCEDURE transfer_v1(from_id BIGINT, to_id BIGINT, amount DECIMAL)\nBEGIN\n    START TRANSACTION;\n    UPDATE accounts SET balance = balance - amount WHERE id = from_id; -- locks from first\n    UPDATE accounts SET balance = balance + amount WHERE id = to_id;\n    COMMIT;\nEND //\n\n-- Procedure 2 (causes deadlock): may lock to_account first in some calls\nCREATE PROCEDURE transfer_v2(from_id BIGINT, to_id BIGINT, amount DECIMAL)\nBEGIN\n    START TRANSACTION;\n    UPDATE accounts SET balance = balance + amount WHERE id = to_id;   -- locks to first\n    UPDATE accounts SET balance = balance - amount WHERE id = from_id;\n    COMMIT;\nEND //\nDELIMITER ;\n\n-- Rewrite as a SINGLE deadlock-safe transfer procedure:\n-- Answer:",
           "solutionCode": "-- Deadlock-safe: always lock lower ID first\nDELIMITER //\nCREATE PROCEDURE transfer_safe(from_id BIGINT, to_id BIGINT, amount DECIMAL)\nBEGIN\n    START TRANSACTION;\n\n    -- Lock BOTH rows in ascending ID order before any modification\n    -- ORDER BY id ensures consistent lock acquisition across all callers\n    SELECT id FROM accounts\n    WHERE id IN (from_id, to_id)\n    ORDER BY id\n    FOR UPDATE;\n    -- Now both rows are locked in id order — no cycle possible\n\n    -- Validate sufficient balance\n    IF (SELECT balance FROM accounts WHERE id = from_id) < amount THEN\n        ROLLBACK;\n        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Insufficient balance';\n    END IF;\n\n    UPDATE accounts SET balance = balance - amount WHERE id = from_id;\n    UPDATE accounts SET balance = balance + amount WHERE id = to_id;\n\n    COMMIT;\nEND //\nDELIMITER ;\n\n-- Why this works:\n-- Any concurrent call to transfer_safe for accounts (1,2) and (2,1)\n-- will both try to lock id=1 first, then id=2\n-- One gets the lock, other waits — no cycle, no deadlock",
-          "testCases": "Procedure locks rows in ORDER BY id — concurrent transfers always lock same order, eliminating deadlock cycle"
+          "testCases": "Procedure locks rows in ORDER BY id — concurrent transfers always lock same order, eliminating deadlock cycle",
+          "sampleInput": "Innodb_buffer_pool_reads=100, read_requests=10000",
+          "sampleOutput": "Hit rate = 99% (100/10000 = 1% miss rate) — acceptable"
         }
       ]
     }

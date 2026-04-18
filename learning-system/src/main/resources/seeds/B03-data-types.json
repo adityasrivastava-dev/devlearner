@@ -69,7 +69,7 @@
         {
           "displayOrder": 1,
           "title": "Integer Overflow Detection",
-          "description": "Write a method `safeAdd(int a, int b)` that adds two integers and throws an ArithmeticException if overflow would occur, instead of silently wrapping around. Also write `safeMultiply(int a, int b)` with the same protection.",
+          "description": "Detect if adding two integers will overflow `Integer.MAX_VALUE` or underflow `Integer.MIN_VALUE` before performing the addition.\n\n**Example:**\nwillOverflow(Integer.MAX_VALUE, 1) => true\nwillOverflow(1000, 2000) => false\nwillUnderflow(Integer.MIN_VALUE, -1) => true\n\n**Key insight:** Check `a > 0 && b > Integer.MAX_VALUE - a` to detect overflow without actually overflowing.",
           "difficulty": "EASY",
           "pattern": "Overflow Detection",
           "hint1": "For addition: overflow occurs when a > 0 && b > 0 && result < 0, OR a < 0 && b < 0 && result > 0.",
@@ -96,12 +96,14 @@
             }
           ],
           "constraints": "Must throw ArithmeticException on overflow. Use Math.addExact/multiplyExact or manual long-cast check.",
-          "editorial": "Integer overflow wraps around silently — no exception. Use Math.addExact(a, b) to throw ArithmeticException on overflow. Check: (a > 0 && b > Integer.MAX_VALUE - a) before adding. Or detect post-addition: if (a > 0 && b > 0 && result < 0) then overflow occurred."
+          "editorial": "Integer overflow wraps around silently — no exception. Use Math.addExact(a, b) to throw ArithmeticException on overflow. Check: (a > 0 && b > Integer.MAX_VALUE - a) before adding. Or detect post-addition: if (a > 0 && b > 0 && result < 0) then overflow occurred.",
+          "sampleInput": "willOverflow(Integer.MAX_VALUE, 1)",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 2,
           "title": "Type Range Validator",
-          "description": "Write a method `fitInType(long value)` that returns the smallest Java integer type that can hold the given value: 'byte', 'short', 'int', or 'long'. Also handle the case where the value exceeds long range (return 'BigInteger').",
+          "description": "Validate whether a value fits within a given primitive type range.\n\n**Example:**\nfitsInByte(127) => true\nfitsInByte(128) => false\nfitsInShort(32767) => true\nfitsInShort(32768) => false\nfitsInInt(Long.MAX_VALUE) => false\n\n**Key insight:** Byte: -128 to 127. Short: -32768 to 32767. Int: -2^31 to 2^31-1. Long: -2^63 to 2^63-1.",
           "difficulty": "EASY",
           "pattern": "Type Ranges",
           "hint1": "Check against Byte.MIN_VALUE/MAX_VALUE, then Short, then Integer, then Long.",
@@ -128,12 +130,14 @@
             }
           ],
           "constraints": "Use MIN_VALUE/MAX_VALUE constants from wrapper classes. Return exact smallest fitting type.",
-          "editorial": "Each primitive has MIN_VALUE and MAX_VALUE constants. byte: -128 to 127. short: -32768 to 32767. int: ~-2.1B to 2.1B. long: ~-9.2E18 to 9.2E18. Use Long.parseLong and catch NumberFormatException. Compare against the type's actual bounds, not Double (floating point imprecision)."
+          "editorial": "Each primitive has MIN_VALUE and MAX_VALUE constants. byte: -128 to 127. short: -32768 to 32767. int: ~-2.1B to 2.1B. long: ~-9.2E18 to 9.2E18. Use Long.parseLong and catch NumberFormatException. Compare against the type's actual bounds, not Double (floating point imprecision).",
+          "sampleInput": "fitsInByte(127), fitsInByte(128)",
+          "sampleOutput": "true, false"
         },
         {
           "displayOrder": 3,
           "title": "Float Precision Comparator",
-          "description": "Write a method `doubleEquals(double a, double b, double epsilon)` that correctly compares two doubles within a tolerance (epsilon). Also demonstrate why `0.1 + 0.2 == 0.3` is false and your method returns true.",
+          "description": "Compare floating-point numbers correctly using an epsilon tolerance instead of `==`.\n\n**Example:**\n0.1 + 0.2 == 0.3 => false (floating point imprecision)\nequalsApprox(0.1 + 0.2, 0.3, 1e-9) => true\n\n**Key insight:** Never compare floats/doubles with `==`. Use `Math.abs(a - b) < epsilon`. For financial calculations, use `BigDecimal`.",
           "difficulty": "EASY",
           "pattern": "Floating Point Precision",
           "hint1": "Use Math.abs(a - b) <= epsilon for the comparison.",
@@ -152,12 +156,14 @@
             }
           ],
           "constraints": "Must use Math.abs(). epsilon must be a parameter (not hardcoded). Show both false (direct ==) and true (epsilon comparison).",
-          "editorial": "Never use == or - for floating-point equality. Use Math.abs(a - b) < epsilon where epsilon is the acceptable tolerance (e.g., 1e-9). BigDecimal.compareTo() returns 0 for equal values — use it for exact decimal comparison. Double.compare() handles NaN and -0.0 correctly."
+          "editorial": "Never use == or - for floating-point equality. Use Math.abs(a - b) < epsilon where epsilon is the acceptable tolerance (e.g., 1e-9). BigDecimal.compareTo() returns 0 for equal values — use it for exact decimal comparison. Double.compare() handles NaN and -0.0 correctly.",
+          "sampleInput": "equalsApprox(0.1 + 0.2, 0.3, 1e-9)",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 4,
           "title": "Autoboxing Cache Trap",
-          "description": "Write a test method that demonstrates the Integer cache behavior: show that == works for cached values (-128..127) but not for uncached values (>=128). Return an array showing [equality of 127, equality of 128, equals() result for 128].",
+          "description": "Predict the output of Integer autoboxing cache comparisons:\n\n```java\nInteger a = 127; Integer b = 127;\na == b => true  // cached (-128 to 127)\nInteger c = 128; Integer d = 128;\nc == d => false // new objects outside cache\n```\n\nImplement `predictBoxingEquality(int value)` returning whether `Integer.valueOf(value) == Integer.valueOf(value)`.",
           "difficulty": "EASY",
           "pattern": "Integer Cache / Autoboxing",
           "hint1": "Integer cache range is -128 to 127 (guaranteed by JLS). Values in this range always return the same object.",
@@ -180,12 +186,14 @@
             }
           ],
           "constraints": "Must use Integer (wrapper) not int. Must demonstrate cache boundary at 127/128 exactly.",
-          "editorial": "Integer.valueOf() caches values from -128 to 127. Comparing cached Integer objects with == returns true because they're the same instance. Outside this range, new Integer objects are created — == returns false. Always use .equals() for Integer comparison, never ==."
+          "editorial": "Integer.valueOf() caches values from -128 to 127. Comparing cached Integer objects with == returns true because they're the same instance. Outside this range, new Integer objects are created — == returns false. Always use .equals() for Integer comparison, never ==.",
+          "sampleInput": "predictBoxingEquality(127), predictBoxingEquality(128)",
+          "sampleOutput": "true, false"
         },
         {
           "displayOrder": 5,
           "title": "String to Primitive Conversions",
-          "description": "Write a utility class `TypeParser` with methods to safely parse Strings to each primitive type, returning Optional or a default value if parsing fails:\n- `parseInt(String s, int defaultVal)`\n- `parseDouble(String s, double defaultVal)`\n- `parseBoolean(String s)` — accepts 'true'/'false'/'yes'/'no'/'1'/'0'",
+          "description": "Convert strings to each primitive type with proper error handling.\n\n**Example:**\nparseInt(\"42\") => 42\nparseDouble(\"3.14\") => 3.14\nparseBoolean(\"true\") => true\nparseInt(\"abc\") => throws NumberFormatException\nparseInt(null) => throws NumberFormatException\n\nImplement `safeParse(String s, Class<?> type)` returning `Optional<?>` wrapping the result.",
           "difficulty": "EASY",
           "pattern": "String Parsing",
           "hint1": "Use Integer.parseInt() inside try-catch(NumberFormatException) to handle invalid input.",
@@ -212,12 +220,14 @@
             }
           ],
           "constraints": "Handle null input. Use try-catch for NumberFormatException. parseBoolean must support true/false/yes/no/1/0 case-insensitively.",
-          "editorial": "Integer.parseInt() throws NumberFormatException for invalid strings. Double.parseDouble() is similar. Boolean.parseBoolean() is lenient — only 'true' (case-insensitive) returns true, everything else (including null) returns false. Character.getNumericValue() converts char digits to int."
+          "editorial": "Integer.parseInt() throws NumberFormatException for invalid strings. Double.parseDouble() is similar. Boolean.parseBoolean() is lenient — only 'true' (case-insensitive) returns true, everything else (including null) returns false. Character.getNumericValue() converts char digits to int.",
+          "sampleInput": "safeParse(\"3.14\", Double.class)",
+          "sampleOutput": "Optional[3.14]"
         },
         {
           "displayOrder": 6,
           "title": "Bitwise Type Analysis",
-          "description": "Implement a method `analyzeBits(int value)` that returns a string showing the binary representation of the value with: sign bit highlighted, value in hex, decimal, octal, and binary formats.",
+          "description": "Analyze a number's binary representation using bitwise operators.\n\n**Example:**\nint n = 42; // binary: 00101010\nbinaryString(n) => \"00101010\"\ncountBits(n) => 8\ncountSetBits(n) => 3 (bits 1,3,5 are set)\nhighestSetBit(n) => 5 (0-indexed from right)\n\n**Key insight:** `Integer.toBinaryString(n)` shows binary. `Integer.bitCount(n)` counts set bits.",
           "difficulty": "EASY",
           "pattern": "Number Representation",
           "hint1": "Use Integer.toBinaryString() for binary, Integer.toHexString() for hex, Integer.toOctalString() for octal.",
@@ -236,12 +246,14 @@
             }
           ],
           "constraints": "Binary must be exactly 32 characters (padded with zeros). Hex must use uppercase with 0x prefix. Sign bit must be identified.",
-          "editorial": "Boolean: 1 bit logical, 1 byte storage. byte: 8-bit signed (-128 to 127). char: 16-bit unsigned UTF-16. Use Integer.bitCount() for set bits, Integer.toBinaryString() for binary representation. Type hierarchy: byte → short → int → long → float → double (widening conversions are implicit)."
+          "editorial": "Boolean: 1 bit logical, 1 byte storage. byte: 8-bit signed (-128 to 127). char: 16-bit unsigned UTF-16. Use Integer.bitCount() for set bits, Integer.toBinaryString() for binary representation. Type hierarchy: byte → short → int → long → float → double (widening conversions are implicit).",
+          "sampleInput": "analyze(42)",
+          "sampleOutput": "binary=101010, setBits=3, highestBit=5"
         },
         {
           "displayOrder": 7,
           "title": "StringBuilder Performance Benchmark",
-          "description": "Write a method that benchmarks String concatenation (+) vs StringBuilder.append() for building a string from 10,000 parts. Return the ratio of (+) time to StringBuilder time. The ratio should be significantly > 1 (String + is much slower).",
+          "description": "Benchmark `String` concatenation with `+` vs `StringBuilder` for 10,000 iterations.\n\n**Example:**\nbenchmark(10000):\nconcatWithPlus: ~200ms (creates 10000 String objects)\nconcatWithBuilder: ~2ms (one StringBuilder)\n\nReturn: `Map<String, Long>` with {\"plus_ms\": X, \"builder_ms\": Y}\n\n**Key insight:** `s += part` inside a loop is O(n^2) — each iteration copies the growing string. StringBuilder is O(n).",
           "difficulty": "MEDIUM",
           "pattern": "String Performance",
           "hint1": "Use System.nanoTime() to measure. Run each approach multiple times for warmth.",
@@ -256,12 +268,14 @@
             }
           ],
           "constraints": "Must measure actual elapsed time. Ratio must be > 10 for N=10,000. Include JIT warm-up calls.",
-          "editorial": "StringBuilder is O(n) amortized for append — it doubles capacity when full (similar to ArrayList). String concatenation in a loop creates O(n) intermediate String objects. StringBuilder.toString() creates one final String. For thread-safe use, StringBuffer (synchronized version) or join at the end."
+          "editorial": "StringBuilder is O(n) amortized for append — it doubles capacity when full (similar to ArrayList). String concatenation in a loop creates O(n) intermediate String objects. StringBuilder.toString() creates one final String. For thread-safe use, StringBuffer (synchronized version) or join at the end.",
+          "sampleInput": "benchmark concat with 10000 iterations",
+          "sampleOutput": "{plus_ms:~200, builder_ms:~2}"
         },
         {
           "displayOrder": 8,
           "title": "Type Conversion Matrix",
-          "description": "Write a method `convertAll(double value)` that converts a double to all other numeric primitive types and returns a Map showing each type name and its converted value. Handle edge cases: NaN, Infinity, values outside target type range.",
+          "description": "Build a type conversion matrix showing implicit widening and explicit narrowing between all primitive types.\n\n**Example:**\nbyte -> short -> int -> long -> float -> double (widening, implicit)\ndouble -> float -> long -> int -> short -> byte (narrowing, requires cast)\n\ncanImplicitlyConvert(int.class, double.class) => true\ncanImplicitlyConvert(double.class, int.class) => false\nneedsExplicitCast(double.class, int.class) => true",
           "difficulty": "MEDIUM",
           "pattern": "Type Casting",
           "hint1": "Cast the double to each type: (int) value, (long) value, (float) value, (byte) value, etc.",
@@ -280,12 +294,14 @@
             }
           ],
           "constraints": "Handle NaN and Infinity cases. char must only be shown if value is in valid Unicode range (0-65535).",
-          "editorial": "Widening conversions are implicit and safe (except long→float which can lose precision). Narrowing conversions require explicit cast and can lose data. long→float: a 64-bit long can have more significant digits than a 32-bit float's mantissa (23 bits) — precision loss occurs for large values."
+          "editorial": "Widening conversions are implicit and safe (except long→float which can lose precision). Narrowing conversions require explicit cast and can lose data. long→float: a 64-bit long can have more significant digits than a 32-bit float's mantissa (23 bits) — precision loss occurs for large values.",
+          "sampleInput": "canImplicitlyConvert(int.class, double.class)",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 9,
           "title": "BigDecimal Money Calculator",
-          "description": "Implement a simple money calculator using BigDecimal that avoids floating-point precision issues. Write:\n1. `addMoney(String a, String b)` — add two monetary amounts (e.g., '0.10' + '0.20' = '0.30')\n2. `splitBill(String total, int ways)` — divide a bill N ways, returning each share rounded to 2 decimal places and the remainder",
+          "description": "Calculate monetary amounts using `BigDecimal` to avoid floating-point precision errors.\n\n**Example:**\n// WRONG: double\n0.1 + 0.2 => 0.30000000000000004\n\n// CORRECT: BigDecimal\nnew BigDecimal(\"0.10\").add(new BigDecimal(\"0.20\")) => 0.30\n\nImplement `calculateTotal(String[] prices)` summing price strings as BigDecimal, rounding to 2 decimal places.",
           "difficulty": "MEDIUM",
           "pattern": "BigDecimal / Financial Precision",
           "hint1": "Create BigDecimal from String (not double!): new BigDecimal('0.1') is exact, new BigDecimal(0.1) is not.",
@@ -304,12 +320,14 @@
             }
           ],
           "constraints": "Must use BigDecimal(String) constructor, NOT BigDecimal(double). Use RoundingMode.HALF_UP for financial rounding.",
-          "editorial": "BigDecimal stores exact decimal values — no floating-point rounding errors. Always use BigDecimal(String) constructor, not BigDecimal(double) (which inherits the double's imprecision). Use add(), subtract(), multiply(), divide() — not + - * /. setScale() controls decimal places. Use RoundingMode.HALF_UP for money."
+          "editorial": "BigDecimal stores exact decimal values — no floating-point rounding errors. Always use BigDecimal(String) constructor, not BigDecimal(double) (which inherits the double's imprecision). Use add(), subtract(), multiply(), divide() — not + - * /. setScale() controls decimal places. Use RoundingMode.HALF_UP for money.",
+          "sampleInput": "[\"10.50\", \"3.99\", \"0.01\"]",
+          "sampleOutput": "14.50"
         },
         {
           "displayOrder": 10,
           "title": "Char Array Password Handling",
-          "description": "Explain and demonstrate why `char[]` is preferred over `String` for storing passwords. Write:\n1. `storePassword` using String — show how it lingers in memory/String Pool\n2. `storePasswordSafe` using char[] — show how it can be zeroed after use\n3. A method that zeros out a char[] after use",
+          "description": "Handle passwords as `char[]` instead of `String` for security — `char[]` can be zeroed out after use; Strings are immutable and may linger in memory/logs.\n\n**Example:**\nchar[] password = getPassword();\ntry { authenticate(password); }\nfinally { Arrays.fill(password, '\\0'); } // zero out\n\nImplement `securePasswordCheck(char[] input, char[] stored)` that zeroes both arrays after comparison.",
           "difficulty": "MEDIUM",
           "pattern": "Security / Immutability",
           "hint1": "Strings are immutable — you cannot zero them out. They may stay in String Pool indefinitely.",
@@ -328,12 +346,14 @@
             }
           ],
           "constraints": "char[] version must use Arrays.fill(password, '\\0') in finally block. Must explain why String is less secure.",
-          "editorial": "char[] is preferred over String for passwords because char[] can be zeroed (Arrays.fill(pwd, '\\0')) after use. String is immutable — the sensitive value persists in the String Pool until GC. This is why java.security.spec.KeySpec uses char[] for passwords (PBKDF2WithHmacSHA256)."
+          "editorial": "char[] is preferred over String for passwords because char[] can be zeroed (Arrays.fill(pwd, '\\0')) after use. String is immutable — the sensitive value persists in the String Pool until GC. This is why java.security.spec.KeySpec uses char[] for passwords (PBKDF2WithHmacSHA256).",
+          "sampleInput": "securePasswordCheck({'p','a','s','s'}, {'p','a','s','s'})",
+          "sampleOutput": "true (then both arrays zeroed)"
         },
         {
           "displayOrder": 11,
           "title": "var Usage Analyzer",
-          "description": "Write a simple static analyzer that takes Java source code as a String and counts: (1) number of var declarations, (2) cases where var is used well (RHS is a 'new' expression), (3) cases where var might be unclear (RHS is a method call). Return a summary report.",
+          "description": "Analyze code to find where `var` (local type inference) can be used appropriately vs where it harms readability.\n\n**Example:**\nvar list = new ArrayList<String>(); // OK — type obvious from RHS\nvar x = process(); // BAD — return type unclear\nvar entry = map.entrySet().iterator().next(); // OK — verbose type\n\nImplement `canUseVar(String declaration)` returning \"OK\", \"BAD\", or \"BORDERLINE\" with reason.",
           "difficulty": "MEDIUM",
           "pattern": "var / Code Analysis",
           "hint1": "Use regex or simple string parsing. var declarations match pattern: `var <name> = <expr>;`",
@@ -348,12 +368,14 @@
             }
           ],
           "constraints": "Must count total var declarations and classify by RHS type. Use regex for detection.",
-          "editorial": "var (local variable type inference, Java 10+) infers the type at compile time — it's not dynamic typing. The type is fixed and cannot change. var works only for local variables with initializer, for-each loop variables, and try-with-resources. Cannot use var for fields, parameters, or return types."
+          "editorial": "var (local variable type inference, Java 10+) infers the type at compile time — it's not dynamic typing. The type is fixed and cannot change. var works only for local variables with initializer, for-each loop variables, and try-with-resources. Cannot use var for fields, parameters, or return types.",
+          "sampleInput": "\"var list = new ArrayList<String>()\"",
+          "sampleOutput": "\"OK (type obvious from RHS)\""
         },
         {
           "displayOrder": 12,
           "title": "Primitive Array vs Wrapper Array Memory",
-          "description": "Calculate and compare the theoretical memory usage of `int[]` vs `Integer[]` for N=1,000,000 elements. Write a method that also measures actual heap usage using Runtime.getRuntime().",
+          "description": "Measure memory usage difference between `int[]` and `Integer[]`:\n\n**Example:**\nint[] primitives = new int[1000000];    // ~4MB\nInteger[] boxed = new Integer[1000000]; // ~16MB+ (header per object)\n\nImplement `measureArrayMemory(int size)` returning `{primitive_bytes, boxed_bytes}`.\n\n**Key insight:** Each `Integer` object has ~16 bytes header + 4 bytes value. Primitive `int` is 4 bytes. 4x+ overhead from boxing.",
           "difficulty": "MEDIUM",
           "pattern": "Memory Layout",
           "hint1": "int[N]: 16 bytes overhead (object header + length) + N * 4 bytes = ~4MB for 1M elements.",
@@ -368,12 +390,14 @@
             }
           ],
           "constraints": "Must measure actual heap delta. int[] should use ~4MB, Integer[] should use ~5-20MB depending on Integer cache hits.",
-          "editorial": "int[] stores primitive ints contiguously — no boxing, no object overhead. Integer[] stores references to Integer objects on the heap — 16 bytes per object plus 4 bytes per reference. For large arrays, int[] uses ~4x less memory and has better cache locality. Use primitive arrays for performance-critical code."
+          "editorial": "int[] stores primitive ints contiguously — no boxing, no object overhead. Integer[] stores references to Integer objects on the heap — 16 bytes per object plus 4 bytes per reference. For large arrays, int[] uses ~4x less memory and has better cache locality. Use primitive arrays for performance-critical code.",
+          "sampleInput": "measureArrayMemory(1000000)",
+          "sampleOutput": "{primitive: ~4MB, boxed: ~16MB}"
         },
         {
           "displayOrder": 13,
           "title": "String Intern Pool Stress Test",
-          "description": "Write a program that demonstrates the String intern pool by comparing: (1) 10,000 unique strings without intern, (2) same strings with .intern(). Measure memory difference and show that interned duplicates share the same reference.",
+          "description": "Stress-test the String intern pool by interning thousands of strings and measuring memory:\n\n**Example:**\nString.intern() adds to the pool — repeated interning of the same string reuses the pooled instance.\n\"hello\".intern() == \"hello\" => true (same reference from pool)\n\nImplement `internStressTest(int count)` interning `count` unique strings and return pool size estimate.",
           "difficulty": "MEDIUM",
           "pattern": "String Pool / Memory",
           "hint1": "Create 10,000 strings using new String(\"prefix\" + i) to bypass the pool, then intern them.",
@@ -392,12 +416,14 @@
             }
           ],
           "constraints": "Must use new String() to bypass pool initially. .intern() must produce == equality for same-content strings.",
-          "editorial": "String.intern() returns the pooled reference. After intern, == comparison works for equal strings. The JDK interns all string literals automatically. Calling intern() on dynamically created strings moves them to the pool — can cause metaspace growth if abused. Modern JVMs (Java 7+) move the pool to the heap."
+          "editorial": "String.intern() returns the pooled reference. After intern, == comparison works for equal strings. The JDK interns all string literals automatically. Calling intern() on dynamically created strings moves them to the pool — can cause metaspace growth if abused. Modern JVMs (Java 7+) move the pool to the heap.",
+          "sampleInput": "internStressTest(100000)",
+          "sampleOutput": "pool grows ~100000 entries"
         },
         {
           "displayOrder": 14,
           "title": "Type Widening Surprise: long to float",
-          "description": "Demonstrate and explain the 'silent precision loss' when widening from long to float (or double). Write a method that: finds a long value that loses precision when converted to float, shows the lost information, and calculates the magnitude of the error.",
+          "description": "Demonstrate the surprising precision loss when converting `long` to `float`:\n\n**Example:**\nlong big = 1234567890123456789L;\nfloat f = (float) big;\nlong back = (long) f;\nbig == back => false! (precision lost in float's 23-bit mantissa)\n\n**Key insight:** `float` has only 7 significant decimal digits; `long` has 19. Large longs lose precision when cast to float.",
           "difficulty": "HARD",
           "pattern": "Numeric Precision",
           "hint1": "float has 23-bit mantissa = ~7 decimal digits. long values > 10^7 can't be represented exactly as float.",
@@ -416,12 +442,14 @@
             }
           ],
           "constraints": "Must find exact first precision loss value (2^24+1 = 16,777,217). Must show that widening can lose precision.",
-          "editorial": "long (64-bit) to float (32-bit): float has only 23 bits of mantissa, so large longs (> 2^24) lose precision when converted. Example: (float) 16777217L == 16777216.0f — the last bit is lost. This is a widening conversion that can still lose information — unique among Java's widening conversions."
+          "editorial": "long (64-bit) to float (32-bit): float has only 23 bits of mantissa, so large longs (> 2^24) lose precision when converted. Example: (float) 16777217L == 16777216.0f — the last bit is lost. This is a widening conversion that can still lose information — unique among Java's widening conversions.",
+          "sampleInput": "long big = 1234567890123456789L; (long)(float)big == big",
+          "sampleOutput": "false (precision loss)"
         },
         {
           "displayOrder": 15,
           "title": "Custom Numeric Type — Safe Integer",
-          "description": "Implement a `SafeInt` class that wraps an int but throws ArithmeticException on any arithmetic overflow. Support +, -, * operations via methods. Also implement Comparable<SafeInt> and override equals/hashCode.",
+          "description": "Create a `SafeInt` class that wraps `int` and throws `ArithmeticException` on overflow instead of silently wrapping.\n\n**Example:**\nSafeInt.add(Integer.MAX_VALUE, 1) => throws ArithmeticException(\"Integer overflow\")\nSafeInt.add(100, 200) => 300\nSafeInt.multiply(100000, 100000) => throws ArithmeticException (> MAX_VALUE)",
           "difficulty": "HARD",
           "pattern": "Value Type Pattern",
           "hint1": "Use Math.addExact, subtractExact, multiplyExact — they throw ArithmeticException on overflow.",
@@ -440,12 +468,14 @@
             }
           ],
           "constraints": "Must use Math.addExact/subtractExact/multiplyExact. Must implement equals, hashCode, compareTo correctly. value must be final.",
-          "editorial": "Wrap int in a class with overflow detection on all arithmetic operations. throw ArithmeticException on overflow. Use Math.addExact, Math.subtractExact, Math.multiplyExact internally. Expose a value() accessor returning the int. This is the pattern behind Guava's IntMath.checkedAdd()."
+          "editorial": "Wrap int in a class with overflow detection on all arithmetic operations. throw ArithmeticException on overflow. Use Math.addExact, Math.subtractExact, Math.multiplyExact internally. Expose a value() accessor returning the int. This is the pattern behind Guava's IntMath.checkedAdd().",
+          "sampleInput": "SafeInt.add(Integer.MAX_VALUE, 1)",
+          "sampleOutput": "throws ArithmeticException(\"Integer overflow\")"
         },
         {
           "displayOrder": 16,
           "title": "Generic Number Accumulator",
-          "description": "Implement a generic `NumberAccumulator<T extends Number>` that can sum any list of Number subclasses (Integer, Long, Double, BigDecimal) and return the sum as a double. Handle the case where summing might lose precision for very large values.",
+          "description": "Implement `NumberAccumulator<T extends Number>` that sums any `Number` subtype using `doubleValue()`.\n\n**Example:**\naccumulator.add(1); accumulator.add(2.5); accumulator.add(3L);\naccumulator.sum() => 6.5\naccumulator.average() => 2.1667\naccumulator.count() => 3\n\n**Key insight:** All `Number` subtypes have `doubleValue()` — use it for universal accumulation.",
           "difficulty": "HARD",
           "pattern": "Generics / Number",
           "hint1": "Use T extends Number to accept any Number subclass. Call .doubleValue() for addition.",
@@ -464,12 +494,14 @@
             }
           ],
           "constraints": "Must use T extends Number. Must call .doubleValue() for double sum. Must use BigDecimal arithmetic for preciseSum.",
-          "editorial": "T extends Number gives access to intValue(), doubleValue(), etc. Use a List<T> to store values. sum(): iterate calling doubleValue(). getMin()/getMax(): iterate with comparisons. The bounded type parameter enables type-safe generic numeric code that works for Integer, Double, BigDecimal."
+          "editorial": "T extends Number gives access to intValue(), doubleValue(), etc. Use a List<T> to store values. sum(): iterate calling doubleValue(). getMin()/getMax(): iterate with comparisons. The bounded type parameter enables type-safe generic numeric code that works for Integer, Double, BigDecimal.",
+          "sampleInput": "add(1, 2.5, 3L).sum()",
+          "sampleOutput": "6.5"
         },
         {
           "displayOrder": 17,
           "title": "Unsigned Integer Operations",
-          "description": "Java int is signed. Implement unsigned integer operations using Java's Integer API (Integer.toUnsignedString, Integer.compareUnsigned, Integer.divideUnsigned). Show how to treat an int as an unsigned 32-bit value.",
+          "description": "Implement unsigned integer operations in Java (which has no unsigned int primitive):\n\n**Example:**\nunsignedToLong(-1) => 4294967295L (max unsigned 32-bit)\nunsignedAdd(Integer.MAX_VALUE, 1) => 2147483648L (as unsigned)\nunsignedCompare(-1, 1) => positive (in unsigned, -1 is max value)\n\n**Key insight:** `Integer.toUnsignedLong(n)` converts to unsigned. `Integer.compareUnsigned(a, b)` treats both as unsigned.",
           "difficulty": "HARD",
           "pattern": "Bitwise / Unsigned",
           "hint1": "Integer.MAX_VALUE = 2^31-1 = 2,147,483,647. As unsigned, 0xFFFFFFFF = 4,294,967,295.",
@@ -488,12 +520,14 @@
             }
           ],
           "constraints": "Must use Integer.toUnsignedString(), Integer.compareUnsigned(), Integer.divideUnsigned(). Show signed vs unsigned difference for -1.",
-          "editorial": "Java has no unsigned integer type. Simulate with long (use long for unsigned int). Integer.toUnsignedString() and Integer.compareUnsigned() treat the int bits as unsigned. For unsigned right shift, use >>> (zero-fills high bits) instead of >> (sign-extends). Long.toUnsignedString() for unsigned long."
+          "editorial": "Java has no unsigned integer type. Simulate with long (use long for unsigned int). Integer.toUnsignedString() and Integer.compareUnsigned() treat the int bits as unsigned. For unsigned right shift, use >>> (zero-fills high bits) instead of >> (sign-extends). Long.toUnsignedString() for unsigned long.",
+          "sampleInput": "unsignedToLong(-1)",
+          "sampleOutput": "4294967295"
         },
         {
           "displayOrder": 18,
           "title": "Variable Shadowing Detector",
-          "description": "Write a simple detector that finds variable shadowing in Java source code: a local variable or parameter that has the same name as a field in the enclosing class. Return a list of shadowing instances found.\n\nExample: field 'name' shadowed by parameter 'name' in constructor.",
+          "description": "Detect variable shadowing in nested scopes:\n\n```java\nint x = 10;\n{\n    int x = 20; // compile error: variable x is already defined\n}\n```\n\nBut in lambdas and inner classes:\n```java\nint x = 10;\nRunnable r = () -> { int x = 20; }; // compile error: effectively final captured\n```\n\nImplement `demonstrateShadowing()` showing legal vs illegal shadowing cases.",
           "difficulty": "HARD",
           "pattern": "Scoping / Variable Shadowing",
           "hint1": "Parse the source to find: (1) class-level fields, (2) method parameters and local variables. A shadowing occurs when a parameter/local has the same name as a field.",
@@ -508,12 +542,14 @@
             }
           ],
           "constraints": "Must detect field-to-parameter shadowing. Use regex for parsing. Return list of ShadowReport records.",
-          "editorial": "Shadowing: a local variable with the same name as a field or outer-class member hides the outer one. this.x always refers to the field. Detect with reflection: compare Method.getParameters() names against Field names in the class. Shadowing is legal but confusing — many style guides forbid it."
+          "editorial": "Shadowing: a local variable with the same name as a field or outer-class member hides the outer one. this.x always refers to the field. Detect with reflection: compare Method.getParameters() names against Field names in the class. Shadowing is legal but confusing — many style guides forbid it.",
+          "sampleInput": "outer int x=10; inner int x=20;",
+          "sampleOutput": "compile error: variable x already defined"
         },
         {
           "displayOrder": 19,
           "title": "Runtime Type Hierarchy Walker",
-          "description": "Write a method `typeHierarchy(Object obj)` that uses reflection to walk and print the full type hierarchy of any object: its class, all superclasses up to Object, and all implemented interfaces (recursively). Format as an indented tree.",
+          "description": "Walk the type hierarchy of a given class using reflection: superclass chain + all implemented interfaces (recursively).\n\n**Example:**\nwalkHierarchy(ArrayList.class)\n=> ArrayList -> AbstractList -> AbstractCollection -> Object\n=> implements: List, RandomAccess, Cloneable, Serializable\n\nImplement `getFullHierarchy(Class<?> cls)` returning a `Map<String, List<String>>` with {superclasses, interfaces}.",
           "difficulty": "HARD",
           "pattern": "Reflection / Type Hierarchy",
           "hint1": "Use clazz.getSuperclass() to walk up the class hierarchy. Use clazz.getInterfaces() to get directly implemented interfaces.",
@@ -528,12 +564,14 @@
             }
           ],
           "constraints": "Must use getSuperclass() and getInterfaces(). Must stop at Object (getSuperclass() returns null for Object). Must avoid infinite loops for interfaces extending interfaces.",
-          "editorial": "Walk the type hierarchy: cls.getSuperclass() for parent classes, cls.getInterfaces() for interfaces. Recurse both. Use a Set<Class<?>> visited to avoid infinite loops (interfaces can be implemented multiple times via different paths). Collect all types in a List<String> of getSimpleName()."
+          "editorial": "Walk the type hierarchy: cls.getSuperclass() for parent classes, cls.getInterfaces() for interfaces. Recurse both. Use a Set<Class<?>> visited to avoid infinite loops (interfaces can be implemented multiple times via different paths). Collect all types in a List<String> of getSimpleName().",
+          "sampleInput": "walkHierarchy(ArrayList.class)",
+          "sampleOutput": "{superclasses:[AbstractList,AbstractCollection,Object], interfaces:[List,RandomAccess,...]}"
         },
         {
           "displayOrder": 20,
           "title": "Comprehensive Type System Quiz Engine",
-          "description": "Build a quiz engine with 10 Java type system questions. Each question presents a code snippet and asks for the output. Score the user's answers. Topics: integer overflow, autoboxing, string pool, casting, type erasure, var inference.\n\nReturn the questions as a list of Question records and a method to check an answer.",
+          "description": "Build a quiz engine that presents type system questions and evaluates answers:\n\n**Example questions:**\n1. \"What is the range of byte?\" => \"-128 to 127\"\n2. \"Which is wider: long or float?\" => \"float (can represent larger magnitudes but with less precision)\"\n3. \"What does Integer.MAX_VALUE + 1 equal?\" => Integer.MIN_VALUE (overflow)\n\nImplement `QuizEngine` with `nextQuestion()` and `checkAnswer(String answer)` methods.",
           "difficulty": "HARD",
           "pattern": "Type System Comprehensive",
           "hint1": "Use a List<Question> where Question is a record with: code, expectedOutput, explanation.",
@@ -548,7 +586,9 @@
             }
           ],
           "constraints": "Must have exactly 10 questions. Must cover: overflow, autoboxing cache, string pool, casting, floating point, var. checkAnswer must be case-insensitive.",
-          "editorial": "Build a quiz engine with a Map<String, Runnable> of test cases. Each test verifies a specific type behavior (overflow, autoboxing cache, float precision). Use assert or custom check() method to report pass/fail. Return a score. This consolidates all type-system edge cases into a single runnable spec."
+          "editorial": "Build a quiz engine with a Map<String, Runnable> of test cases. Each test verifies a specific type behavior (overflow, autoboxing cache, float precision). Use assert or custom check() method to report pass/fail. Return a score. This consolidates all type-system edge cases into a single runnable spec.",
+          "sampleInput": "checkAnswer(\"Integer.MAX_VALUE + 1 = ?\")",
+          "sampleOutput": "Integer.MIN_VALUE (-2147483648)"
         }
       ],
       "subCategory": "Language Basics",

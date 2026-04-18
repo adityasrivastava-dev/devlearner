@@ -66,7 +66,7 @@
         {
           "displayOrder": 1,
           "title": "Valid Parentheses",
-          "description": "Given a string containing only '(', ')', '{', '}', '[', ']', determine if the input string is valid.\n\nValid means: open brackets are closed by the same type in the correct order.\n\n**Example:**\nInput: \"()[]{}\" → true\nInput: \"([)]\" → false\nInput: \"{[]}\" → true",
+          "description": "Return true if the bracket string is valid — every opening bracket has a matching closing bracket in the right order.\n\n**Example 1:**\nisValid(\"()[]{}\") => true\nisValid(\"([)]\") => false\nisValid(\"{[]}\") => true\n\n**Key insight:** Push opening brackets. On closing bracket, pop and check match.",
           "difficulty": "EASY",
           "pattern": "Stack",
           "hint1": "When you see an open bracket, what should you do? When you see a close bracket, what should you check?",
@@ -76,12 +76,14 @@
           "solutionCode": "public class Solution {\n    public boolean isValid(String s) {\n        Deque<Character> stack = new ArrayDeque<>();\n        for (char c : s.toCharArray()) {\n            if (c == '(' || c == '{' || c == '[') stack.push(c);\n            else {\n                if (stack.isEmpty()) return false;\n                char top = stack.pop();\n                if ((c == ')' && top != '(') || (c == '}' && top != '{') || (c == ']' && top != '['))\n                    return false;\n            }\n        }\n        return stack.isEmpty();\n    }\n}",
           "testCases": "[{\"input\":\"()\",\"output\":\"true\"},{\"input\":\"()[]{}\",\"output\":\"true\"},{\"input\":\"(]\",\"output\":\"false\"},{\"input\":\"([)]\",\"output\":\"false\"},{\"input\":\"{[]}\",\"output\":\"true\"}]",
           "constraints": "1 ≤ s.length ≤ 10^4 | s consists of parentheses only",
-          "editorial": "Classic stack problem. O(n) time, O(n) space. The invariant: at every close bracket, the most recent unmatched open bracket must be the corresponding type. Stack naturally enforces this."
+          "editorial": "Classic stack problem. O(n) time, O(n) space. The invariant: at every close bracket, the most recent unmatched open bracket must be the corresponding type. Stack naturally enforces this.",
+          "sampleInput": "\"{[]}\"",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 2,
           "title": "Min Stack",
-          "description": "Design a stack that supports push, pop, top, and retrieving the minimum element in constant time.\n\n- push(val): push element onto stack\n- pop(): remove the top element\n- top(): get the top element\n- getMin(): retrieve the minimum element in the stack\n\nAll operations O(1).",
+          "description": "Design a stack that supports `push`, `pop`, `top`, and `getMin` — all in O(1).\n\n**Example:**\nMinStack s;\ns.push(-2); s.push(0); s.push(-3);\ns.getMin() => -3\ns.pop();\ns.getMin() => -2\n\n**Key insight:** Maintain a parallel min-stack. Each push also pushes current minimum.",
           "difficulty": "MEDIUM",
           "pattern": "Stack",
           "hint1": "How can you track the minimum efficiently? Can you store extra information alongside each element?",
@@ -91,12 +93,14 @@
           "solutionCode": "class MinStack {\n    private Deque<Integer> stack    = new ArrayDeque<>();\n    private Deque<Integer> minStack = new ArrayDeque<>();\n\n    public void push(int val) {\n        stack.push(val);\n        int curMin = minStack.isEmpty() ? val : Math.min(val, minStack.peek());\n        minStack.push(curMin);\n    }\n    public void pop()     { stack.pop(); minStack.pop(); }\n    public int top()      { return stack.peek(); }\n    public int getMin()   { return minStack.peek(); }\n}",
           "testCases": "[{\"input\":\"push(-2), push(0), push(-3), getMin(), pop(), top(), getMin()\",\"output\":\"-3, 0, -2\"}]",
           "constraints": "-2^31 ≤ val ≤ 2^31 - 1 | At most 3*10^4 calls | pop/top/getMin called only on non-empty stack",
-          "editorial": "Auxiliary min stack stores the running minimum at every level. Both stacks are always the same size. O(1) all operations, O(n) space. Alternative: store (val, minAtThisLevel) as pairs in one stack."
+          "editorial": "Auxiliary min stack stores the running minimum at every level. Both stacks are always the same size. O(1) all operations, O(n) space. Alternative: store (val, minAtThisLevel) as pairs in one stack.",
+          "sampleInput": "push(-2,0,-3), getMin(), pop(), getMin()",
+          "sampleOutput": "[-3, -2]"
         },
         {
           "displayOrder": 3,
           "title": "Daily Temperatures",
-          "description": "Given an array of integers temperatures, return an array answer where answer[i] is the number of days you have to wait after the ith day to get a warmer temperature. If there is no future day with a warmer temperature, answer[i] = 0.\n\n**Example:**\nInput: [73,74,75,71,69,72,76,73]\nOutput: [1,1,4,2,1,1,0,0]",
+          "description": "Given temperatures array, return array where `result[i]` is the number of days until a warmer temperature.\n\n**Example:**\ndailyTemperatures([73,74,75,71,69,72,76,73]) => [1,1,4,2,1,1,0,0]\n\n**Key insight:** Monotonic decreasing stack of indices. When current temp > stack top's temp, pop and record distance.",
           "difficulty": "MEDIUM",
           "pattern": "Monotonic Stack",
           "hint1": "For each day, you need to find the nearest future day with a higher temperature. Brute force is O(n²). Can you do O(n)?",
@@ -106,12 +110,14 @@
           "solutionCode": "public class Solution {\n    public int[] dailyTemperatures(int[] temperatures) {\n        int n = temperatures.length;\n        int[] answer = new int[n];\n        Deque<Integer> stack = new ArrayDeque<>();\n        for (int i = 0; i < n; i++) {\n            while (!stack.isEmpty() && temperatures[stack.peek()] < temperatures[i]) {\n                int j = stack.pop();\n                answer[j] = i - j;\n            }\n            stack.push(i);\n        }\n        return answer;\n    }\n}",
           "testCases": "[{\"input\":\"[73,74,75,71,69,72,76,73]\",\"output\":\"[1,1,4,2,1,1,0,0]\"},{\"input\":\"[30,40,50,60]\",\"output\":\"[1,1,1,0]\"},{\"input\":\"[30,60,90]\",\"output\":\"[1,1,0]\"}]",
           "constraints": "1 ≤ temperatures.length ≤ 10^5 | 30 ≤ temperatures[i] ≤ 100",
-          "editorial": "Monotonic decreasing stack of indices. Each element is pushed once and popped once → O(n) amortized. When popped at index i, the wait = i - popped_index. Remaining stack elements have answer 0 (default array values)."
+          "editorial": "Monotonic decreasing stack of indices. Each element is pushed once and popped once → O(n) amortized. When popped at index i, the wait = i - popped_index. Remaining stack elements have answer 0 (default array values).",
+          "sampleInput": "[73,74,75,71,69,72,76,73]",
+          "sampleOutput": "[1,1,4,2,1,1,0,0]"
         },
         {
           "displayOrder": 4,
           "title": "Implement Queue Using Two Stacks",
-          "description": "Implement a FIFO queue using only two stacks. Supported operations: push(x), pop(), peek(), empty().\n\n**Example:**\npush(1), push(2), peek() → 1, pop() → 1, empty() → false",
+          "description": "Implement a queue using two stacks with amortized O(1) enqueue and dequeue.\n\n**Example:**\nMyQueue q;\nq.push(1); q.push(2);\nq.peek() => 1\nq.pop() => 1\nq.empty() => false\n\n**Key insight:** Stack1 for push. Stack2 for pop (lazy transfer: dump stack1 into stack2 only when stack2 is empty).",
           "difficulty": "EASY",
           "pattern": "Stack",
           "hint1": "Stack is LIFO, queue is FIFO. How can two stacks give you FIFO ordering?",
@@ -121,12 +127,14 @@
           "solutionCode": "class MyQueue {\n    private Deque<Integer> inbox  = new ArrayDeque<>();\n    private Deque<Integer> outbox = new ArrayDeque<>();\n\n    public void push(int x) { inbox.push(x); }\n\n    public int pop() {\n        refill();\n        return outbox.pop();\n    }\n\n    public int peek() {\n        refill();\n        return outbox.peek();\n    }\n\n    public boolean empty() { return inbox.isEmpty() && outbox.isEmpty(); }\n\n    private void refill() {\n        if (outbox.isEmpty())\n            while (!inbox.isEmpty()) outbox.push(inbox.pop());\n    }\n}",
           "testCases": "[{\"input\":\"push(1), push(2), peek(), pop(), empty()\",\"output\":\"1, 1, false\"}]",
           "constraints": "1 ≤ x ≤ 9 | At most 100 calls to push, pop, peek, empty | Always valid (pop/peek on non-empty)",
-          "editorial": "Two-stack queue: inbox for writes, outbox for reads. Lazy transfer on read (only when outbox empty). Each element transferred at most once → amortized O(1) per operation. O(n) space."
+          "editorial": "Two-stack queue: inbox for writes, outbox for reads. Lazy transfer on read (only when outbox empty). Each element transferred at most once → amortized O(1) per operation. O(n) space.",
+          "sampleInput": "push(1,2), peek(), pop()",
+          "sampleOutput": "peek=1, pop=1"
         },
         {
           "displayOrder": 5,
           "title": "Largest Rectangle in Histogram",
-          "description": "Given an array of integers heights representing the heights of bars in a histogram (width = 1 each), find the area of the largest rectangle in the histogram.\n\n**Example:**\nInput: [2,1,5,6,2,3]\nOutput: 10  (rectangle of height 5, width 2, between index 2–3)",
+          "description": "Find the largest rectangle area in a histogram.\n\n**Example 1:**\nlargestRectangle([2,1,5,6,2,3]) => 10\nlargestRectangle([2,4]) => 4\n\n**Key insight:** Monotonic increasing stack. Pop when current bar is shorter. Area = height[popped] * width (right - stack.peek() - 1).",
           "difficulty": "HARD",
           "pattern": "Monotonic Stack",
           "hint1": "For each bar, the rectangle extends as far left and right as bars of equal or greater height. How do you find those boundaries efficiently?",
@@ -136,12 +144,14 @@
           "solutionCode": "public class Solution {\n    public int largestRectangleArea(int[] heights) {\n        Deque<Integer> stack = new ArrayDeque<>();\n        int maxArea = 0;\n        for (int i = 0; i <= heights.length; i++) {\n            int h = (i == heights.length) ? 0 : heights[i];\n            while (!stack.isEmpty() && heights[stack.peek()] > h) {\n                int height = heights[stack.pop()];\n                int width  = stack.isEmpty() ? i : i - stack.peek() - 1;\n                maxArea = Math.max(maxArea, height * width);\n            }\n            stack.push(i);\n        }\n        return maxArea;\n    }\n}",
           "testCases": "[{\"input\":\"[2,1,5,6,2,3]\",\"output\":\"10\"},{\"input\":\"[2,4]\",\"output\":\"4\"},{\"input\":\"[1]\",\"output\":\"1\"}]",
           "constraints": "1 ≤ heights.length ≤ 10^5 | 0 ≤ heights[i] ≤ 10^4",
-          "editorial": "Monotonic increasing stack. Key insight: for each bar as the height of a rectangle, extend as far as shorter bars allow. The stack gives us the left and right boundaries in O(1) per bar. O(n) time, O(n) space. Sentinel 0 forces the stack to flush at the end."
+          "editorial": "Monotonic increasing stack. Key insight: for each bar as the height of a rectangle, extend as far as shorter bars allow. The stack gives us the left and right boundaries in O(1) per bar. O(n) time, O(n) space. Sentinel 0 forces the stack to flush at the end.",
+          "sampleInput": "[2,1,5,6,2,3]",
+          "sampleOutput": "10"
         },
         {
           "displayOrder": 6,
           "title": "Sliding Window Maximum",
-          "description": "Given an integer array nums and a window size k, return the maximum of each window as it slides from left to right.\n\n**Example:**\nInput: nums = [1,3,-1,-3,5,3,6,7], k = 3\nOutput: [3,3,5,5,6,7]",
+          "description": "Return the max of every sliding window of size k.\n\n**Example:**\nslidingWindowMax([1,3,-1,-3,5,3,6,7], k=3) => [3,3,5,5,6,7]\n\n**Key insight:** Monotonic deque (decreasing). Remove from front if out of window; remove from back while smaller than current.",
           "difficulty": "HARD",
           "pattern": "Monotonic Stack",
           "hint1": "Brute force checks every window in O(k) → total O(nk). Can you maintain the maximum as you slide in O(1) per step?",
@@ -151,12 +161,14 @@
           "solutionCode": "public class Solution {\n    public int[] maxSlidingWindow(int[] nums, int k) {\n        int n = nums.length;\n        int[] result = new int[n - k + 1];\n        Deque<Integer> deque = new ArrayDeque<>(); // stores indices\n\n        for (int i = 0; i < n; i++) {\n            // Remove elements outside window\n            if (!deque.isEmpty() && deque.peekFirst() <= i - k) deque.pollFirst();\n            // Remove smaller elements from back (they'll never be max)\n            while (!deque.isEmpty() && nums[deque.peekLast()] < nums[i]) deque.pollLast();\n            deque.offerLast(i);\n            if (i >= k - 1) result[i - k + 1] = nums[deque.peekFirst()];\n        }\n        return result;\n    }\n}",
           "testCases": "[{\"input\":\"nums=[1,3,-1,-3,5,3,6,7], k=3\",\"output\":\"[3,3,5,5,6,7]\"},{\"input\":\"nums=[1], k=1\",\"output\":\"[1]\"}]",
           "constraints": "1 ≤ nums.length ≤ 10^5 | -10^4 ≤ nums[i] ≤ 10^4 | 1 ≤ k ≤ nums.length",
-          "editorial": "Monotonic deque stores indices in decreasing order of values. Front = max of current window. Each element enqueued and dequeued at most once → O(n) total. Key: maintain window validity (remove front if out of range) AND maintain monotonicity (remove back if smaller than new element)."
+          "editorial": "Monotonic deque stores indices in decreasing order of values. Front = max of current window. Each element enqueued and dequeued at most once → O(n) total. Key: maintain window validity (remove front if out of range) AND maintain monotonicity (remove back if smaller than new element).",
+          "sampleInput": "[1,3,-1,-3,5,3,6,7], k=3",
+          "sampleOutput": "[3,3,5,5,6,7]"
         },
         {
           "displayOrder": 7,
           "title": "Next Greater Element I",
-          "description": "Given two arrays nums1 and nums2 (nums1 is a subset of nums2), find for each element in nums1 its next greater element in nums2. The next greater element of x is the first element to the right of x in nums2 that is greater than x. Return -1 if none.\n\n**Example:**\nnums1=[4,1,2], nums2=[1,3,4,2]\nOutput: [-1,3,-1] (4 has no greater, 1's next greater is 3, 2 has no greater)",
+          "description": "For each element in `nums1`, find the next greater element in `nums2`.\n\n**Example:**\nnums1=[4,1,2], nums2=[1,3,4,2]\nnextGreater => [-1,3,-1]\n(4: no greater in nums2; 1: 3 is next greater; 2: no greater)\n\n**Key insight:** Monotonic stack over nums2. HashMap stores {element -> next greater}.",
           "difficulty": "EASY",
           "pattern": "Monotonic Stack",
           "hint1": "For each element in nums2, find its next greater element. Then answer queries from nums1 using a lookup.",
@@ -166,12 +178,14 @@
           "solutionCode": "public class Solution {\n    public int[] nextGreaterElement(int[] nums1, int[] nums2) {\n        Map<Integer, Integer> nge = new HashMap<>();\n        Deque<Integer> stack = new ArrayDeque<>();\n        for (int num : nums2) {\n            while (!stack.isEmpty() && stack.peek() < num)\n                nge.put(stack.pop(), num);\n            stack.push(num);\n        }\n        int[] result = new int[nums1.length];\n        for (int i = 0; i < nums1.length; i++)\n            result[i] = nge.getOrDefault(nums1[i], -1);\n        return result;\n    }\n}",
           "testCases": "[{\"input\":\"nums1=[4,1,2], nums2=[1,3,4,2]\",\"output\":\"[-1,3,-1]\"},{\"input\":\"nums1=[2,4], nums2=[1,2,3,4]\",\"output\":\"[3,-1]\"}]",
           "constraints": "1 ≤ nums1.length ≤ nums2.length ≤ 1000 | 0 ≤ nums1[i], nums2[i] ≤ 10^4 | All elements unique",
-          "editorial": "Precompute NGE for all nums2 elements in O(n) using monotonic stack. Store in HashMap. Answer all nums1 queries in O(m) using lookup. Total O(m+n) vs O(m*n) brute force."
+          "editorial": "Precompute NGE for all nums2 elements in O(n) using monotonic stack. Store in HashMap. Answer all nums1 queries in O(m) using lookup. Total O(m+n) vs O(m*n) brute force.",
+          "sampleInput": "nums1=[4,1,2], nums2=[1,3,4,2]",
+          "sampleOutput": "[-1,3,-1]"
         },
         {
           "displayOrder": 8,
           "title": "Evaluate Reverse Polish Notation",
-          "description": "Evaluate the value of an arithmetic expression in Reverse Polish Notation (postfix). Valid operators: +, -, *, /. Integer division truncates toward zero.\n\n**Example:**\nTokens: ['2','1','+','3','*'] → Output: 9 ((2+1)*3)\nTokens: ['4','13','5','/','+'] → Output: 6 (4+(13/5))",
+          "description": "Evaluate an expression in Reverse Polish Notation.\n\n**Example 1:**\nevalRPN([\"2\",\"1\",\"+\",\"3\",\"*\"]) => 9 ((2+1)*3)\neval([\"4\",\"13\",\"5\",\"/\",\"+\"]) => 6 (4+(13/5))\n\n**Key insight:** Stack — push numbers. On operator, pop two, apply, push result. Division truncates toward zero.",
           "difficulty": "MEDIUM",
           "pattern": "Stack",
           "hint1": "In RPN, operators come after their operands. When you see an operator, apply it to the last two numbers seen. What data structure maintains the last seen numbers?",
@@ -181,12 +195,14 @@
           "solutionCode": "public class Solution {\n    public int evalRPN(String[] tokens) {\n        Deque<Integer> stack = new ArrayDeque<>();\n        for (String t : tokens) {\n            if (t.equals(\"+\") || t.equals(\"-\") || t.equals(\"*\") || t.equals(\"/\")) {\n                int b = stack.pop(), a = stack.pop();\n                switch (t) {\n                    case \"+\" -> stack.push(a + b);\n                    case \"-\" -> stack.push(a - b);\n                    case \"*\" -> stack.push(a * b);\n                    case \"/\" -> stack.push(a / b);\n                }\n            } else {\n                stack.push(Integer.parseInt(t));\n            }\n        }\n        return stack.pop();\n    }\n}",
           "testCases": "[{\"input\":\"['2','1','+','3','*']\",\"output\":\"9\"},{\"input\":\"['4','13','5','/','+']\" ,\"output\":\"6\"},{\"input\":\"['10','6','9','3','+','-11','*','/',\"*\",\"17\",\"+\",\"5\",\"+\"]\",\"output\":\"22\"}]",
           "constraints": "1 ≤ tokens.length ≤ 10^4 | Each token is an integer or one of +, -, *, / | Input is always a valid RPN expression | Result fits in 32-bit int",
-          "editorial": "Classic stack application. RPN was invented specifically so expressions can be evaluated with a single stack pass in O(n). Pop order: second pop is left operand, first pop is right operand (b = pop, a = pop, push a op b)."
+          "editorial": "Classic stack application. RPN was invented specifically so expressions can be evaluated with a single stack pass in O(n). Pop order: second pop is left operand, first pop is right operand (b = pop, a = pop, push a op b).",
+          "sampleInput": "[\"2\",\"1\",\"+\",\"3\",\"*\"]",
+          "sampleOutput": "9"
         },
         {
           "displayOrder": 9,
           "title": "Design Circular Queue",
-          "description": "Implement a circular queue (ring buffer) with fixed capacity k.\n- enQueue(val): inserts an element, returns false if full\n- deQueue(): deletes the front element, returns false if empty\n- Front(): gets the front item, -1 if empty\n- Rear(): gets the last item, -1 if empty\n- isEmpty(), isFull()\n\nAll operations O(1).",
+          "description": "Design a circular queue with `enQueue(val)`, `deQueue()`, `Front()`, `Rear()`, `isEmpty()`, `isFull()`.\n\n**Example:**\ncq = CircularQueue(3)\ncq.enQueue(1); cq.enQueue(2); cq.enQueue(3);\ncq.isFull() => true\ncq.deQueue(); cq.enQueue(4);\ncq.Rear() => 4",
           "difficulty": "MEDIUM",
           "pattern": "Design",
           "hint1": "Use an array of size k with two pointers: head (front) and tail (insertion point). How do you wrap around when you reach the end of the array?",
@@ -196,12 +212,14 @@
           "solutionCode": "class MyCircularQueue {\n    private int[] data;\n    private int head, tail, size, capacity;\n\n    public MyCircularQueue(int k) {\n        data = new int[k]; capacity = k; head = 0; tail = 0; size = 0;\n    }\n    public boolean enQueue(int val) {\n        if (isFull()) return false;\n        data[tail] = val; tail = (tail + 1) % capacity; size++;\n        return true;\n    }\n    public boolean deQueue() {\n        if (isEmpty()) return false;\n        head = (head + 1) % capacity; size--;\n        return true;\n    }\n    public int Front()    { return isEmpty() ? -1 : data[head]; }\n    public int Rear()     { return isEmpty() ? -1 : data[(tail - 1 + capacity) % capacity]; }\n    public boolean isEmpty() { return size == 0; }\n    public boolean isFull()  { return size == capacity; }\n}",
           "testCases": "[{\"input\":\"MyCircularQueue(3): enQueue(1), enQueue(2), enQueue(3), enQueue(4), Rear(), isFull(), deQueue(), enQueue(4), Rear()\",\"output\":\"true, true, true, false, 3, true, true, true, 4\"}]",
           "constraints": "1 ≤ k ≤ 1000 | 0 ≤ value ≤ 1000 | At most 3000 calls to each operation",
-          "editorial": "Ring buffer with modulo arithmetic. size variable cleanly tracks count. Rear = (tail-1+k)%k to get last inserted element. Used in: OS I/O buffers, producer-consumer queues, audio streaming ring buffers."
+          "editorial": "Ring buffer with modulo arithmetic. size variable cleanly tracks count. Rear = (tail-1+k)%k to get last inserted element. Used in: OS I/O buffers, producer-consumer queues, audio streaming ring buffers.",
+          "sampleInput": "enQueue(1,2,3), deQueue(), enQueue(4), Rear()",
+          "sampleOutput": "4"
         },
         {
           "displayOrder": 10,
           "title": "Implement Stack Using Queues",
-          "description": "Implement a LIFO stack using only queue operations. Supported: push(x), pop(), top(), empty().\n\n**Example:**\npush(1), push(2), top()→2, pop()→2, empty()→false",
+          "description": "Implement a stack using only two queues.\n\n**Example:**\nMyStack s;\ns.push(1); s.push(2);\ns.top() => 2\ns.pop() => 2\ns.empty() => false\n\n**Key insight:** On push: enqueue to q2, then dump all of q1 into q2, swap q1 and q2. Top of stack is front of q1.",
           "difficulty": "EASY",
           "pattern": "Stack",
           "hint1": "A queue is FIFO. How can you make the newest element accessible from the front?",
@@ -211,7 +229,9 @@
           "solutionCode": "class MyStack {\n    private Queue<Integer> q = new LinkedList<>();\n\n    public void push(int x) {\n        q.offer(x);\n        // Rotate: move all elements before x to after x\n        for (int i = 0; i < q.size() - 1; i++) q.offer(q.poll());\n    }\n    public int pop()  { return q.poll(); }\n    public int top()  { return q.peek(); }\n    public boolean empty() { return q.isEmpty(); }\n}",
           "testCases": "[{\"input\":\"push(1), push(2), top(), pop(), empty()\",\"output\":\"2, 2, false\"}]",
           "constraints": "1 ≤ x ≤ 9 | At most 100 calls | Always valid (pop/top on non-empty)",
-          "editorial": "After each push, rotate queue so new element is at front. O(n) push, O(1) pop/top. Symmetric to Queue-with-2-Stacks. Rotation trick: enqueue x, then dequeue-and-reenqueue all n-1 previous elements."
+          "editorial": "After each push, rotate queue so new element is at front. O(n) push, O(1) pop/top. Symmetric to Queue-with-2-Stacks. Rotation trick: enqueue x, then dequeue-and-reenqueue all n-1 previous elements.",
+          "sampleInput": "push(1,2), top(), pop()",
+          "sampleOutput": "top=2, pop=2"
         }
       ],
       "subCategory": "Stack & Queue",

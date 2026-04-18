@@ -69,7 +69,7 @@
         {
           "displayOrder": 1,
           "title": "Predict Compilation Error or Success",
-          "description": "For each code snippet, predict if it will compile successfully or fail with a compilation error, and if it fails, name the javac phase that catches it:\n\nA: `int x = \"hello\";`\nB: `String s = null; s.length();`\nC: `class Foo { Foo() {} } Foo f = new Foo(42);`\nD: `int y = 10 / 0;`\nE: `@interface X {} @X @X void method() {}`",
+          "description": "For each code snippet, predict whether it compiles or produces a compile error and why:\n\n1. `int x = 3.14;` => error (double to int)\n2. `final int N = 5; int[] arr = new int[N];` => compiles (compile-time constant)\n3. `String s = null; s.length();` => compiles (runtime NPE, not compile error)\n\nImplement `predictCompilation(String[] snippets)` returning `\"OK\"` or `\"ERROR: reason\"`.",
           "difficulty": "EASY",
           "pattern": "Compilation Phases",
           "hint1": "Type errors (A) are caught in semantic analysis phase. Runtime errors (B) compile fine but throw at runtime.",
@@ -100,12 +100,14 @@
             }
           ],
           "constraints": "Analyze statically. Do not compile and run the snippets.",
-          "editorial": "A: int x = 'hello' — type mismatch, compile error. B: final int x = 5; int[] arr = new int[x] — final constants allowed as array size, compiles. C: switch on String — legal since Java 7. D: @Override on interface default — legal since Java 8. E: duplicate annotation without @Repeatable — compile error."
+          "editorial": "A: int x = 'hello' — type mismatch, compile error. B: final int x = 5; int[] arr = new int[x] — final constants allowed as array size, compiles. C: switch on String — legal since Java 7. D: @Override on interface default — legal since Java 8. E: duplicate annotation without @Repeatable — compile error.",
+          "sampleInput": "[\"int x = 3.14;\", \"final int N=5; int[] arr=new int[N];\"]",
+          "sampleOutput": "[\"ERROR: incompatible types\", \"OK\"]"
         },
         {
           "displayOrder": 2,
           "title": "Read Class File Magic Number",
-          "description": "Write a method `isJavaClassFile(byte[] fileBytes)` that returns true if the byte array starts with the Java class file magic number (0xCAFEBABE). Also write `getClassFileMajorVersion(byte[] fileBytes)` that extracts the major version from bytes 6-7.",
+          "description": "Every `.class` file starts with the magic number `0xCAFEBABE`. Read a class file and verify it.\n\n**Example:**\nbyte[] bytes = Files.readAllBytes(Path.of(\"Hello.class\"));\nString magic = String.format(\"%02X%02X%02X%02X\", bytes[0],bytes[1],bytes[2],bytes[3]);\n=> \"CAFEBABE\"\n\nAlso read the major version (bytes 6-7) to determine Java version: 65 = Java 21, 61 = Java 17.",
           "difficulty": "EASY",
           "pattern": "Binary Format / Class File Structure",
           "hint1": "Java class files start with 4 magic bytes: 0xCA, 0xFE, 0xBA, 0xBE.",
@@ -120,12 +122,14 @@
             }
           ],
           "constraints": "Handle null and short arrays. Use bit masking (& 0xFF) to treat bytes as unsigned.",
-          "editorial": "Java class files start with magic number 0xCAFEBABE (bytes [0xCA, 0xFE, 0xBA, 0xBE]). Major version is at bytes [6,7] as big-endian short. Java 8 = 52, 11 = 55, 17 = 61, 21 = 65. Formula: javaVersion = majorVersion - 44. Check fileBytes.length >= 8 before reading version."
+          "editorial": "Java class files start with magic number 0xCAFEBABE (bytes [0xCA, 0xFE, 0xBA, 0xBE]). Major version is at bytes [6,7] as big-endian short. Java 8 = 52, 11 = 55, 17 = 61, 21 = 65. Formula: javaVersion = majorVersion - 44. Check fileBytes.length >= 8 before reading version.",
+          "sampleInput": "read Hello.class first 8 bytes",
+          "sampleOutput": "magic=CAFEBABE, major=65 (Java 21)"
         },
         {
           "displayOrder": 3,
           "title": "Compile Java Source at Runtime",
-          "description": "Write a method `compileAndRun(String className, String sourceCode)` that uses the javax.tools.JavaCompiler API to compile a String of Java source code at runtime, then loads and runs the compiled class.",
+          "description": "Use `javax.tools.JavaCompiler` to compile Java source code at runtime from a String.\n\n**Example:**\nString src = \"public class Greeter { public String greet() { return \\\"Hello!\\\"; } }\";\nClass<?> cls = compileAndLoad(src, \"Greeter\");\ncls.getMethod(\"greet\").invoke(cls.newInstance()) => \"Hello!\"\n\n**Key insight:** `ToolProvider.getSystemJavaCompiler()` gives access to javac programmatically — used in IDEs, build tools, and live-coding environments.",
           "difficulty": "MEDIUM",
           "pattern": "JavaCompiler API / Dynamic Compilation",
           "hint1": "Use ToolProvider.getSystemJavaCompiler() to get the JavaCompiler instance. Requires JDK (not JRE).",
@@ -140,12 +144,14 @@
             }
           ],
           "constraints": "Requires JDK (ToolProvider.getSystemJavaCompiler() returns null in JRE). Must clean up temp files.",
-          "editorial": "JavaCompiler compiler = ToolProvider.getSystemJavaCompiler() — returns null if not running on JDK (only JRE). Write source to a temp .java file, compile with compiler.run(), then load with URLClassLoader pointing to the temp dir. Use reflection to call main() on the loaded class."
+          "editorial": "JavaCompiler compiler = ToolProvider.getSystemJavaCompiler() — returns null if not running on JDK (only JRE). Write source to a temp .java file, compile with compiler.run(), then load with URLClassLoader pointing to the temp dir. Use reflection to call main() on the loaded class.",
+          "sampleInput": "compileAndLoad(Greeter source)",
+          "sampleOutput": "\"Hello!\""
         },
         {
           "displayOrder": 4,
           "title": "Constant Pool Size Counter",
-          "description": "The constant pool in a .class file stores all string literals, class names, and method references. Write a method that reads a .class file and counts how many constant pool entries it contains. The constant pool count is stored as a 2-byte big-endian value at bytes 8-9 of the .class file.",
+          "description": "Use `javap -verbose` output or ASM library to count the constant pool size of a compiled class.\n\n**Example:**\nanalyzeClass(\"Hello.class\")\n=> Constant pool size: 42\n=> Methods: 2\n=> Fields: 1\n\nParse the class file bytes: constant pool count is at bytes 8-9 (big-endian short).",
           "difficulty": "EASY",
           "pattern": "Class File Format",
           "hint1": "After the magic number (4 bytes) and version numbers (4 bytes), bytes 8-9 hold the constant pool count.",
@@ -160,12 +166,14 @@
             }
           ],
           "constraints": "Read bytes 8-9 as big-endian 2-byte unsigned value. Handle short arrays gracefully.",
-          "editorial": "The constant pool count is stored as a big-endian unsigned short at bytes 8-9 (0-indexed) in the .class file. Read ((bytes[8] & 0xFF) << 8) | (bytes[9] & 0xFF). The count is one more than the actual number of entries (entry 0 is reserved). Check minimum length of 10 bytes first."
+          "editorial": "The constant pool count is stored as a big-endian unsigned short at bytes 8-9 (0-indexed) in the .class file. Read ((bytes[8] & 0xFF) << 8) | (bytes[9] & 0xFF). The count is one more than the actual number of entries (entry 0 is reserved). Check minimum length of 10 bytes first.",
+          "sampleInput": "analyzeClass(\"Hello.class\")",
+          "sampleOutput": "constant pool size: 42, methods: 2"
         },
         {
           "displayOrder": 5,
           "title": "Source Retention vs Runtime Retention Annotation",
-          "description": "Demonstrate the three annotation retention policies by creating three annotations (SOURCE, CLASS, RUNTIME) and showing which ones are accessible via reflection at runtime.",
+          "description": "Demonstrate the difference between `@Retention(SOURCE)`, `CLASS`, and `RUNTIME` annotations:\n\n- SOURCE: only in source, stripped by javac (e.g. `@Override`)\n- CLASS: in .class file but not accessible at runtime\n- RUNTIME: accessible via reflection at runtime\n\n**Example:**\n@MyRuntime // RetentionPolicy.RUNTIME\nclass Foo {}\nFoo.class.isAnnotationPresent(MyRuntime.class) => true\nFoo.class.isAnnotationPresent(MyClass.class) => false",
           "difficulty": "EASY",
           "pattern": "Annotation Retention",
           "hint1": "RetentionPolicy.SOURCE: stripped by javac. RetentionPolicy.CLASS: in .class but not loaded into JVM. RetentionPolicy.RUNTIME: available via reflection.",
@@ -188,12 +196,14 @@
             }
           ],
           "constraints": "Must define all three retention policies. getAnnotation() must return null for SOURCE and CLASS annotations.",
-          "editorial": "SOURCE annotations are discarded after compilation — not in .class file. CLASS annotations are in .class but not loaded at runtime. RUNTIME annotations are loaded and accessible via reflection. Spring's @Autowired, JUnit's @Test are RUNTIME. Lombok's @Data is SOURCE (annotation processor)."
+          "editorial": "SOURCE annotations are discarded after compilation — not in .class file. CLASS annotations are in .class but not loaded at runtime. RUNTIME annotations are loaded and accessible via reflection. Spring's @Autowired, JUnit's @Test are RUNTIME. Lombok's @Data is SOURCE (annotation processor).",
+          "sampleInput": "isAnnotationPresent(MyRuntime.class)",
+          "sampleOutput": "true (RUNTIME); false (CLASS retention)"
         },
         {
           "displayOrder": 6,
           "title": "Dead Code Elimination by javac",
-          "description": "Java's compiler performs a simple form of dead code elimination for unreachable code after unconditional jumps. Write examples demonstrating:\n1. Code after `return` — compile error (unreachable)\n2. Code inside `if (false)` — allowed (compile-time constant folding)\n3. Code inside `if (true)` — allowed, unreachable else branch kept as dead code\n\nExplain why `if (false)` is allowed (debug pattern) but `return; statement;` is a compile error.",
+          "description": "Show that `javac` eliminates dead code — unreachable branches are not compiled into bytecode:\n\n```java\nfinal boolean DEBUG = false;\nif (DEBUG) { System.out.println(\"debug\"); } // removed by compiler\n```\n\nVerify using `javap -c` that the `if` block is absent from bytecode.\n\nImplement `hasDeadCode(Class<?> cls, String methodName)` returning false for the optimized version.",
           "difficulty": "MEDIUM",
           "pattern": "Reachability Analysis",
           "hint1": "javac performs reachability analysis per the JLS (Java Language Specification). Code after `return` is definitively unreachable.",
@@ -212,12 +222,14 @@
             }
           ],
           "constraints": "DEBUG must be a static final boolean constant. Verify with javap that dead blocks emit no bytecode.",
-          "editorial": "if (DEBUG) where DEBUG is a compile-time constant (static final boolean = false) — javac eliminates the dead branch entirely, generating no bytecode for it. This is the 'compile-time conditional compilation' pattern. The else branch is included. Unreachable code after return/throw IS a compile error."
+          "editorial": "if (DEBUG) where DEBUG is a compile-time constant (static final boolean = false) — javac eliminates the dead branch entirely, generating no bytecode for it. This is the 'compile-time conditional compilation' pattern. The else branch is included. Unreachable code after return/throw IS a compile error.",
+          "sampleInput": "hasDeadCode(OptimizedClass.class, \"run\")",
+          "sampleOutput": "false (dead code eliminated)"
         },
         {
           "displayOrder": 7,
           "title": "Build a Simple Tokenizer (Lexer Phase)",
-          "description": "Implement a simplified Java lexer that tokenizes a string of Java source code. Support these token types: KEYWORD (public/class/int/void/if/return), IDENTIFIER, NUMBER, STRING, OPERATOR (+/-/*/=/==/!=/</>), PUNCTUATION ({/}/(/)/;/,), WHITESPACE (skip).\n\nInput: `\"int x = 42;\"`\nOutput: `[NUMBER_TOKEN(int), IDENTIFIER(x), OPERATOR(=), NUMBER(42), PUNCTUATION(;)]`",
+          "description": "Implement a simple **lexer (tokenizer)** that splits Java-like source code into tokens: KEYWORD, IDENTIFIER, NUMBER, OPERATOR, STRING, WHITESPACE.\n\n**Example:**\ntokenize(\"int x = 42 + y;\")\n=> [(KEYWORD,\"int\"),(IDENT,\"x\"),(OP,\"=\"),(NUMBER,\"42\"),(OP,\"+\"),(IDENT,\"y\"),(OP,\";\")]",
           "difficulty": "MEDIUM",
           "pattern": "Lexer / Compilation Phase 1",
           "hint1": "Use a while loop with an index pointer scanning the input character by character.",
@@ -236,12 +248,14 @@
             }
           ],
           "constraints": "Handle all listed token types. Skip whitespace. Distinguish keywords from identifiers. Support == and != as 2-char operators.",
-          "editorial": "Scan character by character. Track state: inside string literal, inside comment. Collect word chars for KEYWORD/IDENTIFIER — check against keyword set after collecting. For strings, collect everything between quotes. Operators and punctuation are single characters. Return List<Token> in order."
+          "editorial": "Scan character by character. Track state: inside string literal, inside comment. Collect word chars for KEYWORD/IDENTIFIER — check against keyword set after collecting. For strings, collect everything between quotes. Operators and punctuation are single characters. Return List<Token> in order.",
+          "sampleInput": "\"int x = 42 + y;\"",
+          "sampleOutput": "[(KEYWORD,int),(IDENT,x),(OP,=),(NUMBER,42),(OP,+),(IDENT,y),(OP,;)]"
         },
         {
           "displayOrder": 8,
           "title": "AST Node Implementation",
-          "description": "Implement a simple Abstract Syntax Tree for arithmetic expressions. Support: NumberNode (leaf), BinaryOpNode (+, -, *, /), and UnaryNegNode. Write an `evaluate()` method and a `toSource()` method that reconstructs the expression as a string.\n\nRepresent and evaluate: `-(3 + 4) * 2` → `-14`",
+          "description": "Build an AST node hierarchy for arithmetic expressions: `BinaryOp(left, op, right)`, `NumberLiteral(int value)`, `VariableRef(String name)`.\n\n**Example:**\n// Represents: (3 + x) * 2\nExpr ast = new BinaryOp(\n    new BinaryOp(new NumberLiteral(3), \"+\", new VariableRef(\"x\")),\n    \"*\",\n    new NumberLiteral(2));\nast.toString() => \"((3 + x) * 2)\"\nast.evaluate(Map.of(\"x\", 4)) => 14",
           "difficulty": "MEDIUM",
           "pattern": "AST / Compiler Data Structures",
           "hint1": "Use a sealed interface or abstract class for the Node type. Each concrete type implements evaluate() and toSource().",
@@ -260,12 +274,14 @@
             }
           ],
           "constraints": "Must use composition (AST nodes reference other nodes). evaluate() must be recursive. Support +, -, *, / operators.",
-          "editorial": "Sealed interface AstNode with record implementations is clean. evaluate() recurses — BinaryOpNode evaluates both children, applies operator. Division by zero: throw ArithmeticException. toSource() wraps children in parentheses for unambiguous output. Use pattern matching switch for operators."
+          "editorial": "Sealed interface AstNode with record implementations is clean. evaluate() recurses — BinaryOpNode evaluates both children, applies operator. Division by zero: throw ArithmeticException. toSource() wraps children in parentheses for unambiguous output. Use pattern matching switch for operators.",
+          "sampleInput": "((3 + x) * 2) with x=4",
+          "sampleOutput": "14"
         },
         {
           "displayOrder": 9,
           "title": "Incremental Compilation Dependency Graph",
-          "description": "Build a simple dependency graph that represents which Java classes depend on which others (like javac incremental compilation tracking). When class A changes, find all classes that need recompilation.\n\nImplement: `addDependency(String classA, String classB)` (A depends on B) and `getAffectedByChange(String changedClass)` (returns all classes that need recompilation if changedClass changes).",
+          "description": "Build a dependency graph for incremental compilation: only recompile classes that depend on a changed class.\n\n**Example:**\ndeps: A->B, A->C, B->D, C->D\nchanged: D\naffected(D) => [B, C, A] (transitive dependents)\n\nImplement `findAffected(String changedClass, Map<String,Set<String>> deps)` using BFS/DFS.",
           "difficulty": "MEDIUM",
           "pattern": "Graph / Compilation Dependency",
           "hint1": "Use a Map<String, Set<String>> as an adjacency list. Key = class, Value = set of classes that depend ON it (reverse dependency).",
@@ -284,12 +300,14 @@
             }
           ],
           "constraints": "BFS/DFS must handle transitive dependencies. Avoid infinite loops. Include the changed class in the result.",
-          "editorial": "Build a reverse graph: for each 'A depends on B', store B -> A. BFS/DFS from the changed class on the reverse graph finds all classes that transitively depend on it. Include the changed class in results. Use a visited set to avoid cycles. This is how Maven Reactor and Bazel compute rebuild sets."
+          "editorial": "Build a reverse graph: for each 'A depends on B', store B -> A. BFS/DFS from the changed class on the reverse graph finds all classes that transitively depend on it. Include the changed class in results. Use a visited set to avoid cycles. This is how Maven Reactor and Bazel compute rebuild sets.",
+          "sampleInput": "changed=D, deps={A->[B,C], B->[D], C->[D]}",
+          "sampleOutput": "[B, C, A]"
         },
         {
           "displayOrder": 10,
           "title": "Java Source Formatter — Indentation Fixer",
-          "description": "Implement a basic Java source code indenter that takes unindented/incorrectly indented Java code and produces properly indented output. Rules: each `{` increases indent by one level (4 spaces), each `}` decreases indent before printing it.",
+          "description": "Fix indentation in malformed Java source code: detect the current indentation level based on `{` and `}` tokens.\n\n**Example:**\nInput:\n```\npublic class X {\nint x=1;\nif(true){\nx++;\n}\n}\n```\nOutput:\n```\npublic class X {\n    int x=1;\n    if(true){\n        x++;\n    }\n}\n```",
           "difficulty": "MEDIUM",
           "pattern": "Source Transformation",
           "hint1": "Process line by line. Track indent level as an integer.",
@@ -304,12 +322,14 @@
             }
           ],
           "constraints": "Handle only { and } for indentation. 4-space indent per level. Strip existing indentation with trim().",
-          "editorial": "Process line by line. Track indent level (int). Before printing: if line starts with '}', decrement indent. Print indent (spaces * level) + trimmed line. After printing: if line ends with '{', increment indent. Handle edge cases: lines with both '{' and '}' (rare in well-formatted code)."
+          "editorial": "Process line by line. Track indent level (int). Before printing: if line starts with '}', decrement indent. Print indent (spaces * level) + trimmed line. After printing: if line ends with '{', increment indent. Handle edge cases: lines with both '{' and '}' (rare in well-formatted code).",
+          "sampleInput": "unindented Java source",
+          "sampleOutput": "properly indented Java source"
         },
         {
           "displayOrder": 11,
           "title": "Type Erasure — Generic Information at Runtime",
-          "description": "Java's generics are erased at compile time. Demonstrate type erasure by showing that `List<String>` and `List<Integer>` have the same runtime Class, and implement a workaround using a 'Type Token' pattern to preserve generic type information.",
+          "description": "Demonstrate Java **type erasure**: generic type information is removed at compile time.\n\n**Example:**\nList<String> strings = new ArrayList<>();\nList<Integer> ints = new ArrayList<>();\nstrings.getClass() == ints.getClass() => true (both are just ArrayList)\n\nBut with a type token:\nclass TypeToken<T> { Type t = ((ParameterizedType)getClass().getGenericSuperclass()).getActualTypeArguments()[0]; }\nnew TypeToken<String>(){}.t => String.class\n\nImplement `getGenericType(List<?> list)` using reflection.",
           "difficulty": "MEDIUM",
           "pattern": "Generics / Type Erasure",
           "hint1": "new ArrayList<String>().getClass() == new ArrayList<Integer>().getClass() → true. Type erasure makes them identical at runtime.",
@@ -328,12 +348,14 @@
             }
           ],
           "constraints": "Type erasure demonstration must show same runtime class. TypeToken must use anonymous subclass trick. Must use getGenericSuperclass().",
-          "editorial": "At runtime, List<String> and List<Integer> have the same Class object (java.util.List) — generics are erased. To preserve type at runtime, use a type token: abstract class TypeToken<T> { Type getType() { return ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0]; } }"
+          "editorial": "At runtime, List<String> and List<Integer> have the same Class object (java.util.List) — generics are erased. To preserve type at runtime, use a type token: abstract class TypeToken<T> { Type getType() { return ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0]; } }",
+          "sampleInput": "new ArrayList<String>().getClass() == new ArrayList<Integer>().getClass()",
+          "sampleOutput": "true (type erasure)"
         },
         {
           "displayOrder": 12,
           "title": "javac Diagnostic Collector",
-          "description": "Using the javax.tools API, write a method that compiles a Java source string and collects all compilation errors/warnings, returning them as a list of formatted diagnostic messages instead of printing to stderr.",
+          "description": "Use `javax.tools.DiagnosticCollector` to collect compile errors from source code and return structured error information.\n\n**Example:**\ncompileWithDiagnostics(\"class X { int x = \\\"bad\\\"; }\")\n=> [Diagnostic{kind=ERROR, line=1, message=\"incompatible types: String cannot be converted to int\"}]",
           "difficulty": "MEDIUM",
           "pattern": "JavaCompiler API / Diagnostics",
           "hint1": "Use DiagnosticCollector<JavaFileObject> as the diagnostics listener when calling compiler.getTask().",
@@ -348,12 +370,14 @@
             }
           ],
           "constraints": "Must use DiagnosticCollector. Must return List<String> of formatted messages, not print to stderr. Requires JDK.",
-          "editorial": "ToolProvider.getSystemJavaCompiler() + DiagnosticCollector<JavaFileObject> as listener. Pass the collector to getTask(). After compile(), call collector.getDiagnostics() and filter by Diagnostic.Kind. Returns structured error info (line, column, message) rather than raw stderr output."
+          "editorial": "ToolProvider.getSystemJavaCompiler() + DiagnosticCollector<JavaFileObject> as listener. Pass the collector to getTask(). After compile(), call collector.getDiagnostics() and filter by Diagnostic.Kind. Returns structured error info (line, column, message) rather than raw stderr output.",
+          "sampleInput": "compile \"class X { int x = \\\"bad\\\"; }\"",
+          "sampleOutput": "ERROR line 1: incompatible types"
         },
         {
           "displayOrder": 13,
           "title": "Sealed Class Hierarchy and Pattern Matching",
-          "description": "Implement a sealed class hierarchy representing AST nodes for a calculator, then use Java 17+ pattern matching switch to evaluate it without any casting:\n\n```\nsealed interface Expr permits Num, Add, Mul, Neg\n```\n\nEvaluate: `Add(Num(3), Mul(Num(4), Neg(Num(2))))` = 3 + (4 * -2) = -5",
+          "description": "Use sealed classes + pattern matching switch to exhaustively handle a shape hierarchy:\n\n```java\nsealed interface Shape permits Circle, Rectangle, Triangle {}\nrecord Circle(double r) implements Shape {}\nrecord Rectangle(double w, double h) implements Shape {}\nrecord Triangle(double b, double height) implements Shape {}\n\ndouble area(Shape s) {\n    return switch(s) {\n        case Circle c -> Math.PI*c.r()*c.r();\n        case Rectangle r -> r.w()*r.h();\n        case Triangle t -> 0.5*t.b()*t.height();\n    };\n}\n```\narea(new Circle(5)) => 78.54",
           "difficulty": "HARD",
           "pattern": "Sealed Classes / Pattern Matching",
           "hint1": "Use `sealed interface Expr permits ...` and `record Num(int v) implements Expr` etc.",
@@ -372,12 +396,14 @@
             }
           ],
           "constraints": "Must use sealed interface with permits clause. Must use pattern matching switch (Java 17+). No instanceof casts.",
-          "editorial": "Sealed classes permit a closed set of subclasses — the compiler knows all cases. Pattern matching switch is exhaustive over sealed types without a default clause. Records are ideal as sealed subtypes. Combine with instanceof pattern matching for safe downcasting without explicit casts."
+          "editorial": "Sealed classes permit a closed set of subclasses — the compiler knows all cases. Pattern matching switch is exhaustive over sealed types without a default clause. Records are ideal as sealed subtypes. Combine with instanceof pattern matching for safe downcasting without explicit casts.",
+          "sampleInput": "area(new Circle(5))",
+          "sampleOutput": "78.54"
         },
         {
           "displayOrder": 14,
           "title": "Bytecode Instruction Frequency Analyzer",
-          "description": "Parse the output of `javap -c` for a class and count the frequency of each bytecode instruction mnemonic. Return the top-5 most used instructions. This simulates what JVM profilers do to identify optimization opportunities.",
+          "description": "Analyze a `.class` file and count the frequency of each bytecode instruction using ASM or raw byte parsing.\n\n**Example:**\nanalyzeInstructions(\"Fibonacci.class\")\n=> {ILOAD:15, ISTORE:8, IADD:3, IRETURN:1, IF_ICMPLT:2, ...}\n\nTop 3 most frequent instructions in typical Java code: `aload_0`, `invokespecial`, `return`.",
           "difficulty": "HARD",
           "pattern": "Bytecode Analysis",
           "hint1": "Parse javap -c output line by line. Bytecode lines match the pattern: `   <number>: <mnemonic> <optional operands>`",
@@ -392,12 +418,14 @@
             }
           ],
           "constraints": "Must use regex to parse bytecode lines. Return top 5 sorted by frequency descending. Skip non-bytecode lines.",
-          "editorial": "Read .class bytes, find each opcode by scanning the constant pool and code attributes. Count opcode occurrences in a Map<String,Integer>. Sort by count descending. Most frequent opcodes in real code: aload_0 (load this), invokevirtual (method calls), getfield, putfield, return."
+          "editorial": "Read .class bytes, find each opcode by scanning the constant pool and code attributes. Count opcode occurrences in a Map<String,Integer>. Sort by count descending. Most frequent opcodes in real code: aload_0 (load this), invokevirtual (method calls), getfield, putfield, return.",
+          "sampleInput": "analyzeInstructions(\"Fibonacci.class\")",
+          "sampleOutput": "{ILOAD:15, ISTORE:8, IADD:3, ...}"
         },
         {
           "displayOrder": 15,
           "title": "Implement a Record Desugarer",
-          "description": "Java records are syntactic sugar. `record Point(int x, int y)` compiles to a class with: final fields, canonical constructor, equals(), hashCode(), toString(), and accessor methods x() and y().\n\nWrite a `desugarRecord(String recordName, String[] fields)` method that generates the equivalent Java class source code as a String.",
+          "description": "Show what the compiler generates for a `record` by implementing an equivalent class manually:\n\n```java\nrecord Point(int x, int y) {}\n// Desugars to:\nfinal class Point {\n    private final int x, y;\n    Point(int x, int y) { this.x=x; this.y=y; }\n    int x() { return x; } int y() { return y; }\n    // equals, hashCode, toString auto-generated\n}\n```\n\nImplement `Point` manually and verify it behaves identically to the record.",
           "difficulty": "HARD",
           "pattern": "Code Generation / Records",
           "hint1": "Generate: class declaration with final fields, then canonical constructor, then accessor methods (same name as field, no 'get' prefix), then equals(), hashCode(), toString().",
@@ -412,12 +440,14 @@
             }
           ],
           "constraints": "Must generate: final fields, canonical constructor, accessors (no 'get' prefix), equals, hashCode, toString with record bracket format.",
-          "editorial": "A Java record `record Point(int x, int y){}` desugars to: final class Point with private final fields, canonical constructor, accessor methods x() and y(), equals(), hashCode(), toString(). The compact constructor body runs before field assignment. Generate this equivalent class programmatically."
+          "editorial": "A Java record `record Point(int x, int y){}` desugars to: final class Point with private final fields, canonical constructor, accessor methods x() and y(), equals(), hashCode(), toString(). The compact constructor body runs before field assignment. Generate this equivalent class programmatically.",
+          "sampleInput": "new Point(3,4).x()",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 16,
           "title": "Lambda to Anonymous Class Desugar",
-          "description": "Java lambdas are compiled using invokedynamic + LambdaMetafactory. Before Java 8, developers used anonymous classes. Write a method that takes a list of integers and applies a transformation using BOTH a lambda and its equivalent anonymous class form, showing they produce identical results.",
+          "description": "Show what the compiler generates for a lambda — desugar it to an anonymous class:\n\n**Lambda:**\nRunnable r = () -> System.out.println(\"hello\");\n\n**Desugared:**\nRunnable r = new Runnable() { public void run() { System.out.println(\"hello\"); } };\n\n**Example:**\nRunnable lambda = () -> System.out.println(\"lambda\");\nlambda.run() => \"lambda\"\nRunnable anon = new Runnable() { public void run() { System.out.println(\"anon\"); } };\nanon.run() => \"anon\"",
           "difficulty": "MEDIUM",
           "pattern": "Lambda / Functional Interface",
           "hint1": "A lambda `x -> x * 2` is equivalent to `new Function<Integer,Integer>() { public Integer apply(Integer x) { return x * 2; } }`",
@@ -436,12 +466,14 @@
             }
           ],
           "constraints": "Lambda and anonymous class must implement the same transformation. Use Function<Integer,Integer>.",
-          "editorial": "Lambda `(x) -> x * 2` desugars to an anonymous class implementing the functional interface, with the lambda body as the apply() method. Inner class captures effectively-final variables from the enclosing scope. For method references, the anonymous class delegates to the referenced method."
+          "editorial": "Lambda `(x) -> x * 2` desugars to an anonymous class implementing the functional interface, with the lambda body as the apply() method. Inner class captures effectively-final variables from the enclosing scope. For method references, the anonymous class delegates to the referenced method.",
+          "sampleInput": "(() -> print(\"hello\")).run()",
+          "sampleOutput": "\"hello\""
         },
         {
           "displayOrder": 17,
           "title": "Source Code Minifier",
-          "description": "Write a Java source code minifier that removes: all comments (// and /* */), extra whitespace, and blank lines, while preserving all tokens and their order. This simulates what ProGuard/R8 does before obfuscation.\n\nInput: multi-line class with comments and blank lines\nOutput: single-line equivalent (or minimal) source",
+          "description": "Minify Java source code by removing comments and excess whitespace while preserving semantics.\n\n**Example:**\nInput:\n```java\n// This adds two numbers\npublic int add(int a,   int b) {\n    return a + b; // simple\n}\n```\nOutput: `public int add(int a,int b){return a+b;}`",
           "difficulty": "HARD",
           "pattern": "Source Transformation",
           "hint1": "Remove block comments first (/* ... */) using regex with DOTALL flag. Then remove line comments (// ...).",
@@ -456,12 +488,14 @@
             }
           ],
           "constraints": "Must handle // and /* */ comments. Must collapse whitespace. Warning: string literals may contain // — this simplified version doesn't handle that edge case.",
-          "editorial": "Remove all comments (line and block). Remove all unnecessary whitespace (multiple spaces → one). Shorten identifiers if safe. Keep string literals intact. Process as a character stream with state tracking (inside string, inside comment). Output should compile identically to the input."
+          "editorial": "Remove all comments (line and block). Remove all unnecessary whitespace (multiple spaces → one). Shorten identifiers if safe. Keep string literals intact. Process as a character stream with state tracking (inside string, inside comment). Output should compile identically to the input.",
+          "sampleInput": "public int add(int a,   int b) { return a + b; }",
+          "sampleOutput": "public int add(int a,int b){return a+b;}"
         },
         {
           "displayOrder": 18,
           "title": "Method Signature Parser",
-          "description": "Java's reflection API uses JVM method descriptor format. Parse a JVM method descriptor string and return a human-readable signature.\n\nDescriptor format: `(parameter types)return type`\nType codes: Z=boolean, B=byte, C=char, S=short, I=int, J=long, F=float, D=double, V=void, L<classname>;=object, [=array\n\nInput: `(ILjava/lang/String;[D)Z`\nOutput: `boolean method(int, String, double[])`",
+          "description": "Parse a Java method signature string into its components: visibility, return type, name, parameter types.\n\n**Example:**\nparseSignature(\"public static List<String> findAll(int limit, String prefix)\")\n=> {visibility:\"public\", modifiers:[\"static\"], returnType:\"List<String>\", name:\"findAll\", params:[(\"int\",\"limit\"),(\"String\",\"prefix\")]}",
           "difficulty": "HARD",
           "pattern": "JVM Descriptor Parsing",
           "hint1": "Parse the descriptor left to right. Everything inside `(...)` is parameters. After `)` is the return type.",
@@ -484,12 +518,14 @@
             }
           ],
           "constraints": "Must support all primitive types, void, object (L...;), and array ([). Return type must appear before parameter list.",
-          "editorial": "Parse method descriptor format: (param_types)return_type. L-prefixed names are object types ending with semicolon. [ prefix is array. B=byte, C=char, D=double, F=float, I=int, J=long, S=short, V=void, Z=boolean. Example: (ILjava/lang/String;)[D → (int, String) → double[]."
+          "editorial": "Parse method descriptor format: (param_types)return_type. L-prefixed names are object types ending with semicolon. [ prefix is array. B=byte, C=char, D=double, F=float, I=int, J=long, S=short, V=void, Z=boolean. Example: (ILjava/lang/String;)[D → (int, String) → double[].",
+          "sampleInput": "\"public static List<String> findAll(int limit, String prefix)\"",
+          "sampleOutput": "{name:findAll, return:List<String>, params:[(int,limit),(String,prefix)]}"
         },
         {
           "displayOrder": 19,
           "title": "Build a Simple Expression Parser",
-          "description": "Extend the tokenizer from a previous problem to build a recursive-descent parser for arithmetic expressions with proper operator precedence (+/- lower than */). Parse and evaluate `3 + 4 * 2 - 1` = 10 (not 13).\n\nGrammar:\n```\nexpr   → term (('+' | '-') term)*\nterm   → factor (('*' | '/') factor)*\nfactor → NUMBER | '(' expr ')'\n```",
+          "description": "Build a recursive descent parser for simple arithmetic expressions supporting `+`, `-`, `*`, `/`, parentheses, and integer literals.\n\n**Example:**\nparse(\"3 + 4 * 2\") => 11 (operator precedence: * before +)\nparse(\"(3 + 4) * 2\") => 14\nparse(\"10 / 2 - 1\") => 4\n\n**Key insight:** Recursive descent: `expr` calls `term`, `term` calls `factor`. Precedence is encoded in the grammar.",
           "difficulty": "HARD",
           "pattern": "Recursive Descent Parser",
           "hint1": "Each grammar rule becomes a method: parseExpr(), parseTerm(), parseFactor(). They call each other recursively.",
@@ -512,12 +548,14 @@
             }
           ],
           "constraints": "Must implement operator precedence (* before +). Must handle parentheses. Use recursive descent with separate methods per grammar rule.",
-          "editorial": "Recursive descent parser: parseExpr() handles + and - (lowest precedence), parseTerm() handles * and / (higher), parseFactor() handles numbers and parenthesized subexpressions. Each level calls the next level for higher-precedence operations, naturally enforcing operator precedence."
+          "editorial": "Recursive descent parser: parseExpr() handles + and - (lowest precedence), parseTerm() handles * and / (higher), parseFactor() handles numbers and parenthesized subexpressions. Each level calls the next level for higher-precedence operations, naturally enforcing operator precedence.",
+          "sampleInput": "\"3 + 4 * 2\"",
+          "sampleOutput": "11"
         },
         {
           "displayOrder": 20,
           "title": "Full Compilation Pipeline Simulation",
-          "description": "Combine the tokenizer and AST parser to build a minimal end-to-end 'compiler' for a tiny subset of Java:\n- Variable declarations: `int x = expr;`\n- Print statements: `print(expr);`\n- Expression: arithmetic with variables\n\nThe 'compiler' should: parse the input program, build a symbol table, evaluate/execute it, and print outputs.\n\nInput program:\n```\nint a = 5;\nint b = 3 + a;\nprint(a * b);\n```\nExpected output: `40`",
+          "description": "Simulate the full compilation pipeline: source string -> tokenize -> parse to AST -> evaluate.\n\n**Example:**\nCompiler c = new Compiler();\nc.compile(\"let x = 5; let y = 3; return x * y + 2;\");\nc.run() => 17\n\nImplement: `Lexer` (tokenize) -> `Parser` (build AST) -> `Interpreter` (evaluate AST).",
           "difficulty": "HARD",
           "pattern": "Compiler End-to-End",
           "hint1": "Reuse the tokenizer and expression parser from previous problems. Add variable lookup in parseFactor.",
@@ -536,7 +574,9 @@
             }
           ],
           "constraints": "Must support: int declarations with expression RHS, print statement, variable lookup in expressions. Symbol table stored in Map<String,Integer>.",
-          "editorial": "Full pipeline: source string → tokenize → parse to AST → semantic check (type validation) → generate bytecode representation (instruction list) → execute instructions on a stack machine. Each phase transforms the representation. This mirrors javac's internal phases: scan → parse → analyze → generate."
+          "editorial": "Full pipeline: source string → tokenize → parse to AST → semantic check (type validation) → generate bytecode representation (instruction list) → execute instructions on a stack machine. Each phase transforms the representation. This mirrors javac's internal phases: scan → parse → analyze → generate.",
+          "sampleInput": "\"let x=5; let y=3; return x*y+2;\"",
+          "sampleOutput": "17"
         }
       ],
       "subCategory": "JVM Internals (Interview Critical)",

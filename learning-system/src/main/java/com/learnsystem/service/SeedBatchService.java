@@ -161,6 +161,17 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
                                     : pdto.getTestCases().toString();
                             if (!newTc.equals(p.getTestCases())) { p.setTestCases(newTc); dirty = true; }
                         }
+                        // description / sampleInput / sampleOutput: always update from seed
+                        // (seed is authoritative for content quality — allows improving descriptions without DB wipe)
+                        if (notBlank(pdto.getDescription()) && !pdto.getDescription().equals(p.getDescription())) {
+                            p.setDescription(pdto.getDescription()); dirty = true;
+                        }
+                        if (notBlank(pdto.getSampleInput()) && !pdto.getSampleInput().equals(p.getSampleInput())) {
+                            p.setSampleInput(pdto.getSampleInput()); dirty = true;
+                        }
+                        if (notBlank(pdto.getSampleOutput()) && !pdto.getSampleOutput().equals(p.getSampleOutput())) {
+                            p.setSampleOutput(pdto.getSampleOutput()); dirty = true;
+                        }
                         if (dirty) { problemRepo.save(p); patchedProblems++; }
                     }
                 }

@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Longest Substring Without Repeating Characters",
-          "description": "Given a string s, find the length of the longest substring without repeating characters.",
+          "description": "Find the length of the longest substring without repeating characters.\n\n**Example 1:**\nlengthOfLongest(\"abcabcbb\") => 3 (\"abc\")\nlengthOfLongest(\"bbbbb\") => 1\nlengthOfLongest(\"pwwkew\") => 3 (\"wke\")\n\n**Key insight:** Sliding window + HashMap storing last index. Expand right; shrink left when duplicate found.",
           "difficulty": "EASY",
           "pattern": "Sliding window, HashSet or last-seen map",
           "hint1": "Use a HashMap to store last seen index of each character.",
@@ -43,12 +43,14 @@
           "hint3": "Track maxLen = max(maxLen, r - l + 1) after each step.",
           "starterCode": "import java.util.*;\n\npublic class Q1 {\n    public static int lengthOfLongestSubstring(String s) {\n        // TODO O(n)\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(lengthOfLongestSubstring(\"abcabcbb\")); // 3\n        System.out.println(lengthOfLongestSubstring(\"bbbbb\"));    // 1\n        System.out.println(lengthOfLongestSubstring(\"pwwkew\"));   // 3\n        System.out.println(lengthOfLongestSubstring(\"\"));         // 0\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q1 {\n    public static int lengthOfLongestSubstring(String s) {\n        Map<Character, Integer> lastSeen = new HashMap<>();\n        int maxLen = 0, l = 0;\n        for (int r = 0; r < s.length(); r++) {\n            char c = s.charAt(r);\n            if (lastSeen.containsKey(c) && lastSeen.get(c) >= l)\n                l = lastSeen.get(c) + 1; // shrink window past duplicate\n            lastSeen.put(c, r);\n            maxLen = Math.max(maxLen, r - l + 1);\n        }\n        return maxLen;\n    }\n    public static void main(String[] args) {\n        System.out.println(lengthOfLongestSubstring(\"abcabcbb\")); // 3\n        System.out.println(lengthOfLongestSubstring(\"bbbbb\"));    // 1\n        System.out.println(lengthOfLongestSubstring(\"pwwkew\"));   // 3\n        System.out.println(lengthOfLongestSubstring(\"\"));         // 0\n    }\n}",
-          "testCases": "3\n1\n3\n0"
+          "testCases": "3\n1\n3\n0",
+          "sampleInput": "\"abcabcbb\"",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 2,
           "title": "Valid Anagram",
-          "description": "Given two strings s and t, return true if t is an anagram of s (same characters, same frequencies, different order). Assume lowercase letters only.",
+          "description": "Check if two strings are anagrams (same characters, same frequencies).\n\n**Example 1:**\nisAnagram(\"anagram\", \"nagaram\") => true\nisAnagram(\"rat\", \"car\") => false\n\n**Key insight:** Sort both and compare, or use a frequency count array of 26 letters (increment for s, decrement for t).",
           "difficulty": "EASY",
           "pattern": "Frequency map, int[26]",
           "hint1": "If lengths differ, return false immediately.",
@@ -56,12 +58,14 @@
           "hint3": "Alternative: sort both strings and compare. O(n log n) but simpler.",
           "starterCode": "public class Q2 {\n    public static boolean isAnagram(String s, String t) {\n        // TODO O(n)\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(isAnagram(\"anagram\", \"nagaram\")); // true\n        System.out.println(isAnagram(\"rat\", \"car\"));         // false\n        System.out.println(isAnagram(\"ab\", \"a\"));            // false\n    }\n}",
           "solutionCode": "public class Q2 {\n    public static boolean isAnagram(String s, String t) {\n        if (s.length() != t.length()) return false;\n        int[] count = new int[26];\n        for (char c : s.toCharArray()) count[c - 'a']++;\n        for (char c : t.toCharArray()) {\n            count[c - 'a']--;\n            if (count[c - 'a'] < 0) return false;\n        }\n        return true;\n    }\n    public static void main(String[] args) {\n        System.out.println(isAnagram(\"anagram\", \"nagaram\")); // true\n        System.out.println(isAnagram(\"rat\", \"car\"));         // false\n        System.out.println(isAnagram(\"ab\", \"a\"));            // false\n    }\n}",
-          "testCases": "true\nfalse\nfalse"
+          "testCases": "true\nfalse\nfalse",
+          "sampleInput": "\"anagram\", \"nagaram\"",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 3,
           "title": "Group Anagrams",
-          "description": "Given an array of strings, group all anagrams together. Return a list of groups. Order within and between groups does not matter.",
+          "description": "Group an array of strings by their anagram class.\n\n**Example:**\ngroupAnagrams([\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"])\n=> [[\"eat\",\"tea\",\"ate\"],[\"tan\",\"nat\"],[\"bat\"]]\n\n**Key insight:** Sorted string as HashMap key. All anagrams share the same sorted form.",
           "difficulty": "MEDIUM",
           "pattern": "HashMap, sorted key",
           "hint1": "Anagrams have the same sorted string. Use sorted string as HashMap key.",
@@ -69,7 +73,9 @@
           "hint3": "Iterate words, sort each, add to map under that key. Return map.values().",
           "starterCode": "import java.util.*;\n\npublic class Q3 {\n    public static List<List<String>> groupAnagrams(String[] strs) {\n        // TODO O(n * k log k) where k = max string length\n        return new ArrayList<>();\n    }\n    public static void main(String[] args) {\n        List<List<String>> result = groupAnagrams(new String[]{\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"});\n        // Groups: [eat,tea,ate], [tan,nat], [bat]\n        result.forEach(g -> { Collections.sort(g); System.out.println(g); });\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q3 {\n    public static List<List<String>> groupAnagrams(String[] strs) {\n        Map<String, List<String>> map = new HashMap<>();\n        for (String s : strs) {\n            char[] ch = s.toCharArray();\n            Arrays.sort(ch);\n            String key = new String(ch);\n            map.computeIfAbsent(key, k -> new ArrayList<>()).add(s);\n        }\n        return new ArrayList<>(map.values());\n    }\n    public static void main(String[] args) {\n        List<List<String>> result = groupAnagrams(new String[]{\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"});\n        result.forEach(g -> { Collections.sort(g); System.out.println(g); });\n    }\n}",
-          "testCases": "[ate, eat, tea]\n[bat]\n[nat, tan]"
+          "testCases": "[ate, eat, tea]\n[bat]\n[nat, tan]",
+          "sampleInput": "[\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]",
+          "sampleOutput": "[[\"eat\",\"tea\",\"ate\"],[\"tan\",\"nat\"],[\"bat\"]]"
         }
       ]
     }

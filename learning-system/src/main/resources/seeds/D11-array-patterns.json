@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Maximum Average Subarray of Length K",
-          "description": "Given an integer array and integer k, find the contiguous subarray of length k with the maximum average value. Return the maximum average (as double).",
+          "description": "Find the maximum average of a subarray of length exactly k.\n\n**Example:**\nmaxAverage([1,12,-5,-6,50,3], k=4) => 12.75 (subarray [12,-5,-6,50] = 51/4)\n\n**Key insight:** Sliding window of fixed size k. Slide by subtracting outgoing + adding incoming element.",
           "difficulty": "EASY",
           "pattern": "Sliding window fixed",
           "hint1": "Compute sum of first k elements as initial window.",
@@ -43,12 +43,14 @@
           "hint3": "Track maxSum, return maxSum / k.",
           "starterCode": "public class Q1 {\n    public static double findMaxAverage(int[] nums, int k) {\n        // TODO O(n)\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(findMaxAverage(new int[]{1,12,-5,-6,50,3}, 4)); // 12.75\n        System.out.println(findMaxAverage(new int[]{5}, 1));               // 5.0\n    }\n}",
           "solutionCode": "public class Q1 {\n    public static double findMaxAverage(int[] nums, int k) {\n        int sum = 0;\n        for (int i = 0; i < k; i++) sum += nums[i];\n        int maxSum = sum;\n        for (int r = k; r < nums.length; r++) {\n            sum += nums[r] - nums[r - k];\n            maxSum = Math.max(maxSum, sum);\n        }\n        return (double) maxSum / k;\n    }\n    public static void main(String[] args) {\n        System.out.println(findMaxAverage(new int[]{1,12,-5,-6,50,3}, 4)); // 12.75\n        System.out.println(findMaxAverage(new int[]{5}, 1));               // 5.0\n    }\n}",
-          "testCases": "12.75\n5.0"
+          "testCases": "12.75\n5.0",
+          "sampleInput": "[1,12,-5,-6,50,3], k=4",
+          "sampleOutput": "12.75"
         },
         {
           "displayOrder": 2,
           "title": "Subarray Sum Equals K",
-          "description": "Given an integer array and integer k, return the total number of contiguous subarrays whose sum equals k. Array may have negative numbers.",
+          "description": "Find the total number of contiguous subarrays that sum to exactly k.\n\n**Example 1:**\nsubarraySum([1,1,1], k=2) => 2\nsubarraySum([1,2,3], k=3) => 2 ([3] and [1,2])\n\n**Key insight:** Prefix sum + HashMap. `prefixMap[sum]` = count of times this prefix sum appeared. If `prefix-k` exists, those subarrays sum to k.",
           "difficulty": "MEDIUM",
           "pattern": "Prefix sum + HashMap",
           "hint1": "Sliding window doesn't work with negative numbers — use prefix sum.",
@@ -56,12 +58,14 @@
           "hint3": "HashMap stores (prefixSum → count). Init with {0:1} for subarrays starting at index 0.",
           "starterCode": "import java.util.*;\n\npublic class Q2 {\n    public static int subarraySum(int[] nums, int k) {\n        // TODO O(n)\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(subarraySum(new int[]{1,1,1}, 2)); // 2\n        System.out.println(subarraySum(new int[]{1,2,3}, 3)); // 2\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q2 {\n    public static int subarraySum(int[] nums, int k) {\n        Map<Integer,Integer> prefixCount = new HashMap<>();\n        prefixCount.put(0, 1); // empty prefix\n        int curr = 0, count = 0;\n        for (int num : nums) {\n            curr += num;\n            count += prefixCount.getOrDefault(curr - k, 0);\n            prefixCount.merge(curr, 1, Integer::sum);\n        }\n        return count;\n    }\n    public static void main(String[] args) {\n        System.out.println(subarraySum(new int[]{1,1,1}, 2)); // 2\n        System.out.println(subarraySum(new int[]{1,2,3}, 3)); // 2\n    }\n}",
-          "testCases": "2\n2"
+          "testCases": "2\n2",
+          "sampleInput": "[1,1,1], k=2",
+          "sampleOutput": "2"
         },
         {
           "displayOrder": 3,
           "title": "Container With Most Water",
-          "description": "Given n non-negative integers representing heights of lines, find two lines that together with the x-axis forms a container holding the most water. Return the maximum water volume. (Classic two-pointer problem)",
+          "description": "Find two lines that together with the x-axis form a container holding the most water.\n\n**Example 1:**\nmaxWater([1,8,6,2,5,4,8,3,7]) => 49 (lines at index 1 and 8: min(8,7) * 7 = 49)\nmaxWater([1,1]) => 1\n\n**Key insight:** Two pointers from both ends. Move the shorter line inward — the taller line can only decrease width, so never helps.",
           "difficulty": "MEDIUM",
           "pattern": "Two pointers, greedy",
           "hint1": "Water = (hi - lo) * min(height[lo], height[hi]).",
@@ -69,7 +73,9 @@
           "hint3": "Start lo=0, hi=n-1 and converge.",
           "starterCode": "public class Q3 {\n    public static int maxWater(int[] height) {\n        // TODO O(n)\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(maxWater(new int[]{1,8,6,2,5,4,8,3,7})); // 49\n        System.out.println(maxWater(new int[]{1,1}));                // 1\n    }\n}",
           "solutionCode": "public class Q3 {\n    public static int maxWater(int[] height) {\n        int lo = 0, hi = height.length - 1, max = 0;\n        while (lo < hi) {\n            int water = (hi - lo) * Math.min(height[lo], height[hi]);\n            max = Math.max(max, water);\n            if (height[lo] < height[hi]) lo++; // move smaller side\n            else hi--;\n        }\n        return max;\n    }\n    public static void main(String[] args) {\n        System.out.println(maxWater(new int[]{1,8,6,2,5,4,8,3,7})); // 49\n        System.out.println(maxWater(new int[]{1,1}));                // 1\n    }\n}",
-          "testCases": "49\n1"
+          "testCases": "49\n1",
+          "sampleInput": "[1,8,6,2,5,4,8,3,7]",
+          "sampleOutput": "49"
         }
       ]
     }

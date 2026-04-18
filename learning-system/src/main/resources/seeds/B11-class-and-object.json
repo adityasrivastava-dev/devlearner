@@ -69,7 +69,7 @@
         {
           "displayOrder": 1,
           "title": "Create a Student Class",
-          "description": "Design a `Student` class with fields: `String name`, `int age`, `double gpa`. Add a constructor, getters for each field, and a `toString()` that returns exactly: `Student{name=Alice, age=20, gpa=3.8}`. Create two Student objects and print them.",
+          "description": "Design a `Student` class with fields `String name`, `int age`, `double gpa`. Add a constructor, getters, and a `toString()` that returns `\"Student{name='Alice', age=20, gpa=3.8}\"`.\n\n**Example 1:**\nStudent s = new Student(\"Alice\", 20, 3.8);\ns.toString() => \"Student{name='Alice', age=20, gpa=3.8}\"\n\n**Example 2:**\nStudent s = new Student(\"Bob\", 22, 3.2);\ns.getName() => \"Bob\"\ns.getAge() => 22\ns.getGpa() => 3.2",
           "difficulty": "EASY",
           "pattern": "Basic Class Design",
           "hint1": "Use `this.name = name` in the constructor to initialize each field from its parameter.",
@@ -88,12 +88,14 @@
             }
           ],
           "constraints": "Fields non-null. gpa in [0.0, 4.0].",
-          "editorial": "Basic OOP building blocks: private fields (encapsulation), public constructor (initialization via this.x=x to disambiguate field from param), public getters (controlled access), @Override toString() for readable output. The pattern this.field = param is the canonical constructor body."
+          "editorial": "Basic OOP building blocks: private fields (encapsulation), public constructor (initialization via this.x=x to disambiguate field from param), public getters (controlled access), @Override toString() for readable output. The pattern this.field = param is the canonical constructor body.",
+          "sampleInput": "new Student(\"Alice\", 20, 3.8)",
+          "sampleOutput": "\"Student{name='Alice', age=20, gpa=3.8}\""
         },
         {
           "displayOrder": 2,
           "title": "Instance Counter With Static Field",
-          "description": "Create a `Widget` class where each instance is automatically assigned a unique sequential ID (1, 2, 3, …) using a static counter field. Add `getStaticCount()` as a static method returning total widgets created. Print three Widget IDs to verify they're sequential.",
+          "description": "Create a `Widget` class where each instance is automatically assigned a unique sequential `id` starting from 1. Use a `static int counter` field incremented in the constructor.\n\n**Example:**\nWidget w1 = new Widget(\"button\");\nWidget w2 = new Widget(\"label\");\nWidget w3 = new Widget(\"panel\");\nw1.getId() => 1\nw2.getId() => 2\nw3.getId() => 3\n\n**Key insight:** `static` fields are shared across all instances — incrementing it in each constructor produces unique per-instance IDs.",
           "difficulty": "EASY",
           "pattern": "Static vs Instance Field",
           "hint1": "Declare `private static int nextId = 1;` — one shared copy in Method Area.",
@@ -108,12 +110,14 @@
             }
           ],
           "constraints": "Single-threaded. IDs start at 1.",
-          "editorial": "nextId is static — one value shared across all Widget instances. Each constructor assigns the current nextId to this.id then increments nextId (post-increment). getStaticCount() returns nextId-1 = last assigned ID = total count. In multi-threaded code use AtomicInteger.getAndIncrement() for thread safety."
+          "editorial": "nextId is static — one value shared across all Widget instances. Each constructor assigns the current nextId to this.id then increments nextId (post-increment). getStaticCount() returns nextId-1 = last assigned ID = total count. In multi-threaded code use AtomicInteger.getAndIncrement() for thread safety.",
+          "sampleInput": "new Widget(\"button\"), new Widget(\"label\"), new Widget(\"panel\")",
+          "sampleOutput": "ids = [1, 2, 3]"
         },
         {
           "displayOrder": 3,
           "title": "Override equals() and hashCode()",
-          "description": "Create a `Point` class with `int x, y`. Override `equals()` so two Points with the same (x, y) are equal, and `hashCode()` consistently. Show that two Points with identical coordinates return true for equals, and a `HashSet` deduplicates them correctly.",
+          "description": "Create a `Point` class with `int x, y`. Override `equals()` so two Points with the same coordinates are equal, and override `hashCode()` consistently.\n\n**Example 1:**\nnew Point(3,4).equals(new Point(3,4)) => true\nnew Point(3,4).equals(new Point(3,5)) => false\n\n**Example 2:**\nSet<Point> set = new HashSet<>();\nset.add(new Point(1,2));\nset.contains(new Point(1,2)) => true\n\n**Key insight:** If you override `equals()`, you MUST override `hashCode()` — otherwise `HashSet`/`HashMap` will treat equal objects as different keys.",
           "difficulty": "EASY",
           "pattern": "equals/hashCode Contract",
           "hint1": "equals(): check `if (!(o instanceof Point)) return false;` then cast and compare x and y.",
@@ -128,12 +132,14 @@
             }
           ],
           "constraints": "Integer coordinates.",
-          "editorial": "Objects.hash(x, y) produces a hash from both fields. Both equals and hashCode MUST use the same fields — if equals uses x and y, hashCode must too. Breaking this breaks HashMap/HashSet. The instanceof check handles null and wrong type safely."
+          "editorial": "Objects.hash(x, y) produces a hash from both fields. Both equals and hashCode MUST use the same fields — if equals uses x and y, hashCode must too. Breaking this breaks HashMap/HashSet. The instanceof check handles null and wrong type safely.",
+          "sampleInput": "new Point(3,4).equals(new Point(3,4))",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 4,
           "title": "Fluent Builder With Method Chaining",
-          "description": "Implement a `PersonBuilder` class that builds a `Person(name, age, email)` using method chaining. Methods `name(String)`, `age(int)`, `email(String)` each return `this`. `build()` returns the final `Person` object.",
+          "description": "Implement a `PersonBuilder` that builds a `Person(name, age, email)` using **method chaining**. Each setter returns `this`, so calls can be chained. `build()` returns the final `Person`.\n\n**Example:**\nPerson p = new PersonBuilder()\n    .name(\"Alice\")\n    .age(30)\n    .email(\"alice@example.com\")\n    .build();\np.getName() => \"Alice\"\np.getAge() => 30\n\n**Key insight:** Each method returns `this` (the builder), enabling fluent dot-chaining. `build()` constructs the final immutable object.",
           "difficulty": "EASY",
           "pattern": "Builder Pattern / return this",
           "hint1": "Each setter: `this.name = name; return this;`",
@@ -148,12 +154,14 @@
             }
           ],
           "constraints": "All fields set before build().",
-          "editorial": "return this on every setter enables chaining — the dot chain keeps calling methods on the same PersonBuilder object. build() constructs the final immutable Person. This is the classic GoF Builder pattern, replicated in Lombok @Builder, Protobuf, OkHttp clients, and virtually every modern Java library."
+          "editorial": "return this on every setter enables chaining — the dot chain keeps calling methods on the same PersonBuilder object. build() constructs the final immutable Person. This is the classic GoF Builder pattern, replicated in Lombok @Builder, Protobuf, OkHttp clients, and virtually every modern Java library.",
+          "sampleInput": "new PersonBuilder().name(\"Alice\").age(30).email(\"alice@example.com\").build()",
+          "sampleOutput": "Person{name='Alice', age=30, email='alice@example.com'}"
         },
         {
           "displayOrder": 5,
           "title": "Descriptive toString()",
-          "description": "Create a `Transaction` class with fields: `String id`, `String type`, `double amount`, `long timestamp`. Override `toString()` to return exactly: `Transaction[id=T001, type=CREDIT, amount=$100.50, at=1700000000000]`.",
+          "description": "Create a `Transaction` class with fields `String id`, `String type`, `double amount`, `java.time.LocalDate date`. Override `toString()` to return a human-readable summary.\n\n**Example 1:**\nnew Transaction(\"T001\", \"CREDIT\", 250.0, LocalDate.of(2024,1,15)).toString()\n=> \"Transaction[T001] CREDIT $250.00 on 2024-01-15\"\n\n**Example 2:**\nnew Transaction(\"T002\", \"DEBIT\", 75.5, LocalDate.of(2024,2,1)).toString()\n=> \"Transaction[T002] DEBIT $75.50 on 2024-02-01\"",
           "difficulty": "EASY",
           "pattern": "toString Override",
           "hint1": "Use `String.format(\"$%.2f\", amount)` to format the dollar amount with two decimals.",
@@ -168,12 +176,14 @@
             }
           ],
           "constraints": "amount >= 0.",
-          "editorial": "toString() is called automatically by System.out.println(obj), string concatenation (\"val=\" + obj), and logging frameworks. Without override, you get Transaction@6d06d69c — useless. String.format(\"%.2f\", v) always produces exactly two decimal places."
+          "editorial": "toString() is called automatically by System.out.println(obj), string concatenation (\"val=\" + obj), and logging frameworks. Without override, you get Transaction@6d06d69c — useless. String.format(\"%.2f\", v) always produces exactly two decimal places.",
+          "sampleInput": "new Transaction(\"T001\", \"CREDIT\", 250.0, LocalDate.of(2024,1,15))",
+          "sampleOutput": "\"Transaction[T001] CREDIT $250.00 on 2024-01-15\""
         },
         {
           "displayOrder": 6,
           "title": "Multiple Constructors (Constructor Overloading)",
-          "description": "Create a `Circle` class with three constructors: `Circle()` (defaults: radius=1.0, color=\"red\"), `Circle(double radius)` (color defaults to \"black\"), `Circle(double radius, String color)`. Each shorter constructor must chain to the longest using `this(...)`. Verify all three constructors.",
+          "description": "Create a `Circle` class with **three constructors** using `this()` chaining:\n- `Circle()` — defaults: radius=1.0, color=\"red\"\n- `Circle(double radius)` — default color=\"red\"\n- `Circle(double radius, String color)`\n\n**Example 1:**\nnew Circle().getRadius() => 1.0, getColor() => \"red\"\n\n**Example 2:**\nnew Circle(5.0).getRadius() => 5.0, getColor() => \"red\"\n\n**Example 3:**\nnew Circle(3.0, \"blue\").getArea() => 28.27\n\n**Key insight:** `this(args)` calls another constructor in the same class — avoids duplicating initialization logic.",
           "difficulty": "EASY",
           "pattern": "Constructor Chaining",
           "hint1": "`Circle() { this(1.0, \"red\"); }` — chains to the 2-arg constructor.",
@@ -196,12 +206,14 @@
             }
           ],
           "constraints": "radius > 0.",
-          "editorial": "Constructor chaining centralises initialization: all overloads ultimately call the most-specific constructor. this() MUST be the first statement — the compiler enforces this to ensure the object is always fully initialised through a single code path. Avoids duplicated field assignment logic."
+          "editorial": "Constructor chaining centralises initialization: all overloads ultimately call the most-specific constructor. this() MUST be the first statement — the compiler enforces this to ensure the object is always fully initialised through a single code path. Avoids duplicated field assignment logic.",
+          "sampleInput": "new Circle(3.0, \"blue\").getArea()",
+          "sampleOutput": "28.27"
         },
         {
           "displayOrder": 7,
           "title": "Inventory: Collection of Objects",
-          "description": "Create a `Product(String name, double price, int quantity)` class. Then implement `Inventory` with a `List<Product>` and three methods: `addProduct(Product p)`, `totalValue()` returning the sum of `price * quantity` for every product, and `findMostExpensive()` returning the Product with the highest unit price.",
+          "description": "Create `Product(String name, double price, int quantity)`. Implement `Inventory` with `addProduct()`, `getTotalValue()` (sum of price*qty), and `getMostExpensive()` (highest unit price).\n\n**Example:**\nInventory inv = new Inventory();\ninv.addProduct(new Product(\"Apple\", 0.5, 100));\ninv.addProduct(new Product(\"Laptop\", 999.99, 5));\ninv.getTotalValue() => 5049.95\ninv.getMostExpensive().getName() => \"Laptop\"",
           "difficulty": "MEDIUM",
           "pattern": "Object Collections / Iteration",
           "hint1": "totalValue: `for (Product p : products) total += p.price * p.quantity;`",
@@ -216,12 +228,14 @@
             }
           ],
           "constraints": "products non-empty for findMostExpensive.",
-          "editorial": "totalValue: 1.5×100 + 999×5 + 0.5×200 = 150 + 4995 + 100 = 5245.0. findMostExpensive tracks the Product with the highest unit price (not total value) — scan-and-update pattern with a running max."
+          "editorial": "totalValue: 1.5×100 + 999×5 + 0.5×200 = 150 + 4995 + 100 = 5245.0. findMostExpensive tracks the Product with the highest unit price (not total value) — scan-and-update pattern with a running max.",
+          "sampleInput": "products: Apple($0.50 x100), Laptop($999.99 x5)",
+          "sampleOutput": "totalValue=5049.95, mostExpensive=\"Laptop\""
         },
         {
           "displayOrder": 8,
           "title": "Mutable vs Immutable Point",
-          "description": "Create both a `MutablePoint` (fields can be changed via setters) and an `ImmutablePoint` (final fields, no setters; `translate(dx,dy)` returns a *new* ImmutablePoint instead of modifying `this`). Show that sharing an ImmutablePoint across two references is safe — one method cannot corrupt the other's view.",
+          "description": "Create both `MutablePoint` (fields changeable via setters) and `ImmutablePoint` (all fields final, no setters, `withX(int x)` returns a new instance).\n\n**MutablePoint example:**\nMutablePoint p = new MutablePoint(1,2);\np.setX(10);\np.getX() => 10\n\n**ImmutablePoint example:**\nImmutablePoint p = new ImmutablePoint(1,2);\nImmutablePoint p2 = p.withX(10);\np.getX() => 1   // original unchanged\np2.getX() => 10  // new instance\n\n**Key insight:** Immutable objects are thread-safe by design — no synchronization needed since state never changes.",
           "difficulty": "MEDIUM",
           "pattern": "Immutable Object Design",
           "hint1": "ImmutablePoint: `final int x, y;` — compiler prevents reassignment.",
@@ -244,12 +258,14 @@
             }
           ],
           "constraints": "No constraints.",
-          "editorial": "Immutability: final fields set once in the constructor, never changed. Every 'modification' returns a new object. The caller keeps the old reference untouched. This makes objects safe to share freely across threads, cache keys, and method parameters without defensive copying. String, Integer, LocalDate, BigDecimal all use this pattern."
+          "editorial": "Immutability: final fields set once in the constructor, never changed. Every 'modification' returns a new object. The caller keeps the old reference untouched. This makes objects safe to share freely across threads, cache keys, and method parameters without defensive copying. String, Integer, LocalDate, BigDecimal all use this pattern.",
+          "sampleInput": "ImmutablePoint(1,2).withX(10)",
+          "sampleOutput": "original.x=1, new.x=10"
         },
         {
           "displayOrder": 9,
           "title": "Temperature Converter Class",
-          "description": "Design a `Temperature` class that stores a value in Celsius. Add factory methods `fromCelsius(double c)` and `fromFahrenheit(double f)` as static methods. Add instance methods `toCelsius()`, `toFahrenheit()`, `toKelvin()`. Use `toString()` to show `25.0°C`.",
+          "description": "Design a `Temperature` class storing Celsius internally. Add factory methods `fromCelsius(double)`, `fromFahrenheit(double)`, `fromKelvin(double)`, and conversion getters `toCelsius()`, `toFahrenheit()`, `toKelvin()`.\n\n**Example 1:**\nTemperature.fromFahrenheit(212).toCelsius() => 100.0\n\n**Example 2:**\nTemperature.fromKelvin(273.15).toCelsius() => 0.0\n\n**Example 3:**\nTemperature.fromCelsius(0).toFahrenheit() => 32.0\n\n**Key insight:** Factory methods communicate intent better than constructors — `fromFahrenheit(212)` is clearer than `new Temperature(100)`.",
           "difficulty": "MEDIUM",
           "pattern": "Static Factory Methods",
           "hint1": "Private constructor — only factory methods create instances: `private Temperature(double celsius) { this.celsius = celsius; }`",
@@ -272,12 +288,14 @@
             }
           ],
           "constraints": "Temperatures above absolute zero (> -273.15°C).",
-          "editorial": "Static factory methods hide the constructor — the class controls how instances are created. Here all internal storage is Celsius; factory methods convert on entry, instance methods convert on output. This is how java.time.LocalDate.of(), Integer.valueOf(), and Optional.of() work — they control instance creation rather than exposing new directly."
+          "editorial": "Static factory methods hide the constructor — the class controls how instances are created. Here all internal storage is Celsius; factory methods convert on entry, instance methods convert on output. This is how java.time.LocalDate.of(), Integer.valueOf(), and Optional.of() work — they control instance creation rather than exposing new directly.",
+          "sampleInput": "Temperature.fromFahrenheit(212).toCelsius()",
+          "sampleOutput": "100.0"
         },
         {
           "displayOrder": 10,
           "title": "Compare Objects With Comparable",
-          "description": "Create a `Student(String name, double gpa)` class that implements `Comparable<Student>`. Students should sort in descending GPA order (highest GPA first). Demonstrate by sorting a list with `Collections.sort()`.",
+          "description": "Create `Student(String name, double gpa)` implementing `Comparable<Student>` — compare by GPA descending (highest first). Also write a `Comparator` for alphabetical name order.\n\n**Example:**\nList<Student> students = List.of(\n    new Student(\"Charlie\", 3.5),\n    new Student(\"Alice\", 3.9),\n    new Student(\"Bob\", 3.7));\nCollections.sort(students);\n// => [Alice(3.9), Bob(3.7), Charlie(3.5)]\n\n**Key insight:** `compareTo` defines natural order. `Comparator` defines alternate orderings. Both are used by `Collections.sort()` and `TreeSet`.",
           "difficulty": "MEDIUM",
           "pattern": "Comparable Interface",
           "hint1": "Implement `public int compareTo(Student other)` in Student.",
@@ -292,12 +310,14 @@
             }
           ],
           "constraints": "gpa in [0.0, 4.0].",
-          "editorial": "Comparable<T> defines the 'natural order' of objects. compareTo returns negative if this < other, 0 if equal, positive if this > other. For descending GPA: swap `this` and `other` in Double.compare. Collections.sort() and Arrays.sort() use this ordering. Alternatively use a Comparator for external ordering without modifying the class."
+          "editorial": "Comparable<T> defines the 'natural order' of objects. compareTo returns negative if this < other, 0 if equal, positive if this > other. For descending GPA: swap `this` and `other` in Double.compare. Collections.sort() and Arrays.sort() use this ordering. Alternatively use a Comparator for external ordering without modifying the class.",
+          "sampleInput": "[Charlie(3.5), Alice(3.9), Bob(3.7)] sorted by GPA desc",
+          "sampleOutput": "[Alice(3.9), Bob(3.7), Charlie(3.5)]"
         },
         {
           "displayOrder": 11,
           "title": "Validate State in Constructor",
-          "description": "Create a `BankAccount(String owner, double initialBalance)` class. The constructor must throw `IllegalArgumentException` if `owner` is null/blank or if `initialBalance < 0`. Implement `deposit(double)` and `withdraw(double)` with similar guards. Test all validation paths.",
+          "description": "Create `BankAccount(String owner, double initialBalance)`. The constructor must throw `IllegalArgumentException` if `owner` is blank or `initialBalance < 0`. `deposit(double)` and `withdraw(double)` must also validate inputs.\n\n**Example 1:**\nnew BankAccount(\"Alice\", 100.0).getBalance() => 100.0\n\n**Example 2:**\nnew BankAccount(\"\", 100.0) => throws IllegalArgumentException(\"Owner must not be blank\")\n\n**Example 3:**\nnew BankAccount(\"Bob\", -50) => throws IllegalArgumentException(\"Balance cannot be negative\")",
           "difficulty": "MEDIUM",
           "pattern": "Constructor Validation / Invariant Enforcement",
           "hint1": "Check `if (owner == null || owner.isBlank()) throw new IllegalArgumentException(...);`",
@@ -320,12 +340,14 @@
             }
           ],
           "constraints": "balance >= 0 at all times.",
-          "editorial": "Constructor validation is the first line of defence — it ensures objects are always in a valid state from birth. If preconditions fail, throw IllegalArgumentException. If an operation would violate a business rule, throw IllegalStateException. This encapsulation principle means no external code can ever create a BankAccount with a negative balance."
+          "editorial": "Constructor validation is the first line of defence — it ensures objects are always in a valid state from birth. If preconditions fail, throw IllegalArgumentException. If an operation would violate a business rule, throw IllegalStateException. This encapsulation principle means no external code can ever create a BankAccount with a negative balance.",
+          "sampleInput": "new BankAccount(\"\", 100.0)",
+          "sampleOutput": "throws IllegalArgumentException"
         },
         {
           "displayOrder": 12,
           "title": "Object Graph — Order With Line Items",
-          "description": "Model an `Order` that contains a list of `LineItem(String product, int qty, double unitPrice)`. Implement `Order.addItem(LineItem)` and `Order.grandTotal()` which sums `qty * unitPrice` for all items. Also provide `Order.toString()` showing all items and the total.",
+          "description": "Model an `Order` containing a list of `LineItem(String product, int qty, double unitPrice)`. Implement `Order.getTotal()` summing `qty * unitPrice` for all line items, and `Order.toString()` listing each item.\n\n**Example:**\nOrder order = new Order(\"O-001\");\norder.addItem(new LineItem(\"Apple\", 3, 0.50));\norder.addItem(new LineItem(\"Milk\", 2, 1.20));\norder.getTotal() => 3.90\norder.getItemCount() => 2\n\n**Key insight:** Composition — Order HAS-A list of LineItems. Each object has a single responsibility.",
           "difficulty": "MEDIUM",
           "pattern": "Object Graph / Composition",
           "hint1": "Order has `List<LineItem> items = new ArrayList<>();`",
@@ -340,12 +362,14 @@
             }
           ],
           "constraints": "At least one item.",
-          "editorial": "Composition: Order *contains* LineItems — has-a relationship. grandTotal: 2×12.99 + 10×1.50 + 1×49.99 = 25.98 + 15.00 + 49.99 = 90.97. This object graph pattern is the backbone of every e-commerce domain model."
+          "editorial": "Composition: Order *contains* LineItems — has-a relationship. grandTotal: 2×12.99 + 10×1.50 + 1×49.99 = 25.98 + 15.00 + 49.99 = 90.97. This object graph pattern is the backbone of every e-commerce domain model.",
+          "sampleInput": "Order with LineItem(Apple,3,$0.50) and LineItem(Milk,2,$1.20)",
+          "sampleOutput": "total = 3.90"
         },
         {
           "displayOrder": 13,
           "title": "Singleton Pattern",
-          "description": "Implement a thread-safe `DatabaseConfig` singleton using the initialization-on-demand holder pattern. It should have fields `host`, `port`, `dbName` set at construction. `getInstance()` must always return the same object. Verify with `==`.",
+          "description": "Implement a **thread-safe Singleton** `DatabaseConfig` using the initialization-on-demand holder idiom. `getInstance()` must return the same instance every time, even under concurrent access.\n\n**Example:**\nDatabaseConfig a = DatabaseConfig.getInstance();\nDatabaseConfig b = DatabaseConfig.getInstance();\na == b => true\n\n**Key insight:** The holder idiom — a private static inner class `Holder { static final DatabaseConfig INSTANCE = new DatabaseConfig(); }` — is initialized lazily and is inherently thread-safe due to class-loading guarantees.",
           "difficulty": "HARD",
           "pattern": "Singleton / Static Inner Class",
           "hint1": "Private constructor prevents external instantiation.",
@@ -360,12 +384,14 @@
             }
           ],
           "constraints": "Single-class implementation. No synchronised keyword needed with holder pattern.",
-          "editorial": "Initialization-on-demand holder: the Holder inner class is not loaded until getInstance() is first called. Class loading in Java is inherently thread-safe — the JVM guarantees it happens exactly once. Compared to double-checked locking, this is simpler and provably correct. Used in Apache Commons, Spring framework internals."
+          "editorial": "Initialization-on-demand holder: the Holder inner class is not loaded until getInstance() is first called. Class loading in Java is inherently thread-safe — the JVM guarantees it happens exactly once. Compared to double-checked locking, this is simpler and provably correct. Used in Apache Commons, Spring framework internals.",
+          "sampleInput": "DatabaseConfig.getInstance() called twice",
+          "sampleOutput": "same instance: a == b => true"
         },
         {
           "displayOrder": 14,
           "title": "Defensive Copy in Constructor and Getter",
-          "description": "Create an immutable `DateRange(Date start, Date end)` class. Because `java.util.Date` is mutable, store defensive copies in the constructor and return defensive copies from the getters — otherwise callers can mutate the 'immutable' object's internals.",
+          "description": "Create an immutable `DateRange(Date start, Date end)` class. Since `java.util.Date` is mutable, the constructor must make **defensive copies**, and getters must return copies too — otherwise callers could mutate the \"immutable\" object.\n\n**Example:**\nDate s = new Date(1000L);\nDateRange r = new DateRange(s, new Date(2000L));\ns.setTime(9999L);          // mutate original\nr.getStart().getTime() => 1000L  // defensive copy protects immutability\n\n**Key insight:** `new Date(original.getTime())` in the constructor and getter prevents external mutation of internal state.",
           "difficulty": "HARD",
           "pattern": "Defensive Copy / Immutability",
           "hint1": "In constructor: `this.start = new Date(start.getTime());` — copy, don't store the passed reference.",
@@ -384,12 +410,14 @@
             }
           ],
           "constraints": "start <= end.",
-          "editorial": "Effective Java Item 50: make defensive copies when fields are mutable objects. Two attack vectors: (1) caller mutates the object passed to the constructor — guard: copy in constructor. (2) caller mutates the object returned by a getter — guard: return a copy. Both must be defended. Modern Java avoids this with Instant or LocalDate which are already immutable."
+          "editorial": "Effective Java Item 50: make defensive copies when fields are mutable objects. Two attack vectors: (1) caller mutates the object passed to the constructor — guard: copy in constructor. (2) caller mutates the object returned by a getter — guard: return a copy. Both must be defended. Modern Java avoids this with Instant or LocalDate which are already immutable.",
+          "sampleInput": "DateRange constructed, then source Date mutated",
+          "sampleOutput": "r.getStart().getTime() = 1000L (unchanged)"
         },
         {
           "displayOrder": 15,
           "title": "Chained Validation Builder",
-          "description": "Implement a `UserBuilder` with fields `username`, `email`, `age`. `build()` should validate: username 3–20 chars, email contains '@', age 18–120 — throwing `IllegalStateException` listing ALL validation errors, not just the first. Use a `List<String> errors` internally.",
+          "description": "Implement `UserBuilder` with fields `username`, `email`, `age`. `build()` must validate: username non-null/non-blank, email contains '@', age between 0–150. Throw `IllegalStateException` with a descriptive message on violation.\n\n**Example 1:**\nnew UserBuilder().username(\"alice\").email(\"alice@example.com\").age(25).build()\n=> User{username='alice', email='alice@example.com', age=25}\n\n**Example 2:**\nnew UserBuilder().username(\"bob\").email(\"not-an-email\").age(25).build()\n=> throws IllegalStateException(\"Invalid email\")",
           "difficulty": "HARD",
           "pattern": "Validation Builder / Error Accumulation",
           "hint1": "In build(): `List<String> errors = new ArrayList<>();` then add individual error messages.",
@@ -408,12 +436,14 @@
             }
           ],
           "constraints": "All three fields must be set.",
-          "editorial": "Collect-then-throw validation: all rules run and errors accumulate into a List. Only at the end, if any errors exist, join them and throw a single exception. This is far better UX than fail-fast (one error per attempt) — the user sees all problems at once. Used in Bean Validation (Hibernate Validator), Spring's BindingResult, and GraphQL error handling."
+          "editorial": "Collect-then-throw validation: all rules run and errors accumulate into a List. Only at the end, if any errors exist, join them and throw a single exception. This is far better UX than fail-fast (one error per attempt) — the user sees all problems at once. Used in Bean Validation (Hibernate Validator), Spring's BindingResult, and GraphQL error handling.",
+          "sampleInput": "username=\"bob\", email=\"not-an-email\", age=25",
+          "sampleOutput": "throws IllegalStateException(\"Invalid email\")"
         },
         {
           "displayOrder": 16,
           "title": "Generic Pair Class",
-          "description": "Implement a generic `Pair<A, B>` class with fields `first` and `second`, a constructor, getters, `swap()` that returns a new `Pair<B, A>`, and a correct `equals()`/`hashCode()`. Test with `Pair<String, Integer>` and `Pair<Integer, String>`.",
+          "description": "Implement a generic `Pair<A, B>` class with fields `first` and `second`, a full constructor, getters, `equals()`, `hashCode()`, `toString()`, and a static factory method `of(A a, B b)`.\n\n**Example 1:**\nPair<String, Integer> p = Pair.of(\"hello\", 42);\np.getFirst() => \"hello\"\np.getSecond() => 42\np.toString() => \"(hello, 42)\"\n\n**Example 2:**\nPair.of(\"a\", 1).equals(Pair.of(\"a\", 1)) => true\n\n**Key insight:** Generic classes let you write type-safe containers without casting. `Pair<String,Integer>` is checked at compile time.",
           "difficulty": "HARD",
           "pattern": "Generic Class Design",
           "hint1": "Class declaration: `public class Pair<A, B>` with fields `private final A first; private final B second;`",
@@ -436,12 +466,14 @@
             }
           ],
           "constraints": "A, B can be any non-primitive type.",
-          "editorial": "Generic class: type parameters A and B replace concrete types, making Pair reusable. swap() returns Pair<B,A> — generics track the type swap. equals uses instanceof Pair<?,?> (wildcard) since generics are erased at runtime. Objects.equals handles nulls safely. Map.Entry<K,V> in the JDK follows this exact pattern."
+          "editorial": "Generic class: type parameters A and B replace concrete types, making Pair reusable. swap() returns Pair<B,A> — generics track the type swap. equals uses instanceof Pair<?,?> (wildcard) since generics are erased at runtime. Objects.equals handles nulls safely. Map.Entry<K,V> in the JDK follows this exact pattern.",
+          "sampleInput": "Pair.of(\"hello\", 42)",
+          "sampleOutput": "\"(hello, 42)\""
         },
         {
           "displayOrder": 17,
           "title": "Chained Object Transformations (Pipeline)",
-          "description": "Create a `StringPipeline` class that wraps a String and offers chainable transformations: `trim()`, `toUpperCase()`, `replace(String from, String to)`, `append(String s)`. Each method returns a new `StringPipeline` (immutable-style). Implement `get()` to retrieve the final string.",
+          "description": "Create a `StringPipeline` class wrapping a String with chainable transformation methods: `trim()`, `toUpperCase()`, `replace(from, to)`, `append(s)`. Each returns `this` for chaining. `result()` returns the final string.\n\n**Example:**\nnew StringPipeline(\"  hello world  \")\n    .trim()\n    .toUpperCase()\n    .replace(\"WORLD\", \"JAVA\")\n    .append(\"!\")\n    .result()\n=> \"HELLO JAVA!\"\n\n**Key insight:** Each method mutates internal state and returns `this` — the pipeline pattern for readable sequential transformations.",
           "difficulty": "HARD",
           "pattern": "Immutable Method Chaining",
           "hint1": "Each method: `return new StringPipeline(this.value.trim());` — creates new wrapper.",
@@ -456,12 +488,14 @@
             }
           ],
           "constraints": "value non-null.",
-          "editorial": "Immutable chaining: each step creates a new StringPipeline rather than modifying the existing one. The original StringPipeline is never changed — safe to branch: `StringPipeline base = new StringPipeline(\"hi\"); StringPipeline a = base.append(\"!\"); StringPipeline b = base.append(\"?\")`  — base is unaffected. This mirrors Java's Stream API and Optional — each operation returns a new wrapper."
+          "editorial": "Immutable chaining: each step creates a new StringPipeline rather than modifying the existing one. The original StringPipeline is never changed — safe to branch: `StringPipeline base = new StringPipeline(\"hi\"); StringPipeline a = base.append(\"!\"); StringPipeline b = base.append(\"?\")`  — base is unaffected. This mirrors Java's Stream API and Optional — each operation returns a new wrapper.",
+          "sampleInput": "\"  hello world  \" -> trim -> toUpperCase -> replace(WORLD,JAVA) -> append(!)",
+          "sampleOutput": "\"HELLO JAVA!\""
         },
         {
           "displayOrder": 18,
           "title": "equals() Without hashCode() — Bug Demo",
-          "description": "Create a `Key(int id)` class that overrides `equals()` but NOT `hashCode()`. Show that using Key as a HashMap key fails: put with k1, get with k2 (same id) returns null. Then fix it by adding hashCode and show the lookup succeeds.",
+          "description": "Create `Key(int id)` overriding `equals()` but **NOT** `hashCode()`. Demonstrate the bug: two logically-equal Keys placed in a `HashMap` produce two entries instead of one.\n\n**Example (broken):**\nMap<Key,String> map = new HashMap<>();\nmap.put(new Key(1), \"first\");\nmap.put(new Key(1), \"second\");\nmap.size() => 2  // BUG: should be 1\n\n**Fixed (with hashCode):**\nmap.size() => 1\n\n**Key insight:** `HashMap` uses `hashCode()` to find the bucket first, then `equals()` to match within it. Without a consistent `hashCode()`, equal objects land in different buckets.",
           "difficulty": "HARD",
           "pattern": "equals/hashCode Contract Violation",
           "hint1": "Without hashCode: k1 and k2 hash to different buckets (identity hash). HashMap looks in wrong bucket.",
@@ -480,12 +514,14 @@
             }
           ],
           "constraints": "No constraint — this is a deliberate bug demonstration.",
-          "editorial": "HashMap uses hashCode first to find the bucket. If hashCode() is not overridden, two logically-equal objects (same id, both returning true from equals) hash to different buckets — the entry is never found. The contract: if a.equals(b) then a.hashCode() == b.hashCode(). Override both or neither. IDEs and code quality tools (SpotBugs, SonarQube) flag this violation."
+          "editorial": "HashMap uses hashCode first to find the bucket. If hashCode() is not overridden, two logically-equal objects (same id, both returning true from equals) hash to different buckets — the entry is never found. The contract: if a.equals(b) then a.hashCode() == b.hashCode(). Override both or neither. IDEs and code quality tools (SpotBugs, SonarQube) flag this violation.",
+          "sampleInput": "put Key(1)->\"first\", put Key(1)->\"second\" (no hashCode override)",
+          "sampleOutput": "map.size() = 2 (bug)"
         },
         {
           "displayOrder": 19,
           "title": "Value Object Pattern — Money",
-          "description": "Implement an immutable `Money(long cents, String currency)` value object. Override `equals`, `hashCode`, `toString`. Add `add(Money other)` that returns a new Money (throws if currencies differ), and `multiply(int factor)`. Demonstrate in a shopping cart total.",
+          "description": "Implement an immutable `Money(long cents, String currency)` value object. Override `equals()`, `hashCode()`, `toString()`, and add `add(Money other)` (must have same currency) and `multiply(int factor)`.\n\n**Example 1:**\nnew Money(1000, \"USD\").toString() => \"$10.00 USD\"\n\n**Example 2:**\nnew Money(500, \"USD\").add(new Money(300, \"USD\")) => Money(800, \"USD\")\n\n**Example 3:**\nnew Money(200, \"USD\").add(new Money(100, \"EUR\")) => throws IllegalArgumentException(\"Currency mismatch\")",
           "difficulty": "HARD",
           "pattern": "Value Object / Immutable Domain Class",
           "hint1": "Store cents as long to avoid floating-point errors. $1.99 = 199 cents.",
@@ -504,12 +540,14 @@
             }
           ],
           "constraints": "cents >= 0. Same currency for add().",
-          "editorial": "Value Object: identity comes from value, not reference. Two Money(500,USD) objects are equal — just like two Integer(5) objects are equal. Immutability + equals/hashCode makes Money safe as a HashMap key and for arithmetic. Storing money as cents (long) avoids IEEE 754 floating-point errors — $0.1 + $0.2 = $0.30000000000000004 in doubles but 10+20=30 cents exactly."
+          "editorial": "Value Object: identity comes from value, not reference. Two Money(500,USD) objects are equal — just like two Integer(5) objects are equal. Immutability + equals/hashCode makes Money safe as a HashMap key and for arithmetic. Storing money as cents (long) avoids IEEE 754 floating-point errors — $0.1 + $0.2 = $0.30000000000000004 in doubles but 10+20=30 cents exactly.",
+          "sampleInput": "Money(500,\"USD\").add(Money(300,\"USD\"))",
+          "sampleOutput": "Money(800, \"USD\")"
         },
         {
           "displayOrder": 20,
           "title": "Prototype Pattern — Clone Objects",
-          "description": "Implement a `Shape` class hierarchy where `Circle` and `Rectangle` both implement a `clone()` method (not Java's Cloneable) that returns a deep copy. Implement a `ShapeRegistry` that stores prototype Shapes by name and can produce fresh copies via `create(String name)`.",
+          "description": "Implement the **Prototype pattern**: a `Shape` interface with `clone()` method, implemented by `Circle(double radius)` and `Rectangle(double width, double height)`. `clone()` must return a deep copy.\n\n**Example:**\nCircle c1 = new Circle(5.0);\nCircle c2 = (Circle) c1.clone();\nc2.setRadius(10.0);\nc1.getRadius() => 5.0   // original unchanged\nc2.getRadius() => 10.0\n\n**Key insight:** Prototype avoids expensive re-initialization — clone an existing object instead of constructing from scratch. Deep copy ensures independence.",
           "difficulty": "HARD",
           "pattern": "Prototype Pattern",
           "hint1": "Define abstract `Shape` with `abstract Shape clone();` and common fields like `color`.",
@@ -524,7 +562,9 @@
             }
           ],
           "constraints": "Registry must be pre-populated before create().",
-          "editorial": "Prototype pattern: instead of calling new SpecificClass() everywhere, clone a pre-built prototype. Useful when object construction is expensive or when you want to produce objects that are pre-configured. Each clone() creates a fully independent deep copy — mutating c1 does NOT affect the stored prototype. Used in Java's object serialisation round-trip cloning and game entity factories."
+          "editorial": "Prototype pattern: instead of calling new SpecificClass() everywhere, clone a pre-built prototype. Useful when object construction is expensive or when you want to produce objects that are pre-configured. Each clone() creates a fully independent deep copy — mutating c1 does NOT affect the stored prototype. Used in Java's object serialisation round-trip cloning and game entity factories.",
+          "sampleInput": "c1 = Circle(5.0), c2 = c1.clone(), c2.setRadius(10.0)",
+          "sampleOutput": "c1.radius=5.0, c2.radius=10.0"
         }
       ],
       "subCategory": "OOP (VERY IMPORTANT)",

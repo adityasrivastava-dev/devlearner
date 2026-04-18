@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Fix the Serialization Bug",
-          "description": "The class below fails with InvalidClassException after a new field is added. Fix it. Also: Logger and connection fields should not be serialized.\n```java\nclass OrderService implements Serializable {\n    private String orderId;\n    private Logger log = Logger.getLogger(\"orders\");\n    private Connection dbConn;\n    private int version; // newly added field\n}\n```",
+          "description": "Fix a serialization bug: a class implements `Serializable` but has a non-serializable field that causes `NotSerializableException`.\n\n**Broken:**\n```java\nclass Config implements Serializable {\n    Connection conn; // not Serializable!\n}\n```\n\n**Fix:** Mark `conn` as `transient` — it's excluded from serialization.\n\n**Example:**\nserialize(new Config()) => works (conn is transient)\ndeserialize(bytes) => Config with conn=null (reconnect in readObject)",
           "difficulty": "EASY",
           "pattern": "serialVersionUID, transient",
           "hint1": "Add a fixed serialVersionUID to prevent auto-generated version mismatches.",
@@ -43,12 +43,14 @@
           "hint3": "transient fields are null after deserialization — reinitialize them in readObject() if needed.",
           "starterCode": "import java.io.*;\nimport java.sql.Connection;\nimport java.util.logging.Logger;\n\npublic class Q1 {\n    // Fix this class:\n    static class OrderService implements Serializable {\n        private String orderId;\n        private Logger log = Logger.getLogger(\"orders\");\n        private Connection dbConn;\n        private int version;\n    }\n\n    public static void main(String[] args) throws Exception {\n        OrderService svc = new OrderService();\n        // serialize and deserialize without exception\n        ByteArrayOutputStream bos = new ByteArrayOutputStream();\n        new ObjectOutputStream(bos).writeObject(svc);\n        OrderService restored = (OrderService) new ObjectInputStream(\n            new ByteArrayInputStream(bos.toByteArray())).readObject();\n        System.out.println(\"OK\");\n    }\n}",
           "solutionCode": "import java.io.*;\nimport java.sql.Connection;\nimport java.util.logging.Logger;\n\npublic class Q1 {\n    static class OrderService implements Serializable {\n        private static final long serialVersionUID = 1L; // fixed version\n        private String orderId;\n        private transient Logger log;          // not serializable\n        private transient Connection dbConn;   // not serializable\n        private int version;\n\n        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {\n            ois.defaultReadObject();\n            this.log = Logger.getLogger(\"orders\"); // reinitialize transient\n        }\n    }\n\n    public static void main(String[] args) throws Exception {\n        OrderService svc = new OrderService();\n        ByteArrayOutputStream bos = new ByteArrayOutputStream();\n        new ObjectOutputStream(bos).writeObject(svc);\n        OrderService restored = (OrderService) new ObjectInputStream(\n            new ByteArrayInputStream(bos.toByteArray())).readObject();\n        System.out.println(\"OK\");\n    }\n}",
-          "testCases": "OK"
+          "testCases": "OK",
+          "sampleInput": "serialize Config with transient Connection",
+          "sampleOutput": "No NotSerializableException; conn=null after deserialization"
         },
         {
           "displayOrder": 2,
           "title": "Deep Clone via Serialization",
-          "description": "Implement a generic `deepClone(T obj)` method that uses serialization to create a completely independent copy of an object graph (not just shallow copy).",
+          "description": "Deep clone an object using serialization/deserialization — no need to manually copy every field.\n\n**Example:**\nPerson original = new Person(\"Alice\", new Address(\"NYC\"));\nPerson clone = deepClone(original);\nclone.getAddress().setCity(\"LA\");\noriginal.getAddress().getCity() => \"NYC\" (deep copy — independent)\n\n**Key insight:** Serialize to `ByteArrayOutputStream`, deserialize from `ByteArrayInputStream` — copies entire object graph.",
           "difficulty": "EASY",
           "pattern": "Serialization pattern, deep copy",
           "hint1": "Serialize the object to a ByteArrayOutputStream, then deserialize from ByteArrayInputStream.",
@@ -56,12 +58,14 @@
           "hint3": "The type T must implement Serializable for this to work.",
           "starterCode": "import java.io.*;\nimport java.util.*;\n\npublic class Q2 {\n    @SuppressWarnings(\"unchecked\")\n    public static <T extends Serializable> T deepClone(T obj) throws Exception {\n        // TODO: serialize to byte array, then deserialize\n        return null;\n    }\n\n    public static void main(String[] args) throws Exception {\n        List<String> original = new ArrayList<>(Arrays.asList(\"a\", \"b\", \"c\"));\n        List<String> clone = deepClone((Serializable & java.util.List<String>) original);\n        clone.add(\"d\");\n        System.out.println(\"Original: \" + original); // [a, b, c]\n        System.out.println(\"Clone:    \" + clone);     // [a, b, c, d]\n    }\n}",
           "solutionCode": "import java.io.*;\nimport java.util.*;\n\npublic class Q2 {\n    @SuppressWarnings(\"unchecked\")\n    public static <T extends Serializable> T deepClone(T obj) throws Exception {\n        ByteArrayOutputStream bos = new ByteArrayOutputStream();\n        try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {\n            oos.writeObject(obj);\n        }\n        try (ObjectInputStream ois = new ObjectInputStream(\n                new ByteArrayInputStream(bos.toByteArray()))) {\n            return (T) ois.readObject();\n        }\n    }\n\n    public static void main(String[] args) throws Exception {\n        List<String> original = new ArrayList<>(Arrays.asList(\"a\", \"b\", \"c\"));\n        @SuppressWarnings(\"unchecked\")\n        List<String> clone = (List<String>) deepClone((Serializable) original);\n        clone.add(\"d\");\n        System.out.println(\"Original: \" + original); // [a, b, c]\n        System.out.println(\"Clone:    \" + clone);     // [a, b, c, d]\n    }\n}",
-          "testCases": "Original: [a, b, c]\nClone:    [a, b, c, d]"
+          "testCases": "Original: [a, b, c]\nClone:    [a, b, c, d]",
+          "sampleInput": "deepClone(Person{Alice, Address{NYC}})",
+          "sampleOutput": "clone independent; original unchanged"
         },
         {
           "displayOrder": 3,
           "title": "Implement Externalizable for Compact Serialization",
-          "description": "A `Point3D` class has x, y, z (double) and a label (String). Using Externalizable, serialize only x, y, z (skip label). Verify label is null after deserialization and the coordinates are preserved.",
+          "description": "Implement `Externalizable` for compact, custom serialization — write/read only essential fields.\n\n**Example:**\nclass Point implements Externalizable {\n    int x, y;\n    void writeExternal(ObjectOutput out) { out.writeInt(x); out.writeInt(y); }\n    void readExternal(ObjectInput in) { x = in.readInt(); y = in.readInt(); }\n}\n// 8 bytes (2 ints) vs Serializable's ~50+ bytes\n\nnew Point(3,4) serialized size => 8 bytes",
           "difficulty": "MEDIUM",
           "pattern": "Externalizable, selective field serialization",
           "hint1": "Implement Externalizable (not Serializable). Add a public no-arg constructor.",
@@ -69,7 +73,9 @@
           "hint3": "label is not written — it will be null after deserialization.",
           "starterCode": "import java.io.*;\n\npublic class Q3 {\n    static class Point3D implements Externalizable {\n        double x, y, z;\n        String label;\n\n        // TODO: add no-arg constructor, writeExternal, readExternal\n    }\n\n    public static void main(String[] args) throws Exception {\n        Point3D p = new Point3D();\n        p.x = 1.5; p.y = 2.5; p.z = 3.5; p.label = \"origin\";\n\n        ByteArrayOutputStream bos = new ByteArrayOutputStream();\n        new ObjectOutputStream(bos).writeObject(p);\n\n        Point3D restored = (Point3D) new ObjectInputStream(\n            new ByteArrayInputStream(bos.toByteArray())).readObject();\n\n        System.out.println(restored.x + \",\" + restored.y + \",\" + restored.z); // 1.5,2.5,3.5\n        System.out.println(restored.label); // null\n    }\n}",
           "solutionCode": "import java.io.*;\n\npublic class Q3 {\n    static class Point3D implements Externalizable {\n        double x, y, z;\n        String label;\n\n        public Point3D() {} // required by Externalizable\n\n        @Override\n        public void writeExternal(ObjectOutput out) throws IOException {\n            out.writeDouble(x);\n            out.writeDouble(y);\n            out.writeDouble(z);\n            // label intentionally not written\n        }\n\n        @Override\n        public void readExternal(ObjectInput in) throws IOException {\n            this.x = in.readDouble();\n            this.y = in.readDouble();\n            this.z = in.readDouble();\n            // label stays null\n        }\n    }\n\n    public static void main(String[] args) throws Exception {\n        Point3D p = new Point3D();\n        p.x = 1.5; p.y = 2.5; p.z = 3.5; p.label = \"origin\";\n\n        ByteArrayOutputStream bos = new ByteArrayOutputStream();\n        new ObjectOutputStream(bos).writeObject(p);\n\n        Point3D restored = (Point3D) new ObjectInputStream(\n            new ByteArrayInputStream(bos.toByteArray())).readObject();\n\n        System.out.println(restored.x + \",\" + restored.y + \",\" + restored.z);\n        System.out.println(restored.label);\n    }\n}",
-          "testCases": "1.5,2.5,3.5\nnull"
+          "testCases": "1.5,2.5,3.5\nnull",
+          "sampleInput": "serialize/deserialize Point(3,4) with Externalizable",
+          "sampleOutput": "x=3, y=4; serialized size=8 bytes"
         }
       ]
     }

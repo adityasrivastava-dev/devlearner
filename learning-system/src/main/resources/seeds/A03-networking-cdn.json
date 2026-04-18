@@ -65,7 +65,9 @@
             "HealthCheckId attached to PRIMARY record only",
             "Failover time = (failureThreshold × requestInterval) + TTL = (3×30) + 60 = 150s worst case",
             "For 90s guarantee: use Fast health check (10s interval), failureThreshold=3 → 30s + TTL=60s = 90s"
-          ]
+          ],
+          "sampleInput": "Primary: 54.1.2.3 (us-east-1), Secondary: 52.6.7.8 (eu-west-1)",
+          "sampleOutput": "Failover=PRIMARY record with HealthCheckId on 54.1.2.3, TTL=60s | Failover=SECONDARY on 52.6.7.8 (no health check needed on secondary). Health check: HTTP, /health, port 443, failureThreshold=3, requestInterval=30"
         },
         {
           "title": "Canary Deployment with Route 53 Weighted Routing",
@@ -87,7 +89,9 @@
             "aws route53 change-resource-record-sets with Weight=0 to remove a record from rotation",
             "CloudWatch → Route 53 automated rollback: EventBridge + Lambda watches the alarm",
             "SetIdentifier must be unique within the same Name + Type combination"
-          ]
+          ],
+          "sampleInput": "v1 weight=95, v2 weight=5 (5% canary)",
+          "sampleOutput": "Route 53: two A records with SetIdentifier='v1'/'v2'. Rollback: CloudWatch Alarm on HTTP 5xx rate > 0.5% on v2 ALB → Lambda updates Route 53 weight v2=0"
         },
         {
           "title": "CNAME vs Alias Record",
@@ -109,7 +113,9 @@
             "CNAME cannot coexist with SOA/NS records at the root — violates RFC 1034",
             "Alias record Type is A (or AAAA) but with an AliasTarget instead of ResourceRecords",
             "EvaluateTargetHealth only works with Alias records, not CNAME"
-          ]
+          ],
+          "sampleInput": "example.com CNAME my-alb.amazonaws.com (broken)",
+          "sampleOutput": "Fix: example.com Alias A record → AliasTarget.DNSName=my-alb.amazonaws.com. Benefit: free queries (CNAME billed per query), works at apex, EvaluateTargetHealth available"
         }
       ],
       "subCategory": "Networking & CDN",
@@ -181,7 +187,9 @@
             "Check CloudFront cache behavior configurations for /api/*",
             "CloudFront console → Reports → Cache Statistics shows hit/miss breakdown by behavior",
             "aws s3 cp index.html s3://bucket/ --cache-control 'no-cache' sets the S3 object metadata"
-          ]
+          ],
+          "sampleInput": "Cache hit ratio: 12%. Distribution handles both /api/* and /* paths",
+          "sampleOutput": "Cause 1: /api/* is POST requests — POST is not cacheable, every request is a miss. Fix: separate behavior for /api/* with CachingDisabled policy. Cause 2: static assets including User-Agent in cache key — millions of unique keys. Fix: remove User-Agent from cache key. Cause 3: index.html has no Cach"
         },
         {
           "title": "Set Up HTTPS with ACM Certificate",
@@ -203,7 +211,9 @@
             "ACM in us-east-1 only for CloudFront (other services use regional certs)",
             "SslSupportMethod: sni-only (vs vip — expensive dedicated IP)",
             "MinimumProtocolVersion: TLSv1.2_2021 (disables insecure TLS 1.0/1.1)"
-          ]
+          ],
+          "sampleInput": "Custom domain: api.example.com, SSL required",
+          "sampleOutput": "1. Request cert in ACM us-east-1 for api.example.com. 2. Add DNS validation CNAME to Route 53 (or auto-validate if hosted zone in same account). 3. Wait for ISSUED status. 4. Add to CloudFront ViewerCertificate.AcmCertificateArn. 5. Add Aliases=['api.example.com']. 6. Route 53 Alias A record → Cloud"
         },
         {
           "title": "Design CloudFront for a Video Streaming Platform",
@@ -225,7 +235,9 @@
             "Key Group replaces legacy Origin Access Identity for signed URL enforcement",
             "CachingDisabled policy for signed content — signed URL parameters would fragment cache",
             "Server-side URL signing: your backend generates the signed URL, delivers to client — private key never leaves server"
-          ]
+          ],
+          "sampleInput": "Free preview: /previews/*, Full episodes: /episodes/*, Thumbnails: /thumbs/*",
+          "sampleOutput": "S3 + OAI (blocks direct S3 access). Behaviors: /previews/* → no restriction + long TTL. /episodes/* → CloudFront key group + Signed URL required + CachingDisabled. /thumbs/* → public + max-age=86400. Sign URLs server-side with episode expiry=4h"
         }
       ],
       "subCategory": "Networking & CDN",
@@ -297,7 +309,9 @@
             "Default action (no rule) handles everything not matched by a rule",
             "fixed-response content-type must be specified: application/json or text/plain",
             "Priority gaps (1, 10, 20 instead of 1, 2, 3) leave room to insert new rules later"
-          ]
+          ],
+          "sampleInput": "4 routing rules, /health should be fastest (no backend call)",
+          "sampleOutput": "Priority 1: /health → fixed-response 200. Priority 10: /admin/* → admin-tg. Priority 20: /api/* → api-tg. Default: frontend-tg (no rule needed — it's the default action)"
         },
         {
           "title": "Choose ALB vs NLB",
@@ -318,7 +332,9 @@
             "If the protocol is not HTTP/HTTPS/WebSocket → NLB",
             "If static IP is required for firewall whitelisting → NLB",
             "WebSocket: ALB supports it natively (HTTP Upgrade header) → ALB is fine"
-          ]
+          ],
+          "sampleInput": "Game server using UDP for position updates",
+          "sampleOutput": "NLB — UDP is Layer 4. ALB only supports HTTP/HTTPS/WebSocket. NLB handles UDP natively."
         },
         {
           "title": "Debug VPC Peering Connectivity Issue",
@@ -340,7 +356,9 @@
             "aws ec2 describe-route-tables shows all routes",
             "aws ec2 describe-security-groups shows inbound rules",
             "Use VPC Reachability Analyzer to trace the exact point of failure"
-          ]
+          ],
+          "sampleInput": "Peering ACTIVE but no connectivity. App VPC: 10.0.0.0/16, DB VPC: 10.1.0.0/16",
+          "sampleOutput": "Check 1: App VPC route table — does it have 10.1.0.0/16 → pcx-xxx? Check 2: DB VPC route table — does it have 10.0.0.0/16 → pcx-xxx? Check 3: RDS security group — does it allow TCP:5432 from 10.0.0.0/16 (or from EC2 security group ID)?"
         },
         {
           "title": "ALB Connection Draining for Zero-Downtime Deployments",
@@ -362,7 +380,9 @@
             "aws elbv2 modify-target-group-attributes --deregistration-delay.timeout-seconds 30",
             "During draining: ALB sends to remaining healthy targets only. If only 1 instance left: it handles 100% of traffic",
             "EC2 Auto Scaling respects connection draining before terminating instances"
-          ]
+          ],
+          "sampleInput": "2 instances (v1), rolling deploy to v2",
+          "sampleOutput": "1. Deregister instance-1 from target group. 2. ALB stops sending new requests to instance-1 (deregistration_delay=30s). 3. In-flight requests on instance-1 complete. 4. After drain: instance-1 fully deregistered. 5. Stop instance-1, deploy v2, restart. 6. Register new v2 instance. 7. Health checks p"
         }
       ],
       "subCategory": "Networking & CDN",

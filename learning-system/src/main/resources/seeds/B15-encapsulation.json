@@ -68,7 +68,7 @@
         {
           "displayOrder": 1,
           "title": "Fix the Broken BankAccount",
-          "description": "The given BankAccount class has all fields public and no validation. Refactor it so: balance is private with a validated deposit()/withdraw() (no negative amounts, no overdraft), owner is private with a non-null getter, and accountId is public final. Add canAfford(double) method. Preserve the same observable behavior for valid inputs.",
+          "description": "The following `BankAccount` exposes its balance directly — fix it:\n\n```java\nclass BankAccount { public double balance; } // broken\n```\n\nRefactor: make `balance` private, add `deposit(double)` and `withdraw(double)` with validation.\n\n**Example:**\nBankAccount a = new BankAccount(100);\na.deposit(50); a.getBalance() => 150.0\na.withdraw(200) => throws InsufficientFundsException\na.withdraw(-10) => throws IllegalArgumentException",
           "difficulty": "EASY",
           "pattern": "Encapsulation Basics",
           "hint1": "Change public fields to private. Add public getters where needed.",
@@ -91,12 +91,14 @@
             }
           ],
           "constraints": "No public mutable fields allowed.",
-          "editorial": "Make all fields private. Add validated setters: deposit() checks amount > 0, withdraw() checks amount <= balance. canAfford() encapsulates the balance comparison — callers never access balance directly. toString() for debug output. The invariant (balance >= 0) is enforced at every entry point."
+          "editorial": "Make all fields private. Add validated setters: deposit() checks amount > 0, withdraw() checks amount <= balance. canAfford() encapsulates the balance comparison — callers never access balance directly. toString() for debug output. The invariant (balance >= 0) is enforced at every entry point.",
+          "sampleInput": "deposit(50) then withdraw(200)",
+          "sampleOutput": "getBalance()=150.0 then throws InsufficientFundsException"
         },
         {
           "displayOrder": 2,
           "title": "Identify Access Modifier Levels",
-          "description": "Given a class in package com.app.model and a subclass in com.app.service and an unrelated class in com.other, predict which fields/methods are accessible from each location. Implement a method that returns which access level a member is from each context: 'accessible' or 'compile error'.",
+          "description": "Identify the correct access modifier for each member:\n\n- `private`: internal implementation detail — never visible outside the class\n- `package-private` (no modifier): visible within the same package\n- `protected`: visible to subclasses and same package\n- `public`: visible everywhere\n\n**Example:**\nImplement `AccessDemo` with one field of each level and a `describeAccess()` method returning their names.\n\n**Output:** [\"private\", \"package\", \"protected\", \"public\"]",
           "difficulty": "EASY",
           "pattern": "Access Modifiers",
           "hint1": "private: same class only. Package-private: same package. protected: package + subclasses. public: all.",
@@ -119,12 +121,14 @@
             }
           ],
           "constraints": "Understanding based — no runtime reflection needed.",
-          "editorial": "private: class only. default (no modifier): same package. protected: same package + subclasses in any package. public: everywhere. The trap: protected is NOT accessible from a different package if you're not a subclass. Package-private is the most commonly misunderstood level."
+          "editorial": "private: class only. default (no modifier): same package. protected: same package + subclasses in any package. public: everywhere. The trap: protected is NOT accessible from a different package if you're not a subclass. Package-private is the most commonly misunderstood level.",
+          "sampleInput": "describeAccess()",
+          "sampleOutput": "[\"private\", \"package-private\", \"protected\", \"public\"]"
         },
         {
           "displayOrder": 3,
           "title": "Temperature Class with Validation",
-          "description": "Create an immutable Temperature class with a value in Celsius. Add factory methods: celsius(double), fahrenheit(double), kelvin(double) — all convert to and store as Celsius internally. Provide toCelsius(), toFahrenheit(), toKelvin() getters. Validate: temperature cannot be below absolute zero (-273.15°C). Return a formatted string like '100.00°C / 212.00°F / 373.15K'.",
+          "description": "Design `Temperature(double value, String unit)` with validation: value must be above absolute zero (-273.15°C). Setters must re-validate; unit must be \"C\", \"F\", or \"K\".\n\n**Example 1:**\nnew Temperature(100, \"C\").getValue() => 100.0\nnew Temperature(100, \"C\").toFahrenheit() => 212.0\n\n**Example 2:**\nnew Temperature(-300, \"C\") => throws IllegalArgumentException(\"Below absolute zero\")\nnew Temperature(100, \"X\") => throws IllegalArgumentException(\"Invalid unit\")",
           "difficulty": "EASY",
           "pattern": "Immutable Value Class",
           "hint1": "Store only Celsius internally. Factory methods convert before storing.",
@@ -147,12 +151,14 @@
             }
           ],
           "constraints": "Celsius = (F-32)*5/9. Kelvin = C+273.15. Precision: 2 decimal places.",
-          "editorial": "Factory methods (celsius, fahrenheit, kelvin) hide the constructor. Store everything as Celsius internally — convert on access. Validate in the factory method before constructing. Immutable: no setters, all fields final. toCelsius(), toFahrenheit(), toKelvin() compute on-the-fly from stored value."
+          "editorial": "Factory methods (celsius, fahrenheit, kelvin) hide the constructor. Store everything as Celsius internally — convert on access. Validate in the factory method before constructing. Immutable: no setters, all fields final. toCelsius(), toFahrenheit(), toKelvin() compute on-the-fly from stored value.",
+          "sampleInput": "new Temperature(-300, \"C\")",
+          "sampleOutput": "throws IllegalArgumentException(\"Below absolute zero\")"
         },
         {
           "displayOrder": 4,
           "title": "Counter — Thread-Safe Encapsulation",
-          "description": "Create a Counter class with increment(), decrement(), reset(), and getCount(). The counter cannot go below 0. Implement a getAndIncrement() that returns the value before incrementing. Add a threshold constructor: Counter(int threshold) — once count reaches threshold, increment() does nothing further. Demonstrate encapsulation prevents bypassing these rules.",
+          "description": "Implement a thread-safe `Counter` using `synchronized` methods or `AtomicInteger`. Multiple threads incrementing concurrently must produce the correct total.\n\n**Example:**\nCounter c = new Counter();\n10 threads each increment 1000 times\nc.getValue() => 10000 (no lost updates)\n\n**Key insight:** Without synchronization, increments race — threads read stale values. `synchronized` or `AtomicInteger` ensures atomicity.",
           "difficulty": "EASY",
           "pattern": "Encapsulation with Invariants",
           "hint1": "count is private. No setter for count — only controlled methods.",
@@ -179,12 +185,14 @@
             }
           ],
           "constraints": "No synchronization needed. count starts at 0.",
-          "editorial": "Synchronized methods ensure atomicity of increment/decrement/reset. getCount() also synchronized for visibility. The floor is 0 — decrement does Math.max(0, count-1). Optional threshold: increment becomes no-op when count >= threshold. AtomicInteger is an alternative for lock-free thread safety."
+          "editorial": "Synchronized methods ensure atomicity of increment/decrement/reset. getCount() also synchronized for visibility. The floor is 0 — decrement does Math.max(0, count-1). Optional threshold: increment becomes no-op when count >= threshold. AtomicInteger is an alternative for lock-free thread safety.",
+          "sampleInput": "10 threads * 1000 increments",
+          "sampleOutput": "10000"
         },
         {
           "displayOrder": 5,
           "title": "Encapsulated Stack",
-          "description": "Implement a generic Stack<T> with push(T), pop(), peek(), isEmpty(), size(). The internal storage is a private array or list. If pop/peek is called on an empty stack, throw EmptyStackException. Add a capacity constructor: if full, push throws StackOverflowException. Return the elements as an unmodifiable snapshot() without exposing the internal array.",
+          "description": "Implement an encapsulated `Stack<T>` — internal array or list is private; only `push()`, `pop()`, `peek()`, `isEmpty()`, `size()` are public.\n\n**Example:**\nStack<Integer> s = new Stack<>();\ns.push(1); s.push(2); s.push(3);\ns.peek() => 3\ns.pop() => 3\ns.size() => 2\ns.pop(); s.pop(); s.pop() => throws EmptyStackException",
           "difficulty": "EASY",
           "pattern": "Encapsulation with Generics",
           "hint1": "Use a private List<T> or private Object[] for storage.",
@@ -211,12 +219,14 @@
             }
           ],
           "constraints": "Generic type T. snapshot() must not expose internal list.",
-          "editorial": "Back the stack with a private List<T>. push() calls list.add(). pop() removes last element after isEmpty() check — throw EmptyStackException. peek() returns last without removing. snapshot() returns an unmodifiable view so callers can inspect without modifying. size() delegates to list.size()."
+          "editorial": "Back the stack with a private List<T>. push() calls list.add(). pop() removes last element after isEmpty() check — throw EmptyStackException. peek() returns last without removing. snapshot() returns an unmodifiable view so callers can inspect without modifying. size() delegates to list.size().",
+          "sampleInput": "push(1,2,3), peek(), pop()",
+          "sampleOutput": "peek=3, pop=3, size=2"
         },
         {
           "displayOrder": 6,
           "title": "Product Catalog — Defensive Copy on Return",
-          "description": "Implement a ProductCatalog that stores Product objects (id, name, price). The catalog's internal map must not be leakable. getProduct(id) returns an Optional<Product>. listAll() returns an unmodifiable list sorted by name. addProduct() validates that price > 0 and id is not null. removeProduct(id) returns true if removed. getSnapshot() returns a deep copy (new Product instances) of all products.",
+          "description": "Create `ProductCatalog` holding `List<Product>`. The getter must return a **defensive copy** to prevent callers from mutating the internal list.\n\n**Example:**\nList<Product> external = catalog.getProducts();\nexternal.add(new Product(\"hack\", 0));\ncatalog.getProducts().size() === original size (unchanged)\n\n**Key insight:** `return new ArrayList<>(internalList)` — callers get their own copy; modifying it doesn't affect the catalog.",
           "difficulty": "EASY",
           "pattern": "Defensive Copying",
           "hint1": "Store as private Map<String, Product> catalog.",
@@ -239,12 +249,14 @@
             }
           ],
           "constraints": "Use Optional for nullable returns. listAll sorted by name.",
-          "editorial": "Return a deep copy: new Product(p.getId(), p.getName(), p.getPrice()) for each entry. Collections.unmodifiableMap() prevents structural changes but not mutation of mutable values — only a deep copy protects fully. getById() returns Optional<Product>.empty() for missing keys."
+          "editorial": "Return a deep copy: new Product(p.getId(), p.getName(), p.getPrice()) for each entry. Collections.unmodifiableMap() prevents structural changes but not mutation of mutable values — only a deep copy protects fully. getById() returns Optional<Product>.empty() for missing keys.",
+          "sampleInput": "getProducts() then add to returned list",
+          "sampleOutput": "catalog.size() unchanged"
         },
         {
           "displayOrder": 7,
           "title": "Mutable vs Immutable String Chain",
-          "description": "Compare encapsulation in String (immutable) vs StringBuilder (mutable). Implement a StringChain class that wraps a StringBuilder but exposes only: append(String), prepend(String), length(), reverse(), and snapshot(). The underlying StringBuilder must not be accessible. Show that snapshot() returns an immutable String, not the builder itself. Also implement a reset() that clears the internal builder.",
+          "description": "Show that `String` is immutable — methods return new strings, they never modify the original:\n\n```java\nString s = \"hello\";\nString upper = s.toUpperCase();\nSystem.out.println(s);     // \"hello\" (unchanged)\nSystem.out.println(upper); // \"HELLO\"\n```\n\nBuild a chain: `trim().toUpperCase().replace(\"O\",\"0\")` on `\"  hello world  \"`\n=> \"HELL0 W0RLD\"",
           "difficulty": "MEDIUM",
           "pattern": "Wrapper Encapsulation",
           "hint1": "private final StringBuilder sb = new StringBuilder().",
@@ -267,12 +279,14 @@
             }
           ],
           "constraints": "Fluent API — all mutation methods return this. StringBuilder must stay private.",
-          "editorial": "String is immutable — every operation returns a new String. StringBuilder is mutable — append() modifies in place, no new object. StringChain wraps StringBuilder privately. append() delegates to sb.append(), returns this for chaining. snapshot() returns sb.toString() — a new immutable String."
+          "editorial": "String is immutable — every operation returns a new String. StringBuilder is mutable — append() modifies in place, no new object. StringChain wraps StringBuilder privately. append() delegates to sb.append(), returns this for chaining. snapshot() returns sb.toString() — a new immutable String.",
+          "sampleInput": "\"  hello world  \".trim().toUpperCase().replace(\"O\",\"0\")",
+          "sampleOutput": "\"HELL0 W0RLD\""
         },
         {
           "displayOrder": 8,
           "title": "Configuration Manager — Read-Only After Init",
-          "description": "Implement a ConfigManager that accepts key-value pairs during a loading phase, then can be locked. After lock(), any attempt to set() throws IllegalStateException. get(key) works always; getOrDefault(key, fallback) returns fallback if missing. Add getRequired(key) that throws NoSuchElementException if key is absent. All keys are case-insensitive. Return an unmodifiable snapshot as Map<String,String>.",
+          "description": "Create `ConfigManager` that accepts all settings in the constructor. After construction, nothing can be changed — add a `freeze()` mechanism or make all fields final.\n\n**Example:**\nConfigManager cfg = new ConfigManager(\"localhost\", 8080, \"/api\");\ncfg.getHost() => \"localhost\"\ncfg.setHost(\"other\") => throws UnsupportedOperationException(\"Config is immutable\")\n\n**Key insight:** Read-only configuration prevents accidental runtime changes — a common source of bugs in long-running services.",
           "difficulty": "MEDIUM",
           "pattern": "Two-Phase Encapsulation",
           "hint1": "private boolean locked = false; set() checks !locked.",
@@ -295,12 +309,14 @@
             }
           ],
           "constraints": "Keys case-insensitive. Locked = no further writes.",
-          "editorial": "Use a boolean locked flag. All mutating methods check: if (locked) throw IllegalStateException. get() works after lock. lock() is idempotent — call twice with no error. getSnapshot() returns Collections.unmodifiableMap(new HashMap<>(config)) — a snapshot that reflects state at time of call."
+          "editorial": "Use a boolean locked flag. All mutating methods check: if (locked) throw IllegalStateException. get() works after lock. lock() is idempotent — call twice with no error. getSnapshot() returns Collections.unmodifiableMap(new HashMap<>(config)) — a snapshot that reflects state at time of call.",
+          "sampleInput": "cfg.setHost(\"other\") after construction",
+          "sampleOutput": "throws UnsupportedOperationException"
         },
         {
           "displayOrder": 9,
           "title": "Person Record with Custom Accessors",
-          "description": "Create a PersonRecord with: firstName, lastName, age, email. Use compact constructor to validate: firstName/lastName non-blank, age 0-150, email contains '@'. Add computed methods: fullName() (first + last), initials() (first letter of each), ageGroup() (returns 'minor'/<18, 'adult'/18-64, 'senior'/65+), and maskedEmail() (shows only domain part: ***@gmail.com). Verify equals works by value.",
+          "description": "Create a `PersonRecord` (Java 16+ record or POJO) with `firstName`, `lastName`, `age`. Add a custom `fullName()` accessor returning `firstName + \" \" + lastName`.\n\n**Example:**\nnew PersonRecord(\"John\", \"Doe\", 30).fullName() => \"John Doe\"\nnew PersonRecord(\"John\", \"Doe\", 30).getAge() => 30\nnew PersonRecord(\"John\", \"Doe\", -1) => throws IllegalArgumentException (age < 0)\n\n**Key insight:** Records auto-generate `equals`, `hashCode`, `toString`, and accessors — but you can still add custom methods.",
           "difficulty": "MEDIUM",
           "pattern": "Records + Validation",
           "hint1": "Compact constructor validates all fields — Java assigns them after the body.",
@@ -331,12 +347,14 @@
             }
           ],
           "constraints": "Use record features. No mutable state.",
-          "editorial": "Record's compact constructor: validate firstName/lastName not blank (throw), age in [0,150] (throw), email contains '@'. fullName() = firstName + ' ' + lastName. maskedEmail(): split on '@', return '***@' + domain. Records are implicitly immutable — all fields final, no setters."
+          "editorial": "Record's compact constructor: validate firstName/lastName not blank (throw), age in [0,150] (throw), email contains '@'. fullName() = firstName + ' ' + lastName. maskedEmail(): split on '@', return '***@' + domain. Records are implicitly immutable — all fields final, no setters.",
+          "sampleInput": "new PersonRecord(\"John\", \"Doe\", 30).fullName()",
+          "sampleOutput": "\"John Doe\""
         },
         {
           "displayOrder": 10,
           "title": "Encapsulated Priority Queue",
-          "description": "Implement a BoundedPriorityQueue<T> where T implements Comparable<T>. It stores at most `capacity` items. offer(T item) adds if not full or if item is higher priority than the minimum (evicts minimum); poll() removes and returns highest priority item; peek() returns highest without removing; isFull() and size() are read-only. The internal heap/collection must not be accessible.",
+          "description": "Implement `PriorityQueue<Task>` where tasks have priority 1-10. Internal heap is private. Public API: `enqueue(Task)`, `dequeue()` (highest priority first), `peek()`, `size()`.\n\n**Example:**\nqueue.enqueue(new Task(\"low\", 1));\nqueue.enqueue(new Task(\"high\", 10));\nqueue.enqueue(new Task(\"mid\", 5));\nqueue.dequeue().getName() => \"high\"\nqueue.dequeue().getName() => \"mid\"",
           "difficulty": "MEDIUM",
           "pattern": "Encapsulation with Complex Invariants",
           "hint1": "Use a private PriorityQueue<T> internally with natural ordering.",
@@ -355,12 +373,14 @@
             }
           ],
           "constraints": "Min-heap internally. offer() evicts minimum when full and new item is larger.",
-          "editorial": "Java's PriorityQueue is a min-heap. For max-priority-first, pass Comparator.reverseOrder() to constructor. offer(): if size < capacity, add normally. If size == capacity, peek the minimum — if new item is greater, poll minimum and add new item. size(), peek(), poll() delegate to the internal queue."
+          "editorial": "Java's PriorityQueue is a min-heap. For max-priority-first, pass Comparator.reverseOrder() to constructor. offer(): if size < capacity, add normally. If size == capacity, peek the minimum — if new item is greater, poll minimum and add new item. size(), peek(), poll() delegate to the internal queue.",
+          "sampleInput": "enqueue low(1), high(10), mid(5), then dequeue twice",
+          "sampleOutput": "[\"high\", \"mid\"]"
         },
         {
           "displayOrder": 11,
           "title": "Validate and Encapsulate User Registration",
-          "description": "Implement a UserRegistration class. Fields: username (3-20 chars, alphanumeric + underscore), password (min 8 chars, has uppercase + digit), email (contains @ and .), role (enum: USER/ADMIN/MODERATOR). Password must be stored as char[] not String (security). Add a clearPassword() that zeros the array. Provide isPasswordMatch(char[] attempt) without exposing the stored password.",
+          "description": "Create `UserRegistration` with private fields `username`, `email`, `hashedPassword`. Validate all in the constructor: username 3-20 chars, email contains '@', password 8+ chars.\n\n**Example 1:**\nnew UserRegistration(\"alice\", \"alice@example.com\", \"secret99\").getUsername() => \"alice\"\n\n**Example 2:**\nnew UserRegistration(\"ab\", \"alice@example.com\", \"secret99\") => throws IllegalArgumentException(\"Username must be 3-20 chars\")",
           "difficulty": "MEDIUM",
           "pattern": "Secure Encapsulation",
           "hint1": "char[] for password: Arrays.fill(password, '\\0') to clear.",
@@ -387,12 +407,14 @@
             }
           ],
           "constraints": "Store password as char[], never as String. Clear on match attempt.",
-          "editorial": "Regex for username: [a-zA-Z0-9_]{3,20}. For password: check length >= 8, contains uppercase (matches .*[A-Z].*), contains digit (matches .*\\d.*). Collect all validation errors into a List<String> and throw a single exception with all messages — fail-all pattern, not fail-fast."
+          "editorial": "Regex for username: [a-zA-Z0-9_]{3,20}. For password: check length >= 8, contains uppercase (matches .*[A-Z].*), contains digit (matches .*\\d.*). Collect all validation errors into a List<String> and throw a single exception with all messages — fail-all pattern, not fail-fast.",
+          "sampleInput": "new UserRegistration(\"ab\", \"alice@example.com\", \"secret99\")",
+          "sampleOutput": "throws IllegalArgumentException(\"Username must be 3-20 chars\")"
         },
         {
           "displayOrder": 12,
           "title": "Event History — Append-Only Log",
-          "description": "Implement an EventLog that can only append events (never delete or modify them). Events have: timestamp (auto-set to now), type (String), data (String). getEvents() returns an unmodifiable view. getEventsByType(type) returns filtered list. getSince(Instant from) returns events after that time. The internal list must not be clearable or modifiable from outside. Add a count() and latestEvent() that returns Optional<Event>.",
+          "description": "Create `EventHistory` where events can only be **appended**, never removed or modified. Internal list is private; `addEvent(String)` appends; `getEvents()` returns unmodifiable view.\n\n**Example:**\nEventHistory h = new EventHistory();\nh.addEvent(\"user_login\");\nh.addEvent(\"order_placed\");\nh.getEvents() => [\"user_login\", \"order_placed\"]\nh.getEvents().add(\"hack\") => throws UnsupportedOperationException\n\n**Key insight:** `Collections.unmodifiableList()` exposes a read-only view without copying.",
           "difficulty": "MEDIUM",
           "pattern": "Append-Only Encapsulation",
           "hint1": "private final List<Event> events = new ArrayList<>(). No clear, remove, or set exposed.",
@@ -415,12 +437,14 @@
             }
           ],
           "constraints": "No delete or clear. Timestamps are Instant.now() at append time.",
-          "editorial": "Store events in a private List<Event>. Events are records with auto-set timestamp. append() adds to list — no remove, no modify method exposed. getAll() returns Collections.unmodifiableList(). getSince(Instant) filters by timestamp. The append-only invariant is enforced by having no removal methods."
+          "editorial": "Store events in a private List<Event>. Events are records with auto-set timestamp. append() adds to list — no remove, no modify method exposed. getAll() returns Collections.unmodifiableList(). getSince(Instant) filters by timestamp. The append-only invariant is enforced by having no removal methods.",
+          "sampleInput": "getEvents().add(\"hack\")",
+          "sampleOutput": "throws UnsupportedOperationException"
         },
         {
           "displayOrder": 13,
           "title": "Nested Class Access Levels",
-          "description": "Demonstrate the four types of nested classes and their access to the outer class. Create an outer class Engine with private int rpm. Show: (1) static nested class EngineSpec that reads a static constant; (2) inner class Diagnostics that reads and writes private rpm; (3) local class inside a method that captures a local variable; (4) anonymous class implementing an interface. Return which ones can access private rpm.",
+          "description": "Demonstrate nested class access levels:\n- `private static class` — only accessible within the outer class\n- `static class` (package-private) — accessible within the package\n- `public static class` — accessible everywhere\n\n**Example:**\nOuter.PublicNested n = new Outer.PublicNested(); // OK\nnew Outer.PrivateNested(); // compile error from outside Outer\n\nImplement `Outer` with all three nested class levels and a factory method for each.",
           "difficulty": "HARD",
           "pattern": "Nested Class Encapsulation",
           "hint1": "Inner (non-static) class has implicit reference to outer — can access private fields.",
@@ -443,12 +467,14 @@
             }
           ],
           "constraints": "All four nested class types demonstrated.",
-          "editorial": "Static nested class: no outer instance reference, can access outer's private statics. Inner class: holds implicit reference to outer instance, accesses all outer members. Local class: defined inside a method, captures effectively-final local vars. Anonymous class: inline, used for one-off implementations."
+          "editorial": "Static nested class: no outer instance reference, can access outer's private statics. Inner class: holds implicit reference to outer instance, accesses all outer members. Local class: defined inside a method, captures effectively-final local vars. Anonymous class: inline, used for one-off implementations.",
+          "sampleInput": "new Outer.PublicNested()",
+          "sampleOutput": "OK; new Outer.PrivateNested() => compile error"
         },
         {
           "displayOrder": 14,
           "title": "Fluent Builder with Validation Groups",
-          "description": "Implement a sophisticated FlightBooking builder. Required fields: origin, destination, departureDate. Optional: returnDate (if set, must be after departureDate), passengerCount (1-9), seatClass (ECONOMY/BUSINESS/FIRST), meal preference (STANDARD/VEGETARIAN/VEGAN). build() performs cross-field validation: return flight requires returnDate, FIRST class cannot have more than 4 passengers, VEGETARIAN/VEGAN with FIRST class adds surcharge flag.",
+          "description": "Build a `UserBuilder` with validation groups: `BASIC` (name+email), `FULL` (adds phone+address). `build(ValidationGroup)` validates the required fields for that group.\n\n**Example:**\nnew UserBuilder().name(\"Alice\").email(\"a@b.com\").build(BASIC) => OK\nnew UserBuilder().name(\"Alice\").email(\"a@b.com\").build(FULL) => throws ValidationException(\"Phone required for FULL\")\nnew UserBuilder().name(\"\").build(BASIC) => throws ValidationException(\"Name required\")",
           "difficulty": "HARD",
           "pattern": "Builder with Cross-Field Validation",
           "hint1": "Store all builder fields. In build(), run validations in order: required, cross-field.",
@@ -471,12 +497,14 @@
             }
           ],
           "constraints": "Cross-field validation in build(). Private constructor enforces builder-only creation.",
-          "editorial": "Separate required from optional fields. Required: set at construction or throw. Optional: set via builder methods. Validate in build(): throw IllegalArgumentException listing all missing required fields. Return the built object from build(). Mark builder fields with validation state flags."
+          "editorial": "Separate required from optional fields. Required: set at construction or throw. Optional: set via builder methods. Validate in build(): throw IllegalArgumentException listing all missing required fields. Return the built object from build(). Mark builder fields with validation state flags.",
+          "sampleInput": ".name(\"Alice\").email(\"a@b.com\").build(FULL)",
+          "sampleOutput": "throws ValidationException(\"Phone required for FULL\")"
         },
         {
           "displayOrder": 15,
           "title": "Domain Model — Rich Encapsulation",
-          "description": "Implement a LibraryBook domain model. Fields: isbn (immutable, format XXX-XXXXXXXXXX), title, author, totalCopies, availableCopies. Methods: checkout() decrements available (throw if 0), returnBook() increments (throw if > total), reserve() marks a reservation if no copies available. Track checkout history as private List<String> (patron IDs). getCheckoutHistory() returns unmodifiable. Compute: isAvailable(), waitlistSize().",
+          "description": "Create a `BankAccount` domain model with rich encapsulation: private balance, transaction history (append-only), and business rules enforced inside the class.\n\n**Example:**\nBankAccount a = new BankAccount(\"Alice\", 1000);\na.deposit(500);\na.withdraw(200);\na.getBalance() => 1300.0\na.getTransactionCount() => 2\na.withdraw(2000) => throws InsufficientFundsException\na.getBalance() => 1300.0 (unchanged after failed withdraw)",
           "difficulty": "HARD",
           "pattern": "Rich Domain Model",
           "hint1": "ISBN validation: matches(\"\\\\d{3}-\\\\d{10}\").",
@@ -503,12 +531,14 @@
             }
           ],
           "constraints": "ISBN format: 3 digits, dash, 10 digits. totalCopies immutable.",
-          "editorial": "isbn must match format XXX-XXXXXXXXXX (regex). availableCopies cannot exceed totalCopies. borrow() checks availableCopies > 0 before decrementing. returnBook() checks availableCopies < totalCopies before incrementing — detects data inconsistency. All fields private final except availableCopies."
+          "editorial": "isbn must match format XXX-XXXXXXXXXX (regex). availableCopies cannot exceed totalCopies. borrow() checks availableCopies > 0 before decrementing. returnBook() checks availableCopies < totalCopies before incrementing — detects data inconsistency. All fields private final except availableCopies.",
+          "sampleInput": "deposit(500), withdraw(200), withdraw(2000)",
+          "sampleOutput": "balance=1300.0 after 2 ok; throws on 3rd"
         },
         {
           "displayOrder": 16,
           "title": "Reflection vs Encapsulation",
-          "description": "Demonstrate that Java reflection can bypass private access, and explain why this is a design concern. Write a SafeClass with a private int secret = 42. Use reflection to read and modify it. Then demonstrate how to partially defend against this using SecurityManager patterns or sealed/final classes. Also show that records are slightly harder to break via reflection. Write test assertions showing both the breach and the defense.",
+          "description": "Demonstrate that Java reflection can bypass encapsulation, and explain why this is a security concern:\n\n```java\nclass Secret { private String password = \"abc123\"; }\nField f = Secret.class.getDeclaredField(\"password\");\nf.setAccessible(true);\nf.get(new Secret()) // => \"abc123\"\n```\n\nImplement `reflectiveRead(Object obj, String fieldName)` and explain how `SecurityManager` (legacy) or module system (Java 9+) can restrict it.",
           "difficulty": "HARD",
           "pattern": "Reflection + Encapsulation Limits",
           "hint1": "Field f = SafeClass.class.getDeclaredField('secret'); f.setAccessible(true); f.get(obj).",
@@ -531,12 +561,14 @@
             }
           ],
           "constraints": "Educational — shows encapsulation limits. Real defense is Java modules.",
-          "editorial": "field.setAccessible(true) bypasses private. The encapsulation is broken at runtime. Records have truly final fields — setAccessible(true) + field.set() throws IllegalAccessException. Use --add-opens JVM flag to control accessibility in Java 9+ modules. Demonstrate both success and failure paths."
+          "editorial": "field.setAccessible(true) bypasses private. The encapsulation is broken at runtime. Records have truly final fields — setAccessible(true) + field.set() throws IllegalAccessException. Use --add-opens JVM flag to control accessibility in Java 9+ modules. Demonstrate both success and failure paths.",
+          "sampleInput": "reflectiveRead(new Secret(), \"password\")",
+          "sampleOutput": "\"abc123\" (encapsulation bypassed)"
         },
         {
           "displayOrder": 17,
           "title": "Singleton with Double-Checked Locking",
-          "description": "Implement a thread-safe DatabaseConnectionPool singleton with encapsulated connection management. The singleton is lazy-initialized using double-checked locking with volatile. Expose only: getInstance(), getConnection() (returns a mock Connection), releaseConnection(conn), getActiveCount(), getPoolSize(). The pool itself (List<Connection>) must be private. Add a resetForTesting() package-private method for test teardown.",
+          "description": "Implement thread-safe Singleton with **double-checked locking**:\n\n```java\nclass Config {\n    private static volatile Config instance;\n    static Config getInstance() {\n        if (instance == null) {\n            synchronized(Config.class) {\n                if (instance == null) instance = new Config();\n            }\n        }\n        return instance;\n    }\n}\n```\n\n**Example:**\nConfig.getInstance() == Config.getInstance() => true (same reference)\n\n**Key insight:** `volatile` prevents instruction reordering; double-check avoids locking overhead after initialization.",
           "difficulty": "HARD",
           "pattern": "Singleton + Encapsulation",
           "hint1": "private static volatile DatabaseConnectionPool instance; — volatile for visibility.",
@@ -563,12 +595,14 @@
             }
           ],
           "constraints": "volatile + synchronized for thread safety. Pool size 10.",
-          "editorial": "Double-checked locking requires volatile on the instance field to prevent reordering. IODH (Initialization-on-Demand Holder) is simpler and preferred — inner Holder class loaded lazily, class init is thread-safe. Connection pool: two lists (available, in-use). getConnection() moves connection between lists."
+          "editorial": "Double-checked locking requires volatile on the instance field to prevent reordering. IODH (Initialization-on-Demand Holder) is simpler and preferred — inner Holder class loaded lazily, class init is thread-safe. Connection pool: two lists (available, in-use). getConnection() moves connection between lists.",
+          "sampleInput": "Config.getInstance() called from 2 threads",
+          "sampleOutput": "same instance (== true)"
         },
         {
           "displayOrder": 18,
           "title": "Invariant Enforcement — Graph with Validated Edges",
-          "description": "Implement a DirectedGraph<T> that maintains these invariants: no self-loops, no duplicate edges, all referenced nodes must exist before adding edges. Encapsulate the adjacency list completely. Expose: addNode(T), removeNode(T) (also removes all edges to/from it), addEdge(T from, T to), removeEdge(T from, T to), getNeighbors(T), hasPath(T from, T to) via BFS.",
+          "description": "Implement `Graph` where edges are encapsulated — only valid edges (no self-loops, no duplicate edges) can be added via `addEdge(int from, int to)`.\n\n**Example:**\nGraph g = new Graph(4);\ng.addEdge(0, 1); g.addEdge(1, 2);\ng.addEdge(0, 0) => throws IllegalArgumentException(\"Self-loops not allowed\")\ng.addEdge(0, 1) => throws IllegalArgumentException(\"Duplicate edge\")\ng.edgeCount() => 2",
           "difficulty": "HARD",
           "pattern": "Encapsulation with Structural Invariants",
           "hint1": "private Map<T, Set<T>> adjacency = new HashMap<>(). Sets prevent duplicate edges.",
@@ -595,12 +629,14 @@
             }
           ],
           "constraints": "No self-loops. No duplicate edges (use Set). All nodes must exist before adding edges.",
-          "editorial": "addNode(): add to adjacency map. addEdge(): validate from != to (no self-loop), check both nodes exist (throw), check edge not already present. removeNode(): remove from map + remove from all other sets. edgeCount() sums set sizes / 2 for undirected, as-is for directed. DFS/BFS uses adjacency sets."
+          "editorial": "addNode(): add to adjacency map. addEdge(): validate from != to (no self-loop), check both nodes exist (throw), check edge not already present. removeNode(): remove from map + remove from all other sets. edgeCount() sums set sizes / 2 for undirected, as-is for directed. DFS/BFS uses adjacency sets.",
+          "sampleInput": "addEdge(0,0)",
+          "sampleOutput": "throws IllegalArgumentException(\"Self-loops not allowed\")"
         },
         {
           "displayOrder": 19,
           "title": "Layered Validation with Builder Chain",
-          "description": "Build a MortgageApplication builder with these validation layers: (1) field-level: income > 0, loanAmount > 0, creditScore 300-850, term in {10,15,20,30} years; (2) ratio-level: loanAmount <= 10x income, monthly payment <= 43% of monthly income (DTI rule); (3) policy-level: if creditScore < 620, maximum loan is 200,000; if creditScore >= 750, apply 0.5% rate discount. Return a MortgageApplication with rateApplied and approved flags.",
+          "description": "Create a multi-step `OrderBuilder` with staged validation:\n1. `addItem()` — validates price > 0 and qty > 0\n2. `setShipping()` — validates address non-blank\n3. `build()` — validates at least one item exists\n\n**Example 1:**\nnew OrderBuilder().addItem(\"book\",10,1).setShipping(\"123 Main\").build() => Order{items=1}\n\n**Example 2:**\nnew OrderBuilder().setShipping(\"123 Main\").build() => throws IllegalStateException(\"No items\")",
           "difficulty": "HARD",
           "pattern": "Multi-Layer Validation Builder",
           "hint1": "Run all field-level validations first, collecting errors into a list.",
@@ -627,12 +663,14 @@
             }
           ],
           "constraints": "DTI = monthly payment / (income/12). Collect all field errors before throwing.",
-          "editorial": "Collect all validation errors across all three layers before throwing. Layer 1 (field): income > 0, loanAmount > 0, creditScore 300-850. Layer 2 (business): loanAmount <= income * 5. Layer 3 (regulatory): creditScore >= 620 for loanAmount > 500000. Join all errors with newline in the exception message."
+          "editorial": "Collect all validation errors across all three layers before throwing. Layer 1 (field): income > 0, loanAmount > 0, creditScore 300-850. Layer 2 (business): loanAmount <= income * 5. Layer 3 (regulatory): creditScore >= 620 for loanAmount > 500000. Join all errors with newline in the exception message.",
+          "sampleInput": "new OrderBuilder().setShipping(\"123 Main\").build()",
+          "sampleOutput": "throws IllegalStateException(\"No items\")"
         },
         {
           "displayOrder": 20,
           "title": "Encapsulation Audit Tool",
-          "description": "Write a class that uses reflection to audit another class's encapsulation health. For a given Class<?>, compute: publicFieldCount (public non-static fields — encapsulation violation), privateFieldCount (good), hasNoArgConstructor (JavaBean requirement), hasFinalFields (immutability indicator), hasEqualsAndHashCode (both or neither), getterSetterRatio (setters/getters — high ratio = more mutable). Return an EncapsulationReport with these metrics and a score (0-100).",
+          "description": "Implement `EncapsulationAudit` that inspects a class at runtime (via reflection) and reports all fields that are not `private` — a simple encapsulation checker.\n\n**Example:**\nclass Broken { public int x; protected String y; private double z; }\nEncapsulationAudit.check(Broken.class)\n=> [\"x (public)\", \"y (protected)\"] // only non-private fields\n\n**Key insight:** Use `getDeclaredFields()` and check `Modifier.isPrivate(field.getModifiers())`.",
           "difficulty": "HARD",
           "pattern": "Reflection for Code Analysis",
           "hint1": "getDeclaredFields() for all fields; getModifiers() to check Modifier.isPublic(), isStatic(), isFinal().",
@@ -655,7 +693,9 @@
             }
           ],
           "constraints": "Use getDeclaredFields/Methods. Skip static fields. Score clamped 0-100.",
-          "editorial": "Use reflection: getDeclaredFields() for fields, getDeclaredMethods() for methods. Count public vs private fields. Check for 'set' prefix methods as setters. hasEquals: check if class declares equals(Object). Score formula: publicFieldCount * -10 + privateFieldCount * 10 + bonuses. Return the computed score."
+          "editorial": "Use reflection: getDeclaredFields() for fields, getDeclaredMethods() for methods. Count public vs private fields. Check for 'set' prefix methods as setters. hasEquals: check if class declares equals(Object). Score formula: publicFieldCount * -10 + privateFieldCount * 10 + bonuses. Return the computed score.",
+          "sampleInput": "EncapsulationAudit.check(Broken.class)",
+          "sampleOutput": "[\"x (public)\", \"y (protected)\"]"
         }
       ],
       "subCategory": "OOP (VERY IMPORTANT)",

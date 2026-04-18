@@ -69,7 +69,7 @@
         {
           "displayOrder": 1,
           "title": "Extend a Shape Class",
-          "description": "Given a `Shape` class with `String color` and `area()` returning 0.0, create a `Circle(double radius, String color)` and `Square(double side, String color)` that extend it. Override `area()` in each. Create one of each and print their areas.",
+          "description": "Create a `Shape` base class with `double area()` and `double perimeter()`. Extend it with `Circle(double radius)` and `Rectangle(double width, double height)`.\n\n**Example 1:**\nnew Circle(5).area() => 78.54\nnew Circle(5).perimeter() => 31.42\n\n**Example 2:**\nnew Rectangle(4,6).area() => 24.0\nnew Rectangle(4,6).perimeter() => 20.0",
           "difficulty": "EASY",
           "pattern": "Basic extends and @Override",
           "hint1": "Use `super(color)` in each constructor to pass color to Shape.",
@@ -88,12 +88,14 @@
             }
           ],
           "constraints": "radius > 0, side > 0.",
-          "editorial": "super(color) forwards the color argument to Shape's constructor. @Override ensures the method signatures match. Shape.toString() calls area() — dynamic dispatch routes to the subclass override, so the printed area is correct for each concrete type."
+          "editorial": "super(color) forwards the color argument to Shape's constructor. @Override ensures the method signatures match. Shape.toString() calls area() — dynamic dispatch routes to the subclass override, so the printed area is correct for each concrete type.",
+          "sampleInput": "new Circle(5)",
+          "sampleOutput": "area=78.54, perimeter=31.42"
         },
         {
           "displayOrder": 2,
           "title": "Predict Constructor Order",
-          "description": "Given:\n```java\nclass A { A() { System.out.println(\"A\"); } }\nclass B extends A { B() { System.out.println(\"B\"); } }\nclass C extends B { C() { System.out.println(\"C\"); } }\n```\nWhat is printed when `new C()` is called? Implement `predictOrder()` returning a `String[]` of lines printed.",
+          "description": "Given this class hierarchy, predict the exact console output — constructors call `super()` implicitly:\n\n```java\nclass A { A() { System.out.println(\"A\"); } }\nclass B extends A { B() { System.out.println(\"B\"); } }\nclass C extends B { C() { System.out.println(\"C\"); } }\nnew C();\n```\n\n**Key insight:** Java calls the parent constructor first. `new C()` triggers A -> B -> C in order.",
           "difficulty": "EASY",
           "pattern": "Constructor Chain Order",
           "hint1": "C() implicitly calls super() → B constructor first.",
@@ -108,12 +110,14 @@
             }
           ],
           "constraints": "No parameters in any constructor.",
-          "editorial": "Constructors run from the TOP of the hierarchy down. super() is implicit when not written — JVM inserts it. A() runs first, then B() resumes after super() returns, then C() resumes. The deepest ancestor always initialises first."
+          "editorial": "Constructors run from the TOP of the hierarchy down. super() is implicit when not written — JVM inserts it. A() runs first, then B() resumes after super() returns, then C() resumes. The deepest ancestor always initialises first.",
+          "sampleInput": "new C()",
+          "sampleOutput": "A\nB\nC"
         },
         {
           "displayOrder": 3,
           "title": "super.method() — Extend Don't Replace",
-          "description": "Create `Logger` with method `log(String msg)` that prints `[LOG] msg`. Extend it as `TimestampLogger` which overrides `log()` to prepend a timestamp and then calls `super.log(msg)` so the `[LOG]` prefix is still applied.",
+          "description": "Create `Animal` with `speak()` printing `\"...\"`. Extend with `Dog` overriding `speak()` to print `\"Woof\"` but also calling `super.speak()` first.\n\n**Example:**\nnew Dog().speak()\n=> prints \"...\"\n=> prints \"Woof\"\n\n**Key insight:** `super.method()` calls the parent implementation — useful for extending (not replacing) inherited behavior.",
           "difficulty": "EASY",
           "pattern": "super.method() Extension",
           "hint1": "TimestampLogger.log(): prepend timestamp string, then call super.log(timestampedMsg).",
@@ -132,12 +136,14 @@
             }
           ],
           "constraints": "Use super.log() — do not duplicate the [LOG] prefix logic.",
-          "editorial": "super.log(msg) explicitly calls Logger.log() — bypassing the vtable for that one call. This is the extension pattern: add behaviour before/after the parent's implementation rather than replacing it. Used in servlet filters, Spring interceptors, AOP before/after advice."
+          "editorial": "super.log(msg) explicitly calls Logger.log() — bypassing the vtable for that one call. This is the extension pattern: add behaviour before/after the parent's implementation rather than replacing it. Used in servlet filters, Spring interceptors, AOP before/after advice.",
+          "sampleInput": "new Dog().speak()",
+          "sampleOutput": "\"...\"\n\"Woof\""
         },
         {
           "displayOrder": 4,
           "title": "IS-A Check With instanceof",
-          "description": "Create a three-level hierarchy: `Animal → Dog → GoldenRetriever`. Using `instanceof`, check which classes each object IS-A. Implement `checkInstanceOf(Object obj)` that returns a `String` describing which types the object is an instance of.",
+          "description": "Implement `describeAnimal(Animal a)` that uses `instanceof` checks to print a specific description for `Dog`, `Cat`, and `Animal`.\n\n**Example 1:**\ndescribeAnimal(new Dog()) => \"This is a Dog, also an Animal\"\ndescribeAnimal(new Cat()) => \"This is a Cat, also an Animal\"\ndescribeAnimal(new Animal()) => \"Just an Animal\"\n\n**Key insight:** `instanceof` checks IS-A relationships — a Dog is also an Animal. Order matters: check most specific type first.",
           "difficulty": "EASY",
           "pattern": "instanceof and IS-A",
           "hint1": "A GoldenRetriever IS-A Dog IS-A Animal IS-A Object — instanceof returns true for all.",
@@ -160,12 +166,14 @@
             }
           ],
           "constraints": "No constraints.",
-          "editorial": "instanceof tests the ACTUAL runtime type. A GoldenRetriever IS-A Dog, IS-A Animal, IS-A Object — all true. A Dog is NOT a GoldenRetriever — false. instanceof enables safe downcasting. Java 16+ pattern matching: `if (obj instanceof Dog d) { d.bark(); }` — no separate cast needed."
+          "editorial": "instanceof tests the ACTUAL runtime type. A GoldenRetriever IS-A Dog, IS-A Animal, IS-A Object — all true. A Dog is NOT a GoldenRetriever — false. instanceof enables safe downcasting. Java 16+ pattern matching: `if (obj instanceof Dog d) { d.bark(); }` — no separate cast needed.",
+          "sampleInput": "describeAnimal(new Dog())",
+          "sampleOutput": "\"This is a Dog, also an Animal\""
         },
         {
           "displayOrder": 5,
           "title": "toString() Chain With super",
-          "description": "Create hierarchy `Vehicle → Car → SportsCar` where each class has unique fields and each `toString()` calls `super.toString()` to build a cumulative string. Verify the final string includes all three levels' data.",
+          "description": "Each class in a hierarchy overrides `toString()` and calls `super.toString()` to build a chain:\n\n```java\nclass Vehicle  { toString() => \"Vehicle\" }\nclass Car extends Vehicle { toString() => super.toString() + \">Car\" }\nclass SportsCar extends Car { toString() => super.toString() + \">SportsCar\" }\n```\n\n**Example:**\nnew SportsCar().toString() => \"Vehicle>Car>SportsCar\"\n\n**Key insight:** Chaining `super.toString()` builds a descriptive breadcrumb of the full inheritance path.",
           "difficulty": "EASY",
           "pattern": "toString Chain",
           "hint1": "Vehicle.toString(): `return \"Vehicle[make=\" + make + \"]\"` ",
@@ -180,12 +188,14 @@
             }
           ],
           "constraints": "No constraints.",
-          "editorial": "super.toString() in each level calls the parent's version first, then appends the current level's data. The final string aggregates data from all three levels. This demonstrates the 'extension' use of super.method() — each level builds on what came before rather than discarding it."
+          "editorial": "super.toString() in each level calls the parent's version first, then appends the current level's data. The final string aggregates data from all three levels. This demonstrates the 'extension' use of super.method() — each level builds on what came before rather than discarding it.",
+          "sampleInput": "new SportsCar().toString()",
+          "sampleOutput": "\"Vehicle>Car>SportsCar\""
         },
         {
           "displayOrder": 6,
           "title": "Polymorphic Array of Shapes",
-          "description": "Create `Shape → Circle(radius) → Triangle(base, height)`. Store mixed instances in a `Shape[]`. Implement `totalArea(Shape[] shapes)` that sums all areas using polymorphism — no instanceof checks needed.",
+          "description": "Create a `Shape[]` array holding `Circle`, `Rectangle`, and `Triangle` objects. Loop over it calling `area()` on each — demonstrating runtime polymorphism.\n\n**Example:**\nShape[] shapes = { new Circle(3), new Rectangle(4,5), new Triangle(3,4,5) };\nfor (Shape s : shapes) System.out.println(s.area());\n=> 28.27\n=> 20.0\n=> 6.0\n\n**Key insight:** The array holds the supertype; each call dispatches to the correct subtype at runtime.",
           "difficulty": "EASY",
           "pattern": "Polymorphism / Common Type Array",
           "hint1": "Shape[] shapes = { new Circle(3), new Triangle(4,5), new Circle(7) };",
@@ -200,12 +210,14 @@
             }
           ],
           "constraints": "No instanceof in totalArea.",
-          "editorial": "s.area() is a polymorphic call — the JVM dispatches to Circle.area() or Triangle.area() based on the actual object type, not the reference type Shape. No instanceof or casting needed. This is the power of polymorphism: totalArea works correctly for any future Shape subclass without modification."
+          "editorial": "s.area() is a polymorphic call — the JVM dispatches to Circle.area() or Triangle.area() based on the actual object type, not the reference type Shape. No instanceof or casting needed. This is the power of polymorphism: totalArea works correctly for any future Shape subclass without modification.",
+          "sampleInput": "Shape[] {Circle(3), Rectangle(4,5), Triangle(3,4,5)}",
+          "sampleOutput": "[28.27, 20.0, 6.0]"
         },
         {
           "displayOrder": 7,
           "title": "Employee Payroll Hierarchy",
-          "description": "Build `Employee(name, baseSalary)` with `calculatePay()` returning baseSalary. Extend it as `Manager(name, baseSalary, bonus)` where calculatePay() adds bonus, and `Contractor(name, hourlyRate, hoursWorked)` where calculatePay() = hourlyRate × hoursWorked. Print payroll for a mixed list.",
+          "description": "Create `Employee(String name, double baseSalary)` with `calculatePay()`. Extend with `FullTimeEmployee` (returns baseSalary) and `ContractEmployee(double hourlyRate, int hours)` (returns hourlyRate * hours).\n\n**Example 1:**\nnew FullTimeEmployee(\"Alice\", 5000).calculatePay() => 5000.0\n\n**Example 2:**\nnew ContractEmployee(\"Bob\", 50.0, 80).calculatePay() => 4000.0",
           "difficulty": "MEDIUM",
           "pattern": "Inheritance + Polymorphism",
           "hint1": "Manager.calculatePay(): `return super.calculatePay() + bonus;`",
@@ -228,12 +240,14 @@
             }
           ],
           "constraints": "hours and rates are positive.",
-          "editorial": "Manager.calculatePay() uses super.calculatePay() to get base salary then adds bonus — extending, not replacing. Contractor completely overrides the formula — passes 0 to super just to satisfy the constructor. The for-each loop calls calculatePay() polymorphically — correct result for each type without any instanceof."
+          "editorial": "Manager.calculatePay() uses super.calculatePay() to get base salary then adds bonus — extending, not replacing. Contractor completely overrides the formula — passes 0 to super just to satisfy the constructor. The for-each loop calls calculatePay() polymorphically — correct result for each type without any instanceof.",
+          "sampleInput": "new ContractEmployee(\"Bob\", 50.0, 80).calculatePay()",
+          "sampleOutput": "4000.0"
         },
         {
           "displayOrder": 8,
           "title": "Abstract Payment Processor",
-          "description": "Create abstract `PaymentProcessor` with abstract method `processPayment(double amount)` and a concrete `logTransaction(double amount)` that prints `Processing $X.XX`. Extend as `CreditCardProcessor` and `PayPalProcessor`, each with its own processPayment(). Call logTransaction from each.",
+          "description": "Create `abstract class PaymentProcessor` with `abstract void process(double amount)` and a concrete `logTransaction(double amount)`. Extend with `CreditCardProcessor` and `PayPalProcessor`.\n\n**Example:**\nnew CreditCardProcessor().process(99.99)\n=> \"[LOG] Processing $99.99\"\n=> \"Credit card charged: $99.99\"\n\nnew PayPalProcessor().process(50.0)\n=> \"[LOG] Processing $50.00\"\n=> \"PayPal transfer: $50.00\"",
           "difficulty": "MEDIUM",
           "pattern": "Abstract Class + Template Method",
           "hint1": "Abstract class: `abstract class PaymentProcessor { abstract void processPayment(double amount); }`",
@@ -252,12 +266,14 @@
             }
           ],
           "constraints": "No constraints.",
-          "editorial": "Abstract classes can have both concrete (logTransaction) and abstract (processPayment) methods. Subclasses must implement all abstract methods. logTransaction provides shared behaviour available to all processors — a common pattern called the Template Method, where the base class defines the algorithm skeleton and subclasses fill in the steps."
+          "editorial": "Abstract classes can have both concrete (logTransaction) and abstract (processPayment) methods. Subclasses must implement all abstract methods. logTransaction provides shared behaviour available to all processors — a common pattern called the Template Method, where the base class defines the algorithm skeleton and subclasses fill in the steps.",
+          "sampleInput": "new CreditCardProcessor().process(99.99)",
+          "sampleOutput": "\"[LOG] Processing $99.99\"\n\"Credit card charged: $99.99\""
         },
         {
           "displayOrder": 9,
           "title": "Override hashCode and equals in Subclass",
-          "description": "Create `Person(String name, int age)` with proper equals/hashCode. Extend it as `Employee(name, age, employeeId)` — override equals/hashCode to also compare employeeId. Show that two Employees with same name/age but different IDs are NOT equal, but two with same name/age/id ARE.",
+          "description": "Create `Point(int x, int y)` with `equals()`/`hashCode()`. Extend with `Point3D(int x, int y, int z)` overriding both correctly.\n\n**Example:**\nnew Point3D(1,2,3).equals(new Point3D(1,2,3)) => true\nnew Point3D(1,2,3).equals(new Point(1,2)) => false\nnew HashSet<>().contains after add(new Point3D(1,2,3)) => true\n\n**Key insight:** Call `super.equals()` for parent fields, then check subclass fields. `hashCode` must include all fields.",
           "difficulty": "MEDIUM",
           "pattern": "equals/hashCode in Inheritance",
           "hint1": "Employee.equals(): call super.equals(o) first, then also compare employeeId.",
@@ -276,12 +292,14 @@
             }
           ],
           "constraints": "No constraints.",
-          "editorial": "Extending equals in subclasses: call super.equals() first to verify parent fields match, then check the extra subclass field. Include employeeId in hashCode via Objects.hash(super.hashCode(), employeeId). Note: the symmetry problem — a Person.equals(Employee) may return true while Employee.equals(Person) returns false. Effective Java recommends using getClass() instead of instanceof for this reason in non-sealed hierarchies."
+          "editorial": "Extending equals in subclasses: call super.equals() first to verify parent fields match, then check the extra subclass field. Include employeeId in hashCode via Objects.hash(super.hashCode(), employeeId). Note: the symmetry problem — a Person.equals(Employee) may return true while Employee.equals(Person) returns false. Effective Java recommends using getClass() instead of instanceof for this reason in non-sealed hierarchies.",
+          "sampleInput": "new Point3D(1,2,3).equals(new Point3D(1,2,3))",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 10,
           "title": "Downcast and ClassCastException",
-          "description": "Given a `Shape[]` containing Circles and Triangles stored as Shapes, safely extract all Circles using instanceof before downcasting. Also demonstrate what happens when you downcast without checking (ClassCastException). Return the count of Circle instances found.",
+          "description": "Demonstrate safe and unsafe downcasting:\n\n**Safe:** `Animal a = new Dog(); Dog d = (Dog) a;` — works\n**Unsafe:** `Animal a = new Cat(); Dog d = (Dog) a;` — throws `ClassCastException`\n\nImplement `safeCast(Animal a)` using `instanceof` guard before casting.\n\n**Example:**\nsafeCast(new Dog()) => \"Got a Dog\"\nsafeCast(new Cat()) => \"Not a Dog, skipping\"",
           "difficulty": "MEDIUM",
           "pattern": "Upcasting / Downcasting / instanceof",
           "hint1": "Upcast (widening): `Shape s = new Circle(5);` — always safe, implicit.",
@@ -300,12 +318,14 @@
             }
           ],
           "constraints": "Handle ClassCastException.",
-          "editorial": "Upcast (Shape s = new Circle()) is always safe — no check needed. Downcast (Circle c = (Circle) s) requires the object to actually be a Circle at runtime — otherwise ClassCastException. Always use instanceof before downcasting in production code. Java 16+ pattern matching `if (s instanceof Circle c)` combines the check and cast in one step."
+          "editorial": "Upcast (Shape s = new Circle()) is always safe — no check needed. Downcast (Circle c = (Circle) s) requires the object to actually be a Circle at runtime — otherwise ClassCastException. Always use instanceof before downcasting in production code. Java 16+ pattern matching `if (s instanceof Circle c)` combines the check and cast in one step.",
+          "sampleInput": "safeCast(new Cat())",
+          "sampleOutput": "\"Not a Dog, skipping\""
         },
         {
           "displayOrder": 11,
           "title": "Template Method Pattern",
-          "description": "Implement a `DataProcessor` abstract class with a `process()` template method that calls: `readData()` → `transformData()` → `writeData()`. Subclasses override the three steps. Implement `CsvProcessor` and `JsonProcessor` with different read/transform/write implementations.",
+          "description": "Implement the **Template Method** pattern: `DataExporter` defines the algorithm skeleton (`export()` calls `readData()`, `processData()`, `writeOutput()` in order). `CsvExporter` and `JsonExporter` implement the abstract steps.\n\n**Example:**\nnew CsvExporter().export()\n=> \"Reading data...\"\n=> \"Processing for CSV...\"\n=> \"Writing CSV output\"\n\n**Key insight:** The parent defines WHEN to call each step; subclasses define HOW.",
           "difficulty": "MEDIUM",
           "pattern": "Template Method Pattern",
           "hint1": "process() is final and concrete in DataProcessor: calls readData(), transformData(), writeData() in order.",
@@ -324,12 +344,14 @@
             }
           ],
           "constraints": "process() must be final.",
-          "editorial": "Template Method pattern: the parent defines the algorithm (process() — fixed order of steps) and delegates the variable parts to abstract methods. Subclasses customise the steps without changing the order. Used in JUnit (setUp → test → tearDown), HttpServlet (service → doGet/doPost), Spring Batch (open → read → process → write → close)."
+          "editorial": "Template Method pattern: the parent defines the algorithm (process() — fixed order of steps) and delegates the variable parts to abstract methods. Subclasses customise the steps without changing the order. Used in JUnit (setUp → test → tearDown), HttpServlet (service → doGet/doPost), Spring Batch (open → read → process → write → close).",
+          "sampleInput": "new CsvExporter().export()",
+          "sampleOutput": "Reading data... / Processing for CSV... / Writing CSV output"
         },
         {
           "displayOrder": 12,
           "title": "Liskov Substitution — Verify IS-A",
-          "description": "Create a `Bird` class with `fly()` printing 'flying'. Extend as `Eagle` (can fly) and `Penguin` (CANNOT fly). Show that Penguin extending Bird and inheriting fly() violates LSP (Liskov Substitution Principle). Fix by redesigning: `Bird → CanFlyBird → Eagle` and `Bird → Penguin`.",
+          "description": "Verify the Liskov Substitution Principle: a `Square extends Rectangle` violates LSP because `setWidth()` on a Square must also change height, breaking Rectangle's contract.\n\nDemonstrate the violation:\n```java\nRectangle r = new Square();\nr.setWidth(5); r.setHeight(3);\nr.area(); // expected 15, gets 9 — LSP violated\n```\n\nFix: don't extend Rectangle; use a common `Shape` interface instead.",
           "difficulty": "MEDIUM",
           "pattern": "Liskov Substitution Principle",
           "hint1": "LSP: if S extends T, any code that works on T must work on S without surprising behaviour.",
@@ -348,12 +370,14 @@
             }
           ],
           "constraints": "No constraints.",
-          "editorial": "LSP: subclasses must be substitutable for their superclass. If Penguin extends Bird but can't fly, any code using Bird breaks for Penguin. The fix: don't put capabilities in the base class that not all subclasses have. Move fly() to a FlyingBird subtype. The compiler then prevents passing Penguins where FlyingBirds are expected — fail fast at compile time."
+          "editorial": "LSP: subclasses must be substitutable for their superclass. If Penguin extends Bird but can't fly, any code using Bird breaks for Penguin. The fix: don't put capabilities in the base class that not all subclasses have. Move fly() to a FlyingBird subtype. The compiler then prevents passing Penguins where FlyingBirds are expected — fail fast at compile time.",
+          "sampleInput": "Rectangle r = new Square(); r.setWidth(5); r.setHeight(3); r.area()",
+          "sampleOutput": "9 (LSP violation — expected 15)"
         },
         {
           "displayOrder": 13,
           "title": "Covariant Return Types",
-          "description": "Java allows a subclass to narrow (covary) the return type of an overridden method. Create `Animal` with `Animal create()` returning `new Animal()`. Extend as `Dog` with `@Override Dog create()` — the return type is narrowed from Animal to Dog. Show this compiles and that the result is a Dog.",
+          "description": "Demonstrate **covariant return types**: a subclass overrides a method and returns a more specific type.\n\n```java\nclass Animal { Animal create() { return new Animal(); } }\nclass Dog extends Animal { Dog create() { return new Dog(); } } // covariant\n```\n\n**Example:**\nnew Dog().create() returns a `Dog` (not just `Animal`)\nDog d = new Dog().create(); // no cast needed\n\n**Key insight:** Since Java 5, overriding methods may return a subtype — avoids casting at the call site.",
           "difficulty": "HARD",
           "pattern": "Covariant Return Type",
           "hint1": "Dog.create() return type is Dog (a subtype of Animal) — this is valid covariant narrowing.",
@@ -376,12 +400,14 @@
             }
           ],
           "constraints": "No constraints.",
-          "editorial": "Covariant return types (Java 5+): an overriding method may declare a return type that is a subtype of the parent's return type. Dog.create() returns Dog instead of Animal — still @Override valid. Caller using a Dog reference gets a Dog directly (no cast). Polymorphic call through Animal reference still dispatches to Dog.create() — returning a Dog at runtime."
+          "editorial": "Covariant return types (Java 5+): an overriding method may declare a return type that is a subtype of the parent's return type. Dog.create() returns Dog instead of Animal — still @Override valid. Caller using a Dog reference gets a Dog directly (no cast). Polymorphic call through Animal reference still dispatches to Dog.create() — returning a Dog at runtime.",
+          "sampleInput": "new Dog().create().getClass().getSimpleName()",
+          "sampleOutput": "\"Dog\""
         },
         {
           "displayOrder": 14,
           "title": "Sealed Hierarchy (Java 17+)",
-          "description": "Create a sealed class `Shape` that permits only `Circle`, `Rectangle`, `Triangle` as subclasses. Use pattern matching switch to compute area without instanceof chains. Demonstrate that adding a new subclass outside the permitted list causes a compile error.",
+          "description": "Model a `sealed` class hierarchy (Java 17+) where `Shape` permits only `Circle`, `Rectangle`, `Triangle`. Use pattern matching in a `switch` to compute area.\n\n**Example:**\nShape s = new Circle(5);\ndouble area = switch(s) {\n    case Circle c -> Math.PI * c.radius() * c.radius();\n    case Rectangle r -> r.w() * r.h();\n    case Triangle t -> 0.5 * t.base() * t.height();\n}; // => 78.54\n\n**Key insight:** Sealed classes make the `switch` exhaustive — compiler warns if a permitted subtype is missing.",
           "difficulty": "HARD",
           "pattern": "Sealed Classes / Pattern Matching Switch",
           "hint1": "`sealed class Shape permits Circle, Rectangle, Triangle {}`",
@@ -404,12 +430,14 @@
             }
           ],
           "constraints": "Java 17+. Use sealed + records.",
-          "editorial": "Sealed classes restrict which classes can extend/implement them — the compiler knows the complete set. Pattern matching switch becomes exhaustive — no default needed because all permitted types are handled. Adding a case for a 4th shape (Hexagon) would require modifying the permits clause. Used in Java's own java.lang.constant.ConstantDesc and in Domain-Driven Design algebraic data types."
+          "editorial": "Sealed classes restrict which classes can extend/implement them — the compiler knows the complete set. Pattern matching switch becomes exhaustive — no default needed because all permitted types are handled. Adding a case for a 4th shape (Hexagon) would require modifying the permits clause. Used in Java's own java.lang.constant.ConstantDesc and in Domain-Driven Design algebraic data types.",
+          "sampleInput": "new Circle(5) in sealed switch",
+          "sampleOutput": "78.54"
         },
         {
           "displayOrder": 15,
           "title": "Mixins via Multiple Interface Inheritance",
-          "description": "Java classes can implement multiple interfaces. Create interfaces `Flyable` (with default `fly()`) and `Swimmable` (with default `swim()`). Create `Duck` that implements both. Also create `FlyingFish` that implements both. Demonstrate method resolution when both interfaces define `describe()`.",
+          "description": "Java supports multiple interface inheritance. Create `Flyable` and `Swimmable` interfaces; implement `Duck` that implements both.\n\n**Example:**\nDuck d = new Duck();\nd.fly() => \"Duck flying\"\nd.swim() => \"Duck swimming\"\n\nFlyable f = new Duck(); f.fly(); // works\nSwimmable s = new Duck(); s.swim(); // works\n\n**Key insight:** A class can implement many interfaces — this is Java's answer to multiple inheritance for behavior mixing.",
           "difficulty": "HARD",
           "pattern": "Multiple Interface Implementation",
           "hint1": "Interfaces with default methods: `interface Flyable { default void fly() { ... } }`",
@@ -428,12 +456,14 @@
             }
           ],
           "constraints": "Java 8+ default methods.",
-          "editorial": "When two interfaces both provide a default method with the same signature, the implementing class MUST override it — otherwise a compile error: 'inherits unrelated defaults'. The class can delegate to a specific interface version using `Flyable.super.describe()` syntax. This is Java's solution to the diamond problem — explicit override required, no silent ambiguity."
+          "editorial": "When two interfaces both provide a default method with the same signature, the implementing class MUST override it — otherwise a compile error: 'inherits unrelated defaults'. The class can delegate to a specific interface version using `Flyable.super.describe()` syntax. This is Java's solution to the diamond problem — explicit override required, no silent ambiguity.",
+          "sampleInput": "new Duck().fly()",
+          "sampleOutput": "\"Duck flying\""
         },
         {
           "displayOrder": 16,
           "title": "Fragile Base Class — Private vs Protected",
-          "description": "Demonstrate the fragile base class problem: a superclass changes its internals, breaking a subclass that relied on those internals. Create `Counter` with `increment()` and `incrementBy(n)`. Subclass `CountingList` overrides `incrementBy()` calling super `n` times. Show that if `Counter.increment()` calls `incrementBy(1)` internally, the subclass double-counts.",
+          "description": "Demonstrate the **fragile base class** problem: a base class changes a `protected` method, inadvertently breaking a subclass that calls it via `super`.\n\nShow that `private` methods in the base class prevent subclass interference, making the base class less fragile.\n\n**Example:**\nBase uses private helper — subclass override doesn't interfere\nBase uses protected helper — subclass override changes base behavior unexpectedly\n\n**Key insight:** Prefer `private` over `protected`. Expose only what subclasses truly need.",
           "difficulty": "HARD",
           "pattern": "Fragile Base Class Problem",
           "hint1": "If Counter.increment() calls this.incrementBy(1) — and CountingList overrides incrementBy() — then calling increment() on a CountingList calls CountingList.incrementBy(1) which calls super n times... leading to over-counting.",
@@ -452,12 +482,14 @@
             }
           ],
           "constraints": "No constraints.",
-          "editorial": "Fragile base class: when Counter.increment() calls incrementBy(1) via dynamic dispatch, the subclass's incrementBy() gets called — causing logCount to track increment() calls too. Fix: increment() calls a private addToCount(1) — private methods are NOT overridable, so LoggingCounter.incrementBy() is bypassed. Effective Java Item 19: document self-use of overridable methods, or use private helpers to avoid this."
+          "editorial": "Fragile base class: when Counter.increment() calls incrementBy(1) via dynamic dispatch, the subclass's incrementBy() gets called — causing logCount to track increment() calls too. Fix: increment() calls a private addToCount(1) — private methods are NOT overridable, so LoggingCounter.incrementBy() is bypassed. Effective Java Item 19: document self-use of overridable methods, or use private helpers to avoid this.",
+          "sampleInput": "protected vs private method in base class",
+          "sampleOutput": "private: safe; protected: fragile"
         },
         {
           "displayOrder": 17,
           "title": "Visitor Pattern Over Inheritance",
-          "description": "Implement the Visitor pattern: separate an operation (computing tax) from the object hierarchy (Product types). Create `Visitor` interface with `visit(Food)`, `visit(Electronics)`. `TaxCalculator` implements Visitor. Each Product subclass has `accept(Visitor v)` that calls `v.visit(this)`.",
+          "description": "Implement the **Visitor pattern** to operate on a Shape hierarchy without modifying Shape classes. `ShapeVisitor` has `visit(Circle)`, `visit(Rectangle)`. `AreaVisitor` and `PerimeterVisitor` implement it.\n\n**Example:**\nShapeVisitor area = new AreaVisitor();\nnew Circle(5).accept(area) => 78.54\nnew Rectangle(4,6).accept(area) => 24.0\n\n**Key insight:** Visitor adds new operations without touching existing classes — open/closed principle across a hierarchy.",
           "difficulty": "HARD",
           "pattern": "Visitor Design Pattern",
           "hint1": "interface Visitor { double visit(Food f); double visit(Electronics e); }",
@@ -476,12 +508,14 @@
             }
           ],
           "constraints": "Tax rates: Food 5%, Electronics 18%.",
-          "editorial": "Visitor decouples operations from the class hierarchy. Adding a new operation (DiscountCalculator) requires only a new Visitor class — no changes to Product hierarchy. The double-dispatch trick: p.accept(visitor) calls visitor.visit(this) — 'this' is the concrete type (Food or Electronics), so the correct overloaded visit() is called at runtime. Used in Java compiler AST visitors, Lombok's @VisitorPattern, Apache POI."
+          "editorial": "Visitor decouples operations from the class hierarchy. Adding a new operation (DiscountCalculator) requires only a new Visitor class — no changes to Product hierarchy. The double-dispatch trick: p.accept(visitor) calls visitor.visit(this) — 'this' is the concrete type (Food or Electronics), so the correct overloaded visit() is called at runtime. Used in Java compiler AST visitors, Lombok's @VisitorPattern, Apache POI.",
+          "sampleInput": "new Circle(5).accept(new AreaVisitor())",
+          "sampleOutput": "78.54"
         },
         {
           "displayOrder": 18,
           "title": "Method Hiding vs Overriding (static)",
-          "description": "Demonstrate the difference between method OVERRIDING (instance methods — polymorphic) and method HIDING (static methods — resolved at compile-time reference type). Show that calling a static method through a parent reference always calls the parent's version, regardless of the actual object type.",
+          "description": "Demonstrate the difference between **method hiding** (static) and **method overriding** (instance):\n\n```java\nclass A { static void greet() { print(\"A static\"); } void hello() { print(\"A instance\"); } }\nclass B extends A { static void greet() { print(\"B static\"); } void hello() { print(\"B instance\"); } }\nA obj = new B();\nobj.greet(); // A static — HIDING: resolved at compile time\nobj.hello(); // B instance — OVERRIDING: resolved at runtime\n```",
           "difficulty": "HARD",
           "pattern": "Method Hiding vs Overriding",
           "hint1": "Instance method override: Parent ref = new Child(); ref.instanceMethod() → Child's version (polymorphic).",
@@ -500,12 +534,14 @@
             }
           ],
           "constraints": "No constraints.",
-          "editorial": "Instance methods: resolved at runtime based on the ACTUAL object type — polymorphism (virtual dispatch). Static methods: resolved at compile time based on the REFERENCE type — method hiding, not overriding. @Override cannot annotate a static method override. Calling ref.staticMethod() where ref is Parent always calls Parent.staticMethod() even if ref points to a Child. This is why calling static methods through object references is a code smell — use ClassName.staticMethod() instead."
+          "editorial": "Instance methods: resolved at runtime based on the ACTUAL object type — polymorphism (virtual dispatch). Static methods: resolved at compile time based on the REFERENCE type — method hiding, not overriding. @Override cannot annotate a static method override. Calling ref.staticMethod() where ref is Parent always calls Parent.staticMethod() even if ref points to a Child. This is why calling static methods through object references is a code smell — use ClassName.staticMethod() instead.",
+          "sampleInput": "A obj = new B(); obj.greet(); obj.hello();",
+          "sampleOutput": "\"A static\"\n\"B instance\""
         },
         {
           "displayOrder": 19,
           "title": "Multi-Level Payroll With Override Chain",
-          "description": "Build a 4-level hierarchy: `Worker → PartTime → Intern → MBAIntern`. Each level's `calculatePay()` calls `super.calculatePay()` and adjusts. Worker: baseRate * hours. PartTime: 80% of Worker rate. Intern: PartTime rate + $100 stipend. MBAIntern: Intern rate + 20% premium. Compute MBAIntern's pay.",
+          "description": "Build a 3-level payroll hierarchy: `Employee` -> `Manager(double bonus)` -> `Director(double stockOptions)`. Each level adds to `calculatePay()` by calling `super.calculatePay()` and adding its extra.\n\n**Example:**\nnew Director(\"Alice\", 5000, 2000, 10000).calculatePay()\n=> 5000 (base) + 2000 (bonus) + 10000 (stock) = 17000.0\n\n**Key insight:** `super.calculatePay()` at each level builds total compensation incrementally.",
           "difficulty": "HARD",
           "pattern": "Multi-Level Override Chain",
           "hint1": "Worker.calculatePay() = baseRate * hours.",
@@ -520,12 +556,14 @@
             }
           ],
           "constraints": "Follow the chain: Worker → PartTime → Intern → MBAIntern.",
-          "editorial": "Each super.calculatePay() call walks the chain: MBAIntern calls Intern.super, which calls PartTime.super, which calls Worker. The computation unwinds: Worker=800 → PartTime=640 → Intern=740 → MBAIntern=888. The call chain is: MBAIntern.calculatePay() → super = Intern.calculatePay() → super = PartTime.calculatePay() → super = Worker.calculatePay()."
+          "editorial": "Each super.calculatePay() call walks the chain: MBAIntern calls Intern.super, which calls PartTime.super, which calls Worker. The computation unwinds: Worker=800 → PartTime=640 → Intern=740 → MBAIntern=888. The call chain is: MBAIntern.calculatePay() → super = Intern.calculatePay() → super = PartTime.calculatePay() → super = Worker.calculatePay().",
+          "sampleInput": "new Director(\"Alice\", 5000, 2000, 10000).calculatePay()",
+          "sampleOutput": "17000.0"
         },
         {
           "displayOrder": 20,
           "title": "Composition Over Inheritance",
-          "description": "Rewrite a deep inheritance chain using composition. Original: `Vehicle → Car → SportsCar → TurboSportsCar` where each level adds one behaviour. Refactored: `Car` composes optional `Engine`, `Spoiler`, `TurboKit` behaviours passed in constructor. Show that composition is more flexible — you can build a TurboCarWithSpoiler without a new class.",
+          "description": "Replace an inheritance hierarchy with **composition**. Instead of `Car extends Engine`, use `Car HAS-A Engine`.\n\n**Before (inheritance):**\nclass ElectricCar extends Engine — wrong: a car IS NOT an engine\n\n**After (composition):**\nclass Car { private Engine engine; }\nnew Car(new ElectricEngine()).start() => \"Electric engine started\"\nnew Car(new PetrolEngine()).start() => \"Petrol engine started\"\n\n**Key insight:** Favour composition — it's more flexible, avoids tight coupling, and models HAS-A correctly.",
           "difficulty": "HARD",
           "pattern": "Composition Over Inheritance",
           "hint1": "Car has fields: `Engine engine, Spoiler spoiler, TurboKit turbo` — all nullable.",
@@ -544,7 +582,9 @@
             }
           ],
           "constraints": "No constraints.",
-          "editorial": "Inheritance explosion: N independent features need 2^N subclass combinations. Composition: each feature is a separate object combined at construction time. FlexCar with any N components needs only 1 class. Prefer composition when: behaviour varies independently, you want runtime flexibility, or the IS-A relationship is forced. Use inheritance for genuine IS-A with shared implementation. Spring: ApplicationContext composes ResourceLoader, BeanFactory, MessageSource — not extends all three."
+          "editorial": "Inheritance explosion: N independent features need 2^N subclass combinations. Composition: each feature is a separate object combined at construction time. FlexCar with any N components needs only 1 class. Prefer composition when: behaviour varies independently, you want runtime flexibility, or the IS-A relationship is forced. Use inheritance for genuine IS-A with shared implementation. Spring: ApplicationContext composes ResourceLoader, BeanFactory, MessageSource — not extends all three.",
+          "sampleInput": "new Car(new ElectricEngine()).start()",
+          "sampleOutput": "\"Electric engine started\""
         }
       ],
       "subCategory": "OOP (VERY IMPORTANT)",

@@ -49,6 +49,14 @@ Optional<Problem> findByIdWithTopic(@Param("id") Long id);
 @Query("SELECT DISTINCT p.pattern FROM Problem p WHERE p.pattern IS NOT NULL ORDER BY p.pattern")
 List<String> findDistinctPatterns();
 
+/** Pattern name + problem count, sorted by count desc — for tag pills with counts. */
+@Query("SELECT p.pattern, COUNT(p) FROM Problem p WHERE p.pattern IS NOT NULL GROUP BY p.pattern ORDER BY COUNT(p) DESC")
+List<Object[]> findPatternCounts();
+
+/** Category name + problem count, sorted by count desc — for topic pills with counts. */
+@Query("SELECT CAST(t.category AS string), COUNT(p) FROM Problem p JOIN p.topic t GROUP BY t.category ORDER BY COUNT(p) DESC")
+List<Object[]> findCategoryCounts();
+
 /**
  * Paginated, filtered list for GET /api/problems.
  * Every filter is optional — pass NULL to skip that filter.

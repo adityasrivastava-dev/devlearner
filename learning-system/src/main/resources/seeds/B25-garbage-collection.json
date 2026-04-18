@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Identify the Memory Leak",
-          "description": "Review the following code. A `Cache` class stores request data in a static HashMap. After 10,000 requests the app crashes with OutOfMemoryError. Identify the leak and fix it using a size-bounded approach (max 100 entries, evict oldest).",
+          "description": "Identify the memory leak in this code and fix it:\n\n```java\nclass EventBus {\n    static List<Listener> listeners = new ArrayList<>();\n    static void register(Listener l) { listeners.add(l); }\n    // No deregister method!\n}\n```\n\nFix options:\n1. Add `static void deregister(Listener l) { listeners.remove(l); }`\n2. Use `List<WeakReference<Listener>>` — GC can collect listeners when no other references exist\n\nExplain why option 2 is safer for anonymous listeners.",
           "difficulty": "MEDIUM",
           "pattern": "LinkedHashMap LRU, memory leak identification",
           "hint1": "The static HashMap grows forever — it's the leak.",
@@ -43,12 +43,14 @@
           "hint3": "Override removeEldestEntry to return true when size > MAX.",
           "starterCode": "import java.util.*;\n\npublic class Q1 {\n    // BUGGY: memory leak\n    static final Map<String, byte[]> CACHE = new HashMap<>();\n    static final int MAX = 100;\n\n    static void cacheRequest(String key, byte[] data) {\n        CACHE.put(key, data);\n    }\n\n    // TODO: fix cacheRequest so cache never exceeds MAX entries\n    // Use LinkedHashMap with removeEldestEntry\n    public static void main(String[] args) {\n        for (int i = 0; i < 200; i++) cacheRequest(\"key\" + i, new byte[1024]);\n        System.out.println(\"Cache size: \" + CACHE.size()); // should be <= 100\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q1 {\n    static final int MAX = 100;\n    static final Map<String, byte[]> CACHE = new LinkedHashMap<>(MAX, 0.75f, true) {\n        @Override protected boolean removeEldestEntry(Map.Entry<String, byte[]> eldest) {\n            return size() > MAX;\n        }\n    };\n\n    static void cacheRequest(String key, byte[] data) {\n        CACHE.put(key, data);\n    }\n\n    public static void main(String[] args) {\n        for (int i = 0; i < 200; i++) cacheRequest(\"key\" + i, new byte[1024]);\n        System.out.println(\"Cache size: \" + CACHE.size()); // 100\n    }\n}",
-          "testCases": "Cache size: 100"
+          "testCases": "Cache size: 100",
+          "sampleInput": "register 10000 listeners, no deregister",
+          "sampleOutput": "Fix: WeakReference<Listener> or explicit deregister()"
         },
         {
           "displayOrder": 2,
           "title": "Reference Type Hierarchy",
-          "description": "Demonstrate the difference between StrongReference, SoftReference, and WeakReference. Create one of each pointing to a byte[1024] array. Print reachability before and after setting strong reference to null and suggesting GC.",
+          "description": "Demonstrate the four reference types in Java and when each is collected:\n\n- `StrongReference`: never collected while referenced\n- `SoftReference<T>`: collected when JVM needs memory (good for caches)\n- `WeakReference<T>`: collected at next GC regardless of memory\n- `PhantomReference<T>`: collected after finalization\n\n**Example:**\nWeakReference<Object> weak = new WeakReference<>(new Object());\nSystem.gc();\nweak.get() => null (collected)",
           "difficulty": "EASY",
           "pattern": "Reference types",
           "hint1": "Strong: byte[] strong = new byte[1024]; SoftReference<byte[]> soft = new SoftReference<>(...).",
@@ -56,12 +58,14 @@
           "hint3": "SoftReference is not cleared unless memory is tight.",
           "starterCode": "import java.lang.ref.*;\n\npublic class Q2 {\n    public static void main(String[] args) throws InterruptedException {\n        byte[] data = new byte[1024];\n        SoftReference<byte[]>  soft = new SoftReference<>(data);\n        WeakReference<byte[]>  weak = new WeakReference<>(data);\n\n        System.out.println(\"Before null: soft=\" + (soft.get() != null) + \" weak=\" + (weak.get() != null));\n\n        data = null; // remove strong reference\n        System.gc();\n        Thread.sleep(100);\n\n        // TODO: print soft and weak get() null status\n    }\n}",
           "solutionCode": "import java.lang.ref.*;\n\npublic class Q2 {\n    public static void main(String[] args) throws InterruptedException {\n        byte[] data = new byte[1024];\n        SoftReference<byte[]>  soft = new SoftReference<>(data);\n        WeakReference<byte[]>  weak = new WeakReference<>(data);\n\n        System.out.println(\"Before null: soft=\" + (soft.get() != null) + \" weak=\" + (weak.get() != null));\n\n        data = null;\n        System.gc();\n        Thread.sleep(100);\n\n        System.out.println(\"After GC:    soft=\" + (soft.get() != null) + \" weak=\" + (weak.get() != null));\n        // soft typically still alive (memory not tight), weak typically null\n    }\n}",
-          "testCases": "Before null: soft=true weak=true\nAfter GC:    soft=true weak=false"
+          "testCases": "Before null: soft=true weak=true\nAfter GC:    soft=true weak=false",
+          "sampleInput": "WeakReference<Object> after System.gc()",
+          "sampleOutput": "weak.get() = null"
         },
         {
           "displayOrder": 3,
           "title": "ThreadLocal Cleanup in Thread Pool",
-          "description": "A ThreadLocal<List<String>> is used to accumulate log messages per-request. In a thread-pool scenario, the ThreadLocal must be cleaned up after each task. Write a `runTask(String taskId)` method that uses the ThreadLocal, adds one log entry, then cleans up.",
+          "description": "Demonstrate the `ThreadLocal` memory leak in thread pools and how to fix it:\n\n**Leak:** Thread pool reuses threads. `ThreadLocal` values set during one task remain for the next task if not cleaned up.\n\n```java\nExecutorService pool = Executors.newFixedThreadPool(5);\npool.submit(() -> {\n    local.set(new LargeObject()); // set\n    // forgotten: local.remove(); // MUST clean up!\n});\n```\n\n**Fix:** Always call `local.remove()` in a finally block.\n\nImplement a wrapper `SafeThreadLocalTask` that auto-cleans.",
           "difficulty": "EASY",
           "pattern": "ThreadLocal lifecycle",
           "hint1": "ThreadLocal.withInitial(ArrayList::new) initializes lazily.",
@@ -69,7 +73,9 @@
           "hint3": "Without remove(), the next task in the same thread sees leftover data.",
           "starterCode": "import java.util.*;\n\npublic class Q3 {\n    static final ThreadLocal<List<String>> TL = ThreadLocal.withInitial(ArrayList::new);\n\n    static void runTask(String taskId) {\n        // TODO: add taskId to TL, print size, then clean up\n    }\n\n    public static void main(String[] args) {\n        runTask(\"T1\");\n        runTask(\"T2\"); // should see size 1, not 2\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q3 {\n    static final ThreadLocal<List<String>> TL = ThreadLocal.withInitial(ArrayList::new);\n\n    static void runTask(String taskId) {\n        try {\n            TL.get().add(taskId);\n            System.out.println(taskId + \" log size: \" + TL.get().size()); // always 1\n        } finally {\n            TL.remove(); // critical in thread pools\n        }\n    }\n\n    public static void main(String[] args) {\n        runTask(\"T1\"); // T1 log size: 1\n        runTask(\"T2\"); // T2 log size: 1\n    }\n}",
-          "testCases": "T1 log size: 1\nT2 log size: 1"
+          "testCases": "T1 log size: 1\nT2 log size: 1",
+          "sampleInput": "ThreadLocal in pool without cleanup",
+          "sampleOutput": "memory leak; Fix: local.remove() in finally"
         }
       ]
     }

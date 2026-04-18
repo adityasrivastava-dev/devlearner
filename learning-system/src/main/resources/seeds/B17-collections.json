@@ -69,7 +69,7 @@
         {
           "displayOrder": 1,
           "title": "Frequency Map",
-          "description": "Given a `String[] words`, return a `Map<String, Integer>` with the frequency of each word. Then find and return the word with the highest frequency.",
+          "description": "Given an array of strings, return a `Map<String,Long>` of each string's frequency.\n\n**Example:**\nfrequencyMap([\"apple\",\"banana\",\"apple\",\"cherry\",\"banana\",\"apple\"])\n=> {apple=3, banana=2, cherry=1}\n\n**Key insight:** `map.merge(word, 1L, Long::sum)` or `getOrDefault` pattern. Use `LinkedHashMap` to preserve insertion order.",
           "difficulty": "EASY",
           "pattern": "HashMap Frequency Count",
           "hint1": "Use `map.merge(word, 1, Integer::sum)` or `map.getOrDefault(word, 0) + 1`.",
@@ -88,12 +88,14 @@
             }
           ],
           "constraints": "At least one word. Unique most frequent word.",
-          "editorial": "merge(k, 1, Integer::sum) is the most concise frequency counter. Collections.max with comparingByValue() finds the max-value entry without explicit iteration."
+          "editorial": "merge(k, 1, Integer::sum) is the most concise frequency counter. Collections.max with comparingByValue() finds the max-value entry without explicit iteration.",
+          "sampleInput": "[\"apple\",\"banana\",\"apple\",\"cherry\",\"banana\",\"apple\"]",
+          "sampleOutput": "{apple=3, banana=2, cherry=1}"
         },
         {
           "displayOrder": 2,
           "title": "Remove Duplicates Preserving Order",
-          "description": "Given a `List<Integer>`, remove duplicates while preserving the original insertion order. Return the deduplicated list.",
+          "description": "Remove duplicates from a list while preserving the original insertion order.\n\n**Example 1:**\nremoveDuplicates([3,1,4,1,5,9,2,6,5]) => [3,1,4,5,9,2,6]\n\n**Example 2:**\nremoveDuplicates([\"a\",\"b\",\"a\",\"c\",\"b\"]) => [\"a\",\"b\",\"c\"]\n\n**Key insight:** Use `LinkedHashSet` — preserves insertion order while eliminating duplicates. Then convert back to list.",
           "difficulty": "EASY",
           "pattern": "LinkedHashSet Deduplication",
           "hint1": "New LinkedHashSet<>(list) deduplicates while preserving insertion order in O(n).",
@@ -112,12 +114,14 @@
             }
           ],
           "constraints": "Must preserve original order of first occurrence.",
-          "editorial": "LinkedHashSet = HashSet + doubly-linked insertion order. Wrapping the list in it deduplicates in O(n) while preserving first-occurrence order."
+          "editorial": "LinkedHashSet = HashSet + doubly-linked insertion order. Wrapping the list in it deduplicates in O(n) while preserving first-occurrence order.",
+          "sampleInput": "[3,1,4,1,5,9,2,6,5]",
+          "sampleOutput": "[3,1,4,5,9,2,6]"
         },
         {
           "displayOrder": 3,
           "title": "Group Anagrams",
-          "description": "Given a `String[] strs`, group anagrams together. Return a `List<List<String>>` where each inner list contains words that are anagrams of each other. Order within groups doesn't matter.",
+          "description": "Group an array of strings into anagram groups using `HashMap<String, List<String>>`.\n\n**Example:**\ngroupAnagrams([\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"])\n=> [[\"bat\"],[\"nat\",\"tan\"],[\"ate\",\"eat\",\"tea\"]]\n\n**Key insight:** Sort each string to get its canonical form as the map key — all anagrams share the same sorted key.",
           "difficulty": "EASY",
           "pattern": "HashMap Grouping by Sorted Key",
           "hint1": "Two strings are anagrams if their sorted character arrays are equal.",
@@ -136,12 +140,14 @@
             }
           ],
           "constraints": "All lowercase. 1 <= strs.length <= 10^4.",
-          "editorial": "Sort each word's characters to get a canonical key. All anagrams share the same sorted key. computeIfAbsent elegantly initialises the list if missing. O(n * k log k) where k = max word length."
+          "editorial": "Sort each word's characters to get a canonical key. All anagrams share the same sorted key. computeIfAbsent elegantly initialises the list if missing. O(n * k log k) where k = max word length.",
+          "sampleInput": "[\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]",
+          "sampleOutput": "[[\"bat\"],[\"nat\",\"tan\"],[\"ate\",\"eat\",\"tea\"]]"
         },
         {
           "displayOrder": 4,
           "title": "Find All Duplicates",
-          "description": "Given an `int[] nums`, find all elements that appear more than once. Return them as a sorted `List<Integer>`. Use a HashSet-based approach.",
+          "description": "Find all numbers that appear **more than once** in the array.\n\n**Example 1:**\nfindDuplicates([4,3,2,7,8,2,3,1]) => [2,3]\n\n**Example 2:**\nfindDuplicates([1,1,2]) => [1]\n\n**Key insight:** Two passes — first build frequency map, then collect keys with count > 1. Or use a `Set` to detect second occurrence.",
           "difficulty": "EASY",
           "pattern": "HashSet — Seen Tracking",
           "hint1": "Use two sets: `seen` and `duplicates`. If `seen.contains(n)` → add to duplicates.",
@@ -160,12 +166,14 @@
             }
           ],
           "constraints": "1 <= nums[i] <= nums.length.",
-          "editorial": "seen.add(n) returns false if the element was already present. A TreeSet for duplicates gives us sorted output for free. O(n) time, O(n) space."
+          "editorial": "seen.add(n) returns false if the element was already present. A TreeSet for duplicates gives us sorted output for free. O(n) time, O(n) space.",
+          "sampleInput": "[4,3,2,7,8,2,3,1]",
+          "sampleOutput": "[2,3]"
         },
         {
           "displayOrder": 5,
           "title": "Priority Task Queue",
-          "description": "Implement a task processor using a `PriorityQueue<Task>` where `Task(String name, int priority)`. Higher priority number = served first. Process all tasks printing them in priority order.",
+          "description": "Implement a `PriorityQueue`-backed task scheduler. Tasks have name and priority (1=highest). `addTask(name, priority)` enqueues; `runNext()` dequeues and returns the highest-priority task.\n\n**Example:**\nscheduler.addTask(\"low\", 5);\nscheduler.addTask(\"high\", 1);\nscheduler.addTask(\"mid\", 3);\nscheduler.runNext() => \"high\"\nscheduler.runNext() => \"mid\"",
           "difficulty": "EASY",
           "pattern": "PriorityQueue with Custom Comparator",
           "hint1": "Comparator: `Comparator.comparingInt(t -> -t.priority)` (negate for max-heap).",
@@ -180,12 +188,14 @@
             }
           ],
           "constraints": "Unique priorities.",
-          "editorial": "PriorityQueue default is min-heap. reversed() or negative comparator creates a max-heap by priority. poll() always removes the highest-priority element in O(log n)."
+          "editorial": "PriorityQueue default is min-heap. reversed() or negative comparator creates a max-heap by priority. poll() always removes the highest-priority element in O(log n).",
+          "sampleInput": "add low(5),high(1),mid(3) then runNext twice",
+          "sampleOutput": "[\"high\", \"mid\"]"
         },
         {
           "displayOrder": 6,
           "title": "Two Sum With HashMap",
-          "description": "Given `int[] nums` and a `target`, return indices of the two numbers that add up to target. Use a HashMap for O(n) solution instead of O(n²) brute force.",
+          "description": "Given an array and a target, return the indices of the two numbers that sum to target using a `HashMap`.\n\n**Example 1:**\ntwoSum([2,7,11,15], 9) => [0,1]\ntwoSum([3,2,4], 6) => [1,2]\ntwoSum([3,3], 6) => [0,1]\n\n**Key insight:** Store `{value -> index}` while scanning. For each element check if `target - element` exists in the map — O(n) time.",
           "difficulty": "EASY",
           "pattern": "HashMap Complement Lookup",
           "hint1": "For each num: complement = target - num. Check if complement is already in the map.",
@@ -204,12 +214,14 @@
             }
           ],
           "constraints": "Exactly one solution. 2 <= nums.length <= 10^4.",
-          "editorial": "HashMap stores previously seen values. For each element, check if its complement exists in O(1). Total: O(n). Versus O(n²) brute force nested loops. Classic HashMap complement pattern."
+          "editorial": "HashMap stores previously seen values. For each element, check if its complement exists in O(1). Total: O(n). Versus O(n²) brute force nested loops. Classic HashMap complement pattern.",
+          "sampleInput": "twoSum([2,7,11,15], 9)",
+          "sampleOutput": "[0,1]"
         },
         {
           "displayOrder": 7,
           "title": "Top K Frequent Elements",
-          "description": "Given `int[] nums` and `int k`, return the `k` most frequent elements. Output order doesn't matter. Use a frequency map + min-heap of size k.",
+          "description": "Return the `k` most frequent elements in an array.\n\n**Example 1:**\ntopKFrequent([1,1,1,2,2,3], k=2) => [1,2]\n\n**Example 2:**\ntopKFrequent([1], k=1) => [1]\n\n**Key insight:** Build frequency map, then use a min-heap of size k — O(n log k). Or bucket sort for O(n).",
           "difficulty": "MEDIUM",
           "pattern": "HashMap + PriorityQueue — Top K",
           "hint1": "Step 1: Build frequency map with HashMap.",
@@ -228,12 +240,14 @@
             }
           ],
           "constraints": "1 <= k <= unique elements. Answer is unique.",
-          "editorial": "Min-heap of size k: always keep the k highest-frequency elements. When adding a new element, if heap exceeds k, remove the minimum-frequency element. O(n log k) time — better than O(n log n) full sort when k << n."
+          "editorial": "Min-heap of size k: always keep the k highest-frequency elements. When adding a new element, if heap exceeds k, remove the minimum-frequency element. O(n log k) time — better than O(n log n) full sort when k << n.",
+          "sampleInput": "topKFrequent([1,1,1,2,2,3], k=2)",
+          "sampleOutput": "[1,2]"
         },
         {
           "displayOrder": 8,
           "title": "Sliding Window Maximum With Deque",
-          "description": "Given `int[] nums` and window size `k`, return the maximum of each sliding window as an array. Use an `ArrayDeque` to maintain a monotonic decreasing deque of indices for O(n) solution.",
+          "description": "Return the **maximum** in every sliding window of size `k` using a `Deque<Integer>` (monotonic decreasing queue).\n\n**Example:**\nslidingWindowMax([1,3,-1,-3,5,3,6,7], k=3)\n=> [3,3,5,5,6,7]\n\n**Key insight:** Deque stores indices; front always holds the max index. Remove from front if out of window; remove from back while smaller than current element.",
           "difficulty": "MEDIUM",
           "pattern": "Monotonic Deque — Sliding Window",
           "hint1": "Deque stores INDICES. Front of deque = index of the current window maximum.",
@@ -252,12 +266,14 @@
             }
           ],
           "constraints": "1 <= k <= nums.length <= 10^5.",
-          "editorial": "Monotonic deque: maintain indices in decreasing order of their values. Front = current window max (O(1) peek). Each index is added and removed at most once — O(n) total. Removes obsolete indices from front (outside window) and smaller values from back (can never be max while current element is in window)."
+          "editorial": "Monotonic deque: maintain indices in decreasing order of their values. Front = current window max (O(1) peek). Each index is added and removed at most once — O(n) total. Removes obsolete indices from front (outside window) and smaller values from back (can never be max while current element is in window).",
+          "sampleInput": "[1,3,-1,-3,5,3,6,7], k=3",
+          "sampleOutput": "[3,3,5,5,6,7]"
         },
         {
           "displayOrder": 9,
           "title": "Word Frequency TreeMap",
-          "description": "Given a paragraph (String), count word frequencies and print them in alphabetical order (case-insensitive). Use a TreeMap for automatic key sorting. Split on non-word characters.",
+          "description": "Count word frequencies and return them in **alphabetical order** using a `TreeMap`.\n\n**Example:**\nwordFrequency(\"the cat sat on the mat the cat\")\n=> {cat=2, mat=1, on=1, sat=1, the=3}\n\n**Key insight:** `TreeMap` keeps keys sorted by natural order automatically — no explicit sorting step needed.",
           "difficulty": "MEDIUM",
           "pattern": "TreeMap — Sorted Key Iteration",
           "hint1": "Split: `paragraph.toLowerCase().split(\"\\\\W+\")`",
@@ -272,12 +288,14 @@
             }
           ],
           "constraints": "Case-insensitive. Ignore punctuation.",
-          "editorial": "TreeMap sorts keys by natural order (alphabetical for strings). merge() handles both first occurrence and increments. split(\"\\\\W+\") splits on any non-word character sequence."
+          "editorial": "TreeMap sorts keys by natural order (alphabetical for strings). merge() handles both first occurrence and increments. split(\"\\\\W+\") splits on any non-word character sequence.",
+          "sampleInput": "\"the cat sat on the mat the cat\"",
+          "sampleOutput": "{cat=2, mat=1, on=1, sat=1, the=3}"
         },
         {
           "displayOrder": 10,
           "title": "BFS With Queue",
-          "description": "Implement BFS on an adjacency list graph starting from node 0. Return the BFS traversal order as a `List<Integer>`. Use an `ArrayDeque` as the queue.",
+          "description": "Implement BFS using a `Queue<Integer>`. Return nodes in BFS order.\n\n**Example:**\nGraph: {0:[1,2], 1:[3,4], 2:[5]}\nbfs(0) => [0,1,2,3,4,5]\n\n**Key insight:** `LinkedList` as `Queue` — offer to back, poll from front. Mark visited before enqueuing to avoid cycles.",
           "difficulty": "MEDIUM",
           "pattern": "BFS — ArrayDeque as Queue",
           "hint1": "offer() the start node. While queue not empty: poll() node, add to result, offer() unvisited neighbors.",
@@ -292,12 +310,14 @@
             }
           ],
           "constraints": "Connected graph. 1 <= nodes <= 10^4.",
-          "editorial": "BFS uses a FIFO queue. Mark visited before offering (not after polling) to avoid adding the same node multiple times. ArrayDeque is faster than LinkedList for queue operations."
+          "editorial": "BFS uses a FIFO queue. Mark visited before offering (not after polling) to avoid adding the same node multiple times. ArrayDeque is faster than LinkedList for queue operations.",
+          "sampleInput": "bfs(0) on {0:[1,2],1:[3,4],2:[5]}",
+          "sampleOutput": "[0,1,2,3,4,5]"
         },
         {
           "displayOrder": 11,
           "title": "Multi-Map Grouping by Department",
-          "description": "Given a list of `Employee(String name, String department)`, group them by department using `Map<String, List<Employee>>`. Print each department with its employee names sorted alphabetically.",
+          "description": "Group employees by department using `Map<String, List<Employee>>`.\n\n**Example:**\nList<Employee> employees = [\n  Employee(\"Alice\", \"Engineering\"),\n  Employee(\"Bob\", \"Marketing\"),\n  Employee(\"Charlie\", \"Engineering\")\n]\ngroupByDept(employees)\n=> {Engineering=[Alice,Charlie], Marketing=[Bob]}\n\n**Key insight:** `map.computeIfAbsent(dept, k -> new ArrayList<>()).add(emp)` is cleaner than getOrDefault.",
           "difficulty": "MEDIUM",
           "pattern": "Multi-Map Grouping",
           "hint1": "Use `map.computeIfAbsent(dept, k -> new ArrayList<>()).add(emp)`.",
@@ -312,12 +332,14 @@
             }
           ],
           "constraints": "No constraints.",
-          "editorial": "computeIfAbsent handles both the first employee in a department (creates list) and subsequent ones (uses existing). TreeMap sorts departments alphabetically. Collections.sort sorts names within each group."
+          "editorial": "computeIfAbsent handles both the first employee in a department (creates list) and subsequent ones (uses existing). TreeMap sorts departments alphabetically. Collections.sort sorts names within each group.",
+          "sampleInput": "group Alice(Eng), Bob(Mkt), Charlie(Eng)",
+          "sampleOutput": "{Engineering=[Alice,Charlie], Marketing=[Bob]}"
         },
         {
           "displayOrder": 12,
           "title": "Merge Intervals With TreeMap",
-          "description": "Given a list of `int[] intervals` where each interval is `[start, end]`, merge overlapping intervals. Use a TreeMap to process intervals in sorted start-time order. Return the merged intervals.",
+          "description": "Merge overlapping intervals using a `TreeMap` keyed by start time.\n\n**Example:**\nmergeIntervals([[1,3],[2,6],[8,10],[15,18]])\n=> [[1,6],[8,10],[15,18]]\n\nmergeIntervals([[1,4],[4,5]])\n=> [[1,5]]\n\n**Key insight:** Sort by start (TreeMap does this), then merge: if current start <= last end, extend the last interval's end.",
           "difficulty": "MEDIUM",
           "pattern": "TreeMap — Interval Processing",
           "hint1": "Sort intervals by start time (or use TreeMap with start as key).",
@@ -336,12 +358,14 @@
             }
           ],
           "constraints": "1 <= intervals.length <= 10^4. intervals[i].length == 2.",
-          "editorial": "Sort by start time first. Then single pass: if current interval overlaps with last merged (last.end >= curr.start), extend last.end. Otherwise add new interval. O(n log n) for sort + O(n) merge pass."
+          "editorial": "Sort by start time first. Then single pass: if current interval overlaps with last merged (last.end >= curr.start), extend last.end. Otherwise add new interval. O(n log n) for sort + O(n) merge pass.",
+          "sampleInput": "[[1,3],[2,6],[8,10],[15,18]]",
+          "sampleOutput": "[[1,6],[8,10],[15,18]]"
         },
         {
           "displayOrder": 13,
           "title": "LRU Cache Implementation",
-          "description": "Implement an LRU (Least Recently Used) cache with `get(int key)` and `put(int key, int value)`. Cache has fixed capacity. When full, evict the LRU entry. Both operations must be O(1). Use `LinkedHashMap` with access-order.",
+          "description": "Implement `LRUCache(int capacity)` with `get(int key)` and `put(int key, int value)`. When full, evict the least recently used.\n\n**Example:**\ncache = LRUCache(2)\ncache.put(1,1); cache.put(2,2);\ncache.get(1) => 1\ncache.put(3,3); // evicts key 2\ncache.get(2) => -1\ncache.get(3) => 3\n\n**Key insight:** `LinkedHashMap(capacity, 0.75f, true)` with `removeEldestEntry` override — O(1) for both get and put.",
           "difficulty": "HARD",
           "pattern": "LinkedHashMap LRU Cache",
           "hint1": "LinkedHashMap with accessOrder=true moves accessed entries to tail (MRU position).",
@@ -360,12 +384,14 @@
             }
           ],
           "constraints": "1 <= capacity <= 3000. O(1) for both get and put.",
-          "editorial": "LinkedHashMap with accessOrder=true moves accessed entries to the tail (MRU). removeEldestEntry evicts the head (LRU) when size exceeds capacity. get() must use getOrDefault — NOT get() on the superclass directly, as it triggers the access-order reordering."
+          "editorial": "LinkedHashMap with accessOrder=true moves accessed entries to the tail (MRU). removeEldestEntry evicts the head (LRU) when size exceeds capacity. get() must use getOrDefault — NOT get() on the superclass directly, as it triggers the access-order reordering.",
+          "sampleInput": "capacity=2, put(1,1),put(2,2),get(1),put(3,3),get(2)",
+          "sampleOutput": "-1"
         },
         {
           "displayOrder": 14,
           "title": "Consistent Hashing Ring With TreeMap",
-          "description": "Implement a simple consistent hashing ring with `addServer(String server)` and `getServer(int key)`. Use a TreeMap where keys are hash positions. getServer finds the server responsible for a key by looking up the next server clockwise (ceilingKey, wrapping to first if needed).",
+          "description": "Implement a consistent hashing ring using `TreeMap<Integer, String>`. Nodes are placed at hashed positions; a key maps to the first node clockwise.\n\n**Example:**\nring.addNode(\"ServerA\");\nring.addNode(\"ServerB\");\nring.addNode(\"ServerC\");\nring.getNode(\"user_123\") => \"ServerB\" (closest clockwise node)\n\n**Key insight:** `treeMap.ceilingKey(hash)` finds the next clockwise node; wrap around with `firstKey()` if none.",
           "difficulty": "HARD",
           "pattern": "TreeMap — Consistent Hashing",
           "hint1": "addServer: hash the server name and put it in the TreeMap.",
@@ -384,12 +410,14 @@
             }
           ],
           "constraints": "At least one server in ring before getServer.",
-          "editorial": "TreeMap.ceilingEntry(k) finds the smallest key >= k — this is the next clockwise server. If null (past the last server), wrap to firstEntry(). Adding/removing servers only affects nearby keys — consistent hashing minimises redistribution. Real implementations use multiple virtual nodes per server for even distribution."
+          "editorial": "TreeMap.ceilingEntry(k) finds the smallest key >= k — this is the next clockwise server. If null (past the last server), wrap to firstEntry(). Adding/removing servers only affects nearby keys — consistent hashing minimises redistribution. Real implementations use multiple virtual nodes per server for even distribution.",
+          "sampleInput": "getNode(\"user_123\") on 3-node ring",
+          "sampleOutput": "\"ServerB\" (or nearest node)"
         },
         {
           "displayOrder": 15,
           "title": "Median From Data Stream",
-          "description": "Design a `MedianFinder` that supports `addNum(int num)` and `findMedian()`. Maintain two heaps: a max-heap for the lower half and a min-heap for the upper half. Balance them after each insertion.",
+          "description": "Support `addNum(int)` and `findMedian()` in O(log n) / O(1) using two heaps: max-heap for the lower half, min-heap for the upper half.\n\n**Example:**\nstream.addNum(1); stream.addNum(2);\nstream.findMedian() => 1.5\nstream.addNum(3);\nstream.findMedian() => 2.0\n\n**Key insight:** Keep heaps balanced (sizes differ by at most 1). Median is the top of the larger heap or average of both tops.",
           "difficulty": "HARD",
           "pattern": "Two Heaps — Sliding Median",
           "hint1": "Lower half: max-heap (largest of small half at top). Upper half: min-heap (smallest of large half at top).",
@@ -408,12 +436,14 @@
             }
           ],
           "constraints": "O(log n) addNum, O(1) findMedian.",
-          "editorial": "Two-heap approach: lower max-heap contains the smaller half, upper min-heap contains the larger half. Invariant: lower.size() >= upper.size() and lower.peek() <= upper.peek(). Median is either lower.peek() (odd count) or average of both tops (even count). LeetCode #295."
+          "editorial": "Two-heap approach: lower max-heap contains the smaller half, upper min-heap contains the larger half. Invariant: lower.size() >= upper.size() and lower.peek() <= upper.peek(). Median is either lower.peek() (odd count) or average of both tops (even count). LeetCode #295.",
+          "sampleInput": "addNum(1,2,3) then findMedian()",
+          "sampleOutput": "2.0"
         },
         {
           "displayOrder": 16,
           "title": "LFU Cache",
-          "description": "Implement an LFU (Least Frequently Used) cache with `get(int key)` and `put(int key, int value)`. When evicting, remove the least frequently used; ties broken by LRU. Use maps: values, frequencies, and frequency-to-keys (LinkedHashSet for LRU ordering within each frequency).",
+          "description": "Implement `LFUCache(int capacity)` — evicts the **least frequently used** key (ties broken by LRU).\n\n**Example:**\nlfu = LFUCache(2)\nlfu.put(1,1); lfu.put(2,2);\nlfu.get(1) => 1 (freq[1]=2)\nlfu.put(3,3); // evicts key 2 (freq=1, LRU)\nlfu.get(2) => -1\nlfu.get(3) => 3\n\n**Key insight:** Maintain `Map<key,freq>`, `Map<freq, LinkedHashSet<key>>`, and min-frequency pointer.",
           "difficulty": "HARD",
           "pattern": "LFU Cache — Multiple Maps",
           "hint1": "Three maps: `Map<Integer,Integer> values`, `Map<Integer,Integer> counts`, `Map<Integer,LinkedHashSet<Integer>> freqToKeys`.",
@@ -432,12 +462,14 @@
             }
           ],
           "constraints": "O(1) for both operations.",
-          "editorial": "LFU requires tracking access frequency. Key insight: LinkedHashSet per frequency bucket maintains insertion (LRU) order within each frequency. increment() moves the key to the next frequency bucket. evict() removes the first key from minFreq bucket. minFreq resets to 1 on any new put."
+          "editorial": "LFU requires tracking access frequency. Key insight: LinkedHashSet per frequency bucket maintains insertion (LRU) order within each frequency. increment() moves the key to the next frequency bucket. evict() removes the first key from minFreq bucket. minFreq resets to 1 on any new put.",
+          "sampleInput": "put(1,1),put(2,2),get(1),put(3,3),get(2)",
+          "sampleOutput": "-1"
         },
         {
           "displayOrder": 17,
           "title": "Time-Based Key-Value Store",
-          "description": "Implement a `TimeMap` with `set(String key, String value, int timestamp)` and `get(String key, int timestamp)` that returns the value with the largest timestamp <= given timestamp. Use `Map<String, TreeMap<Integer, String>>`.",
+          "description": "Design a time-based key-value store: `set(key, value, timestamp)` stores a value at a time; `get(key, timestamp)` returns the value with the largest timestamp <= given timestamp.\n\n**Example:**\nstore.set(\"foo\", \"bar\", 1);\nstore.set(\"foo\", \"bar2\", 4);\nstore.get(\"foo\", 4) => \"bar2\"\nstore.get(\"foo\", 3) => \"bar\"\nstore.get(\"foo\", 0) => \"\"\n\n**Key insight:** `Map<String, TreeMap<Integer,String>>` — `floorKey(timestamp)` finds the right entry.",
           "difficulty": "HARD",
           "pattern": "TreeMap floorKey — Time Series Store",
           "hint1": "Inner map: TreeMap<Integer (timestamp), String (value)>.",
@@ -460,12 +492,14 @@
             }
           ],
           "constraints": "Timestamps are strictly increasing for same key.",
-          "editorial": "TreeMap<Integer,String> per key stores timestamp→value in sorted order. floorKey(t) returns the largest key <= t in O(log n). Perfect for versioned/time-series data. LeetCode #981."
+          "editorial": "TreeMap<Integer,String> per key stores timestamp→value in sorted order. floorKey(t) returns the largest key <= t in O(log n). Perfect for versioned/time-series data. LeetCode #981.",
+          "sampleInput": "set(foo,bar,1), set(foo,bar2,4), get(foo,3)",
+          "sampleOutput": "\"bar\""
         },
         {
           "displayOrder": 18,
           "title": "Design Twitter Feed",
-          "description": "Design a simplified Twitter: `postTweet(userId, tweetId)`, `getNewsFeed(userId)` (10 most recent tweets from user and followees), `follow(followerId, followeeId)`, `unfollow(followerId, followeeId)`. Use a PriorityQueue for merging multiple users' tweet streams.",
+          "description": "Design a simplified Twitter feed: `postTweet(userId, tweetId)`, `getNewsFeed(userId)` returns 10 most recent tweets from the user and their followees, `follow(followerId, followeeId)`, `unfollow()`.\n\n**Example:**\npostTweet(1, 5); follow(1, 2); postTweet(2, 6);\ngetNewsFeed(1) => [6, 5]\nunfollow(1, 2);\ngetNewsFeed(1) => [5]\n\n**Key insight:** Per-user tweet lists + a heap merge across followees for the top-10.",
           "difficulty": "HARD",
           "pattern": "Multi-Source Merge With PriorityQueue",
           "hint1": "Track tweet order with a global timestamp counter.",
@@ -480,12 +514,14 @@
             }
           ],
           "constraints": "At most 10 tweets in feed. Each user <= 10 posts in this test.",
-          "editorial": "K-way merge with PriorityQueue: initialise heap with each relevant user's most recent tweet. On each poll, add the next tweet from that user. O(n log k) for n total tweets, k users. LeetCode #355."
+          "editorial": "K-way merge with PriorityQueue: initialise heap with each relevant user's most recent tweet. On each poll, add the next tweet from that user. O(n log k) for n total tweets, k users. LeetCode #355.",
+          "sampleInput": "postTweet(1,5), follow(1,2), postTweet(2,6), getNewsFeed(1)",
+          "sampleOutput": "[6,5]"
         },
         {
           "displayOrder": 19,
           "title": "Serialize and Deserialize BST",
-          "description": "Serialize a BST to a string and deserialize it back. Use preorder traversal with comma separation. For deserialization, use a TreeMap-based sorted insertion or exploit BST properties during recursive deserialization from a Queue of values.",
+          "description": "Serialize a BST to a string and deserialize it back. Use pre-order traversal with null markers.\n\n**Example:**\nBST: [4,2,6,1,3,5,7]\nserialize(root) => \"4,2,1,null,null,3,null,null,6,5,null,null,7,null,null\"\ndeserialize(\"4,2,1,...\") => same BST structure\ndeserialize(serialize(root)).inOrder() => [1,2,3,4,5,6,7]\n\n**Key insight:** Pre-order makes reconstruction unambiguous — root first, then left, then right.",
           "difficulty": "HARD",
           "pattern": "Queue-Based Deserialization",
           "hint1": "Serialize: preorder traversal, join with commas.",
@@ -504,12 +540,14 @@
             }
           ],
           "constraints": "Valid BST. No duplicate values.",
-          "editorial": "Preorder serialization is unique for a BST (unlike general trees). Deserialization uses BST property: each value must fall within [min, max] range derived from parent. Queue drives the preorder consumption. O(n) time and space. LeetCode #449."
+          "editorial": "Preorder serialization is unique for a BST (unlike general trees). Deserialization uses BST property: each value must fall within [min, max] range derived from parent. Queue drives the preorder consumption. O(n) time and space. LeetCode #449.",
+          "sampleInput": "serialize then deserialize BST [4,2,6,1,3,5,7]",
+          "sampleOutput": "inOrder = [1,2,3,4,5,6,7]"
         },
         {
           "displayOrder": 20,
           "title": "Search Autocomplete System",
-          "description": "Design an autocomplete system. `input(char c)` returns top-3 historical sentences matching current prefix, sorted by frequency (ties: lexicographic). `input('#')` ends current input and records the sentence. Use a HashMap for frequency and a Trie or prefix filtering for lookups.",
+          "description": "Design a search autocomplete system that returns the top 3 hot sentences matching a prefix as the user types character by character.\n\n**Example:**\nsystem = AutocompleteSystem([\"i love you\",\"island\",\"iroman\"], [5,3,2])\nsystem.input('i') => [\"i love you\", \"island\", \"iroman\"]\nsystem.input(' ') => [\"i love you\"]\nsystem.input('#') => [] (stores the new sentence)\n\n**Key insight:** `Trie` + frequency map, or `HashMap<prefix, sorted sentences>`. '#' terminates input and records the typed sentence.",
           "difficulty": "HARD",
           "pattern": "HashMap + Prefix Search",
           "hint1": "Maintain `Map<String, Integer> freq` for sentence frequencies.",
@@ -528,7 +566,9 @@
             }
           ],
           "constraints": "At most 3 results. Ties broken lexicographically.",
-          "editorial": "HashMap stores sentence frequencies. For each character, filter by prefix and sort. O(n) filter + O(n log n) sort per character — adequate for interview. Production: Trie with sorted result lists per prefix node for O(k) query where k = prefix length. LeetCode #642."
+          "editorial": "HashMap stores sentence frequencies. For each character, filter by prefix and sort. O(n) filter + O(n log n) sort per character — adequate for interview. Production: Trie with sorted result lists per prefix node for O(k) query where k = prefix length. LeetCode #642.",
+          "sampleInput": "input('i') on sentences: [i love you(5), island(3), iroman(2)]",
+          "sampleOutput": "[\"i love you\", \"island\", \"iroman\"]"
         }
       ],
       "subCategory": "Collections Framework",

@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Number of 1 Bits (Hamming Weight)",
-          "description": "Write a function that returns the number of '1' bits in the binary representation of a non-negative integer n. Do NOT use Integer.bitCount().",
+          "description": "Count the number of '1' bits in a 32-bit unsigned integer (Hamming weight).\n\n**Example 1:**\nhammingWeight(11) => 3 (1011 has three 1s)\nhammingWeight(128) => 1 (10000000)\nhammingWeight(2147483645) => 30\n\n**Key insight:** `n & (n-1)` clears the lowest set bit. Count how many times until n=0.",
           "difficulty": "EASY",
           "pattern": "Kernighan's bit count",
           "hint1": "n & (n-1) clears the lowest set bit.",
@@ -43,12 +43,14 @@
           "hint3": "Also works: check (n & 1), then n >>= 1 for 32 iterations.",
           "starterCode": "public class Q1 {\n    public static int hammingWeight(int n) {\n        // TODO: count set bits without Integer.bitCount\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(hammingWeight(11));  // 3 (1011)\n        System.out.println(hammingWeight(128)); // 1 (10000000)\n        System.out.println(hammingWeight(255)); // 8 (11111111)\n    }\n}",
           "solutionCode": "public class Q1 {\n    public static int hammingWeight(int n) {\n        int count = 0;\n        while (n != 0) { n &= n - 1; count++; }\n        return count;\n    }\n    public static void main(String[] args) {\n        System.out.println(hammingWeight(11));  // 3\n        System.out.println(hammingWeight(128)); // 1\n        System.out.println(hammingWeight(255)); // 8\n    }\n}",
-          "testCases": "3\n1\n8"
+          "testCases": "3\n1\n8",
+          "sampleInput": "11 (binary: 00001011)",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 2,
           "title": "Single Number — XOR",
-          "description": "Given a non-empty array where every element appears twice EXCEPT one. Find that single element. Must be O(n) time and O(1) space.",
+          "description": "Find the single number in an array where every element appears twice except one.\n\n**Example 1:**\nsingleNumber([2,2,1]) => 1\nsingleNumber([4,1,2,1,2]) => 4\n\n**Key insight:** XOR all elements. Pairs cancel out (a^a=0). The unique number is what remains.",
           "difficulty": "EASY",
           "pattern": "XOR cancellation",
           "hint1": "a ^ a = 0 for any a.",
@@ -56,12 +58,14 @@
           "hint3": "XOR all elements — pairs cancel, unique remains.",
           "starterCode": "public class Q2 {\n    public static int singleNumber(int[] nums) {\n        // TODO O(n) time, O(1) space\n        return 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(singleNumber(new int[]{2,2,1}));         // 1\n        System.out.println(singleNumber(new int[]{4,1,2,1,2}));     // 4\n        System.out.println(singleNumber(new int[]{1}));             // 1\n    }\n}",
           "solutionCode": "public class Q2 {\n    public static int singleNumber(int[] nums) {\n        int res = 0;\n        for (int n : nums) res ^= n;\n        return res;\n    }\n    public static void main(String[] args) {\n        System.out.println(singleNumber(new int[]{2,2,1}));     // 1\n        System.out.println(singleNumber(new int[]{4,1,2,1,2})); // 4\n        System.out.println(singleNumber(new int[]{1}));         // 1\n    }\n}",
-          "testCases": "1\n4\n1"
+          "testCases": "1\n4\n1",
+          "sampleInput": "[4,1,2,1,2]",
+          "sampleOutput": "4"
         },
         {
           "displayOrder": 3,
           "title": "Generate All Subsets Using Bitmask",
-          "description": "Given an array of distinct integers, return all possible subsets (power set) using bitmask enumeration. Do not use recursion.",
+          "description": "Generate all subsets of [0, n-1] using bitmask enumeration.\n\n**Example:**\nsubsets(3) using bitmask:\nmask 000 => {}\nmask 001 => {0}\nmask 010 => {1}\nmask 011 => {0,1}\nmask 100 => {2}\n...\nmask 111 => {0,1,2}\n\n**Key insight:** 2^n masks from 0 to 2^n-1. For each mask, bit j set means element j is in the subset.",
           "difficulty": "MEDIUM",
           "pattern": "Bitmask subset enumeration",
           "hint1": "There are 2^n subsets for n elements.",
@@ -69,7 +73,9 @@
           "hint3": "Use (mask >> i) & 1 or (mask & (1<<i)) != 0 to check inclusion.",
           "starterCode": "import java.util.*;\n\npublic class Q3 {\n    public static List<List<Integer>> subsets(int[] nums) {\n        // TODO: bitmask approach, no recursion\n        return new ArrayList<>();\n    }\n    public static void main(String[] args) {\n        System.out.println(subsets(new int[]{1,2,3}));\n        // [[], [1], [2], [1,2], [3], [1,3], [2,3], [1,2,3]]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q3 {\n    public static List<List<Integer>> subsets(int[] nums) {\n        int n = nums.length;\n        List<List<Integer>> result = new ArrayList<>();\n        for (int mask = 0; mask < (1 << n); mask++) {\n            List<Integer> subset = new ArrayList<>();\n            for (int i = 0; i < n; i++)\n                if ((mask & (1 << i)) != 0) subset.add(nums[i]);\n            result.add(subset);\n        }\n        return result;\n    }\n    public static void main(String[] args) {\n        System.out.println(subsets(new int[]{1,2,3}));\n    }\n}",
-          "testCases": "[[], [1], [2], [1, 2], [3], [1, 3], [2, 3], [1, 2, 3]]"
+          "testCases": "[[], [1], [2], [1, 2], [3], [1, 3], [2, 3], [1, 2, 3]]",
+          "sampleInput": "n=3",
+          "sampleOutput": "8 subsets: [{},{0},{1},{0,1},{2},{0,2},{1,2},{0,1,2}]"
         }
       ]
     }

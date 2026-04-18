@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Property Binding with @ConfigurationProperties",
-          "description": "Given this application.properties:\n```\napp.server.max-connections=100\napp.server.timeout-seconds=30\napp.server.host=api.example.com\n```\nCreate a ServerConfig class bound to the 'app.server' prefix. Write a service that prints the config on startup using @PostConstruct.",
+          "description": "Implement a REST endpoint with request validation and error handling.\n\n```java\n@RestController\n@RequestMapping(\"/api/users\")\npublic class UserController {\n    @PostMapping\n    public ResponseEntity<UserDto> create(@Valid @RequestBody CreateUserRequest req) {\n        // @Valid triggers bean validation\n        return ResponseEntity.created(URI.create(\"/api/users/1\")).body(service.create(req));\n    }\n    @ExceptionHandler(MethodArgumentNotValidException.class)\n    public ResponseEntity<Map<String,String>> handleValidation(MethodArgumentNotValidException ex) {\n        Map<String,String> errors = new HashMap<>();\n        ex.getBindingResult().getFieldErrors().forEach(e -> errors.put(e.getField(), e.getDefaultMessage()));\n        return ResponseEntity.badRequest().body(errors);\n    }\n}\n```\n\n**Key insight:** `@Valid` + `@NotBlank`/`@Email` etc. on DTO fields = automatic validation. `@ExceptionHandler` converts validation failures to structured error responses.",
           "difficulty": "EASY",
           "pattern": "@ConfigurationProperties, type-safe config",
           "hint1": "@ConfigurationProperties(prefix='app.server') with @Component or @EnableConfigurationProperties.",
@@ -43,12 +43,14 @@
           "hint3": "@PostConstruct void logConfig() { log.info(...); }",
           "starterCode": "// ServerConfig.java\nimport org.springframework.boot.context.properties.ConfigurationProperties;\nimport org.springframework.stereotype.Component;\n\n@Component\n@ConfigurationProperties(prefix = \"app.server\")\npublic class ServerConfig {\n    // TODO: add fields, getters, setters\n    // maxConnections, timeoutSeconds, host\n}\n\n// StartupLogger.java\nimport org.springframework.stereotype.Component;\nimport jakarta.annotation.PostConstruct;\n\n@Component\npublic class StartupLogger {\n    // TODO: inject ServerConfig and print on @PostConstruct\n}",
           "solutionCode": "import org.springframework.boot.context.properties.ConfigurationProperties;\nimport org.springframework.stereotype.Component;\nimport jakarta.annotation.PostConstruct;\n\n@Component\n@ConfigurationProperties(prefix = \"app.server\")\npublic class ServerConfig {\n    private int maxConnections;\n    private int timeoutSeconds;\n    private String host;\n    public int getMaxConnections() { return maxConnections; }\n    public void setMaxConnections(int v) { maxConnections = v; }\n    public int getTimeoutSeconds() { return timeoutSeconds; }\n    public void setTimeoutSeconds(int v) { timeoutSeconds = v; }\n    public String getHost() { return host; }\n    public void setHost(String v) { host = v; }\n    @Override public String toString() {\n        return host + \" max=\" + maxConnections + \" timeout=\" + timeoutSeconds + \"s\";\n    }\n}\n\n// In a @Component\n// @PostConstruct void log() { System.out.println(\"Server config: \" + serverConfig); }",
-          "testCases": "Server config: api.example.com max=100 timeout=30s"
+          "testCases": "Server config: api.example.com max=100 timeout=30s",
+          "sampleInput": "POST /api/users with {\"name\":\"\", \"email\":\"notanemail\"}",
+          "sampleOutput": "400 Bad Request: {\"name\": \"must not be blank\", \"email\": \"must be a valid email\"}"
         },
         {
           "displayOrder": 2,
           "title": "Profile-Based Bean Selection",
-          "description": "Create a DataSourceConfig class that provides an H2 DataSource when profile is 'dev' and a MySQL DataSource config when profile is 'prod'. Use @Profile on @Bean methods. Demonstrate by activating each profile.",
+          "description": "Configure Spring Boot application with profiles (dev/prod).\n\n**application.yml:**\n```yaml\nspring:\n  profiles:\n    active: dev\n```\n\n**application-dev.yml:**\n```yaml\nserver.port: 8080\nlogging.level.root: DEBUG\nspring.datasource.url: jdbc:h2:mem:testdb\n```\n\n**application-prod.yml:**\n```yaml\nserver.port: 80\nlogging.level.root: WARN\nspring.datasource.url: ${DATABASE_URL}\n```\n\n**Run with:** `java -jar app.jar --spring.profiles.active=prod`\n\n**Key insight:** Profile-specific files override base `application.yml`. Env vars override everything — ideal for 12-factor app config.",
           "difficulty": "MEDIUM",
           "pattern": "@Profile, conditional beans",
           "hint1": "@Bean @Profile('dev') public String devDataSource() returns H2 URL.",
@@ -56,12 +58,14 @@
           "hint3": "Activate with System.setProperty('spring.profiles.active', 'dev') before context start, or -Dspring.profiles.active=dev.",
           "starterCode": "import org.springframework.context.annotation.*;\n\n@Configuration\npublic class DataSourceConfig {\n    // TODO: define two @Bean methods, one for 'dev' profile returning H2 URL,\n    // one for 'prod' returning MySQL URL\n    // Both should be named 'dataSourceUrl' (String)\n}\n\npublic class ProfileDemo {\n    public static void main(String[] args) {\n        System.setProperty(\"spring.profiles.active\", \"dev\");\n        var ctx = new AnnotationConfigApplicationContext(DataSourceConfig.class);\n        System.out.println(ctx.getBean(\"dataSourceUrl\"));\n        ctx.close();\n    }\n}",
           "solutionCode": "import org.springframework.context.annotation.*;\n\n@Configuration\npublic class DataSourceConfig {\n    @Bean @Profile(\"dev\")\n    public String dataSourceUrl() { return \"jdbc:h2:mem:devdb\"; }\n\n    @Bean @Profile(\"prod\")\n    public String dataSourceUrl_prod() { return \"jdbc:mysql://prod-server/mydb\"; }\n}\n\npublic class ProfileDemo {\n    public static void main(String[] args) {\n        System.setProperty(\"spring.profiles.active\", \"dev\");\n        var ctx = new AnnotationConfigApplicationContext(DataSourceConfig.class);\n        System.out.println(ctx.getBean(\"dataSourceUrl\")); // jdbc:h2:mem:devdb\n        ctx.close();\n    }\n}",
-          "testCases": "jdbc:h2:mem:devdb"
+          "testCases": "jdbc:h2:mem:devdb",
+          "sampleInput": "Start with --spring.profiles.active=prod",
+          "sampleOutput": "App starts on port 80, uses ${DATABASE_URL}, WARN-level logging"
         },
         {
           "displayOrder": 3,
           "title": "Externalized Config Precedence",
-          "description": "Explain and demonstrate Spring Boot's configuration precedence. Given: (1) default in application.properties: app.greeting=Hello, (2) profile-specific application-dev.properties: app.greeting=Dev Hello, (3) environment variable APP_GREETING=Env Hello, which value wins when the 'dev' profile is active and the environment variable is set? Write a test showing the lookup order.",
+          "description": "Use Spring Boot Actuator to build a custom health indicator.\n\n```java\n@Component\npublic class DatabaseHealthIndicator implements HealthIndicator {\n    @Autowired DataSource dataSource;\n    @Override\n    public Health health() {\n        try (Connection conn = dataSource.getConnection()) {\n            conn.createStatement().executeQuery(\"SELECT 1\");\n            return Health.up().withDetail(\"database\", \"reachable\").build();\n        } catch (Exception e) {\n            return Health.down().withDetail(\"error\", e.getMessage()).build();\n        }\n    }\n}\n```\n\n**GET /actuator/health** returns:\n```json\n{\"status\": \"UP\", \"components\": {\"database\": {\"status\": \"UP\", \"details\": {\"database\": \"reachable\"}}}}\n```\n\n**Key insight:** `HealthIndicator` beans are auto-discovered. Return `Health.down()` to signal failures to load balancers and orchestrators.",
           "difficulty": "EASY",
           "pattern": "Config precedence, @Value",
           "hint1": "Precedence (highest first): command line args > ENV vars > profile properties > application.properties.",
@@ -69,7 +73,9 @@
           "hint3": "Demonstrate with @Value('${app.greeting}') and print the value.",
           "starterCode": "// Describe the precedence order and demonstrate with a simple @Value injection\n// No runnable code needed — explain in comments\npublic class Q3 {\n    // @Value(\"${app.greeting}\") String greeting;\n    // What value does 'greeting' have in each scenario?\n    // Scenario 1: only application.properties\n    // Scenario 2: application.properties + application-dev.properties, profile=dev\n    // Scenario 3: scenario 2 + ENV APP_GREETING=Env Hello\n    public static void main(String[] args) {\n        System.out.println(\"Highest precedence: command line args\");\n        System.out.println(\"Then: OS environment variables\");\n        System.out.println(\"Then: application-{profile}.properties\");\n        System.out.println(\"Then: application.properties (base defaults)\");\n    }\n}",
           "solutionCode": "public class Q3 {\n    public static void main(String[] args) {\n        // Spring Boot property source order (highest priority first):\n        // 1. Command line: --app.greeting=CLI Hello\n        // 2. OS ENV: APP_GREETING=Env Hello  (. replaced by _ and uppercase)\n        // 3. application-dev.properties: app.greeting=Dev Hello  (when dev profile active)\n        // 4. application.properties: app.greeting=Hello\n        //\n        // With profile=dev + ENV set:\n        // @Value(\"${app.greeting}\") → \"Env Hello\" (ENV wins over profile properties)\n        //\n        // With profile=dev only:\n        // @Value(\"${app.greeting}\") → \"Dev Hello\"\n        //\n        // No profile, no ENV:\n        // @Value(\"${app.greeting}\") → \"Hello\"\n\n        System.out.println(\"1. Command line > 2. ENV vars > 3. Profile properties > 4. Base properties\");\n    }\n}",
-          "testCases": "1. Command line > 2. ENV vars > 3. Profile properties > 4. Base properties"
+          "testCases": "1. Command line > 2. ENV vars > 3. Profile properties > 4. Base properties",
+          "sampleInput": "GET /actuator/health",
+          "sampleOutput": "{\"status\": \"UP\", \"components\": {\"database\": {\"status\": \"UP\"}}}"
         }
       ]
     }

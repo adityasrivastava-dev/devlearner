@@ -67,7 +67,7 @@
         {
           "displayOrder": 1,
           "title": "Number of Islands",
-          "description": "Given an m×n grid of '1' (land) and '0' (water), count the number of islands. An island is formed by connecting adjacent (horizontal/vertical) land cells.\n\n**Example:**\nInput:\n11110\n11010\n11000\n00000\nOutput: 1\n\nInput:\n11000\n11000\n00100\n00011\nOutput: 3",
+          "description": "Count the number of islands in a 2D grid of '1' (land) and '0' (water).\n\n**Example 1:**\ngrid = [[1,1,0],[0,1,0],[0,0,1]] => 2\n\n**Key insight:** DFS from each unvisited '1', mark all connected land as visited. Each DFS start = one island.",
           "difficulty": "MEDIUM",
           "pattern": "Graph BFS/DFS",
           "hint1": "How do you mark land cells you've already counted so you don't count the same island twice?",
@@ -77,12 +77,14 @@
           "solutionCode": "public class Solution {\n    public int numIslands(char[][] grid) {\n        int count = 0;\n        for (int r = 0; r < grid.length; r++)\n            for (int c = 0; c < grid[0].length; c++)\n                if (grid[r][c] == '1') { dfs(grid, r, c); count++; }\n        return count;\n    }\n    private void dfs(char[][] grid, int r, int c) {\n        if (r < 0 || c < 0 || r >= grid.length || c >= grid[0].length || grid[r][c] != '1') return;\n        grid[r][c] = '0';\n        dfs(grid, r+1, c); dfs(grid, r-1, c);\n        dfs(grid, r, c+1); dfs(grid, r, c-1);\n    }\n}",
           "testCases": "[{\"input\":\"[[1,1,1,1,0],[1,1,0,1,0],[1,1,0,0,0],[0,0,0,0,0]]\",\"output\":\"1\"},{\"input\":\"[[1,1,0,0,0],[1,1,0,0,0],[0,0,1,0,0],[0,0,0,1,1]]\",\"output\":\"3\"}]",
           "constraints": "m == grid.length | n == grid[i].length | 1 ≤ m, n ≤ 300 | grid[i][j] is '0' or '1'",
-          "editorial": "Grid DFS/BFS: O(m*n) time and space. Modifying the grid in-place avoids extra visited array. Each cell is processed at most once. BFS alternative: use a queue, same complexity."
+          "editorial": "Grid DFS/BFS: O(m*n) time and space. Modifying the grid in-place avoids extra visited array. Each cell is processed at most once. BFS alternative: use a queue, same complexity.",
+          "sampleInput": "[[1,1,0],[0,1,0],[0,0,1]]",
+          "sampleOutput": "2"
         },
         {
           "displayOrder": 2,
           "title": "Clone Graph",
-          "description": "Given a reference to a node in a connected undirected graph, return a deep copy of the graph.\n\nEach node has a value (int) and a list of neighbors (List<Node>).\n\n**Example:**\nInput: adjList = [[2,4],[1,3],[2,4],[1,3]]\nOutput: Deep copy of the same structure",
+          "description": "Clone a connected undirected graph. Each node has a val and list of neighbors.\n\n**Example:**\nInput: Node(1) connected to Node(2), Node(2) connected to Node(1)\nOutput: Deep copy with same adjacency\n\n**Key insight:** BFS/DFS with a HashMap<original, clone> to avoid infinite loops and enable reconnecting.",
           "difficulty": "MEDIUM",
           "pattern": "Graph BFS/DFS",
           "hint1": "How do you avoid infinite loops when cloning a graph with cycles?",
@@ -92,12 +94,14 @@
           "solutionCode": "public class Solution {\n    private Map<Node, Node> visited = new HashMap<>();\n    public Node cloneGraph(Node node) {\n        if (node == null) return null;\n        if (visited.containsKey(node)) return visited.get(node);\n        Node clone = new Node(node.val);\n        visited.put(node, clone);\n        for (Node nb : node.neighbors) clone.neighbors.add(cloneGraph(nb));\n        return clone;\n    }\n}",
           "testCases": "[{\"input\":\"[[2,4],[1,3],[2,4],[1,3]]\",\"output\":\"[[2,4],[1,3],[2,4],[1,3]]\"},{\"input\":\"[[]]\",\"output\":\"[[]]\"}]",
           "constraints": "0 ≤ number of nodes ≤ 100 | 1 ≤ Node.val ≤ 100 | No repeated edges, no self-loops | Graph is connected",
-          "editorial": "HashMap acts as both visited set and clone registry. The key insight: add node to map BEFORE recursing into neighbors to handle cycles. O(V+E) time and space."
+          "editorial": "HashMap acts as both visited set and clone registry. The key insight: add node to map BEFORE recursing into neighbors to handle cycles. O(V+E) time and space.",
+          "sampleInput": "Node(1)<->Node(2)",
+          "sampleOutput": "clone with same structure"
         },
         {
           "displayOrder": 3,
           "title": "Course Schedule (Cycle Detection)",
-          "description": "There are numCourses courses labeled 0 to n-1. You're given prerequisites[i] = [ai, bi] meaning you must take course bi before ai. Return true if you can finish all courses.\n\n**Example:**\nnumCourses=2, prerequisites=[[1,0]] → true\nnumCourses=2, prerequisites=[[1,0],[0,1]] → false (cycle)",
+          "description": "Detect if you can finish all courses given prerequisite pairs (detect cycle in directed graph).\n\n**Example 1:**\ncanFinish(2, [[1,0]]) => true (take 0 then 1)\ncanFinish(2, [[1,0],[0,1]]) => false (circular dependency)\n\n**Key insight:** Topological sort (Kahn's algorithm or DFS). Cycle = not all nodes processed.",
           "difficulty": "MEDIUM",
           "pattern": "Graph DFS",
           "hint1": "This is a cycle detection problem in a directed graph. If there's a cycle, you can't finish all courses.",
@@ -107,12 +111,14 @@
           "solutionCode": "public class Solution {\n    public boolean canFinish(int numCourses, int[][] prerequisites) {\n        List<List<Integer>> adj = new ArrayList<>();\n        int[] inDeg = new int[numCourses];\n        for (int i = 0; i < numCourses; i++) adj.add(new ArrayList<>());\n        for (int[] p : prerequisites) { adj.get(p[1]).add(p[0]); inDeg[p[0]]++; }\n        Queue<Integer> q = new LinkedList<>();\n        for (int i = 0; i < numCourses; i++) if (inDeg[i] == 0) q.offer(i);\n        int processed = 0;\n        while (!q.isEmpty()) {\n            int node = q.poll(); processed++;\n            for (int nb : adj.get(node)) if (--inDeg[nb] == 0) q.offer(nb);\n        }\n        return processed == numCourses;\n    }\n}",
           "testCases": "[{\"input\":\"numCourses=2, prerequisites=[[1,0]]\",\"output\":\"true\"},{\"input\":\"numCourses=2, prerequisites=[[1,0],[0,1]]\",\"output\":\"false\"}]",
           "constraints": "1 ≤ numCourses ≤ 2000 | 0 ≤ prerequisites.length ≤ 5000 | No duplicate prerequisites",
-          "editorial": "Kahn's BFS topological sort detects cycles naturally: if any node is never added to the queue (always has in-degree > 0 due to cycle), processed < numCourses. O(V+E) time and space."
+          "editorial": "Kahn's BFS topological sort detects cycles naturally: if any node is never added to the queue (always has in-degree > 0 due to cycle), processed < numCourses. O(V+E) time and space.",
+          "sampleInput": "numCourses=2, prerequisites=[[1,0],[0,1]]",
+          "sampleOutput": "false"
         },
         {
           "displayOrder": 4,
           "title": "Network Delay Time (Dijkstra)",
-          "description": "There are n network nodes labeled 1 to n. times[i] = [ui, vi, wi] represents a directed edge. Given starting node k, find how long for all nodes to receive signal. Return -1 if not all reachable.\n\n**Example:**\ntimes=[[2,1,1],[2,3,1],[3,4,1]], n=4, k=2 → Output: 2",
+          "description": "Find the shortest travel time from node k to all other nodes using Dijkstra's algorithm.\n\n**Example:**\ntimes=[[2,1,1],[2,3,1],[3,4,1]], n=4, k=2\n=> Answer is max of all shortest paths = 2 (all nodes reachable in ≤ 2 steps)\n\n**Key insight:** Min-heap Dijkstra: (dist, node). Relax edges when shorter path found.",
           "difficulty": "MEDIUM",
           "pattern": "Graph Dijkstra",
           "hint1": "This is single-source shortest path from node k. Which algorithm handles weighted directed graphs?",
@@ -122,12 +128,14 @@
           "solutionCode": "public class Solution {\n    public int networkDelayTime(int[][] times, int n, int k) {\n        Map<Integer, List<int[]>> graph = new HashMap<>();\n        for (int[] t : times) graph.computeIfAbsent(t[0], x -> new ArrayList<>()).add(new int[]{t[1], t[2]});\n        int[] dist = new int[n + 1];\n        Arrays.fill(dist, Integer.MAX_VALUE);\n        dist[k] = 0;\n        PriorityQueue<int[]> pq = new PriorityQueue<>(Comparator.comparingInt(a -> a[0]));\n        pq.offer(new int[]{0, k});\n        while (!pq.isEmpty()) {\n            int[] curr = pq.poll();\n            int d = curr[0], u = curr[1];\n            if (d > dist[u]) continue;\n            for (int[] edge : graph.getOrDefault(u, List.of())) {\n                int newDist = dist[u] + edge[1];\n                if (newDist < dist[edge[0]]) { dist[edge[0]] = newDist; pq.offer(new int[]{newDist, edge[0]}); }\n            }\n        }\n        int ans = 0;\n        for (int i = 1; i <= n; i++) {\n            if (dist[i] == Integer.MAX_VALUE) return -1;\n            ans = Math.max(ans, dist[i]);\n        }\n        return ans;\n    }\n}",
           "testCases": "[{\"input\":\"times=[[2,1,1],[2,3,1],[3,4,1]], n=4, k=2\",\"output\":\"2\"},{\"input\":\"times=[[1,2,1]], n=2, k=1\",\"output\":\"1\"},{\"input\":\"times=[[1,2,1]], n=2, k=2\",\"output\":\"-1\"}]",
           "constraints": "1 ≤ k ≤ n ≤ 100 | 1 ≤ times.length ≤ 6000 | 1 ≤ wi ≤ 100",
-          "editorial": "Dijkstra from source k. Stale entry check: if d > dist[u], skip. After completing, max of dist[] is the answer. O((V+E) log V) time."
+          "editorial": "Dijkstra from source k. Stale entry check: if d > dist[u], skip. After completing, max of dist[] is the answer. O((V+E) log V) time.",
+          "sampleInput": "times=[[2,1,1],[2,3,1],[3,4,1]], n=4, k=2",
+          "sampleOutput": "2"
         },
         {
           "displayOrder": 5,
           "title": "Number of Connected Components",
-          "description": "Given n nodes (0 to n-1) and undirected edges, find the number of connected components.\n\n**Example:**\nn=5, edges=[[0,1],[1,2],[3,4]] → Output: 2",
+          "description": "Count the number of connected components in an undirected graph.\n\n**Example:**\nn=5, edges=[[0,1],[1,2],[3,4]] => 2 components ({0,1,2} and {3,4})\n\n**Key insight:** Union-Find or BFS/DFS. Each time we start a new BFS/DFS on an unvisited node, it's a new component.",
           "difficulty": "MEDIUM",
           "pattern": "Union-Find",
           "hint1": "A connected component is a group where any two nodes can reach each other.",
@@ -137,12 +145,14 @@
           "solutionCode": "public class Solution {\n    private int[] parent, rank;\n    public int countComponents(int n, int[][] edges) {\n        parent = new int[n]; rank = new int[n];\n        for (int i = 0; i < n; i++) parent[i] = i;\n        int components = n;\n        for (int[] e : edges) if (union(e[0], e[1])) components--;\n        return components;\n    }\n    private int find(int x) { if (parent[x] != x) parent[x] = find(parent[x]); return parent[x]; }\n    private boolean union(int x, int y) {\n        int rx = find(x), ry = find(y);\n        if (rx == ry) return false;\n        if (rank[rx] < rank[ry]) parent[rx] = ry;\n        else if (rank[rx] > rank[ry]) parent[ry] = rx;\n        else { parent[ry] = rx; rank[rx]++; }\n        return true;\n    }\n}",
           "testCases": "[{\"input\":\"n=5, edges=[[0,1],[1,2],[3,4]]\",\"output\":\"2\"},{\"input\":\"n=5, edges=[[0,1],[1,2],[2,3],[3,4]]\",\"output\":\"1\"}]",
           "constraints": "1 ≤ n ≤ 2000 | 1 ≤ edges.length ≤ 5000 | No repeated edges, no self-loops",
-          "editorial": "Union-Find with path compression and union by rank. O(E * α(n)) total. Alternative BFS/DFS: O(V+E) but requires adjacency list."
+          "editorial": "Union-Find with path compression and union by rank. O(E * α(n)) total. Alternative BFS/DFS: O(V+E) but requires adjacency list.",
+          "sampleInput": "n=5, edges=[[0,1],[1,2],[3,4]]",
+          "sampleOutput": "2"
         },
         {
           "displayOrder": 6,
           "title": "Word Ladder",
-          "description": "Find the length of the shortest transformation sequence from beginWord to endWord, changing one letter at a time, each intermediate word in wordList.\n\n**Example:**\nbeginWord='hit', endWord='cog', wordList=['hot','dot','dog','lot','log','cog']\nOutput: 5 → hit→hot→dot→dog→cog",
+          "description": "Find the shortest transformation sequence from beginWord to endWord, changing one letter at a time (each word must be in wordList).\n\n**Example 1:**\nwordLadder(\"hit\",\"cog\",[\"hot\",\"dot\",\"dog\",\"lot\",\"log\",\"cog\"]) => 5\nhit->hot->dot->dog->cog\n\n**Key insight:** BFS from beginWord. At each step, try all 26 letter substitutions. Each valid word is a BFS neighbor.",
           "difficulty": "HARD",
           "pattern": "Graph BFS",
           "hint1": "This is a shortest path problem. Nodes are words, edges connect words differing by one letter.",
@@ -152,7 +162,9 @@
           "solutionCode": "public class Solution {\n    public int ladderLength(String begin, String end, List<String> wordList) {\n        Set<String> wordSet = new HashSet<>(wordList);\n        if (!wordSet.contains(end)) return 0;\n        Queue<String> queue = new LinkedList<>();\n        queue.offer(begin);\n        int steps = 1;\n        while (!queue.isEmpty()) {\n            int size = queue.size();\n            for (int i = 0; i < size; i++) {\n                String word = queue.poll();\n                char[] chars = word.toCharArray();\n                for (int j = 0; j < chars.length; j++) {\n                    char orig = chars[j];\n                    for (char c = 'a'; c <= 'z'; c++) {\n                        chars[j] = c;\n                        String next = new String(chars);\n                        if (next.equals(end)) return steps + 1;\n                        if (wordSet.remove(next)) queue.offer(next);\n                    }\n                    chars[j] = orig;\n                }\n            }\n            steps++;\n        }\n        return 0;\n    }\n}",
           "testCases": "[{\"input\":\"beginWord='hit', endWord='cog', wordList=['hot','dot','dog','lot','log','cog']\",\"output\":\"5\"},{\"input\":\"beginWord='hit', endWord='cog', wordList=['hot','dot','dog','lot','log']\",\"output\":\"0\"}]",
           "constraints": "1 ≤ beginWord.length ≤ 10 | 1 ≤ wordList.length ≤ 5000 | All words same length, lowercase letters",
-          "editorial": "BFS on implicit graph. Generate 26*L variants per word. O(26 * L * N) time where N = wordList size."
+          "editorial": "BFS on implicit graph. Generate 26*L variants per word. O(26 * L * N) time where N = wordList size.",
+          "sampleInput": "beginWord=hit, endWord=cog, wordList=[hot,dot,dog,lot,log,cog]",
+          "sampleOutput": "5"
         }
       ],
       "subCategory": "Graphs",

@@ -76,7 +76,9 @@
             "urllib.parse.unquote_plus() decodes the key",
             "Check key.startswith('thumbnails/') and return early",
             "Use Pillow Image.thumbnail() — it maintains aspect ratio unlike resize()"
-          ]
+          ],
+          "sampleInput": "event.Records[0].s3.object.key = 'uploads/user/photo.jpg'",
+          "sampleOutput": "Thumbnail saved to 'thumbnails/user/photo.jpg' in same bucket"
         },
         {
           "title": "Lambda Cold Start Optimisation",
@@ -98,7 +100,9 @@
             "Module-scope initialisation runs once per container lifecycle",
             "SnapStart takes a snapshot after init phase — restores from snapshot instead of reinitialising",
             "Scheduled Provisioned Concurrency scale-up/down with EventBridge saves cost vs always-on"
-          ]
+          ],
+          "sampleInput": "p99=1800ms, p50=40ms gap indicates cold starts",
+          "sampleOutput": "Fix 1: Move DynamoDB client to module scope. Fix 2: Provisioned Concurrency=5 during peak hours via EventBridge schedule. Fix 3: Use AWS Lambda SnapStart (Java only) to reduce JVM cold start from ~1s to ~100ms"
         },
         {
           "title": "SQS Dead Letter Queue Setup",
@@ -120,7 +124,9 @@
             "Visibility timeout should be at least 6× the Lambda timeout for safety",
             "batchItemFailures response tells Lambda which messages to NOT delete",
             "DLQ is just another SQS queue — set it as the redrive policy target"
-          ]
+          ],
+          "sampleInput": "Lambda timeout=30s, batch size=5, 2 messages fail processing",
+          "sampleOutput": "VisibilityTimeout=35s (> Lambda timeout), maxReceiveCount=3, partial batch: return batchItemFailures with 2 failed messageIds"
         },
         {
           "title": "Lambda Execution Role Permissions",
@@ -142,7 +148,9 @@
             "DynamoDB table ARN: arn:aws:dynamodb:region:account:table/orders",
             "Secrets Manager ARN: arn:aws:secretsmanager:region:account:secret:/prod/payment-api-key-*",
             "Lambda auto-creates the CloudWatch Log group if CreateLogGroup permission is present"
-          ]
+          ],
+          "sampleInput": "Lambda processes orders: reads SQS, writes DynamoDB, logs, reads secret",
+          "sampleOutput": "4-statement policy: sqs:ReceiveMessage+DeleteMessage+GetQueueAttributes on queue ARN | dynamodb:PutItem+GetItem on table ARN | logs:CreateLogGroup+CreateLogStream+PutLogEvents | secretsmanager:GetSecretValue on secret ARN"
         }
       ],
       "subCategory": "Serverless & Functions",
@@ -214,7 +222,9 @@
             "202 Accepted with a polling URL is the standard async REST pattern",
             "POST /process-image → Lambda writes job to DynamoDB (status=PENDING) → invokes processing Lambda async → returns jobId",
             "Alternatively: SQS + polling or SNS + WebSocket push"
-          ]
+          ],
+          "sampleInput": "POST /process-image takes 45s, API Gateway returns 504",
+          "sampleOutput": "Solution 1: Async pattern — POST returns 202 + jobId immediately, client polls GET /jobs/{jobId} for status. Solution 2: WebSocket API — client connects, server pushes completion event when done"
         },
         {
           "title": "Design API Gateway CORS Configuration",
@@ -236,7 +246,9 @@
             "OPTIONS method is handled automatically by API Gateway with CorsConfiguration set",
             "Without Content-Type in AllowHeaders, POST requests with JSON body will be blocked",
             "AllowCredentials=true required if using cookies — but then AllowOrigins cannot be *"
-          ]
+          ],
+          "sampleInput": "SPA origin: https://app.example.com, methods: GET/POST/DELETE, headers: Authorization + Content-Type",
+          "sampleOutput": "CorsConfiguration: AllowOrigins=[https://app.example.com], AllowMethods=[GET,POST,DELETE,OPTIONS], AllowHeaders=[Authorization,Content-Type], MaxAge=600"
         },
         {
           "title": "Rate Limiting with Usage Plans",
@@ -258,7 +270,9 @@
             "API key is passed in x-api-key header or as query param",
             "Usage Plan links an API key to a stage + throttle/quota settings",
             "CloudWatch metric UsageByApiKey shows per-partner consumption"
-          ]
+          ],
+          "sampleInput": "Standard tier: 10,000/day quota, 20 RPS throttle",
+          "sampleOutput": "UsagePlan: {quota: {limit:10000, period:DAY}, throttle: {rateLimit:20, burstLimit:40}}. New partner: create API key → add key to Standard usage plan → give partner the key value"
         }
       ],
       "subCategory": "Serverless & Functions",
@@ -329,7 +343,9 @@
             "Use epoch milliseconds in sort key for time-ordered queries",
             "User→Conversation mapping is a separate item type in the same table",
             "Sparse GSI: only items with the GSI PK attribute appear in the index"
-          ]
+          ],
+          "sampleInput": "4 access patterns: fetch conversation messages, single message, user conversations, unread count",
+          "sampleOutput": "PK=CONV#{convId} SK=MSG#{timestamp}#{msgId} for messages | PK=USER#{userId} SK=CONV#{lastMsgTs} for user conversations | GSI: PK=USER#{userId} SK=UNREAD#{convId} (sparse — only unread)"
         },
         {
           "title": "DynamoDB Capacity Planning",
@@ -352,7 +368,9 @@
             "Distribute operations over seconds: daily_ops / 86400 = ops/second",
             "2KB item = 1 RCU (rounds up to 4KB boundary)",
             "For bursty workloads with big peak/off-peak difference, On-Demand often wins even at higher per-operation cost"
-          ]
+          ],
+          "sampleInput": "100k DAU, cart reads ~2KB, order writes ~1KB, peak 5× for 2h",
+          "sampleOutput": "Avg reads: 100k/86400s ≈ 1.2 RPS → 1 RCU (2KB item = 1 RCU). Peak reads: 6 RPS → 6 RCU. Avg writes: 10k/86400 ≈ 0.12 WPS → 1 WCU. Peak writes: 0.6 WPS → 1 WCU"
         },
         {
           "title": "Fix a Hot Partition Problem",
@@ -374,7 +392,9 @@
             "Each unique PK value gets its own partition — distribution is automatic if PKs are diverse",
             "Using a constant PK='POSTS' means everything goes to ONE partition (maximum ~1000 WCU)",
             "Fix: use the actual post ID as the partition key — millions of unique posts = millions of partitions = automatic distribution"
-          ]
+          ],
+          "sampleInput": "PK='POSTS' for all posts — 200 writes/second all to one partition",
+          "sampleOutput": "Problem: DynamoDB partition max is 1000 WCU, but a SINGLE partition key maxes at 1000 WCU — you're OK at 200 WPS. Real fix: distribute by PK=POST#{shardNumber} where shardNumber=hash(postId)%10, query with parallel Scan/BatchGetItem across 10 shards"
         }
       ],
       "subCategory": "Databases & Storage",
@@ -446,7 +466,9 @@
             "If visibility timeout < Lambda timeout, messages become visible while Lambda is still running",
             "Lambda reports batch success/failure atomically — individual message deletes are NOT done mid-batch",
             "Visibility timeout can be extended mid-processing with ChangeMessageVisibility API call"
-          ]
+          ],
+          "sampleInput": "Lambda timeout=30s, 5 messages per batch",
+          "sampleOutput": "Visibility timeout: 180s (6 × 30s). If set to 25s: messages become visible while Lambda is still processing, causing duplicate processing"
         },
         {
           "title": "Design SNS + SQS Fan-Out for an E-Commerce Platform",
@@ -468,7 +490,9 @@
             "Two SNS topics or one topic with filter policies can both work",
             "DLQ on the fraud SQS catches Lambda failures (3 retries) for later human review",
             "PAYMENT_CONFIRMED is a separate event published by the payment service after successful charge"
-          ]
+          ],
+          "sampleInput": "4 downstream systems, independent failure domains, email only after payment",
+          "sampleOutput": "SNS topic with 4 SQS subscribers. Filter: inventory+fraud+analytics on ORDER_PLACED; email on PAYMENT_CONFIRMED. Fraud SQS has DLQ — failed checks accumulate there for review"
         },
         {
           "title": "Standard vs FIFO Queue Selection",
@@ -491,7 +515,9 @@
             "Bank transactions: order critical per account → FIFO",
             "Bulk emails: high volume, order irrelevant → Standard",
             "Order status: needs per-order ordering to prevent shipped before confirmed → FIFO"
-          ]
+          ],
+          "sampleInput": "Bank transactions: order matters (can't process withdrawal before deposit if account starts empty)",
+          "sampleOutput": "FIFO with MessageGroupId=accountId. Each account's transactions are ordered; different accounts processed in parallel"
         },
         {
           "title": "Idempotent SQS Consumer",
@@ -513,7 +539,9 @@
             "Payment APIs (Stripe, Braintree) support idempotency keys — same key = same charge, not duplicate",
             "DynamoDB conditional write: attribute_not_exists(PK) ensures only one write per orderId",
             "Idempotency key in payment API + conditional DynamoDB write = bulletproof double-charge prevention"
-          ]
+          ],
+          "sampleInput": "orderId=O99 delivered twice (SQS at-least-once)",
+          "sampleOutput": "1. Check DynamoDB: O99 exists? → skip and delete. 2. If not: charge card, write O99 to DynamoDB atomically (conditional write). 3. If card charge succeeded but DynamoDB write failed: next delivery checks DynamoDB, finds nothing, charges again → PROBLEM. Fix: use payment API idempotency key = orderId"
         }
       ],
       "subCategory": "Serverless & Functions",

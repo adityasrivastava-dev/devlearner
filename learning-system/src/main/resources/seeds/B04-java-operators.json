@@ -69,7 +69,7 @@
         {
           "displayOrder": 1,
           "title": "Check Power of Two",
-          "description": "Write a method `isPowerOfTwo(int n)` that returns true if n is a positive power of 2. Use the bitwise trick: a power of 2 has exactly one bit set, so n & (n-1) == 0.",
+          "description": "Return `true` if `n` is a power of two using bit manipulation.\n\n**Example 1:**\nisPowerOfTwo(16) => true (10000 in binary — exactly one bit set)\nisPowerOfTwo(18) => false (10010 — two bits)\nisPowerOfTwo(1) => true\nisPowerOfTwo(0) => false\n\n**Key insight:** A power of two has exactly one set bit. `n & (n-1) == 0` clears the lowest set bit — if result is 0, only one bit was set.",
           "difficulty": "EASY",
           "pattern": "Bitwise / Power of 2",
           "hint1": "Powers of 2 in binary: 1=0001, 2=0010, 4=0100, 8=1000. Only one bit is set.",
@@ -104,12 +104,14 @@
             }
           ],
           "constraints": "Must use bitwise operator n & (n-1). Must handle n <= 0. No loops allowed.",
-          "editorial": "A number is a power of two iff it has exactly one set bit: n > 0 && (n & (n-1)) == 0. The n-1 trick works because subtracting 1 flips the rightmost set bit and all lower bits. Powers of 2: 1, 2, 4, 8, 16... Edge case: 0 is not a power of 2. Long.bitCount(n) == 1 is an alternative."
+          "editorial": "A number is a power of two iff it has exactly one set bit: n > 0 && (n & (n-1)) == 0. The n-1 trick works because subtracting 1 flips the rightmost set bit and all lower bits. Powers of 2: 1, 2, 4, 8, 16... Edge case: 0 is not a power of 2. Long.bitCount(n) == 1 is an alternative.",
+          "sampleInput": "isPowerOfTwo(16)",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 2,
           "title": "Count Set Bits (Popcount)",
-          "description": "Write a method `countBits(int n)` that counts the number of 1-bits in the binary representation of n (also called Hamming weight or popcount). Implement two versions: (1) simple loop, (2) Brian Kernighan's algorithm using n & (n-1).",
+          "description": "Count the number of set bits (1s) in an integer's binary representation.\n\n**Example 1:**\ncountBits(7) => 3 (111 in binary)\ncountBits(0) => 0\ncountBits(255) => 8\ncountBits(Integer.MAX_VALUE) => 31\n\n**Key insight:** `n & (n-1)` clears the lowest set bit. Loop until n==0, counting iterations. Or use `Integer.bitCount(n)`.",
           "difficulty": "EASY",
           "pattern": "Bitwise / Bit Counting",
           "hint1": "Simple: loop 32 times, check each bit with (n >> i) & 1.",
@@ -136,12 +138,14 @@
             }
           ],
           "constraints": "Must implement both approaches. Use >>> not >> in simple version for correct handling of negative numbers.",
-          "editorial": "Integer.bitCount(n) counts set bits in O(1). Manual approach: n & 1 extracts the LSB, then n >>>= 1 (unsigned right shift). Loop until n == 0. The Brian Kernighan trick: n &= (n-1) removes the lowest set bit each iteration — O(number of set bits) which is optimal."
+          "editorial": "Integer.bitCount(n) counts set bits in O(1). Manual approach: n & 1 extracts the LSB, then n >>>= 1 (unsigned right shift). Loop until n == 0. The Brian Kernighan trick: n &= (n-1) removes the lowest set bit each iteration — O(number of set bits) which is optimal.",
+          "sampleInput": "countBits(7)",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 3,
           "title": "Swap Two Numbers Without Temp Variable",
-          "description": "Swap two integers using XOR without using a temporary variable. Explain why it works and demonstrate it. Also show the arithmetic swap (a = a+b; b = a-b; a = a-b) and why XOR is preferred.",
+          "description": "Swap two integers without a temporary variable using XOR.\n\n**Example:**\nint a = 5, b = 10;\na ^= b; b ^= a; a ^= b;\na => 10, b => 5\n\n**Warning:** `a ^= b ^= a ^= b;` — undefined behaviour in C/C++, but safe in Java (left-to-right evaluation).\n\n**Key insight:** XOR is its own inverse: `(a^b)^b == a`. Three XOR swaps exchange values without extra memory.",
           "difficulty": "EASY",
           "pattern": "XOR / Bitwise Tricks",
           "hint1": "XOR swap: a ^= b; b ^= a; a ^= b. Property: a ^ b ^ b = a (XOR with same value twice cancels).",
@@ -160,12 +164,14 @@
             }
           ],
           "constraints": "Must NOT use a temporary variable. Must demonstrate the 3-step XOR swap. Mention the same-location pitfall.",
-          "editorial": "XOR swap: a ^= b; b ^= a; a ^= b; — works because XOR is its own inverse. a^b^b = a. Arithmetic swap: a = a+b; b = a-b; a = a-b; — risks integer overflow. Destructuring swap (Java 14+): var temp trick. XOR swap fails if a and b are aliases (same memory location)."
+          "editorial": "XOR swap: a ^= b; b ^= a; a ^= b; — works because XOR is its own inverse. a^b^b = a. Arithmetic swap: a = a+b; b = a-b; a = a-b; — risks integer overflow. Destructuring swap (Java 14+): var temp trick. XOR swap fails if a and b are aliases (same memory location).",
+          "sampleInput": "a=5, b=10; XOR swap",
+          "sampleOutput": "a=10, b=5"
         },
         {
           "displayOrder": 4,
           "title": "Ternary Chain: Grade Calculator",
-          "description": "Write a method `getGrade(int score)` using a ternary chain that returns letter grade: A (>=90), B (>=80), C (>=70), D (>=60), F (<60). Also write a switch expression version for comparison.",
+          "description": "Use a ternary chain to classify a score as A/B/C/D/F:\n\n**Example:**\ngetGrade(95) => 'A'\ngetGrade(82) => 'B'\ngetGrade(73) => 'C'\ngetGrade(61) => 'D'\ngetGrade(55) => 'F'\n\nImplement using nested ternary: `score>=90 ? 'A' : score>=80 ? 'B' : ...`\n\n**Key insight:** Ternary is right-associative — each else clause can itself be a ternary expression.",
           "difficulty": "EASY",
           "pattern": "Ternary / Switch Expression",
           "hint1": "Ternary chain: score >= 90 ? 'A' : score >= 80 ? 'B' : ... : 'F'",
@@ -192,12 +198,14 @@
             }
           ],
           "constraints": "Must implement both ternary and switch expression versions. Results must be identical.",
-          "editorial": "Nested ternary: condition ? a : (condition2 ? b : c). Evaluate left to right. Use parentheses for clarity. Java ternary is right-associative. For letter grade: score>=90?'A':score>=80?'B':score>=70?'C':score>=60?'D':'F'. If-else chains are more readable for complex logic."
+          "editorial": "Nested ternary: condition ? a : (condition2 ? b : c). Evaluate left to right. Use parentheses for clarity. Java ternary is right-associative. For letter grade: score>=90?'A':score>=80?'B':score>=70?'C':score>=60?'D':'F'. If-else chains are more readable for complex logic.",
+          "sampleInput": "getGrade(82)",
+          "sampleOutput": "'B'"
         },
         {
           "displayOrder": 5,
           "title": "Evaluate Short-Circuit Behavior",
-          "description": "Write a method that demonstrates short-circuit evaluation by counting how many times each operand is evaluated. Given expressions like `alwaysFalse() && expensive()`, show that expensive() is NOT called when alwaysFalse() returns false.",
+          "description": "Demonstrate Java's short-circuit evaluation with `&&` and `||`:\n\n```java\nboolean result = (x != 0) && (10 / x > 1); // safe: RHS not evaluated if x==0\nboolean any = isEmpty() || checkDefault(); // checkDefault() not called if already empty\n```\n\nImplement `shortCircuitDemo()` with a `sideEffect()` method that logs when called, then verify it's not called when short-circuited.",
           "difficulty": "EASY",
           "pattern": "Short-Circuit / Logical",
           "hint1": "Use counter variables incremented inside each method to track call counts.",
@@ -220,12 +228,14 @@
             }
           ],
           "constraints": "Must use separate call-count variables. Short-circuit expressions must show right=0 when appropriate.",
-          "editorial": "Short-circuit: && stops at first false operand. || stops at first true operand. Right side is not evaluated if left determines the result. Use this deliberately: if (list != null && !list.isEmpty()). The side effect test: increment a counter in the right operand — check if it was called."
+          "editorial": "Short-circuit: && stops at first false operand. || stops at first true operand. Right side is not evaluated if left determines the result. Use this deliberately: if (list != null && !list.isEmpty()). The side effect test: increment a counter in the right operand — check if it was called.",
+          "sampleInput": "(false && sideEffect())",
+          "sampleOutput": "sideEffect() NOT called"
         },
         {
           "displayOrder": 6,
           "title": "Bit Flag Permission System",
-          "description": "Implement a file permission system using bit flags. Define constants for READ(4), WRITE(2), EXECUTE(1). Write methods: `setPermission`, `clearPermission`, `hasPermission`, `getPermissionString` (returns rwx format like '755').",
+          "description": "Implement a permission system using bit flags:\n\n```java\nstatic final int READ    = 1 << 0; // 001\nstatic final int WRITE   = 1 << 1; // 010\nstatic final int EXECUTE = 1 << 2; // 100\n\nint userPerms = READ | WRITE; // 011\nhasPermission(userPerms, READ) => true\nhasPermission(userPerms, EXECUTE) => false\ngrantPermission(userPerms, EXECUTE) => 111\nrevokePermission(userPerms, WRITE) => 001\n```",
           "difficulty": "MEDIUM",
           "pattern": "Bitwise / Flags",
           "hint1": "SET: perms |= flag. CLEAR: perms &= ~flag. CHECK: (perms & flag) != 0.",
@@ -248,12 +258,14 @@
             }
           ],
           "constraints": "Must use bitwise operations only (no if-else chains for set/clear). getPermissionString must use hasPermission.",
-          "editorial": "Use bit flags (powers of 2) for permissions: READ=1, WRITE=2, EXECUTE=4. Set: perms |= WRITE. Unset: perms &= ~WRITE. Check: (perms & READ) != 0. Combine: READ | WRITE = 3. This is the pattern behind Unix file permissions (rwxrwxrwx) and Java's java.nio.file.attribute.PosixFilePermission."
+          "editorial": "Use bit flags (powers of 2) for permissions: READ=1, WRITE=2, EXECUTE=4. Set: perms |= WRITE. Unset: perms &= ~WRITE. Check: (perms & READ) != 0. Combine: READ | WRITE = 3. This is the pattern behind Unix file permissions (rwxrwxrwx) and Java's java.nio.file.attribute.PosixFilePermission.",
+          "sampleInput": "hasPermission(READ|WRITE, EXECUTE)",
+          "sampleOutput": "false"
         },
         {
           "displayOrder": 7,
           "title": "Arithmetic Expression Evaluator with Precedence",
-          "description": "Write a method that evaluates a simple arithmetic expression string with correct operator precedence. The expression contains only: single-digit integers, +, -, *, /, parentheses, and spaces. Return the integer result.",
+          "description": "Evaluate arithmetic expressions respecting operator precedence using a stack-based algorithm.\n\n**Example:**\nevaluate(\"3 + 4 * 2\") => 11\nevaluate(\"(3 + 4) * 2\") => 14\nevaluate(\"10 / 2 + 3 - 1\") => 7\n\n**Key insight:** Shunting-yard algorithm converts infix to postfix. `*` and `/` have higher precedence than `+` and `-`.",
           "difficulty": "MEDIUM",
           "pattern": "Operator Precedence",
           "hint1": "Use the recursive descent parser pattern: parseExpr → parseTerm → parseFactor.",
@@ -276,12 +288,14 @@
             }
           ],
           "constraints": "Must respect operator precedence (* before +). Must handle parentheses. Multi-digit numbers should work.",
-          "editorial": "Shunting-yard algorithm: use two stacks (operators, output). Handle precedence (* before +). Scan tokens left to right: numbers go to output, operators go to operator stack after popping higher/equal precedence ops. Parentheses: push '(', pop until '(' on ')'. Post-fix evaluate with a value stack."
+          "editorial": "Shunting-yard algorithm: use two stacks (operators, output). Handle precedence (* before +). Scan tokens left to right: numbers go to output, operators go to operator stack after popping higher/equal precedence ops. Parentheses: push '(', pop until '(' on ')'. Post-fix evaluate with a value stack.",
+          "sampleInput": "evaluate(\"3 + 4 * 2\")",
+          "sampleOutput": "11"
         },
         {
           "displayOrder": 8,
           "title": "Reverse Bits of Integer",
-          "description": "Write a method `reverseBits(int n)` that reverses the bits of a 32-bit integer. Example: 00000000000000000000000000000001 (1) becomes 10000000000000000000000000000000 (-2147483648 or 2147483648 unsigned).",
+          "description": "Reverse all 32 bits of an integer.\n\n**Example:**\nreverseBits(0b00000010100101000001111010011100) => 0b00111001011110000010100101000000\nreverseBits(43261596) => 964176192\nreverseBits(0) => 0\n\n**Key insight:** Loop 32 times: take the LSB of n (`n & 1`), shift into result from MSB side. `result |= (n & 1); result <<= 1; n >>= 1;`",
           "difficulty": "MEDIUM",
           "pattern": "Bitwise / Bit Manipulation",
           "hint1": "Loop 32 times: extract lowest bit of n (n & 1), shift it to correct position in result (bit << (31 - i)).",
@@ -304,12 +318,14 @@
             }
           ],
           "constraints": "Must use >>> (unsigned right shift) for correct bit extraction. Must process exactly 32 bits.",
-          "editorial": "Reverse bits by extracting LSB with n & 1, placing it at the MSB position of result, shifting result left, shifting n right. For 32 bits: loop 32 times. Alternative: use Integer.reverse(n) (JDK built-in). Be careful with the unsigned right shift >>> to avoid sign-extension."
+          "editorial": "Reverse bits by extracting LSB with n & 1, placing it at the MSB position of result, shifting result left, shifting n right. For 32 bits: loop 32 times. Alternative: use Integer.reverse(n) (JDK built-in). Be careful with the unsigned right shift >>> to avoid sign-extension.",
+          "sampleInput": "reverseBits(43261596)",
+          "sampleOutput": "964176192"
         },
         {
           "displayOrder": 9,
           "title": "Single Number — XOR Find Unique",
-          "description": "Given an array where every number appears exactly twice except for one number which appears once, find that unique number. Use XOR: since a ^ a = 0 for any a, all paired numbers cancel out, leaving the unique one. O(n) time, O(1) space.",
+          "description": "Find the one number that appears only once in an array where every other number appears exactly twice. Use XOR.\n\n**Example 1:**\nsingleNumber([2,2,1]) => 1\nsingleNumber([4,1,2,1,2]) => 4\n\n**Key insight:** XOR of a number with itself is 0; XOR with 0 is itself. XOR all elements — duplicates cancel out, leaving the unique number.",
           "difficulty": "MEDIUM",
           "pattern": "XOR / LeetCode Classic",
           "hint1": "XOR all elements together. Pairs cancel (a ^ a = 0), unique number remains (0 ^ x = x).",
@@ -332,12 +348,14 @@
             }
           ],
           "constraints": "Must use XOR (single pass, O(n) time, O(1) space). No HashMap or sorting allowed.",
-          "editorial": "XOR of a pair of equal numbers is 0. XOR of all numbers where every number appears twice except one: all pairs cancel out, leaving the unique number. x ^ x = 0, x ^ 0 = x, XOR is commutative and associative. O(n) time, O(1) space — optimal solution."
+          "editorial": "XOR of a pair of equal numbers is 0. XOR of all numbers where every number appears twice except one: all pairs cancel out, leaving the unique number. x ^ x = 0, x ^ 0 = x, XOR is commutative and associative. O(n) time, O(1) space — optimal solution.",
+          "sampleInput": "[4,1,2,1,2]",
+          "sampleOutput": "4"
         },
         {
           "displayOrder": 10,
           "title": "Compute Without Arithmetic Operators",
-          "description": "Implement addition of two integers WITHOUT using + or - operators. Use only bitwise operators. Hint: in binary, a + b = (a XOR b) + carry, where carry = (a AND b) << 1. Apply recursively until carry is 0.",
+          "description": "Implement addition without using `+` or `-` operators — use only bitwise operators.\n\n**Example:**\nadd(3, 5) => 8\nadd(-1, 1) => 0\nadd(15, 16) => 31\n\n**Key insight:**\n- `a ^ b` gives sum without carry\n- `(a & b) << 1` gives carry\n- Repeat until no carry: `while(b != 0) { carry = (a & b) << 1; a = a ^ b; b = carry; }`",
           "difficulty": "MEDIUM",
           "pattern": "Bitwise Arithmetic",
           "hint1": "Sum without carry: a ^ b (XOR). Carry: (a & b) << 1. Add sum and carry recursively.",
@@ -360,12 +378,14 @@
             }
           ],
           "constraints": "Must NOT use +, -, *, / operators. Only bitwise operators allowed (^, &, |, ~, <<, >>). ",
-          "editorial": "Addition with bit manipulation: sum = a ^ b (XOR gives sum without carry). carry = (a & b) << 1 (AND gives carry positions, shift left to add). Repeat until carry == 0. Handle negative numbers with two's complement (Java ints are already two's complement). Watch for infinite loop if both negative."
+          "editorial": "Addition with bit manipulation: sum = a ^ b (XOR gives sum without carry). carry = (a & b) << 1 (AND gives carry positions, shift left to add). Repeat until carry == 0. Handle negative numbers with two's complement (Java ints are already two's complement). Watch for infinite loop if both negative.",
+          "sampleInput": "add(3, 5)",
+          "sampleOutput": "8"
         },
         {
           "displayOrder": 11,
           "title": "Operator Overloading Simulation with BigDecimal",
-          "description": "Java doesn't support operator overloading. Write a Money class that wraps BigDecimal and provides add(), subtract(), multiply(int qty), and divide(int divisors) methods with proper financial rounding. Demonstrate how verbose it is compared to hypothetical operator overloading.",
+          "description": "Use `BigDecimal` operators (add, subtract, multiply, divide) to simulate exact decimal arithmetic:\n\n**Example:**\nBigDecimal price = new BigDecimal(\"19.99\");\nBigDecimal tax = new BigDecimal(\"0.08\");\nBigDecimal total = price.multiply(BigDecimal.ONE.add(tax)).setScale(2, HALF_UP);\n=> 21.59\n\n**Key insight:** `BigDecimal` has no overloaded operators in Java — use `.add()`, `.multiply()`, etc. Always specify scale for division.",
           "difficulty": "MEDIUM",
           "pattern": "BigDecimal / Value Types",
           "hint1": "Store amount as BigDecimal internally. Always use String constructor to avoid float precision issues.",
@@ -388,12 +408,14 @@
             }
           ],
           "constraints": "Must use BigDecimal(String) constructor. Must set scale=2. All operations return new Money (immutable). Use HALF_UP rounding.",
-          "editorial": "BigDecimal has no operator overloading in Java. Wrap BigDecimal in a class with add(Money other), multiply(int factor) etc. returning new instances. Use compareTo() not equals() for value comparison (equals() also compares scale). This is the correct pattern for money arithmetic in Java."
+          "editorial": "BigDecimal has no operator overloading in Java. Wrap BigDecimal in a class with add(Money other), multiply(int factor) etc. returning new instances. Use compareTo() not equals() for value comparison (equals() also compares scale). This is the correct pattern for money arithmetic in Java.",
+          "sampleInput": "19.99 * 1.08",
+          "sampleOutput": "21.59"
         },
         {
           "displayOrder": 12,
           "title": "Modular Arithmetic Ring",
-          "description": "Implement a `ModInt` class representing integers modulo a given N. Operations (+, -, *, pow) should all produce results in [0, N). Handle negative modulo correctly (Java's % can return negative).",
+          "description": "Implement a modular arithmetic ring: all operations wrap around modulus N.\n\n**Example:**\nRing ring = new Ring(7);\nring.add(5, 4) => 2 (9 mod 7)\nring.multiply(3, 4) => 5 (12 mod 7)\nring.power(2, 10) => 2 (1024 mod 7)\nring.inverse(3) => 5 (3*5=15=1 mod 7)\n\n**Key insight:** `((a % n) + n) % n` handles negative numbers correctly.",
           "difficulty": "MEDIUM",
           "pattern": "Modular Arithmetic",
           "hint1": "Always-positive modulo: ((n % m) + m) % m.",
@@ -416,12 +438,14 @@
             }
           ],
           "constraints": "Constructor must normalize to [0, mod) range. Use ((v%m)+m)%m. multiply must use long to prevent overflow. pow must use fast exponentiation.",
-          "editorial": "Modular arithmetic: all operations mod m. Addition: (a + b) % m. Multiplication: (a * b) % m. Use long intermediate to prevent overflow when a and b are up to int max. Negative modulo in Java: (-5 % 3) == -2, not 1 — fix with ((n % m) + m) % m for always-positive results."
+          "editorial": "Modular arithmetic: all operations mod m. Addition: (a + b) % m. Multiplication: (a * b) % m. Use long intermediate to prevent overflow when a and b are up to int max. Negative modulo in Java: (-5 % 3) == -2, not 1 — fix with ((n % m) + m) % m for always-positive results.",
+          "sampleInput": "Ring(7).add(5, 4)",
+          "sampleOutput": "2"
         },
         {
           "displayOrder": 13,
           "title": "Bitmasked Sudoku Validity Checker",
-          "description": "Use bit manipulation to efficiently check if a Sudoku board is valid. For each row, column, and 3x3 box, maintain a bitmask of seen digits (1-9). Using bit 1 for digit 1, bit 2 for digit 2, etc. Check for duplicates with the & operator.",
+          "description": "Validate a Sudoku board using bitmasked row/column/box tracking.\n\n**Example:**\nint[] rowMask = new int[9];\nFor each cell (r,c) with value v:\nif (rowMask[r] & (1<<v)) != 0 => duplicate in row, invalid!\nrowMask[r] |= (1<<v);\n\nisValidSudoku(board) => true / false\n\n**Key insight:** Bit N is set if value N has been seen. `& (1<<v)` checks; `|= (1<<v)` marks. 9 ints replace 9 HashSets.",
           "difficulty": "HARD",
           "pattern": "Bitmask / 2D Array",
           "hint1": "Use bitmask: int seen = 0. For digit d, bit d should be set. Check: (seen & (1 << d)) != 0 means duplicate.",
@@ -440,12 +464,14 @@
             }
           ],
           "constraints": "Must use bitmasks for row/col/box tracking. bit = 1 << digit. Check before set. O(81) time O(27) space.",
-          "editorial": "Represent each row/column/3x3 box as a bitmask. For each cell value v, check if bit (1 << v) is already set in the mask — if so, duplicate found. Set the bit. Use 27 masks total (9 rows + 9 cols + 9 boxes). O(81) time, O(27) space — the most efficient Sudoku validator approach."
+          "editorial": "Represent each row/column/3x3 box as a bitmask. For each cell value v, check if bit (1 << v) is already set in the mask — if so, duplicate found. Set the bit. Use 27 masks total (9 rows + 9 cols + 9 boxes). O(81) time, O(27) space — the most efficient Sudoku validator approach.",
+          "sampleInput": "valid 9x9 Sudoku board",
+          "sampleOutput": "true"
         },
         {
           "displayOrder": 14,
           "title": "Implement Multiplication Using Bit Shifts",
-          "description": "Implement `multiply(int a, int b)` using only bit shifts and addition (no * operator). Use the standard binary multiplication algorithm: for each set bit in b, add a shifted left by the bit position.",
+          "description": "Implement integer multiplication using only bit shifts and addition.\n\n**Example:**\nmultiply(6, 7) => 42\nmultiply(3, 0) => 0\nmultiply(-3, 4) => -12\n\n**Key insight:** `a * b = a * (sum of powers of 2 in b)`. For each set bit at position i in b, add `a << i` to result. This is how hardware multipliers work.",
           "difficulty": "HARD",
           "pattern": "Bitwise Multiplication",
           "hint1": "Binary multiplication: 5 * 6 = 5 * (4 + 2) = 5*4 + 5*2 = 20 + 10 = 30. Each set bit in b contributes a * (1 << bitPos).",
@@ -468,12 +494,14 @@
             }
           ],
           "constraints": "Must NOT use * operator. Use bit shifts and addition only. Handle negative numbers correctly.",
-          "editorial": "Russian peasant multiplication using bit shifts: result += (a << bit) when the corresponding bit of b is set. Or iteratively: while b > 0: if b is odd, result += a; a <<= 1; b >>= 1. This is O(log n) and how hardware multipliers worked before dedicated multiply circuits."
+          "editorial": "Russian peasant multiplication using bit shifts: result += (a << bit) when the corresponding bit of b is set. Or iteratively: while b > 0: if b is odd, result += a; a <<= 1; b >>= 1. This is O(log n) and how hardware multipliers worked before dedicated multiply circuits.",
+          "sampleInput": "multiply(6, 7)",
+          "sampleOutput": "42"
         },
         {
           "displayOrder": 15,
           "title": "Operator Precedence Trap Quiz",
-          "description": "Create a class with 10 tricky Java operator precedence quiz questions. Each question shows an expression and four choices. Return a List<String> of the correct answers and explanations.",
+          "description": "Predict the output of tricky operator precedence expressions:\n\n**Examples:**\n`2 + 3 * 4` => 14 (not 20)\n`10 - 3 - 2` => 5 (left-to-right)\n`2 << 1 + 1` => 8 (+ has higher precedence than <<)\n`true || false && false` => true (&& binds tighter than ||)\n\nImplement `evaluateTrap(String expr)` returning the correct result.",
           "difficulty": "HARD",
           "pattern": "Operator Precedence",
           "hint1": "Traps: && before ||, & before &&, String + is left-associative, ternary is right-associative.",
@@ -488,12 +516,14 @@
             }
           ],
           "constraints": "Must include exactly 10 questions. Must cover: *, &&/||, char+int, String+int, prefix/postfix, integer division, >>> , ternary associativity, byte overflow.",
-          "editorial": "Operator precedence traps: (1) ++ prefix vs postfix — x = i++ vs x = ++i; (2) bitwise & before &&; (3) ternary lower precedence than arithmetic; (4) = (assignment) very low precedence — if (x = getValue()) != 0 needs parentheses; (5) >>> vs >> — unsigned vs signed shift."
+          "editorial": "Operator precedence traps: (1) ++ prefix vs postfix — x = i++ vs x = ++i; (2) bitwise & before &&; (3) ternary lower precedence than arithmetic; (4) = (assignment) very low precedence — if (x = getValue()) != 0 needs parentheses; (5) >>> vs >> — unsigned vs signed shift.",
+          "sampleInput": "\"2 << 1 + 1\"",
+          "sampleOutput": "8"
         },
         {
           "displayOrder": 16,
           "title": "Hamming Distance Calculator",
-          "description": "The Hamming distance between two integers is the number of bit positions where they differ. Implement `hammingDistance(int x, int y)` and `totalHammingDistance(int[] nums)` — the sum of Hamming distances between all pairs.",
+          "description": "Calculate the Hamming distance between two integers (number of positions where bits differ).\n\n**Example 1:**\nhammingDistance(1, 4) => 2 (1=001, 4=100, differ at 2 positions)\nhammingDistance(3, 1) => 1 (3=011, 1=001, differ at 1 position)\nhammingDistance(0, 0) => 0\n\n**Key insight:** XOR flips bits where they differ. `Integer.bitCount(a ^ b)` counts the differing positions.",
           "difficulty": "MEDIUM",
           "pattern": "XOR / Bit Counting",
           "hint1": "Hamming distance = Integer.bitCount(x ^ y). XOR gives 1 in positions where bits differ.",
@@ -512,12 +542,14 @@
             }
           ],
           "constraints": "hammingDistance must use Integer.bitCount(x^y). totalHammingDistance must be O(32*n), not O(n²).",
-          "editorial": "Hamming distance: XOR the two numbers (bits differ where XOR is 1), then count set bits with Integer.bitCount(). x = a ^ b; return Integer.bitCount(x). O(1) time. The bitCount algorithm uses Brian Kernighan's trick or SWAR (SIMD Within A Register) population count."
+          "editorial": "Hamming distance: XOR the two numbers (bits differ where XOR is 1), then count set bits with Integer.bitCount(). x = a ^ b; return Integer.bitCount(x). O(1) time. The bitCount algorithm uses Brian Kernighan's trick or SWAR (SIMD Within A Register) population count.",
+          "sampleInput": "hammingDistance(1, 4)",
+          "sampleOutput": "2"
         },
         {
           "displayOrder": 17,
           "title": "Gray Code Generator",
-          "description": "Generate an n-bit Gray code sequence where consecutive values differ by exactly one bit. The formula is: gray(i) = i ^ (i >> 1). Generate the first 2^n values and verify each consecutive pair differs by exactly 1 bit.",
+          "description": "Generate the n-bit Gray code sequence where consecutive values differ by exactly one bit.\n\n**Example:**\ngrayCode(2) => [0,1,3,2] (00,01,11,10)\ngrayCode(3) => [0,1,3,2,6,7,5,4] (8 values)\n\n**Key insight:** The Gray code for i is `i ^ (i >> 1)`. No need to generate iteratively — direct formula.",
           "difficulty": "HARD",
           "pattern": "Bitwise / Gray Code",
           "hint1": "Gray code formula: gray(i) = i XOR (i right-shift 1). This produces the standard binary-reflected Gray code.",
@@ -536,12 +568,14 @@
             }
           ],
           "constraints": "Must use i ^ (i >> 1) formula. Must verify each consecutive pair differs by exactly 1 bit. Implement gray-to-binary conversion.",
-          "editorial": "Gray code sequence: 0,1,3,2,6,7,5,4... Formula: gray(n) = n ^ (n >> 1). To generate sequence: for i in 0..2^n-1, output i^(i>>1). Property: adjacent codes differ by exactly 1 bit. Inverse: decode by XOR prefix scan. Used in rotary encoders to eliminate invalid states during transitions."
+          "editorial": "Gray code sequence: 0,1,3,2,6,7,5,4... Formula: gray(n) = n ^ (n >> 1). To generate sequence: for i in 0..2^n-1, output i^(i>>1). Property: adjacent codes differ by exactly 1 bit. Inverse: decode by XOR prefix scan. Used in rotary encoders to eliminate invalid states during transitions.",
+          "sampleInput": "grayCode(3)",
+          "sampleOutput": "[0,1,3,2,6,7,5,4]"
         },
         {
           "displayOrder": 18,
           "title": "Maximum AND Pair",
-          "description": "Given an array of integers, find the pair (a, b) where a AND b is maximized. Brute force is O(n²). Optimized: try to build the maximum result bit by bit from the most significant bit, keeping only numbers that have that bit set.",
+          "description": "Find the pair of numbers in an array whose AND value is maximum.\n\n**Example:**\nmaxANDPair([4,8,6,2]) => 6 (4&6=4, 8&6=0... try all: 4&8=0, 4&6=4, 8&6=0, 6&2=2... max=4)\nActually: findMaxAND([1,2,3,4,5]) => 4 (4&5=4)\n\n**Key insight:** Try all pairs O(n^2), or greedy from MSB: check if keeping bit i gives a valid pair.",
           "difficulty": "HARD",
           "pattern": "Bitwise / Greedy",
           "hint1": "Brute force: for all pairs check a & b and track maximum.",
@@ -560,12 +594,14 @@
             }
           ],
           "constraints": "Both brute and optimized must give same answer. Optimized must work in O(30*n) using greedy bit-by-bit approach.",
-          "editorial": "For maximum AND pair: greedily set bits from MSB. For each bit from 31 to 0: check if at least 2 numbers have this bit set (using count of numbers with mask & bit). If yes, include in answer mask. O(32n) = O(n) time. The AND of two numbers cannot exceed either operand."
+          "editorial": "For maximum AND pair: greedily set bits from MSB. For each bit from 31 to 0: check if at least 2 numbers have this bit set (using count of numbers with mask & bit). If yes, include in answer mask. O(32n) = O(n) time. The AND of two numbers cannot exceed either operand.",
+          "sampleInput": "findMaxAND([1,2,3,4,5])",
+          "sampleOutput": "4"
         },
         {
           "displayOrder": 19,
           "title": "Decode Ways Using Bitmask DP",
-          "description": "A string of digits can be decoded where 'A'=1, 'B'=2, ..., 'Z'=26. Count the number of ways to decode a given digit string. Use a bitmask approach or dynamic programming with bitwise operations to track valid decode states.",
+          "description": "Solve 'Decode Ways' using bitmask DP: count the number of ways to decode a digit string to letters (1->A, ..., 26->Z).\n\n**Example:**\ndecodeWays(\"12\") => 2 (\"AB\" or \"L\")\ndecodeWays(\"226\") => 3 (\"BBF\", \"BZ\", \"VF\")\ndecodeWays(\"06\") => 0 (invalid leading zero)\n\n**Key insight:** `dp[i] = dp[i-1]` (single digit) + `dp[i-2]` (two-digit, if 10-26). DP with bitmask optimizes space to O(1).",
           "difficulty": "HARD",
           "pattern": "DP / Bitwise",
           "hint1": "DP approach: dp[i] = number of ways to decode s[0..i-1]. dp[i] += dp[i-1] if s[i-1] is non-zero, dp[i] += dp[i-2] if s[i-2..i-1] forms 10-26.",
@@ -592,12 +628,14 @@
             }
           ],
           "constraints": "O(n) time, O(1) space DP using two rolling variables. Handle leading zero. Handle '0' digits (only valid as second digit of 10 or 20).",
-          "editorial": "Bitmask DP: dp[mask] = number of ways to decode the subset represented by mask. Transition: try extending current decode with 1 or 2 digits. dp[0] = 1 (empty string). For each position, check single digit (1-9) and double digit (10-26). The bitmask tracks which characters have been consumed."
+          "editorial": "Bitmask DP: dp[mask] = number of ways to decode the subset represented by mask. Transition: try extending current decode with 1 or 2 digits. dp[0] = 1 (empty string). For each position, check single digit (1-9) and double digit (10-26). The bitmask tracks which characters have been consumed.",
+          "sampleInput": "decodeWays(\"226\")",
+          "sampleOutput": "3"
         },
         {
           "displayOrder": 20,
           "title": "Bitwise Puzzle: Find Missing and Duplicate in Array",
-          "description": "Given an array of n integers where elements should be from 1 to n, but one element is missing and one is duplicated — find both using O(n) time and O(1) space using only bitwise XOR and arithmetic operators.\n\nExample: [1,2,2,4] → missing=3, duplicate=2",
+          "description": "In an array of n+2 integers where numbers 1..n each appear once except one number appears twice and one is missing, find both using XOR.\n\n**Example:**\nfindMissingAndDuplicate([1,2,2,4]) => {duplicate:2, missing:3}\nfindMissingAndDuplicate([3,1,3]) => {duplicate:3, missing:2}\n\n**Key insight:** XOR all elements and all 1..n. The result is `missing ^ duplicate`. Separate them using the lowest set bit.",
           "difficulty": "HARD",
           "pattern": "XOR / Math Trick",
           "hint1": "XOR of 1..n XOR all elements = missing ^ duplicate (since all others cancel).",
@@ -616,7 +654,9 @@
             }
           ],
           "constraints": "O(n) time, O(1) space. Must use XOR. Two-pass: first XOR pass, then split-by-bit pass. Final check to determine which is missing vs duplicate.",
-          "editorial": "XOR find missing and duplicate in array [1..n]: XOR all elements with all of 1..n. Result = missing ^ duplicate. Then use sum formula: sum(array) - sum(1..n) = duplicate - missing. Solve the two equations. O(n) time, O(1) space. No sorting, no extra storage."
+          "editorial": "XOR find missing and duplicate in array [1..n]: XOR all elements with all of 1..n. Result = missing ^ duplicate. Then use sum formula: sum(array) - sum(1..n) = duplicate - missing. Solve the two equations. O(n) time, O(1) space. No sorting, no extra storage.",
+          "sampleInput": "[1,2,2,4]",
+          "sampleOutput": "{duplicate:2, missing:3}"
         }
       ],
       "subCategory": "Language Basics",

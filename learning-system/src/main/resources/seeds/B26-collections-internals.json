@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Group Anagrams",
-          "description": "Given a list of strings, group them into lists of anagrams. Return a List<List<String>> where each inner list contains words that are anagrams of each other. Order within groups and order of groups doesn't matter.",
+          "description": "Group an array of strings by their anagram signature (sorted characters).\n\n**Example:**\ngroupAnagrams([\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"])\n=> [[\"eat\",\"tea\",\"ate\"],[\"tan\",\"nat\"],[\"bat\"]]\n\n**Internals:** HashMap uses `hashCode()` + `equals()` for keys. Sorted string as key: all anagrams have the same sorted form.",
           "difficulty": "MEDIUM",
           "pattern": "HashMap with sorted-string key",
           "hint1": "Two words are anagrams if their sorted char arrays are equal.",
@@ -43,12 +43,14 @@
           "hint3": "Return new ArrayList(map.values()).",
           "starterCode": "import java.util.*;\n\npublic class Q1 {\n    public static List<List<String>> groupAnagrams(List<String> words) {\n        // TODO\n        return new ArrayList<>();\n    }\n    public static void main(String[] args) {\n        System.out.println(groupAnagrams(List.of(\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\")));\n        // [[eat, tea, ate], [tan, nat], [bat]]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q1 {\n    public static List<List<String>> groupAnagrams(List<String> words) {\n        Map<String, List<String>> map = new HashMap<>();\n        for (String w : words) {\n            char[] chars = w.toCharArray(); Arrays.sort(chars);\n            String key = new String(chars);\n            map.computeIfAbsent(key, k -> new ArrayList<>()).add(w);\n        }\n        return new ArrayList<>(map.values());\n    }\n    public static void main(String[] args) {\n        System.out.println(groupAnagrams(List.of(\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\")));\n    }\n}",
-          "testCases": "eat,tea,tan,ate,nat,bat\n[[eat, tea, ate], [tan, nat], [bat]]"
+          "testCases": "eat,tea,tan,ate,nat,bat\n[[eat, tea, ate], [tan, nat], [bat]]",
+          "sampleInput": "[\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]",
+          "sampleOutput": "[[\"eat\",\"tea\",\"ate\"],[\"tan\",\"nat\"],[\"bat\"]]"
         },
         {
           "displayOrder": 2,
           "title": "Top K Frequent Elements",
-          "description": "Given an int array and integer k, return the k most frequent elements. If two elements have the same frequency, return either. You may return in any order.",
+          "description": "Return the k most frequent elements using a min-heap of size k.\n\n**Example:**\ntopKFrequent([1,1,1,2,2,3], k=2) => [1,2]\n\n**Internals:** `PriorityQueue` is a binary min-heap. Maintain size k — if heap grows beyond k, poll the minimum. Remaining k elements are the top k.",
           "difficulty": "MEDIUM",
           "pattern": "HashMap + PriorityQueue (min-heap)",
           "hint1": "First build a frequency map with HashMap.",
@@ -56,12 +58,14 @@
           "hint3": "When heap size > k, poll() to remove the least frequent.",
           "starterCode": "import java.util.*;\n\npublic class Q2 {\n    public static int[] topKFrequent(int[] nums, int k) {\n        // TODO\n        return new int[0];\n    }\n    public static void main(String[] args) {\n        System.out.println(Arrays.toString(topKFrequent(new int[]{1,1,1,2,2,3}, 2)));\n        // [1, 2]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q2 {\n    public static int[] topKFrequent(int[] nums, int k) {\n        Map<Integer,Integer> freq = new HashMap<>();\n        for (int n : nums) freq.merge(n, 1, Integer::sum);\n        PriorityQueue<Integer> heap = new PriorityQueue<>(Comparator.comparingInt(freq::get));\n        for (int n : freq.keySet()) {\n            heap.offer(n);\n            if (heap.size() > k) heap.poll();\n        }\n        int[] res = new int[k];\n        for (int i = k-1; i >= 0; i--) res[i] = heap.poll();\n        return res;\n    }\n    public static void main(String[] args) {\n        System.out.println(Arrays.toString(topKFrequent(new int[]{1,1,1,2,2,3}, 2)));\n    }\n}",
-          "testCases": "1 1 1 2 2 3\nk=2\n[1, 2]"
+          "testCases": "1 1 1 2 2 3\nk=2\n[1, 2]",
+          "sampleInput": "topKFrequent([1,1,1,2,2,3], k=2)",
+          "sampleOutput": "[1,2]"
         },
         {
           "displayOrder": 3,
           "title": "Sort Students by GPA then Name",
-          "description": "Given a list of Student objects (name: String, gpa: double), sort them: primary descending GPA, secondary ascending name. Return the sorted list.",
+          "description": "Sort a list of students by GPA descending, then by name ascending for ties.\n\n**Example:**\nsort([Student(Alice,3.9), Student(Bob,3.7), Student(Charlie,3.9)])\n=> [Alice(3.9), Charlie(3.9), Bob(3.7)]\n\n**Key insight:** `Comparator.comparingDouble(Student::getGpa).reversed().thenComparing(Student::getName)` chains multiple sort keys.",
           "difficulty": "EASY",
           "pattern": "Comparator chaining",
           "hint1": "Use Comparator.comparingDouble(s -> s.gpa).reversed().",
@@ -69,7 +73,9 @@
           "hint3": "list.sort(comparator) or Collections.sort(list, comparator).",
           "starterCode": "import java.util.*;\n\npublic class Q3 {\n    static class Student { String name; double gpa;\n        Student(String n, double g) { name=n; gpa=g; }\n        public String toString() { return name+\"(\"+gpa+\")\"; }\n    }\n    public static List<Student> sortStudents(List<Student> students) {\n        // TODO\n        return students;\n    }\n    public static void main(String[] args) {\n        List<Student> s = new ArrayList<>(List.of(\n            new Student(\"Bob\",3.8), new Student(\"Alice\",3.9),\n            new Student(\"Carol\",3.8), new Student(\"Dave\",4.0)));\n        System.out.println(sortStudents(s));\n        // [Dave(4.0), Alice(3.9), Bob(3.8), Carol(3.8)]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q3 {\n    static class Student { String name; double gpa;\n        Student(String n, double g) { name=n; gpa=g; }\n        public String toString() { return name+\"(\"+gpa+\")\"; }\n    }\n    public static List<Student> sortStudents(List<Student> students) {\n        students.sort(Comparator.comparingDouble((Student s) -> s.gpa)\n                                .reversed()\n                                .thenComparing(s -> s.name));\n        return students;\n    }\n    public static void main(String[] args) {\n        List<Student> s = new ArrayList<>(List.of(\n            new Student(\"Bob\",3.8), new Student(\"Alice\",3.9),\n            new Student(\"Carol\",3.8), new Student(\"Dave\",4.0)));\n        System.out.println(sortStudents(s));\n    }\n}",
-          "testCases": "[Dave(4.0), Alice(3.9), Bob(3.8), Carol(3.8)]"
+          "testCases": "[Dave(4.0), Alice(3.9), Bob(3.8), Carol(3.8)]",
+          "sampleInput": "[Alice(3.9), Bob(3.7), Charlie(3.9)]",
+          "sampleOutput": "[Alice(3.9), Charlie(3.9), Bob(3.7)]"
         }
       ]
     }

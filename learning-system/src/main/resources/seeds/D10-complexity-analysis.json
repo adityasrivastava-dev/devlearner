@@ -35,7 +35,7 @@
         {
           "displayOrder": 1,
           "title": "Determine Complexity of Code Snippets",
-          "description": "For each of the following, state the time complexity:\n1. for(i=0;i<n;i++) for(j=i;j<n;j++) ...\n2. for(i=1;i<n;i*=2) ...\n3. for(i=0;i<n;i++) binarySearch(arr, i)\n4. Two separate loops: for(i<n)... for(j<m)...\n5. Recursive: f(n) = f(n-1) + O(1)",
+          "description": "Determine the Big-O complexity of these code snippets:\n\n```java\n// Snippet 1:\nfor(int i=0;i<n;i++) for(int j=i;j<n;j++) sum++;\n// Snippet 2:\nint i=1; while(i<n) i*=2;\n// Snippet 3:\nfor(int i=0;i<n;i++) binarySearch(arr, target);\n```\n\n**Answers:** O(n^2), O(log n), O(n log n)\n\nImplement `analyze(String code)` returning the complexity.",
           "difficulty": "EASY",
           "pattern": "Complexity analysis",
           "hint1": "Triangular sum 0+1+2+...+(n-1) = n(n-1)/2 = O(n²).",
@@ -43,12 +43,14 @@
           "hint3": "Two independent loops: O(n) + O(m) = O(n+m).",
           "starterCode": "public class Q1 {\n    public static void main(String[] args) {\n        // Analyze each snippet's time complexity\n        System.out.println(\"1. Nested loop j from i: \" + \"TODO\");\n        System.out.println(\"2. i*=2 loop: \" + \"TODO\");\n        System.out.println(\"3. n binary searches: \" + \"TODO\");\n        System.out.println(\"4. Two separate loops n+m: \" + \"TODO\");\n        System.out.println(\"5. f(n)=f(n-1)+O(1): \" + \"TODO\");\n    }\n}",
           "solutionCode": "public class Q1 {\n    public static void main(String[] args) {\n        System.out.println(\"1. Nested j from i: O(n²) — triangular: n*(n-1)/2 iterations\");\n        System.out.println(\"2. i*=2 loop: O(log n) — doubles each step, log₂(n) iters\");\n        System.out.println(\"3. n binary searches: O(n log n) — n * O(log n)\");\n        System.out.println(\"4. Two loops n+m: O(n+m) — additive, not multiplicative\");\n        System.out.println(\"5. f(n)=f(n-1)+1: O(n) — linear recursion, n stack frames\");\n    }\n}",
-          "testCases": "1. O(n²)\n2. O(log n)\n3. O(n log n)\n4. O(n+m)\n5. O(n)"
+          "testCases": "1. O(n²)\n2. O(log n)\n3. O(n log n)\n4. O(n+m)\n5. O(n)",
+          "sampleInput": "nested loop i,j=i..n",
+          "sampleOutput": "O(n^2)"
         },
         {
           "displayOrder": 2,
           "title": "Two Sum — O(n²) vs O(n)",
-          "description": "Given an array of integers and a target sum, find indices of two numbers that add up to target. Implement both: (1) brute force O(n²) and (2) optimized O(n) with HashMap. Return int[]{i,j}.",
+          "description": "Compare two implementations of Two Sum: O(n^2) brute force vs O(n) HashMap.\n\n**Example:**\ntwoSumBrute([2,7,11,15], 9) => [0,1] — O(n^2): check all pairs\ntwoSumHash([2,7,11,15], 9) => [0,1] — O(n): HashMap lookup\n\nBenchmark both for n=10000:\nbrute: ~100ms, hash: ~1ms\n\nReturn both results and execution times.",
           "difficulty": "EASY",
           "pattern": "HashMap, two-sum",
           "hint1": "Brute: nested loop checking all pairs.",
@@ -56,12 +58,14 @@
           "hint3": "HashMap stores num → index. One pass: check then put.",
           "starterCode": "import java.util.*;\n\npublic class Q2 {\n    static int[] twoSumBrute(int[] nums, int target) {\n        // O(n²) TODO\n        return new int[0];\n    }\n    static int[] twoSumFast(int[] nums, int target) {\n        // O(n) TODO\n        return new int[0];\n    }\n    public static void main(String[] args) {\n        int[] arr = {2, 7, 11, 15};\n        System.out.println(Arrays.toString(twoSumBrute(arr, 9))); // [0,1]\n        System.out.println(Arrays.toString(twoSumFast(arr, 9)));  // [0,1]\n    }\n}",
           "solutionCode": "import java.util.*;\n\npublic class Q2 {\n    static int[] twoSumBrute(int[] nums, int target) {\n        for (int i = 0; i < nums.length; i++)\n            for (int j = i+1; j < nums.length; j++)\n                if (nums[i] + nums[j] == target) return new int[]{i, j};\n        return new int[0];\n    }\n    static int[] twoSumFast(int[] nums, int target) {\n        Map<Integer,Integer> map = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int complement = target - nums[i];\n            if (map.containsKey(complement)) return new int[]{map.get(complement), i};\n            map.put(nums[i], i);\n        }\n        return new int[0];\n    }\n    public static void main(String[] args) {\n        int[] arr = {2, 7, 11, 15};\n        System.out.println(Arrays.toString(twoSumBrute(arr, 9))); // [0, 1]\n        System.out.println(Arrays.toString(twoSumFast(arr, 9)));  // [0, 1]\n    }\n}",
-          "testCases": "[0, 1]\n[0, 1]"
+          "testCases": "[0, 1]\n[0, 1]",
+          "sampleInput": "[2,7,11,15], target=9",
+          "sampleOutput": "both return [0,1]; hash is ~100x faster"
         },
         {
           "displayOrder": 3,
           "title": "Count Operations and Predict Runtime",
-          "description": "Given n=10,000: (a) O(n²) algorithm does how many operations? (b) O(n log n) does how many? (c) If each operation takes 1ns, how long does each take? Write a program that counts actual iterations for both approaches and prints the time.",
+          "description": "Count the number of operations in each algorithm and predict which is faster for n=1000:\n\n1. `bubbleSort(arr)` — O(n^2) worst case\n2. `mergeSort(arr)` — O(n log n)\n3. `binarySearch(sorted, target)` — O(log n)\n\n**Example:**\ncountOps(\"bubbleSort\", 1000) => ~500000\ncountOps(\"mergeSort\", 1000) => ~10000\ncountOps(\"binarySearch\", 1000) => ~10\n\nReturn `{name: estimated_ops}`",
           "difficulty": "EASY",
           "pattern": "Complexity intuition, operation counting",
           "hint1": "n²=10⁸, n*log₂(n)≈10000*14=140000.",
@@ -69,7 +73,9 @@
           "hint3": "Measure with System.nanoTime() inside both loops.",
           "starterCode": "public class Q3 {\n    public static void main(String[] args) {\n        int n = 10_000;\n        // Count O(n²) iterations\n        long count2 = 0;\n        for (int i = 0; i < n; i++)\n            for (int j = 0; j < n; j++) count2++;\n\n        // Count O(n log n) — simulate merge sort work\n        long countNlogN = 0;\n        // TODO: approximate with n * (log2 of n) iterations\n\n        System.out.println(\"n = \" + n);\n        System.out.println(\"O(n²) ops: \" + count2 + \" → \" + count2/1_000_000 + \"ms at 1ns/op\");\n        System.out.println(\"O(n log n) ops: TODO\");\n    }\n}",
           "solutionCode": "public class Q3 {\n    static int log2(int n) { return (int)(Math.log(n)/Math.log(2)); }\n\n    public static void main(String[] args) {\n        int n = 10_000;\n        long count2 = (long)n * n;\n        long countNlogN = (long)n * log2(n);\n\n        System.out.println(\"n = \" + n);\n        System.out.printf(\"O(n²) ops:      %,d → ~%dms at 1ns/op%n\", count2, count2/1_000_000);\n        System.out.printf(\"O(n log n) ops: %,d → ~%dµs at 1ns/op%n\", countNlogN, countNlogN/1_000);\n        System.out.println();\n        System.out.println(\"Conclusion: O(n²) is 700x more operations than O(n log n) for n=10,000\");\n        System.out.println(\"At n=1,000,000: O(n²)=10^12 (~17min), O(n log n)=20M (~20ms)\");\n    }\n}",
-          "testCases": "n = 10000\nO(n²) ops: 100,000,000 → ~100ms\nO(n log n) ops: 130,000 → ~130µs"
+          "testCases": "n = 10000\nO(n²) ops: 100,000,000 → ~100ms\nO(n log n) ops: 130,000 → ~130µs",
+          "sampleInput": "n=1000 for bubbleSort, mergeSort, binarySearch",
+          "sampleOutput": "{bubble:~500000, merge:~10000, binary:~10}"
         }
       ]
     }

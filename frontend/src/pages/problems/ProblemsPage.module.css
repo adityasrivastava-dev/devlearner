@@ -36,29 +36,13 @@
   flex-shrink: 0;
 }
 .backBtn:hover { color: var(--text); border-color: var(--border2); }
-.headerRight {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.heading {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text);
-  margin: 0;
-}
-.totalCount {
-  font-size: 12px;
-  color: var(--text3);
-  font-weight: 500;
-}
-.solvedStat {
-  font-size: 12px;
-  color: var(--text3);
-}
+.headerRight { display: flex; align-items: center; gap: 12px; }
+.heading { font-size: 16px; font-weight: 700; color: var(--text); margin: 0; }
+.totalCount { font-size: 12px; color: var(--text3); font-weight: 500; }
+.solvedStat { font-size: 12px; color: var(--text3); }
 
-/* ── Filter bar ──────────────────────────────────────────────────────────────  */
-.filterBar {
+/* ── Top filter row (search + difficulty + clear) ────────────────────────────  */
+.topFilterBar {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -109,10 +93,7 @@
 .searchClear:hover { color: var(--text2); }
 
 /* Difficulty pills */
-.diffPills {
-  display: flex;
-  gap: 4px;
-}
+.diffPills { display: flex; gap: 4px; }
 .diffPill {
   padding: 4px 12px;
   border-radius: 20px;
@@ -126,31 +107,13 @@
   transition: all .15s;
 }
 .diffPill:hover { color: var(--text); border-color: var(--text3); }
-
 .diffPillActive { background: var(--bg3); color: var(--text); border-color: var(--text3); }
-
 .diffPill.diffEASY   { color: var(--easy,   #4ade80); }
 .diffPill.diffMEDIUM { color: var(--medium, #fbbf24); }
 .diffPill.diffHARD   { color: var(--hard,   #f87171); }
 .diffPillActive.diffEASY   { background: rgba(74,222,128,.1);  border-color: rgba(74,222,128,.4);  color: #4ade80; }
 .diffPillActive.diffMEDIUM { background: rgba(251,191,36,.1);  border-color: rgba(251,191,36,.4);  color: #fbbf24; }
 .diffPillActive.diffHARD   { background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.4); color: #f87171; }
-
-/* Selects */
-.select {
-  height: 34px;
-  padding: 0 10px;
-  background: var(--bg2);
-  border: 1px solid var(--border2);
-  border-radius: 6px;
-  color: var(--text2);
-  font-size: 12px;
-  font-family: var(--font-ui);
-  cursor: pointer;
-  outline: none;
-  transition: border-color .15s;
-}
-.select:focus { border-color: var(--accent); }
 
 /* Clear */
 .clearBtn {
@@ -166,6 +129,133 @@
   transition: all .15s;
 }
 .clearBtn:hover { color: var(--text); border-color: var(--text3); }
+
+/* ── Pattern tag pills row ───────────────────────────────────────────────────  */
+.tagSection {
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.tagPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border2);
+  background: var(--bg2);
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: all .15s;
+  white-space: nowrap;
+}
+.tagPill:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg2));
+}
+.tagPillActive {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg2));
+  font-weight: 600;
+}
+.tagCount {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 400;
+  background: var(--bg3);
+  border-radius: 3px;
+  padding: 0 4px;
+  min-width: 20px;
+  text-align: center;
+  line-height: 16px;
+}
+.tagPillActive .tagCount,
+.tagPill:hover .tagCount {
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg3));
+  color: var(--accent);
+}
+.expandBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px dashed var(--border2);
+  background: none;
+  color: var(--text3);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: all .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.expandBtn:hover { color: var(--text2); border-color: var(--text3); }
+
+/* ── Category / topic pills row ─────────────────────────────────────────────  */
+.categorySection {
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.categorySection::-webkit-scrollbar { height: 0; }
+.categoryRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-width: max-content;
+}
+.catPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--bg2);
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: all .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.catPill:hover {
+  border-color: var(--border2);
+  color: var(--text);
+  background: var(--bg3);
+}
+.catPillActive {
+  border-color: var(--text2);
+  color: var(--text);
+  background: var(--bg3);
+  font-weight: 600;
+}
+.catIcon { font-size: 13px; line-height: 1; }
+.catCount {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 400;
+  margin-left: 1px;
+}
+.catPillActive .catCount { color: var(--text2); }
 
 /* ── Table area ──────────────────────────────────────────────────────────────  */
 .tableWrap {
@@ -197,10 +287,7 @@
 .empty span { font-size: 32px; }
 
 /* Table */
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
+.table { width: 100%; border-collapse: collapse; }
 .table thead th {
   position: sticky;
   top: 0;
@@ -218,11 +305,7 @@
 }
 
 /* Rows */
-.row {
-  cursor: pointer;
-  border-bottom: 1px solid var(--border);
-  transition: background .1s;
-}
+.row { cursor: pointer; border-bottom: 1px solid var(--border); transition: background .1s; }
 .row:hover { background: var(--bg2); }
 .row td { padding: 0 16px; height: 46px; vertical-align: middle; }
 .solvedRow { opacity: .7; }
@@ -240,40 +323,24 @@
   color: transparent;
   flex-shrink: 0;
 }
-.statusSolved {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #0d0f12;
-}
+.statusSolved { background: var(--accent); border-color: var(--accent); color: #0d0f12; }
 
 /* Number cell */
-.numCell {
-  font-size: 12px;
-  color: var(--text3);
-  font-family: var(--font-code);
-}
+.numCell { font-size: 12px; color: var(--text3); font-family: var(--font-code); }
 
 /* Problem title */
-.probTitle {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text);
-  transition: color .1s;
-}
+.probTitle { font-size: 14px; font-weight: 500; color: var(--text); transition: color .1s; }
 .row:hover .probTitle { color: var(--accent); }
 .probTitleSolved { color: var(--text2); }
 .row:hover .probTitleSolved { color: var(--accent); }
 
 /* Difficulty label */
-.diffLabel {
-  font-size: 13px;
-  font-weight: 600;
-}
+.diffLabel { font-size: 13px; font-weight: 600; }
 .diffEASY   { color: #4ade80; }
 .diffMEDIUM { color: #fbbf24; }
 .diffHARD   { color: #f87171; }
 
-/* Pattern chip */
+/* Pattern chip — clickable to filter */
 .patternChip {
   display: inline-block;
   padding: 2px 8px;
@@ -283,9 +350,18 @@
   font-size: 11px;
   color: var(--text3);
   white-space: nowrap;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: all .15s;
+}
+.patternChip:hover { border-color: var(--accent); color: var(--accent); }
+.patternChipActive {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg3));
 }
 
-/* Topic label — truncates long topic names with ellipsis; full name on hover */
+/* Topic label */
 .topicLabel {
   display: block;
   max-width: 160px;
@@ -338,21 +414,7 @@
 }
 .pageBtn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .pageBtn:disabled { opacity: .35; cursor: default; }
-.pageBtnActive {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #0d0f12;
-}
+.pageBtnActive { background: var(--accent); border-color: var(--accent); color: #0d0f12; }
 .pageBtnActive:hover { opacity: .85; color: #0d0f12; }
-.ellipsis {
-  padding: 0 4px;
-  font-size: 13px;
-  color: var(--text3);
-  user-select: none;
-}
-.pageInfo {
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--text3);
-  white-space: nowrap;
-}
+.ellipsis { padding: 0 4px; font-size: 13px; color: var(--text3); user-select: none; }
+.pageInfo { margin-left: auto; font-size: 11px; color: var(--text3); white-space: nowrap; }
