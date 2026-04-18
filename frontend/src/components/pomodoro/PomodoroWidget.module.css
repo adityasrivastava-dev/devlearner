@@ -1,0 +1,213 @@
+/* ── Root — fixed bottom-right ───────────────────────────────────────────── */
+.root {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* ── Collapsed pill ──────────────────────────────────────────────────────── */
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 24px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-secondary, var(--bg2));
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  user-select: none;
+}
+.pill:hover { border-color: var(--accent); box-shadow: 0 4px 20px rgba(0,0,0,0.28); }
+
+.pillRunning {
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.15), 0 4px 16px rgba(0,0,0,0.18);
+}
+
+.pillIcon { font-size: 1rem; }
+.pillTime { font-variant-numeric: tabular-nums; letter-spacing: 0.03em; }
+
+.pillDot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.75); }
+}
+
+/* ── Expanded card ───────────────────────────────────────────────────────── */
+.card {
+  width: 260px;
+  background: var(--bg-secondary, var(--bg2));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.24);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  animation: slideUp 0.18s ease;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cardFlash { animation: flash 0.4s ease; }
+@keyframes flash {
+  0%,100% { background: var(--bg-secondary, var(--bg2)); }
+  50%      { background: var(--bg-tertiary, var(--bg3, #2a2a3a)); }
+}
+
+/* ── Card header ─────────────────────────────────────────────────────────── */
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.cardTitle { font-size: 0.88rem; font-weight: 700; color: var(--text-primary); }
+.closeBtn {
+  background: none; border: none;
+  color: var(--text-muted); font-size: 0.85rem;
+  cursor: pointer; padding: 2px 5px; border-radius: 4px;
+}
+.closeBtn:hover { color: var(--text-primary); background: var(--bg-primary, var(--bg)); }
+
+/* ── Phase tabs ──────────────────────────────────────────────────────────── */
+.phaseTabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-primary, var(--bg));
+  border-radius: 10px;
+  padding: 3px;
+  width: 100%;
+}
+.phaseTab {
+  flex: 1;
+  padding: 5px 4px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.12s, background 0.12s, border-color 0.12s;
+}
+.phaseTab:hover { color: var(--text-primary); }
+.phaseTabActive {
+  background: var(--bg-secondary, var(--bg2));
+  font-weight: 600;
+}
+
+/* ── Ring ────────────────────────────────────────────────────────────────── */
+.ringWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px; height: 120px;
+}
+.ring {
+  position: absolute;
+  inset: 0;
+}
+.ringTrack {
+  fill: none;
+  stroke: var(--border);
+}
+.ringFill {
+  fill: none;
+  transition: stroke-dashoffset 0.9s linear;
+}
+.timeDisplay {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  z-index: 1;
+}
+.timeText {
+  font-size: 1.6rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.phaseLabel {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Dots ────────────────────────────────────────────────────────────────── */
+.dots {
+  display: flex;
+  gap: 8px;
+}
+.dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  transition: background 0.25s, border-color 0.25s;
+}
+.dotFilled { border-color: transparent; }
+
+.countLabel {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: -6px;
+}
+
+/* ── Controls ────────────────────────────────────────────────────────────── */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+.resetBtn, .skipBtn {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.12s, color 0.12s;
+}
+.resetBtn:hover, .skipBtn:hover { border-color: var(--accent); color: var(--accent); }
+
+.startBtn {
+  flex: 1;
+  max-width: 120px;
+  padding: 9px 0;
+  border-radius: 10px;
+  border: none;
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.startBtn:hover   { opacity: 0.88; }
+.startBtn:active  { transform: scale(0.97); }
+.startBtnPause    { opacity: 0.9; }

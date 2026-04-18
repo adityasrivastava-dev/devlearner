@@ -34,6 +34,7 @@ import LearningPathPage     from './pages/path/LearningPathPage';
 import ResumePage           from './pages/resume/ResumePage';
 import MockInterviewPage    from './pages/mock-interview/MockInterviewPage';
 import StoriesPage          from './pages/stories/StoriesPage';
+import PomodoroWidget       from './components/pomodoro/PomodoroWidget';
 
 // Apply saved theme on load
 const savedTheme = localStorage.getItem('devlearn_theme') || 'dark';
@@ -96,6 +97,7 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AppRoutes />
+          <PomodoroWidget />
         </BrowserRouter>
 
         <Toaster
