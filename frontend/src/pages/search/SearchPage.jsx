@@ -93,6 +93,8 @@ export default function SearchPage() {
         )}
       </div>
 
+      <div className={styles.scrollBody}>
+
       {isFetching && (
         <div className={styles.loading}>
           <div className={styles.spinner} />
@@ -213,6 +215,8 @@ export default function SearchPage() {
           </div>
         </div>
       )}
+
+      </div>
     </div>
   );
 }
