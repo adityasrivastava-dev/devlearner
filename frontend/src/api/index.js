@@ -543,6 +543,7 @@ export const QUERY_KEYS = {
   timetable:       (id)  => ['timetable', id],
   screenshots:           ['screenshots'],
   search:          (q)   => ['search', q],
+  notifications:         ['notifications'],
 };
 // ─── Spaced Repetition ────────────────────────────────────────────────────────
 export const srsApi = {
@@ -551,6 +552,11 @@ export const srsApi = {
 
   review: (itemType, itemId, quality) =>
     http.post('/api/srs/review', { itemType, itemId, quality }).then((r) => r.data),
+};
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+export const notificationsApi = {
+  getSummary: () => http.get('/api/notifications/summary').then((r) => r.data).catch(() => ({ streak: { days: 0, atRisk: false }, srsDue: 0, dailyPending: false, total: 0 })),
 };
 
 // ─── Global Search ────────────────────────────────────────────────────────────

@@ -34,6 +34,11 @@
   padding: 14px 14px 10px;
   flex-shrink: 0;
 }
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
 .logoBtn {
   background: none; border: none; cursor: pointer; padding: 0; line-height: 1;
 }

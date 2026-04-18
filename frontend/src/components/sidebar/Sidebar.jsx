@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { CATEGORIES } from '../../utils/helpers';
 import { topicsApi, userVideosApi, QUERY_KEYS } from '../../api';
 import UserBar from './UserBar';
+import NotificationBell from '../notifications/NotificationBell';
 import styles from './Sidebar.module.css';
 
 // ── Nav structure ─────────────────────────────────────────────────────────────
@@ -237,7 +238,10 @@ export default function Sidebar({ isOpen, onClose }) {
           <button className={styles.logoBtn} onClick={() => navTo('/')} title="Dashboard">
             <span className={styles.logo}>⟨dev<span>learn</span>⟩</span>
           </button>
-          <button className={`${styles.iconBtn} ${styles.closeBtn}`} onClick={onClose} title="Close">✕</button>
+          <div className={styles.headerActions}>
+            <NotificationBell />
+            <button className={`${styles.iconBtn} ${styles.closeBtn}`} onClick={onClose} title="Close">✕</button>
+          </div>
         </div>
 
         {/* ── Scrollable body ───────────────────────────────────────────── */}
