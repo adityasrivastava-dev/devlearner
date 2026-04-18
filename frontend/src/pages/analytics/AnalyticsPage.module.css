@@ -1,6 +1,7 @@
 /* ── Layout ───────────────────────────────────────────────────────────────── */
 .page {
   min-height: 100vh;
+  height: 100dvh;
   background: var(--bg1);
   padding: 24px;
   display: flex;

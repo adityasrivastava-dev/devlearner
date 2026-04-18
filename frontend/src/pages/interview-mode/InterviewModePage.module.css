@@ -1,6 +1,7 @@
 /* ── Shared ───────────────────────────────────────────────────────────────── */
 .setupPage, .loadingPage, .scorecardPage {
   min-height: 100vh;
+  height: 100dvh;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-ui);
@@ -12,6 +13,7 @@
 
 .sessionPage {
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--bg);

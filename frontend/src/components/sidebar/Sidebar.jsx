@@ -124,12 +124,17 @@ function VideosSection({ topicId }) {
   return (
     <div className={styles.videosSection}>
       {/* Accordion header — same style as nav sections */}
-      <button className={styles.videosAccordion} onClick={() => setOpen(v => !v)}>
+      <button
+        className={styles.videosAccordion}
+        onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+        aria-controls="sidebar-videos-list"
+      >
         <div className={styles.videosAccordionLeft}>
           <span className={styles.videosSectionTitle}>Videos</span>
-          <span className={styles.videosCount}>{total}</span>
+          <span className={styles.videosCount} aria-label={`${total} videos`}>{total}</span>
         </div>
-        <span className={`${styles.navChevron} ${open ? styles.navChevronOpen : ''}`}>›</span>
+        <span className={`${styles.navChevron} ${open ? styles.navChevronOpen : ''}`} aria-hidden="true">›</span>
       </button>
 
       {/* Collapsed: show topic name as hint */}
@@ -139,15 +144,15 @@ function VideosSection({ topicId }) {
 
       {/* Expanded: full list */}
       {open && (
-        <div className={styles.videosList}>
+        <div id="sidebar-videos-list" className={styles.videosList}>
           {adminUrls.map((url, i) => {
             const vid   = getYtId(url);
             const thumb = vid ? `https://img.youtube.com/vi/${vid}/mqdefault.jpg` : null;
             return (
-              <a key={`a-${i}`} href={url} target="_blank" rel="noopener noreferrer" className={styles.videoItem}>
+              <a key={`a-${i}`} href={url} target="_blank" rel="noopener noreferrer" className={styles.videoItem} aria-label={`Watch video ${i + 1} for ${topic?.title}`}>
                 {thumb
-                  ? <img src={thumb} alt="" className={styles.videoThumb} />
-                  : <div className={styles.videoThumbFallback}>▶</div>
+                  ? <img src={thumb} alt="" className={styles.videoThumb} aria-hidden="true" />
+                  : <div className={styles.videoThumbFallback} aria-hidden="true">▶</div>
                 }
                 <div className={styles.videoMeta}>
                   <span className={styles.videoName}>Video {i + 1}</span>
@@ -259,7 +264,7 @@ export default function Sidebar({ isOpen, onClose }) {
           </button>
           <div className={styles.headerActions}>
             <NotificationBell />
-            <button className={`${styles.iconBtn} ${styles.closeBtn}`} onClick={onClose} title="Close">✕</button>
+            <button className={`${styles.iconBtn} ${styles.closeBtn}`} onClick={onClose} title="Close sidebar" aria-label="Close sidebar">✕</button>
           </div>
         </div>
 
@@ -278,11 +283,12 @@ export default function Sidebar({ isOpen, onClose }) {
             placeholder="Search topics, problems…"
             autoComplete="off"
             spellCheck={false}
+            aria-label="Search topics and problems"
           />
         </form>
 
         {/* ── Nav ───────────────────────────────────────────────────────── */}
-        <nav className={styles.nav}>
+        <nav className={styles.nav} aria-label="Main navigation">
           {NAV_SECTIONS.map((section) => {
             const isExpanded = openSections.has(section.label);
             const hasActive  = section.items.some((i) => isActive(i.path));
@@ -291,21 +297,25 @@ export default function Sidebar({ isOpen, onClose }) {
                 <button
                   className={`${styles.navAccordion} ${hasActive ? styles.navAccordionActive : ''}`}
                   onClick={() => toggleSection(section.label)}
+                  aria-expanded={isExpanded}
+                  aria-controls={`nav-section-${section.label}`}
                 >
                   <span className={styles.navAccordionLabel}>{section.label}</span>
-                  <span className={`${styles.navChevron} ${isExpanded ? styles.navChevronOpen : ''}`}>›</span>
+                  <span className={`${styles.navChevron} ${isExpanded ? styles.navChevronOpen : ''}`} aria-hidden="true">›</span>
                 </button>
                 {isExpanded && (
-                  <div className={styles.navItems}>
+                  <div id={`nav-section-${section.label}`} className={styles.navItems}>
                     {section.items.map(({ path, icon, label }) => {
                       const dimmed = focusPath && focusPath !== path;
+                      const active = isActive(path);
                       return (
                         <button
                           key={path}
-                          className={`${styles.navItem} ${isActive(path) ? styles.navItemActive : ''} ${dimmed ? styles.navItemDimmed : ''}`}
+                          className={`${styles.navItem} ${active ? styles.navItemActive : ''} ${dimmed ? styles.navItemDimmed : ''}`}
                           onClick={() => navTo(path)}
+                          aria-current={active ? 'page' : undefined}
                         >
-                          <span className={styles.navIcon}>{icon}</span>
+                          <span className={styles.navIcon} aria-hidden="true">{icon}</span>
                           <span className={styles.navLabel}>{label}</span>
                         </button>
                       );
@@ -321,8 +331,10 @@ export default function Sidebar({ isOpen, onClose }) {
               <button
                 className={`${styles.navAccordion} ${isActive('/admin') ? styles.navAccordionActive : ''}`}
                 onClick={() => navTo('/admin')}
+                aria-current={isActive('/admin') ? 'page' : undefined}
               >
-                <span className={styles.navAccordionLabel}>⚙ Admin</span>
+                <span className={styles.navAccordionLabel} aria-hidden="true">⚙</span>
+                <span className={styles.navAccordionLabel}> Admin</span>
               </button>
             </div>
           )}

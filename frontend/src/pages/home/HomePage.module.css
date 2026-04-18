@@ -2,6 +2,7 @@
 .layout {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: var(--bg);
 }
@@ -72,6 +73,11 @@
   transition: .15s;
 }
 .themeToggle:hover { background: var(--bg3); }
+
+/* ── Tablet overrides ── */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .layout { height: 100dvh; }
+}
 
 /* ── Mobile overrides ── */
 @media (max-width: 768px) {

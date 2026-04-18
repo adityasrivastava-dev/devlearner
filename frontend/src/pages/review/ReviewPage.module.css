@@ -4,6 +4,7 @@
 .resultsPage,
 .loadingPage {
   min-height: 100vh;
+  height: 100dvh;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-ui);

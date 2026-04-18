@@ -1,6 +1,7 @@
 /* ══ System Design Canvas ══════════════════════════════════════════════════ */
 
-.page { display: flex; flex-direction: column; height: 100vh; background: var(--bg); overflow: hidden; }
+.page { display: flex; flex-direction: column; height: 100vh;
+  height: 100dvh; background: var(--bg); overflow: hidden; }
 
 /* ── Toolbar ── */
 .toolbar {

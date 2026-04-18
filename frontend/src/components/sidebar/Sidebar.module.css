@@ -49,10 +49,14 @@
 .logo span { color: var(--accent3); }
 
 .iconBtn {
-  width: 26px; height: 26px; display: inline-flex; align-items: center;
+  width: 32px; height: 32px; display: inline-flex; align-items: center;
   justify-content: center; border-radius: 6px; background: none; border: none;
   font-size: 13px; color: var(--text3); cursor: pointer;
   transition: background .15s, color .15s;
+  min-width: 32px; min-height: 32px;
+}
+@media (max-width: 768px) {
+  .iconBtn { width: 44px; height: 44px; min-width: 44px; min-height: 44px; font-size: 16px; }
 }
 .iconBtn:hover { background: var(--bg3); color: var(--text2); }
 .closeBtn { display: none; }
@@ -135,6 +139,10 @@
   text-align: left;
   width: 100%;
   transition: background .12s, color .12s;
+  min-height: 32px;
+}
+@media (max-width: 768px) {
+  .navItem { min-height: 44px; padding: 8px 10px 8px 20px; font-size: 14px; }
 }
 .navItem:hover {
   background: var(--bg3);

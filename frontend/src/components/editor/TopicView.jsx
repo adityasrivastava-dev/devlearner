@@ -174,19 +174,26 @@ export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext
             className={`${styles.bookmarkBtn} ${isBookmarked ? styles.bookmarked : ''}`}
             onClick={toggleBookmark}
             title={isBookmarked ? 'Remove bookmark' : 'Bookmark this topic'}
+            aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this topic'}
+            aria-pressed={isBookmarked}
           >
-            {isBookmarked ? '★' : '☆'}
+            <span aria-hidden="true">{isBookmarked ? '★' : '☆'}</span>
           </button>
 
           {/* Star rating */}
-          <div className={styles.starRating} title={ratingData?.count > 0 ? `${ratingData.average} avg (${ratingData.count} ratings)` : 'Rate this topic'}>
+          <div
+            className={styles.starRating}
+            role="group"
+            aria-label={ratingData?.count > 0 ? `Rating: ${ratingData.average} out of 5 (${ratingData.count} ratings)` : 'Rate this topic'}
+          >
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
                 className={`${styles.starBtn} ${star <= (ratingData?.myRating ?? 0) ? styles.starFilled : ''}`}
                 onClick={() => !ratingPending && submitRating(star)}
-                title={`Rate ${star} star${star !== 1 ? 's' : ''}`}
-              >★</button>
+                aria-label={`Rate ${star} star${star !== 1 ? 's' : ''}`}
+                aria-pressed={star <= (ratingData?.myRating ?? 0)}
+              ><span aria-hidden="true">★</span></button>
             ))}
             {ratingData?.count > 0 && (
               <span className={styles.ratingAvg}>{ratingData.average}</span>
@@ -199,7 +206,7 @@ export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext
       </div>
 
       {/* ── Tab bar ───────────────────────────────────────────────────────── */}
-      <div className={styles.tabBar}>
+      <div className={styles.tabBar} role="tablist" aria-label="Topic sections">
         {[
           { key: 'theory',   label: 'Theory',   icon: '📖' },
           { key: 'examples', label: 'Examples', icon: '💡' },
@@ -211,18 +218,22 @@ export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext
         ].map(({ key, label, icon, locked }) => (
           <button
             key={key}
+            role="tab"
+            aria-selected={tab === key}
+            aria-controls={`tabpanel-${key}`}
             className={`${styles.tabBtn} ${tab === key ? styles.tabActive : ''} ${locked ? styles.tabLocked : ''}`}
             onClick={() => { setTab(key); setActiveExample(null); }}
             title={locked ? 'Complete theory to unlock practice' : undefined}
+            aria-disabled={locked ? true : undefined}
           >
-            <span className={styles.tabIcon}>{locked ? '🔒' : icon}</span>
+            <span className={styles.tabIcon} aria-hidden="true">{locked ? '🔒' : icon}</span>
             <span className={styles.tabLabel}>{label}</span>
           </button>
         ))}
       </div>
 
       {/* ── Body ──────────────────────────────────────────────────────────── */}
-      <div className={styles.body}>
+      <div className={styles.body} role="tabpanel" id={`tabpanel-${tab}`} aria-label={tab}>
 
         {/* THEORY */}
         {tab === 'theory' && (
@@ -349,7 +360,7 @@ export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext
                     </span>
                     {visibleProblems.length > 0 && (
                       <span className={styles.practiceStat}>
-                        <strong style={{ color: 'var(--accent)' }}>
+                        <strong className={styles.solvedCount}>
                           {[...solvedSet].filter(id => visibleProblems.some(p => p.id === id)).length}
                         </strong> solved
                       </span>
@@ -432,7 +443,7 @@ export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext
                       <div><span className={styles.optLabel}>Space</span>{topic.spaceComplexity || '—'}</div>
                     </>
                   ) : (
-                    topic[key] || <span style={{ color: 'var(--text3)' }}>Not specified</span>
+                    topic[key] || <span className={styles.notSpecified}>Not specified</span>
                   )}
                 </div>
               </div>
@@ -503,22 +514,29 @@ function TheoryGate({ gate, completing, error, onComplete, onPractice }) {
 
   return (
     <div className={styles.gateForm}>
-      <div className={styles.gateFormTitle}>
+      <label htmlFor="gate-note" className={styles.gateFormTitle}>
         ✍️ Write what you understood
-      </div>
-      <p className={styles.gateFormHint}>
+      </label>
+      <p id="gate-note-hint" className={styles.gateFormHint}>
         Before unlocking practice problems, write a short summary in your own words (minimum 20 characters).
         This forces active recall — the single best way to make knowledge stick.
       </p>
       <textarea
+        id="gate-note"
         className={styles.gateTextarea}
         placeholder="e.g. Two pointers work when the array is sorted and we need to find a pair. We move left/right based on the sum comparison..."
         value={note}
         onChange={(e) => setNote(e.target.value)}
         rows={4}
+        aria-describedby="gate-note-hint gate-note-count"
       />
       <div className={styles.gateFormFooter}>
-        <span className={`${styles.gateCharCount} ${note.length >= 20 ? styles.gateCharOk : ''}`}>
+        <span
+          id="gate-note-count"
+          className={`${styles.gateCharCount} ${note.length >= 20 ? styles.gateCharOk : ''}`}
+          aria-live="polite"
+          aria-atomic="true"
+        >
           {note.length} / 20 min
         </span>
         <button
@@ -632,12 +650,15 @@ function NotesPanel({ topicId }) {
   return (
     <div className={styles.notesPanel}>
       <div className={styles.noteForm}>
+        <label htmlFor="note-input" className="sr-only">Write a note</label>
         <textarea
+          id="note-input"
           className={styles.noteTextarea}
           placeholder="Write a note for this topic…"
           value={noteText}
           onChange={(e) => setNoteText(e.target.value)}
           rows={3}
+          aria-label="Write a note for this topic"
         />
         <button
           className="btn btn-primary btn-sm"
@@ -777,18 +798,20 @@ function TopicInterviewQuestions({ category, topicTitle }) {
                 <button
                   className={styles.qaQuestion}
                   onClick={() => setExpanded(expanded === i ? null : i)}
+                  aria-expanded={expanded === i}
+                  aria-controls={`qa-answer-${i}`}
                 >
-                  <span className={styles.qaNum}>{i + 1}</span>
+                  <span className={styles.qaNum} aria-hidden="true">{i + 1}</span>
                   <span className={styles.qaText}>{q.question}</span>
-                  <span className={styles.qaDiff} style={{ color: diffColor[q.difficulty] || '#94a3b8' }}>
+                  <span className={styles.qaDiff} style={{ color: diffColor[q.difficulty] || '#94a3b8' }} aria-label={`Difficulty: ${q.difficulty === 'HIGH' ? 'Hard' : 'Medium'}`}>
                     {q.difficulty === 'HIGH' ? 'Hard' : 'Medium'}
                   </span>
-                  <span className={`${styles.qaChevron} ${expanded === i ? styles.qaChevronOpen : ''}`}>›</span>
+                  <span className={`${styles.qaChevron} ${expanded === i ? styles.qaChevronOpen : ''}`} aria-hidden="true">›</span>
                 </button>
 
                 {/* Expanded answer */}
                 {expanded === i && (
-                  <div className={styles.qaAnswer}>
+                  <div id={`qa-answer-${i}`} className={styles.qaAnswer}>
                     {/* Quick answer */}
                     {q.quickAnswer && (
                       <div className={styles.qaAnswerSection}>
@@ -1108,7 +1131,7 @@ function VideosTab({ topic, isAdmin, ytEditing, ytDraft, setYtDraft, setYtEditin
               placeholder={'Paste YouTube URLs, one per line or JSON array:\n["https://youtu.be/abc", "https://youtu.be/xyz"]'}
               autoFocus
             />
-            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <div className={styles.ytBtnRow}>
               <button className="btn btn-primary btn-sm" disabled={saveYtMutation.isPending} onClick={() => saveYtMutation.mutate(ytDraft)}>
                 {saveYtMutation.isPending ? 'Saving…' : 'Save'}
               </button>
@@ -1125,7 +1148,7 @@ function VideosTab({ topic, isAdmin, ytEditing, ytDraft, setYtDraft, setYtEditin
       </div>
 
       {/* ── User's own videos ───────────────────────────────────────── */}
-      <div className={styles.ytSection} style={{ marginTop: 16 }}>
+      <div className={`${styles.ytSection} ${styles.ytSectionSpaced}`}>
         <div className={styles.ytSectionHeader}>
           <span className={styles.ytSectionTitle}>📌 My Videos</span>
           <span className={styles.ytSectionSub}>Only visible to you</span>
@@ -1137,21 +1160,21 @@ function VideosTab({ topic, isAdmin, ytEditing, ytDraft, setYtDraft, setYtEditin
         {adding && (
           <div className={styles.ytAddBox}>
             <input
-              className={styles.ytInput}
-              style={{ padding: '6px 10px', marginBottom: 6 }}
+              className={`${styles.ytInput} ${styles.ytInputField}`}
               value={addUrl}
               onChange={e => setAddUrl(e.target.value)}
               placeholder="YouTube URL  (e.g. https://youtu.be/abc123)"
+              aria-label="YouTube video URL"
               autoFocus
             />
             <input
-              className={styles.ytInput}
-              style={{ padding: '6px 10px', marginBottom: 8 }}
+              className={`${styles.ytInput} ${styles.ytInputFieldTitle}`}
               value={addTitle}
               onChange={e => setAddTitle(e.target.value)}
               placeholder="Title (optional)"
+              aria-label="Video title (optional)"
             />
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className={styles.ytBtnRow}>
               <button className="btn btn-primary btn-sm" disabled={addMutation.isPending} onClick={handleAdd}>
                 {addMutation.isPending ? 'Adding…' : 'Add'}
               </button>

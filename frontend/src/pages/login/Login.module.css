@@ -2,6 +2,7 @@
 .shell {
   display: flex;
   min-height: 100vh;
+  height: 100dvh;
   background: var(--bg);
   overflow: hidden;
 }
@@ -18,7 +19,9 @@
   overflow-x: hidden;
   overflow-y: auto;
   min-height: 100vh;
+  height: 100dvh;
   max-height: 100vh;
+  height: 100dvh;
 }
 
 /* Ambient glow from card accent */
@@ -451,6 +454,7 @@
   background: var(--bg2);
   position: relative;
   min-height: 100vh;
+  height: 100dvh;
 }
 
 /* ── Auth form container (no heavy card shadow — panel IS the bg) ────────────── */
@@ -648,6 +652,7 @@
   .featurePanel { display: none; }
   .authPanel    {
     min-height: 100vh;
+  height: 100dvh;
     padding: 40px 24px;
     background: var(--bg);
   }

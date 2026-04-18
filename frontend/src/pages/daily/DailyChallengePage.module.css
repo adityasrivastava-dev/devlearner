@@ -1,6 +1,8 @@
 /* ══ Daily Challenge Page ══════════════════════════════════════════════════ */
-.page { display: flex; flex-direction: column; height: 100vh; background: var(--bg); overflow: hidden; }
-.loadingPage { display: flex; align-items: center; justify-content: center; height: 100vh; gap: 12px; color: var(--text3); font-size: 14px; }
+.page { display: flex; flex-direction: column; height: 100vh;
+  height: 100dvh; background: var(--bg); overflow: hidden; }
+.loadingPage { display: flex; align-items: center; justify-content: center; height: 100vh;
+  height: 100dvh; gap: 12px; color: var(--text3); font-size: 14px; }
 
 /* ── Toolbar ── */
 .toolbar {

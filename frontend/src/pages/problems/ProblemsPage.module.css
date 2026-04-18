@@ -1,10 +1,16 @@
 /* ── Page shell ──────────────────────────────────────────────────────────────  */
 .page {
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--bg);
   overflow: hidden;
+}
+@media (max-width: 768px) {
+  .page { overflow: auto; }
+  .header { flex-wrap: wrap; height: auto; padding: 10px 16px; gap: 8px; }
+  .filterBar { flex-wrap: wrap; padding: 8px 16px; gap: 6px; }
 }
 
 /* ── Header ──────────────────────────────────────────────────────────────────  */
