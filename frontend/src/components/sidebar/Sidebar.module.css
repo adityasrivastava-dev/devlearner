@@ -164,6 +164,35 @@
 .scrollArea::-webkit-scrollbar { width: 4px; }
 .scrollArea::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
+/* ── Sidebar search bar ── */
+.searchBar {
+  position: relative;
+  margin: 10px 12px 4px;
+  display: flex;
+  align-items: center;
+}
+.searchBarIcon {
+  position: absolute;
+  left: 9px;
+  font-size: 1rem;
+  color: var(--text-muted, #888);
+  pointer-events: none;
+  line-height: 1;
+}
+.searchBarInput {
+  width: 100%;
+  padding: 7px 10px 7px 28px;
+  background: var(--bg-primary, var(--bg1));
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary, var(--text));
+  font-size: 0.82rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.searchBarInput::placeholder { color: var(--text-muted, #888); }
+.searchBarInput:focus { border-color: var(--accent); }
+
 /* ── Videos section ── */
 .videosSection {
   border-top: 1px solid var(--border);

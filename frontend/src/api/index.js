@@ -542,6 +542,7 @@ export const QUERY_KEYS = {
   timetables:            ['timetables'],
   timetable:       (id)  => ['timetable', id],
   screenshots:           ['screenshots'],
+  search:          (q)   => ['search', q],
 };
 // ─── Spaced Repetition ────────────────────────────────────────────────────────
 export const srsApi = {
@@ -550,6 +551,11 @@ export const srsApi = {
 
   review: (itemType, itemId, quality) =>
     http.post('/api/srs/review', { itemType, itemId, quality }).then((r) => r.data),
+};
+
+// ─── Global Search ────────────────────────────────────────────────────────────
+export const searchApi = {
+  search: (q) => http.get('/api/search', { params: { q } }).then((r) => r.data),
 };
 
 // ─── Recall Drill ─────────────────────────────────────────────────────────────

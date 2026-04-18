@@ -92,4 +92,12 @@ Page<Problem> findPageFiltered(
 @Modifying
 @Query("DELETE FROM Problem")
 void deleteAllProblems();
+
+@Query(value = """
+    SELECT p.id, p.title, p.difficulty, p.pattern, t.id, t.title
+    FROM problems p JOIN topics t ON p.topic_id = t.id
+    WHERE MATCH(p.title, p.description, p.pattern) AGAINST(:q IN BOOLEAN MODE)
+    LIMIT 10
+    """, nativeQuery = true)
+List<Object[]> fullTextSearch(@Param("q") String q);
 }

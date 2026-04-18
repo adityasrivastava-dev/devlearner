@@ -42,4 +42,12 @@ public interface TopicRepository extends JpaRepository<Topic, Long> {
 
     @Query("SELECT t FROM Topic t WHERE t.category = :category ORDER BY t.displayOrder ASC, t.title ASC")
     List<TopicSummary> findSummariesByCategory(@Param("category") Topic.Category category);
+
+    @Query(value = """
+        SELECT id, title, CAST(category AS CHAR) AS category, sub_category, description, memory_anchor
+        FROM topics
+        WHERE MATCH(title, description, memory_anchor) AGAINST(:q IN BOOLEAN MODE)
+        LIMIT 10
+        """, nativeQuery = true)
+    List<Object[]> fullTextSearch(@Param("q") String q);
 }

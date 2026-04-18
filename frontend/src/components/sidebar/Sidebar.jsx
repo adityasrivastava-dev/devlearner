@@ -243,6 +243,21 @@ export default function Sidebar({ isOpen, onClose }) {
         {/* ── Scrollable body ───────────────────────────────────────────── */}
         <div className={styles.scrollArea}>
 
+        {/* ── Search bar ────────────────────────────────────────────────── */}
+        <form
+          className={styles.searchBar}
+          onSubmit={(e) => { e.preventDefault(); const q = e.target.q.value.trim(); if (q.length >= 2) { navigate(`/search?q=${encodeURIComponent(q)}`); onClose?.(); } }}
+        >
+          <span className={styles.searchBarIcon}>⌕</span>
+          <input
+            name="q"
+            className={styles.searchBarInput}
+            placeholder="Search topics, problems…"
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </form>
+
         {/* ── Nav ───────────────────────────────────────────────────────── */}
         <nav className={styles.nav}>
           {NAV_SECTIONS.map((section) => {

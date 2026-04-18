@@ -64,6 +64,11 @@ public void run(ApplicationArguments args) {
 	addColumnIfMissing("problems", "code_harness",
 			"ALTER TABLE problems ADD COLUMN code_harness LONGTEXT NULL");
 
+	// ── FULLTEXT indexes for global search ───────────────────────────────────
+	addFullTextIndexIfMissing("topics",    "ft_topics_search",    "title, description, memory_anchor");
+	addFullTextIndexIfMissing("problems",  "ft_problems_search",  "title, description, pattern");
+	addFullTextIndexIfMissing("algorithms","ft_algorithms_search","name, description");
+
 	log.info("DatabaseMigrationRunner: column checks complete.");
 }
 
@@ -163,6 +168,27 @@ private void alterColumnIfNotText(String table, String column, String alterSql) 
 	} catch (Exception e) {
 		// Log but don't crash startup — the seed runner will surface the real error.
 		log.error("DatabaseMigrationRunner: failed to alter {}.{}: {}", table, column, e.getMessage());
+	}
+}
+
+private void addFullTextIndexIfMissing(String table, String indexName, String columns) {
+	try {
+		Integer count = jdbc.queryForObject(
+				"SELECT COUNT(*) FROM information_schema.STATISTICS " +
+				"WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?",
+				Integer.class, table, indexName);
+
+		if (count != null && count > 0) {
+			log.debug("DatabaseMigrationRunner: FULLTEXT index {} on {} already exists — skipping.", indexName, table);
+			return;
+		}
+
+		log.info("DatabaseMigrationRunner: creating FULLTEXT index {} on {}({})...", indexName, table, columns);
+		jdbc.execute("ALTER TABLE " + table + " ADD FULLTEXT INDEX " + indexName + " (" + columns + ")");
+		log.info("DatabaseMigrationRunner: FULLTEXT index {} created.", indexName);
+
+	} catch (Exception e) {
+		log.error("DatabaseMigrationRunner: failed to create FULLTEXT index {} on {}: {}", indexName, table, e.getMessage());
 	}
 }
 }
