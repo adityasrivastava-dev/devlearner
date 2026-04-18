@@ -5,6 +5,7 @@ import { getCategoryMeta } from '../../utils/helpers';
 import styles from './TopicView.module.css';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import EmptyState from '../shared/EmptyState';
 
 import TopicTheoryTab  from './TopicTheoryTab';
 import TopicExamplesTab from './TopicExamplesTab';
@@ -53,29 +54,34 @@ function NotesPanel({ topicId }) {
         <label htmlFor="note-input" className="sr-only">Write a note</label>
         <textarea
           id="note-input"
-          className={styles.noteTextarea}
+          className={`${styles.noteTextarea} ${noteText.length > 0 && noteText.trim().length === 0 ? styles.noteTextareaError : ''}`}
           placeholder="Write a note for this topic…"
           value={noteText}
           onChange={(e) => setNoteText(e.target.value)}
           rows={3}
           aria-label="Write a note for this topic"
+          aria-describedby="note-hint"
         />
-        <button
-          className="btn btn-primary btn-sm"
-          disabled={!noteText.trim() || creating}
-          onClick={() => createNote(noteText.trim())}
-        >
-          {creating ? 'Saving…' : '+ Save Note'}
-        </button>
+        <div className={styles.noteFormFooter}>
+          {noteText.length > 0 && noteText.trim().length === 0 && (
+            <span id="note-hint" className={styles.noteValidationHint} role="alert">
+              Note cannot be only whitespace.
+            </span>
+          )}
+          <button
+            className="btn btn-primary btn-sm"
+            disabled={!noteText.trim() || creating}
+            onClick={() => createNote(noteText.trim())}
+          >
+            {creating ? 'Saving…' : '+ Save Note'}
+          </button>
+        </div>
       </div>
 
       {isLoading ? (
         <div className={styles.loadingRow}><span className="spinner" />Loading notes…</div>
       ) : notes.length === 0 ? (
-        <div className={styles.emptyState}>
-          <span>📝</span>
-          <p>No notes yet. Write something above to remember this topic.</p>
-        </div>
+        <EmptyState icon="📝" title="No notes yet." hint="Write something above to capture your understanding." compact />
       ) : (
         <div className={styles.notesList}>
           {notes.map((note) => (
@@ -168,11 +174,12 @@ function TopicInterviewQuestions({ category, topicTitle }) {
       )}
 
       {!isLoading && questions.length === 0 && (
-        <div className={styles.qaEmpty}>
-          <div className={styles.qaEmptyIcon}>📭</div>
-          <div className={styles.qaEmptyText}>No questions imported for this topic yet.</div>
-          <div className={styles.qaEmptyHint}>Ask an admin to import the Q&amp;A batch files.</div>
-        </div>
+        <EmptyState
+          icon="📭"
+          title="No questions imported for this topic yet."
+          hint="Ask an admin to import the Q&A batch files."
+          compact
+        />
       )}
 
       {!isLoading && questions.length > 0 && (

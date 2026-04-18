@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import EmptyState from '../shared/EmptyState';
 import styles from './TopicView.module.css';
 
 // ── YouTube helpers ───────────────────────────────────────────────────────────
@@ -176,18 +177,23 @@ function TheoryGate({ gate, completing, error, onComplete, onPractice }) {
           aria-live="polite"
           aria-atomic="true"
         >
-          {note.length} / 20 min
+          {note.length >= 20
+            ? '✓ Ready to unlock'
+            : note.length === 0
+              ? '20 characters minimum'
+              : `${20 - note.length} more character${20 - note.length !== 1 ? 's' : ''} needed`}
         </span>
         <button
           className={styles.gateUnlockBtn}
           disabled={note.trim().length < 20 || completing}
           onClick={() => onComplete({ note: note.trim() })}
+          aria-describedby="gate-note-count"
         >
           {completing ? 'Unlocking…' : '🔓 I Understood This — Unlock Practice'}
         </button>
       </div>
       {error && (
-        <p className={styles.gateError}>
+        <p className={styles.gateError} role="alert">
           {error?.response?.data?.error ?? 'Failed to save. Try again.'}
         </p>
       )}
@@ -233,10 +239,7 @@ export default function TopicTheoryTab({ topic, gate, gateLoading, completing, c
       )}
       {topic.youtubeUrls && <YoutubeVideosCard raw={topic.youtubeUrls} />}
       {!topic.description && !topic.memoryAnchor && !topic.story && !topic.analogy && !topic.firstPrinciples && !topic.starterCode && (
-        <div className={styles.emptyState}>
-          <span>✍️</span>
-          <p>Theory content not yet written.</p>
-        </div>
+        <EmptyState icon="✍️" title="Theory content not yet written." hint="An admin needs to add content for this topic." compact />
       )}
       {!gateLoading && (
         <TheoryGate

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { topicsApi, submissionsApi, QUERY_KEYS } from '../../api';
 import { getDiffMeta } from '../../utils/helpers';
+import EmptyState from '../shared/EmptyState';
 import styles from './TopicView.module.css';
 
 function StageProgressBar({ gate, stage }) {
@@ -136,7 +137,7 @@ export default function TopicPracticeTab({ topicId, gate, stage, practiceUnlocke
           {prLoading ? (
             <div className={styles.loadingRow}><span className="spinner" />Loading…</div>
           ) : filteredProblems.length === 0 ? (
-            <div className={styles.emptyState}><span>🎯</span><p>No problems at this difficulty yet.</p></div>
+            <EmptyState icon="🎯" title="No problems at this difficulty yet." hint="Try a different difficulty filter." compact />
           ) : (
             <div className={styles.problemsList}>
               {filteredProblems.map((p, i) => {

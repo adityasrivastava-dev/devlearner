@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { interviewApi, QUERY_KEYS } from '../../api';
 import { QUESTIONS as STATIC_QUESTIONS, CATEGORY_META } from './interviewData';
+import EmptyState from '../../components/shared/EmptyState';
 import styles from './RevisionPage.module.css';
 
 // Normalise a DB question (keyPoints is JSON string) to the same shape as static data
@@ -149,7 +150,7 @@ function SessionScreen({ questions, duration, onFinish }) {
 
   if (questions.length === 0) return (
     <div className={styles.sessionPage}>
-      <div className={styles.emptyState}><span>😕</span><p>No questions in pool.</p><button className={styles.ghostBtn} onClick={() => onFinish([])}>← Back</button></div>
+      <EmptyState icon="😕" title="No questions in the pool." hint="Select a category or lower the minimum difficulty to find questions." action={() => onFinish([])} actionLabel="← Back" />
     </div>
   );
 

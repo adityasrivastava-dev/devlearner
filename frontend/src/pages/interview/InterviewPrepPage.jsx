@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { interviewApi, QUERY_KEYS } from '../../api';
 import { QUESTIONS as STATIC_QUESTIONS, CATEGORY_META } from './interviewData';
+import EmptyState from '../../components/shared/EmptyState';
 import styles from './InterviewPrepPage.module.css';
 
 function normalise(q) {
@@ -140,10 +141,7 @@ export default function InterviewPrepPage() {
       {/* ── Questions ────────────────────────────────────────────────────── */}
       <div className={styles.body}>
         {filtered.length === 0 ? (
-          <div className={styles.empty}>
-            <span>🔍</span>
-            <p>No questions match your filters.</p>
-          </div>
+          <EmptyState icon="🔍" title="No questions match your filters." hint="Try clearing a filter or selecting a different category." />
         ) : (
           categoryOrder.map((cat) => {
             const qs = grouped[cat];

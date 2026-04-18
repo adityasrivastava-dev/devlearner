@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { searchApi, QUERY_KEYS } from '../../api';
+import EmptyState from '../../components/shared/EmptyState';
 import styles from './SearchPage.module.css';
 
 const DIFFICULTY_COLOR = {
@@ -186,15 +187,16 @@ export default function SearchPage() {
           )}
 
           {!hasResults && (
-            <div className={styles.empty}>
-              <span className={styles.emptyIcon}>⌕</span>
-              <p>No results found. Try a different keyword.</p>
-              <ul className={styles.tips}>
-                <li>Check spelling or try a broader term</li>
-                <li>Try pattern names like <em>HashMap</em>, <em>BFS</em>, <em>Two Pointers</em></li>
-                <li>Try topic names like <em>Spring Boot</em>, <em>Arrays</em></li>
-              </ul>
-            </div>
+            <EmptyState
+              icon="⌕"
+              title={`No results for "${query}"`}
+              hint="Try a different keyword or broaden your search."
+              tips={[
+                'Check spelling or try a broader term',
+                'Try pattern names like HashMap, BFS, Two Pointers',
+                'Try topic names like Spring Boot, Arrays',
+              ]}
+            />
           )}
         </div>
       )}

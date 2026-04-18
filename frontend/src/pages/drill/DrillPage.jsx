@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { problemsApi } from '../../api';
+import EmptyState from '../../components/shared/EmptyState';
 import styles from './DrillPage.module.css';
 
 const DRILL_SIZE = 10;
@@ -325,11 +326,13 @@ export default function DrillPage() {
           <span className={styles.topTitle}>Pattern Drill</span>
           <span />
         </div>
-        <div className={styles.errorWrap}>
-          <p>No problems with patterns found.</p>
-          <p className={styles.errorSub}>Seed some DSA problems from Admin → Seed Files first.</p>
-          <button className={styles.backBtn2} onClick={() => navigate('/')}>← Dashboard</button>
-        </div>
+        <EmptyState
+          icon="⚔"
+          title="No problems with patterns found."
+          hint="Seed some DSA problems from Admin → Seed Files first."
+          action={() => navigate('/')}
+          actionLabel="← Dashboard"
+        />
       </div>
     );
   }

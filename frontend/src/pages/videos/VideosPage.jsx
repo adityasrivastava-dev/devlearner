@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { userVideosApi, QUERY_KEYS } from '../../api';
 import { getCategoryMeta, CATEGORIES } from '../../utils/helpers';
 import { SkeletonCard } from '../../components/shared/Skeleton';
+import EmptyState from '../../components/shared/EmptyState';
 import styles from './VideosPage.module.css';
 
 // ── YouTube helpers ────────────────────────────────────────────────────────────
@@ -80,10 +81,11 @@ export default function VideosPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className={styles.empty}>
-          <span className={styles.emptyIcon}>📹</span>
-          <p>{search || catFilter !== 'ALL' ? 'No videos match your filter.' : 'No videos added yet. Open a topic and go to the Videos tab to add some.'}</p>
-        </div>
+        <EmptyState
+          icon="📹"
+          title={search || catFilter !== 'ALL' ? 'No videos match your filter.' : 'No videos saved yet.'}
+          hint={search || catFilter !== 'ALL' ? 'Try clearing your search or filter.' : 'Open any topic and go to the Videos tab to add your first link.'}
+        />
       ) : (
         <div className={styles.groups}>
           {filtered.map((group) => (

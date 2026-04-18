@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { topicsApi, QUERY_KEYS } from '../../api';
+import EmptyState from '../shared/EmptyState';
 import TracerPlayer from './TracerPlayer';
 import FlowchartViewer from './FlowchartViewer';
 import SqlTableVisualizer from '../sql/SqlTableVisualizer';
@@ -143,7 +144,7 @@ export default function TopicExamplesTab({ topicId, theme }) {
       {isLoading ? (
         <ExamplesSkeletons />
       ) : examples.length === 0 ? (
-        <div className={styles.emptyState}><span>📭</span><p>No examples yet.</p></div>
+        <EmptyState icon="💡" title="No examples yet." hint="Ask an admin to add code examples for this topic." compact />
       ) : (
         <>
           <div className={styles.examplesGrid}>

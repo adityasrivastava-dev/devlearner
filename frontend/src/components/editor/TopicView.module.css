@@ -997,6 +997,21 @@
   border-color: var(--accent3);
 }
 .noteTextarea::placeholder { color: var(--text3); }
+.noteTextareaError { border-color: var(--red) !important; }
+
+.noteFormFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.noteValidationHint {
+  font-size: 11px;
+  color: var(--red);
+  flex: 1;
+}
 
 .notesList {
   display: flex;

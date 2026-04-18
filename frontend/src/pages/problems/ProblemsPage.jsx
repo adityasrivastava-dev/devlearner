@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { problemsApi, submissionsApi, bookmarksApi, QUERY_KEYS } from '../../api';
 import { getDiffMeta } from '../../utils/helpers';
 import { SkeletonTableRow } from '../../components/shared/Skeleton';
+import EmptyState from '../../components/shared/EmptyState';
 import styles from './ProblemsPage.module.css';
 
 const PAGE_SIZE = 20;
@@ -272,14 +273,13 @@ export default function ProblemsPage() {
             </tbody>
           </table>
         ) : isError ? (
-          <div className={styles.empty}>
-            <span>⚠</span><p>Failed to load problems. Try again.</p>
-          </div>
+          <EmptyState icon="⚠" title="Failed to load problems." hint="Check your connection and try again." />
         ) : problems.length === 0 ? (
-          <div className={styles.empty}>
-            <span>🔍</span>
-            <p>No problems match your filters.</p>
-          </div>
+          <EmptyState
+            icon="🔍"
+            title="No problems match your filters."
+            hint="Try clearing a filter or broadening your search."
+          />
         ) : (
           <table className={styles.table}>
             <thead>
