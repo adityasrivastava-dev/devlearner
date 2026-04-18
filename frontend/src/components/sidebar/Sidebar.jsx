@@ -39,7 +39,8 @@ const NAV_SECTIONS = [
   {
     label: 'Interview',
     items: [
-      { path: '/interview-mode', icon: '⏱', label: 'Interview Mode' },
+      { path: '/interview-mode',  icon: '⏱', label: 'Interview Mode'      },
+      { path: '/mock-interview',  icon: '🎤', label: 'Mock Interview'      },
       { path: '/interview-prep', icon: '📋', label: 'Q&A Bank'       },
       { path: '/revision',       icon: '↺',  label: 'Revision'      },
       { path: '/drill',          icon: '⚔',  label: 'Pattern Drill'  },

@@ -609,6 +609,24 @@ export const interviewApi = {
     http.post(`/api/admin/interview-questions/files/${encodeURIComponent(filename)}`).then((r) => r.data),
 };
 
+// ─── Mock Interview ───────────────────────────────────────────────────────────
+export const mockInterviewApi = {
+  start: (category, difficulty, durationMinutes, resumeContext = null) =>
+    http.post('/api/mock-interview/start', { category, difficulty, durationMinutes, resumeContext }).then(r => r.data),
+
+  answer: (sessionId, answer, questionIndex) =>
+    http.post(`/api/mock-interview/${sessionId}/answer`, { answer, questionIndex }).then(r => r.data),
+
+  finish: (sessionId) =>
+    http.post(`/api/mock-interview/${sessionId}/finish`).then(r => r.data),
+
+  getSession: (sessionId) =>
+    http.get(`/api/mock-interview/${sessionId}`).then(r => r.data),
+
+  history: () =>
+    http.get('/api/mock-interview/history').then(r => r.data),
+};
+
 // ─── Resume Analyzer ─────────────────────────────────────────────────────────
 export const resumeApi = {
   analyze: (file) => {

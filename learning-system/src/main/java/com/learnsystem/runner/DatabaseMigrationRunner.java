@@ -65,6 +65,17 @@ public void run(ApplicationArguments args) {
 	addColumnIfMissing("problems", "code_harness",
 			"ALTER TABLE problems ADD COLUMN code_harness LONGTEXT NULL");
 
+	// ── mock_interview_sessions.stage ────────────────────────────────────────
+	// Old schema had ENUM(SETUP,INTRO,APPROACH,CODING,DEBRIEF).
+	// First update any rows with old values, then widen column to VARCHAR.
+	try {
+		jdbc.execute(
+			"UPDATE mock_interview_sessions SET stage = 'DEBRIEF' " +
+			"WHERE stage NOT IN ('ACTIVE','DEBRIEF')");
+	} catch (Exception ignored) {}
+	ensureVarcharMinLength("mock_interview_sessions", "stage", 10,
+			"ALTER TABLE mock_interview_sessions MODIFY COLUMN stage VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'");
+
 	// ── FULLTEXT indexes for global search ───────────────────────────────────
 	// Drop the old ft_algorithms_search if it was created on 'name,description'
 	// (description column doesn't exist; correct index is on name,tags).
