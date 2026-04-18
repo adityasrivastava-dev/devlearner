@@ -1,0 +1,191 @@
+.page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary, var(--bg));
+  color: var(--text-primary, var(--text));
+  overflow: hidden;
+}
+
+.scrollBody {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px;
+}
+
+/* ── Loading ─────────────────────────────────────────────────────────────── */
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; height: 100%; color: var(--text-muted); font-size: 0.9rem;
+}
+.spinner {
+  width: 22px; height: 22px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.hero {
+  padding: 32px 24px 24px;
+  background: var(--bg-secondary, var(--bg2));
+  border-bottom: 1px solid var(--border);
+}
+.title {
+  font-size: 1.6rem; font-weight: 800; margin: 0 0 4px;
+  color: var(--text-primary);
+}
+.subtitle { font-size: 0.88rem; color: var(--text-muted); margin: 0 0 20px; }
+
+/* Summary pills */
+.summaryRow {
+  display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.summaryPill {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 18px; border-radius: 10px;
+  border: 1.5px solid; background: var(--bg-primary, var(--bg));
+  min-width: 90px;
+}
+.pillNum {
+  font-size: 1.4rem; font-weight: 800; line-height: 1;
+  color: var(--text-primary);
+}
+.pillLabel { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+
+/* Progress bar */
+.progressWrap {
+  display: flex; align-items: center; gap: 12px;
+}
+.progressTrack {
+  flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+}
+.progressFill {
+  height: 100%; background: #a78bfa; border-radius: 3px;
+  transition: width 0.6s ease;
+}
+.progressLabel { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
+
+/* ── Content ─────────────────────────────────────────────────────────────── */
+.content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.section {}
+.sectionTitle {
+  font-size: 1rem; font-weight: 700; color: var(--text-primary);
+  margin: 0 0 14px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Week Plan ───────────────────────────────────────────────────────────── */
+.weeks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+.weekCard {
+  background: var(--bg-secondary, var(--bg2));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+.weekCardActive {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.weekHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.weekLabel { font-size: 0.82rem; font-weight: 700; color: var(--text-primary); }
+.weekCount { font-size: 0.72rem; color: var(--text-muted); }
+
+.weekItems { display: flex; flex-direction: column; gap: 6px; }
+.weekItem {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; text-align: left;
+  background: var(--bg-primary, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px 10px;
+  cursor: pointer; transition: border-color 0.15s;
+}
+.weekItem:hover { border-color: var(--accent); }
+.weekItemIcon { font-size: 1rem; flex-shrink: 0; }
+.weekItemBody { flex: 1; min-width: 0; }
+.weekItemTitle {
+  display: block; font-size: 0.82rem; font-weight: 600;
+  color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.weekItemAction { display: block; font-size: 0.72rem; color: var(--text-muted); margin-top: 1px; }
+.stageDot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ── Topic Cards ─────────────────────────────────────────────────────────── */
+.topicGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+.topicCard {
+  width: 100%; text-align: left;
+  background: var(--bg-secondary, var(--bg2));
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px;
+  cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.topicCard:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.cardTop {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+}
+.cardCatIcon { font-size: 1rem; flex-shrink: 0; }
+.cardTitle {
+  flex: 1; font-size: 0.88rem; font-weight: 600; color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cardStageBadge {
+  font-size: 0.7rem; font-weight: 700; padding: 1px 7px;
+  border: 1px solid; border-radius: 99px; white-space: nowrap; flex-shrink: 0;
+}
+.cardSub { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; }
+.cardAction { font-size: 0.78rem; color: var(--text-secondary, var(--text2)); margin-bottom: 8px; }
+
+.cardProgress {
+  display: flex; align-items: center; gap: 8px;
+}
+.progressMini {
+  flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;
+}
+.progressMiniFill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+.progressMiniLabel { font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; }
+
+/* ── Mastered ────────────────────────────────────────────────────────────── */
+.masteredList {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.masteredItem {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; text-align: left;
+  background: var(--bg-secondary, var(--bg2));
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px 12px; cursor: pointer; transition: border-color 0.15s;
+  font-size: 0.85rem;
+}
+.masteredItem:hover { border-color: #a78bfa; }
+.masteredTitle { flex: 1; color: var(--text-primary); }
+.masteredCheck { color: #a78bfa; font-weight: 700; }
+
+/* ── Empty ───────────────────────────────────────────────────────────────── */
+.empty { text-align: center; padding: 60px; color: var(--text-muted); }
+.moreHint { font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 12px; }

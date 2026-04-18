@@ -544,6 +544,7 @@ export const QUERY_KEYS = {
   screenshots:           ['screenshots'],
   search:          (q)   => ['search', q],
   notifications:         ['notifications'],
+  learningPath:          ['learningPath'],
 };
 // ─── Spaced Repetition ────────────────────────────────────────────────────────
 export const srsApi = {
@@ -552,6 +553,11 @@ export const srsApi = {
 
   review: (itemType, itemId, quality) =>
     http.post('/api/srs/review', { itemType, itemId, quality }).then((r) => r.data),
+};
+
+// ─── Learning Path ────────────────────────────────────────────────────────────
+export const pathApi = {
+  getPath: () => http.get('/api/path').then((r) => r.data),
 };
 
 // ─── Skill Assessment ─────────────────────────────────────────────────────────

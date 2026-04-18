@@ -18,6 +18,7 @@ const NAV_SECTIONS = [
       { path: '/mastery',     icon: '◉',  label: 'Mastery Map'    },
       { path: '/review',      icon: '↻',  label: 'Review Queue'   },
       { path: '/analytics',   icon: '▲',  label: 'Analytics'      },
+      { path: '/path',        icon: '🛤', label: 'Learning Path'   },
       { path: '/roadmap',     icon: '🗺', label: 'Roadmap'        },
       { path: '/timetable',   icon: '📅', label: 'Timetable'      },
       { path: '/videos',      icon: '▶',  label: 'Videos'         },
