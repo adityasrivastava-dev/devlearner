@@ -33,6 +33,7 @@ import AssessmentPage       from './pages/assessment/AssessmentPage';
 import LearningPathPage     from './pages/path/LearningPathPage';
 import ResumePage           from './pages/resume/ResumePage';
 import MockInterviewPage    from './pages/mock-interview/MockInterviewPage';
+import StoriesPage          from './pages/stories/StoriesPage';
 
 // Apply saved theme on load
 const savedTheme = localStorage.getItem('devlearn_theme') || 'dark';
@@ -81,6 +82,7 @@ function AppRoutes() {
         <Route path="/path"           element={<ProtectedRoute><ErrorBoundary label="Learning Path"><LearningPathPage /></ErrorBoundary></ProtectedRoute>} />
         <Route path="/resume"         element={<ProtectedRoute><ErrorBoundary label="Resume Analyzer"><ResumePage /></ErrorBoundary></ProtectedRoute>} />
         <Route path="/mock-interview" element={<ProtectedRoute><ErrorBoundary label="Mock Interview"><MockInterviewPage /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/stories"       element={<ProtectedRoute><ErrorBoundary label="Stories"><StoriesPage /></ErrorBoundary></ProtectedRoute>} />
         <Route path="/admin"          element={<AdminRoute><ErrorBoundary label="Admin Panel"><AdminPage /></ErrorBoundary></AdminRoute>} />
         <Route path="*"               element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
       </Routes>

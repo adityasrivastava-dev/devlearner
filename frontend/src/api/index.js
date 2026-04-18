@@ -638,6 +638,15 @@ export const resumeApi = {
   },
 };
 
+export const storyApi = {
+  list:    ()           => http.get('/api/stories').then(r => r.data),
+  create:  (body)       => http.post('/api/stories', body).then(r => r.data),
+  update:  (id, body)   => http.put(`/api/stories/${id}`, body).then(r => r.data),
+  remove:  (id)         => http.delete(`/api/stories/${id}`).then(r => r.data),
+  polish:  (id)         => http.post(`/api/stories/${id}/polish`).then(r => r.data),
+  themes:  ()           => http.get('/api/stories/themes').then(r => r.data),
+};
+
 // ─── Learning Gate ────────────────────────────────────────────────────────────
 export const gateApi = {
   getStatus: (topicId) =>
