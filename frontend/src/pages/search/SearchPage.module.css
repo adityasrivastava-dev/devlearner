@@ -6,8 +6,20 @@
 }
 
 /* ── Hero ─────────────────────────────────────────────────────────────────── */
+.backBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 12px;
+  display: block;
+}
+.backBtn:hover { color: var(--text-primary); }
+
 .hero {
-  padding: 40px 24px 32px;
+  padding: 24px 24px 32px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-secondary);
   text-align: center;

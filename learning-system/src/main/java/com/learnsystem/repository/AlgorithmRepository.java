@@ -50,9 +50,9 @@ List<AlgorithmSummary> findSummariesByCategory(@Param("category") String categor
 void deleteAllAlgorithms();
 
 @Query(value = """
-    SELECT id, name, category, difficulty, description, slug
+    SELECT id, name, category, difficulty, analogy, slug
     FROM algorithms
-    WHERE MATCH(name, description) AGAINST(:q IN BOOLEAN MODE)
+    WHERE MATCH(name, tags) AGAINST(:q IN BOOLEAN MODE)
     LIMIT 8
     """, nativeQuery = true)
 List<Object[]> fullTextSearch(@Param("q") String q);

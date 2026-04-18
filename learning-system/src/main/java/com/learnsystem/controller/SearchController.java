@@ -99,7 +99,7 @@ public class SearchController {
             m.put("name",        r[1]);
             m.put("category",    r[2]);
             m.put("difficulty",  r[3]);
-            m.put("description", truncate((String) r[4], 120));
+            m.put("description", truncate((String) r[4], 120)); // r[4] = analogy
             m.put("slug",        r[5]);
             m.put("type",        "ALGORITHM");
             out.add(m);

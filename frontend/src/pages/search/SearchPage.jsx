@@ -59,6 +59,7 @@ export default function SearchPage() {
   return (
     <div className={styles.page}>
       <div className={styles.hero}>
+        <button className={styles.backBtn} onClick={() => navigate(-1)}>← Back</button>
         <h1 className={styles.title}>Global Search</h1>
         <p className={styles.subtitle}>Search topics, problems, and algorithms</p>
 

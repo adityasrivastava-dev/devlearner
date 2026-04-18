@@ -1,5 +1,6 @@
 package com.learnsystem.runner;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -65,9 +66,12 @@ public void run(ApplicationArguments args) {
 			"ALTER TABLE problems ADD COLUMN code_harness LONGTEXT NULL");
 
 	// ── FULLTEXT indexes for global search ───────────────────────────────────
+	// Drop the old ft_algorithms_search if it was created on 'name,description'
+	// (description column doesn't exist; correct index is on name,tags).
+	dropFullTextIndexIfOnWrongColumns("algorithms", "ft_algorithms_search", "name,tags");
 	addFullTextIndexIfMissing("topics",    "ft_topics_search",    "title, description, memory_anchor");
 	addFullTextIndexIfMissing("problems",  "ft_problems_search",  "title, description, pattern");
-	addFullTextIndexIfMissing("algorithms","ft_algorithms_search","name, description");
+	addFullTextIndexIfMissing("algorithms","ft_algorithms_search","name, tags");
 
 	log.info("DatabaseMigrationRunner: column checks complete.");
 }
@@ -168,6 +172,35 @@ private void alterColumnIfNotText(String table, String column, String alterSql) 
 	} catch (Exception e) {
 		// Log but don't crash startup — the seed runner will surface the real error.
 		log.error("DatabaseMigrationRunner: failed to alter {}.{}: {}", table, column, e.getMessage());
+	}
+}
+
+/**
+ * Drops a FULLTEXT index if the columns it covers do NOT match expectedColumns
+ * (comma-separated, no spaces). Used to fix indexes created with wrong columns.
+ */
+private void dropFullTextIndexIfOnWrongColumns(String table, String indexName, String expectedColumns) {
+	try {
+		List<String> cols = jdbc.queryForList(
+				"SELECT COLUMN_NAME FROM information_schema.STATISTICS " +
+				"WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ? " +
+				"ORDER BY SEQ_IN_INDEX",
+				String.class, table, indexName);
+
+		if (cols.isEmpty()) return; // index doesn't exist yet — nothing to drop
+
+		String actual = String.join(",", cols);
+		if (actual.equalsIgnoreCase(expectedColumns)) {
+			log.debug("DatabaseMigrationRunner: FULLTEXT index {} columns match — no drop needed.", indexName);
+			return;
+		}
+
+		log.info("DatabaseMigrationRunner: dropping stale FULLTEXT index {} (was on {}, need {})...", indexName, actual, expectedColumns);
+		jdbc.execute("ALTER TABLE " + table + " DROP INDEX " + indexName);
+		log.info("DatabaseMigrationRunner: stale FULLTEXT index {} dropped.", indexName);
+
+	} catch (Exception e) {
+		log.error("DatabaseMigrationRunner: failed to check/drop FULLTEXT index {}: {}", indexName, e.getMessage());
 	}
 }
 
