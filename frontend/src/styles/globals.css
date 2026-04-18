@@ -30,6 +30,15 @@
   --easy:     #4ade80;
   --medium:   #fbbf24;
   --hard:     #f87171;
+  --amber:    #f59e0b;
+  --amber2:   #d97706;
+  --sky:      #38bdf8;
+  --sky2:     #0ea5e9;
+  --teal:     #34d399;
+  --teal2:    #10b981;
+  --pink:     #f472b6;
+  --pink2:    #ec4899;
+  --on-accent: #0d0f12;
   --font-ui:      'Inter', sans-serif;
   --font-reading: 'Lora', Georgia, serif;
   --font-code:    'JetBrains Mono', monospace;

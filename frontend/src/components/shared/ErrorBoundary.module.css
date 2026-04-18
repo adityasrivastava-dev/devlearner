@@ -1,0 +1,72 @@
+/* ── Minimal banner (inline, e.g. inside a tab) ─────────────────────────── */
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(248,113,113,.08);
+  border: 1px solid rgba(248,113,113,.25);
+  border-radius: var(--radius);
+  color: var(--red);
+  font-size: var(--text-body);
+}
+
+.bannerRetry {
+  margin-left: auto;
+  background: none;
+  border: 1px solid rgba(248,113,113,.3);
+  border-radius: 4px;
+  color: var(--red);
+  cursor: pointer;
+  padding: 2px 8px;
+  font-size: var(--text-label);
+  font-family: var(--font-ui);
+  transition: background .15s;
+}
+.bannerRetry:hover { background: rgba(248,113,113,.12); }
+
+/* ── Full-page crash view ─────────────────────────────────────────────────── */
+.fullPage {
+  min-height: 40vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text2);
+  padding: 40px;
+  text-align: center;
+}
+
+.crashIcon  { font-size: 36px; line-height: 1; }
+.crashTitle { font-size: 18px; font-weight: 700; color: var(--text); }
+.crashHint  { font-size: var(--text-body); max-width: 420px; color: var(--text3); }
+
+.crashStack {
+  font-size: 11px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  max-width: 600px;
+  text-align: left;
+  overflow: auto;
+  color: var(--red);
+  margin-top: 8px;
+  font-family: var(--font-code);
+}
+
+.crashRetry {
+  margin-top: 8px;
+  padding: 8px 20px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  color: #fff;
+  font-size: var(--text-body);
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: background .15s;
+}
+.crashRetry:hover { background: var(--accent2); }
