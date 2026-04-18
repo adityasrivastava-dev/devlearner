@@ -202,6 +202,21 @@ export default function Sidebar({ isOpen, onClose }) {
     return active ? new Set([active]) : new Set();
   });
 
+  // Focus mode — dim non-focused nav items
+  const [focusPath, setFocusPath] = useState(() => {
+    try { const f = JSON.parse(localStorage.getItem('devlearn_focus_mode') || 'null'); return f?.path || null; }
+    catch { return null; }
+  });
+
+  useEffect(() => {
+    function onFocusChange() {
+      try { const f = JSON.parse(localStorage.getItem('devlearn_focus_mode') || 'null'); setFocusPath(f?.path || null); }
+      catch { setFocusPath(null); }
+    }
+    window.addEventListener('devlearn_focus_change', onFocusChange);
+    return () => window.removeEventListener('devlearn_focus_change', onFocusChange);
+  }, []);
+
   useEffect(() => {
     const active = sectionForPath(location.pathname);
     if (active) setOpenSections((prev) => new Set([...prev, active]));
@@ -282,16 +297,19 @@ export default function Sidebar({ isOpen, onClose }) {
                 </button>
                 {isExpanded && (
                   <div className={styles.navItems}>
-                    {section.items.map(({ path, icon, label }) => (
-                      <button
-                        key={path}
-                        className={`${styles.navItem} ${isActive(path) ? styles.navItemActive : ''}`}
-                        onClick={() => navTo(path)}
-                      >
-                        <span className={styles.navIcon}>{icon}</span>
-                        <span className={styles.navLabel}>{label}</span>
-                      </button>
-                    ))}
+                    {section.items.map(({ path, icon, label }) => {
+                      const dimmed = focusPath && focusPath !== path;
+                      return (
+                        <button
+                          key={path}
+                          className={`${styles.navItem} ${isActive(path) ? styles.navItemActive : ''} ${dimmed ? styles.navItemDimmed : ''}`}
+                          onClick={() => navTo(path)}
+                        >
+                          <span className={styles.navIcon}>{icon}</span>
+                          <span className={styles.navLabel}>{label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
