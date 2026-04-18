@@ -136,7 +136,15 @@
   border-bottom: 1px solid var(--border);
   background: var(--bg);
   flex-shrink: 0;
+  overflow: hidden;
 }
+.tagSectionExpanded {
+  max-height: 180px;
+  overflow-y: auto;
+}
+.tagSectionExpanded::-webkit-scrollbar { width: 4px; }
+.tagSectionExpanded::-webkit-scrollbar-track { background: transparent; }
+.tagSectionExpanded::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 .tagRow {
   display: flex;
   flex-wrap: wrap;

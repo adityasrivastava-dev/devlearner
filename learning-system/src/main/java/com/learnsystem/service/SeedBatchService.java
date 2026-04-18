@@ -319,14 +319,23 @@ public SeedBatchResponse seed(SeedBatchRequest req) {
 
 @Transactional
 public void clearAll() {
-    // Native SQL bulk deletes — orders respects FK constraints
-    // problems → examples → topics → seed_log
-    em.createNativeQuery("DELETE FROM problems").executeUpdate();
-    em.createNativeQuery("DELETE FROM examples").executeUpdate();
-    em.createNativeQuery("DELETE FROM topics").executeUpdate();
-    em.createNativeQuery("DELETE FROM seed_log").executeUpdate();
-    em.flush();
-    log.info("Cleared all topics, examples, problems and seed_log.");
+    // Disable FK checks so dependent tables (submissions, daily_challenges,
+    // roadmap_topics, execution_jobs, bookmarks, etc.) don't block the deletes.
+    em.createNativeQuery("SET FOREIGN_KEY_CHECKS = 0").executeUpdate();
+    try {
+        em.createNativeQuery("DELETE FROM submissions").executeUpdate();
+        em.createNativeQuery("DELETE FROM daily_challenges").executeUpdate();
+        em.createNativeQuery("DELETE FROM roadmap_topics").executeUpdate();
+        em.createNativeQuery("DELETE FROM execution_jobs").executeUpdate();
+        em.createNativeQuery("DELETE FROM problems").executeUpdate();
+        em.createNativeQuery("DELETE FROM examples").executeUpdate();
+        em.createNativeQuery("DELETE FROM topics").executeUpdate();
+        em.createNativeQuery("DELETE FROM seed_log").executeUpdate();
+        em.flush();
+        log.info("Cleared all topics, examples, problems and seed_log.");
+    } finally {
+        em.createNativeQuery("SET FOREIGN_KEY_CHECKS = 1").executeUpdate();
+    }
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────

@@ -192,7 +192,7 @@ export default function ProblemsPage() {
 
       {/* ── Pattern tags row ────────────────────────────────────────────────── */}
       {(meta.patternCounts?.length > 0) && (
-        <div className={styles.tagSection}>
+        <div className={`${styles.tagSection} ${patternsExpanded ? styles.tagSectionExpanded : ''}`}>
           <div className={styles.tagRow}>
             <button
               className={`${styles.tagPill} ${!filters.pattern ? styles.tagPillActive : ''}`}
