@@ -7,7 +7,7 @@
 }
 
 .error {
-  color: #f87171;
+  color: var(--red);
   padding: 12px;
   background: #1f1f1f;
   border-radius: 8px;
@@ -40,15 +40,15 @@
 .tableName {
   font-size: 12px;
   font-weight: 700;
-  color: #60a5fa;
+  color: var(--blue);
   font-family: monospace;
   letter-spacing: 0.5px;
 }
 
 .tableBadge {
   font-size: 10px;
-  background: #1e3a5f;
-  color: #93c5fd;
+  background: var(--bg3);
+  color: var(--sky);
   padding: 2px 7px;
   border-radius: 10px;
   font-weight: 600;
@@ -62,7 +62,7 @@
 
 .rowCount {
   font-size: 11px;
-  color: #4ade80;
+  color: var(--easy);
   margin-left: auto;
   font-weight: 600;
 }
@@ -82,7 +82,7 @@
 .th {
   padding: 7px 12px;
   background: #1e1e1e;
-  color: #a78bfa;
+  color: var(--accent3);
   font-weight: 700;
   text-align: left;
   border-bottom: 1px solid #2a2a2a;
@@ -93,7 +93,7 @@
 
 .td {
   padding: 6px 12px;
-  color: #e2e8f0;
+  color: var(--text);
   border-bottom: 1px solid #1e1e1e;
   white-space: nowrap;
 }
@@ -108,7 +108,7 @@
 }
 
 .rowMatched .td {
-  color: #4ade80;
+  color: var(--easy);
 }
 
 .rowExcluded {
@@ -125,17 +125,17 @@
 }
 
 .rowResult .td {
-  color: #bfdbfe;
+  color: var(--sky);
 }
 
 /* ── Column highlights ──────────────────────────────────────────────────────── */
 .colHighlight {
   background: rgba(167, 139, 250, 0.1);
-  color: #a78bfa !important;
+  color: var(--accent3) !important;
 }
 
 .nullVal {
-  color: #6b7280;
+  color: var(--text3);
   font-style: italic;
   font-size: 11px;
 }
@@ -150,7 +150,7 @@
   font-size: 11px;
 }
 
-.legendMatch { color: #4ade80; }
+.legendMatch { color: var(--easy); }
 .legendExcl  { color: #555; }
 
 /* ── JOIN Visualizer ─────────────────────────────────────────────────────────── */
@@ -176,7 +176,7 @@
 
 .joinDesc {
   font-size: 12px;
-  color: #93c5fd;
+  color: var(--sky);
 }
 
 .inputTablesRow {
@@ -199,17 +199,17 @@
 .joinArrowLine {
   width: 1px;
   height: 20px;
-  background: #3b82f6;
+  background: var(--blue);
 }
 
 .joinArrowLabel {
   font-size: 10px;
-  color: #60a5fa;
+  color: var(--blue);
   text-align: center;
   background: #1e1e1e;
   padding: 4px 8px;
   border-radius: 6px;
-  border: 1px solid #3b82f6;
+  border: 1px solid var(--blue);
   font-family: monospace;
   white-space: nowrap;
 }
@@ -285,7 +285,7 @@
 
 .vennResultRows {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--text3);
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -293,7 +293,7 @@
 
 .vennResultHint {
   font-size: 9.5px;
-  color: #4b5563;
+  color: var(--text3);
   line-height: 1.4;
   margin-top: 4px;
   max-width: 110px;
@@ -302,7 +302,7 @@
 /* ── Result arrow ───────────────────────────────────────────────────────────── */
 .resultArrow {
   text-align: center;
-  color: #4ade80;
+  color: var(--easy);
   font-size: 13px;
   font-weight: 600;
   padding: 4px 0;
@@ -311,11 +311,11 @@
 /* ── Note / explanation ─────────────────────────────────────────────────────── */
 .vizNote {
   background: #1a1a2e;
-  border-left: 3px solid #7c3aed;
+  border-left: 3px solid var(--violet2);
   padding: 10px 14px;
   border-radius: 0 8px 8px 0;
   font-size: 12px;
-  color: #c4b5fd;
+  color: var(--accent3);
   line-height: 1.5;
 }
 
@@ -330,7 +330,7 @@
 .inlineSQL {
   font-family: 'Fira Code', monospace;
   font-size: 13px;
-  color: #fbbf24;
+  color: var(--yellow);
   word-break: break-all;
 }
 
@@ -343,7 +343,7 @@
 .stepLabel {
   font-size: 11px;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--text3);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -354,7 +354,7 @@
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 12px;
-  color: #86efac;
+  color: var(--success);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -409,7 +409,7 @@
   padding: 5px 10px;
   font-size: 12px;
   font-weight: 700;
-  color: #4ade80;
+  color: var(--easy);
   background: #0a1a0a;
   font-family: monospace;
 }
@@ -424,10 +424,10 @@
   font-size: 13px;
   font-weight: 700;
   background: #1a1a3a;
-  color: #a78bfa;
+  color: var(--accent3);
   padding: 6px 16px;
   border-radius: 20px;
-  border: 1px solid #4c1d95;
+  border: 1px solid var(--violet2);
 }
 
 .normLayout {
@@ -456,19 +456,19 @@
 .normArrowLine {
   width: 1px;
   flex: 1;
-  background: #7c3aed;
+  background: var(--violet2);
   min-height: 20px;
 }
 
 .normArrowLabel {
   font-size: 10px;
-  color: #a78bfa;
+  color: var(--accent3);
   writing-mode: vertical-lr;
   text-orientation: mixed;
   background: #1a0a2a;
   padding: 8px 4px;
   border-radius: 4px;
-  border: 1px solid #4c1d95;
+  border: 1px solid var(--violet2);
   letter-spacing: 0.5px;
   font-weight: 700;
 }
@@ -482,11 +482,11 @@
 
 .issue {
   font-size: 11px;
-  color: #f87171;
+  color: var(--red);
   background: #1a0a0a;
   padding: 4px 8px;
   border-radius: 4px;
-  border-left: 2px solid #ef4444;
+  border-left: 2px solid var(--red);
 }
 
 .gainList {
@@ -498,11 +498,11 @@
 
 .gain {
   font-size: 11px;
-  color: #4ade80;
+  color: var(--easy);
   background: #0a1a0a;
   padding: 4px 8px;
   border-radius: 4px;
-  border-left: 2px solid #22c55e;
+  border-left: 2px solid var(--success2);
 }
 
 /* ── SUBQUERY Visualizer ─────────────────────────────────────────────────────── */
@@ -523,7 +523,7 @@
 .subStepNum {
   font-size: 12px;
   font-weight: 700;
-  color: #f59e0b;
+  color: var(--amber);
   white-space: nowrap;
 }
 
@@ -535,7 +535,7 @@
 
 .subArrow {
   text-align: center;
-  color: #f59e0b;
+  color: var(--amber);
   font-size: 13px;
   font-weight: 600;
 }

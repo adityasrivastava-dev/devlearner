@@ -14,7 +14,7 @@
   font-weight: 700;
   letter-spacing: .08em;
   text-transform: uppercase;
-  background: var(--accent,#6366f1);
+  background: var(--accent,var(--accent));
   color: #fff;
 }
 
@@ -78,7 +78,7 @@
   right: 6px;
   font-size: 9px;
   font-weight: 600;
-  color: var(--accent,#818cf8);
+  color: var(--accent,var(--accent3));
   white-space: nowrap;
 }
 .cellVal { flex: 1; text-align: center; }
@@ -99,18 +99,18 @@
   font-size: 12px;
 }
 .varKey { color: var(--text2,#888); }
-.varVal { color: var(--accent,#818cf8); font-weight: 700; }
+.varVal { color: var(--accent,var(--accent3)); font-weight: 700; }
 
 /* ── Message ── */
 .message {
   display: flex; align-items: flex-start; gap: 8px;
   background: var(--bg2,#12121f);
   border: 1px solid var(--border,#2a2a3e);
-  border-left: 3px solid var(--accent,#6366f1);
+  border-left: 3px solid var(--accent,var(--accent));
   border-radius: 6px;
   padding: 10px 14px;
   max-width: 680px; width: 100%;
   font-size: 13px; line-height: 1.5;
 }
-.msgIcon { color: var(--accent,#818cf8); font-weight: 700; flex-shrink: 0; }
+.msgIcon { color: var(--accent,var(--accent3)); font-weight: 700; flex-shrink: 0; }
 .msgText { color: var(--text,#e2e8f0); }

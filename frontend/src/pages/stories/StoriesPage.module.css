@@ -36,21 +36,21 @@
 .reviewBtn {
   padding: 8px 16px;
   border-radius: 8px;
-  border: 1.5px solid var(--accent, #6366f1);
+  border: 1.5px solid var(--accent, var(--accent));
   background: transparent;
-  color: var(--accent, #6366f1);
+  color: var(--accent, var(--accent));
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
 }
-.reviewBtn:hover { background: var(--accent, #6366f1)15; }
+.reviewBtn:hover { background: var(--accent, var(--accent))15; }
 
 .newBtn {
   padding: 8px 18px;
   border-radius: 8px;
   border: none;
-  background: var(--accent, #6366f1);
+  background: var(--accent, var(--accent));
   color: #fff;
   font-size: 0.82rem;
   font-weight: 700;
@@ -60,9 +60,9 @@
 
 /* ── Error banner ──────────────────────────────────────────────────────────── */
 .errorBanner {
-  background: #ef444422;
-  color: #ef4444;
-  border-left: 3px solid #ef4444;
+  background: var(--red)22;
+  color: var(--red);
+  border-left: 3px solid var(--red);
   padding: 10px 20px;
   font-size: 0.82rem;
   flex-shrink: 0;
@@ -155,7 +155,7 @@
   transition: border-color 0.15s, background 0.12s;
 }
 .storyCard:hover { border-color: var(--accent); background: var(--bg-secondary, var(--bg2)); }
-.storyCardActive { border-color: var(--accent); background: var(--accent, #6366f1)10; }
+.storyCardActive { border-color: var(--accent); background: var(--accent, var(--accent))10; }
 .storyCardHeader {
   display: flex;
   align-items: center;
@@ -182,7 +182,7 @@
   cursor: pointer; padding: 2px 4px;
   border-radius: 4px; flex-shrink: 0;
 }
-.deleteBtn:hover { color: #ef4444; background: #ef444418; }
+.deleteBtn:hover { color: var(--red); background: var(--red)18; }
 
 /* ── Empty state ─────────────────────────────────────────────────────────────── */
 .emptyState {
@@ -201,7 +201,7 @@
   padding: 8px 20px;
   border-radius: 8px;
   border: none;
-  background: var(--accent, #6366f1);
+  background: var(--accent, var(--accent));
   color: #fff;
   font-size: 0.82rem;
   font-weight: 600;
@@ -262,16 +262,16 @@
 .polishBtn {
   padding: 7px 14px;
   border-radius: 8px;
-  border: 1.5px solid #a78bfa;
-  background: #a78bfa18;
-  color: #a78bfa;
+  border: 1.5px solid var(--accent3);
+  background: var(--accent3)18;
+  color: var(--accent3);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
   display: flex; align-items: center; gap: 6px;
 }
-.polishBtn:hover:not(:disabled) { background: #a78bfa28; }
+.polishBtn:hover:not(:disabled) { background: var(--accent3)28; }
 .polishBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── Polish banner ───────────────────────────────────────────────────────────── */
@@ -280,8 +280,8 @@
   align-items: center;
   gap: 12px;
   padding: 10px 20px;
-  background: #a78bfa15;
-  border-bottom: 1px solid #a78bfa33;
+  background: var(--accent3)15;
+  border-bottom: 1px solid var(--accent3)33;
   flex-shrink: 0;
 }
 .polishBannerIcon { font-size: 1.2rem; flex-shrink: 0; }
@@ -289,15 +289,15 @@
 .polishApplyBtn {
   padding: 5px 12px;
   border-radius: 6px;
-  border: 1px solid #a78bfa;
-  background: #a78bfa22;
-  color: #a78bfa;
+  border: 1px solid var(--accent3);
+  background: var(--accent3)22;
+  color: var(--accent3);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
   flex-shrink: 0;
 }
-.polishApplyBtn:hover { background: #a78bfa33; }
+.polishApplyBtn:hover { background: var(--accent3)33; }
 
 /* ── STAR tabs ───────────────────────────────────────────────────────────────── */
 .starTabs {
@@ -330,7 +330,7 @@
   z-index: 1;
 }
 .starTabFilled { color: var(--accent); }
-.starTabCheck { font-size: 0.72rem; color: #4ade80; }
+.starTabCheck { font-size: 0.72rem; color: var(--easy); }
 
 /* ── Field area ──────────────────────────────────────────────────────────────── */
 .fieldWrap {
@@ -377,7 +377,7 @@
   flex-shrink: 0;
 }
 .wordCount  { font-size: 0.72rem; color: var(--text-muted); }
-.wordHint   { font-size: 0.72rem; color: #fbbf24; }
+.wordHint   { font-size: 0.72rem; color: var(--yellow); }
 
 /* ── Tags ────────────────────────────────────────────────────────────────────── */
 .tagsRow {
@@ -423,7 +423,7 @@
   padding: 8px 22px;
   border-radius: 8px;
   border: none;
-  background: var(--accent, #6366f1);
+  background: var(--accent, var(--accent));
   color: #fff;
   font-size: 0.84rem;
   font-weight: 700;
@@ -538,7 +538,7 @@
   transition: border-color 0.12s, color 0.12s;
 }
 .reviewFilter:hover { border-color: var(--accent); color: var(--accent); }
-.reviewFilterActive { border-color: var(--accent); color: var(--accent); background: var(--accent, #6366f1)12; }
+.reviewFilterActive { border-color: var(--accent); color: var(--accent); background: var(--accent, var(--accent))12; }
 
 .reviewList {
   flex: 1; overflow-y: auto; padding: 16px 20px;

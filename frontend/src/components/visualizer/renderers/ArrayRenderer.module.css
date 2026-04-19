@@ -16,7 +16,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  background: var(--accent, #6366f1);
+  background: var(--accent, var(--accent));
   color: #fff;
   opacity: 0.9;
 }
@@ -91,49 +91,49 @@
   color: var(--text, #e2e8f0);
 }
 .stateComparing {
-  background: #78350f;
-  border-color: #fbbf24;
-  color: #fbbf24;
+  background: var(--amber2);
+  border-color: var(--yellow);
+  color: var(--yellow);
   transform: translateY(-4px);
 }
 .stateSwapping {
   background: #7c2d12;
-  border-color: #f97316;
-  color: #f97316;
+  border-color: var(--orange);
+  color: var(--orange);
   transform: translateY(-6px) scale(1.08);
 }
 .stateSorted {
-  background: #14532d;
-  border-color: #22c55e;
-  color: #22c55e;
+  background: var(--success2);
+  border-color: var(--success2);
+  color: var(--success2);
 }
 .statePivot {
   background: #581c87;
-  border-color: #a855f7;
-  color: #c4b5fd;
+  border-color: var(--violet);
+  color: var(--accent3);
   transform: translateY(-4px);
 }
 .stateFound {
   background: #064e3b;
-  border-color: #10b981;
-  color: #6ee7b7;
+  border-color: var(--teal2);
+  color: var(--teal);
   transform: translateY(-6px) scale(1.1);
 }
 .stateExcluded {
   background: #0f172a;
   border-color: #1e293b;
-  color: #475569;
+  color: var(--text2);
   opacity: 0.5;
 }
 .stateInWindow {
-  background: #1e3a5f;
-  border-color: #3b82f6;
-  color: #93c5fd;
+  background: var(--bg3);
+  border-color: var(--blue);
+  color: var(--sky);
 }
 .stateWindowEdge {
-  background: #1e3a5f;
-  border-color: #60a5fa;
-  color: #bfdbfe;
+  background: var(--bg3);
+  border-color: var(--blue);
+  color: var(--sky);
   transform: translateY(-3px);
 }
 .statePointerLeft {
@@ -150,8 +150,8 @@
 }
 .stateCurrent {
   background: #2d1b69;
-  border-color: #8b5cf6;
-  color: #c4b5fd;
+  border-color: var(--violet);
+  color: var(--accent3);
   transform: translateY(-3px);
 }
 .stateInserting {
@@ -160,14 +160,14 @@
   color: #d6d3d1;
 }
 .stateDependency {
-  background: #1e3a5f;
-  border-color: #60a5fa;
-  color: #93c5fd;
+  background: var(--bg3);
+  border-color: var(--blue);
+  color: var(--sky);
 }
 .stateOptimal {
-  background: #14532d;
-  border-color: #10b981;
-  color: #6ee7b7;
+  background: var(--success2);
+  border-color: var(--teal2);
+  color: var(--teal);
 }
 
 /* ── Index row ── */
@@ -193,7 +193,7 @@
   font-size: 12px;
 }
 .varKey { color: var(--text2, #888); }
-.varVal { color: var(--accent, #818cf8); font-weight: 700; }
+.varVal { color: var(--accent, var(--accent3)); font-weight: 700; }
 
 /* ── Message ── */
 .message {
@@ -202,7 +202,7 @@
   gap: 8px;
   background: var(--bg2, #12121f);
   border: 1px solid var(--border, #2a2a3e);
-  border-left: 3px solid var(--accent, #6366f1);
+  border-left: 3px solid var(--accent, var(--accent));
   border-radius: 6px;
   padding: 10px 14px;
   max-width: 680px;
@@ -210,7 +210,7 @@
   font-size: 13px;
   line-height: 1.5;
 }
-.msgIcon { color: var(--accent, #818cf8); font-weight: 700; flex-shrink: 0; }
+.msgIcon { color: var(--accent, var(--accent3)); font-weight: 700; flex-shrink: 0; }
 .msgText { color: var(--text, #e2e8f0); }
 
 /* ── Legend ── */

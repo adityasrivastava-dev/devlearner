@@ -133,7 +133,7 @@
   border-radius: 8px;
   border: none;
   background: var(--accent);
-  color: #0d0f12;
+  color: var(--on-accent);
   font-size: 14px;
   font-weight: 700;
   font-family: var(--font-ui);
@@ -380,21 +380,21 @@
 /* ── Rating color theme (shared across setup + card + results) ───────────── */
 .rForgot {
   background: rgba(239,68,68,0.08);
-  border-color: #ef4444;
-  color: #f87171;
+  border-color: var(--red);
+  color: var(--red);
 }
 .rHard {
   background: rgba(234,88,12,0.08);
-  border-color: #ea580c;
-  color: #fb923c;
+  border-color: var(--orange);
+  color: var(--orange);
 }
 .rGotIt {
   background: rgba(59,130,246,0.08);
-  border-color: #3b82f6;
-  color: #60a5fa;
+  border-color: var(--blue);
+  color: var(--blue);
 }
 .rEasy {
   background: rgba(22,163,74,0.08);
-  border-color: #16a34a;
-  color: #4ade80;
+  border-color: var(--success2);
+  color: var(--easy);
 }

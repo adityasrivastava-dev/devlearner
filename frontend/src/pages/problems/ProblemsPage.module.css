@@ -114,12 +114,12 @@
 }
 .diffPill:hover { color: var(--text); border-color: var(--text3); }
 .diffPillActive { background: var(--bg3); color: var(--text); border-color: var(--text3); }
-.diffPill.diffEASY   { color: var(--easy,   #4ade80); }
-.diffPill.diffMEDIUM { color: var(--medium, #fbbf24); }
-.diffPill.diffHARD   { color: var(--hard,   #f87171); }
-.diffPillActive.diffEASY   { background: rgba(74,222,128,.1);  border-color: rgba(74,222,128,.4);  color: #4ade80; }
-.diffPillActive.diffMEDIUM { background: rgba(251,191,36,.1);  border-color: rgba(251,191,36,.4);  color: #fbbf24; }
-.diffPillActive.diffHARD   { background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.4); color: #f87171; }
+.diffPill.diffEASY   { color: var(--easy,   var(--easy)); }
+.diffPill.diffMEDIUM { color: var(--medium, var(--yellow)); }
+.diffPill.diffHARD   { color: var(--hard,   var(--red)); }
+.diffPillActive.diffEASY   { background: rgba(74,222,128,.1);  border-color: rgba(74,222,128,.4);  color: var(--easy); }
+.diffPillActive.diffMEDIUM { background: rgba(251,191,36,.1);  border-color: rgba(251,191,36,.4);  color: var(--yellow); }
+.diffPillActive.diffHARD   { background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.4); color: var(--red); }
 
 /* Clear */
 .clearBtn {
@@ -337,7 +337,7 @@
   color: transparent;
   flex-shrink: 0;
 }
-.statusSolved { background: var(--accent); border-color: var(--accent); color: #0d0f12; }
+.statusSolved { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
 /* Number cell */
 .numCell { font-size: 12px; color: var(--text3); font-family: var(--font-code); }
@@ -350,9 +350,9 @@
 
 /* Difficulty label */
 .diffLabel { font-size: 13px; font-weight: 600; }
-.diffEASY   { color: #4ade80; }
-.diffMEDIUM { color: #fbbf24; }
-.diffHARD   { color: #f87171; }
+.diffEASY   { color: var(--easy); }
+.diffMEDIUM { color: var(--yellow); }
+.diffHARD   { color: var(--red); }
 
 /* Pattern chip — clickable to filter */
 .patternChip {
@@ -400,8 +400,8 @@
   align-items: center;
   justify-content: center;
 }
-.bmBtn:hover { color: #f59e0b; }
-.bmActive { color: #f59e0b !important; }
+.bmBtn:hover { color: var(--amber); }
+.bmActive { color: var(--amber) !important; }
 
 /* ── Pagination ───────────────────────────────────────────────────────────────  */
 .pagination {
@@ -428,7 +428,7 @@
 }
 .pageBtn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .pageBtn:disabled { opacity: .35; cursor: default; }
-.pageBtnActive { background: var(--accent); border-color: var(--accent); color: #0d0f12; }
-.pageBtnActive:hover { opacity: .85; color: #0d0f12; }
+.pageBtnActive { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.pageBtnActive:hover { opacity: .85; color: var(--on-accent); }
 .ellipsis { padding: 0 4px; font-size: 13px; color: var(--text3); user-select: none; }
 .pageInfo { margin-left: auto; font-size: 11px; color: var(--text3); white-space: nowrap; }

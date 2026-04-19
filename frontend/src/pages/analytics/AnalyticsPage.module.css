@@ -289,7 +289,7 @@
 
 .patternMismatch {
   background: rgba(248, 113, 113, 0.12);
-  color: #f87171;
+  color: var(--red);
 }
 
 .confusionCount {

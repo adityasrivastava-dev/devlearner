@@ -14,7 +14,7 @@
   align-items: center;
   justify-content: center;
   transition: background 0.15s;
-  color: var(--text-muted, #888);
+  color: var(--text-muted, var(--text3));
 }
 .bell:hover { background: var(--bg-tertiary, rgba(255,255,255,0.06)); }
 .bellActive { color: var(--text-primary, #fff); }
@@ -25,7 +25,7 @@
   position: absolute;
   top: 1px;
   right: 1px;
-  background: #ef4444;
+  background: var(--red);
   color: #fff;
   font-size: 0.65rem;
   font-weight: 700;
@@ -71,20 +71,20 @@
 
 .dropCount {
   font-size: 0.75rem;
-  color: var(--text-muted, #888);
+  color: var(--text-muted, var(--text3));
 }
 
 /* ── Empty state ─────────────────────────────────────────────────────────── */
 .empty {
   padding: 28px 14px;
   text-align: center;
-  color: var(--text-muted, #888);
+  color: var(--text-muted, var(--text3));
 }
 .emptyIcon {
   font-size: 1.5rem;
   display: block;
   margin-bottom: 6px;
-  color: #4ade80;
+  color: var(--easy);
 }
 .empty p { font-size: 0.85rem; margin: 0; }
 
@@ -102,8 +102,8 @@
 }
 .item:hover { background: var(--bg-tertiary, rgba(255,255,255,0.04)); }
 
-.warning { border-left-color: #f97316; }
-.info    { border-left-color: var(--accent, #6366f1); }
+.warning { border-left-color: var(--orange); }
+.info    { border-left-color: var(--accent, var(--accent)); }
 
 .itemHeader {
   display: flex;
@@ -123,7 +123,7 @@
 
 .itemBody {
   font-size: 0.78rem;
-  color: var(--text-muted, #888);
+  color: var(--text-muted, var(--text3));
   margin: 0 0 8px;
   line-height: 1.5;
   padding-left: 24px;
@@ -134,7 +134,7 @@
   background: none;
   border: 1px solid var(--border);
   border-radius: 5px;
-  color: var(--accent, #6366f1);
+  color: var(--accent, var(--accent));
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
@@ -142,7 +142,7 @@
   transition: background 0.15s, border-color 0.15s;
 }
 .itemCta:hover {
-  background: var(--accent, #6366f1);
-  border-color: var(--accent, #6366f1);
+  background: var(--accent, var(--accent));
+  border-color: var(--accent, var(--accent));
   color: #fff;
 }

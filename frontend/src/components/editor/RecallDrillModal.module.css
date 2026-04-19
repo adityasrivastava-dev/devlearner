@@ -201,7 +201,7 @@
   background: var(--accent);
   border: 1px solid var(--accent);
   border-radius: 8px;
-  color: #0d0f12;
+  color: var(--on-accent);
   font-size: 12px;
   font-weight: 700;
   font-family: var(--font-ui);

@@ -21,7 +21,7 @@
 }
 .progressInner {
   height: 100%;
-  background: var(--accent, #6366f1);
+  background: var(--accent, var(--accent));
   border-radius: 2px;
   transition: width 0.2s ease;
 }
@@ -29,10 +29,10 @@
 /* ── Step counter ── */
 .stepCounter {
   font-size: 12px;
-  color: var(--text2, #888);
+  color: var(--text2, var(--text3));
 }
 .stepCounter strong {
-  color: var(--accent, #818cf8);
+  color: var(--accent, var(--accent3));
   font-size: 13px;
 }
 
@@ -69,23 +69,23 @@
 }
 .btnSecondary:hover:not(:disabled) {
   background: var(--bg4, #232336);
-  border-color: var(--accent, #6366f1);
+  border-color: var(--accent, var(--accent));
 }
 
 .btnPrimary {
   width: 48px;
   height: 48px;
-  background: var(--accent, #6366f1);
+  background: var(--accent, var(--accent));
   color: #fff;
   font-size: 18px;
   box-shadow: 0 0 0 0 rgba(99,102,241,0.4);
 }
 .btnPrimary:hover:not(:disabled) {
-  background: var(--accent-hover, #4f46e5);
+  background: var(--accent-hover, var(--accent2));
   box-shadow: 0 0 0 4px rgba(99,102,241,0.25);
 }
 .btnPause {
-  background: #7c3aed;
+  background: var(--violet2);
 }
 .btnPause:hover:not(:disabled) {
   background: #6d28d9;
@@ -106,7 +106,7 @@
   border-radius: 5px;
   background: transparent;
   border: none;
-  color: var(--text2, #888);
+  color: var(--text2, var(--text3));
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -114,7 +114,7 @@
 }
 .speedBtn:hover { color: var(--text, #e2e8f0); }
 .speedActive {
-  background: var(--accent, #6366f1);
+  background: var(--accent, var(--accent));
   color: #fff !important;
 }
 
@@ -128,14 +128,14 @@
   background: var(--bg3, #1a1a2e);
   outline: none;
   cursor: pointer;
-  accent-color: var(--accent, #6366f1);
+  accent-color: var(--accent, var(--accent));
 }
 .scrubber::-webkit-slider-thumb {
   appearance: none;
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--accent, #6366f1);
+  background: var(--accent, var(--accent));
   cursor: pointer;
   border: 2px solid var(--bg, #0d0d1a);
 }

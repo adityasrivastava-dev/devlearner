@@ -769,7 +769,7 @@
   flex-shrink: 0;
   margin-top: 4px;
 }
-.qaPairRemove:hover:not(:disabled) { background: rgba(248,113,113,.15); color: #f87171; }
+.qaPairRemove:hover:not(:disabled) { background: rgba(248,113,113,.15); color: var(--red); }
 .qaPairRemove:disabled { opacity: .3; cursor: default; }
 
 /* ── IQ Topic File Row ──────────────────────────────────────────────────────── */

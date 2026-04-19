@@ -29,7 +29,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, var(--accent), var(--violet));
   color: #fff;
 }
 .algoLabel {
@@ -48,8 +48,8 @@
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
-.inputToggle:hover { border-color: var(--accent, #6366f1); color: var(--text, #e2e8f0); }
-.inputToggleActive { border-color: var(--accent, #6366f1); color: var(--accent, #818cf8); }
+.inputToggle:hover { border-color: var(--accent, var(--accent)); color: var(--text, #e2e8f0); }
+.inputToggleActive { border-color: var(--accent, var(--accent)); color: var(--accent, var(--accent3)); }
 
 /* ── Input panel ── */
 .inputPanel {
@@ -96,7 +96,7 @@
   outline: none;
   transition: border-color 0.15s;
 }
-.fieldInput:focus { border-color: var(--accent, #6366f1); }
+.fieldInput:focus { border-color: var(--accent, var(--accent)); }
 .fieldSmall { max-width: 100px; }
 
 .applyBtn {
@@ -104,14 +104,14 @@
   padding: 7px 18px;
   border-radius: 8px;
   border: none;
-  background: var(--accent, #6366f1);
+  background: var(--accent, var(--accent));
   color: #fff;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
 }
-.applyBtn:hover { background: var(--accent-hover, #4f46e5); }
+.applyBtn:hover { background: var(--accent-hover, var(--accent2)); }
 
 /* ── Viz area ── */
 .vizArea {
@@ -138,7 +138,7 @@
   line-height: 1.6;
 }
 .hint strong { color: var(--text, #e2e8f0); }
-.hint em { color: var(--accent, #818cf8); font-style: normal; }
+.hint em { color: var(--accent, var(--accent3)); font-style: normal; }
 
 /* ── No visualizer state ── */
 .noViz {

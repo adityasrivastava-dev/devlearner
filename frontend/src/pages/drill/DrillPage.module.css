@@ -106,7 +106,7 @@
   width: 20px;
   height: 20px;
   background: var(--accent);
-  color: #0f1117;
+  color: var(--bg2);
   border-radius: 50%;
   font-size: 11px;
   font-weight: 700;
@@ -118,7 +118,7 @@
   background: var(--accent);
   border: none;
   border-radius: 10px;
-  color: #0f1117;
+  color: var(--bg2);
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
@@ -226,7 +226,7 @@
   background: var(--accent);
   border: none;
   border-radius: 8px;
-  color: #0f1117;
+  color: var(--bg2);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -254,23 +254,23 @@
 }
 .resultCorrect {
   background: rgba(74, 222, 128, .06);
-  border-color: #4ade80;
+  border-color: var(--easy);
 }
 .resultWrong {
   background: rgba(248, 113, 113, .06);
-  border-color: #f87171;
+  border-color: var(--red);
 }
 
 .resultLabel { display: flex; align-items: center; }
 .correctIcon {
   font-size: 15px;
   font-weight: 700;
-  color: #4ade80;
+  color: var(--easy);
 }
 .wrongIcon {
   font-size: 15px;
   font-weight: 700;
-  color: #f87171;
+  color: var(--red);
 }
 
 .answerReveal {
@@ -414,7 +414,7 @@
   background: var(--accent);
   border: none;
   border-radius: 8px;
-  color: #0f1117;
+  color: var(--bg2);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;

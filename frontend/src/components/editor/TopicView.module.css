@@ -1067,7 +1067,7 @@
   transition: .15s;
 }
 .noteActionBtn:hover { color: var(--text); border-color: var(--text3); }
-.noteDelete:hover { color: var(--red, #e74c3c); border-color: var(--red, #e74c3c); }
+.noteDelete:hover { color: var(--red, var(--red)); border-color: var(--red, var(--red)); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    LEARNING GATE
@@ -1926,7 +1926,7 @@
   border-radius: 4px;
   line-height: 1;
 }
-.userVideoDelete:hover { color: var(--danger, #f87171); background: rgba(248,113,113,.1); }
+.userVideoDelete:hover { color: var(--danger, var(--red)); background: rgba(248,113,113,.1); }
 
 /* ── Accessibility & inline-style replacements ──────────────────────────── */
 .solvedCount { color: var(--accent); }

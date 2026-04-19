@@ -154,7 +154,7 @@
   border-radius: 8px;
   border: 1px solid var(--border);
 }
-.catPass { border-color: #4ade80; background: color-mix(in srgb, #4ade80 8%, transparent); }
+.catPass { border-color: var(--easy); background: color-mix(in srgb, var(--easy) 8%, transparent); }
 .catFail { opacity: 0.7; }
 .catTop {
   display: flex; align-items: center; gap: 8px;
@@ -164,10 +164,10 @@
 .catBadge {
   font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 99px;
 }
-.passBadge { background: #4ade8022; color: #4ade80; }
-.failBadge { background: #f8717122; color: #f87171; }
+.passBadge { background: var(--easy)22; color: var(--easy); }
+.failBadge { background: var(--red)22; color: var(--red); }
 .catScore { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; padding-left: 24px; }
-.advanced { color: #4ade80; font-weight: 600; }
+.advanced { color: var(--easy); font-weight: 600; }
 
 .reviewSection { margin-top: 8px; }
 .reviewTitle { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px; }
@@ -177,8 +177,8 @@
   margin-bottom: 6px;
   border-left: 3px solid transparent;
 }
-.reviewCorrect { border-left-color: #4ade80; background: color-mix(in srgb, #4ade80 6%, transparent); }
-.reviewWrong   { border-left-color: #f87171; background: color-mix(in srgb, #f87171 6%, transparent); }
+.reviewCorrect { border-left-color: var(--easy); background: color-mix(in srgb, var(--easy) 6%, transparent); }
+.reviewWrong   { border-left-color: var(--red); background: color-mix(in srgb, var(--red) 6%, transparent); }
 .reviewQ { font-size: 0.83rem; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
 .reviewAnswer { font-size: 0.78rem; color: var(--text-muted); }
 .reviewExp { font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; font-style: italic; }

@@ -35,7 +35,7 @@
 .submitBtn {
   display:flex; align-items:center; gap:5px;
   padding:5px 16px; background:var(--accent); border:none;
-  border-radius:6px; color:#0d0f12; font-size:12px; font-weight:700;
+  border-radius:6px; color:var(--on-accent); font-size:12px; font-weight:700;
   cursor:pointer; font-family:var(--font-ui); transition:.15s; white-space:nowrap;
 }
 .submitBtn:hover:not(:disabled) { opacity:.85; }

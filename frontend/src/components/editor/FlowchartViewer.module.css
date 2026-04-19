@@ -37,4 +37,4 @@
   gap: 8px;
 }
 
-.error { color: var(--red, #e74c3c); }
+.error { color: var(--red, var(--red)); }

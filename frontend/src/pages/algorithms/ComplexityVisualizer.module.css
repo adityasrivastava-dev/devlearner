@@ -76,7 +76,7 @@
 
 .sectionSub {
   font-size: 12px;
-  color: var(--text2, #94a3b8);
+  color: var(--text2, var(--text3));
   margin-left: auto;
 }
 
@@ -116,7 +116,7 @@
 
 .derivArrow {
   font-size: 20px;
-  color: var(--text2, #94a3b8);
+  color: var(--text2, var(--text3));
   position: absolute;
   bottom: -18px;
   left: 20px;
@@ -127,7 +127,7 @@
   margin: 0;
   font-size: 13px;
   line-height: 1.6;
-  color: var(--text2, #94a3b8);
+  color: var(--text2, var(--text3));
 }
 
 /* ─── Slider + chart ─────────────────────────────────────────────────────── */

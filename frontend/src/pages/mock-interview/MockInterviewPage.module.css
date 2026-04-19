@@ -73,7 +73,7 @@
   transition: border-color 0.15s, color 0.15s;
 }
 .catBtn:hover   { border-color: var(--accent); color: var(--text-primary); }
-.catBtnActive   { border-color: var(--accent); color: var(--accent); background: var(--accent, #6366f1)11; }
+.catBtnActive   { border-color: var(--accent); color: var(--accent); background: var(--accent, var(--accent))11; }
 
 .diffRow { display: flex; gap: 8px; flex-wrap: wrap; }
 .diffBtn {
@@ -88,14 +88,14 @@
 .diffBtn:hover   { border-color: var(--accent); }
 .diffBtnActive   { font-weight: 700; }
 
-.errMsg { color: var(--red, #f87171); font-size: 0.85rem; margin-bottom: 12px; text-align: center; }
+.errMsg { color: var(--red, var(--red)); font-size: 0.85rem; margin-bottom: 12px; text-align: center; }
 
 .startBtn {
   width: 100%;
   padding: 14px;
   border-radius: 10px;
   border: none;
-  background: var(--accent, #6366f1);
+  background: var(--accent, var(--accent));
   color: #fff;
   font-size: 1rem; font-weight: 700;
   cursor: pointer;
@@ -150,9 +150,9 @@
 .modeCardTag   {
   font-size: 0.68rem; font-weight: 700; padding: 2px 8px;
   border-radius: 99px;
-  background: var(--accent, #6366f1)22;
-  color: var(--accent, #6366f1);
-  border: 1px solid var(--accent, #6366f1)44;
+  background: var(--accent, var(--accent))22;
+  color: var(--accent, var(--accent));
+  border: 1px solid var(--accent, var(--accent))44;
   margin-top: 4px;
 }
 
@@ -169,7 +169,7 @@
 }
 .dropZone:hover, .dropZoneDrag {
   border-color: var(--accent);
-  background: var(--accent, #6366f1)0a;
+  background: var(--accent, var(--accent))0a;
 }
 .hiddenInput { display: none; }
 .dropIcon    { font-size: 2.2rem; margin-bottom: 10px; }
@@ -192,13 +192,13 @@
 .techPills { display: flex; flex-wrap: wrap; gap: 6px; }
 .techPill  {
   padding: 3px 10px; border-radius: 99px; font-size: 0.76rem;
-  background: var(--accent, #6366f1)18; border: 1px solid var(--accent, #6366f1)44;
+  background: var(--accent, var(--accent))18; border: 1px solid var(--accent, var(--accent))44;
   color: var(--text-primary);
 }
 .inferredCats    { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
 .inferredCatPill {
   padding: 5px 14px; border-radius: 99px; font-size: 0.82rem; font-weight: 600;
-  background: #4ade8022; border: 1px solid #4ade8055; color: #4ade80;
+  background: var(--easy)22; border: 1px solid var(--easy)55; color: var(--easy);
 }
 .inferHint { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin: 0; }
 
@@ -221,15 +221,15 @@
 .roomMeta     { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .roomStage    {
   font-size: 0.72rem; font-weight: 700; padding: 2px 8px;
-  border-radius: 99px; background: var(--accent, #6366f1)22;
-  color: var(--accent, #6366f1); border: 1px solid var(--accent, #6366f1)44;
+  border-radius: 99px; background: var(--accent, var(--accent))22;
+  color: var(--accent, var(--accent)); border: 1px solid var(--accent, var(--accent))44;
   white-space: nowrap;
 }
 .roomQuestion { font-size: 0.82rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .roomActions  { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
 .timer       { font-size: 0.88rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
-.timerDanger { color: #f87171; animation: pulse 1s ease-in-out infinite; }
+.timerDanger { color: var(--red); animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
 .muteBtn     { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 4px; border-radius: 4px; }
@@ -237,7 +237,7 @@
 
 .speakingDot {
   width: 8px; height: 8px; border-radius: 50%;
-  background: #4ade80;
+  background: var(--easy);
   animation: speak 0.8s ease-in-out infinite;
 }
 @keyframes speak { 0%,100%{transform:scale(1)} 50%{transform:scale(1.5)} }
@@ -277,8 +277,8 @@
   align-self: flex-start;
 }
 .bubbleUser {
-  background: var(--accent, #6366f1)22;
-  border: 1px solid var(--accent, #6366f1)44;
+  background: var(--accent, var(--accent))22;
+  border: 1px solid var(--accent, var(--accent))44;
   align-self: flex-end;
 }
 .bubbleRole { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
@@ -328,7 +328,7 @@
   padding: 8px 16px;
   border-radius: 8px;
   border: none;
-  background: var(--accent, #6366f1);
+  background: var(--accent, var(--accent));
   color: #fff;
   font-size: 0.85rem;
   font-weight: 600;
@@ -370,8 +370,8 @@
   padding: 9px 20px;
   border-radius: 8px;
   border: none;
-  background: #4ade80;
-  color: #0f1117;
+  background: var(--easy);
+  color: var(--bg2);
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
@@ -411,8 +411,8 @@
   width: 8px; height: 8px; border-radius: 50%;
   background: var(--border);
 }
-.qDotDone   { background: #4ade80; }
-.qDotActive { background: var(--accent, #6366f1); box-shadow: 0 0 0 2px var(--accent, #6366f1)44; }
+.qDotDone   { background: var(--easy); }
+.qDotActive { background: var(--accent, var(--accent)); box-shadow: 0 0 0 2px var(--accent, var(--accent))44; }
 .qCount     { font-size: 0.78rem; color: var(--text-muted); margin-left: 4px; }
 
 /* ── Panel body ──────────────────────────────────────────────────────────── */
@@ -455,7 +455,7 @@
   font-size: 1rem; font-weight: 600;
   color: var(--text-primary); line-height: 1.6;
   padding-left: 4px;
-  border-left: 3px solid var(--accent, #6366f1);
+  border-left: 3px solid var(--accent, var(--accent));
   padding-left: 12px;
 }
 
@@ -473,17 +473,17 @@
   transition: border-color 0.15s, color 0.15s;
   white-space: nowrap;
 }
-.micBtn:hover:not(:disabled) { border-color: #f87171; color: var(--text-primary); }
+.micBtn:hover:not(:disabled) { border-color: var(--red); color: var(--text-primary); }
 .micBtnActive {
-  border-color: #f87171 !important;
-  color: #f87171 !important;
-  background: #f8717114 !important;
+  border-color: var(--red) !important;
+  color: var(--red) !important;
+  background: var(--red)14 !important;
 }
 .micBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 .micPulse {
   position: absolute; top: -3px; right: -3px;
   width: 8px; height: 8px; border-radius: 50%;
-  background: #f87171;
+  background: var(--red);
   animation: pulse 1s ease-in-out infinite;
 }
 
@@ -531,10 +531,10 @@
   transition: border-color 0.15s, background 0.15s;
 }
 .mcqOption:hover  { border-color: var(--accent); }
-.mcqSelected      { border-color: var(--accent) !important; background: var(--accent, #6366f1)18 !important; }
+.mcqSelected      { border-color: var(--accent) !important; background: var(--accent, var(--accent))18 !important; }
 .mcqLabel {
   font-size: 0.85rem; font-weight: 800;
-  color: var(--accent, #6366f1);
+  color: var(--accent, var(--accent));
   min-width: 20px; flex-shrink: 0;
 }
 .mcqText { font-size: 0.85rem; color: var(--text-primary); line-height: 1.4; }
@@ -555,7 +555,7 @@
   flex-shrink: 0;
 }
 .codePadLabel { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); }
-.codePadHint  { font-size: 0.72rem; color: #fbbf24; }
+.codePadHint  { font-size: 0.72rem; color: var(--yellow); }
 .codePadEditor { flex: 1; overflow: hidden; }
 
 /* Text pad */
@@ -594,15 +594,15 @@
 .feedbackToast {
   display: flex; align-items: flex-start; gap: 12px;
   padding: 14px 18px;
-  background: #4ade8018;
-  border: 1px solid #4ade8044;
+  background: var(--easy)18;
+  border: 1px solid var(--easy)44;
   border-radius: 10px;
 }
 .feedbackToastIcon { font-size: 1.3rem; flex-shrink: 0; }
 .feedbackToastText { flex: 1; font-size: 0.88rem; color: var(--text-primary); line-height: 1.5; }
 .feedbackToastNext {
   padding: 7px 16px; border-radius: 7px;
-  border: none; background: var(--accent, #6366f1);
+  border: none; background: var(--accent, var(--accent));
   color: #fff; font-size: 0.82rem; font-weight: 600;
   cursor: pointer; white-space: nowrap;
   display: flex; align-items: center; gap: 6px;
@@ -614,16 +614,16 @@
 .allDoneBanner {
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 20px;
-  background: #a78bfa18;
-  border: 1px solid #a78bfa44;
+  background: var(--accent3)18;
+  border: 1px solid var(--accent3)44;
   border-radius: 10px;
   font-size: 0.9rem; font-weight: 600; color: var(--text-primary);
   gap: 12px;
 }
 .finishBtn {
   padding: 10px 22px; border-radius: 8px;
-  border: none; background: #a78bfa;
-  color: #0f1117; font-size: 0.88rem; font-weight: 700;
+  border: none; background: var(--accent3);
+  color: var(--bg2); font-size: 0.88rem; font-weight: 700;
   cursor: pointer;
   display: flex; align-items: center; gap: 6px;
 }
@@ -634,7 +634,7 @@
 }
 .submitAnswerBtn {
   padding: 11px 28px; border-radius: 8px;
-  border: none; background: var(--accent, #6366f1);
+  border: none; background: var(--accent, var(--accent));
   color: #fff; font-size: 0.9rem; font-weight: 700;
   cursor: pointer;
   display: flex; align-items: center; gap: 7px;
@@ -715,7 +715,7 @@
   padding: 12px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: var(--accent, #6366f1);
+  background: var(--accent, var(--accent));
   color: #fff;
   font-size: 0.88rem;
   font-weight: 700;
@@ -854,8 +854,8 @@
 }
 .voiceItem:hover { background: var(--bg-primary, var(--bg)); }
 .voiceItemSelected {
-  background: var(--accent, #6366f1)15 !important;
-  border: 1px solid var(--accent, #6366f1)40;
+  background: var(--accent, var(--accent))15 !important;
+  border: 1px solid var(--accent, var(--accent))40;
 }
 
 .voiceItemLeft {
@@ -897,9 +897,9 @@
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 10px;
-  background: #a78bfa22;
-  color: #a78bfa;
-  border: 1px solid #a78bfa44;
+  background: var(--accent3)22;
+  color: var(--accent3);
+  border: 1px solid var(--accent3)44;
   white-space: nowrap;
 }
 .previewBtn {
@@ -915,7 +915,7 @@
   flex-shrink: 0;
 }
 .previewBtn:hover       { border-color: var(--accent); color: var(--accent); }
-.previewBtnActive       { border-color: #f87171; color: #f87171; background: #f8717122; }
+.previewBtnActive       { border-color: var(--red); color: var(--red); background: var(--red)22; }
 
 .voicePickerFooter {
   display: flex;
@@ -949,7 +949,7 @@
   padding: 6px 16px;
   border-radius: 6px;
   border: none;
-  background: var(--accent, #6366f1);
+  background: var(--accent, var(--accent));
   color: #fff;
   font-size: 0.82rem;
   font-weight: 600;

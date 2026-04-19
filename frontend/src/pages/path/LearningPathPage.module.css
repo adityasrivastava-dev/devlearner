@@ -64,7 +64,7 @@
   flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
 }
 .progressFill {
-  height: 100%; background: #a78bfa; border-radius: 3px;
+  height: 100%; background: var(--accent3); border-radius: 3px;
   transition: width 0.6s ease;
 }
 .progressLabel { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
@@ -183,9 +183,9 @@
   padding: 8px 12px; cursor: pointer; transition: border-color 0.15s;
   font-size: 0.85rem;
 }
-.masteredItem:hover { border-color: #a78bfa; }
+.masteredItem:hover { border-color: var(--accent3); }
 .masteredTitle { flex: 1; color: var(--text-primary); }
-.masteredCheck { color: #a78bfa; font-weight: 700; }
+.masteredCheck { color: var(--accent3); font-weight: 700; }
 
 /* ── Empty ───────────────────────────────────────────────────────────────── */
 .empty { text-align: center; padding: 60px; color: var(--text-muted); }

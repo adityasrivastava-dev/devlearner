@@ -108,7 +108,7 @@
   background: var(--accent);
   border: none;
   border-radius: 8px;
-  color: #0d0f12;
+  color: var(--on-accent);
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
@@ -188,7 +188,7 @@
   transition: all .3s;
 }
 .timerWarn {
-  color: #f87171 !important;
+  color: var(--red) !important;
   background: rgba(248,113,113,.1) !important;
   border-color: rgba(248,113,113,.3) !important;
 }
@@ -244,8 +244,8 @@
   padding: 4px 12px;
   border-radius: 20px;
 }
-.diffHigh { color: #f87171; background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.25); }
-.diffMed  { color: #fbbf24; background: rgba(251,191,36,.1);  border: 1px solid rgba(251,191,36,.25); }
+.diffHigh { color: var(--red); background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.25); }
+.diffMed  { color: var(--yellow); background: rgba(251,191,36,.1);  border: 1px solid rgba(251,191,36,.25); }
 
 .questionText {
   font-size: 28px;
@@ -272,7 +272,7 @@
   background: var(--accent);
   border: none;
   border-radius: 10px;
-  color: #0d0f12;
+  color: var(--on-accent);
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
@@ -412,13 +412,13 @@
 
 .rateBtnIcon { font-size: 15px; }
 
-.rateMissed { color: #f87171; }
+.rateMissed { color: var(--red); }
 .rateMissed:hover { background: rgba(248,113,113,.12); }
 
-.ratePartial { color: #fbbf24; }
+.ratePartial { color: var(--yellow); }
 .ratePartial:hover { background: rgba(251,191,36,.12); }
 
-.rateGot { color: #4ade80; }
+.rateGot { color: var(--easy); }
 .rateGot:hover { background: rgba(74,222,128,.12); }
 
 /* ── Shared ──────────────────────────────────────────────────────────────── */
@@ -480,9 +480,9 @@
 .resultsTitle { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
 .resultsSub   { font-size: 13px; color: var(--text3); margin-top: 4px; }
 .scoreBreakdown { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
-.bdGot     { font-size: 13px; font-weight: 700; color: #4ade80; }
-.bdPartial { font-size: 13px; font-weight: 700; color: #fbbf24; }
-.bdMissed  { font-size: 13px; font-weight: 700; color: #f87171; }
+.bdGot     { font-size: 13px; font-weight: 700; color: var(--easy); }
+.bdPartial { font-size: 13px; font-weight: 700; color: var(--yellow); }
+.bdMissed  { font-size: 13px; font-weight: 700; color: var(--red); }
 
 .reviewSection { display: flex; flex-direction: column; gap: 12px; }
 .reviewTitle {

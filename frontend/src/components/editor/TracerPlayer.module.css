@@ -32,19 +32,19 @@
   gap: 8px;
   background: rgba(74,222,128,.08);
   border: 1px solid rgba(74,222,128,.2);
-  border-left: 3px solid #4ade80;
+  border-left: 3px solid var(--easy);
   border-radius: 6px;
   padding: 6px 10px;
 }
 .execLineArrow {
   font-size: 10px;
-  color: #4ade80;
+  color: var(--easy);
   flex-shrink: 0;
 }
 .execLineCode {
   font-family: var(--font-code);
   font-size: 12px;
-  color: #e2e8f0;
+  color: var(--text);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -76,9 +76,9 @@
   font-family: var(--font-code);
   font-size: 12px;
 }
-.varName { color: #60a5fa; font-weight: 700; }
+.varName { color: var(--blue); font-weight: 700; }
 .varEq   { color: var(--text3); }
-.varVal  { color: #4ade80; }
+.varVal  { color: var(--easy); }
 
 /* Phase badge + annotation */
 .annotationRow {
@@ -132,7 +132,7 @@
 
 .playBtn {
   background: rgba(74,222,128,.12);
-  color: #4ade80;
+  color: var(--easy);
   border-color: rgba(74,222,128,.3);
   font-weight: 700;
   padding: 5px 16px;
@@ -140,7 +140,7 @@
 .playBtn:hover { background: rgba(74,222,128,.2); }
 .pauseBtn {
   background: rgba(251,191,36,.12);
-  color: #fbbf24;
+  color: var(--yellow);
   border-color: rgba(251,191,36,.3);
 }
 .pauseBtn:hover { background: rgba(251,191,36,.2); }
@@ -172,7 +172,7 @@
 }
 .progressFill {
   height: 100%;
-  background: #4ade80;
+  background: var(--easy);
   border-radius: 1px;
   transition: width .3s ease;
 }

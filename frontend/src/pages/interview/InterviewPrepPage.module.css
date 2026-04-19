@@ -133,10 +133,10 @@
 }
 .diffPill:hover { color: var(--text); border-color: var(--text3); }
 .diffActive { background: var(--bg3); color: var(--text); border-color: var(--text3); }
-.diffHIGH  { color: #f87171; }
-.diffMEDIUM{ color: #fbbf24; }
-.diffActive.diffHIGH   { background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.4); color: #f87171; }
-.diffActive.diffMEDIUM { background: rgba(251,191,36,.1);  border-color: rgba(251,191,36,.4);  color: #fbbf24; }
+.diffHIGH  { color: var(--red); }
+.diffMEDIUM{ color: var(--yellow); }
+.diffActive.diffHIGH   { background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.4); color: var(--red); }
+.diffActive.diffMEDIUM { background: rgba(251,191,36,.1);  border-color: rgba(251,191,36,.4);  color: var(--yellow); }
 
 /* ── Body ────────────────────────────────────────────────────────────────── */
 .body {
@@ -213,8 +213,8 @@
   padding: 2px 6px;
   border-radius: 4px;
 }
-.priorityHigh { color: #f87171; background: rgba(248,113,113,.1); }
-.priorityMed  { color: #fbbf24; background: rgba(251,191,36,.1);  }
+.priorityHigh { color: var(--red); background: rgba(248,113,113,.1); }
+.priorityMed  { color: var(--yellow); background: rgba(251,191,36,.1);  }
 
 .question {
   flex: 1;

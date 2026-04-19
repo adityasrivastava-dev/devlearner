@@ -55,7 +55,7 @@
 }
 
 .masteredNote {
-  color: #a78bfa;
+  color: var(--accent3);
   font-weight: 600;
 }
 

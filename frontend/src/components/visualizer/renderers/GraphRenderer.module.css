@@ -15,7 +15,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  background: var(--accent, #6366f1);
+  background: var(--accent, var(--accent));
   color: #fff;
   opacity: 0.9;
 }
@@ -36,7 +36,7 @@
 }
 
 .edge {
-  stroke: #4b5563;
+  stroke: var(--text3);
   stroke-width: 1.8;
 }
 
@@ -75,9 +75,9 @@
   flex-wrap: wrap;
 }
 .queueItem {
-  background: #1e3a5f;
-  border: 1px solid #3b82f6;
-  color: #93c5fd;
+  background: var(--bg3);
+  border: 1px solid var(--blue);
+  color: var(--sky);
   border-radius: 6px;
   padding: 2px 10px;
   font-size: 13px;
@@ -108,7 +108,7 @@
   font-size: 12px;
 }
 .varKey { color: var(--text2, #888); }
-.varVal { color: var(--accent, #818cf8); font-weight: 700; }
+.varVal { color: var(--accent, var(--accent3)); font-weight: 700; }
 
 /* ── Message ── */
 .message {
@@ -117,7 +117,7 @@
   gap: 8px;
   background: var(--bg2, #12121f);
   border: 1px solid var(--border, #2a2a3e);
-  border-left: 3px solid var(--accent, #6366f1);
+  border-left: 3px solid var(--accent, var(--accent));
   border-radius: 6px;
   padding: 10px 14px;
   max-width: 620px;
@@ -125,7 +125,7 @@
   font-size: 13px;
   line-height: 1.5;
 }
-.msgIcon { color: var(--accent, #818cf8); font-weight: 700; flex-shrink: 0; }
+.msgIcon { color: var(--accent, var(--accent3)); font-weight: 700; flex-shrink: 0; }
 .msgText { color: var(--text, #e2e8f0); }
 
 /* ── Legend ── */
