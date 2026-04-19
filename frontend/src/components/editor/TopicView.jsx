@@ -543,7 +543,8 @@ export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className={styles.header}>
-        <div className={styles.headerTop}>
+        {/* Row 1: nav controls */}
+        <div className={styles.headerNav}>
           {onBack && (
             <button className={styles.backBtn} onClick={onBack} title="Go back">{backLabel}</button>
           )}
@@ -554,40 +555,44 @@ export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext
             </div>
           )}
           <span className={`badge ${catMeta.cls}`}>{catMeta.label}</span>
-          <h1 className={styles.title}>{topic.title}</h1>
+        </div>
 
-          {!gateLoading && (
-            <span className={`${styles.stageBadge} ${styles[`stage${stage}`]}`}>
-              {STAGE_LABELS[stage]}
-            </span>
-          )}
-
-          <button
-            className={`${styles.bookmarkBtn} ${isBookmarked ? styles.bookmarked : ''}`}
-            onClick={toggleBookmark}
-            aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this topic'}
-            aria-pressed={isBookmarked}
-          >
-            <span aria-hidden="true">{isBookmarked ? '★' : '☆'}</span>
-          </button>
-
-          <div
-            className={styles.starRating}
-            role="group"
-            aria-label={ratingData?.count > 0 ? `Rating: ${ratingData.average} out of 5 (${ratingData.count} ratings)` : 'Rate this topic'}
-          >
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                className={`${styles.starBtn} ${star <= (ratingData?.myRating ?? 0) ? styles.starFilled : ''}`}
-                onClick={() => !ratingPending && submitRating(star)}
-                aria-label={`Rate ${star} star${star !== 1 ? 's' : ''}`}
-                aria-pressed={star <= (ratingData?.myRating ?? 0)}
-              ><span aria-hidden="true">★</span></button>
-            ))}
-            {ratingData?.count > 0 && <span className={styles.ratingAvg}>{ratingData.average}</span>}
+        {/* Row 2: title + actions */}
+        <div className={styles.headerMeta}>
+          <h1 className={styles.title} title={topic.title}>{topic.title}</h1>
+          <div className={styles.headerActions}>
+            {!gateLoading && (
+              <span className={`${styles.stageBadge} ${styles[`stage${stage}`]}`}>
+                {STAGE_LABELS[stage]}
+              </span>
+            )}
+            <button
+              className={`${styles.bookmarkBtn} ${isBookmarked ? styles.bookmarked : ''}`}
+              onClick={toggleBookmark}
+              aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this topic'}
+              aria-pressed={isBookmarked}
+            >
+              <span aria-hidden="true">{isBookmarked ? '★' : '☆'}</span>
+            </button>
+            <div
+              className={styles.starRating}
+              role="group"
+              aria-label={ratingData?.count > 0 ? `Rating: ${ratingData.average} out of 5 (${ratingData.count} ratings)` : 'Rate this topic'}
+            >
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  className={`${styles.starBtn} ${star <= (ratingData?.myRating ?? 0) ? styles.starFilled : ''}`}
+                  onClick={() => !ratingPending && submitRating(star)}
+                  aria-label={`Rate ${star} star${star !== 1 ? 's' : ''}`}
+                  aria-pressed={star <= (ratingData?.myRating ?? 0)}
+                ><span aria-hidden="true">★</span></button>
+              ))}
+              {ratingData?.count > 0 && <span className={styles.ratingAvg}>{ratingData.average}</span>}
+            </div>
           </div>
         </div>
+
         {topic.description && <p className={styles.desc}>{topic.description}</p>}
       </div>
 
@@ -643,18 +648,21 @@ export default function TopicView({ topic, onProblemOpen, onBack, onPrev, onNext
         {tab === 'optimize' && (
           <div className={styles.optimizePanel}>
             {[
-              { icon: '🐌', title: 'Brute Force',        key: 'bruteForce',        accent: false },
-              { icon: '⚡', title: 'Optimized Approach',  key: 'optimizedApproach', accent: true  },
-              { icon: '🎯', title: 'When to Use',         key: 'whenToUse',         accent: false },
-              { icon: '📈', title: 'Complexity',          key: '__complexity__',    accent: false },
-            ].map(({ icon, title, key, accent }) => (
-              <div key={key} className={`${styles.optCard} ${accent ? styles.optAccent : ''}`}>
+              { icon: '🐌', title: 'Brute Force',        key: 'bruteForce',        accent: false, span: false },
+              { icon: '⚡', title: 'Optimized Approach',  key: 'optimizedApproach', accent: true,  span: false },
+              { icon: '🎯', title: 'When to Use',         key: 'whenToUse',         accent: false, span: true  },
+              { icon: '📈', title: 'Complexity',          key: '__complexity__',    accent: false, span: true  },
+            ].map(({ icon, title, key, accent, span }) => (
+              <div key={key} className={`${styles.optCard} ${accent ? styles.optAccent : ''} ${span ? styles.optSpan : ''}`}>
                 <div className={styles.optTitle}>{icon} {title}</div>
                 <div className={styles.optContent}>
                   {key === '__complexity__' ? (
                     <>
-                      <div><span className={styles.optLabel}>Time</span>{topic.timeComplexity || '—'}</div>
-                      <div><span className={styles.optLabel}>Space</span>{topic.spaceComplexity || '—'}</div>
+                      {topic.timeComplexity  && <div><span className={styles.optLabel}>Time</span>{topic.timeComplexity}</div>}
+                      {topic.spaceComplexity && <div><span className={styles.optLabel}>Space</span>{topic.spaceComplexity}</div>}
+                      {!topic.timeComplexity && !topic.spaceComplexity && (
+                        <span className={styles.notSpecified}>Not specified</span>
+                      )}
                     </>
                   ) : (
                     topic[key] || <span className={styles.notSpecified}>Not specified</span>

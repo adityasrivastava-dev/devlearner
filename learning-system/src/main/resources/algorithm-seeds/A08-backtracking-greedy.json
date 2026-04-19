@@ -1,6 +1,6 @@
 {
   "batchName": "A08-backtracking-greedy",
-  "skipExisting": true,
+  "skipExisting": false,
   "algorithms": [
     {
       "slug": "backtracking",
@@ -24,6 +24,9 @@
       "useCases": "[{\"title\":\"Sudoku Solver (Norvig's)\",\"desc\":\"Peter Norvig's Python Sudoku solver uses backtracking with constraint propagation — solves any valid Sudoku in under a second.\"},{\"title\":\"Regex Matching\",\"desc\":\"Regex engines use backtracking to try different ways to match wildcards (*, ?) — leading to catastrophic backtracking with pathological inputs.\"},{\"title\":\"Compiler Parser\",\"desc\":\"Recursive descent parsers use backtracking to try different grammar rules when one fails — the 'try and rollback' pattern.\"}]",
       "pitfalls": "[\"Not making a deep copy when adding to results: result.add(current) adds a reference — current changes later. Use new ArrayList<>(current)\",\"Pruning too late: checking constraints after recursing (not before) misses the optimization entirely\",\"Deduplication: when input has duplicates, you must sort + skip duplicate choices at the same level to avoid duplicate results\",\"Exponential blowup without pruning: pure backtracking is O(n!) — always look for constraint checks to prune early\"]",
       "variants": "[{\"name\":\"Branch and Bound\",\"desc\":\"Backtracking + upper/lower bound estimates to prune more aggressively — used in integer linear programming\"},{\"name\":\"Constraint Propagation\",\"desc\":\"Arc consistency / forward checking — after each choice, propagate consequences to prune remaining choices\"}]",
+      "keyInsight": "The template never changes: CHOOSE → RECURSE → UNCHOOSE. That's it. Every backtracking problem is this loop. The only variables are: (1) what counts as a valid solution, (2) what constraints let you prune, (3) when to make a deep copy for the result list.",
+      "patternSignal": "generate all combinations, all permutations, all subsets, find all solutions, N-Queens, Sudoku, constraint satisfaction, word search, letter combinations, restore IP addresses, palindrome partitioning",
+      "practiceProblems": "[{\"name\":\"Subsets\",\"difficulty\":\"Medium\",\"hint\":\"The simplest backtracking — every state is valid, no pruning needed. Master this template first.\"},{\"name\":\"Permutations\",\"difficulty\":\"Medium\",\"hint\":\"Use a boolean[] used array to track which elements are in the current path\"},{\"name\":\"Combination Sum\",\"difficulty\":\"Medium\",\"hint\":\"Can reuse elements — pass the same index (not i+1) when recursing\"},{\"name\":\"N-Queens\",\"difficulty\":\"Hard\",\"hint\":\"Track columns + two diagonal sets (row-col and row+col) for O(1) constraint check\"},{\"name\":\"Word Search\",\"difficulty\":\"Medium\",\"hint\":\"Backtracking on a 2D grid — mark visited cells, unmark on backtrack\"}]",
       "mermaidDiagram": "graph TD\n    A[\"Start: empty path []\"] --> B[\"Choose nums[0]=1\"]\n    A --> C[\"Choose nums[0]=2\"]\n    A --> D[\"Choose nums[0]=3\"]\n    B --> B1[\"[1,2] → add\"]\n    B --> B2[\"[1,3] → add\"]\n    C --> C1[\"[2,1] → add\"]\n    C --> C2[\"[2,3] → add\"]\n    D --> D1[\"[3,1] → add\"]\n    D --> D2[\"[3,2] → add\"]\n    B1 -.->|\"unchoose\"| A\n    C1 -.->|\"unchoose\"| A"
     },
     {

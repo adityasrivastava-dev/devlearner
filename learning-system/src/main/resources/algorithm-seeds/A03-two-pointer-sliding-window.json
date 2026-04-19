@@ -1,6 +1,6 @@
 {
   "batchName": "A03-two-pointer-sliding-window",
-  "skipExisting": true,
+  "skipExisting": false,
   "algorithms": [
     {
       "slug": "two-pointer-opposite",
@@ -23,7 +23,10 @@
       "interviewTips": "• Always clarify: is the array sorted? Two pointers requires sorted data or a specific structure\n• For Three Sum, sort first, then for each element run two pointers on the remainder — O(n²) overall\n• Skip duplicates explicitly to avoid returning duplicate triplets/pairs\n• The key insight to communicate: 'when sum is too large, right-- eliminates all pairs with arr[right]' — this is why it's O(n)",
       "useCases": "[{\"title\":\"Database Range Queries\",\"desc\":\"Finding pairs of records whose combined value satisfies a constraint (e.g., two orders summing to a budget) uses a sorted two-pointer scan.\"},{\"title\":\"Palindrome Validation\",\"desc\":\"DNS, URL, and input validators use two-pointer palindrome checks on strings of IDs and codes.\"},{\"title\":\"Container With Most Water\",\"desc\":\"Maximising the area between two vertical lines in a histogram — a classic interview problem solved exactly with opposite-end two pointers.\"}]",
       "pitfalls": "[\"Using two pointers on an unsorted array without sorting first — the logic breaks down\",\"While condition left < right vs left <= right: use strict less-than to avoid processing the same element as both pointers\",\"Not skipping duplicates in Three Sum — leads to duplicate triplets in the result\"]",
-      "variants": "[{\"name\":\"Fast & Slow Pointers\",\"desc\":\"Both start at the same end — fast moves 2 steps, slow moves 1. Used for cycle detection in linked lists (Floyd's algorithm)\"},{\"name\":\"Three Pointers\",\"desc\":\"Extension of two pointers for Three Sum — fix one element, then run two pointers on the rest\"}]"
+      "variants": "[{\"name\":\"Fast & Slow Pointers\",\"desc\":\"Both start at the same end — fast moves 2 steps, slow moves 1. Used for cycle detection in linked lists (Floyd's algorithm)\"},{\"name\":\"Three Pointers\",\"desc\":\"Extension of two pointers for Three Sum — fix one element, then run two pointers on the rest\"}]",
+      "keyInsight": "Two pointers works because sorted order lets you be certain: if the sum is too large, RIGHT pointer can never contribute to a valid answer again — shrink it. If too small, LEFT can never contribute — grow it. This certainty is what gives you O(n) instead of O(n²).",
+      "patternSignal": "sorted array, pair that sums to target, reverse in-place, palindrome check, three sum, container with most water, remove duplicates from sorted, closest pair",
+      "practiceProblems": "[{\"name\":\"Two Sum II (sorted)\",\"difficulty\":\"Medium\",\"hint\":\"Classic two-pointer on sorted — if sum < target move left++, if > target move right--\"},{\"name\":\"3Sum\",\"difficulty\":\"Medium\",\"hint\":\"Sort first, fix one element with a loop, run two pointers on the rest. Skip duplicates!\"},{\"name\":\"Container With Most Water\",\"difficulty\":\"Medium\",\"hint\":\"Move the pointer with the shorter bar — a taller bar can never increase area with a shorter partner\"},{\"name\":\"Valid Palindrome II\",\"difficulty\":\"Easy\",\"hint\":\"At mismatch, try skipping left OR right — if either works, it's valid\"}]"
     },
     {
       "slug": "sliding-window-variable",

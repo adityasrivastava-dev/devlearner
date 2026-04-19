@@ -93,6 +93,24 @@ private String stability;
 @Column(name = "display_order")
 private Integer displayOrder;
 
+/**
+ * The single most important insight to memorize — the "aha moment".
+ * Plain text. Shown prominently at top of Overview tab.
+ */
+@Column(name = "key_insight", columnDefinition = "TEXT") private String keyInsight;
+
+/**
+ * Comma-separated keywords/phrases in interview problems that signal this algorithm.
+ * E.g. "find in sorted, O(log n), first/last position, search range, monotonic"
+ */
+@Column(name = "pattern_signal", columnDefinition = "TEXT") private String patternSignal;
+
+/**
+ * JSON array of must-solve practice problems:
+ * [{"name":"...", "difficulty":"Easy|Medium|Hard", "hint":"..."}]
+ */
+@Column(name = "practice_problems", columnDefinition = "TEXT") private String practiceProblems;
+
 // ── Enums ─────────────────────────────────────────────────────────────────
 public enum Difficulty {
 	BEGINNER, INTERMEDIATE, ADVANCED

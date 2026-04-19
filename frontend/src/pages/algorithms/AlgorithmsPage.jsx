@@ -104,10 +104,12 @@ function AlgorithmDetail({ algo, onBack }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [copied, setCopied] = useState(false);
 
-  const tags        = parseJSON(algo.tags, []);
-  const useCases    = parseJSON(algo.useCases, []);
-  const pitfalls    = parseJSON(algo.pitfalls, []);
-  const variants    = parseJSON(algo.variants, []);
+  const tags             = parseJSON(algo.tags, []);
+  const useCases         = parseJSON(algo.useCases, []);
+  const pitfalls         = parseJSON(algo.pitfalls, []);
+  const variants         = parseJSON(algo.variants, []);
+  const practiceProblems = parseJSON(algo.practiceProblems, []);
+  const patternSignals   = algo.patternSignal ? algo.patternSignal.split(',').map(s => s.trim()).filter(Boolean) : [];
 
   const flowDiagram = getAlgorithmFlowDiagram(algo.name, algo.category);
 
@@ -141,7 +143,7 @@ function AlgorithmDetail({ algo, onBack }) {
         </div>
       );
       if (line.startsWith('•')) return (
-        <div key={i} className={styles.bullet}>{line}</div>
+        <div key={i} className={styles.bullet}>{line.replace(/^•\s*/, '')}</div>
       );
       return <div key={i} className={styles.plainLine}>{line}</div>;
     });
@@ -203,14 +205,37 @@ function AlgorithmDetail({ algo, onBack }) {
 
         {activeTab === 'overview' && (
           <div className={styles.section}>
+
+            {/* Key Insight — shown only when data exists */}
+            {algo.keyInsight && (
+              <div className={styles.keyInsightBox}>
+                <div className={styles.keyInsightLabel}>⚡ Key Insight — memorize this</div>
+                <p className={styles.keyInsightText}>{algo.keyInsight}</p>
+              </div>
+            )}
+
             <div className={styles.storyBox}>
               <h3 className={styles.sectionTitle}>The Story</h3>
               <p className={styles.storyText}>{algo.story}</p>
             </div>
+
             <div className={styles.whenBox}>
               <h3 className={styles.sectionTitle}>When to Use</h3>
               <div>{renderLines(algo.whenToUse)}</div>
             </div>
+
+            {/* Pattern Recognition — shown only when data exists */}
+            {patternSignals.length > 0 && (
+              <div className={styles.patternBox}>
+                <h3 className={styles.sectionTitle}>Spot the Pattern — interview trigger words</h3>
+                <div className={styles.patternChips}>
+                  {patternSignals.map((s, i) => (
+                    <span key={i} className={styles.patternChip}>{s}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {variants.length > 0 && (
               <div className={styles.variantsBox}>
                 <h3 className={styles.sectionTitle}>Variants</h3>
@@ -222,6 +247,7 @@ function AlgorithmDetail({ algo, onBack }) {
                 ))}
               </div>
             )}
+
             <div className={styles.tagsRow}>
               {tags.map(t => <span key={t} className={styles.tagLg}>{t}</span>)}
             </div>
@@ -299,6 +325,7 @@ function AlgorithmDetail({ algo, onBack }) {
             <div className={styles.useCaseGrid}>
               {useCases.map((uc, i) => (
                 <div key={i} className={styles.useCaseCard}>
+                  <div className={styles.useCaseBadge}>Real App #{i + 1}</div>
                   <div className={styles.useCaseTitle}>{uc.title}</div>
                   <div className={styles.useCaseDesc}>{uc.desc}</div>
                 </div>
@@ -313,7 +340,7 @@ function AlgorithmDetail({ algo, onBack }) {
             <div className={styles.pitfallList}>
               {pitfalls.map((p, i) => (
                 <div key={i} className={styles.pitfall}>
-                  <span className={styles.pitfallIcon}>⚠️</span>
+                  <span className={styles.pitfallNum}>Don't #{i + 1}</span>
                   <span className={styles.pitfallText}>{p}</span>
                 </div>
               ))}
@@ -327,11 +354,33 @@ function AlgorithmDetail({ algo, onBack }) {
             <div className={styles.interviewBox}>
               {(algo.interviewTips || '').split('\n').filter(Boolean).map((tip, i) => (
                 <div key={i} className={styles.interviewTip}>
-                  <span className={styles.interviewIcon}>🎤</span>
+                  <span className={styles.interviewBadge}>Key {i + 1}</span>
                   <span className={styles.interviewText}>{tip.replace(/^•\s*/, '')}</span>
                 </div>
               ))}
             </div>
+
+            {/* Practice problems */}
+            {practiceProblems.length > 0 && (
+              <>
+                <h3 className={styles.sectionTitle} style={{ marginTop: 8 }}>Must-Solve Problems</h3>
+                <div className={styles.practiceList}>
+                  {practiceProblems.map((p, i) => {
+                    const dc = { Easy: 'var(--easy)', Medium: 'var(--yellow)', Hard: 'var(--red)' }[p.difficulty] || 'var(--text3)';
+                    return (
+                      <div key={i} className={styles.practiceItem}>
+                        <div className={styles.practiceTop}>
+                          <span className={styles.practiceNum}>#{i + 1}</span>
+                          <span className={styles.practiceName}>{p.name}</span>
+                          <span className={styles.practiceDiff} style={{ color: dc, borderColor: dc + '55' }}>{p.difficulty}</span>
+                        </div>
+                        {p.hint && <div className={styles.practiceHint}>💡 {p.hint}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

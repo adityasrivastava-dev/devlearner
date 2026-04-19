@@ -350,11 +350,11 @@
 }
 .analogyIcon { font-size: 16px; margin-top: 1px; flex-shrink: 0; }
 .analogyText {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text);
   font-style: italic;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 /* ─── Tab bar ────────────────────────────────────────────────────────────── */
@@ -411,49 +411,77 @@
 
 /* Story */
 .storyBox {
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  background: rgba(245,158,11,.04);
+  border: 1px solid rgba(245,158,11,.2);
+  border-left: 3px solid var(--amber);
   border-radius: var(--radius-lg);
-  padding: 14px 16px;
+  padding: 16px 18px;
 }
-.storyText { font-size: 13px; color: var(--text2); line-height: 1.7; }
+.storyBox .sectionTitle { color: var(--amber2); }
+.storyText {
+  font-size: 14.5px;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--text);
+  line-height: 1.9;
+  font-family: var(--font-reading);
+}
 
 /* When to use */
 .whenBox {
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  background: rgba(74,222,128,.04);
+  border: 1px solid rgba(74,222,128,.18);
+  border-left: 3px solid var(--accent);
   border-radius: var(--radius-lg);
-  padding: 14px 16px;
+  padding: 16px 18px;
 }
-.bullet { font-size: 13px; color: var(--text2); line-height: 1.6; padding: 2px 0; }
-.plainLine { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.whenBox .sectionTitle { color: var(--accent); }
+.bullet {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.7;
+  padding: 3px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.bullet::before {
+  content: '✓';
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 12px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.plainLine { font-size: 14px; color: var(--text); line-height: 1.7; }
 
 /* Steps */
 .stepsBox {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 14px 16px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
-.step { display: flex; align-items: flex-start; gap: 10px; }
+.step { display: flex; align-items: flex-start; gap: 12px; }
 .stepNum {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--adim);
-  border: 1px solid rgba(99,102,241,.25);
+  border: 1.5px solid rgba(99,102,241,.35);
   color: var(--accent3);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-top: 1px;
 }
-.stepText { font-size: 13px; color: var(--text2); line-height: 1.5; padding-top: 2px; }
+.stepText { font-size: 14px; color: var(--text); line-height: 1.6; padding-top: 2px; }
 
 /* Variants */
 .variantsBox {
@@ -468,13 +496,14 @@
 .variantItem {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 8px 10px;
+  gap: 3px;
+  padding: 9px 12px;
   background: var(--bg3);
+  border-left: 3px solid var(--accent3);
   border-radius: var(--radius);
 }
-.variantName { font-size: 12px; font-weight: 700; color: var(--text); }
-.variantDesc { font-size: 12px; color: var(--text3); }
+.variantName { font-size: 13px; font-weight: 700; color: var(--text); }
+.variantDesc { font-size: 12.5px; color: var(--text2); line-height: 1.5; }
 
 /* Tags */
 .tagsRow { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -524,47 +553,84 @@
 /* Use cases */
 .useCaseGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
 }
 .useCaseCard {
   background: var(--bg2);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(52,211,153,.2);
+  border-left: 3px solid var(--teal);
   border-radius: var(--radius-lg);
-  padding: 12px 14px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  transition: transform .15s, box-shadow .15s;
 }
-.useCaseTitle { font-size: 12px; font-weight: 700; color: var(--text); }
-.useCaseDesc { font-size: 12px; color: var(--text3); line-height: 1.5; }
+.useCaseCard:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.useCaseBadge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--teal2);
+}
+.useCaseTitle { font-size: 13px; font-weight: 700; color: var(--text); }
+.useCaseDesc { font-size: 13px; color: var(--text2); line-height: 1.6; }
 
 /* Pitfalls */
-.pitfallList { display: flex; flex-direction: column; gap: 8px; }
+.pitfallList { display: flex; flex-direction: column; gap: 10px; }
 .pitfall {
   display: flex;
-  gap: 10px;
-  padding: 10px 14px;
+  gap: 12px;
+  padding: 12px 16px;
   background: rgba(248,113,113,.05);
-  border: 1px solid rgba(248,113,113,.15);
-  border-radius: var(--radius);
+  border: 1px solid rgba(248,113,113,.2);
+  border-left: 3px solid var(--red);
+  border-radius: var(--radius-lg);
+  align-items: flex-start;
 }
-.pitfallIcon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
-.pitfallText { font-size: 13px; color: var(--text2); line-height: 1.5; }
+.pitfallNum {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--red);
+  background: rgba(248,113,113,.12);
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 1px;
+  letter-spacing: .4px;
+}
+.pitfallText { font-size: 13.5px; color: var(--text); line-height: 1.6; }
 
 /* Interview */
 .interviewBox { display: flex; flex-direction: column; gap: 10px; }
 .interviewTip {
   display: flex;
-  gap: 10px;
-  padding: 11px 14px;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: var(--radius);
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(167,139,250,.05);
+  border: 1px solid rgba(167,139,250,.2);
+  border-left: 3px solid var(--violet);
+  border-radius: var(--radius-lg);
+  align-items: flex-start;
 }
-.interviewIcon { font-size: 14px; flex-shrink: 0; }
-.interviewText { font-size: 13px; color: var(--text2); line-height: 1.5; }
+.interviewBadge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--violet);
+  background: rgba(167,139,250,.12);
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.interviewText { font-size: 13.5px; color: var(--text); line-height: 1.6; }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
@@ -576,6 +642,104 @@
 }
 @media (max-width: 480px) {
   .grid { grid-template-columns: 1fr; }
+}
+
+/* ─── Key Insight box ────────────────────────────────────────────────────── */
+.keyInsightBox {
+  background: linear-gradient(135deg, rgba(245,158,11,.1) 0%, rgba(251,191,36,.05) 100%);
+  border: 1.5px solid rgba(245,158,11,.35);
+  border-left: 4px solid var(--amber);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+}
+.keyInsightLabel {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--amber);
+  margin-bottom: 10px;
+}
+.keyInsightText {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.8;
+  font-family: var(--font-reading);
+}
+
+/* ─── Pattern Signal box ─────────────────────────────────────────────────── */
+.patternBox {
+  background: rgba(167,139,250,.04);
+  border: 1px solid rgba(167,139,250,.2);
+  border-left: 3px solid var(--violet);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+}
+.patternBox .sectionTitle { color: var(--violet); }
+.patternChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.patternChip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  background: rgba(167,139,250,.1);
+  border: 1px solid rgba(167,139,250,.25);
+  border-radius: 20px;
+  color: var(--violet);
+}
+
+/* ─── Practice Problems ──────────────────────────────────────────────────── */
+.practiceList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.practiceItem {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.practiceTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.practiceNum {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text3);
+  font-family: var(--font-code);
+  width: 20px;
+  flex-shrink: 0;
+}
+.practiceName {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+}
+.practiceDiff {
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 1px 7px;
+  flex-shrink: 0;
+}
+.practiceHint {
+  font-size: 12.5px;
+  color: var(--text2);
+  line-height: 1.55;
+  padding-left: 2px;
 }
 
 /* ─── Flow Diagram tab ───────────────────────────────────────────────────── */

@@ -1,6 +1,6 @@
 {
   "batchName": "A01-searching",
-  "skipExisting": true,
+  "skipExisting": false,
   "algorithms": [
     {
       "slug": "binary-search",
@@ -23,7 +23,10 @@
       "interviewTips": "• Always use mid = low + (high - low) / 2 — never (low + high) / 2 which overflows for large indices\n• The condition is low <= high (not low < high) — the equal case handles single-element arrays\n• For 'first/last occurrence' problems, don't return on match — narrow the range and remember the answer\n• Binary search applies beyond arrays: use it on answer spaces (e.g. 'minimum mid value such that condition holds')",
       "useCases": "[{\"title\":\"Database Index Lookup\",\"desc\":\"B-tree indexes in MySQL use a variant of binary search to find rows in O(log n). A table with 1 billion rows needs at most 30 comparisons.\"},{\"title\":\"Git Bisect\",\"desc\":\"git bisect uses binary search to find the commit that introduced a bug. It halves the commit range on each step, finding the culprit in O(log n) test runs.\"},{\"title\":\"OS Page Table Walk\",\"desc\":\"Operating systems use binary search on sorted page tables to translate virtual addresses to physical memory addresses in O(log n).\"}]",
       "pitfalls": "[\"Off-by-one: using low < high instead of low <= high misses the case where the answer is the last element remaining\",\"Integer overflow: (low + high) / 2 overflows when both are large — always use low + (high - low) / 2\",\"Applying to unsorted arrays: binary search gives undefined results on unsorted data — always verify the precondition\",\"Not adapting for duplicates: a plain binary search finds any occurrence, not the first or last — use the boundary variant explicitly\"]",
-      "variants": "[{\"name\":\"Lower Bound\",\"desc\":\"Find the first index where arr[i] >= target — equivalent to Java's Arrays.binarySearch() returning insertion point\"},{\"name\":\"Upper Bound\",\"desc\":\"Find the first index where arr[i] > target — useful for counting occurrences of a value in a sorted array\"}]"
+      "variants": "[{\"name\":\"Lower Bound\",\"desc\":\"Find the first index where arr[i] >= target — equivalent to Java's Arrays.binarySearch() returning insertion point\"},{\"name\":\"Upper Bound\",\"desc\":\"Find the first index where arr[i] > target — useful for counting occurrences of a value in a sorted array\"}]",
+      "keyInsight": "Three things to tattoo on your brain: (1) mid = low + (high-low)/2 — never low+high (overflow). (2) condition is low <= high — equal handles the 1-element case. (3) Always ask: 'can I throw away half the search space?' — if yes, binary search applies.",
+      "patternSignal": "sorted array, O(log n) required, find position, first/last occurrence, search in rotated array, find peak, minimum in rotated, koko eating bananas, capacity to ship, answer is in a range",
+      "practiceProblems": "[{\"name\":\"Binary Search\",\"difficulty\":\"Easy\",\"hint\":\"The textbook case — nail the template first\"},{\"name\":\"Find First and Last Position of Element in Sorted Array\",\"difficulty\":\"Medium\",\"hint\":\"Run binary search twice: once for left boundary, once for right\"},{\"name\":\"Search in Rotated Sorted Array\",\"difficulty\":\"Medium\",\"hint\":\"One half is always sorted — use that to decide which half to search\"},{\"name\":\"Find Minimum in Rotated Sorted Array\",\"difficulty\":\"Medium\",\"hint\":\"Binary search on the rotation point\"},{\"name\":\"Koko Eating Bananas\",\"difficulty\":\"Medium\",\"hint\":\"Binary search on the answer space — not on the array itself\"}]"
     },
     {
       "slug": "linear-search",

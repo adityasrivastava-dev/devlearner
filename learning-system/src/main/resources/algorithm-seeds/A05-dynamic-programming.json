@@ -1,6 +1,6 @@
 {
   "batchName": "A05-dynamic-programming",
-  "skipExisting": true,
+  "skipExisting": false,
   "algorithms": [
     {
       "slug": "dp-memoization",
@@ -24,6 +24,9 @@
       "useCases": "[{\"title\":\"Game AI Move Evaluation\",\"desc\":\"Chess/Go engines evaluate millions of board positions using memoization — the same board position reached via different move sequences is only evaluated once.\"},{\"title\":\"Compiler Optimization\",\"desc\":\"Compilers use DP to solve register allocation — determining which variables to keep in CPU registers to minimize memory accesses.\"},{\"title\":\"Bioinformatics Sequence Alignment\",\"desc\":\"BLAST (genomic sequence alignment) uses memoized LCS variants to align DNA/protein sequences against databases.\"}]",
       "pitfalls": "[\"Returning memo[n] without checking if it's been set — use -1 as sentinel, not 0 (which may be a valid answer)\",\"Mutable state in memo keys — if your state includes an array, use a canonical string representation or sort first\",\"Stack overflow on deep recursion — for n > 10000, consider iterative bottom-up DP instead\",\"Using global memo across test cases — always reset the memo between calls in competitive programming\"]",
       "variants": "[{\"name\":\"Tabulation (Bottom-Up)\",\"desc\":\"Fill a DP table iteratively from base cases upward — eliminates recursion overhead and stack overflow risk\"},{\"name\":\"Space-Optimized DP\",\"desc\":\"If each state only depends on the previous row/column, use a 1D array rolling window to reduce O(n²) space to O(n)\"}]",
+      "keyInsight": "DP = recursion + cache. Nothing more. Write the recursive brute force first. Then ask: 'Do I call the same subproblem twice?' If yes, cache it. The cache IS the memoization. Identify the state (what parameters uniquely define a subproblem) and you've solved 80% of DP problems.",
+      "patternSignal": "minimum/maximum of something, number of ways, can you reach, longest subsequence, count distinct ways, optimal strategy, overlapping subproblems, fibonacci pattern, knapsack, coin change",
+      "practiceProblems": "[{\"name\":\"Climbing Stairs\",\"difficulty\":\"Easy\",\"hint\":\"Fibonacci in disguise — dp[i] = dp[i-1] + dp[i-2]. Your first DP.\"},{\"name\":\"Coin Change\",\"difficulty\":\"Medium\",\"hint\":\"dp[amount] = min coins. For each coin, dp[i] = min(dp[i], dp[i-coin]+1)\"},{\"name\":\"Longest Increasing Subsequence\",\"difficulty\":\"Medium\",\"hint\":\"dp[i] = length of LIS ending at index i. Try all j < i where nums[j] < nums[i]\"},{\"name\":\"0/1 Knapsack\",\"difficulty\":\"Medium\",\"hint\":\"2D DP: dp[i][w] = max value using first i items with capacity w\"},{\"name\":\"Edit Distance\",\"difficulty\":\"Hard\",\"hint\":\"Classic 2D DP — if chars match, dp[i][j]=dp[i-1][j-1]; else min of 3 operations\"}]",
       "mermaidDiagram": "graph TD\n    A[\"fib(5)\"] --> B[\"fib(4)\"]\n    A --> C[\"fib(3) ← CACHED after first call\"]\n    B --> D[\"fib(3) ← compute, cache\"]\n    B --> E[\"fib(2)\"]\n    D --> F[\"fib(2)\"]\n    D --> G[\"fib(1)=1\"]\n    E --> H[\"fib(1)=1\"]\n    E --> I[\"fib(0)=0\"]\n    C -.->|\"memo hit!\"| D"
     },
     {

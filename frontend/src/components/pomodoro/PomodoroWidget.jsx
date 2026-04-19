@@ -118,7 +118,15 @@ export default function PomodoroWidget() {
   // ── Position (drag) ────────────────────────────────────────────────────────
   const defaultPos = { x: window.innerWidth - 200, y: window.innerHeight - 80 };
   const savedPos   = loadPos();
-  const [pos,      setPos]      = useState(savedPos || defaultPos);
+
+  function clampPos(p) {
+    return {
+      x: Math.max(0, Math.min(window.innerWidth  - 60, p.x)),
+      y: Math.max(0, Math.min(window.innerHeight - 40, p.y)),
+    };
+  }
+
+  const [pos, setPos] = useState(() => clampPos(savedPos || defaultPos));
   const dragging   = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const rootRef    = useRef(null);
@@ -190,6 +198,13 @@ export default function PomodoroWidget() {
     dragOffset.current = { x: e.clientX - (rect?.left || pos.x), y: e.clientY - (rect?.top || pos.y) };
     e.preventDefault();
   }
+
+  // Clamp back into viewport on window resize / zoom change
+  useEffect(() => {
+    function onResize() { setPos(p => clampPos(p)); }
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []); // eslint-disable-line
 
   useEffect(() => {
     function onMouseMove(e) {
