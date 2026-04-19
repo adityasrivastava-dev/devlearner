@@ -1,8 +1,11 @@
 package com.learnsystem.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnsystem.model.Topic;
 import com.learnsystem.model.User;
 import com.learnsystem.repository.TopicRepository;
+import com.learnsystem.service.GeminiService;
 import com.learnsystem.service.LearningGateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -40,6 +44,8 @@ public class ResumeAnalyzerController {
 
     private final TopicRepository    topicRepo;
     private final LearningGateService gateService;
+    private final GeminiService      geminiService;
+    private final ObjectMapper       objectMapper = new ObjectMapper();
 
     // ── Keyword → DevLearn topic title mappings ────────────────────────────────
     // Key = lowercase keyword (regex word-boundary matched)
@@ -265,5 +271,166 @@ public class ResumeAnalyzerController {
             case "HARD"   -> 2;
             default       -> 3;
         };
+    }
+
+    // ── Generate Interview ─────────────────────────────────────────────────────
+
+    @PostMapping(value = "/generate-interview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> generateInterview(
+            @RequestPart("file") MultipartFile file,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) return ResponseEntity.status(401).build();
+        if (file == null || file.isEmpty())
+            return ResponseEntity.badRequest().body(Map.of("error", "No file uploaded"));
+
+        String fname = file.getOriginalFilename();
+        if (fname == null || !fname.toLowerCase().endsWith(".pdf"))
+            return ResponseEntity.badRequest().body(Map.of("error", "Only PDF files are supported"));
+        if (file.getSize() > 5 * 1024 * 1024)
+            return ResponseEntity.badRequest().body(Map.of("error", "File too large — maximum 5 MB"));
+
+        String resumeText;
+        try (PDDocument doc = Loader.loadPDF(file.getBytes())) {
+            resumeText = new PDFTextStripper().getText(doc);
+        } catch (Exception e) {
+            log.error("PDF parse failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", "Could not read PDF — make sure it contains selectable text"));
+        }
+
+        // Truncate to ~4000 chars to stay within token limits
+        String truncated = resumeText.length() > 4000 ? resumeText.substring(0, 4000) : resumeText;
+
+        String systemPrompt = """
+            You are a senior technical interviewer at MAANG (Meta, Apple, Amazon, Netflix, Google).
+            Analyze the candidate's resume and generate a personalized interview question set.
+
+            Return ONLY a valid JSON array — no markdown, no explanation, no code fences.
+            Each element must have exactly these fields:
+            {
+              "id": <integer starting at 1>,
+              "type": "<THEORY|CODING|PROJECT|BEHAVIORAL|SYSTEM_DESIGN>",
+              "topic": "<short topic name>",
+              "question": "<the full interview question>",
+              "difficulty": "<Easy|Medium|Hard>",
+              "expectedPoints": ["key point 1", "key point 2", "key point 3"]
+            }
+
+            Generate 18-22 questions with this distribution:
+            - THEORY (5-6): Core concept questions on their specific tech stack (Java internals, Spring, DB, etc.)
+            - CODING (4-5): Algorithm/DS problems matching their experience level. Include the problem statement clearly.
+            - PROJECT (4-5): Specific deep-dive questions about projects listed on their resume. Reference project names directly.
+            - BEHAVIORAL (3-4): STAR-format situational questions based on their work experience.
+            - SYSTEM_DESIGN (2-3): Architecture questions if they have backend/cloud experience.
+
+            Make every question specific to THIS resume. Reference their actual projects, companies, and tech stack.
+            Do NOT generate generic questions unrelated to their background.
+            """;
+
+        String aiResponse = geminiService.chat(systemPrompt, "Resume:\n" + truncated);
+
+        try {
+            // Strip markdown code fences if AI wrapped it
+            String cleaned = aiResponse.trim();
+            if (cleaned.startsWith("```")) {
+                cleaned = cleaned.replaceAll("^```[a-z]*\\n?", "").replaceAll("```$", "").trim();
+            }
+            // Extract the JSON array
+            int start = cleaned.indexOf('[');
+            int end   = cleaned.lastIndexOf(']');
+            if (start >= 0 && end > start) cleaned = cleaned.substring(start, end + 1);
+
+            List<Map<String, Object>> questions = objectMapper.readValue(
+                cleaned, new TypeReference<>() {});
+
+            log.info("Interview generated: userId={} questions={}", user.getId(), questions.size());
+            return ResponseEntity.ok(Map.of(
+                "questions",   questions,
+                "totalCount",  questions.size(),
+                "candidateName", extractName(resumeText)
+            ));
+        } catch (Exception e) {
+            log.error("Failed to parse AI question response: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "AI returned an unexpected format. Please try again."));
+        }
+    }
+
+    // ── Evaluate Answer ────────────────────────────────────────────────────────
+
+    @PostMapping("/evaluate-answer")
+    public ResponseEntity<?> evaluateAnswer(
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) return ResponseEntity.status(401).build();
+
+        String question       = String.valueOf(body.getOrDefault("question", ""));
+        String answer         = String.valueOf(body.getOrDefault("answer", ""));
+        String type           = String.valueOf(body.getOrDefault("type", "THEORY"));
+        Object epRaw          = body.get("expectedPoints");
+        String expectedPoints = epRaw != null ? epRaw.toString() : "[]";
+
+        if (answer.isBlank())
+            return ResponseEntity.badRequest().body(Map.of("error", "Answer cannot be empty"));
+
+        String systemPrompt = """
+            You are an expert MAANG technical interviewer evaluating a candidate's answer.
+            Return ONLY valid JSON — no markdown, no explanation, no code fences.
+            JSON structure:
+            {
+              "score": <integer 1-5>,
+              "grade": "<Excellent|Good|Needs Work|Poor>",
+              "strengths": ["what the candidate got right — be specific"],
+              "gaps": ["what was missing or incorrect — be specific and constructive"],
+              "modelAnswer": "<the ideal answer in 3-5 sentences>",
+              "followUp": "<one natural follow-up question an interviewer would ask next>"
+            }
+
+            Scoring guide: 5=excellent, 4=good with minor gaps, 3=partially correct, 2=significant gaps, 1=incorrect/off-topic.
+            Be constructive and specific. Reference the candidate's actual words.
+            """;
+
+        String userMsg = String.format(
+            "Question type: %s\nQuestion: %s\nExpected key points: %s\nCandidate's answer: %s",
+            type, question, expectedPoints, answer);
+
+        String aiResponse = geminiService.chat(systemPrompt, userMsg);
+
+        try {
+            String cleaned = aiResponse.trim();
+            if (cleaned.startsWith("```")) {
+                cleaned = cleaned.replaceAll("^```[a-z]*\\n?", "").replaceAll("```$", "").trim();
+            }
+            int start = cleaned.indexOf('{');
+            int end   = cleaned.lastIndexOf('}');
+            if (start >= 0 && end > start) cleaned = cleaned.substring(start, end + 1);
+
+            Map<String, Object> evaluation = objectMapper.readValue(
+                cleaned, new TypeReference<>() {});
+            return ResponseEntity.ok(evaluation);
+        } catch (Exception e) {
+            log.error("Failed to parse AI evaluation: {}", e.getMessage());
+            // Return a safe fallback
+            return ResponseEntity.ok(Map.of(
+                "score",       3,
+                "grade",       "Good",
+                "strengths",   List.of("You provided an answer — review it against the model answer below."),
+                "gaps",        List.of("AI evaluation unavailable. Compare your answer to the model answer."),
+                "modelAnswer", "Please refer to the expected key points for this question.",
+                "followUp",    "Can you elaborate further on your answer?"
+            ));
+        }
+    }
+
+    private String extractName(String resumeText) {
+        // Heuristic: first non-empty line is usually the candidate's name
+        String[] lines = resumeText.split("\\n");
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (!trimmed.isBlank() && trimmed.length() < 60 && !trimmed.contains("@"))
+                return trimmed;
+        }
+        return "Candidate";
     }
 }
