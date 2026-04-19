@@ -234,8 +234,9 @@
 }
 
 .card:hover {
-  opacity: 0.85;
   transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--border2) !important;
 }
 
 .card:active {

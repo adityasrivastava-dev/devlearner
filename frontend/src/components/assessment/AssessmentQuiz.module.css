@@ -6,7 +6,7 @@
   justify-content: center;
   gap: 16px;
   padding: 60px 24px;
-  color: var(--text-muted);
+  color: var(--text3);
   font-size: 0.9rem;
 }
 .spinner {
@@ -46,7 +46,7 @@
 .qCounter {
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: var(--text3);
 }
 .catTag {
   font-size: 0.75rem;
@@ -60,16 +60,16 @@
   background: none;
   border: none;
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--text3);
   cursor: pointer;
   padding: 4px 8px;
 }
-.skipBtn:hover { color: var(--text-primary); }
+.skipBtn:hover { color: var(--text); }
 
 .questionText {
   font-size: 1.05rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
   line-height: 1.5;
   margin: 0;
 }
@@ -85,7 +85,7 @@
   align-items: flex-start;
   gap: 12px;
   padding: 12px 14px;
-  background: var(--bg-primary, var(--bg1));
+  background: var(--bg);
   border: 1.5px solid var(--border);
   border-radius: 8px;
   cursor: pointer;
@@ -105,7 +105,7 @@
   display: flex; align-items: center; justify-content: center;
   font-size: 0.75rem; font-weight: 700;
   flex-shrink: 0;
-  color: var(--text-muted);
+  color: var(--text3);
 }
 .optionSelected .optLetter {
   background: var(--accent);
@@ -114,7 +114,7 @@
 }
 .optText {
   font-size: 0.88rem;
-  color: var(--text-primary);
+  color: var(--text);
   line-height: 1.4;
 }
 
@@ -141,8 +141,8 @@
 }
 .resultsHeader { text-align: center; }
 .resultsIcon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
-.resultsTitle { font-size: 1.3rem; font-weight: 700; margin: 0 0 6px; color: var(--text-primary); }
-.resultsSub { font-size: 0.88rem; color: var(--text-muted); margin: 0; }
+.resultsTitle { font-size: 1.3rem; font-weight: 700; margin: 0 0 6px; color: var(--text); }
+.resultsSub { font-size: 0.88rem; color: var(--text3); margin: 0; }
 
 .catGrid {
   display: flex;
@@ -160,17 +160,17 @@
   display: flex; align-items: center; gap: 8px;
 }
 .catIcon { font-size: 1rem; }
-.catLabel { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); flex: 1; }
+.catLabel { font-size: 0.88rem; font-weight: 600; color: var(--text); flex: 1; }
 .catBadge {
   font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 99px;
 }
 .passBadge { background: var(--easy)22; color: var(--easy); }
 .failBadge { background: var(--red)22; color: var(--red); }
-.catScore { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; padding-left: 24px; }
+.catScore { font-size: 0.78rem; color: var(--text3); margin-top: 4px; padding-left: 24px; }
 .advanced { color: var(--easy); font-weight: 600; }
 
 .reviewSection { margin-top: 8px; }
-.reviewTitle { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px; }
+.reviewTitle { font-size: 0.85rem; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px; }
 .reviewItem {
   padding: 10px 12px;
   border-radius: 6px;
@@ -179,9 +179,9 @@
 }
 .reviewCorrect { border-left-color: var(--easy); background: color-mix(in srgb, var(--easy) 6%, transparent); }
 .reviewWrong   { border-left-color: var(--red); background: color-mix(in srgb, var(--red) 6%, transparent); }
-.reviewQ { font-size: 0.83rem; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
-.reviewAnswer { font-size: 0.78rem; color: var(--text-muted); }
-.reviewExp { font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; font-style: italic; }
+.reviewQ { font-size: 0.83rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.reviewAnswer { font-size: 0.78rem; color: var(--text3); }
+.reviewExp { font-size: 0.78rem; color: var(--text2); margin-top: 4px; line-height: 1.5; font-style: italic; }
 
 .doneBtn {
   width: 100%;

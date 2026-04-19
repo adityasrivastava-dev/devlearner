@@ -192,22 +192,22 @@
   position: absolute;
   left: 9px;
   font-size: 1rem;
-  color: var(--text-muted, var(--text3));
+  color: var(--text3);
   pointer-events: none;
   line-height: 1;
 }
 .searchBarInput {
   width: 100%;
   padding: 7px 10px 7px 28px;
-  background: var(--bg-primary, var(--bg1));
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
-  color: var(--text-primary, var(--text));
+  color: var(--text);
   font-size: 0.82rem;
   outline: none;
   transition: border-color 0.15s;
 }
-.searchBarInput::placeholder { color: var(--text-muted, var(--text3)); }
+.searchBarInput::placeholder { color: var(--text3); }
 .searchBarInput:focus { border-color: var(--accent); }
 
 /* ── Videos section ── */

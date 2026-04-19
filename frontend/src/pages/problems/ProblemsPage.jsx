@@ -217,8 +217,8 @@ export default function ProblemsPage() {
                 onClick={() => setPatternsExpanded((v) => !v)}
               >
                 {patternsExpanded
-                  ? '⌃ Collapse'
-                  : `Expand ∨ ${meta.patternCounts.length - PATTERN_COLLAPSE_COUNT} more`}
+                  ? '▴ Collapse'
+                  : `▾ ${meta.patternCounts.length - PATTERN_COLLAPSE_COUNT} more patterns`}
               </button>
             )}
           </div>

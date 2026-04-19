@@ -4,14 +4,14 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  background: var(--bg-primary, var(--bg));
+  background: var(--bg);
   padding: 40px 16px 80px;
 }
 
 .card {
   width: 100%;
   max-width: 600px;
-  background: var(--bg-secondary, var(--bg2));
+  background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 32px;
@@ -21,16 +21,16 @@
 
 .backBtn {
   background: none; border: none;
-  color: var(--text-muted); font-size: 0.85rem;
+  color: var(--text3); font-size: 0.85rem;
   cursor: pointer; padding: 0; margin-bottom: 16px; display: block;
 }
-.backBtn:hover { color: var(--text-primary); }
+.backBtn:hover { color: var(--text); }
 
 .title {
   font-size: 1.5rem; font-weight: 700;
-  color: var(--text-primary); margin: 0 0 8px;
+  color: var(--text); margin: 0 0 8px;
 }
 .sub {
-  font-size: 0.88rem; color: var(--text-muted);
+  font-size: 0.88rem; color: var(--text3);
   margin: 0; line-height: 1.5;
 }

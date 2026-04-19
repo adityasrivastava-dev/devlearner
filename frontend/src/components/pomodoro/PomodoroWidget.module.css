@@ -16,8 +16,8 @@
   padding: 8px 14px;
   border-radius: 24px;
   border: 1.5px solid var(--border);
-  background: var(--bg-secondary, var(--bg2));
-  color: var(--text-primary);
+  background: var(--bg2);
+  color: var(--text);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: grab;
@@ -32,7 +32,7 @@
 }
 .pillIcon { font-size: 1rem; }
 .pillTime { font-variant-numeric: tabular-nums; letter-spacing: 0.03em; }
-.pillFocusLabel { font-size: 0.78rem; color: var(--text-muted); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pillFocusLabel { font-size: 0.78rem; color: var(--text3); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pillDot {
   width: 7px; height: 7px; border-radius: 50%;
   animation: pulse 1.4s ease-in-out infinite;
@@ -45,7 +45,7 @@
 /* ── Expanded card ───────────────────────────────────────────────────────── */
 .card {
   width: 272px;
-  background: var(--bg-secondary, var(--bg2));
+  background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 0 0 14px;
@@ -64,7 +64,7 @@
 }
 .cardFlash { animation: flash 0.4s ease; }
 @keyframes flash {
-  0%,100% { background: var(--bg-secondary, var(--bg2)); }
+  0%,100% { background: var(--bg2); }
   50%      { background: var(--bg-tertiary, #2a2a3a); }
 }
 
@@ -84,19 +84,19 @@
 
 .dragHandle {
   font-size: 1rem;
-  color: var(--text-muted);
+  color: var(--text3);
   line-height: 1;
   letter-spacing: -1px;
 }
-.cardTitle { font-size: 0.88rem; font-weight: 700; color: var(--text-primary); }
+.cardTitle { font-size: 0.88rem; font-weight: 700; color: var(--text); }
 
 .closeBtn {
   background: none; border: none;
-  color: var(--text-muted); font-size: 0.82rem;
+  color: var(--text3); font-size: 0.82rem;
   cursor: pointer; padding: 2px 5px; border-radius: 4px;
   flex-shrink: 0;
 }
-.closeBtn:hover { color: var(--text-primary); background: var(--bg-primary, var(--bg)); }
+.closeBtn:hover { color: var(--text); background: var(--bg); }
 
 /* ── Focus mode button ───────────────────────────────────────────────────── */
 .focusModeBtn {
@@ -104,7 +104,7 @@
   border-radius: 12px;
   border: 1px solid var(--border);
   background: none;
-  color: var(--text-muted);
+  color: var(--text3);
   font-size: 0.72rem;
   cursor: pointer;
   white-space: nowrap;
@@ -148,7 +148,7 @@
 .focusPickerTitle {
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: var(--text3);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -164,14 +164,14 @@
   padding: 8px 10px;
   border-radius: 8px;
   border: 1.5px solid var(--border);
-  background: var(--bg-primary, var(--bg));
-  color: var(--text-secondary, var(--text2));
+  background: var(--bg);
+  color: var(--text2);
   font-size: 0.78rem;
   cursor: pointer;
   text-align: left;
   transition: border-color 0.12s, color 0.12s;
 }
-.focusOption:hover { border-color: var(--accent); color: var(--text-primary); }
+.focusOption:hover { border-color: var(--accent); color: var(--text); }
 .focusOptionActive { border-color: var(--amber); color: var(--amber); background: var(--amber)12; }
 .focusOptionIcon  { font-size: 1rem; flex-shrink: 0; }
 .focusOptionLabel { font-size: 0.74rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -181,7 +181,7 @@
   border-radius: 6px;
   border: 1px solid var(--border);
   background: none;
-  color: var(--text-muted);
+  color: var(--text3);
   font-size: 0.75rem;
   cursor: pointer;
   align-self: flex-start;
@@ -192,7 +192,7 @@
 .phaseTabs {
   display: flex;
   gap: 4px;
-  background: var(--bg-primary, var(--bg));
+  background: var(--bg);
   border-radius: 10px;
   padding: 3px;
   width: calc(100% - 28px);
@@ -203,14 +203,14 @@
   border-radius: 7px;
   border: 1px solid transparent;
   background: none;
-  color: var(--text-muted);
+  color: var(--text3);
   font-size: 0.68rem;
   cursor: pointer;
   white-space: nowrap;
   transition: color 0.12s, background 0.12s;
 }
-.phaseTab:hover { color: var(--text-primary); }
-.phaseTabActive { background: var(--bg-secondary, var(--bg2)); font-weight: 600; }
+.phaseTab:hover { color: var(--text); }
+.phaseTabActive { background: var(--bg2); font-weight: 600; }
 
 /* ── Ring ────────────────────────────────────────────────────────────────── */
 .ringWrap {
@@ -230,7 +230,7 @@
   font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1;
 }
 .phaseLabel {
-  font-size: 0.65rem; color: var(--text-muted);
+  font-size: 0.65rem; color: var(--text3);
   text-transform: uppercase; letter-spacing: 0.07em;
 }
 
@@ -242,7 +242,7 @@
   transition: background 0.25s, border-color 0.25s;
 }
 .dotFilled { border-color: transparent; }
-.countLabel { font-size: 0.7rem; color: var(--text-muted); margin-top: -4px; }
+.countLabel { font-size: 0.7rem; color: var(--text3); margin-top: -4px; }
 
 /* ── Controls ────────────────────────────────────────────────────────────── */
 .controls {
@@ -252,7 +252,7 @@
 .resetBtn, .skipBtn {
   width: 34px; height: 34px; border-radius: 50%;
   border: 1.5px solid var(--border);
-  background: none; color: var(--text-muted); font-size: 1rem;
+  background: none; color: var(--text3); font-size: 1rem;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: border-color 0.12s, color 0.12s;
 }

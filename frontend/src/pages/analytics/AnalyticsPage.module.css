@@ -2,7 +2,7 @@
 .page {
   min-height: 100vh;
   height: 100dvh;
-  background: var(--bg1);
+  background: var(--bg);
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -196,7 +196,7 @@
 
 .confBarTrack {
   height: 4px;
-  background: var(--bg1);
+  background: var(--bg);
   border-radius: 2px;
   overflow: hidden;
 }

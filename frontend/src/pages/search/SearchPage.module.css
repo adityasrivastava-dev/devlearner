@@ -3,8 +3,8 @@
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: var(--bg);
+  color: var(--text);
   overflow: hidden;
 }
 
@@ -18,20 +18,20 @@
 .backBtn {
   background: none;
   border: none;
-  color: var(--text-muted);
+  color: var(--text3);
   font-size: 0.85rem;
   cursor: pointer;
   padding: 0;
   margin-bottom: 12px;
   display: block;
 }
-.backBtn:hover { color: var(--text-primary); }
+.backBtn:hover { color: var(--text); }
 
 .hero {
   flex-shrink: 0;
   padding: 24px 24px 32px;
   border-bottom: 1px solid var(--border);
-  background: var(--bg-secondary);
+  background: var(--bg2);
   text-align: center;
 }
 
@@ -39,12 +39,12 @@
   font-size: 1.8rem;
   font-weight: 700;
   margin: 0 0 6px;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .subtitle {
   font-size: 0.9rem;
-  color: var(--text-muted);
+  color: var(--text3);
   margin: 0 0 24px;
 }
 
@@ -67,7 +67,7 @@
   position: absolute;
   left: 12px;
   font-size: 1.1rem;
-  color: var(--text-muted);
+  color: var(--text3);
   pointer-events: none;
 }
 
@@ -76,8 +76,8 @@
   padding: 10px 36px 10px 36px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: var(--bg);
+  color: var(--text);
   font-size: 0.95rem;
   outline: none;
   transition: border-color 0.15s;
@@ -92,13 +92,13 @@
   right: 10px;
   background: none;
   border: none;
-  color: var(--text-muted);
+  color: var(--text3);
   cursor: pointer;
   font-size: 0.85rem;
   padding: 4px;
   line-height: 1;
 }
-.clearBtn:hover { color: var(--text-primary); }
+.clearBtn:hover { color: var(--text); }
 
 .searchBtn {
   padding: 10px 20px;
@@ -118,7 +118,7 @@
 .resultMeta {
   margin: 16px 0 0;
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: var(--text3);
 }
 
 /* ── Loading ─────────────────────────────────────────────────────────────── */
@@ -128,7 +128,7 @@
   justify-content: center;
   gap: 12px;
   padding: 60px 24px;
-  color: var(--text-muted);
+  color: var(--text3);
   font-size: 0.9rem;
 }
 
@@ -161,7 +161,7 @@
   gap: 8px;
   font-size: 1rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text);
   margin: 0 0 14px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--border);
@@ -173,8 +173,8 @@
   margin-left: auto;
   font-size: 0.8rem;
   font-weight: 600;
-  background: var(--bg-tertiary, var(--bg-secondary));
-  color: var(--text-muted);
+  background: var(--bg-tertiary, var(--bg2));
+  color: var(--text3);
   padding: 2px 8px;
   border-radius: 99px;
   border: 1px solid var(--border);
@@ -190,7 +190,7 @@
 .card {
   width: 100%;
   text-align: left;
-  background: var(--bg-secondary);
+  background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px 16px;
@@ -199,7 +199,7 @@
 }
 .card:hover {
   border-color: var(--accent);
-  background: var(--bg-tertiary, var(--bg-secondary));
+  background: var(--bg-tertiary, var(--bg2));
 }
 
 .cardTop {
@@ -212,7 +212,7 @@
 .cardTitle {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
   flex: 1;
   min-width: 0;
 }
@@ -220,8 +220,8 @@
 .catBadge {
   font-size: 0.72rem;
   font-weight: 600;
-  background: var(--bg-primary);
-  color: var(--text-muted);
+  background: var(--bg);
+  color: var(--text3);
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 2px 7px;
@@ -236,14 +236,14 @@
 
 .subCat {
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text3);
   margin-top: 2px;
   display: block;
 }
 
 .cardDesc {
   font-size: 0.82rem;
-  color: var(--text-muted);
+  color: var(--text3);
   margin: 6px 0 0;
   line-height: 1.5;
 }
@@ -258,7 +258,7 @@
 
 .patternTag {
   font-size: 0.75rem;
-  background: var(--bg-primary);
+  background: var(--bg);
   color: var(--accent);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -267,14 +267,14 @@
 
 .topicRef {
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text3);
 }
 
 /* ── Empty ───────────────────────────────────────────────────────────────── */
 .empty {
   text-align: center;
   padding: 60px 24px;
-  color: var(--text-muted);
+  color: var(--text3);
 }
 
 .emptyIcon {
@@ -287,7 +287,7 @@
 .empty p {
   font-size: 1rem;
   margin: 0 0 16px;
-  color: var(--text-secondary);
+  color: var(--text2);
 }
 
 .tips {
@@ -311,7 +311,7 @@
 
 .suggestLabel {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--text3);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin: 0 0 12px;
@@ -328,8 +328,8 @@
   padding: 6px 14px;
   border: 1px solid var(--border);
   border-radius: 99px;
-  background: var(--bg-secondary);
-  color: var(--text-secondary);
+  background: var(--bg2);
+  color: var(--text2);
   font-size: 0.85rem;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
