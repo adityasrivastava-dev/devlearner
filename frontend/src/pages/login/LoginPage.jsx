@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
@@ -236,12 +236,15 @@ export default function LoginPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const from = location.state?.from?.pathname || '/';
+  const oauthHandled = useRef(false);
 
   useEffect(() => {
+    if (oauthHandled.current) return;
     const oauthToken = searchParams.get('token');
     const oauthError = searchParams.get('error');
-    if (oauthError) { toast.error('Google login failed. Please try again.'); return; }
+    if (oauthError) { oauthHandled.current = true; toast.error('Google login failed. Please try again.'); return; }
     if (!oauthToken) return;
+    oauthHandled.current = true;
 
     const prevToken = localStorage.getItem('devlearn_token');
     localStorage.setItem('devlearn_token', oauthToken);

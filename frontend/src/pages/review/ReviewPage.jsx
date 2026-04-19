@@ -45,7 +45,7 @@ function SetupScreen({ dueItems, onStart, onBack }) {
             onClick={onStart}
             disabled={dueItems.length === 0}
           >
-            Start {dueItems.length} review{dueItems.length !== 1 ? 's' : ''} →
+            {dueItems.length === 0 ? 'All caught up ✓' : `Start ${dueItems.length} review${dueItems.length !== 1 ? 's' : ''} →`}
           </button>
         </div>
       </div>

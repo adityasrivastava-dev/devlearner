@@ -589,8 +589,7 @@ export default function ProblemSolveView({
 }
 
 // ── Markdown renderer ─────────────────────────────────────────────────────────
-// Handles: **bold**, `code`, bullet lists (- / * / •), numbered lists (1. 2.),
-//          blank-line paragraph breaks, single-newline <br>
+// Handles: ```fenced code```, **bold**, `code`, bullet/ordered lists, paragraphs
 function MDText({ text }) {
   if (!text) return null;
 
@@ -614,52 +613,61 @@ function MDText({ text }) {
     });
   };
 
-  // Split into blocks on blank lines
-  const blocks = text.split(/\n{2,}/);
+  // Split on fenced code blocks first, then blank lines for other blocks
+  const fenceRe = /```[\w]*\n?([\s\S]*?)```/g;
+  const segments = [];
+  let last = 0, m;
+  while ((m = fenceRe.exec(text)) !== null) {
+    if (m.index > last) segments.push({ type: 'text', content: text.slice(last, m.index) });
+    segments.push({ type: 'code', content: m[1].trimEnd() });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) segments.push({ type: 'text', content: text.slice(last) });
+
+  const renderTextSegment = (seg, si) =>
+    seg.content.split(/\n{2,}/).map((block, bi) => {
+      const trimmed = block.trim();
+      if (!trimmed) return null;
+      const lines = trimmed.split('\n');
+      const isUL = lines.every(l => /^[\-\*•]\s/.test(l.trim()));
+      if (isUL) return (
+        <ul key={`${si}-${bi}`} style={{ margin: '0 0 10px', paddingLeft: 20, lineHeight: 1.7 }}>
+          {lines.map((l, li) => (
+            <li key={li} style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 3 }}>
+              {renderInline(l.trim().replace(/^[\-\*•]\s+/, ''))}
+            </li>
+          ))}
+        </ul>
+      );
+      const isOL = lines.every(l => /^\d+[.)]\s/.test(l.trim()));
+      if (isOL) return (
+        <ol key={`${si}-${bi}`} style={{ margin: '0 0 10px', paddingLeft: 20, lineHeight: 1.7 }}>
+          {lines.map((l, li) => (
+            <li key={li} style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 3 }}>
+              {renderInline(l.trim().replace(/^\d+[.)]\s+/, ''))}
+            </li>
+          ))}
+        </ol>
+      );
+      return (
+        <p key={`${si}-${bi}`} style={{ margin: '0 0 10px', lineHeight: 1.65, fontSize: 13, color: 'var(--text2)' }}>
+          {renderInline(trimmed)}
+        </p>
+      );
+    });
 
   return (
     <>
-      {blocks.map((block, bi) => {
-        const trimmed = block.trim();
-        if (!trimmed) return null;
-
-        const lines = trimmed.split('\n');
-
-        // Unordered list: lines starting with - / * / •
-        const isUL = lines.every(l => /^[\-\*•]\s/.test(l.trim()));
-        if (isUL) {
-          return (
-            <ul key={bi} style={{ margin: '0 0 10px', paddingLeft: 20, lineHeight: 1.7 }}>
-              {lines.map((l, li) => (
-                <li key={li} style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 3 }}>
-                  {renderInline(l.trim().replace(/^[\-\*•]\s+/, ''))}
-                </li>
-              ))}
-            </ul>
-          );
-        }
-
-        // Ordered list: lines starting with 1. 2. etc.
-        const isOL = lines.every(l => /^\d+[.)]\s/.test(l.trim()));
-        if (isOL) {
-          return (
-            <ol key={bi} style={{ margin: '0 0 10px', paddingLeft: 20, lineHeight: 1.7 }}>
-              {lines.map((l, li) => (
-                <li key={li} style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 3 }}>
-                  {renderInline(l.trim().replace(/^\d+[.)]\s+/, ''))}
-                </li>
-              ))}
-            </ol>
-          );
-        }
-
-        // Normal paragraph
-        return (
-          <p key={bi} style={{ margin: '0 0 10px', lineHeight: 1.65, fontSize: 13, color: 'var(--text2)' }}>
-            {renderInline(trimmed)}
-          </p>
-        );
-      })}
+      {segments.map((seg, si) =>
+        seg.type === 'code' ? (
+          <pre key={si} style={{
+            background: 'var(--bg3)', border: '1px solid var(--border2)',
+            borderRadius: 6, padding: '10px 14px', margin: '0 0 12px',
+            fontFamily: 'var(--font-code)', fontSize: 12, color: 'var(--text)',
+            overflowX: 'auto', lineHeight: 1.6, whiteSpace: 'pre',
+          }}>{seg.content}</pre>
+        ) : renderTextSegment(seg, si)
+      )}
     </>
   );
 }
