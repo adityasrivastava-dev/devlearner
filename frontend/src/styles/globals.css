@@ -203,6 +203,15 @@ html, body, #root {
 /* TOAST */
 .react-hot-toast div { font-family: var(--font-ui) !important; }
 
+/* REDUCED MOTION — respect vestibular/motion-sensitive users */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
 /* MOBILE HELPERS */
 .mobile-only  { display: none !important; }
 .desktop-only { display: flex; }

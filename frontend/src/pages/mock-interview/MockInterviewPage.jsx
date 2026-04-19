@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import { mockInterviewApi, resumeApi } from '../../api';
+import useFocusTrap from '../../hooks/useFocusTrap';
 import styles from './MockInterviewPage.module.css';
 
 // ── Voice constants ───────────────────────────────────────────────────────────
@@ -77,6 +78,7 @@ function VoicePicker({ onClose }) {
   const voices   = useVoices();
   const [search,      setSearch]      = useState('');
   const [selected,    setSelected]    = useState(() => localStorage.getItem(VOICE_STORAGE_KEY) || '');
+  const trapRef = useFocusTrap(true);
   const [previewName, setPreviewName] = useState('');
 
   function preview(voice) {
@@ -117,8 +119,8 @@ function VoicePicker({ onClose }) {
     : ordered;
 
   return (
-    <div className={styles.voicePickerOverlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className={styles.voicePickerModal}>
+    <div className={styles.voicePickerOverlay} role="presentation" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div ref={trapRef} className={styles.voicePickerModal} role="dialog" aria-modal="true" aria-label="Interviewer Voice">
         <div className={styles.voicePickerHeader}>
           <span className={styles.voicePickerTitle}>🎙 Interviewer Voice</span>
           <button className={styles.voicePickerClose} onClick={onClose}>✕</button>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { recallApi } from '../../api';
+import useFocusTrap from '../../hooks/useFocusTrap';
 import styles from './RecallDrillModal.module.css';
 
 /**
@@ -20,6 +21,7 @@ export default function RecallDrillModal({
   const [elapsed, setElapsed] = useState(0);
   const textareaRef = useRef(null);
   const timerRef    = useRef(null);
+  const trapRef     = useFocusTrap(isOpen);
 
   // Reset when opened
   useEffect(() => {
@@ -87,8 +89,15 @@ export default function RecallDrillModal({
   const ringColor = elapsed < 20 ? 'var(--accent)' : elapsed < 28 ? '#f59e0b' : 'var(--red)';
 
   return (
-    <div className={styles.overlay} onClick={handleSkip}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <div className={styles.overlay} onClick={handleSkip} role="presentation">
+      <div
+        ref={trapRef}
+        className={styles.modal}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Recall Drill"
+        onClick={(e) => e.stopPropagation()}
+      >
 
         {phase === 'done' ? (
           /* ── Done state ─────────────────────────────────────── */

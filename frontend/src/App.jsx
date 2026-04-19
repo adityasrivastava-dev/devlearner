@@ -40,8 +40,9 @@ const ResumePage         = lazy(() => import('./pages/resume/ResumePage'));
 const MockInterviewPage  = lazy(() => import('./pages/mock-interview/MockInterviewPage'));
 const StoriesPage        = lazy(() => import('./pages/stories/StoriesPage'));
 
-// Apply saved theme on load
-const savedTheme = localStorage.getItem('devlearn_theme') || 'dark';
+// Apply saved theme on load; fall back to OS preference, then dark
+const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+const savedTheme = localStorage.getItem('devlearn_theme') || (systemPrefersDark ? 'dark' : 'light');
 document.documentElement.setAttribute('data-theme', savedTheme);
 
 const queryClient = new QueryClient({

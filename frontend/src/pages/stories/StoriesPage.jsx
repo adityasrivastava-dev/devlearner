@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { storyApi } from '../../api';
+import useFocusTrap from '../../hooks/useFocusTrap';
 import styles from './StoriesPage.module.css';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -245,10 +246,11 @@ function StarEditor({ initial, onSave, onCancel, saving, polishing, onPolish, po
 function ReviewModal({ stories, onClose }) {
   const [filter, setFilter] = useState('ALL');
   const visible = filter === 'ALL' ? stories : stories.filter(s => s.theme === filter);
+  const trapRef = useFocusTrap(true);
 
   return (
-    <div className={styles.reviewOverlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className={styles.reviewModal}>
+    <div className={styles.reviewOverlay} role="presentation" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div ref={trapRef} className={styles.reviewModal} role="dialog" aria-modal="true" aria-label="Pre-Interview Review">
         <div className={styles.reviewHeader}>
           <span className={styles.reviewTitle}>📖 Pre-Interview Review</span>
           <button className={styles.reviewClose} onClick={onClose}>✕</button>
