@@ -28,8 +28,8 @@ public class GeminiService {
     private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
     private static final List<String> GROQ_MODELS = List.of(
+        "llama-3.3-70b-versatile",
         "llama-3.1-8b-instant",
-        "gemma2-9b-it",
         "llama3-8b-8192"
     );
 
@@ -122,6 +122,24 @@ public class GeminiService {
         return "All AI models are currently busy. Please try again.";
     }
 
+    /** Large-prompt path (resume analysis, practice sets): Gemini → OpenAI, skips Groq free-tier TPM limits */
+    public String chatLargePrompt(String systemPrompt, String userMessage) {
+        if (geminiKey != null && !geminiKey.isBlank()) {
+            String result = callGemini(systemPrompt, userMessage);
+            if (result != null) return result;
+        }
+        if (openaiKey != null && !openaiKey.isBlank()) {
+            String result = callOpenAI(systemPrompt, userMessage);
+            if (result != null) return result;
+        }
+        // Last resort: try Groq anyway
+        if (groqKey != null && !groqKey.isBlank()) {
+            String result = callGroq(systemPrompt, userMessage);
+            if (result != null) return result;
+        }
+        return "All AI models are currently busy. Please try again.";
+    }
+
     // ── Groq (OpenAI-compatible) ──────────────────────────────────────────────
 
     private String callGroq(String systemPrompt, String userMessage) {
@@ -155,7 +173,7 @@ public class GeminiService {
                         }
                     }
                     int code = resp.code();
-                    if (code == 429 || code == 503) {
+                    if (code == 429 || code == 503 || code == 413 || code == 400) {
                         log.warn("Groq {} returned {} — trying next model", model, code);
                         continue;
                     }

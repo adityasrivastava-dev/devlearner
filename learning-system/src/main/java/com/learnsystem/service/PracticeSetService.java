@@ -28,28 +28,40 @@ public class PracticeSetService {
 
     // ── Public API ─────────────────────────────────────────────────────────────
 
+    // 5 micro-batches — each prompt stays well under free-tier token limits
+    private static final String[][] MICRO_BATCHES = {
+        { "THEORY",       "4" },
+        { "CODING",       "3" },
+        { "PROJECT",      "3" },
+        { "BEHAVIORAL",   "2" },
+        { "SYSTEM_DESIGN","2" },
+    };
+
     public Map<String, Object> generate(byte[] pdfBytes) throws Exception {
         String resumeText = extractText(pdfBytes);
         if (resumeText.isBlank())
             throw new IllegalArgumentException("Could not extract text from PDF. Make sure it contains selectable text.");
 
-        String truncated = resumeText.length() > 5000 ? resumeText.substring(0, 5000) : resumeText;
+        // Small resume snippet keeps each prompt under ~2500 tokens
+        String truncated = resumeText.length() > 2000 ? resumeText.substring(0, 2000) : resumeText;
 
-        // Parse profile with Gemini (better structured extraction)
+        // Call 1: profile parse (small structured call)
         Map<String, Object> profile = parseProfile(truncated);
 
-        // Generate in two batches of 15 to avoid token-limit truncation
-        List<Map<String, Object>> batch1 = generateQuestions(truncated, profile, "THEORY,CODING,PROJECT", 15);
-        List<Map<String, Object>> batch2 = generateQuestions(truncated, profile, "BEHAVIORAL,SYSTEM_DESIGN,THEORY", 15);
-
+        // Calls 2-6: one category per micro-batch, sequential, small prompts
         List<Map<String, Object>> questions = new ArrayList<>();
-        questions.addAll(batch1);
-        // Re-number ids for batch2
-        int offset = batch1.size();
-        for (int i = 0; i < batch2.size(); i++) {
-            Map<String, Object> q = new java.util.LinkedHashMap<>(batch2.get(i));
-            q.put("id", offset + i + 1);
-            questions.add(q);
+        for (String[] batch : MICRO_BATCHES) {
+            String category = batch[0];
+            int    count    = Integer.parseInt(batch[1]);
+            List<Map<String, Object>> batchQs = generateQuestions(truncated, profile, category, count);
+            // Assign sequential ids across all batches
+            int base = questions.size();
+            for (int i = 0; i < batchQs.size(); i++) {
+                Map<String, Object> q = new java.util.LinkedHashMap<>(batchQs.get(i));
+                q.put("id", base + i + 1);
+                questions.add(q);
+            }
+            sleepQuietly(400); // small pause to avoid per-minute quota bursts
         }
 
         String sessionId = UUID.randomUUID().toString();
@@ -61,6 +73,10 @@ public class PracticeSetService {
         resp.put("questions", questions);
         resp.put("total",     questions.size());
         return resp;
+    }
+
+    private static void sleepQuietly(long ms) {
+        try { Thread.sleep(ms); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
     }
 
     public List<Map<String, Object>> more(String sessionId, String topic, List<String> existingQuestions) {
@@ -83,56 +99,28 @@ public class PracticeSetService {
         String projList  = formatList(profile.get("projects"),  "name");
         String topicList = formatList(profile.get("topicsToTest"), null);
 
-        String focusClause = focusTopic != null && focusTopic.contains(",")
-            // batch mode — focusTopic is a comma-separated list of categories
-            ? "Use ONLY these categories: " + focusTopic + ". Spread evenly across them. Make PROJECT questions reference the candidate's actual projects directly."
-            : focusTopic != null
-            ? "Focus ONLY on the topic: " + focusTopic + "."
-            : "Spread across: THEORY (12), CODING (7), PROJECT (5), BEHAVIORAL (4), SYSTEM_DESIGN (4). " +
-              "Make PROJECT questions reference the candidate's actual project names directly.";
+        String focusClause = "category must be exactly: " + (focusTopic != null ? focusTopic : "THEORY") + ". "
+            + (("PROJECT".equals(focusTopic)) ? "Reference the candidate's actual project names directly." : "");
 
         String system = """
-            You are an expert interview coach creating a comprehensive practice set.
-            Generate a set of interview questions with FULL, DETAILED answers.
-            Return ONLY valid JSON array — no markdown, no fences.
-            Each element:
-            {
-              "id": 1,
-              "category": "THEORY",
-              "topic": "HashMap Internals",
-              "difficulty": "Medium",
-              "question": "How does HashMap handle hash collisions in Java?",
-              "answer": "Concise 2-3 sentence answer covering key technical details a MAANG interviewer expects.",
-              "keyPoints": ["key point 1", "key point 2", "key point 3"],
-              "followUp": "One natural follow-up question the interviewer might ask next."
-            }
-            category must be exactly one of: THEORY, CODING, PROJECT, BEHAVIORAL, SYSTEM_DESIGN
-            difficulty must be exactly: Easy, Medium, or Hard
-            Answers must be technically accurate — include key concepts, trade-offs, and real examples. Keep each answer under 100 words.
-            CRITICAL JSON RULES — violating these will break parsing:
-            - Never use double-quote characters inside string values. Use single quotes for code terms (e.g. 'synchronized', 'HashMap').
-            - Never use backslashes inside string values.
-            - keyPoints must be a JSON array of strings, never null.
-            - Every object must be complete and properly closed before the next one.
+            You are an expert interview coach. Return ONLY a valid JSON array — no markdown, no fences.
+            Each element: {"id":1,"category":"THEORY","topic":"...","difficulty":"Medium","question":"...","answer":"...","keyPoints":["..."],"followUp":"..."}
+            difficulty: Easy, Medium, or Hard. Answers under 60 words.
+            JSON rules: never use double-quotes inside string values (use single quotes); keyPoints is always an array.
             """;
 
         String prompt = String.format("""
-            Resume summary:
-            Role: %s | Experience: %s years
-            Tech Stack: %s
-            Projects: %s
-            Topics to cover: %s
-
+            Candidate: %s, %s yrs | Tech: %s | Projects: %s
             %s
-            Generate exactly %d questions. Every answer must be detailed and technically accurate.
+            Generate exactly %d questions. Mix Easy/Medium/Hard.
             """,
             profile.getOrDefault("currentRole", "Engineer"),
             profile.getOrDefault("yearsOfExperience", "?"),
-            techList, projList, topicList,
+            techList, projList,
             focusClause, count);
 
         // Prefer Gemini for thorough answers; Groq as fast fallback
-        String aiResponse = geminiService.chatGeminiFirst(system, prompt);
+        String aiResponse = geminiService.chatLargePrompt(system, prompt);
 
         try {
             String cleaned = stripFences(aiResponse);
@@ -167,7 +155,7 @@ public class PracticeSetService {
 
         String avoid = existingQuestions == null || existingQuestions.isEmpty()
             ? "none"
-            : String.join(" | ", existingQuestions.stream().limit(20).collect(Collectors.toList()));
+            : String.join(" | ", existingQuestions.stream().limit(8).collect(Collectors.toList()));
 
         String system = """
             You are an expert interview coach. Generate MORE interview Q&A pairs on a specific topic.
@@ -203,7 +191,7 @@ public class PracticeSetService {
             formatList(session.profile.get("techStack"), "tech"),
             topic, avoid);
 
-        String aiResponse = geminiService.chatGeminiFirst(system, prompt);
+        String aiResponse = geminiService.chatLargePrompt(system, prompt);
 
         try {
             String cleaned = stripFences(aiResponse);
@@ -240,7 +228,7 @@ public class PracticeSetService {
             topicsToTest: list 8-10 very specific technical areas based on their resume.
             """;
 
-        String aiResponse = geminiService.chatGeminiFirst(system, "Resume:\n" + resumeText);
+        String aiResponse = geminiService.chatLargePrompt(system, "Resume:\n" + resumeText);
 
         try {
             return mapper.readValue(stripFences(aiResponse), new TypeReference<>() {});
