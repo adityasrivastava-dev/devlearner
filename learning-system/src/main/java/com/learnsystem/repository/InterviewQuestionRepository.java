@@ -40,4 +40,12 @@ public interface InterviewQuestionRepository extends JpaRepository<InterviewQues
     /** Category-level questions (topicTitle IS NULL) */
     @Query("SELECT q FROM InterviewQuestion q WHERE q.category = :category AND q.topicTitle IS NULL ORDER BY q.displayOrder ASC, q.createdAt ASC")
     List<InterviewQuestion> findCategoryLevelPaged(@Param("category") String category, Pageable pageable);
+
+    /** Multi-category fetch — for DB-backed practice set generation */
+    @Query("SELECT q FROM InterviewQuestion q WHERE q.category IN :categories ORDER BY FUNCTION('RAND')")
+    List<InterviewQuestion> findByCategoriesRandom(@Param("categories") List<String> categories, Pageable pageable);
+
+    /** Count how many questions exist for the given categories */
+    @Query("SELECT COUNT(q) FROM InterviewQuestion q WHERE q.category IN :categories")
+    long countByCategories(@Param("categories") List<String> categories);
 }

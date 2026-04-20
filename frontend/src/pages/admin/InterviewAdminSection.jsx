@@ -5,7 +5,7 @@ import { QUESTIONS } from '../interview/interviewData';
 import toast from 'react-hot-toast';
 import styles from './AdminPage.module.css';
 
-const IQ_CATEGORIES = ['JAVA', 'ADVANCED_JAVA', 'DSA', 'SQL', 'SPRING_BOOT', 'HIBERNATE', 'AWS'];
+const IQ_CATEGORIES = ['JAVA', 'ADVANCED_JAVA', 'DSA', 'SQL', 'SPRING_BOOT', 'HIBERNATE', 'AWS', 'BEHAVIORAL', 'SYSTEM_DESIGN'];
 const IQ_DIFFICULTIES = ['HIGH', 'MEDIUM'];
 
 const CAT_LABEL = {
@@ -16,6 +16,8 @@ const CAT_LABEL = {
   SPRING_BOOT:   'Spring Boot',
   HIBERNATE:     'Hibernate',
   AWS:           'AWS',
+  BEHAVIORAL:    'Behavioral',
+  SYSTEM_DESIGN: 'System Design',
 };
 
 const CAT_COLOR = {
@@ -26,67 +28,10 @@ const CAT_COLOR = {
   SPRING_BOOT:   '#22c55e',
   HIBERNATE:     '#14b8a6',
   AWS:           '#f97316',
+  BEHAVIORAL:    '#8b5cf6',
+  SYSTEM_DESIGN: '#06b6d4',
 };
 
-// ── Batch Library — one entry per JSON file in /public/interview-batches/ ─────
-const LIBRARY_BATCHES = [
-  {
-    id: 'iq-batch-05',
-    name: 'Spring Boot Fundamentals',
-    href: '/interview-batches/iq-batch-05-spring-boot-fundamentals.json',
-    categories: ['SPRING_BOOT'],
-    count: 20,
-    description: 'IoC & DI, auto-configuration, bean scopes, profiles, Actuator, exception handling',
-  },
-  {
-    id: 'iq-batch-06',
-    name: 'Spring Boot Advanced + Hibernate',
-    href: '/interview-batches/iq-batch-06-spring-hibernate-advanced.json',
-    categories: ['SPRING_BOOT', 'HIBERNATE'],
-    count: 40,
-    description: '@Transactional & propagation, AOP, Spring Security, JPA lifecycle, N+1, second-level cache',
-  },
-  {
-    id: 'iq-batch-07',
-    name: 'Java Core Extended',
-    href: '/interview-batches/iq-batch-07-java-core-extended.json',
-    categories: ['JAVA'],
-    count: 20,
-    description: 'String pool, ClassLoader, design patterns (Strategy, Observer, Factory, Decorator), concurrency utils',
-  },
-  {
-    id: 'iq-batch-08',
-    name: 'Advanced Java Extended',
-    href: '/interview-batches/iq-batch-08-advanced-java-extended.json',
-    categories: ['ADVANCED_JAVA'],
-    count: 20,
-    description: 'Virtual threads, records, sealed classes, pattern matching, reactive (Mono/Flux), dynamic proxies',
-  },
-  {
-    id: 'iq-batch-09',
-    name: 'DSA Patterns Extended',
-    href: '/interview-batches/iq-batch-09-dsa-extended.json',
-    categories: ['DSA'],
-    count: 25,
-    description: 'Monotonic stack, Union-Find, Trie, Dijkstra, Bellman-Ford, LRU cache, Floyd cycle detection',
-  },
-  {
-    id: 'iq-batch-10',
-    name: 'SQL Advanced',
-    href: '/interview-batches/iq-batch-10-sql-extended.json',
-    categories: ['SQL'],
-    count: 15,
-    description: 'MVCC, InnoDB deadlocks, EXPLAIN plan, covering index, partitioning, phantom reads, sharding',
-  },
-  {
-    id: 'iq-batch-11',
-    name: 'AWS Advanced',
-    href: '/interview-batches/iq-batch-11-aws-extended.json',
-    categories: ['AWS'],
-    count: 15,
-    description: 'Auto Scaling, ALB vs NLB, ElastiCache Redis, Multi-AZ, CloudFront, Cognito, Step Functions',
-  },
-];
 
 const DIFF_COLOR = {
   HIGH:   'var(--red)',
@@ -94,7 +39,7 @@ const DIFF_COLOR = {
 };
 
 const BLANK = {
-  category: 'JAVA',
+  category:  'JAVA',
   difficulty: 'HIGH',
   question: '',
   quickAnswer: '',
@@ -113,7 +58,7 @@ const BLANK = {
 
 /* ── Main exported section ──────────────────────────────────────────────────── */
 export default function InterviewAdminSection() {
-  const [tab, setTab] = useState('manage'); // manage | create | bulk | library | topicfiles | build
+  const [tab, setTab] = useState('manage');
 
   return (
     <div className={styles.section}>
@@ -124,9 +69,7 @@ export default function InterviewAdminSection() {
             ['manage',     '⚙ Manage'],
             ['create',     '+ New Question'],
             ['bulk',       '⬆ Paste JSON'],
-            ['topicfiles', '📂 Topic Files'],
-            ['library',    '📚 Batch Library'],
-            ['build',      '🔨 Build Set'],
+            ['topicfiles', '📂 Import Files'],
           ].map(([key, label]) => (
             <button
               key={key}
@@ -141,8 +84,6 @@ export default function InterviewAdminSection() {
       {tab === 'create'     && <IQFormPanel question={null} onDone={() => setTab('manage')} />}
       {tab === 'bulk'       && <IQBulkUploadPanel onDone={() => setTab('manage')} />}
       {tab === 'topicfiles' && <IQTopicFilesPanel />}
-      {tab === 'library'    && <IQBatchLibraryPanel />}
-      {tab === 'build'      && <IQBuildSetPanel />}
       {tab.startsWith('edit-') && (
         <IQEditWrapper
           id={parseInt(tab.replace('edit-', ''))}
@@ -153,13 +94,21 @@ export default function InterviewAdminSection() {
   );
 }
 
-/* ── Topic Files panel (classpath:interviewquestions/) ───────────────────────── */
+/* ── Import Files panel — fully dynamic from classpath:interviewquestions/ ──── */
+function labelFromFilename(filename) {
+  return filename
+    .replace(/\.json$/, '')
+    .replace(/^iq-(batch-\d+-)?/, '')
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
 function IQTopicFilesPanel() {
   const qc = useQueryClient();
   const [importing, setImporting] = useState(null);
   const [results, setResults]     = useState({});
 
-  const { data: files = [], isLoading } = useQuery({
+  const { data: files = [], isLoading, refetch } = useQuery({
     queryKey: ['iqTopicFiles'],
     queryFn:  () => interviewApi.getFiles(),
     staleTime: 60 * 1000,
@@ -171,9 +120,10 @@ function IQTopicFilesPanel() {
       const res = await interviewApi.importFile(filename);
       setResults(prev => ({ ...prev, [filename]: res }));
       qc.invalidateQueries({ queryKey: QUERY_KEYS.interviewQuestions });
-      toast.success(`${filename}: imported ${res.imported}, skipped ${res.skipped}`);
+      toast.success(`Imported ${res.imported}, skipped ${res.skipped}`);
     } catch (e) {
-      toast.error(`Failed to import ${filename}`);
+      const msg = e?.response?.data?.error || e?.message || 'Import failed';
+      toast.error(`${filename}: ${msg}`);
     } finally {
       setImporting(null);
     }
@@ -185,59 +135,46 @@ function IQTopicFilesPanel() {
     }
   }
 
-  const FILE_LABELS = {
-    'iq-java-topics.json':     { label: 'Java Core',       color: '#f59e0b', icon: '☕' },
-    'iq-adv-java-topics.json': { label: 'Advanced Java',   color: '#8b5cf6', icon: '⚡' },
-    'iq-dsa-topics.json':      { label: 'DSA',             color: '#10b981', icon: '🌳' },
-    'iq-sql-topics.json':      { label: 'MySQL / SQL',     color: '#3b82f6', icon: '🗄' },
-    'iq-spring-topics.json':   { label: 'Spring Boot',     color: '#22c55e', icon: '🍃' },
-    'iq-sysdesign-topics.json':{ label: 'System Design',   color: '#f472b6', icon: '🏗' },
-    'iq-aws-topics.json':      { label: 'AWS',             color: '#f97316', icon: '☁' },
-  };
+  const totalQ = files.reduce((s, f) => s + (f.count || 0), 0);
 
   return (
     <div style={{ padding: '16px 0' }}>
       <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
-            Topic-Specific Q&A Files
+            Interview Question Files
           </div>
           <div style={{ fontSize: 12, color: 'var(--text3)' }}>
-            Topic-tagged interview questions stored in backend resources. Importing skips duplicates.
+            {files.length} files · {totalQ} questions in <code>resources/interviewquestions/</code>. Importing skips duplicates.
           </div>
         </div>
-        {files.length > 0 && (
-          <button
-            className="btn btn-sm btn-primary"
-            onClick={handleImportAll}
-            disabled={importing !== null}
-          >
-            Import All
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-sm btn-ghost" onClick={() => refetch()} disabled={isLoading}>↻ Refresh</button>
+          {files.length > 0 && (
+            <button className="btn btn-sm btn-primary" onClick={handleImportAll} disabled={importing !== null}>
+              ⬇ Import All
+            </button>
+          )}
+        </div>
       </div>
 
-      {isLoading && (
-        <div style={{ color: 'var(--text3)', fontSize: 13 }}>Loading files…</div>
-      )}
+      {isLoading && <div style={{ color: 'var(--text3)', fontSize: 13 }}>Loading files…</div>}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {files.map(f => {
-          const meta   = FILE_LABELS[f.filename] || { label: f.filename, color: '#94a3b8', icon: '📄' };
           const result = results[f.filename];
           return (
             <div key={f.filename} className={styles.iqFileRow}>
-              <span style={{ fontSize: 20 }}>{meta.icon}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
-                  <span style={{ color: meta.color }}>{meta.label}</span>
-                  <span style={{ color: 'var(--text3)', fontWeight: 400, marginLeft: 6 }}>
-                    ({f.filename})
+                  {labelFromFilename(f.filename)}
+                  <span style={{ color: 'var(--text3)', fontWeight: 400, marginLeft: 6, fontSize: 11 }}>
+                    {f.filename}
                   </span>
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-                  {f.count} questions · {f.topics.length} topics
-                  {f.topics.length > 0 && `: ${f.topics.slice(0, 3).join(', ')}${f.topics.length > 3 ? ` +${f.topics.length - 3} more` : ''}`}
+                  {f.count} questions
+                  {f.topics.length > 0 && ` · ${f.topics.slice(0, 4).join(', ')}${f.topics.length > 4 ? ` +${f.topics.length - 4} more` : ''}`}
                 </div>
                 {result && (
                   <div style={{ fontSize: 11, color: '#4ade80', marginTop: 2 }}>
@@ -250,7 +187,7 @@ function IQTopicFilesPanel() {
                 onClick={() => handleImport(f.filename)}
                 disabled={importing === f.filename}
               >
-                {importing === f.filename ? 'Importing…' : result ? 'Re-import' : 'Import'}
+                {importing === f.filename ? 'Importing…' : result ? '↻ Re-import' : 'Import'}
               </button>
             </div>
           );
@@ -833,158 +770,6 @@ function IQBulkUploadPanel({ onDone }) {
   );
 }
 
-/* ── Batch Library ───────────────────────────────────────────────────────────── */
-function IQBatchLibraryPanel() {
-  const qc = useQueryClient();
-  const [states, setStates] = useState({}); // { [batchId]: { status, result, error } }
-
-  function setStatus(id, status, extra = {}) {
-    setStates(s => ({ ...s, [id]: { status, ...extra } }));
-  }
-
-  function normalise(raw) {
-    const list = Array.isArray(raw) ? raw : raw?.questions;
-    if (!Array.isArray(list)) throw new Error('Unexpected batch format');
-    return list.map((item, i) => {
-      const normKeyPoints = Array.isArray(item.keyPoints)
-        ? JSON.stringify(item.keyPoints.filter(Boolean))
-        : (() => {
-            if (typeof item.keyPoints === 'string') {
-              const t = item.keyPoints.trim();
-              if (!t) return JSON.stringify([]);
-              if (t.startsWith('[')) return t;
-              return JSON.stringify(t.split('\n').map(l => l.trim()).filter(Boolean));
-            }
-            return JSON.stringify([]);
-          })();
-      const normArr = (v) => {
-        if (Array.isArray(v)) return v.length ? JSON.stringify(v.filter(Boolean)) : null;
-        if (typeof v === 'string' && v.trim()) {
-          const t = v.trim();
-          if (t.startsWith('[')) return t;
-          return JSON.stringify(t.split('\n').map(s => s.trim()).filter(Boolean));
-        }
-        return null;
-      };
-      return {
-        category:          item.category,
-        topicTitle:        item.topicTitle || null,
-        difficulty:        item.difficulty || 'MEDIUM',
-        question:          item.question,
-        quickAnswer:       item.quickAnswer,
-        keyPoints:         normKeyPoints,
-        codeExample:       item.codeExample || null,
-        followUpQuestions: normArr(item.followUpQuestions),
-        spokenAnswer:      item.spokenAnswer || null,
-        commonMistakes:    item.commonMistakes || null,
-        companiesAskThis:  normArr(item.companiesAskThis),
-        seniorExpectation: item.seniorExpectation || null,
-        timeToAnswer:      item.timeToAnswer || null,
-        relatedTopics:     normArr(item.relatedTopics),
-        tags:              normArr(item.tags),
-        displayOrder:      Number.isFinite(Number(item.displayOrder)) ? Number(item.displayOrder) : i,
-      };
-    });
-  }
-
-  async function handleImport(batch) {
-    setStatus(batch.id, 'loading');
-    try {
-      const res = await fetch(batch.href);
-      if (!res.ok) throw new Error(`File not found (${res.status}) — batch not created yet`);
-      const payload = normalise(await res.json());
-      const result  = await interviewApi.bulkImport(payload);
-      setStatus(batch.id, 'done', { result });
-      toast.success(`${batch.name}: ${result.imported} imported`);
-      qc.invalidateQueries({ queryKey: QUERY_KEYS.interviewQuestions });
-    } catch (err) {
-      const msg = err?.response?.data?.message || err?.message || 'Import failed';
-      setStatus(batch.id, 'error', { error: msg });
-      toast.error(`${batch.name}: ${msg}`);
-    }
-  }
-
-  async function handleImportAll() {
-    for (const batch of LIBRARY_BATCHES) {
-      await handleImport(batch);
-    }
-  }
-
-  const totalQ = LIBRARY_BATCHES.reduce((s, b) => s + b.count, 0);
-
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <span style={{ color: 'var(--text2)', fontSize: 13 }}>
-          {totalQ} questions across {LIBRARY_BATCHES.length} batches. Duplicate imports are safe — backend skips existing questions.
-        </span>
-        <button className="btn btn-primary btn-sm" onClick={handleImportAll}>
-          ⬇ Import All Batches
-        </button>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
-        {LIBRARY_BATCHES.map(batch => {
-          const st = states[batch.id];
-          const isLoading = st?.status === 'loading';
-          const isDone    = st?.status === 'done';
-          const isError   = st?.status === 'error';
-
-          return (
-            <div
-              key={batch.id}
-              style={{
-                border: `1px solid ${isDone ? 'var(--green)' : isError ? 'var(--red)' : 'var(--border)'}`,
-                borderRadius: 'var(--radius)',
-                background: 'var(--bg2)',
-                padding: '16px 18px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 10,
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', lineHeight: 1.3 }}>{batch.name}</div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', background: 'var(--bg3)', borderRadius: 4, padding: '2px 7px', flexShrink: 0 }}>
-                  {batch.count} Q
-                </span>
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.5 }}>{batch.description}</div>
-              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                {batch.categories.map(cat => (
-                  <span key={cat} style={{
-                    fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
-                    background: (CAT_COLOR[cat] || '#888') + '22',
-                    color: CAT_COLOR[cat] || '#888',
-                  }}>
-                    {CAT_LABEL[cat] || cat}
-                  </span>
-                ))}
-              </div>
-              {isDone && (
-                <div style={{ fontSize: 12, color: 'var(--green)' }}>
-                  ✓ {st.result.imported} imported, {st.result.skipped} skipped
-                </div>
-              )}
-              {isError && (
-                <div style={{ fontSize: 12, color: 'var(--red)' }}>✕ {st.error}</div>
-              )}
-              <button
-                className={`btn btn-sm ${isDone ? 'btn-ghost' : 'btn-primary'}`}
-                style={{ marginTop: 'auto' }}
-                disabled={isLoading}
-                onClick={() => handleImport(batch)}
-              >
-                {isLoading
-                  ? <><span className="spinner" /> Importing…</>
-                  : isDone ? '↻ Re-import' : '⬇ Import Batch'}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 /* ── Inline JSON editor (expand below a question row) ───────────────────────── */
 function JsonInlineEditor({ question, onClose, onSaved }) {
@@ -1084,209 +869,6 @@ function JsonInlineEditor({ question, onClose, onSaved }) {
         </button>
         <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
       </div>
-    </div>
-  );
-}
-
-/* ── Build Set panel ─────────────────────────────────────────────────────────── */
-function IQBuildSetPanel() {
-  const { data: questions = [], isLoading } = useQuery({
-    queryKey: QUERY_KEYS.interviewQuestions,
-    queryFn:  () => interviewApi.getAll(),
-    staleTime: 30_000,
-  });
-
-  const [setName, setSetName]   = useState('my-interview-set');
-  const [catFilter, setCat]     = useState('ALL');
-  const [diffFilter, setDiff]   = useState('ALL');
-  const [search, setSearch]     = useState('');
-  const [selected, setSelected] = useState(new Set());
-  const [showJson, setShowJson] = useState(false);
-
-  const filtered = questions.filter(q => {
-    if (catFilter !== 'ALL' && q.category !== catFilter) return false;
-    if (diffFilter !== 'ALL' && q.difficulty !== diffFilter) return false;
-    if (search) {
-      const s = search.toLowerCase();
-      if (!q.question.toLowerCase().includes(s)) return false;
-    }
-    return true;
-  });
-
-  function toggleSelect(id) {
-    setSelected(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }
-
-  function selectAll() {
-    setSelected(new Set(filtered.map(q => q.id)));
-  }
-
-  function clearAll() {
-    setSelected(new Set());
-  }
-
-  function buildJson() {
-    const selectedQs = questions.filter(q => selected.has(q.id));
-    const payload = {
-      batchName: setName || 'my-interview-set',
-      questions: selectedQs.map(q => {
-        let kp = [];
-        try { kp = JSON.parse(q.keyPoints || '[]'); } catch { kp = []; }
-        return {
-          category:     q.category,
-          difficulty:   q.difficulty,
-          question:     q.question,
-          quickAnswer:  q.quickAnswer,
-          keyPoints:    kp,
-          codeExample:  q.codeExample || null,
-          displayOrder: q.displayOrder ?? 0,
-        };
-      }),
-    };
-    return JSON.stringify(payload, null, 2);
-  }
-
-  function handleCopy() {
-    navigator.clipboard.writeText(buildJson());
-    toast.success(`Copied ${selected.size} questions as JSON`);
-  }
-
-  function handleDownload() {
-    const blob = new Blob([buildJson()], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `${setName || 'interview-set'}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success(`Downloaded ${setName}.json`);
-  }
-
-  const json = showJson ? buildJson() : '';
-
-  if (isLoading) return <div className={styles.loading}><span className="spinner" />Loading questions…</div>;
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Set name */}
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px' }}>
-            Set / Batch Name
-          </label>
-          <input
-            className="input"
-            style={{ width: 240 }}
-            value={setName}
-            onChange={e => setSetName(e.target.value.trim().replace(/\s+/g, '-').toLowerCase())}
-            placeholder="my-interview-set"
-          />
-        </div>
-        <div style={{ marginTop: 18, display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 13, color: selected.size > 0 ? 'var(--primary)' : 'var(--text3)', fontWeight: 600 }}>
-            {selected.size} selected
-          </span>
-          {selected.size > 0 && (
-            <>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowJson(v => !v)}>
-                {showJson ? 'Hide JSON' : '{ } Preview JSON'}
-              </button>
-              <button className="btn btn-ghost btn-sm" onClick={handleCopy}>📋 Copy JSON</button>
-              <button className="btn btn-primary btn-sm" onClick={handleDownload}>⬇ Download .json</button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* JSON preview */}
-      {showJson && selected.size > 0 && (
-        <textarea
-          className={styles.jsonInput}
-          rows={16}
-          value={json}
-          readOnly
-          style={{ width: '100%' }}
-        />
-      )}
-
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-        <input
-          className="input"
-          style={{ flex: 1, minWidth: 180, maxWidth: 280 }}
-          placeholder="🔍 Filter questions…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-        <select className="input" style={{ width: 'auto' }} value={catFilter} onChange={e => setCat(e.target.value)}>
-          <option value="ALL">All Categories</option>
-          {IQ_CATEGORIES.map(c => <option key={c} value={c}>{CAT_LABEL[c]}</option>)}
-        </select>
-        <select className="input" style={{ width: 'auto' }} value={diffFilter} onChange={e => setDiff(e.target.value)}>
-          <option value="ALL">All Priorities</option>
-          <option value="HIGH">High Priority</option>
-          <option value="MEDIUM">Good to Know</option>
-        </select>
-        <button className="btn btn-ghost btn-sm" onClick={selectAll}>Select All ({filtered.length})</button>
-        {selected.size > 0 && <button className="btn btn-ghost btn-sm" onClick={clearAll}>Clear</button>}
-      </div>
-
-      {/* Question checklist */}
-      {questions.length === 0 ? (
-        <EmptyHint text="No questions yet. Import some first via Paste JSON or Batch Library." />
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 520, overflowY: 'auto' }}>
-          {filtered.map(q => {
-            const isChecked = selected.has(q.id);
-            return (
-              <label
-                key={q.id}
-                style={{
-                  display: 'flex', gap: 10, alignItems: 'flex-start',
-                  padding: '9px 12px',
-                  background: isChecked ? 'var(--primary)11' : 'var(--bg2)',
-                  border: `1px solid ${isChecked ? 'var(--primary)44' : 'var(--border)'}`,
-                  borderRadius: 'var(--radius)',
-                  cursor: 'pointer',
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={isChecked}
-                  onChange={() => toggleSelect(q.id)}
-                  style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--primary)' }}
-                />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: isChecked ? 600 : 400, color: 'var(--text)', lineHeight: 1.4 }}>
-                    {q.question}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
-                    <span style={{
-                      background: (CAT_COLOR[q.category] || '#888') + '22',
-                      color: CAT_COLOR[q.category] || '#888',
-                      padding: '1px 6px', borderRadius: 4, fontWeight: 600, fontSize: 10,
-                    }}>
-                      {CAT_LABEL[q.category] || q.category}
-                    </span>
-                    <span style={{ color: DIFF_COLOR[q.difficulty], fontWeight: 600 }}>
-                      {q.difficulty === 'HIGH' ? 'High Priority' : 'Good to Know'}
-                    </span>
-                  </div>
-                </div>
-              </label>
-            );
-          })}
-          {filtered.length === 0 && (
-            <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
-              No questions match the current filter.
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

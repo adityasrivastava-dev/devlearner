@@ -1,6 +1,7 @@
 package com.learnsystem.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnsystem.model.InterviewQuestion;
 import com.learnsystem.repository.InterviewQuestionRepository;
@@ -208,10 +209,39 @@ public class InterviewQuestionController {
             if (!resource.exists()) {
                 return ResponseEntity.notFound().build();
             }
-            List<InterviewQuestion> incoming = objectMapper.readValue(
-                resource.getInputStream(),
-                new TypeReference<List<InterviewQuestion>>() {}
-            );
+
+            // Parse flexibly — supports both formats:
+            // 1. Plain array:  [{category, question, ...}, ...]
+            // 2. Batch object: {batchName: "...", questions: [{...}, ...]}
+            JsonNode root = objectMapper.readTree(resource.getInputStream());
+            JsonNode questionsNode = root.isArray() ? root : root.path("questions");
+            if (!questionsNode.isArray()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "File must contain a JSON array or {questions:[...]}"));
+            }
+
+            List<InterviewQuestion> incoming = new ArrayList<>();
+            for (JsonNode node : questionsNode) {
+                InterviewQuestion iq = new InterviewQuestion();
+                iq.setCategory(textOrNull(node, "category"));
+                iq.setTopicTitle(textOrNull(node, "topicTitle"));
+                iq.setDifficulty(textOrNull(node, "difficulty"));
+                iq.setQuestion(textOrNull(node, "question"));
+                iq.setQuickAnswer(textOrNull(node, "quickAnswer"));
+                iq.setCodeExample(textOrNull(node, "codeExample"));
+                iq.setSpokenAnswer(textOrNull(node, "spokenAnswer"));
+                iq.setCommonMistakes(textOrNull(node, "commonMistakes"));
+                iq.setSeniorExpectation(textOrNull(node, "seniorExpectation"));
+                iq.setTimeToAnswer(textOrNull(node, "timeToAnswer"));
+                iq.setDisplayOrder(node.path("displayOrder").asInt(0));
+                // Array-or-string fields — normalize to JSON string
+                iq.setKeyPoints(nodeToJsonString(node.get("keyPoints")));
+                iq.setFollowUpQuestions(nodeToJsonString(node.get("followUpQuestions")));
+                iq.setCompaniesAskThis(nodeToJsonString(node.get("companiesAskThis")));
+                iq.setRelatedTopics(nodeToJsonString(node.get("relatedTopics")));
+                iq.setTags(nodeToJsonString(node.get("tags")));
+                if (iq.getCategory() != null && iq.getQuestion() != null) incoming.add(iq);
+            }
 
             // Deduplicate: skip if same category + question already exists
             Set<String> existing = repo.findAll().stream()
@@ -219,7 +249,6 @@ public class InterviewQuestionController {
                 .collect(Collectors.toSet());
 
             List<InterviewQuestion> toSave = incoming.stream()
-                .filter(q -> q.getCategory() != null && q.getQuestion() != null)
                 .filter(q -> !existing.contains(q.getCategory() + "||" + q.getQuestion()))
                 .peek(q -> q.setId(null))
                 .collect(Collectors.toList());
@@ -235,6 +264,42 @@ public class InterviewQuestionController {
             log.error("Failed to import IQ file: {}", filename, e);
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Extract text value or null from a JsonNode field. */
+    private static String textOrNull(JsonNode parent, String field) {
+        JsonNode n = parent.get(field);
+        if (n == null || n.isNull()) return null;
+        return n.asText(null);
+    }
+
+    /**
+     * Converts a JsonNode to a JSON string for storage.
+     * - Array node  → serialized JSON array string e.g. ["a","b"]
+     * - String node → wrap in JSON array if it looks like newline-separated values,
+     *                 otherwise store as single-element array
+     * - null/missing → null
+     */
+    private String nodeToJsonString(JsonNode node) {
+        if (node == null || node.isNull() || node.isMissingNode()) return null;
+        try {
+            if (node.isArray()) {
+                // Already an array — serialize as-is
+                return objectMapper.writeValueAsString(node);
+            }
+            // Plain string — store as-is (legacy format used by iq-*-topics.json)
+            String text = node.asText("").trim();
+            if (text.isEmpty()) return null;
+            if (text.startsWith("[")) return text; // already JSON
+            // Newline-separated → convert to array
+            String[] lines = text.split("\\n");
+            List<String> items = Arrays.stream(lines)
+                .map(String::trim).filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+            return objectMapper.writeValueAsString(items);
+        } catch (Exception e) {
+            return null;
         }
     }
 }

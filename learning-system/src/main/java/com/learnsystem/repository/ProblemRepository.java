@@ -93,6 +93,14 @@ Page<Problem> findPageFiltered(
 @Query("DELETE FROM Problem")
 void deleteAllProblems();
 
+/** Random problems from topics whose category is in the given list — for DB-backed practice sets */
+@Query("SELECT p FROM Problem p JOIN FETCH p.topic t WHERE CAST(t.category AS string) IN :categories ORDER BY FUNCTION('RAND')")
+List<Problem> findByCategoriesRandom(@Param("categories") List<String> categories, Pageable pageable);
+
+/** Count problems with test cases (non-empty testCases) in given topic categories */
+@Query("SELECT COUNT(p) FROM Problem p JOIN p.topic t WHERE CAST(t.category AS string) IN :categories AND p.testCases IS NOT NULL AND p.testCases != ''")
+long countUsableByCategories(@Param("categories") List<String> categories);
+
 @Query(value = """
     SELECT p.id, p.title, p.difficulty, p.pattern, t.id, t.title
     FROM problems p JOIN topics t ON p.topic_id = t.id
