@@ -649,6 +649,21 @@ export const resumeApi = {
       .then((r) => r.data),
 };
 
+export const smartInterviewApi = {
+  start: (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return http.post('/api/smart-interview/start', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 90000,
+    }).then((r) => r.data);
+  },
+  respond: (sessionId, answer) =>
+    http.post(`/api/smart-interview/${sessionId}/respond`, { answer }, { timeout: 30000 }).then(r => r.data),
+  getSummary: (sessionId) =>
+    http.get(`/api/smart-interview/${sessionId}/summary`, { timeout: 60000 }).then(r => r.data),
+};
+
 export const storyApi = {
   list:    ()           => http.get('/api/stories').then(r => r.data),
   create:  (body)       => http.post('/api/stories', body).then(r => r.data),

@@ -86,6 +86,28 @@ public class GeminiService {
         return chat(systemPrompt, full);
     }
 
+    /** Speed-critical path: Groq only, returns null fast if unavailable */
+    public String chatGroqOnly(String systemPrompt, String userMessage) {
+        if (groqKey == null || groqKey.isBlank()) return chat(systemPrompt, userMessage);
+        String result = callGroq(systemPrompt, userMessage);
+        if (result != null) return result;
+        // Groq down — fall back to Gemini so the user gets a response
+        return chat(systemPrompt, userMessage);
+    }
+
+    /** Deep analysis path: Gemini first (better structured JSON), Groq fallback */
+    public String chatGeminiFirst(String systemPrompt, String userMessage) {
+        if (geminiKey != null && !geminiKey.isBlank()) {
+            String result = callGemini(systemPrompt, userMessage);
+            if (result != null) return result;
+        }
+        if (groqKey != null && !groqKey.isBlank()) {
+            String result = callGroq(systemPrompt, userMessage);
+            if (result != null) return result;
+        }
+        return "All AI models are currently busy. Please try again.";
+    }
+
     // ── Groq (OpenAI-compatible) ──────────────────────────────────────────────
 
     private String callGroq(String systemPrompt, String userMessage) {
