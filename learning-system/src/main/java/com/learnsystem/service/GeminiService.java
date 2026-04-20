@@ -16,10 +16,9 @@ import java.util.concurrent.TimeUnit;
  * AI text generation service.
  *
  * Provider priority:
- *   1. Groq  (GROQ_API_KEY)  — Llama 3.1, 14 400 req/day free, very reliable
- *   2. Gemini (GEMINI_API_KEY) — fallback, multiple model fallback chain
- *
- * Set GROQ_API_KEY to get a reliable free tier (console.groq.com, no card needed).
+ *   1. Groq   (GROQ_API_KEY)    — Llama 3.1, 14 400 req/day free, very reliable
+ *   2. Gemini (GEMINI_API_KEY)  — fallback, multiple model fallback chain
+ *   3. OpenAI (OPENAI_API_KEY)  — final fallback (gpt-4o-mini), paid but always available
  */
 @Slf4j
 @Service
@@ -28,11 +27,10 @@ public class GeminiService {
     // ── Groq ──────────────────────────────────────────────────────────────────
     private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-    // Groq models in fallback order (all free tier)
     private static final List<String> GROQ_MODELS = List.of(
-        "llama-3.1-8b-instant",   // fastest, 6 000 req/min
-        "gemma2-9b-it",            // good at JSON, 30 req/min
-        "llama3-8b-8192"           // reliable fallback
+        "llama-3.1-8b-instant",
+        "gemma2-9b-it",
+        "llama3-8b-8192"
     );
 
     // ── Gemini ────────────────────────────────────────────────────────────────
@@ -46,11 +44,22 @@ public class GeminiService {
         "gemini-2.0-flash-lite"
     );
 
+    // ── OpenAI ────────────────────────────────────────────────────────────────
+    private static final String OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+
+    private static final List<String> OPENAI_MODELS = List.of(
+        "gpt-4o-mini",   // cheapest + fast, very reliable
+        "gpt-3.5-turbo"  // legacy fallback
+    );
+
     @Value("${groq.api.key:}")
     private String groqKey;
 
     @Value("${gemini.api.key:}")
     private String geminiKey;
+
+    @Value("${openai.api.key:}")
+    private String openaiKey;
 
     private final OkHttpClient http = new OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -62,19 +71,20 @@ public class GeminiService {
     // ── Public API ─────────────────────────────────────────────────────────────
 
     public String chat(String systemPrompt, String userMessage) {
-        // Try Groq first — much more reliable free tier
         if (groqKey != null && !groqKey.isBlank()) {
             String result = callGroq(systemPrompt, userMessage);
             if (result != null) return result;
             log.warn("All Groq models failed — falling back to Gemini");
         }
-
-        // Fall back to Gemini
         if (geminiKey != null && !geminiKey.isBlank()) {
             String result = callGemini(systemPrompt, userMessage);
             if (result != null) return result;
+            log.warn("All Gemini models failed — falling back to OpenAI");
         }
-
+        if (openaiKey != null && !openaiKey.isBlank()) {
+            String result = callOpenAI(systemPrompt, userMessage);
+            if (result != null) return result;
+        }
         log.error("All AI providers exhausted");
         return "All AI models are currently busy. Please wait a moment and try again.";
     }
@@ -86,16 +96,16 @@ public class GeminiService {
         return chat(systemPrompt, full);
     }
 
-    /** Speed-critical path: Groq only, returns null fast if unavailable */
+    /** Speed-critical path: Groq → Gemini → OpenAI */
     public String chatGroqOnly(String systemPrompt, String userMessage) {
-        if (groqKey == null || groqKey.isBlank()) return chat(systemPrompt, userMessage);
-        String result = callGroq(systemPrompt, userMessage);
-        if (result != null) return result;
-        // Groq down — fall back to Gemini so the user gets a response
+        if (groqKey != null && !groqKey.isBlank()) {
+            String result = callGroq(systemPrompt, userMessage);
+            if (result != null) return result;
+        }
         return chat(systemPrompt, userMessage);
     }
 
-    /** Deep analysis path: Gemini first (better structured JSON), Groq fallback */
+    /** Deep analysis path: Gemini → Groq → OpenAI */
     public String chatGeminiFirst(String systemPrompt, String userMessage) {
         if (geminiKey != null && !geminiKey.isBlank()) {
             String result = callGemini(systemPrompt, userMessage);
@@ -103,6 +113,10 @@ public class GeminiService {
         }
         if (groqKey != null && !groqKey.isBlank()) {
             String result = callGroq(systemPrompt, userMessage);
+            if (result != null) return result;
+        }
+        if (openaiKey != null && !openaiKey.isBlank()) {
+            String result = callOpenAI(systemPrompt, userMessage);
             if (result != null) return result;
         }
         return "All AI models are currently busy. Please try again.";
@@ -150,6 +164,53 @@ public class GeminiService {
                 }
             } catch (Exception e) {
                 log.warn("Groq {} failed: {} — trying next", model, e.getMessage());
+            }
+        }
+        return null;
+    }
+
+    // ── OpenAI ────────────────────────────────────────────────────────────────
+
+    private String callOpenAI(String systemPrompt, String userMessage) {
+        for (String model : OPENAI_MODELS) {
+            try {
+                ObjectNode root = mapper.createObjectNode();
+                root.put("model", model);
+                root.put("temperature", 0.7);
+                root.put("max_tokens",  2048);
+
+                ArrayNode messages = root.putArray("messages");
+                messages.addObject().put("role", "system").put("content", systemPrompt);
+                messages.addObject().put("role", "user")  .put("content", userMessage);
+
+                String body = mapper.writeValueAsString(root);
+
+                Request req = new Request.Builder()
+                    .url(OPENAI_URL)
+                    .header("Authorization", "Bearer " + openaiKey)
+                    .post(RequestBody.create(body, MediaType.parse("application/json")))
+                    .build();
+
+                try (Response resp = http.newCall(req).execute()) {
+                    String respBody = resp.body() != null ? resp.body().string() : "";
+                    if (resp.isSuccessful()) {
+                        JsonNode json = mapper.readTree(respBody);
+                        String text = json.at("/choices/0/message/content").asText("");
+                        if (!text.isBlank()) {
+                            log.debug("OpenAI response via {}", model);
+                            return text;
+                        }
+                    }
+                    int code = resp.code();
+                    if (code == 429 || code == 503) {
+                        log.warn("OpenAI {} returned {} — trying next model", model, code);
+                        continue;
+                    }
+                    log.error("OpenAI {} error {}: {}", model, code, respBody);
+                    return null;
+                }
+            } catch (Exception e) {
+                log.warn("OpenAI {} failed: {} — trying next", model, e.getMessage());
             }
         }
         return null;
