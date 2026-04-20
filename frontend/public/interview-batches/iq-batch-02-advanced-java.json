@@ -1,0 +1,305 @@
+{
+  "batchName": "Advanced Java — Concurrency, Streams & Modern Features",
+  "questions": [
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What does the volatile keyword guarantee in Java, and what does it NOT guarantee?",
+      "quickAnswer": "volatile guarantees visibility (reads/writes go directly to main memory, not CPU cache) and prevents instruction reordering around the variable. It does NOT guarantee atomicity — `volatile int i; i++` is still a read-modify-write race. Use AtomicInteger for compound operations.",
+      "keyPoints": [
+        "Visibility: every thread sees the latest write immediately",
+        "Happens-before: write to volatile happens-before subsequent read",
+        "NOT atomic: i++ is three operations (read, increment, write)",
+        "Good for: flags (boolean stop = false), double-checked locking DCL pattern",
+        "Bad for: counters, check-then-act compound actions"
+      ],
+      "codeExample": "// Safe DCL with volatile\nprivate volatile Singleton instance;\npublic Singleton get() {\n    if (instance == null) {\n        synchronized (this) {\n            if (instance == null)\n                instance = new Singleton(); // volatile prevents partial init\n        }\n    }\n    return instance;\n}",
+      "displayOrder": 1
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "When would you use ReentrantLock over synchronized, and what extra capabilities does it offer?",
+      "quickAnswer": "ReentrantLock offers tryLock (non-blocking attempt), lockInterruptibly (cancel waiting thread), fairness policy (longest-waiting gets lock first), and multiple Condition queues. Use synchronized for simple critical sections; ReentrantLock when you need timeout, interruptibility, or multiple wait-sets.",
+      "keyPoints": [
+        "tryLock(timeout) — avoid indefinite blocking",
+        "lockInterruptibly() — thread.interrupt() can unblock waiting thread",
+        "Fair mode — prevents starvation (but lower throughput)",
+        "Multiple Conditions — producer/consumer with separate await/signal queues",
+        "MUST unlock in finally block — unlike synchronized, no auto-release"
+      ],
+      "codeExample": "ReentrantLock lock = new ReentrantLock();\nCondition notFull  = lock.newCondition();\nCondition notEmpty = lock.newCondition();\n\nvoid put(T item) throws InterruptedException {\n    lock.lock();\n    try {\n        while (isFull()) notFull.await();\n        queue.add(item);\n        notEmpty.signal();\n    } finally { lock.unlock(); } // always in finally\n}",
+      "displayOrder": 2
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is ThreadLocal, and when can it cause memory leaks?",
+      "quickAnswer": "ThreadLocal stores a per-thread value (e.g., DB connection, user context) without passing it through method parameters. Memory leak risk: in thread pools (Tomcat, HikariCP), threads live forever. If you set a ThreadLocal and never remove it, the value stays in memory for the thread's lifetime. Always call remove() in a finally block.",
+      "keyPoints": [
+        "Each thread gets its own independent copy — no synchronization needed",
+        "Common use: Spring SecurityContextHolder, MDC logging context, SimpleDateFormat",
+        "Leak: pooled threads + strong reference in ThreadLocalMap = GC cannot collect",
+        "Fix: threadLocal.remove() in finally, or use try-with-resources wrapper",
+        "InheritableThreadLocal passes values to child threads (e.g., request ID to async tasks)"
+      ],
+      "codeExample": "private static final ThreadLocal<UserContext> CTX = new ThreadLocal<>();\n\n// In filter/interceptor\nvoid doFilter(Request req, Response res, Chain chain) {\n    CTX.set(new UserContext(req.getHeader(\"X-User-Id\")));\n    try {\n        chain.doFilter(req, res);\n    } finally {\n        CTX.remove(); // MUST — Tomcat reuses threads\n    }\n}",
+      "displayOrder": 3
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "Explain the Java Memory Model's happens-before relationship. Why does it matter?",
+      "quickAnswer": "Happens-before is a guarantee that memory writes by one operation are visible to another. Without it, the JVM and CPU can reorder instructions for performance. Key rules: unlock happens-before subsequent lock of same monitor; volatile write happens-before subsequent volatile read; Thread.start() happens-before the started thread's actions.",
+      "keyPoints": [
+        "Program order: each action in a thread HB subsequent actions in same thread",
+        "Monitor: unlock HB lock (synchronized guarantees visibility on exit/entry)",
+        "Volatile: write HB read (hence volatile fixes DCL)",
+        "Thread.start(): all actions before start() are visible in the new thread",
+        "Thread.join(): all actions in thread T are visible after T.join() returns"
+      ],
+      "codeExample": "int x = 0;\nboolean ready = false;\n\n// Thread A\nx = 42;\nready = true; // NO volatile — compiler may reorder!\n\n// Thread B\nif (ready) System.out.println(x); // may print 0!\n\n// Fix: volatile boolean ready — write to ready HB read of ready,\n//      which HB read of x (program order within B)",
+      "displayOrder": 4
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "How does ConcurrentHashMap differ from HashMap and Hashtable?",
+      "quickAnswer": "HashMap is not thread-safe (concurrent modification can cause infinite loop in Java 7). Hashtable is thread-safe via synchronized on every method (coarse-grained, very slow). ConcurrentHashMap uses segment-level locking (Java 7) or CAS + bin-level synchronization (Java 8+) for fine-grained concurrency — reads are mostly lock-free.",
+      "keyPoints": [
+        "Java 8: buckets use CAS for inserts, synchronized only on bin (linked list/tree) during resize",
+        "computeIfAbsent is atomic — safe for cache-aside pattern",
+        "size() returns approximate count (not locked) — use mappingCount() for large maps",
+        "Does not allow null keys or values (unlike HashMap)",
+        "Iterators are weakly consistent — reflect state at or after creation, don't throw CME"
+      ],
+      "codeExample": "// Safe counter map without explicit locking\nConcurrentHashMap<String, AtomicLong> counts = new ConcurrentHashMap<>();\n\nvoid increment(String key) {\n    counts.computeIfAbsent(key, k -> new AtomicLong()).incrementAndGet();\n    // computeIfAbsent is atomic — only one AtomicLong created per key\n}",
+      "displayOrder": 5
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is a deadlock, and how do you prevent it in Java?",
+      "quickAnswer": "Deadlock: thread A holds lock 1 and waits for lock 2; thread B holds lock 2 and waits for lock 1 — both wait forever. Prevention: always acquire multiple locks in the same global order; use tryLock with timeout; use a single coarser lock; or use lock-free data structures.",
+      "keyPoints": [
+        "Four conditions (Coffman): mutual exclusion, hold-and-wait, no preemption, circular wait",
+        "Break circular wait: define total ordering on locks (e.g., by System.identityHashCode)",
+        "tryLock(timeout): if can't get second lock, release first and retry",
+        "Thread dump analysis: jstack, VisualVM, or thread dump shows 'BLOCKED' + lock chain",
+        "Live-lock: threads keep releasing and re-acquiring — use back-off with jitter"
+      ],
+      "codeExample": "// Deadlock-prone\nvoid transfer(Account from, Account to, int amt) {\n    synchronized (from) { synchronized (to) { /* ... */ } }\n}\n// Thread A: transfer(acc1, acc2); Thread B: transfer(acc2, acc1) → deadlock\n\n// Fix: lock in canonical order\nvoid transfer(Account from, Account to, int amt) {\n    Account first  = from.id < to.id ? from : to;\n    Account second = from.id < to.id ? to   : from;\n    synchronized (first) { synchronized (second) { /* ... */ } }\n}",
+      "displayOrder": 6
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What are the different types of ExecutorService thread pools and when do you choose each?",
+      "quickAnswer": "newFixedThreadPool(n): bounded pool, predictable resource use — best for CPU-bound tasks (n = # cores). newCachedThreadPool: unbounded, creates threads on demand — for short-lived IO tasks (can OOM under load). newSingleThreadExecutor: one thread, tasks run sequentially. newScheduledThreadPool: periodic/delayed tasks. For production, prefer custom ThreadPoolExecutor with bounded queue.",
+      "keyPoints": [
+        "newFixedThreadPool: LinkedBlockingQueue (unbounded!) — tasks queue indefinitely, can OOM",
+        "newCachedThreadPool: SynchronousQueue — no buffering, thread created per task",
+        "Always name threads (ThreadFactory) for readable thread dumps",
+        "RejectedExecutionHandler: AbortPolicy (default), CallerRunsPolicy (backpressure), DiscardPolicy",
+        "Virtual threads (Java 21): replace cached pools for IO-bound tasks"
+      ],
+      "codeExample": "// Production-safe pool with bounded queue and caller-runs backpressure\nExecutorService pool = new ThreadPoolExecutor(\n    4,                          // corePoolSize\n    8,                          // maxPoolSize\n    60L, TimeUnit.SECONDS,      // keepAlive\n    new ArrayBlockingQueue<>(500), // bounded queue\n    new ThreadFactory() { /* name threads */ },\n    new ThreadPoolExecutor.CallerRunsPolicy() // slow caller = backpressure\n);",
+      "displayOrder": 7
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "How does CompletableFuture work, and how do you handle exceptions in async pipelines?",
+      "quickAnswer": "CompletableFuture lets you chain async computations: thenApply (map result), thenCompose (flatMap/chain), thenCombine (merge two futures). For exceptions: exceptionally(fn) recovers by returning a fallback; handle(fn) receives both result and exception (always called); whenComplete for side effects without altering result.",
+      "keyPoints": [
+        "thenApply: synchronous transform (Function<T,U>)",
+        "thenApplyAsync: runs transform on ForkJoinPool.commonPool() or custom executor",
+        "thenCompose: chains futures (avoids CompletableFuture<CompletableFuture<T>>)",
+        "exceptionally: converts exception to a fallback value — breaks the error chain",
+        "allOf / anyOf: wait for all / any of a list of futures"
+      ],
+      "codeExample": "CompletableFuture\n    .supplyAsync(() -> fetchUser(userId), ioPool)\n    .thenApply(user -> enrich(user))            // sync transform\n    .thenCompose(user -> fetchOrders(user.id))  // async flatMap\n    .exceptionally(ex -> {\n        log.error(\"Pipeline failed\", ex);\n        return Collections.emptyList();          // fallback\n    })\n    .thenAccept(orders -> cache.put(userId, orders));",
+      "displayOrder": 8
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between CountDownLatch, CyclicBarrier, and Semaphore?",
+      "quickAnswer": "CountDownLatch: one-time gate — one or more threads wait until countdown reaches zero (e.g., wait for 3 services to init). CyclicBarrier: reusable rendezvous — N threads wait at a barrier until all arrive, then all proceed (e.g., parallel batch rounds). Semaphore: controls access count — limits concurrent access to a resource (e.g., max 10 DB connections).",
+      "keyPoints": [
+        "CountDownLatch: count never resets — single use only",
+        "CyclicBarrier: resets after each round, optional runnable runs after each barrier break",
+        "Semaphore: acquire() blocks when 0 permits, release() returns a permit",
+        "Semaphore(1) ≈ mutex, but not reentrant and not owned by a thread",
+        "Phaser: flexible generalization of both Latch and Barrier — supports dynamic party registration"
+      ],
+      "codeExample": "// Semaphore: limit concurrent DB connections\nSemaphore sem = new Semaphore(10); // max 10 concurrent\n\nvoid query(String sql) throws InterruptedException {\n    sem.acquire();       // blocks if 10 already active\n    try {\n        executeQuery(sql);\n    } finally {\n        sem.release();   // always release\n    }\n}",
+      "displayOrder": 9
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "How does ForkJoinPool differ from a standard thread pool, and what is work stealing?",
+      "quickAnswer": "ForkJoinPool is designed for divide-and-conquer tasks. Each worker thread has its own deque. When a thread finishes its tasks, it steals from the tail of another thread's deque — keeping all threads busy. Standard pools have one shared queue with contention. ForkJoinPool.commonPool() is used by parallel streams and CompletableFuture by default.",
+      "keyPoints": [
+        "ForkJoinTask: fork() submits subtask asynchronously; join() waits for result",
+        "RecursiveTask<V>: returns a value; RecursiveAction: no return value",
+        "Work stealing reduces idle time — especially good for unbalanced subtasks",
+        "commonPool size = Runtime.availableProcessors() - 1",
+        "Avoid blocking IO in ForkJoinPool — starves other tasks; use ManagedBlocker"
+      ],
+      "codeExample": "class SumTask extends RecursiveTask<Long> {\n    int[] arr; int lo, hi;\n    protected Long compute() {\n        if (hi - lo < 1000) return sumRange(arr, lo, hi);\n        int mid = (lo + hi) / 2;\n        SumTask left  = new SumTask(arr, lo, mid);\n        SumTask right = new SumTask(arr, mid, hi);\n        left.fork();                    // run left in another thread\n        return right.compute() + left.join(); // run right here, then merge\n    }\n}",
+      "displayOrder": 10
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What are functional interfaces, and how does Java resolve ambiguity with method references?",
+      "quickAnswer": "A functional interface has exactly one abstract method (@FunctionalInterface annotation is optional but documents intent). Common ones: Function<T,R>, Predicate<T>, Consumer<T>, Supplier<T>, BiFunction<T,U,R>. Method references (Class::method) are syntactic sugar for lambdas; Java resolves which functional interface to use from the target type context.",
+      "keyPoints": [
+        "static ref: Integer::parseInt → Function<String, Integer>",
+        "instance ref on type: String::toUpperCase → Function<String, String>",
+        "instance ref on instance: myList::add → Consumer<T>",
+        "constructor ref: ArrayList::new → Supplier<List>",
+        "Ambiguity: if a method is both static and instance-on-type, compiler error — be explicit"
+      ],
+      "codeExample": "// All equivalent transformations\nList<String> words = List.of(\"hello\", \"world\");\n\n// Lambda\nwords.stream().map(s -> s.toUpperCase()).collect(toList());\n\n// Method reference (instance method on type)\nwords.stream().map(String::toUpperCase).collect(toList());\n\n// Custom functional interface\n@FunctionalInterface\ninterface Transformer<T> { T transform(T input); }\nTransformer<String> upper = String::toUpperCase;",
+      "displayOrder": 11
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "How is Stream lazy evaluation implemented, and when does it cause bugs?",
+      "quickAnswer": "Intermediate stream operations (filter, map, flatMap) are lazy — they return a new Stream descriptor without executing. Terminal operations (collect, forEach, count) trigger the pipeline. Bug: capturing a mutable variable in a lambda; the lambda runs at terminal time, not at the line where it's defined — so the variable's value at execution may differ.",
+      "keyPoints": [
+        "Lazy = short-circuit optimization: filter+findFirst stops at first match",
+        "flatMap is lazy in Java 16+ (was eagerly evaluated before)",
+        "Closed stream: a stream can only be consumed once — terminal op closes it",
+        "Stateful intermediate ops (sorted, distinct) buffer — can't be lazy end-to-end",
+        "Side effects in map/filter are dangerous in parallel streams — use forEach carefully"
+      ],
+      "codeExample": "// Bug: mutable capture\nList<String> results = new ArrayList<>();\nStream<String> stream = list.stream()\n    .filter(s -> s.startsWith(\"A\"));\n\nresults.add(\"before\"); // modifying results before terminal op\nstream.forEach(results::add); // runs NOW — captures current 'results'\n\n// Bug: reuse\nStream<String> s = list.stream();\ns.forEach(System.out::println);\ns.forEach(System.out::println); // IllegalStateException: stream already consumed",
+      "displayOrder": 12
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What are the pitfalls of parallel streams, and when should you NOT use them?",
+      "quickAnswer": "Parallel streams split work across ForkJoinPool.commonPool() threads. Pitfalls: shared mutable state causes races; IO-bound tasks block pool threads (starving other tasks); overhead of splitting/merging often exceeds benefit for small lists (<10k elements). Use parallel streams only for CPU-bound, stateless, non-IO work on large collections.",
+      "keyPoints": [
+        "Shared state: list.parallelStream().forEach(list::add) — data race, ConcurrentModificationException",
+        "Ordered ops: findFirst, limit are slow in parallel — lose ordering guarantee",
+        "Splitting cost: LinkedList splits O(n) — ArrayList/arrays split O(1)",
+        "Common pool contention: your parallel stream competes with FJ pool users globally",
+        "Custom pool: new ForkJoinPool(n).submit(() -> list.parallelStream().collect(...))"
+      ],
+      "codeExample": "// WRONG: shared mutable state in parallel stream\nList<Integer> results = new ArrayList<>();\nIntStream.range(0, 1000).parallel()\n    .forEach(results::add); // race condition!\n\n// CORRECT: collect into thread-safe structure\nList<Integer> results = IntStream.range(0, 1000).parallel()\n    .boxed()\n    .collect(Collectors.toList()); // collector handles merging safely",
+      "displayOrder": 13
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "How does Optional prevent NullPointerException, and what are its anti-patterns?",
+      "quickAnswer": "Optional<T> is a container that may or may not hold a value, forcing callers to handle the absent case. Use orElse, orElseGet, ifPresent, map, flatMap, or. Anti-patterns: optional.get() without isPresent() (same NPE risk), using Optional as method parameter or field (adds overhead, breaks serialization), wrapping collections (empty list is better than Optional<List>).",
+      "keyPoints": [
+        "orElse(default): always evaluates default (even if expensive) — prefer orElseGet(() -> expensive())",
+        "map: transforms value if present, returns Optional.empty() if absent",
+        "flatMap: use when transformation itself returns Optional (avoid Optional<Optional<T>>)",
+        "ifPresentOrElse (Java 9): both branches in one call",
+        "Stream integration: optional.stream() returns 0 or 1 element"
+      ],
+      "codeExample": "// Chain without null checks\nOptional<String> city = findUser(userId)\n    .map(User::getAddress)\n    .map(Address::getCity)\n    .filter(c -> !c.isBlank());\n\nString label = city.orElse(\"Unknown\");\n\n// Anti-pattern: isPresent + get = old null-check pattern\nif (city.isPresent()) System.out.println(city.get()); // BAD\ncity.ifPresent(System.out::println);                  // GOOD",
+      "displayOrder": 14
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What are default and static methods on interfaces, and how does Java resolve diamond inheritance?",
+      "quickAnswer": "Default methods (Java 8) let interfaces provide a method body, enabling backward-compatible API evolution. Static interface methods are utility methods scoped to the interface. Diamond resolution: class implementation wins over interface default; if two interfaces provide the same default, the implementing class MUST override (compile error otherwise).",
+      "keyPoints": [
+        "Default enables adding methods to existing interfaces without breaking implementations",
+        "Class > interface: if a class and interface both provide the method, class wins",
+        "Interface A > interface B: if B extends A and both have the default, B's wins",
+        "Conflict: two unrelated interfaces, same signature — must override in implementing class",
+        "Explicitly calling a specific default: InterfaceA.super.method()"
+      ],
+      "codeExample": "interface Flyable  { default String move() { return \"fly\"; } }\ninterface Swimmable { default String move() { return \"swim\"; } }\n\nclass Duck implements Flyable, Swimmable {\n    @Override\n    public String move() {\n        return Flyable.super.move() + \" and \" + Swimmable.super.move();\n    }\n    // MUST override — compiler error if omitted\n}",
+      "displayOrder": 15
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What are sealed classes (Java 17), and how do they enable exhaustive pattern matching?",
+      "quickAnswer": "Sealed classes restrict which classes can extend them (permits clause). Combined with switch pattern matching (Java 21), the compiler can verify all subtype cases are handled without a default branch. This is the foundation of Algebraic Data Types in Java — safe, exhaustive modeling of closed hierarchies.",
+      "keyPoints": [
+        "sealed class Shape permits Circle, Rectangle, Triangle { }",
+        "Permitted subclasses must be in the same package/module",
+        "Subclasses must be: final, sealed, or non-sealed",
+        "Switch expression with guarded patterns: case Circle c when c.radius() > 10",
+        "Enables compiler-checked exhaustiveness — no silent runtime gaps"
+      ],
+      "codeExample": "sealed interface Shape permits Circle, Rect, Triangle {}\nrecord Circle(double r) implements Shape {}\nrecord Rect(double w, double h) implements Shape {}\nrecord Triangle(double b, double h) implements Shape {}\n\ndouble area(Shape s) {\n    return switch (s) {               // no default needed!\n        case Circle  c -> Math.PI * c.r() * c.r();\n        case Rect    r -> r.w() * r.h();\n        case Triangle t -> 0.5 * t.b() * t.h();\n    }; // compiler error if a permitted type is missing\n}",
+      "displayOrder": 16
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What are virtual threads (Java 21), and how do they change the threading model?",
+      "quickAnswer": "Virtual threads are lightweight JVM-managed threads (not OS threads). The JVM scheduler mounts virtual threads onto a small pool of carrier (OS) threads. When a virtual thread blocks on IO, it is unmounted from the carrier (which picks up another virtual thread). This gives the simplicity of thread-per-request with the scalability of async IO — no callback hell.",
+      "keyPoints": [
+        "Thread.ofVirtual().start(task) or Executors.newVirtualThreadPerTaskExecutor()",
+        "Carrier pool = # CPU cores (ForkJoinPool) — not # virtual threads",
+        "Pinning: synchronized block holds the carrier (use ReentrantLock instead for IO-heavy code)",
+        "Stack: virtual thread stacks are heap-allocated and grow/shrink; no 512KB OS stack waste",
+        "Not for CPU-bound: parallel computation still needs platform threads + ForkJoinPool"
+      ],
+      "codeExample": "// Before: thread pool with 200 threads to handle 200 concurrent requests\nExecutorService pool = Executors.newFixedThreadPool(200);\n\n// After: one virtual thread per request — 100k concurrent is fine\nExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();\npool.submit(() -> {\n    String data = httpClient.get(url); // blocks virtual thread, not OS thread\n    db.save(data);                     // same — carrier freed while waiting\n});",
+      "displayOrder": 17
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is AtomicInteger and how does CAS (Compare-And-Swap) work internally?",
+      "quickAnswer": "AtomicInteger wraps an int with lock-free thread-safe operations using CPU-level CAS instructions. CAS(expected, update): atomically checks if current value == expected; if yes, sets it to update and returns true; if no (another thread changed it), returns false. AtomicInteger.incrementAndGet() loops until CAS succeeds — no lock needed.",
+      "keyPoints": [
+        "CAS is a single hardware instruction (CMPXCHG on x86) — cannot be interrupted",
+        "compareAndSet(expected, update) — returns boolean",
+        "getAndUpdate(fn), updateAndGet(fn) — lambda-based atomic transforms",
+        "Spurious failure: CAS may fail even without contention on RISC — Java handles retry loop",
+        "LongAdder: better than AtomicLong under high contention — striped counters, reduce CAS retry"
+      ],
+      "codeExample": "// CAS retry loop — what AtomicInteger.incrementAndGet does internally\npublic int myIncrement(AtomicInteger ai) {\n    while (true) {\n        int current = ai.get();\n        int next    = current + 1;\n        if (ai.compareAndSet(current, next)) // CAS\n            return next;                     // success\n        // else: another thread changed value, retry\n    }\n}",
+      "displayOrder": 18
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "HIGH",
+      "question": "What is BlockingQueue and how does it support producer-consumer patterns?",
+      "quickAnswer": "BlockingQueue is a thread-safe queue where put() blocks when full and take() blocks when empty — built-in coordination. ArrayBlockingQueue is bounded (backpressure), LinkedBlockingQueue is optionally bounded, PriorityBlockingQueue is unbounded priority-based. Eliminates explicit wait/notify synchronization for producer-consumer.",
+      "keyPoints": [
+        "put(e): blocks if full (capacity reached) — natural backpressure",
+        "take(): blocks if empty — no busy-wait",
+        "offer(e, timeout): non-blocking with timeout, returns false if not inserted",
+        "poll(timeout): returns null if empty after timeout",
+        "SynchronousQueue: zero capacity — put blocks until take is called (handoff)"
+      ],
+      "codeExample": "BlockingQueue<String> queue = new ArrayBlockingQueue<>(100);\n\n// Producer\nExecutors.newSingleThreadExecutor().submit(() -> {\n    while (!done) {\n        queue.put(fetchItem()); // blocks if queue full\n    }\n});\n\n// Consumer\nExecutors.newSingleThreadExecutor().submit(() -> {\n    while (!done) {\n        String item = queue.take(); // blocks if empty\n        process(item);\n    }\n});",
+      "displayOrder": 19
+    },
+    {
+      "category": "ADVANCED_JAVA",
+      "difficulty": "MEDIUM",
+      "question": "How do Collectors.groupingBy, partitioningBy, and toMap work in streams?",
+      "quickAnswer": "groupingBy(classifier) partitions elements into a Map<K, List<V>> by key. partitioningBy(predicate) is a special case producing Map<Boolean, List<T>>. toMap(keyFn, valueFn) builds a Map but throws on duplicate keys — use the merge function overload to handle duplicates. Downstream collectors enable aggregation: groupingBy(category, counting()).",
+      "keyPoints": [
+        "groupingBy with downstream: groupingBy(dept, summingInt(Employee::salary))",
+        "toMap merge: toMap(key, val, (v1,v2) -> v1) keeps first on duplicate",
+        "Collectors.toUnmodifiableMap, toUnmodifiableList (Java 10+)",
+        "collectingAndThen: wraps result after collection (e.g., make list unmodifiable)",
+        "teeing (Java 12): collect into two collectors simultaneously, merge results"
+      ],
+      "codeExample": "// Group employees by department, get average salary per dept\nMap<String, Double> avgSalary = employees.stream()\n    .collect(Collectors.groupingBy(\n        Employee::getDepartment,\n        Collectors.averagingInt(Employee::getSalary)\n    ));\n\n// Partition into passing/failing students\nMap<Boolean, List<Student>> result = students.stream()\n    .collect(Collectors.partitioningBy(s -> s.getScore() >= 60));",
+      "displayOrder": 20
+    }
+  ]
+}

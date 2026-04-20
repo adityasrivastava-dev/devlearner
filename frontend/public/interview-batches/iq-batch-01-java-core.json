@@ -1,0 +1,305 @@
+{
+  "batchName": "iq-batch-01-java-core",
+  "questions": [
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "How does HashMap work internally in Java?",
+      "quickAnswer": "HashMap stores entries in an array of buckets. The bucket index is computed as hash(key) & (capacity-1). Collisions are resolved via chaining (linked list), which Java 8 converts to a red-black tree when a bucket exceeds 8 entries. The map resizes (doubles) when the load factor (default 0.75) is exceeded.",
+      "keyPoints": [
+        "hash() applies a secondary hash to spread bits — reduces clustering from poor hashCode() implementations",
+        "Treeification at 8 entries per bucket changes worst-case from O(n) to O(log n)",
+        "Resize doubles capacity and rehashes all entries — O(n) operation amortized to O(1)",
+        "Not thread-safe — use ConcurrentHashMap for concurrent access",
+        "null key is always stored in bucket 0; null values are allowed"
+      ],
+      "codeExample": "Map<String, Integer> map = new HashMap<>();\nmap.put(\"a\", 1); // index = hash(\"a\") & 15\nmap.put(null, 0); // always bucket 0\n// Treeify when bucket has > 8 entries and table.length >= 64",
+      "displayOrder": 0
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the contract between equals() and hashCode()?",
+      "quickAnswer": "If two objects are equal via equals(), they must return the same hashCode(). The reverse is not required — two unequal objects can share a hash code (collision). Violating this breaks HashMap, HashSet, and any hash-based collection.",
+      "keyPoints": [
+        "Equal objects → same hashCode (mandatory). Same hashCode → not necessarily equal (allowed collision)",
+        "If you override equals() without overriding hashCode(), HashMap.get() may return null even after put()",
+        "IDE-generated equals/hashCode is usually correct; use Objects.equals() and Objects.hash() to handle nulls",
+        "Mutable fields in hashCode create bugs when the object is stored in a HashSet then mutated",
+        "Lombok @EqualsAndHashCode and Java records auto-generate correct implementations"
+      ],
+      "codeExample": "// BROKEN: equals overridden, hashCode not\nclass User { String name;\n  @Override public boolean equals(Object o) { ... }\n  // missing hashCode!\n}\nSet<User> set = new HashSet<>();\nset.add(new User(\"Alice\"));\nset.contains(new User(\"Alice\")); // false! wrong bucket",
+      "displayOrder": 1
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the String pool and how does string interning work?",
+      "quickAnswer": "String literals are stored in the String pool (part of heap in Java 8+). Two literals with the same value share the same object, so == works. Strings created with new String() bypass the pool. String.intern() explicitly adds a string to the pool and returns the pooled reference.",
+      "keyPoints": [
+        "String pool lives in the heap (metaspace pre-Java 8) — prevents duplicate literal objects",
+        "String literals are automatically interned; new String(\"x\") creates a separate heap object",
+        "s1 == s2 works for literals but NEVER use == for string comparison in application code",
+        "intern() is useful when storing millions of repeated strings (reduces memory) but has overhead",
+        "String is immutable — all string operations return new objects; pool only covers literals and interned strings"
+      ],
+      "codeExample": "String a = \"hello\";         // pool\nString b = \"hello\";         // same pool object\nString c = new String(\"hello\"); // separate heap object\nSystem.out.println(a == b); // true\nSystem.out.println(a == c); // false\nSystem.out.println(a == c.intern()); // true",
+      "displayOrder": 2
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "When should you use StringBuilder vs StringBuffer?",
+      "quickAnswer": "Use StringBuilder in single-threaded code — it has no synchronization overhead. StringBuffer is thread-safe (synchronized methods) but slower. In practice, StringBuffer is rarely needed because string building is usually done in a single thread or protected externally.",
+      "keyPoints": [
+        "StringBuilder: not thread-safe, faster — use in 99% of cases",
+        "StringBuffer: thread-safe (every method synchronized), use only when shared across threads without external sync",
+        "Both use a resizable char array internally; initial capacity 16, doubles when exceeded",
+        "Java compiler automatically converts string concatenation in loops to StringBuilder",
+        "StringJoiner and String.join() are cleaner for delimiter-separated lists"
+      ],
+      "codeExample": "// Prefer StringBuilder\nStringBuilder sb = new StringBuilder();\nfor (String s : list) sb.append(s).append(\",\");\nString result = sb.toString();\n\n// Cleaner for joining\nString csv = String.join(\",\", list);",
+      "displayOrder": 3
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the difference between checked and unchecked exceptions?",
+      "quickAnswer": "Checked exceptions (extend Exception, not RuntimeException) must be declared with throws or caught — the compiler enforces this. Unchecked exceptions (extend RuntimeException) can be thrown anywhere without declaration. Checked exceptions represent recoverable external failures; unchecked represent programming errors.",
+      "keyPoints": [
+        "Checked: IOException, SQLException — caller must handle or declare; enforces error handling at compile time",
+        "Unchecked: NullPointerException, IllegalArgumentException — signals programmer errors, not worth forcing callers to handle",
+        "Modern Java practice (and most frameworks) prefer unchecked — checked exceptions leak implementation details and pollute APIs",
+        "Spring converts checked SQLExceptions to unchecked DataAccessException hierarchy",
+        "Always catch the most specific exception type first in multi-catch blocks"
+      ],
+      "codeExample": "// Checked — must handle\ntry { Files.readAllBytes(path); }\ncatch (IOException e) { ... } // required\n\n// Unchecked — optional\nObjects.requireNonNull(param, \"param is null\"); // throws NPE\nif (age < 0) throw new IllegalArgumentException(\"negative age\");",
+      "displayOrder": 4
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "How does try-with-resources work?",
+      "quickAnswer": "try-with-resources automatically closes resources that implement AutoCloseable at the end of the block, even if an exception is thrown. Multiple resources are closed in reverse order of declaration. If both the try body and close() throw exceptions, the close() exception is suppressed.",
+      "keyPoints": [
+        "Resource must implement AutoCloseable (or Closeable for IO); close() is called automatically",
+        "Closes in reverse order: last opened, first closed — mirrors stack semantics",
+        "Suppressed exceptions: if try throws and close() also throws, the close() exception is attached via addSuppressed()",
+        "Replaces verbose finally blocks that could swallow the original exception",
+        "Java 9+: can use existing effectively-final variables in the resource list"
+      ],
+      "codeExample": "try (Connection conn = ds.getConnection();\n     PreparedStatement ps = conn.prepareStatement(sql)) {\n    ResultSet rs = ps.executeQuery();\n    // ps closed before conn (reverse order)\n} // auto-close, even on exception\n// Suppressed: conn.close() exception won't hide the query exception",
+      "displayOrder": 5
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What are the different uses of the final keyword?",
+      "quickAnswer": "final on a variable means it can only be assigned once (blank final must be assigned in constructor). final on a method prevents overriding. final on a class prevents subclassing (e.g., String). Lambda parameters captured from outer scope must be effectively final.",
+      "keyPoints": [
+        "final field: must be assigned at declaration or in every constructor path; prevents reassignment (not deep immutability)",
+        "final method: cannot be overridden in subclasses; useful for template method pattern invariants",
+        "final class: cannot be extended — String, Integer, and all wrapper types are final",
+        "Effectively final (Java 8+): variable never reassigned even without final keyword — can be used in lambdas",
+        "final does NOT make object immutable — it prevents reference reassignment but the object itself can still be mutated"
+      ],
+      "codeExample": "final List<String> list = new ArrayList<>();\nlist.add(\"ok\");     // allowed — object mutation\nlist = new ArrayList<>(); // compile error — reassignment\n\n// Effectively final in lambda\nString prefix = \"Hello\";\nnames.forEach(n -> System.out.println(prefix + n)); // prefix is effectively final",
+      "displayOrder": 6
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "How does the static keyword work in Java?",
+      "quickAnswer": "static members belong to the class, not instances — they're shared across all objects. Static methods can't access instance members (no this). Static initializer blocks run once when the class is loaded, in order of appearance. Static nested classes don't hold a reference to the outer class.",
+      "keyPoints": [
+        "Static fields: one copy per class, not per instance — shared state (use carefully in multithreaded code)",
+        "Static methods: no access to instance fields or this; good for utility/factory methods",
+        "Static initializer blocks: run at class loading, in top-to-bottom order, before any constructor",
+        "Static nested class vs inner class: static nested has no implicit outer reference (no memory leak risk)",
+        "Static import: import static java.util.Collections.sort; allows calling sort() without class prefix"
+      ],
+      "codeExample": "class Counter {\n    static int count = 0;   // shared across all instances\n    static { count = 10; } // runs at class load\n    Counter() { count++; }\n    static int getCount() { return count; } // no 'this'\n}\n// Static nested — no outer reference\nclass Outer { static class Helper { ... } }",
+      "displayOrder": 7
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "EASY",
+      "question": "What is the var keyword and where can't it be used?",
+      "quickAnswer": "var (Java 10+) enables local variable type inference — the compiler infers the type from the right-hand side. It's resolved at compile time, not runtime, so there's no performance difference. It cannot be used for fields, method parameters, return types, or when the right side is null or a lambda.",
+      "keyPoints": [
+        "Compile-time type inference only — bytecode is identical to using the explicit type",
+        "Cannot use with: fields, method params, return types, catch parameters (Java <10), null literals, array initializers without new",
+        "Good for: long generic types (Map.Entry<String, List<Integer>>), local variables with obvious types",
+        "Avoid for: non-obvious types where the type name aids readability",
+        "var is not a reserved word — it's a context-sensitive identifier, so var var = 5 compiles"
+      ],
+      "codeExample": "var list = new ArrayList<String>(); // List<String> inferred\nvar entry = map.entrySet().iterator().next(); // cleaner\n\n// Cannot use:\nvar x = null;        // error: can't infer type\nvar fn = s -> s.length(); // error: lambda needs target type\nprivate var field;   // error: not for fields",
+      "displayOrder": 8
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What are the pitfalls of autoboxing and unboxing?",
+      "quickAnswer": "Autoboxing converts primitives to wrapper objects (int → Integer) silently. The main pitfalls are: NullPointerException when unboxing a null wrapper, unexpected == comparison between Integer objects outside the cache range (-128 to 127), and performance overhead from repeated boxing in loops.",
+      "keyPoints": [
+        "NullPointerException: Integer i = null; int x = i; // NPE at unbox",
+        "== compares references for Integer objects outside cache range: Integer.valueOf(200) == Integer.valueOf(200) is false",
+        "Performance: autoboxing in tight loops creates many short-lived objects — use primitive streams (IntStream) instead",
+        "Method overloading ambiguity: remove(int index) vs remove(Object o) on List — autoboxing can call the wrong one",
+        "Use Integer.equals() or Objects.equals() for null-safe comparison; avoid == on wrapper types"
+      ],
+      "codeExample": "Integer a = 127, b = 127;\nSystem.out.println(a == b); // true (cached)\nInteger c = 200, d = 200;\nSystem.out.println(c == d); // false! (not cached)\n\nInteger val = null;\nint x = val; // NullPointerException!\n\nList<Integer> list = new ArrayList<>();\nlist.add(1); list.remove(1); // removes index 1, not value 1!",
+      "displayOrder": 9
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "Why does Integer cache work for values -128 to 127?",
+      "quickAnswer": "Integer.valueOf() caches Integer objects for values -128 to 127 (JVM spec minimum). When autoboxing or calling valueOf() in this range, the same cached object is returned — so == works. Outside this range, new objects are created each time.",
+      "keyPoints": [
+        "Cache is initialized at class loading — 256 Integer objects pre-created",
+        "Upper bound is configurable via JVM flag: -XX:AutoBoxCacheMax=<size>; lower bound always -128",
+        "Only Integer is guaranteed to cache by the JVM spec; other wrappers (Long, Short, Byte, Character) may also cache",
+        "Boolean caches only TRUE and FALSE; Character caches 0-127",
+        "This is why you should never use == to compare Integer values — always use .equals()"
+      ],
+      "codeExample": "Integer a = Integer.valueOf(100); // cached\nInteger b = Integer.valueOf(100); // same object\nSystem.out.println(a == b); // true\n\nInteger x = Integer.valueOf(200); // new object\nInteger y = Integer.valueOf(200); // another new object  \nSystem.out.println(x == y); // false\nSystem.out.println(x.equals(y)); // true — always use equals",
+      "displayOrder": 10
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "Is Java pass-by-value or pass-by-reference?",
+      "quickAnswer": "Java is always pass-by-value. For primitives, the value is copied. For objects, the reference (memory address) is copied — so you can mutate the object through the parameter, but reassigning the parameter doesn't affect the caller's variable.",
+      "keyPoints": [
+        "Primitives: copy of value — no way to modify the original through the parameter",
+        "Objects: copy of the reference — both caller and method point to the same object, mutations are visible",
+        "Reassigning the parameter (param = new Object()) only changes the local copy — caller is unaffected",
+        "This means: you can change object state (list.add()), but can't change which object the caller points to",
+        "C++ has true pass-by-reference (& parameters); Java has no equivalent"
+      ],
+      "codeExample": "void addItem(List<String> list, String item) {\n    list.add(item);  // visible to caller — same object\n    list = new ArrayList<>(); // NOT visible — local copy only\n}\nvoid increment(int x) { x++; } // NOT visible — primitive copy\n\nList<String> myList = new ArrayList<>();\naddItem(myList, \"hello\"); // myList now has \"hello\"\nincrement(5); // original not changed",
+      "displayOrder": 11
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What are the different memory areas in the JVM?",
+      "quickAnswer": "The JVM has: Heap (objects and arrays, GC-managed), Stack (one per thread, method frames with local variables), Metaspace (class metadata, static variables in Java 8+, replaces PermGen), PC Register (current instruction pointer per thread), and Native Method Stack (for JNI calls).",
+      "keyPoints": [
+        "Heap: all objects and arrays live here; divided into Young Gen (Eden + Survivor) and Old Gen",
+        "Stack: one per thread; each frame holds local vars, operand stack, method reference; StackOverflowError on too-deep recursion",
+        "Metaspace: replaces PermGen in Java 8; grows dynamically by default; stores class metadata, static fields",
+        "String pool moved to heap in Java 7 (was PermGen) — enables GC of unreferenced interned strings",
+        "OutOfMemoryError: heap exhausted; StackOverflowError: stack exhausted (infinite recursion)"
+      ],
+      "codeExample": "// Heap: objects\nObject obj = new Object(); // heap\n\n// Stack: local variables\nvoid method() {\n    int x = 5;        // stack frame\n    String s = \"hi\";  // reference on stack, object on heap\n}\n\n// Metaspace: class data\nclass MyClass {           // class definition in metaspace\n    static int count = 0; // static field in metaspace\n}",
+      "displayOrder": 12
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "How does garbage collection work in Java?",
+      "quickAnswer": "The JVM uses generational GC based on the weak generational hypothesis: most objects die young. New objects go to Eden (Young Gen). Surviving minor GCs are promoted to Survivor spaces, then Old Gen. The GC traces live objects from GC roots (stack refs, static fields), marking reachable objects and collecting the rest.",
+      "keyPoints": [
+        "GC roots: local variables on stacks, static fields, JNI references — these anchor the reachability graph",
+        "Minor GC: collects Young Gen (Eden + Survivors) — fast, frequent, stop-the-world pause is short",
+        "Major/Full GC: collects Old Gen — slow, causes longer stop-the-world pauses",
+        "G1GC (default Java 9+): divides heap into regions, collects high-garbage regions first (Garbage First)",
+        "ZGC/Shenandoah: concurrent collectors with sub-millisecond pauses for large heaps"
+      ],
+      "codeExample": "// GC roots keep objects alive\nstatic Object staticRef;    // GC root (static field)\nvoid method() {\n    Object local = new Object(); // GC root (stack)\n    // When method returns, local is no longer a root\n    // Object becomes eligible for GC if no other refs\n}\n// Circular references ARE collected — GC uses reachability, not ref counting",
+      "displayOrder": 13
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "HIGH",
+      "question": "What is the difference between WeakReference, SoftReference, and PhantomReference?",
+      "quickAnswer": "WeakReference: object is GC-eligible as soon as no strong references exist — collected on next GC. SoftReference: object is kept until JVM needs memory — good for caches. PhantomReference: object is already collected when the reference is enqueued — used for cleanup/finalization.",
+      "keyPoints": [
+        "Strong reference (normal): obj = new Object() — never collected while referenced",
+        "WeakReference: WeakHashMap uses this — entries collected when key has no strong references",
+        "SoftReference: JVM clears soft refs before throwing OutOfMemoryError — ideal for memory-sensitive caches",
+        "PhantomReference: get() always returns null; used with ReferenceQueue for post-GC cleanup (replacing finalize())",
+        "All three can be used with ReferenceQueue to receive notification when the referent is about to be or has been collected"
+      ],
+      "codeExample": "// WeakReference — for caches/canonicalization\nWeakReference<Cache> weakCache = new WeakReference<>(new Cache());\nCache c = weakCache.get(); // null if GC'd\n\n// SoftReference — memory-sensitive cache  \nSoftReference<byte[]> data = new SoftReference<>(loadLargeData());\nbyte[] d = data.get(); // non-null until OOM risk\n\n// WeakHashMap — keys GC'd when no strong reference\nMap<Object, String> map = new WeakHashMap<>();",
+      "displayOrder": 14
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between Comparable and Comparator?",
+      "quickAnswer": "Comparable defines the natural ordering of a class (implemented by the class itself, single sort order). Comparator defines an external ordering (separate class/lambda, multiple sort orders). Collections.sort() and TreeSet use natural ordering; overloads accept a Comparator for custom ordering.",
+      "keyPoints": [
+        "Comparable: class implements it (compareTo), defines one natural order — e.g., String, Integer, Date",
+        "Comparator: external strategy object, multiple can exist for the same type",
+        "Comparator.comparing(keyExtractor) with thenComparing() chains multiple sort criteria cleanly",
+        "If compareTo/compare returns 0, equals() should ideally return true (required by SortedSet/SortedMap)",
+        "Comparator.naturalOrder() / reverseOrder() are convenience instances"
+      ],
+      "codeExample": "// Comparable — natural order\nclass Employee implements Comparable<Employee> {\n    int salary;\n    public int compareTo(Employee o) { return Integer.compare(salary, o.salary); }\n}\n\n// Comparator — flexible, external\nComparator<Employee> byName = Comparator.comparing(e -> e.name);\nComparator<Employee> byNameThenSalary = Comparator\n    .comparing((Employee e) -> e.name)\n    .thenComparingInt(e -> e.salary);\nlist.sort(byNameThenSalary);",
+      "displayOrder": 15
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between Iterator and ListIterator?",
+      "quickAnswer": "Iterator traverses any Collection in one direction (forward only) and supports remove(). ListIterator works only on Lists, supports bidirectional traversal (hasPrevious/previous), and allows add/set operations during iteration in addition to remove().",
+      "keyPoints": [
+        "Iterator: hasNext(), next(), remove() — works on any Iterable",
+        "ListIterator: adds hasPrevious(), previous(), add(), set(), nextIndex(), previousIndex()",
+        "Both throw ConcurrentModificationException if the list is structurally modified outside the iterator",
+        "ListIterator.add() inserts before the cursor position; set() replaces the last element returned",
+        "For-each loop uses Iterator under the hood — ConcurrentModificationException applies there too"
+      ],
+      "codeExample": "List<String> list = new ArrayList<>(List.of(\"a\",\"b\",\"c\"));\nListIterator<String> it = list.listIterator();\nwhile (it.hasNext()) {\n    String s = it.next();\n    it.set(s.toUpperCase()); // replace during iteration\n}\n// Backwards\nwhile (it.hasPrevious()) System.out.print(it.previous()); // C B A",
+      "displayOrder": 16
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between fail-fast and fail-safe iterators?",
+      "quickAnswer": "Fail-fast iterators (ArrayList, HashMap) throw ConcurrentModificationException if the collection is structurally modified after the iterator is created. Fail-safe iterators (CopyOnWriteArrayList, ConcurrentHashMap) operate on a snapshot or allow concurrent modification — no exception, but may not see latest changes.",
+      "keyPoints": [
+        "Fail-fast: modCount check — if modCount changes after iterator creation, CME is thrown on next()",
+        "Not guaranteed: CME is thrown on best-effort basis — don't rely on it for thread-safety",
+        "CopyOnWriteArrayList: iterator operates on snapshot taken at creation; writes create new array",
+        "ConcurrentHashMap iterator: weakly consistent — reflects some but not necessarily all updates",
+        "To safely remove during iteration: use iterator.remove() (doesn't trigger CME)"
+      ],
+      "codeExample": "// Fail-fast — throws CME\nList<String> list = new ArrayList<>(List.of(\"a\",\"b\"));\nfor (String s : list) {\n    list.remove(s); // ConcurrentModificationException!\n}\n// Safe removal\nIterator<String> it = list.iterator();\nwhile (it.hasNext()) { it.next(); it.remove(); } // ok\n\n// Fail-safe\nList<String> safe = new CopyOnWriteArrayList<>(list);\nfor (String s : safe) { safe.remove(s); } // no exception",
+      "displayOrder": 17
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between Collections.unmodifiableList, List.of, and Collections.emptyList?",
+      "quickAnswer": "Collections.unmodifiableList wraps an existing list — the original can still be mutated and changes are visible through the wrapper. List.of() creates a truly immutable list (no mutation via any reference). Collections.emptyList() returns a singleton empty immutable list.",
+      "keyPoints": [
+        "unmodifiableList: view-only wrapper, not a copy — mutations to the original list are visible; throws UnsupportedOperationException on write attempts via the wrapper",
+        "List.of() (Java 9+): immutable, no nulls allowed, not a view — truly unchangeable",
+        "Collections.emptyList(): singleton, returns same object every time, very memory efficient",
+        "List.copyOf() (Java 10+): immutable copy — safe from original mutations",
+        "All three throw UnsupportedOperationException on add/remove/set attempts"
+      ],
+      "codeExample": "List<String> original = new ArrayList<>(List.of(\"a\"));\nList<String> view = Collections.unmodifiableList(original);\noriginal.add(\"b\");\nSystem.out.println(view.size()); // 2! view reflects original change\n\nList<String> immutable = List.of(\"a\", \"b\"); // truly immutable\nList<String> empty = Collections.emptyList(); // singleton, zero overhead",
+      "displayOrder": 18
+    },
+    {
+      "category": "JAVA",
+      "difficulty": "MEDIUM",
+      "question": "What are Java records and when should you use them?",
+      "quickAnswer": "Records (Java 16+) are immutable data carriers. Declaring record Point(int x, int y) auto-generates: constructor, getters (x(), y()), equals(), hashCode(), and toString(). Use them for DTOs, value objects, and data transfer — not for entities needing mutable state or inheritance.",
+      "keyPoints": [
+        "Auto-generated: canonical constructor, component accessors (not getX() — just x()), equals/hashCode by all components, toString",
+        "All fields are final — records are shallowly immutable (a List field's contents can still be mutated)",
+        "Cannot extend other classes (implicitly extends Record); can implement interfaces",
+        "Can add custom constructors (compact constructor for validation), static fields/methods, instance methods",
+        "Ideal for: DTOs, API request/response bodies, Map keys, pattern matching in switch"
+      ],
+      "codeExample": "record Point(int x, int y) {}\nPoint p = new Point(3, 4);\nSystem.out.println(p.x());  // 3 (not getX)\nSystem.out.println(p);      // Point[x=3, y=4]\n\n// Compact constructor for validation\nrecord Range(int min, int max) {\n    Range { if (min > max) throw new IllegalArgumentException(); }\n}\n\n// Use in switch pattern matching (Java 21)\nif (shape instanceof Point(int x, int y)) { ... }",
+      "displayOrder": 19
+    }
+  ]
+}

@@ -1,0 +1,305 @@
+{
+  "batchName": "MySQL Deep Dive & AWS Core Services",
+  "questions": [
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "How does a B-Tree index work in MySQL, and what is the difference between clustered and secondary indexes?",
+      "quickAnswer": "InnoDB uses B-Tree indexes where leaf nodes store sorted key values with pointers. The clustered index (always the PRIMARY KEY) stores actual row data in the leaf — there is only one per table. Secondary indexes store the indexed column value + the primary key value (not a pointer); lookups first find PK in secondary index, then do a second lookup in clustered index (called a bookmark lookup).",
+      "keyPoints": [
+        "Clustered index: leaf nodes ARE the table rows, physically ordered by PK",
+        "Secondary index leaf: (index_col, PK) — requires second lookup to get full row",
+        "Covering index: SELECT cols all in one index → no second lookup needed",
+        "Composite index: (a, b, c) — leftmost prefix rule: usable for a, (a,b), (a,b,c) but NOT b alone",
+        "EXPLAIN: key=NULL means no index used; rows=high means full scan"
+      ],
+      "codeExample": "-- Covering index: avoids fetching full row\nCREATE INDEX idx_order_user_date ON orders(user_id, created_at, status);\n\n-- Uses covering index (all cols in index)\nSELECT user_id, created_at, status\nFROM orders\nWHERE user_id = 42 AND created_at > '2024-01-01';\n\n-- EXPLAIN shows: Using index (no row fetch needed)",
+      "displayOrder": 1
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "What are MySQL's four transaction isolation levels and what anomalies does each prevent?",
+      "quickAnswer": "READ UNCOMMITTED: dirty reads possible (reads uncommitted data). READ COMMITTED: no dirty reads, but non-repeatable reads (same query returns different values within a transaction). REPEATABLE READ (InnoDB default): no dirty/non-repeatable reads, phantom reads prevented in InnoDB via gap locks. SERIALIZABLE: fully isolated, behaves like serial execution, very slow.",
+      "keyPoints": [
+        "Dirty read: read another transaction's uncommitted change — fixed at RC+",
+        "Non-repeatable read: same row returns different value — fixed at RR+",
+        "Phantom read: new rows appear in repeated range query — fixed by SERIALIZABLE (InnoDB RR uses MVCC+gap locks to avoid this)",
+        "InnoDB default is REPEATABLE READ — safe for most apps",
+        "MVCC: InnoDB uses row versioning — reads see snapshot at transaction start, no locks needed for reads"
+      ],
+      "codeExample": "-- Check current isolation level\nSELECT @@transaction_isolation;\n\n-- Set for session\nSET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;\n\n-- Example: MVCC snapshot read vs locking read\nSTART TRANSACTION;\nSELECT * FROM orders WHERE user_id = 1;      -- snapshot read (MVCC)\nSELECT * FROM orders WHERE user_id = 1 FOR UPDATE; -- locking read (current)",
+      "displayOrder": 2
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "Explain MySQL's EXPLAIN output — what do the key columns mean?",
+      "quickAnswer": "EXPLAIN shows the query execution plan. Key columns: type (join type, best to worst: system > const > eq_ref > ref > range > index > ALL), key (which index is used, NULL=none), rows (estimated rows scanned), Extra (Using index=covering, Using filesort=sort without index, Using temporary=temp table needed). ALL + large rows = full table scan = bad.",
+      "keyPoints": [
+        "type=ALL: full table scan — needs index",
+        "type=range: index range scan — acceptable for selective queries",
+        "type=ref: non-unique index lookup — good",
+        "type=eq_ref: unique/PK lookup per row join — excellent",
+        "Extra: 'Using filesort' on large tables = add ORDER BY column to index"
+      ],
+      "codeExample": "EXPLAIN SELECT u.name, COUNT(o.id)\nFROM users u\nJOIN orders o ON u.id = o.user_id\nWHERE o.status = 'PENDING'\nGROUP BY u.id\nORDER BY u.name;\n\n-- Look for:\n-- type=ALL on orders → add index on (user_id, status)\n-- Extra: Using filesort → add index on (name) or include in GROUP BY index\n-- rows estimate × each join = total rows examined",
+      "displayOrder": 3
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "MEDIUM",
+      "question": "What is the N+1 query problem and how do you fix it in both raw SQL and JPA?",
+      "quickAnswer": "N+1 occurs when fetching 1 parent entity triggers N additional queries for each child (e.g., load 100 users, then 100 separate queries for each user's orders). Fix in SQL: JOIN or subquery to fetch all in one query. In JPA: use FETCH JOIN in JPQL, @EntityGraph, or Hibernate's @BatchSize to batch child loads. Hibernate's LAZY loading triggers N+1 when accessed.",
+      "keyPoints": [
+        "Root cause: lazy loading iterates a collection and executes one query per entity",
+        "JPQL fix: SELECT u FROM User u JOIN FETCH u.orders WHERE ...",
+        "@EntityGraph: declarative fetch plan without modifying query",
+        "@BatchSize(size=50): instead of N queries, fires ceil(N/50) queries",
+        "spring.jpa.show-sql=true — always check SQL output in development"
+      ],
+      "codeExample": "-- SQL: N+1 problem → fix with JOIN\n-- BAD: 1 query for users + N queries for orders\nSELECT * FROM users;  -- then for each user:\nSELECT * FROM orders WHERE user_id = ?;\n\n-- GOOD: single join\nSELECT u.*, o.*\nFROM users u\nLEFT JOIN orders o ON u.id = o.user_id\nWHERE u.status = 'ACTIVE';\n\n-- JPA FETCH JOIN\n@Query(\"SELECT u FROM User u JOIN FETCH u.orders WHERE u.active = true\")\nList<User> findActiveWithOrders();",
+      "displayOrder": 4
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "MEDIUM",
+      "question": "How do you design for horizontal scaling in MySQL — sharding vs read replicas?",
+      "quickAnswer": "Read replicas: async replication to replica servers — offload read traffic, zero schema change. Use when reads >> writes. Sharding: partition data by a shard key (e.g., user_id % N) across multiple DB servers — each shard is independent. Use when single server can't hold the data or handle write throughput. Sharding adds massive complexity (cross-shard joins, rebalancing).",
+      "keyPoints": [
+        "Read replica: same schema, async lag (replication delay), proxy routes reads",
+        "Shard key choice: must avoid hotspots; user_id better than created_at (time-based skew)",
+        "Cross-shard query: scatter-gather (query all shards, merge in app) — expensive",
+        "Vitess: MySQL sharding middleware used by YouTube, Slack",
+        "Application-level sharding vs proxy-level sharding (ProxySQL, Vitess)"
+      ],
+      "codeExample": "-- Read replica routing in Spring Boot\n@Configuration\npublic class DataSourceConfig {\n    @Bean @Primary\n    DataSource writeDataSource() { /* master config */ }\n\n    @Bean\n    DataSource readDataSource() { /* replica config */ }\n\n    // AbstractRoutingDataSource routes by @Transactional(readOnly=true)\n}\n\n// Shard calculation\nint getShard(long userId) {\n    return (int)(userId % TOTAL_SHARDS); // consistent hash preferred in practice\n}",
+      "displayOrder": 5
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "MEDIUM",
+      "question": "What is a deadlock in MySQL and how does InnoDB handle it?",
+      "quickAnswer": "MySQL InnoDB deadlock: two transactions each hold a lock the other needs. InnoDB automatically detects deadlocks using a wait-for graph and rolls back the lighter transaction (fewer rows locked). The victim transaction receives error 1213 (ER_LOCK_DEADLOCK). Application must catch and retry. Prevent by: consistent lock order, smaller transactions, and avoiding long-running transactions.",
+      "keyPoints": [
+        "InnoDB auto-detect: checks wait-for graph on each lock request",
+        "Victim selection: transaction with fewer undo log records (lighter rollback)",
+        "SHOW ENGINE INNODB STATUS — shows last deadlock details",
+        "Prevention: always lock resources in the same order across transactions",
+        "innodb_lock_wait_timeout (default 50s): separate from deadlock detection"
+      ],
+      "codeExample": "-- Common deadlock pattern: concurrent updates in opposite order\n-- Tx1: UPDATE orders SET ... WHERE id=1; UPDATE orders SET ... WHERE id=2;\n-- Tx2: UPDATE orders SET ... WHERE id=2; UPDATE orders SET ... WHERE id=1;\n\n-- Fix: always update in ascending ID order\nUPDATE orders SET status='PROCESSING'\nWHERE id IN (1, 2)\nORDER BY id; -- deterministic lock order\n\n-- Application retry logic for deadlock\n@Retryable(value = CannotAcquireLockException.class, maxAttempts = 3)",
+      "displayOrder": 6
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "Explain window functions in MySQL 8 — ROW_NUMBER, RANK, DENSE_RANK, and LAG/LEAD.",
+      "quickAnswer": "Window functions compute across a set of rows related to the current row (the 'window'), without collapsing them like GROUP BY. ROW_NUMBER: unique sequential number per partition. RANK: same rank for ties, gaps in sequence. DENSE_RANK: same rank for ties, no gaps. LAG/LEAD: access values from previous/next rows in partition.",
+      "keyPoints": [
+        "OVER(PARTITION BY dept ORDER BY salary DESC) — defines the window",
+        "ROW_NUMBER for pagination; RANK for actual ranking with tie handling",
+        "DENSE_RANK: useful for competition rankings where ties shouldn't skip ranks",
+        "LAG(salary, 1, 0): previous row's salary, offset 1, default 0 if no previous",
+        "FIRST_VALUE / LAST_VALUE: get first/last value in the window frame"
+      ],
+      "codeExample": "-- Top 3 earners per department with ranking\nSELECT name, department, salary,\n    ROW_NUMBER()  OVER w AS row_num,\n    RANK()        OVER w AS rnk,\n    DENSE_RANK()  OVER w AS dense_rnk,\n    LAG(salary)   OVER w AS prev_salary,\n    salary - LAG(salary, 1, 0) OVER w AS salary_diff\nFROM employees\nWINDOW w AS (PARTITION BY department ORDER BY salary DESC);",
+      "displayOrder": 7
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "MEDIUM",
+      "question": "What are covering indexes and partial indexes, and how do they reduce I/O?",
+      "quickAnswer": "Covering index: all columns needed by a query are in the index — MySQL can return results from the index alone without reading the actual row data (EXPLAIN shows 'Using index'). Partial/prefix index: index only the first N characters of a column (e.g., INDEX idx (email(20))) — smaller index, works for prefix-match queries, but not for full string comparison.",
+      "keyPoints": [
+        "Covering reduces I/O from 2 reads (index + row) to 1 (index only)",
+        "Design: include all WHERE, JOIN, ORDER BY, and SELECT columns in the index",
+        "Prefix index: good for long VARCHAR columns, saves space, hurts cardinality",
+        "Invisible index (MySQL 8): hide index without dropping — test impact before removal",
+        "Index merge: MySQL sometimes merges multiple indexes but EXPLAIN shows 'Using union'"
+      ],
+      "codeExample": "-- Query: filter by status + date, return only id and amount\nSELECT id, amount\nFROM transactions\nWHERE status = 'SETTLED' AND created_at > '2024-01-01'\nORDER BY created_at DESC;\n\n-- Covering index: includes all 4 columns referenced\nCREATE INDEX idx_covering\n    ON transactions(status, created_at, id, amount);\n-- EXPLAIN Extra: 'Using index' -- no table row lookup needed",
+      "displayOrder": 8
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "MEDIUM",
+      "question": "What is the difference between INNER JOIN, LEFT JOIN, and EXISTS vs IN for subqueries?",
+      "quickAnswer": "INNER JOIN: only rows where join condition matches in both tables. LEFT JOIN: all rows from left table, NULLs for unmatched right rows. EXISTS: returns true if subquery returns any rows — short-circuits on first match, efficient for large subqueries. IN: evaluates full subquery, bad with NULLs (IN (1, NULL) with NOT IN is broken). Prefer EXISTS over NOT IN when NULLs possible.",
+      "keyPoints": [
+        "LEFT JOIN with WHERE right.col IS NULL = anti-join (rows in left but not right)",
+        "EXISTS stops at first match — preferred for large result subqueries",
+        "NOT IN breaks with NULLs: x NOT IN (1, 2, NULL) → always false (NULL comparison is UNKNOWN)",
+        "NOT EXISTS is NULL-safe and often more efficient",
+        "Semi-join optimization: MySQL may rewrite IN to EXISTS internally"
+      ],
+      "codeExample": "-- Anti-join: users who never placed an order\n-- Method 1: LEFT JOIN + IS NULL\nSELECT u.id FROM users u\nLEFT JOIN orders o ON u.id = o.user_id\nWHERE o.id IS NULL;\n\n-- Method 2: NOT EXISTS (NULL-safe, often faster)\nSELECT u.id FROM users u\nWHERE NOT EXISTS (\n    SELECT 1 FROM orders o WHERE o.user_id = u.id\n);\n\n-- Avoid: NOT IN breaks if orders.user_id has any NULL",
+      "displayOrder": 9
+    },
+    {
+      "category": "MYSQL",
+      "difficulty": "HIGH",
+      "question": "How does MySQL replication work and what is GTID-based replication?",
+      "quickAnswer": "MySQL replication: primary writes changes to binary log; replica I/O thread reads binlog and writes to relay log; replica SQL thread applies events. Row-based replication (RBR) logs actual row changes — safer and more consistent. GTID (Global Transaction Identifier) assigns a unique ID to each transaction, making failover reliable — replicas can auto-resume from any node without specifying binlog position.",
+      "keyPoints": [
+        "Statement-based: replays SQL — fast but unsafe for non-deterministic functions (NOW(), UUID())",
+        "Row-based: replays row changes — safe, larger binlog, preferred",
+        "GTID format: server_uuid:transaction_id — globally unique across cluster",
+        "Semi-sync replication: at least one replica acknowledges receipt before primary commits",
+        "SHOW REPLICA STATUS\\G — check Seconds_Behind_Source for replication lag"
+      ],
+      "codeExample": "-- Enable GTID replication in my.cnf\n[mysqld]\ngtid_mode = ON\nenforce_gtid_consistency = ON\nlog_replica_updates = ON\n\n-- Verify GTID on replica\nSHOW REPLICA STATUS\\G\n-- Check: Executed_Gtid_Set, Seconds_Behind_Source\n\n-- Setup replica\nCHANGE REPLICATION SOURCE TO\n    SOURCE_HOST='primary.db',\n    SOURCE_USER='repl',\n    SOURCE_AUTO_POSITION=1; -- uses GTIDs automatically",
+      "displayOrder": 10
+    },
+    {
+      "category": "AWS",
+      "difficulty": "HIGH",
+      "question": "What is the difference between EC2, ECS, and Lambda — when do you choose each?",
+      "quickAnswer": "EC2: virtual machines — full control, persistent, good for stateful apps or when you need specific OS/GPU config. ECS (with Fargate): containerized workloads managed by AWS — no server management, good for microservices. Lambda: event-driven, serverless functions — no servers, scales to zero, billed per invocation. Lambda cold starts add latency; EC2 always warm. ECS is the middle ground.",
+      "keyPoints": [
+        "EC2: persistent, any runtime, custom AMI, fixed cost — best for long-running stateful apps",
+        "ECS/Fargate: Docker containers, AWS manages cluster — best for containerized microservices",
+        "Lambda: max 15min execution, 10GB memory, 512MB /tmp — best for event handlers, webhooks",
+        "Lambda cold start: 100ms–1s (JVM worse) — use provisioned concurrency for latency-sensitive",
+        "EKS: Kubernetes on AWS — use when team has Kubernetes expertise or need portability"
+      ],
+      "codeExample": "// Lambda handler (Java)\npublic class OrderHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {\n    @Override\n    public APIGatewayProxyResponseEvent handleRequest(\n            APIGatewayProxyRequestEvent event, Context ctx) {\n        String body = event.getBody();\n        // process order...\n        return new APIGatewayProxyResponseEvent()\n            .withStatusCode(200)\n            .withBody(\"{\\\"status\\\":\\\"accepted\\\"}\");\n    }\n}",
+      "displayOrder": 11
+    },
+    {
+      "category": "AWS",
+      "difficulty": "HIGH",
+      "question": "Explain S3 storage classes and lifecycle policies. How do you minimize cost for time-series data?",
+      "quickAnswer": "S3 Standard: high availability, millisecond access, highest cost. Standard-IA: infrequent access (30-day minimum), retrieval fee. Glacier Instant Retrieval: archival, millisecond access. Glacier Flexible Retrieval: 1-12hr retrieval. Glacier Deep Archive: 12-48hr, cheapest. Lifecycle policies automatically transition objects based on age — move logs to IA after 30 days, Glacier after 90 days.",
+      "keyPoints": [
+        "S3 Standard-IA: ~58% cheaper than Standard, retrieval fee per GB",
+        "Intelligent Tiering: AWS auto-moves objects between tiers based on access patterns",
+        "Minimum duration charges: Standard-IA = 30 days, Glacier = 90 days",
+        "Multipart upload: required for objects > 5GB, recommended > 100MB",
+        "Transfer Acceleration: CloudFront edge network for fast global uploads"
+      ],
+      "codeExample": "# S3 lifecycle policy (CloudFormation)\nLifecycleConfiguration:\n  Rules:\n    - Id: log-archival\n      Status: Enabled\n      Filter:\n        Prefix: logs/\n      Transitions:\n        - TransitionInDays: 30\n          StorageClass: STANDARD_IA\n        - TransitionInDays: 90\n          StorageClass: GLACIER\n      Expiration:\n        Days: 365  # delete after 1 year",
+      "displayOrder": 12
+    },
+    {
+      "category": "AWS",
+      "difficulty": "HIGH",
+      "question": "What is RDS Multi-AZ vs Read Replica, and when do you need each?",
+      "quickAnswer": "Multi-AZ: synchronous replication to a standby in another AZ — automatic failover in 1-2 minutes if primary fails. Standby is NOT readable — it's for high availability only. Read Replica: async replication to a readable replica — for scaling read workloads. You can have up to 5 read replicas and can promote them to standalone DB. Multi-AZ = durability; Read Replica = scalability.",
+      "keyPoints": [
+        "Multi-AZ failover: DNS CNAME updates automatically — no app code change needed",
+        "Multi-AZ standby in different AZ (same region) — protects against AZ failure",
+        "Read Replica replication lag: asynchronous — may serve stale data",
+        "Cross-region Read Replica: disaster recovery + geo-distributed reads",
+        "Aurora: 6-way synchronous replication across 3 AZs + up to 15 read replicas"
+      ],
+      "codeExample": "# Terraform: RDS with Multi-AZ and read replica\nresource \"aws_db_instance\" \"primary\" {\n    engine               = \"mysql\"\n    instance_class       = \"db.t3.medium\"\n    multi_az             = true  # automatic standby\n    backup_retention_period = 7\n}\n\nresource \"aws_db_instance\" \"replica\" {\n    replicate_source_db = aws_db_instance.primary.identifier\n    instance_class      = \"db.t3.medium\"\n    # No multi_az needed on replica for read scaling\n}",
+      "displayOrder": 13
+    },
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "How does SQS guarantee delivery and what is the difference between Standard and FIFO queues?",
+      "quickAnswer": "SQS Standard: at-least-once delivery (messages may be delivered more than once), best-effort ordering — highest throughput. FIFO: exactly-once processing within a message group, strict ordering, 300 msg/s (3000 with batching). Visibility timeout: after a consumer reads a message, it's hidden for the timeout period — if not deleted, it reappears. Use SQS to decouple producers from consumers and handle traffic spikes.",
+      "keyPoints": [
+        "Visibility timeout: prevent other consumers from processing the same message",
+        "Dead letter queue (DLQ): messages that exceed maxReceiveCount go here for debugging",
+        "Long polling: ReceiveMessage with WaitTimeSeconds=20 — reduces empty polls (cost)",
+        "FIFO MessageGroupId: ordering within a group; multiple groups = parallel processing",
+        "Message retention: up to 14 days; default 4 days"
+      ],
+      "codeExample": "// Spring Cloud AWS SQS consumer\n@SqsListener(value = \"order-processing-queue\",\n             deletionPolicy = SqsMessageDeletionPolicy.ON_SUCCESS)\nvoid processOrder(String message, @Header(\"ApproximateReceiveCount\") int retries) {\n    try {\n        Order order = objectMapper.readValue(message, Order.class);\n        orderService.process(order);\n        // Message auto-deleted on method return (ON_SUCCESS policy)\n    } catch (Exception e) {\n        // Throw to keep message visible → retry → DLQ after maxReceiveCount\n        throw new RuntimeException(\"Processing failed\", e);\n    }\n}",
+      "displayOrder": 14
+    },
+    {
+      "category": "AWS",
+      "difficulty": "HIGH",
+      "question": "Explain VPC, subnets, security groups, and NACLs — how do they layer security?",
+      "quickAnswer": "VPC: isolated virtual network. Public subnet: has route to Internet Gateway — for load balancers and bastion hosts. Private subnet: no direct internet route — for app servers and databases. Security Groups: stateful, instance-level firewall (return traffic auto-allowed). NACLs: stateless, subnet-level firewall (must explicitly allow return traffic). Security groups for instance rules; NACLs for broad subnet-level blocking.",
+      "keyPoints": [
+        "Security Group: stateful — if inbound allowed, outbound reply is automatically allowed",
+        "NACL: stateless — must explicitly allow both inbound rule AND outbound ephemeral ports",
+        "Default NACL allows all; default Security Group denies all inbound",
+        "Bastion host pattern: only SSH bastion in public subnet; app servers in private",
+        "VPC Peering / Transit Gateway: connect VPCs; PrivateLink for service endpoints"
+      ],
+      "codeExample": "# Terraform: 3-tier VPC architecture\n# Public subnet: load balancer\nresource \"aws_security_group\" \"alb\" {\n    ingress { from_port=443 to_port=443 protocol=\"tcp\" cidr_blocks=[\"0.0.0.0/0\"] }\n    egress  { from_port=8080 to_port=8080 protocol=\"tcp\" source_security_group_id=aws_security_group.app.id }\n}\n# Private app subnet: only from ALB\nresource \"aws_security_group\" \"app\" {\n    ingress { from_port=8080 to_port=8080 protocol=\"tcp\" source_security_group_id=aws_security_group.alb.id }\n}\n# DB subnet: only from app servers\nresource \"aws_security_group\" \"db\" {\n    ingress { from_port=3306 to_port=3306 protocol=\"tcp\" source_security_group_id=aws_security_group.app.id }\n}",
+      "displayOrder": 15
+    },
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "What is CloudFront and how does it reduce latency for a global API?",
+      "quickAnswer": "CloudFront is AWS's CDN with 450+ edge locations globally. Static assets (S3 files) are cached at the nearest edge. For dynamic API calls, CloudFront can compress responses, terminate TLS at the edge (closer to user), and route to origin over AWS backbone (faster than public internet). Cache-Control headers control TTL. Lambda@Edge or CloudFront Functions run code at the edge.",
+      "keyPoints": [
+        "Edge location terminates TLS — handshake RTT reduced dramatically",
+        "Origin shield: add a regional cache tier between edge and origin — reduces origin load",
+        "Cache key: default is URL path; customize with headers, cookies, query strings",
+        "Cache invalidation: CreateInvalidation API — costs money; prefer cache-busting in URLs",
+        "Security: WAF integration, DDoS protection via Shield Standard (free)"
+      ],
+      "codeExample": "# Spring Boot: proper cache headers for CloudFront\n@GetMapping(\"/api/products/{id}\")\nResponseEntity<Product> getProduct(@PathVariable Long id) {\n    Product p = productService.find(id);\n    return ResponseEntity.ok()\n        .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES)\n            .mustRevalidate())\n        .eTag(String.valueOf(p.getVersion()))\n        .body(p);\n    // CloudFront caches up to 5 min; ETag allows 304 Not Modified on revalidation\n}",
+      "displayOrder": 16
+    },
+    {
+      "category": "AWS",
+      "difficulty": "HIGH",
+      "question": "What is IAM and what is the difference between roles, policies, and instance profiles?",
+      "quickAnswer": "IAM controls who can do what in AWS. Policy: JSON document defining permissions (Allow/Deny on Actions/Resources). Role: an identity that can be assumed by a service, user, or account — no password, uses temporary credentials. Instance Profile: container for an IAM role that you attach to an EC2 instance so the instance can call AWS APIs. Always use roles instead of access keys on EC2.",
+      "keyPoints": [
+        "Least privilege: grant only the minimum permissions needed",
+        "Role assumption: STS AssumeRole returns temporary credentials (15min–12hr)",
+        "Service role: role that AWS service assumes on your behalf (Lambda, ECS task role)",
+        "Resource-based policy: attached to resource (S3 bucket policy) — allows cross-account",
+        "Permission boundary: limits max permissions a role can have — guardrails for developers"
+      ],
+      "codeExample": "// EC2 app reading from S3 — no hardcoded credentials needed\n// Instance profile provides role with this policy:\n{\n    \"Version\": \"2012-10-17\",\n    \"Statement\": [{\n        \"Effect\": \"Allow\",\n        \"Action\": [\"s3:GetObject\"],\n        \"Resource\": \"arn:aws:s3:::my-bucket/uploads/*\"\n    }]\n}\n\n// AWS SDK auto-fetches credentials from instance metadata\nS3Client s3 = S3Client.builder().region(Region.AP_SOUTH_1).build();\n// No credentials in code — role provides them at runtime",
+      "displayOrder": 17
+    },
+    {
+      "category": "AWS",
+      "difficulty": "MEDIUM",
+      "question": "How does Auto Scaling work and what are the different scaling policies?",
+      "quickAnswer": "Auto Scaling Group (ASG) maintains a fleet of EC2 instances. Target tracking: maintain a specific metric value (e.g., CPU at 60%) — AWS adjusts capacity automatically. Step scaling: trigger based on CloudWatch alarm thresholds with different step sizes. Scheduled scaling: predictable patterns (scale up before business hours). Predictive scaling: uses ML to forecast demand. Always configure minimum, desired, and maximum capacity.",
+      "keyPoints": [
+        "Cooldown period: prevent rapid scale-in/out oscillation (default 300s after scaling activity)",
+        "Health checks: EC2 health (default) or ELB health — unhealthy instances replaced",
+        "Lifecycle hooks: pause before launch/terminate — run scripts (install agents, drain connections)",
+        "Spot instances in ASG: use mixed instances policy for cost savings with on-demand fallback",
+        "Scale-in protection: mark specific instances as protected (e.g., running long batch jobs)"
+      ],
+      "codeExample": "# Target tracking scaling policy\nresource \"aws_autoscaling_policy\" \"cpu_target\" {\n    autoscaling_group_name = aws_autoscaling_group.app.name\n    policy_type            = \"TargetTrackingScaling\"\n    target_tracking_configuration {\n        predefined_metric_specification {\n            predefined_metric_type = \"ASGAverageCPUUtilization\"\n        }\n        target_value = 60.0  # maintain 60% CPU\n    }\n}",
+      "displayOrder": 18
+    },
+    {
+      "category": "AWS",
+      "difficulty": "HIGH",
+      "question": "What is ElastiCache and when do you choose Redis vs Memcached?",
+      "quickAnswer": "ElastiCache is managed in-memory caching. Redis: persistent (RDB/AOF snapshots), rich data types (sorted sets, streams, pub/sub, Lua scripts), clustering, Pub/Sub — use for sessions, leaderboards, rate limiting, distributed locks. Memcached: simpler, multi-threaded, pure caching only, no persistence — use when you just need a simple key-value cache with max throughput.",
+      "keyPoints": [
+        "Redis sorted sets: leaderboards with O(log n) rank queries",
+        "Redis SETNX + TTL: distributed lock (or use Redisson library)",
+        "Redis Cluster: automatic sharding across 16384 slots — horizontal scaling",
+        "Redis Streams: ordered message log with consumer groups (like lightweight Kafka)",
+        "Memcached: multi-threaded (better for very high single-node throughput), no persistence"
+      ],
+      "codeExample": "// Redis distributed rate limiter with Spring Data Redis\n@Component\npublic class RateLimiter {\n    private final RedisTemplate<String, String> redis;\n\n    public boolean isAllowed(String userId, int maxRequests, long windowSeconds) {\n        String key = \"rate:\" + userId;\n        long count = redis.opsForValue().increment(key);\n        if (count == 1)\n            redis.expire(key, Duration.ofSeconds(windowSeconds));\n        return count <= maxRequests;\n    }\n}",
+      "displayOrder": 19
+    },
+    {
+      "category": "AWS",
+      "difficulty": "HIGH",
+      "question": "Explain the difference between SNS, SQS, and EventBridge for event-driven architecture.",
+      "quickAnswer": "SNS: pub/sub fan-out — one message → multiple subscribers (SQS queues, Lambda, HTTP). SQS: message queue — one consumer processes each message (competing consumers). SNS+SQS is the classic fan-out pattern. EventBridge: event bus with routing rules and schema registry — matches events by pattern and routes to targets. Better for complex event routing across services and AWS-native integrations.",
+      "keyPoints": [
+        "SNS fan-out: one publish → multiple SQS queues receive copy — parallel processing",
+        "SQS decoupling: producer doesn't wait for consumer; absorbs traffic spikes",
+        "EventBridge: 90+ AWS service integrations, custom buses, scheduled events (cron)",
+        "EventBridge schema registry: auto-discovers event schemas for type-safe consumers",
+        "Kinesis vs SQS: Kinesis for ordered high-throughput streams; SQS for decoupled tasks"
+      ],
+      "codeExample": "// SNS → SQS fan-out pattern\n// 1. Create SNS topic: arn:aws:sns:us-east-1:123:order-events\n// 2. Subscribe two SQS queues:\n//    - billing-queue (handles payment)\n//    - inventory-queue (handles stock update)\n\n// Publisher (Spring)\n@Service\npublic class OrderService {\n    @Autowired SnsTemplate snsTemplate;\n\n    void placeOrder(Order o) {\n        save(o);\n        snsTemplate.sendNotification(\n            \"arn:aws:sns:...:order-events\",\n            toJson(o),          // both queues get this\n            \"ORDER_PLACED\");\n    }\n}",
+      "displayOrder": 20
+    }
+  ]
+}
