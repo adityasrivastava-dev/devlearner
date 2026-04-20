@@ -241,6 +241,7 @@ export default function PracticeSetPage() {
 
   return (
     <div className={styles.page}>
+    <div className={styles.pageInner}>
       {/* ── Header ── */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
@@ -309,6 +310,7 @@ export default function PracticeSetPage() {
           </div>
         </>
       )}
+    </div>
     </div>
   );
 }

@@ -109,6 +109,11 @@ public class PracticeSetService {
             category must be exactly one of: THEORY, CODING, PROJECT, BEHAVIORAL, SYSTEM_DESIGN
             difficulty must be exactly: Easy, Medium, or Hard
             Answers must be technically accurate — include key concepts, trade-offs, and real examples. Keep each answer under 100 words.
+            CRITICAL JSON RULES — violating these will break parsing:
+            - Never use double-quote characters inside string values. Use single quotes for code terms (e.g. 'synchronized', 'HashMap').
+            - Never use backslashes inside string values.
+            - keyPoints must be a JSON array of strings, never null.
+            - Every object must be complete and properly closed before the next one.
             """;
 
         String prompt = String.format("""
@@ -131,8 +136,13 @@ public class PracticeSetService {
 
         try {
             String cleaned = stripFences(aiResponse);
-            List<Map<String, Object>> questions = mapper.readValue(cleaned, new TypeReference<>() {});
-            // Ensure each question has an id
+            List<Map<String, Object>> questions;
+            try {
+                questions = mapper.readValue(cleaned, new TypeReference<>() {});
+            } catch (Exception firstEx) {
+                log.warn("Practice questions parse failed, retrying with quote sanitizer: {}", firstEx.getMessage());
+                questions = mapper.readValue(sanitizeJsonQuotes(cleaned), new TypeReference<>() {});
+            }
             for (int i = 0; i < questions.size(); i++) {
                 questions.get(i).putIfAbsent("id", i + 1);
             }
@@ -174,6 +184,7 @@ public class PracticeSetService {
               "followUp": "..."
             }
             Do NOT repeat any questions from the existing list. Go deeper on sub-topics.
+            CRITICAL: Never use double-quote characters inside string values — use single quotes instead. Every JSON object must be complete and properly closed.
             """;
 
         String prompt = String.format("""
@@ -196,8 +207,13 @@ public class PracticeSetService {
 
         try {
             String cleaned = stripFences(aiResponse);
-            List<Map<String, Object>> questions = mapper.readValue(cleaned, new TypeReference<>() {});
-            // Ensure topic field matches
+            List<Map<String, Object>> questions;
+            try {
+                questions = mapper.readValue(cleaned, new TypeReference<>() {});
+            } catch (Exception firstEx) {
+                log.warn("More questions parse failed, retrying with quote sanitizer: {}", firstEx.getMessage());
+                questions = mapper.readValue(sanitizeJsonQuotes(cleaned), new TypeReference<>() {});
+            }
             questions.forEach(q -> q.putIfAbsent("topic", topic));
             return questions;
         } catch (Exception e) {
@@ -274,6 +290,51 @@ public class PracticeSetService {
             if (end > obj) return s.substring(obj, end + 1);
         }
         return s;
+    }
+
+    /**
+     * Replaces unescaped double quotes inside JSON string values with single quotes.
+     * Uses a state machine to distinguish string delimiters from content quotes.
+     */
+    private String sanitizeJsonQuotes(String json) {
+        StringBuilder sb = new StringBuilder(json.length());
+        boolean inString = false;
+        boolean escaped  = false;
+
+        for (int i = 0; i < json.length(); i++) {
+            char c = json.charAt(i);
+            if (escaped) {
+                sb.append(c);
+                escaped = false;
+                continue;
+            }
+            if (c == '\\') {
+                sb.append(c);
+                escaped = true;
+                continue;
+            }
+            if (c == '"') {
+                if (!inString) {
+                    inString = true;
+                    sb.append(c);
+                } else {
+                    // Peek ahead (skip whitespace) to see if this looks like a closing delimiter
+                    int j = i + 1;
+                    while (j < json.length() && json.charAt(j) == ' ') j++;
+                    char next = j < json.length() ? json.charAt(j) : 0;
+                    if (next == ':' || next == ',' || next == '}' || next == ']' || next == '\n' || next == '\r' || next == 0) {
+                        inString = false;
+                        sb.append(c);
+                    } else {
+                        // Unescaped quote inside a string value — replace with single quote
+                        sb.append('\'');
+                    }
+                }
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
     @SuppressWarnings("unchecked")
