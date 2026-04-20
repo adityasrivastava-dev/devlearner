@@ -1,0 +1,380 @@
+{
+  "batchName": "iq-batch-23-system-design-deep",
+  "questions": [
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Design a URL shortener like TinyURL. Handle 100M URLs, 10B reads/month.",
+      "quickAnswer": "Hash the long URL to a 7-char Base62 ID (62^7 = 3.5T unique URLs). Store ID→URL in MySQL with a Redis cache in front. Write path: check if URL exists (dedup), generate ID via a counter service or MD5+truncate, store and return. Read path: Redis lookup → MySQL fallback → 301 redirect. Use consistent hashing to distribute across Redis nodes for the 10B read volume.",
+      "keyPoints": [
+        "Base62 (a-z, A-Z, 0-9) over Base64 because + and / break URLs — 7 chars gives 3.5 trillion combinations",
+        "Counter service vs hash: counter is collision-free but requires a distributed counter (Snowflake ID); hash is simpler but needs collision handling",
+        "Cache hit rate ~99% for popular URLs (power law distribution) — only ~1% go to MySQL",
+        "301 (permanent redirect) vs 302 (temporary): 301 is cached by browser, reducing load; 302 forces every request through your servers (use for analytics)",
+        "Expiry: store created_at + TTL, run a background sweeper to purge expired rows"
+      ],
+      "codeExample": "Client → [API Gateway] → [App Servers]\n                              ↓           ↓\n                          [Redis]    [MySQL]\n                         (hot URLs)  (all URLs)\n\nWrite: POST /shorten\n  hash = base62(counter.next())\n  redis.set(hash, longUrl, TTL=7days)\n  mysql.insert(hash, longUrl, created_at)\n  return \"tinyurl.com/\" + hash\n\nRead: GET /:hash\n  url = redis.get(hash)           // O(1)\n  if !url: url = mysql.find(hash) // fallback\n  return HTTP 301 Location: url",
+      "displayOrder": 0
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Design a rate limiter. Compare token bucket vs sliding window log vs sliding window counter.",
+      "quickAnswer": "Token bucket: bucket refills at rate R, each request consumes 1 token — allows bursts up to bucket capacity. Sliding window log: store each request timestamp, count logs in the last 60s — precise but memory-heavy at scale. Sliding window counter: split time into fixed windows, use weighted count from current + previous window — good balance of accuracy and memory. Implement in Redis using atomic Lua scripts to avoid race conditions.",
+      "keyPoints": [
+        "Token bucket: allows bursts (good for APIs); refill rate = sustained throughput; bucket size = burst allowance",
+        "Fixed window counter: simplest, but lets 2x the limit through at window boundaries — avoid for strict limits",
+        "Sliding window log: exact, O(1) per request but O(requests) memory — use only for low-volume endpoints",
+        "Sliding window counter: prev_count * ((window - elapsed)/window) + curr_count — approximation within 1% error",
+        "Redis INCR + EXPIRE is not atomic; use Lua script or Redis MULTI/EXEC to prevent race conditions"
+      ],
+      "codeExample": "// Token Bucket in Redis (Lua script - atomic)\nlocal key = KEYS[1]\nlocal capacity = tonumber(ARGV[1])   -- e.g. 100\nlocal refill_rate = tonumber(ARGV[2]) -- tokens/sec\nlocal now = tonumber(ARGV[3])         -- epoch ms\n\nlocal bucket = redis.call('HMGET', key, 'tokens', 'last_refill')\nlocal tokens = tonumber(bucket[1]) or capacity\nlocal last_refill = tonumber(bucket[2]) or now\n\nlocal elapsed = (now - last_refill) / 1000\ntokens = math.min(capacity, tokens + elapsed * refill_rate)\n\nif tokens >= 1 then\n  redis.call('HMSET', key, 'tokens', tokens-1, 'last_refill', now)\n  return 1  -- allowed\nelse\n  return 0  -- rate limited\nend",
+      "displayOrder": 1
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Design a notification system that delivers email, SMS, and push notifications at 1M notifications/minute.",
+      "quickAnswer": "Decouple producers from delivery via a Kafka topic per channel (email-topic, sms-topic, push-topic). A central notification service validates, persists to MySQL (for audit and retry tracking), and publishes to Kafka. Channel-specific workers consume from Kafka and call third-party providers (SendGrid, Twilio, FCM). Failed deliveries go to a dead-letter topic with exponential backoff retry. Idempotency key = notificationId prevents duplicate delivery on retry.",
+      "keyPoints": [
+        "Fan-out to multiple channels from a single event: user_id + template_id → resolve preferences → publish to relevant channel topics",
+        "User preferences table: each user stores preferred channels + quiet hours — filter before publishing",
+        "Idempotency: store notificationId + status in DB; before sending, check if already DELIVERED to avoid duplicates on retry",
+        "Rate limiting per provider: SendGrid = 1000/sec, Twilio = 100/sec — use a token bucket per provider",
+        "Priority queues: HIGH_PRIORITY (OTP, security alerts) vs NORMAL — use separate Kafka topics or consumer groups with different concurrency"
+      ],
+      "codeExample": "[Producer Services]\n  Payment / Auth / Marketing\n         ↓\n[Notification Service]\n  validate → persist → publish\n         ↓\n   [Kafka Topics]\n  email | sms | push\n    ↓       ↓     ↓\n[Workers]  [Workers] [Workers]\n    ↓          ↓        ↓\n[SendGrid] [Twilio]  [FCM/APNs]\n         ↓\n   [DLQ + Retry]\n   (exponential backoff,\n    max 5 attempts)",
+      "displayOrder": 2
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Design a distributed cache like Redis. Cover data structures, eviction, persistence, and replication.",
+      "quickAnswer": "In-memory hash map as the core store. Use a hash table with open addressing for O(1) get/set. Support strings, lists (doubly-linked list), sets (hash set), sorted sets (skip list + hash map), and hashes. Eviction policies: LRU implemented with a doubly-linked list + hash map (O(1) evict). Persistence: RDB (periodic snapshot) or AOF (append-only log of every write). Replication: single primary, async replication to replicas using the AOF stream.",
+      "keyPoints": [
+        "Skip list for sorted sets: O(log n) insert/delete/range query — simpler to implement than a balanced BST",
+        "LRU cache: HashMap<key, Node> + doubly-linked list; on get, move node to head; on evict, remove tail — O(1) both operations",
+        "RDB vs AOF: RDB = compact, fast restart, but may lose last N seconds; AOF = every write, slower restart but durable; fsync=always gives durability at cost of throughput",
+        "Sentinel: 3+ nodes watch primary health, elect new primary on failure — quorum-based leader election",
+        "Cluster mode: 16384 hash slots distributed across nodes; key hashes to slot via CRC16 % 16384; clients cache slot→node map"
+      ],
+      "codeExample": "// LRU Eviction: O(1) get + O(1) evict\nclass LRUCache {\n  int capacity;\n  Map<String, Node> map = new HashMap<>();\n  DoublyLinkedList list = new DoublyLinkedList();\n\n  String get(String key) {\n    if (!map.containsKey(key)) return null;\n    Node n = map.get(key);\n    list.moveToHead(n);   // mark as recently used\n    return n.value;\n  }\n\n  void set(String key, String value) {\n    if (map.containsKey(key)) {\n      Node n = map.get(key);\n      n.value = value;\n      list.moveToHead(n);\n    } else {\n      Node n = new Node(key, value);\n      map.put(key, n);\n      list.addToHead(n);\n      if (map.size() > capacity) {\n        Node tail = list.removeTail();\n        map.remove(tail.key); // evict LRU\n      }\n    }\n  }\n}",
+      "displayOrder": 3
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Design a distributed job scheduler / cron service (like Quartz at scale).",
+      "quickAnswer": "Store jobs in MySQL with next_run_at, status (PENDING/RUNNING/DONE/FAILED), and a lock_owner column. Scheduler nodes poll with SELECT ... WHERE next_run_at <= NOW() AND status='PENDING' FOR UPDATE SKIP LOCKED — each node atomically claims jobs. A heartbeat updates lock_expiry; if a node dies, jobs with expired locks are reclaimed by other nodes. Use a min-heap in memory per node for sub-second precision within the polling window.",
+      "keyPoints": [
+        "FOR UPDATE SKIP LOCKED: built into MySQL 8.0 — multiple scheduler nodes can poll the same table without contention",
+        "Exactly-once execution guarantee: optimistic lock (compare status=PENDING before updating to RUNNING) prevents double execution",
+        "Cron expression parsing: parse into next_run_at timestamp at schedule time, not at execution time — simpler and avoids timezone bugs",
+        "Dead node recovery: background thread checks lock_expiry < NOW() and resets those jobs to PENDING",
+        "Sharding by job_id: for millions of jobs, partition the jobs table so different scheduler nodes own different shards"
+      ],
+      "codeExample": "Job Table:\n  id, cron_expr, next_run_at,\n  status (PENDING|RUNNING|DONE|FAILED),\n  lock_owner, lock_expiry, retry_count\n\n// Scheduler node poll loop\nwhile (true) {\n  // Atomically claim a batch of jobs\n  jobs = db.query(\"\"\"\n    SELECT * FROM jobs\n    WHERE next_run_at <= NOW()\n      AND status = 'PENDING'\n    FOR UPDATE SKIP LOCKED\n    LIMIT 10\n  \"\"\");\n  for (Job j : jobs) {\n    j.status = RUNNING;\n    j.lock_owner = nodeId;\n    j.lock_expiry = NOW() + 30s;\n    db.update(j);\n    executor.submit(() -> run(j));\n  }\n  sleep(1_000);\n}",
+      "displayOrder": 4
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Design a chat system at WhatsApp scale: 1 billion users, 100 billion messages/day.",
+      "quickAnswer": "Each user maintains a persistent WebSocket connection to a Chat Server. A service registry (Redis) maps userId → chatServerId. To send a message: sender's server looks up recipient's server, routes the message peer-to-peer via an internal message bus (Kafka), and the recipient's server pushes over WebSocket. Messages are persisted asynchronously to Cassandra (wide-column, optimized for userId+timestamp range scans). For offline users, messages queue in Cassandra until next login.",
+      "keyPoints": [
+        "WebSocket over HTTP long-polling: persistent connection eliminates per-message HTTP overhead at 100B messages/day",
+        "Cassandra as message store: partition key = conversation_id, clustering key = message_id (time-ordered) — O(1) write, O(1) range read",
+        "Fan-out for group chats: sender → Kafka topic per group → worker reads group members → delivers to each member's server",
+        "Message delivery guarantees: client sends ACK after receiving; server retries until ACK received (at-least-once); client deduplicates by messageId",
+        "Presence service: heartbeat every 30s from client; Redis key per user with 60s TTL — last_seen updates on heartbeat; TTL expiry = offline"
+      ],
+      "codeExample": "[User A] --WebSocket-- [Chat Server 1]\n                              ↓\n                       [Service Registry]\n                        userId → serverId\n                              ↓\n                       [Kafka Message Bus]\n                              ↓\n                       [Chat Server 2] --WebSocket-- [User B]\n                              ↓\n                       [Cassandra]\n                    (async message store)\n\nSchema (Cassandra):\n  conversations(conv_id, msg_id, sender_id,\n                body, sent_at, status)\n  PARTITION KEY: conv_id\n  CLUSTERING KEY: msg_id DESC  -- newest first",
+      "displayOrder": 5
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Design a video upload and streaming pipeline (YouTube-scale).",
+      "quickAnswer": "Upload: client uploads raw video to S3 via a pre-signed URL (bypasses your servers). A Lambda or SQS event triggers a transcoding job in a worker pool (FFmpeg) that produces multiple bitrates (360p, 720p, 1080p). Processed segments are stored in S3 and served via CloudFront CDN using HLS (m3u8 playlist + .ts chunks). Adaptive bitrate streaming: the client player switches quality based on available bandwidth by requesting different .m3u8 variants.",
+      "keyPoints": [
+        "Pre-signed S3 URL: client uploads directly to S3 — your API server never touches the binary, eliminates a massive bandwidth bottleneck",
+        "HLS (HTTP Live Streaming): video split into 6-second .ts segments; m3u8 playlist lists segments; CDN caches segments efficiently",
+        "Transcoding parallelism: split 1-hour video into 1-minute chunks, transcode each chunk in parallel, then stitch — reduces 1 hour of encoding to ~5 minutes",
+        "Content deduplication: hash video content (MD5/SHA) before upload — if hash exists, skip transcoding and point to existing CDN URL",
+        "Metadata DB: MySQL stores video_id, user_id, title, s3_path, status (PROCESSING/READY), duration — separated from binary storage"
+      ],
+      "codeExample": "Upload Flow:\n  Client → POST /upload/presign → [API] → S3 pre-signed URL\n  Client → PUT {pre-signed URL}  → S3 (direct)\n  S3 Event → SQS → [Transcode Workers]\n                       ↓\n               FFmpeg: 360p + 720p + 1080p\n                       ↓\n               HLS segments → S3 → CloudFront\n\nStream Flow:\n  Client → GET /video/{id}/manifest.m3u8\n         → CloudFront → S3\n  Client → adaptive bitrate selects variant\n         → GET /segments/720p/seg001.ts\n         → CloudFront (cache hit ~95%)",
+      "displayOrder": 6
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Design a search autocomplete / typeahead system (Google search bar, 10ms response SLA).",
+      "quickAnswer": "Pre-compute the top-k suggestions for every prefix and store them in Redis sorted sets (key = prefix, member = suggestion, score = search frequency). On each keystroke, do a Redis ZREVRANGE on the prefix key to return top 5 suggestions in O(log n). Offline: a MapReduce job counts query frequency, builds prefix→top-k map, and bulk loads into Redis nightly. For real-time trending, use a sliding window counter to update scores incrementally.",
+      "keyPoints": [
+        "Trie in memory is ideal for small datasets; at Google scale, pre-computed prefix→top-k in Redis is more practical and faster",
+        "Redis sorted set ZREVRANGE: O(log n + k), returns top-k members by score descending — perfect for ranked suggestions",
+        "Prefix explosion problem: 'apple' generates 5 keys (a, ap, app, appl, apple) — manageable with a max prefix depth of 20 chars",
+        "Personalization layer: blend global top-k with user's recent search history, weighted 70/30",
+        "CDN for common prefixes: the top 10k most common prefixes can be cached at edge for sub-5ms globally"
+      ],
+      "codeExample": "// Redis structure:\n// Key:   \"prefix:app\"  (sorted set)\n// Members: \"apple\" (score=9M), \"application\" (score=7M)\n\n// Nightly batch build:\nfor each (query, count) in queryLog:\n  for prefix in allPrefixes(query):  // \"g\",\"go\",\"goo\"...\n    redis.ZADD(\"prefix:\"+prefix, count, query)\n    redis.ZREMRANGEBYRANK(\"prefix:\"+prefix, 0, -6)\n    // Keep only top 5 per prefix\n\n// Serve (10ms SLA):\nGET /autocomplete?q=app\n  → redis.ZREVRANGE(\"prefix:app\", 0, 4)\n  → [\"apple\", \"application\", \"apply\", \"approve\", \"approach\"]\n  → return in <2ms",
+      "displayOrder": 7
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Design the backend for a ride-sharing service like Uber. Handle driver location updates and matching.",
+      "quickAnswer": "Driver location updates arrive every 4 seconds via a persistent connection to a Location Service that writes to Redis Geo (GEOADD). Rider requests hit a Matching Service that does GEORADIUS to find nearby drivers, ranks by ETA using a distance estimate, and dispatches the top match. The Trip Service persists trips to MySQL. A Kafka event stream connects all services for async state transitions (DRIVER_ASSIGNED → TRIP_STARTED → COMPLETED).",
+      "keyPoints": [
+        "Redis GEO: GEOADD uses a sorted set with geohash encoding — GEORADIUS is O(N+log M) for N results within radius M members",
+        "Driver location write volume: 1M drivers × 1 update/4s = 250k writes/sec — Redis handles this easily; do NOT write to MySQL",
+        "Matching algorithm: GEORADIUS → filter (available drivers only) → rank by geohash proximity + driver rating → send offer to top 3 simultaneously, first to accept wins",
+        "Supply/demand surge pricing: compute driver density vs request density per geohash cell every 30 seconds — multiply base fare by surge multiplier",
+        "Trip state machine: REQUESTED → DRIVER_ASSIGNED → DRIVER_ARRIVING → TRIP_STARTED → COMPLETED / CANCELLED — each transition is a Kafka event"
+      ],
+      "codeExample": "[Rider App] → POST /ride/request\n       ↓\n[Matching Service]\n  redis.GEORADIUS(\"drivers\", lat, lon, 5km)\n  → filter available drivers\n  → rank by distance + rating\n  → send WebSocket offer to top 3\n       ↓\n[Driver App] → POST /ride/accept\n       ↓\n[Trip Service] → MySQL (persist trip)\n       ↓\n[Kafka: trip-events]\n  → Notification Service (SMS to rider)\n  → Billing Service (hold payment auth)\n  → Analytics Service (demand heatmap)\n\nDriver location update:\nPUT /driver/location {lat, lon}\n  → redis.GEOADD(\"drivers\", lon, lat, driverId)",
+      "displayOrder": 8
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Design a payment processing system with strong idempotency guarantees.",
+      "quickAnswer": "Client generates a UUID idempotency key per payment attempt and sends it as a header. The Payment Service stores a payments table with idempotency_key as a unique index. Before processing, try INSERT — if duplicate key error, fetch and return the existing payment's result. If new, proceed to payment processor (Stripe/Razorpay), store the result, and return it. Use a distributed lock (Redis) during processing to prevent parallel execution of the same key.",
+      "keyPoints": [
+        "Idempotency key = UUID generated by client, stored with the payment — not a server-generated ID",
+        "INSERT first, then process: if INSERT fails (duplicate key), the payment already ran — return its result without charging again",
+        "Two-phase: PENDING → PROCESSING → COMPLETED/FAILED; only transition PENDING→PROCESSING once per idempotency key",
+        "Redis lock during processing: SETNX idempotency_key lockValue EX 30 — prevents two server instances processing the same key simultaneously",
+        "Webhook idempotency: payment provider webhooks may arrive multiple times — store webhook_id in DB and skip if already processed"
+      ],
+      "codeExample": "// Idempotent payment processing\npublic PaymentResult processPayment(\n    PaymentRequest req, String idempotencyKey) {\n\n  // Try to insert — fails if key exists\n  try {\n    db.insert(\"\"\"\n      INSERT INTO payments\n        (idempotency_key, amount, status)\n      VALUES (?, ?, 'PENDING')\n    \"\"\", idempotencyKey, req.amount);\n  } catch (DuplicateKeyException e) {\n    // Already processed — return existing result\n    return db.findByIdempotencyKey(idempotencyKey);\n  }\n\n  // Distributed lock prevents parallel processing\n  try (Lock lock = redis.lock(idempotencyKey, 30s)) {\n    PaymentResult result = stripeClient.charge(req);\n    db.update(idempotencyKey, result.status);\n    return result;\n  }\n}",
+      "displayOrder": 9
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Design an audit logging system that is tamper-evident and queryable at scale.",
+      "quickAnswer": "Write audit events to an append-only Kafka topic (no deletes/updates allowed at the Kafka level). A consumer writes to a dedicated audit_log table in MySQL with columns: event_id, actor_id, action, resource_type, resource_id, timestamp, payload_hash. The payload_hash chains each entry: hash = SHA256(prev_hash + event_data), making tampering detectable. For compliance queries, expose a read-only API backed by Elasticsearch for full-text search.",
+      "keyPoints": [
+        "Append-only storage: audit logs must never be updated or deleted — Kafka retention policy + MySQL INSERT-only enforces this",
+        "Hash chaining: each row's hash includes the previous row's hash — a tampered row breaks the chain, detectable by recalculating hashes",
+        "Separation of concerns: audit log DB is separate from application DB — compromise of app DB doesn't compromise audit trail",
+        "Write path: synchronous audit write before the action completes, not after — ensures no action without a log entry",
+        "Compliance queries: store structured data in MySQL, replicate to Elasticsearch for full-text + time-range queries required by SOC2/GDPR auditors"
+      ],
+      "codeExample": "audit_log table:\n  event_id     BIGINT AUTO_INCREMENT PK\n  actor_id     VARCHAR(36)  -- user who did the action\n  action       VARCHAR(100) -- CREATE_ORDER, DELETE_USER\n  resource_id  VARCHAR(36)\n  timestamp    DATETIME(6)\n  payload      JSON         -- full before/after snapshot\n  prev_hash    VARCHAR(64)  -- SHA-256 of previous row\n  row_hash     VARCHAR(64)  -- SHA-256(prev_hash + payload)\n\nVerification:\n  SELECT event_id, row_hash,\n    SHA2(CONCAT(prev_hash, payload), 256) as computed\n  FROM audit_log\n  WHERE row_hash != SHA2(CONCAT(prev_hash, payload), 256)\n  -- Returns rows where tampering occurred",
+      "displayOrder": 10
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "CAP theorem: you can only have two of Consistency, Availability, and Partition Tolerance. Which two do you pick, and when?",
+      "quickAnswer": "Partition tolerance is non-negotiable in any distributed system — network partitions happen. The real choice is CP vs AP. CP (consistency + partition tolerance): during a partition, refuse requests rather than return stale data — correct for financial transactions, inventory counts, user auth. AP (availability + partition tolerance): during a partition, return possibly stale data — correct for social feeds, product recommendations, read-heavy caches.",
+      "keyPoints": [
+        "P is not optional: you cannot build a distributed system that is immune to network partitions — the CA option doesn't exist in practice",
+        "CP examples: bank account balance (wrong balance = regulatory violation), distributed locks (stale lock = data corruption), inventory reservation (overselling = real loss)",
+        "AP examples: Twitter timeline (a slightly stale feed is fine), product search (showing yesterday's prices is acceptable), DNS (availability over consistency by design)",
+        "Eventual consistency: most AP systems use this — all nodes will converge to the same state eventually (seconds to minutes), with last-write-wins or vector clocks for conflict resolution",
+        "PACELC extends CAP: even without a partition, you trade latency (L) vs consistency (C) — low-latency systems like DynamoDB default to eventual consistency for better latency"
+      ],
+      "codeExample": "CP Systems:            AP Systems:\n  ZooKeeper              Cassandra (tunable)\n  etcd                   DynamoDB (default)\n  HBase                  CouchDB\n  MySQL (sync repl)      DNS\n  Redis Cluster*         Kafka (consumer lag)\n\nPractical rule:\n  Money / auth / locks  → CP\n  Feeds / caches / search → AP\n\nCassandra tunable consistency:\n  QUORUM reads: (replicas/2)+1 nodes agree → CP-like\n  ONE read:     any 1 node responds → AP-like (fast, stale)",
+      "displayOrder": 11
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Explain database sharding strategies: range-based, hash-based, and directory-based. Trade-offs?",
+      "quickAnswer": "Range sharding: shard by value range (users A-M on shard 1, N-Z on shard 2). Simple but creates hot spots if data distribution is skewed. Hash sharding: shard by hash(key) % N — uniform distribution, eliminates hot spots, but range queries require scatter-gather across all shards. Directory sharding: a lookup service maps each key to its shard — fully flexible, supports resharding without rehashing, but the directory is a single point of failure.",
+      "keyPoints": [
+        "Range sharding hot spots: if 40% of users are in the A-M range, shard 1 is overloaded — use consistent hashing or hash sharding to avoid",
+        "Hash sharding range query cost: 'get all orders between Jan 1–Jan 31' requires querying every shard and merging — expensive for analytics",
+        "Directory sharding: used by Pinterest for board sharding — the directory can be replicated for HA, but adds a network hop",
+        "Resharding pain: adding a new shard requires moving ~1/N of data for hash sharding — use consistent hashing to reduce data movement to 1/(N*(N+1)) on average",
+        "Shard key choice is irreversible: choose a key with high cardinality, no hot-key risk, and one that aligns with your most common query pattern"
+      ],
+      "codeExample": "Hash Sharding:\n  shard_id = hash(user_id) % num_shards\n  // Uniform but scatter-gather for range queries\n\nConsistent Hash Ring (reduces resharding):\n  Ring of 360 virtual nodes\n  hash(user_id) → position on ring\n  Walk clockwise to find responsible shard\n  Add shard: only neighbors move data\n\nDirectory Sharding:\n  shard_map = { user_id_1 → shard_3,\n                user_id_2 → shard_1, ... }\n  // Store shard_map in Redis/ZooKeeper\n  // Full flexibility, 1 extra lookup per query\n\nPractical choice:\n  User data, no range queries → Hash sharding\n  Time-series, range queries  → Range sharding\n  Need max flexibility         → Directory sharding",
+      "displayOrder": 12
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Event-driven architecture: when do you use Kafka vs Amazon SQS? What are the real differences?",
+      "quickAnswer": "Use Kafka when you need message replay, multiple independent consumers reading the same events, high throughput (millions/sec), or event sourcing. Use SQS when you need simple point-to-point work queues, don't need replay, want fully managed scaling, and have standard AWS infrastructure. Kafka is a log; SQS is a queue — messages in SQS are deleted after consumption, messages in Kafka are retained by time regardless of consumption.",
+      "keyPoints": [
+        "Kafka retains messages by time/size regardless of consumption — you can replay the last 7 days of events; SQS deletes after ack",
+        "Multiple consumers: Kafka supports N independent consumer groups all reading the same topic from offset 0; SQS supports only one consumer (competing consumers pattern — each message goes to one consumer)",
+        "Throughput: Kafka handles millions of messages/sec per partition; SQS Standard ~unlimited but with higher latency; SQS FIFO capped at 3000/sec",
+        "Ordering: Kafka per-partition ordering is guaranteed; SQS FIFO ordering per message group; SQS Standard best-effort only",
+        "Operational cost: SQS is zero-ops, fully managed; Kafka requires cluster management (or pay for Confluent/MSK)"
+      ],
+      "codeExample": "Use Kafka when:\n  - Analytics pipeline (multiple teams read same events)\n  - Event sourcing (replay to rebuild state)\n  - 1M+ messages/sec throughput\n  - Audit trail that must be immutable\n\nUse SQS when:\n  - Background job queue (send email, resize image)\n  - Fan-out via SNS → multiple SQS queues\n  - Already in AWS, want zero-ops\n  - Don't need replay or multiple consumers\n\nKafka Consumer Group:\n  Topic: orders  (3 partitions)\n  Group A (billing):   reads all 3 partitions\n  Group B (shipping):  reads all 3 partitions\n  Group C (analytics): reads all 3 partitions\n  // 3 independent consumers, same data, no conflicts",
+      "displayOrder": 13
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "MEDIUM",
+      "question": "Microservices vs monolith: what are the real decision criteria? When should you NOT use microservices?",
+      "quickAnswer": "Start with a modular monolith. Extract to microservices when you have independent scaling needs, different deployment cadences, separate team ownership, or polyglot requirements. Do NOT split if you have fewer than 3 backend engineers, tight data coupling between modules, or unclear service boundaries — you'll get a distributed monolith that's worse than either option.",
+      "keyPoints": [
+        "The real cost of microservices: network latency, distributed tracing, eventual consistency, service discovery, per-service CI/CD — these costs require team maturity to manage",
+        "Team topology law (Conway's Law): your architecture will mirror your team structure — split services along team ownership boundaries, not technical layers",
+        "Distributed monolith anti-pattern: services that share a database or can't be deployed independently give you the complexity of microservices with none of the benefits",
+        "Monolith advantages: single transaction boundary, zero network latency between modules, one deployment, easy refactoring, IDE-navigable codebase",
+        "Strangler fig pattern: migrate gradually — new features as services, extract existing features one module at a time, never a big-bang rewrite"
+      ],
+      "codeExample": "Migrate via Strangler Fig:\n\n  Phase 1 (Monolith):\n    [Browser] → [Spring Boot Monolith]\n                  (auth, orders, inventory, payments)\n\n  Phase 2 (Extract payments):\n    [Browser] → [API Gateway]\n                  ↓           ↓\n             [Monolith]  [Payment Service]\n             (auth, orders, inventory)\n\n  Phase 3 (Extract by team ownership):\n    [API Gateway] → [Auth Service]    (team A)\n                  → [Order Service]   (team B)\n                  → [Payment Service] (team C)\n                  → [Inventory]       (team D)\n\n  Rule: extract when a team owns the boundary.",
+      "displayOrder": 14
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Design an API gateway. What responsibilities should it handle, and what should it not handle?",
+      "quickAnswer": "An API gateway handles cross-cutting concerns: request routing, auth token validation, rate limiting, SSL termination, request/response transformation, and observability (logging, tracing, metrics). It should NOT contain business logic, perform database queries, or orchestrate complex multi-service workflows — that belongs in a BFF (Backend for Frontend) layer or the services themselves.",
+      "keyPoints": [
+        "Routing: path-based (/orders/** → order-service) and header-based routing; load balancing across service instances",
+        "Auth at the gateway: validate JWT signature and expiry once at the edge — don't make every service re-validate; pass decoded claims as headers downstream",
+        "Rate limiting at the gateway: centralized rate limiting prevents any service from being overwhelmed by a single client",
+        "Request transformation: translate external API contracts to internal service contracts (versioning, field renaming, pagination normalization)",
+        "Do NOT do at the gateway: data aggregation (N service calls → 1 response belongs in a BFF), complex business logic, database calls, or stateful session management"
+      ],
+      "codeExample": "[Client]\n   ↓\n[API Gateway]\n  ├── SSL Termination\n  ├── JWT Validation → inject X-User-Id header\n  ├── Rate Limiting  → 429 if exceeded\n  ├── Request Logging → correlation-id\n  ├── Route: /api/orders/**  → order-service:8081\n  ├── Route: /api/users/**   → user-service:8082\n  └── Route: /api/payments/** → payment-service:8083\n\n[Downstream services receive]\n  - X-User-Id: 123\n  - X-Correlation-Id: uuid-abc\n  - X-Request-Start: timestamp\n  // No auth re-validation needed",
+      "displayOrder": 15
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Explain the circuit breaker pattern. When does it open, half-open, and close? How does it prevent cascade failure?",
+      "quickAnswer": "A circuit breaker wraps calls to a dependency and tracks the failure rate. CLOSED = requests pass through normally. If failures exceed threshold (e.g., 50% in last 10s), it OPENS — requests fail fast without calling the dependency. After a cooldown period, it goes HALF-OPEN: one probe request is allowed through. If it succeeds, the circuit CLOSES; if it fails, it reopens. This prevents a slow downstream from exhausting your thread pool and taking down your service.",
+      "keyPoints": [
+        "Without circuit breakers: a slow dependency causes thread pool exhaustion (all threads waiting on it), which cascades to unrelated requests failing — full service outage from a partial dependency failure",
+        "Hystrix is deprecated — use Resilience4j in Spring Boot 3: @CircuitBreaker annotation wraps any method",
+        "Failure threshold configuration: don't use count-based (10 failures) — use rate-based (50% of last 100 calls) to avoid false positives during low traffic",
+        "Fallback strategy: circuit open → return cached response, default value, or degrade gracefully — never return a 500 if you can avoid it",
+        "Half-open state is critical: it prevents the thundering herd that would occur if all traffic resumed immediately after recovery"
+      ],
+      "codeExample": "// Resilience4j circuit breaker (Spring Boot 3)\n@CircuitBreaker(\n  name = \"inventoryService\",\n  fallbackMethod = \"getInventoryFallback\"\n)\npublic InventoryResponse getInventory(String productId) {\n  return inventoryClient.get(productId);\n}\n\nprivate InventoryResponse getInventoryFallback(\n    String productId, Exception e) {\n  // Return cached or default — don't throw\n  return InventoryResponse.unknown(productId);\n}\n\n# application.properties\nresilience4j.circuitbreaker.instances.inventoryService\n  .failure-rate-threshold=50\n  .wait-duration-in-open-state=10s\n  .sliding-window-size=10\n  .permitted-calls-in-half-open-state=3",
+      "displayOrder": 16
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Explain the Saga pattern for distributed transactions. Choreography vs orchestration?",
+      "quickAnswer": "A Saga is a sequence of local transactions, each publishing an event that triggers the next step. If a step fails, compensating transactions undo the previous steps. Choreography: each service listens for events and reacts — fully decoupled but hard to track overall saga state. Orchestration: a central saga orchestrator sends commands and waits for replies — easier to visualize and debug, but the orchestrator is a coordination bottleneck.",
+      "keyPoints": [
+        "Two-phase commit (2PC) is the alternative — but it requires a distributed transaction coordinator that blocks resources and is unavailable during coordinator failure; Saga avoids this",
+        "Compensating transactions must be idempotent: if the 'cancel order' compensation runs twice (retry), the end state must be the same",
+        "Choreography failure scenario: if Payment Service fails and never emits an event, Inventory Service never gets triggered — you need a timeout/dead-letter handler to detect stuck sagas",
+        "Orchestration with Kafka: Orchestrator publishes command events (ORDER_PAYMENT_REQUESTED), services respond with result events (PAYMENT_COMPLETED / PAYMENT_FAILED), orchestrator updates saga state machine",
+        "Saga log: persist each saga step and its status in a saga_state table — enables replay, debugging, and monitoring of in-flight sagas"
+      ],
+      "codeExample": "Order Saga (Orchestration):\n\n[Order Orchestrator]\n  1. → PAYMENT_SERVICE: reserve payment\n  2. ← PAYMENT_RESERVED\n  3. → INVENTORY_SERVICE: reserve stock\n  4. ← STOCK_RESERVED\n  5. → SHIPPING_SERVICE: create shipment\n  6. ← SHIPMENT_CREATED\n  7. → ORDER_SERVICE: confirm order\n\nOn failure at step 5:\n  → INVENTORY_SERVICE: release stock  (compensate 4)\n  → PAYMENT_SERVICE: release payment  (compensate 2)\n\nsaga_state table:\n  saga_id, step, status, created_at, updated_at\n  (enables monitoring: find stuck sagas older than 5min)",
+      "displayOrder": 17
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Explain CQRS and Event Sourcing. What are the real trade-offs vs a standard CRUD model?",
+      "quickAnswer": "CQRS separates the write model (commands that mutate state) from the read model (queries optimized for display). Event Sourcing stores every state change as an immutable event rather than current state — you can reconstruct any past state by replaying events. The trade-off: you get a full audit trail, temporal queries, and the ability to build new projections — but at the cost of eventual consistency, complex debugging, and a steep learning curve.",
+      "keyPoints": [
+        "CQRS without Event Sourcing: separate read DB (MySQL replica, Elasticsearch) from write DB — simpler, widely practical, no event complexity",
+        "Event Sourcing alone is costly: events are fine-grained (BalanceDebited, ItemAdded) — querying current balance requires replaying all events unless you maintain a snapshot",
+        "Snapshots: store the state every N events (e.g., every 100); replay from the most recent snapshot + subsequent events — prevents unbounded replay time",
+        "Projection lag: the read model is eventually consistent with the write model — user submits order, the order list may not show it for 100ms",
+        "Use CQRS+ES when: strong audit requirements (banking, healthcare), time-travel debugging needs, or multiple read models needed from the same write stream"
+      ],
+      "codeExample": "// Event Sourcing: store events, not state\nevent_store:\n  (account_id=1): [\n    AccountOpened   {balance: 0}\n    MoneyDeposited  {amount: 1000}\n    MoneyWithdrawn  {amount: 200}\n    MoneyDeposited  {amount: 500}\n  ]\n// Current balance = replay: 0+1000-200+500 = 1300\n\n// CQRS split:\nWrite side:  POST /accounts/1/deposit  → append event\nRead side:   GET  /accounts/1/balance  → read projection\n\n// Projection (denormalized read model):\naccounts_read:\n  account_id=1, balance=1300, last_updated=...\n// Updated async when events are processed",
+      "displayOrder": 18
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Explain consistent hashing. Why is it used in distributed caches and load balancers?",
+      "quickAnswer": "In standard hash-based sharding, adding or removing a node requires remapping ~all keys (hash(key) % N changes for all keys when N changes). Consistent hashing places both nodes and keys on a ring (0 to 2^32). Each key is assigned to the first node clockwise from it. Adding a node only remaps keys between it and its predecessor — on average 1/N of keys move instead of all of them.",
+      "keyPoints": [
+        "Virtual nodes: each physical node is represented by multiple points on the ring (e.g., 150 virtual nodes) — provides uniform load distribution even with heterogeneous nodes",
+        "Without virtual nodes: with 3 physical nodes, each owns 1/3 of the ring — if one is bigger, you can't assign it a larger share without splitting",
+        "Key movement on node add: only keys between new_node and its predecessor move — O(K/N) keys where K=total keys, N=nodes",
+        "Real-world use: Amazon DynamoDB, Apache Cassandra, Memcached ketama, Nginx upstream hashing, Kafka partition assignment",
+        "Hotspot mitigation: if a specific key range is hot, virtual nodes distribute that range across multiple physical nodes — prevents one node owning all hot keys"
+      ],
+      "codeExample": "// Consistent Hash Ring\nTreeMap<Integer, String> ring = new TreeMap<>();\n\nvoid addNode(String nodeId) {\n  for (int i = 0; i < 150; i++) {  // virtual nodes\n    int hash = hash(nodeId + \"#\" + i);\n    ring.put(hash, nodeId);\n  }\n}\n\nString getNode(String key) {\n  int hash = hash(key);\n  // Find first node clockwise from key's hash\n  Map.Entry<Integer, String> entry =\n    ring.ceilingEntry(hash);\n  if (entry == null)\n    entry = ring.firstEntry(); // wrap around\n  return entry.getValue();\n}\n\n// Adding a node: only keys between\n// new_node and its predecessor move — ~1/N remapped",
+      "displayOrder": 19
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Explain leader election in distributed systems. How does it work with Redis or ZooKeeper?",
+      "quickAnswer": "Leader election ensures exactly one node in a cluster performs a coordinating role (e.g., cron job execution, shard assignment). With Redis: use SET nx ex (atomic set-if-not-exists with TTL) — the node that succeeds becomes leader and must renew the lock before expiry. With ZooKeeper: all nodes create an ephemeral sequential znode under /election/; the node with the lowest sequence number is the leader; others watch the znode ahead of them.",
+      "keyPoints": [
+        "Redis SET NX: single-node Redis is not safe for mission-critical election (Redis failure = no leader); use Redlock (5 Redis nodes, majority quorum) for stronger guarantees",
+        "ZooKeeper ephemeral znodes: when the leader node dies, its connection closes and ZooKeeper deletes its ephemeral znode automatically — no manual cleanup needed",
+        "Fencing token: after leader election, the leader receives a monotonically increasing token; any write to a resource must include the token — storage layer rejects stale tokens from old leaders",
+        "Split-brain: without a fencing token, a slow old leader (paused by GC) can wake up and write, conflicting with the new leader — tokens prevent this",
+        "Practical Java: Spring Boot + Redisson's RLock implements distributed lock with Redlock algorithm; ShedLock library provides leader election for scheduled tasks"
+      ],
+      "codeExample": "// Redis leader election with renewal\npublic class LeaderElection {\n  private final RedissonClient redis;\n  private final String nodeId = UUID.randomUUID().toString();\n\n  public boolean tryBecomeLeader() {\n    RBucket<String> leader = redis.getBucket(\"cluster:leader\");\n    // Atomic: set only if absent, 30s TTL\n    return leader.setIfAbsent(nodeId, Duration.ofSeconds(30));\n  }\n\n  @Scheduled(fixedDelay = 10_000) // renew every 10s\n  public void renewLeadership() {\n    RBucket<String> leader = redis.getBucket(\"cluster:leader\");\n    if (nodeId.equals(leader.get())) {\n      leader.expire(Duration.ofSeconds(30)); // renew TTL\n      performLeaderTasks();\n    }\n  }\n}",
+      "displayOrder": 20
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "How do you design for idempotency in REST APIs? Cover GET, POST, PUT, DELETE.",
+      "quickAnswer": "GET and PUT are naturally idempotent (same request, same state). DELETE is idempotent (deleting something twice leaves it deleted). POST is not idempotent — handle it with a client-provided idempotency key header (Idempotency-Key: uuid). The server stores a hash of request + idempotency key; on duplicate, return the original response without re-executing the side effects. Use a short TTL (24 hours) on idempotency records.",
+      "keyPoints": [
+        "HTTP idempotency contract: GET/HEAD/PUT/DELETE are idempotent by spec; POST/PATCH are not — your implementation must add idempotency for POST",
+        "Idempotency key storage: store (idempotency_key, response_body, response_status, expires_at) in Redis or DB; TTL prevents unbounded growth",
+        "Conditional updates with ETag: GET returns ETag header; PUT/DELETE must send If-Match: etag; server rejects if ETag doesn't match — prevents lost update problem",
+        "Database-level idempotency: UNIQUE constraint on (user_id, order_id) prevents duplicate order rows regardless of API layer — defense in depth",
+        "Idempotency ≠ at-most-once: idempotency means multiple identical requests have the same effect as one; the operation may still execute once — the second request just returns the cached result"
+      ],
+      "codeExample": "// POST /orders with idempotency\n@PostMapping(\"/orders\")\npublic ResponseEntity<Order> createOrder(\n    @RequestHeader(\"Idempotency-Key\") String idemKey,\n    @RequestBody OrderRequest req) {\n\n  // Check cache\n  String cached = redis.get(\"idem:\" + idemKey);\n  if (cached != null)\n    return ResponseEntity.ok(parse(cached)); // replay\n\n  // Execute\n  Order order = orderService.create(req);\n\n  // Cache result (24h TTL)\n  redis.set(\"idem:\" + idemKey,\n            serialize(order),\n            Duration.ofHours(24));\n\n  return ResponseEntity.status(201).body(order);\n}",
+      "displayOrder": 21
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "What is the thundering herd problem? Where does it occur and how do you solve it?",
+      "quickAnswer": "Thundering herd: a large number of clients simultaneously try to acquire a resource after it becomes available — all fail together or all hit the origin at once. Classic scenario: a hot cache key expires and 10,000 requests all miss the cache simultaneously and hit the database. Solutions: probabilistic early expiration (refresh before expiry), mutex/lock-based cache population, staggered TTLs, and request coalescing.",
+      "keyPoints": [
+        "Cache stampede = thundering herd for caches: key expires, all waiting requests miss, all compute/fetch at once, DB overloads",
+        "Lock-based population: only one thread fetches from DB while others wait; the winner sets the cache and releases the lock; others read from cache",
+        "Probabilistic early expiration (PER): instead of expiring at T, each request computes: if (now + random() * beta * -log(rand)) > expiry → proactively refresh — spreads refreshes over time",
+        "Staggered TTLs: add jitter to cache TTL (TTL = base + random(0, base*0.1)) — prevents all keys expiring at the same second",
+        "Request coalescing: API gateway or cache proxy collapses N identical in-flight requests into 1 upstream request — all N receive the same response"
+      ],
+      "codeExample": "// Lock-based cache population (Java)\npublic Product getProduct(String id) {\n  Product cached = redis.get(\"product:\" + id);\n  if (cached != null) return cached;\n\n  // Only one thread fetches from DB\n  String lockKey = \"lock:product:\" + id;\n  boolean locked = redis.setIfAbsent(\n      lockKey, \"1\", Duration.ofSeconds(5));\n\n  if (locked) {\n    try {\n      Product p = db.findById(id);  // fetch once\n      // Add jitter: TTL = 5min ± 30s\n      int ttl = 300 + ThreadLocalRandom.current()\n                                       .nextInt(-30, 30);\n      redis.set(\"product:\" + id, p, Duration.ofSeconds(ttl));\n      return p;\n    } finally {\n      redis.delete(lockKey);\n    }\n  } else {\n    // Wait briefly then retry (others got the lock)\n    Thread.sleep(50);\n    return getProduct(id);\n  }\n}",
+      "displayOrder": 22
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Blue-green vs canary deployment: when do you use each? What are the rollback strategies?",
+      "quickAnswer": "Blue-green: maintain two identical environments (blue=live, green=new). Deploy to green, test, then flip the load balancer to send 100% traffic to green. Rollback is instant — flip back to blue. Use for stateless services or when you need zero-downtime cutover with an immediate rollback option. Canary: gradually shift traffic (1% → 10% → 50% → 100%). Use when you want to validate with real traffic at scale, or when schema/data migrations make instant rollback impossible.",
+      "keyPoints": [
+        "Blue-green rollback time: seconds (flip load balancer back) — best rollback option, but requires double the infrastructure cost",
+        "Canary rollback: reduce canary traffic to 0% and route back to stable — slightly slower than blue-green but uses less infra",
+        "Database migrations and blue-green: if v2 changes the DB schema, v1 can't run on the new schema — you must do expand-contract migrations: add new column (both versions work) → deploy v2 → remove old column",
+        "Canary analysis: monitor error rate, p99 latency, and business metrics (conversion, checkout failures) in the canary slice before expanding",
+        "Feature flags + canary: best of both worlds — deploy the code to 100% of servers but gate the feature to 1% of users via a feature flag; decouples deployment from release"
+      ],
+      "codeExample": "Blue-Green:\n  Load Balancer → 100% → Blue (v1)\n  Deploy v2 to Green, run smoke tests\n  Load Balancer → 100% → Green (v2)\n  Rollback: LB → 100% → Blue (instant)\n\nCanary:\n  Load Balancer → 99% → Stable (v1)\n               →  1% → Canary (v2)\n  Monitor: error_rate, p99_latency, conversion\n  If OK: 1% → 10% → 50% → 100%\n  If bad: Canary → 0%, root cause\n\nExpand-Contract DB Migration:\n  Phase 1: ALTER TABLE ADD COLUMN new_col (nullable)\n  Phase 2: Deploy v2 (writes to both old+new col)\n  Phase 3: Backfill old rows\n  Phase 4: Deploy v3 (reads from new_col only)\n  Phase 5: DROP COLUMN old_col",
+      "displayOrder": 23
+    },
+    {
+      "category": "SYSTEM_DESIGN",
+      "difficulty": "HIGH",
+      "question": "Design a feature flag system. How do you support gradual rollouts, user targeting, and kill switches?",
+      "quickAnswer": "A feature flag system has three parts: a flag store (MySQL/Redis with flag name, state, targeting rules), an evaluation SDK (client library that evaluates flags per-request without a network call), and an admin UI to manage flags. Flags are evaluated by: is flag enabled globally? → does user match targeting rules (user ID, percentage rollout, user attributes)? → return true/false. SDK caches the flag ruleset locally and polls for updates every 30 seconds.",
+      "keyPoints": [
+        "Kill switch: a flag that is evaluated first, before any feature code runs — set to false to immediately disable a feature for 100% of users within 30 seconds",
+        "Percentage rollout: hash(userId + flagName) % 100 < rolloutPercentage — deterministic and sticky (same user always gets the same treatment)",
+        "User targeting: flag rule examples: user.plan='PREMIUM', user.country='IN', user.email ends with '@beta.com' — enables early access programs",
+        "SDK local evaluation: flag rules are downloaded to the app server and evaluated in-process — zero latency per flag check; vs server-side evaluation which adds a network call per request",
+        "OpenFeature: CNCF standard API for feature flags in Java; use it to decouple your code from the specific flag vendor (LaunchDarkly, Unleash, self-hosted)"
+      ],
+      "codeExample": "flag_definitions table:\n  name        VARCHAR  PK\n  enabled     BOOLEAN\n  rollout_pct INT      -- 0-100\n  rules       JSON     -- [{attr: 'plan', op: 'eq', val: 'PREMIUM'}]\n  updated_at  DATETIME\n\n// SDK evaluation (in-process, zero latency)\npublic boolean isEnabled(String flag, User user) {\n  FlagDefinition def = localCache.get(flag);\n  if (def == null || !def.enabled) return false;\n\n  // Check targeting rules first\n  for (Rule rule : def.rules)\n    if (matches(user, rule)) return true;\n\n  // Percentage rollout: deterministic by userId\n  int bucket = Math.abs(\n    (flag + user.id).hashCode()) % 100;\n  return bucket < def.rolloutPct;\n}\n\n// SDK polls every 30s for flag updates\n@Scheduled(fixedDelay = 30_000)\nvoid refreshFlags() { localCache = db.loadAllFlags(); }",
+      "displayOrder": 24
+    }
+  ]
+}

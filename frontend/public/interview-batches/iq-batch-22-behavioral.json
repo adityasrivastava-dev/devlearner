@@ -1,0 +1,380 @@
+{
+  "batchName": "iq-batch-22-behavioral",
+  "questions": [
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "HIGH",
+      "question": "Tell me about a time you had a production incident under pressure. How did you handle it?",
+      "quickAnswer": "During a Black Friday traffic spike, our order-confirmation Kafka consumer started falling behind — 400k unprocessed messages in 8 minutes. I paged the team, increased consumer group partitions from 4 to 12, and deployed a hotfix to short-circuit a slow downstream inventory check. Lag cleared in 18 minutes, zero order loss, and I wrote a post-mortem the next morning with three follow-up tickets.",
+      "keyPoints": [
+        "Prioritizes restoration over root cause — increase throughput first, investigate second",
+        "Shows clear incident command: paged team, took point, communicated status",
+        "Quantified the problem (400k messages, 8 minutes) and the resolution (18 minutes, zero loss)",
+        "Post-mortem with concrete follow-up shows a learning culture, not blame culture",
+        "Demonstrates on-call ownership and the confidence to make infra changes under pressure"
+      ],
+      "codeExample": null,
+      "displayOrder": 0
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "HIGH",
+      "question": "Tell me about a time you disagreed with a technical decision made by a senior engineer.",
+      "quickAnswer": "My tech lead wanted to use a shared MySQL table with a status column as a job queue — I disagreed because polling at our write volume (3k TPS) would create table-lock contention. I prepared a one-page doc comparing the approach to SQS FIFO, ran a quick load test showing 40% query latency increase with polling, and presented it in our next design sync. The team switched to SQS and we avoided a bottleneck that would have hit us in month two.",
+      "keyPoints": [
+        "Disagreed through data, not opinion — load test results are objective",
+        "Prepared a document: shows respect for the senior's time and structured thinking",
+        "Escalated in the right forum (design sync), not in a hallway argument",
+        "Outcome-focused: the win was preventing a future bottleneck, not 'being right'",
+        "Shows courage to challenge authority while remaining professionally respectful"
+      ],
+      "codeExample": null,
+      "displayOrder": 1
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "MEDIUM",
+      "question": "Tell me about a conflict with a teammate over code quality.",
+      "quickAnswer": "A colleague was consistently merging PRs with no unit tests — they argued tests slow delivery, I argued we were accumulating risk. Instead of escalating, I paired with them on one feature, wrote tests together in 45 minutes, and showed that the tests caught two edge cases before QA. They started writing tests on their own after that, and our regression rate for that module dropped 60% over the next quarter.",
+      "keyPoints": [
+        "Resolved the conflict through action (pairing), not escalation or passive-aggressive PR comments",
+        "Empathized with the teammate's concern (speed) rather than dismissing it",
+        "Led by example — showed the value, didn't demand compliance",
+        "Measured the outcome: 60% regression reduction makes the argument concrete",
+        "Shows collaborative leadership, not confrontational behavior"
+      ],
+      "codeExample": null,
+      "displayOrder": 2
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "HIGH",
+      "question": "Describe a time you had to deliver bad news to stakeholders about a missed deadline.",
+      "quickAnswer": "Our MySQL 5.7→8.0 migration hit an unexpected schema compatibility issue with our ORM layer three days before cutover. I called an early stakeholder sync, explained the technical blocker clearly without jargon, gave a revised timeline of 10 additional days, and presented a mitigation plan: keep 5.7 in production behind a feature flag while we fixed the ORM mappings. Stakeholders were frustrated but appreciated the proactive communication — the migration shipped cleanly on the revised date.",
+      "keyPoints": [
+        "Delivered the news early — not the day before the deadline, but 3 days out",
+        "Explained the blocker in stakeholder terms, not MySQL internals",
+        "Came with a plan, not just a problem — revised timeline plus mitigation",
+        "Feature flag strategy showed low-risk path forward, reducing stakeholder anxiety",
+        "Interviewers look for: honesty, early escalation, and solution-orientation under pressure"
+      ],
+      "codeExample": null,
+      "displayOrder": 3
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "HIGH",
+      "question": "Tell me about a major technical mistake you made and what you learned from it.",
+      "quickAnswer": "I wrote a migration script that dropped and re-created an index on a 200M-row table in production during business hours — I didn't realize MySQL would lock the table for 40 minutes on a non-InnoDB engine version. The service was effectively read-only for our EU users for 38 minutes. I rolled back what I could, escalated immediately, and afterward instituted a rule: all DDL changes run on a staging replica first with EXPLAIN and duration estimation, and never during peak hours.",
+      "keyPoints": [
+        "Takes full ownership — no blame-shifting to 'the lack of process'",
+        "Shows awareness of what went wrong technically (table lock on non-instant DDL)",
+        "Immediate escalation rather than trying to hide or self-rescue silently",
+        "Systemic fix: the process change prevents recurrence, not just personal vigilance",
+        "Quantified impact (38 minutes, EU users) — shows you take the user impact seriously"
+      ],
+      "codeExample": null,
+      "displayOrder": 4
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "MEDIUM",
+      "question": "Describe a time you had to handle ambiguous requirements with no clear owner.",
+      "quickAnswer": "We needed to integrate a third-party KYC provider, but the PM who scoped it had left the company and no one had clear ownership. I read the vendor docs, drafted a two-page integration spec, and shared it in Slack asking stakeholders to object within 48 hours. No objections came, I built it, shipped it in 3 weeks, and then retroactively got the PM for that product area to formally own the feature going forward.",
+      "keyPoints": [
+        "Didn't wait for someone to assign ownership — self-started with a concrete artifact",
+        "Used a 'disagree and commit' mechanism: 48-hour objection window avoids endless sign-off loops",
+        "Shipped, then established ownership — pragmatic over bureaucratic",
+        "Shows initiative without overstepping: shared the spec before building, not after",
+        "Interviewers look for: bias for action, written communication, and structured decision-making"
+      ],
+      "codeExample": null,
+      "displayOrder": 5
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "HIGH",
+      "question": "Tell me about a time you pushed back on an unrealistic timeline from a PM.",
+      "quickAnswer": "A PM wanted our payment reconciliation service refactored and deployed in 2 weeks — I estimated 5 weeks based on the scope. I broke the work into a detailed task list in Jira with time estimates per item, shared it in a meeting, and walked through why certain steps (audit trail, idempotency, end-to-end testing) couldn't be skipped. The PM agreed to 4 weeks after we descoped one reporting feature. We delivered in 3.5 weeks with full test coverage.",
+      "keyPoints": [
+        "Pushed back with evidence — a task breakdown, not just a gut feeling",
+        "Identified what was non-negotiable (audit trail, idempotency) vs negotiable (reporting)",
+        "Offered a path forward: descoping rather than just saying 'not possible'",
+        "Delivered early relative to the negotiated timeline — earns credibility for future pushbacks",
+        "Shows engineering maturity: timeline negotiation is a skill, not insubordination"
+      ],
+      "codeExample": null,
+      "displayOrder": 6
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "MEDIUM",
+      "question": "Tell me about a time you mentored a struggling junior developer.",
+      "quickAnswer": "A junior on our team consistently wrote N+1 queries — they understood Java fine but not SQL execution plans. Instead of pointing it out in PRs repeatedly, I ran two 30-minute sessions where we used EXPLAIN ANALYZE on their actual queries in staging. I showed them how to see the nested loop joins, then we rewrote one query together with a JOIN. Within a month they were catching their own N+1s in code review before submitting.",
+      "keyPoints": [
+        "Identified the root cause: knowledge gap, not carelessness — leads with empathy",
+        "Chose 1:1 teaching over PR comments, which are embarrassing and often ignored",
+        "Used real code, not toy examples — makes the lesson stick",
+        "Measured success by the junior's independence, not by the number of sessions",
+        "Interviewers look for: patience, structured teaching ability, and coaching mindset"
+      ],
+      "codeExample": null,
+      "displayOrder": 7
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "MEDIUM",
+      "question": "Tell me about a time you took ownership beyond your job scope.",
+      "quickAnswer": "Our monitoring setup had no alerting on Kafka consumer lag — that was officially the DevOps team's domain. But after two silent incidents, I wrote a Prometheus scraper and Grafana dashboard for consumer lag on our topics, set up PagerDuty alerts for lag > 50k, and shared it with the DevOps team who adopted it for all services. I spent about 6 hours over two evenings; it prevented at least three incidents I know of in the following quarter.",
+      "keyPoints": [
+        "Identified a gap that was 'not my job' and filled it anyway",
+        "Didn't ask for permission — shipped it, then shared it",
+        "Scaled the impact: the DevOps team adopted it, not just your own service",
+        "Quantified value: 3 prevented incidents is concrete",
+        "Shows customer/product thinking: 'if users are affected, it's my problem too'"
+      ],
+      "codeExample": null,
+      "displayOrder": 8
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "HIGH",
+      "question": "Tell me about a time you had to prioritize between a critical bug fix and a feature deadline.",
+      "quickAnswer": "Two days before our Q3 feature launch, we discovered that our JWT refresh logic had a race condition that logged users out on mobile apps under poor connectivity — affecting ~8% of active sessions. I made the call to delay the feature by 3 days, fix the auth bug, and deploy it. I communicated the delay to the PM and documented the user impact data that justified the call. The PM agreed in hindsight — a bad launch experience would have been worse than a delayed one.",
+      "keyPoints": [
+        "Made a clear, principled decision with user impact data — not arbitrary",
+        "Owned the call and communicated it proactively rather than hoping no one would notice",
+        "Framed it correctly: a broken feature launch is worse than a delayed one",
+        "Shows product judgment: engineers who understand user trust make better trade-offs",
+        "Interviewers look for: decision-making under pressure and stakeholder communication"
+      ],
+      "codeExample": null,
+      "displayOrder": 9
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "MEDIUM",
+      "question": "Describe a time you had a difficult cross-team dependency that threatened your delivery.",
+      "quickAnswer": "Our new checkout service needed an API from the identity team that was 3 weeks behind schedule. I first talked to their lead directly to understand the blocker — they were under-resourced. I proposed a contract-first approach: we agreed on the API contract in OpenAPI spec, I built a mock using WireMock in our integration tests, and our team continued development in parallel. When their real API arrived, we needed only 2 days of integration work instead of the originally feared 2 weeks.",
+      "keyPoints": [
+        "Started with empathy — understood their constraint before escalating",
+        "Found a technical solution (contract-first + mocking) that removed the blocker unilaterally",
+        "Reduced integration risk by front-loading contract agreement",
+        "Shows cross-functional communication skill and pragmatic engineering",
+        "Interviewers look for: proactive unblocking, not just 'waiting and complaining'"
+      ],
+      "codeExample": null,
+      "displayOrder": 10
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "MEDIUM",
+      "question": "Tell me about a time you advocated for paying down technical debt.",
+      "quickAnswer": "Our Spring Boot 2 application had 14 deprecated libraries flagged in our Snyk scan, and the team kept deferring the upgrade. I tracked three bugs in the past quarter that traced back to the old library versions, wrote a one-pager quantifying the risk (2 engineer-days per bug × 3 bugs = 6 days lost), and proposed a 2-week tech debt sprint. Leadership approved it; we completed the Spring Boot 2→3 upgrade and dependency refresh, and saw zero recurrence of those bug categories over the next 6 months.",
+      "keyPoints": [
+        "Made the business case in business terms: days lost, not 'code quality'",
+        "Used historical data to justify the investment, not just engineering instinct",
+        "Proposed a bounded commitment: a 2-week sprint, not open-ended cleanup",
+        "Tracked outcomes: zero recurrence validates the ROI",
+        "Interviewers look for: ability to translate technical risk into business impact"
+      ],
+      "codeExample": null,
+      "displayOrder": 11
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "HIGH",
+      "question": "Tell me about a time you were publicly wrong about a technical decision.",
+      "quickAnswer": "In a design review with 12 engineers, I confidently said our Redis cache would handle 10k QPS without sharding — a week after we deployed, at 7k QPS the single Redis node hit CPU saturation and latency spiked to 800ms. I had ignored the key distribution skew from our user ID hashing. I acknowledged the mistake in our team Slack, fixed it with Redis Cluster in 4 days, and added a load-testing step to our deployment checklist specifically for cache assumptions.",
+      "keyPoints": [
+        "Acknowledged the mistake publicly and quickly — no ego defense",
+        "Identified the specific technical error (key distribution skew), not a vague 'miscalculation'",
+        "Fixed it fast and added a systemic safeguard (checklist item)",
+        "Being wrong in public is a leadership test — how you respond defines your reputation",
+        "Interviewers look for: intellectual honesty, speed of recovery, and process improvement"
+      ],
+      "codeExample": null,
+      "displayOrder": 12
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "MEDIUM",
+      "question": "Tell me about navigating an org reorg or layoff that affected your team.",
+      "quickAnswer": "After a round of layoffs reduced our backend team from 9 to 6 engineers, two critical service owners left and their systems had almost no documentation. I immediately ran a knowledge-capture session with the departing engineers in their final two weeks, produced runbooks for their services, and redistributed ownership across the remaining team. We maintained SLA compliance throughout the transition and onboarded a new hire 6 weeks later with half the ramp-up time because of those runbooks.",
+      "keyPoints": [
+        "Focused on continuity and the team, not personal anxiety about job security",
+        "Took immediate practical action: knowledge capture before the people were gone",
+        "Produced durable artifacts (runbooks) that compounded value over time",
+        "Quantified the downstream benefit: faster onboarding for the next hire",
+        "Interviewers look for: resilience, systems thinking, and team-first orientation"
+      ],
+      "codeExample": null,
+      "displayOrder": 13
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "MEDIUM",
+      "question": "What is the most impactful project you have worked on, and why?",
+      "quickAnswer": "Rebuilding our payment reconciliation service from a nightly batch job into a real-time event-driven system using Kafka. The old batch missed same-day discrepancies worth ~$40k/month in undetected errors. The new system processed every transaction event in under 500ms, flagged mismatches in real time, and reduced reconciliation errors by 94% in the first month. It also unblocked the finance team from manual audits that took 3 days per month.",
+      "keyPoints": [
+        "Impact is quantified: $40k/month exposure reduced, 94% error reduction, 3 days of manual work eliminated",
+        "Shows technical depth: event-driven architecture, Kafka, real-time processing",
+        "Cross-functional impact: unblocked a non-engineering team (finance)",
+        "Choose a project that demonstrates both technical skill AND business impact",
+        "Interviewers look for: ownership, scope of thinking, and ability to articulate value"
+      ],
+      "codeExample": null,
+      "displayOrder": 14
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "HIGH",
+      "question": "Tell me about a time you failed to meet expectations.",
+      "quickAnswer": "I was assigned to deliver an API gateway integration in 6 weeks but underestimated the OAuth2 scope mapping complexity with our legacy auth system. At week 5 I had 70% done and realized I'd miss the deadline by 2 weeks. I told my manager immediately, we adjusted sprint planning, and I delivered with 10 days late. I learned to flag scope uncertainty earlier — I now create a risk log at week 2 of any integration project.",
+      "keyPoints": [
+        "Admits the failure clearly and specifically — no minimizing or external blame",
+        "Escalated at the point of awareness (week 5), not at the deadline (week 6)",
+        "Concrete lesson learned with a behavioral change that followed",
+        "Shows self-awareness: identifies the root cause (underestimating scope uncertainty)",
+        "Interviewers look for: honesty, early escalation, and genuine reflection — not a 'humble brag' failure story"
+      ],
+      "codeExample": null,
+      "displayOrder": 15
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "HIGH",
+      "question": "Tell me about a time you had to handle a teammate who was not pulling their weight.",
+      "quickAnswer": "A teammate repeatedly missed PR review SLAs, causing a 2-day review backlog on our team. I first checked privately whether something was wrong — they were dealing with a personal situation and felt overwhelmed. We agreed on a reduced review commitment for 3 weeks while they stabilized, and I temporarily covered the gap. After they returned to full capacity, I shared the feedback in our next 1:1 that communication earlier would have let us help sooner. No escalation needed.",
+      "keyPoints": [
+        "Started with empathy: assumed personal context before assuming laziness",
+        "Had a private conversation, not a public callout or immediate escalation to management",
+        "Found a temporary accommodation that protected the team without punishing the individual",
+        "Delivered feedback when appropriate, not as accusation but as learning",
+        "Interviewers look for: emotional intelligence, fairness, and team protection without drama"
+      ],
+      "codeExample": null,
+      "displayOrder": 16
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "MEDIUM",
+      "question": "Describe giving hard feedback to a peer during code review.",
+      "quickAnswer": "A senior peer submitted a PR implementing custom session storage in a Spring Boot service — I had to tell them it was a security anti-pattern that bypassed our existing JWT framework. I left a detailed comment explaining the specific risk (session fixation vulnerability), linked to OWASP, and suggested the correct approach using our existing JwtService. I also added 'happy to pair on this if helpful' to avoid it feeling like an attack. They revised it the same day and thanked me.",
+      "keyPoints": [
+        "Feedback was specific, technical, and referenced a standard (OWASP) — not just 'this is wrong'",
+        "Offered an alternative, not just criticism",
+        "Offered to pair — signals collaboration, not superiority",
+        "Respect for the peer: private (PR comment) not public shaming in Slack",
+        "Interviewers look for: ability to give clear technical feedback without relationship damage"
+      ],
+      "codeExample": null,
+      "displayOrder": 17
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "MEDIUM",
+      "question": "Tell me about a time you had to switch priorities mid-sprint due to an emergency.",
+      "quickAnswer": "Midway through a sprint where I was 60% done with a search optimization feature, our primary database replica fell out of sync and reads started hitting the primary, tripling its load. I handed off my in-progress branch with clear notes, shifted to the DB incident, coordinated with the DBA to re-sync the replica using mysqldump with GTID, and had reads rerouted back in 4 hours. The sprint goal was adjusted by our Scrum Master and the search feature shipped the following sprint with no quality loss.",
+      "keyPoints": [
+        "Handed off cleanly — left the branch in a usable state with notes, not abandoned",
+        "Didn't try to do both simultaneously: full context switch is correct for a P0",
+        "Showed technical depth: knew the replica re-sync mechanism (mysqldump + GTID)",
+        "Used the Scrum Master to adjust sprint scope — process-aware, not rogue",
+        "Interviewers look for: incident response, graceful context switching, and team communication"
+      ],
+      "codeExample": null,
+      "displayOrder": 18
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "MEDIUM",
+      "question": "Tell me about a time you collaborated with a team in a different timezone.",
+      "quickAnswer": "For 6 months I worked daily with a team in Bangalore (IST, 9.5 hours ahead) to build a shared authentication service. We solved the overlap problem by establishing a 30-minute daily async Loom video update — I recorded mine end of day, they recorded theirs, and we used a shared decision log in Confluence for anything blocking. We shipped on time with fewer dropped-context incidents than our same-timezone project the quarter before.",
+      "keyPoints": [
+        "Solved the async problem with structured tooling (Loom + decision log), not just 'worked harder'",
+        "Minimal meeting overhead: 30-minute async update instead of daily overlap calls",
+        "Measured success: fewer context incidents than a co-located project",
+        "Shows awareness that async communication is a skill that requires deliberate design",
+        "Interviewers look for: distributed team experience and structured communication habits"
+      ],
+      "codeExample": null,
+      "displayOrder": 19
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "MEDIUM",
+      "question": "Tell me about a time you had to learn something completely new very fast.",
+      "quickAnswer": "When we adopted Kafka for the first time on our team, I had 2 weeks before the design review to become the team's Kafka expert. I read the Kafka documentation, built a small local producer/consumer with Docker Compose, read 3 post-mortems from the Confluent engineering blog, and ran a 1-hour internal knowledge share covering partitions, consumer groups, and offset management. I came into the design review with a partition strategy recommendation and a failure-mode risk list.",
+      "keyPoints": [
+        "Structured the learning: official docs → hands-on → real-world case studies",
+        "Shared the knowledge immediately — multiplied the value of the learning",
+        "Came prepared with a concrete artifact: partition strategy + risk list",
+        "Shows learning velocity and self-direction, not just capability",
+        "Interviewers look for: curiosity, structured approach to unfamiliar territory, and knowledge sharing"
+      ],
+      "codeExample": null,
+      "displayOrder": 20
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "HIGH",
+      "question": "Tell me about a time you disagreed with a product decision that shipped anyway.",
+      "quickAnswer": "Our product team decided to show real-time stock count on product pages (e.g., '3 left!'), which I argued would require 50ms cache TTLs and significantly increase our read load during sales events. I raised it in the design review with data, but the PM had business justification from A/B tests showing a 12% conversion lift. I committed to shipping it, built it with a graceful degradation path (show 'limited stock' instead of a number during high load), and we had zero incidents during the next sale.",
+      "keyPoints": [
+        "Raised the concern with data, then committed once the decision was made — no passive resistance",
+        "Built in a technical safeguard (graceful degradation) that addressed the original concern",
+        "Respects that product decisions involve trade-offs engineers don't always see (A/B test data)",
+        "The 'disagree and commit' principle: voice it once strongly, then execute fully",
+        "Interviewers look for: professional maturity, not blind compliance or constant opposition"
+      ],
+      "codeExample": null,
+      "displayOrder": 21
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "MEDIUM",
+      "question": "Tell me about a time you experienced burnout on a long project and how you handled it.",
+      "quickAnswer": "After 4 months on a high-pressure platform migration — nights and weekends included — I noticed I was making careless mistakes in code review and dreading standups. I was honest with my manager, took 3 days of PTO without a laptop, and we agreed I'd drop from two parallel tracks to one for 6 weeks. I also started blocking two hours of focus time daily and stopped joining non-essential meetings. Productivity and quality recovered visibly within 2 weeks.",
+      "keyPoints": [
+        "Identified the symptoms early: mistakes and dread are warning signs, not personality flaws",
+        "Was honest with the manager rather than suffering silently until a bigger breakdown",
+        "Proposed a concrete, bounded recovery plan — not open-ended 'I need a break'",
+        "Systemic change: blocking focus time addresses root cause (context fragmentation)",
+        "Interviewers look for: self-awareness, honesty with leadership, and sustainable work practices"
+      ],
+      "codeExample": null,
+      "displayOrder": 22
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "HIGH",
+      "question": "Tell me about a time you had to make a decision with incomplete data.",
+      "quickAnswer": "During an on-call shift for our Kafka consumers, messages in one partition stopped processing but no alerts fired — the lag metric was flat but the consumer was silently crashing on a null pointer in a rare message shape. I had 10 minutes before SLA breach. Without full root cause, I rerouted that partition to a backup consumer group and manually dead-lettered the suspect messages. I made the call with 60% certainty — service stayed up, I investigated the root cause post-incident and filed a fix.",
+      "keyPoints": [
+        "Made a time-boxed decision: 10 minutes was the real constraint, not perfect information",
+        "Chose the option with the lowest blast radius: reroute + dead-letter rather than restart and retry",
+        "Acknowledged uncertainty explicitly: '60% certainty' — confident, not reckless",
+        "Separated restoration from investigation — correct incident response sequencing",
+        "Interviewers look for: calm decision-making under ambiguity and correct incident prioritization"
+      ],
+      "codeExample": null,
+      "displayOrder": 23
+    },
+    {
+      "category": "BEHAVIORAL",
+      "difficulty": "MEDIUM",
+      "question": "Tell me about a time you proactively improved a process or system without being asked.",
+      "quickAnswer": "Our deployment process required 11 manual steps in a Confluence page — developers would miss steps and deployments would fail, costing 30-60 minutes of debugging per incident. I spent two afternoons writing a shell script that automated 8 of the 11 steps, added validation checks, and printed a summary of what was skipped and why. I shared it with the team via a demo in our weekly sync and updated the runbook. Deployment failures dropped from ~3/month to 0 in the following 3 months.",
+      "keyPoints": [
+        "Identified the problem through data: 3 failures/month, 30-60 min each — real cost",
+        "Solved it during spare time — didn't require a ticket or sprint allocation",
+        "Socialized the fix: demo in weekly sync, updated the runbook — made it stick",
+        "Measured impact: 0 failures over 3 months is a clean outcome",
+        "Interviewers look for: bias for action, systems thinking, and proactive ownership"
+      ],
+      "codeExample": null,
+      "displayOrder": 24
+    }
+  ]
+}
