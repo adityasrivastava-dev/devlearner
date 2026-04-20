@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { screenshotsApi, QUERY_KEYS } from '../../api';
 import toast from 'react-hot-toast';
@@ -8,6 +8,7 @@ const SLIDE_KEYS = [
   'analytics', 'algorithms', 'complexity', 'habit-engine',
   'interview-qa', 'mastery-map', 'daily-challenge', 'timetable',
   'mcq-quiz', 'roadmap', 'quick-win',
+  'smart-interview', 'practice-set', 'mock-interview', 'stories',
 ];
 
 const LABELS = {
@@ -26,6 +27,10 @@ const LABELS = {
   'mcq-quiz':           'MCQ Quiz',
   'roadmap':            'Roadmap',
   'quick-win':          'Quick Win',
+  'smart-interview':    'Smart AI Interviewer',
+  'practice-set':       'Practice Set',
+  'mock-interview':     'Mock Interview',
+  'stories':            'Story Builder',
 };
 
 export default function LoginScreenshotsAdmin() {
@@ -34,6 +39,7 @@ export default function LoginScreenshotsAdmin() {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [caption, setCaption] = useState('');
   const [base64Data, setBase64Data] = useState(null);
+  const [dragging, setDragging] = useState(false);
   const fileRef = useRef(null);
 
   const { data: screenshots = [], isLoading } = useQuery({
@@ -81,16 +87,24 @@ export default function LoginScreenshotsAdmin() {
     setBase64Data(null);
   }
 
-  function handleFileChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const readFile = useCallback((file) => {
+    if (!file || !file.type.startsWith('image/')) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const dataUrl = ev.target.result;
-      setBase64Data(dataUrl);
-      setPreviewUrl(dataUrl);
+      setBase64Data(ev.target.result);
+      setPreviewUrl(ev.target.result);
     };
     reader.readAsDataURL(file);
+  }, []);
+
+  function handleFileChange(e) {
+    readFile(e.target.files?.[0]);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    setDragging(false);
+    readFile(e.dataTransfer.files?.[0]);
   }
 
   function handleSave() {
@@ -268,12 +282,20 @@ export default function LoginScreenshotsAdmin() {
               <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {/* Image preview */}
                 {previewUrl ? (
-                  <div style={{
-                    borderRadius: 8,
-                    overflow: 'hidden',
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg)',
-                  }}>
+                  <div
+                    style={{
+                      borderRadius: 8,
+                      overflow: 'hidden',
+                      border: `1.5px solid ${dragging ? 'var(--accent3)' : 'var(--border)'}`,
+                      background: 'var(--bg)',
+                      position: 'relative',
+                      transition: 'border-color .15s',
+                    }}
+                    onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                    onDragLeave={() => setDragging(false)}
+                    onDrop={handleDrop}
+                    onClick={() => fileRef.current?.click()}
+                  >
                     <img
                       src={previewUrl}
                       alt="Preview"
@@ -282,29 +304,49 @@ export default function LoginScreenshotsAdmin() {
                         maxHeight: 260,
                         objectFit: 'contain',
                         display: 'block',
+                        cursor: 'pointer',
+                        opacity: dragging ? 0.5 : 1,
+                        transition: 'opacity .15s',
                       }}
                     />
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      pointerEvents: 'none',
+                      opacity: dragging ? 1 : 0,
+                      transition: 'opacity .15s',
+                      fontSize: 13, fontWeight: 700, color: 'var(--accent3)',
+                      gap: 6,
+                    }}>
+                      📥 Drop to replace
+                    </div>
                   </div>
                 ) : (
                   <div
                     onClick={() => fileRef.current?.click()}
+                    onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                    onDragLeave={() => setDragging(false)}
+                    onDrop={handleDrop}
                     style={{
-                      height: 140,
-                      background: 'var(--bg)',
-                      border: '1.5px dashed var(--border2)',
+                      height: 160,
+                      background: dragging ? 'color-mix(in srgb, var(--accent3) 8%, var(--bg))' : 'var(--bg)',
+                      border: `1.5px dashed ${dragging ? 'var(--accent3)' : 'var(--border2)'}`,
                       borderRadius: 8,
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: 6,
-                      color: 'var(--text3)',
+                      gap: 8,
+                      color: dragging ? 'var(--accent3)' : 'var(--text3)',
                       cursor: 'pointer',
+                      transition: 'border-color .15s, background .15s, color .15s',
                     }}
                   >
-                    <div style={{ fontSize: 24 }}>📁</div>
-                    <div style={{ fontSize: 13 }}>Click to select an image</div>
-                    <div style={{ fontSize: 11 }}>PNG, JPG, WebP</div>
+                    <div style={{ fontSize: 28 }}>{dragging ? '📥' : '📁'}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>
+                      {dragging ? 'Drop image here' : 'Drag & drop or click to select'}
+                    </div>
+                    <div style={{ fontSize: 11, opacity: 0.7 }}>PNG, JPG, WebP · any size</div>
                   </div>
                 )}
 
