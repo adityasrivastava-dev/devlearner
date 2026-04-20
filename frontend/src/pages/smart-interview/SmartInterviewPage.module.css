@@ -265,6 +265,41 @@
 .answerInput::placeholder { color: var(--text3); }
 .answerInput:disabled { opacity: .6; }
 .answerActions { display: flex; justify-content: flex-end; gap: 10px; align-items: center; }
+/* Speaker toggle */
+.speakerBtn {
+  padding: 5px 10px; border-radius: 20px;
+  border: 1px solid var(--border2); background: var(--bg3);
+  font-size: 16px; cursor: pointer; transition: background .15s, opacity .15s;
+  line-height: 1;
+}
+.speakerBtn:hover { background: var(--border2); }
+.speakerOff { opacity: .45; }
+
+/* Mic button */
+.micBtn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: var(--radius);
+  border: 1.5px solid var(--border2); background: var(--bg3);
+  color: var(--text2); font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: var(--font-ui); transition: .15s;
+}
+.micBtn:hover:not(:disabled) { border-color: #ef4444; color: #ef4444; }
+.micBtn:disabled { opacity: .4; cursor: not-allowed; }
+.micActive {
+  background: color-mix(in srgb, #ef4444 12%, var(--bg3));
+  border-color: #ef4444; color: #ef4444;
+  animation: micRing 1.8s ease-in-out infinite;
+}
+@keyframes micRing {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, #ef4444 40%, transparent); }
+  50%       { box-shadow: 0 0 0 6px color-mix(in srgb, #ef4444 0%, transparent); }
+}
+.micPulse {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: #ef4444; animation: pulseDot .8s ease-in-out infinite alternate;
+}
+@keyframes pulseDot { from { opacity: 1; transform: scale(1); } to { opacity: .4; transform: scale(.6); } }
+
 .skipBtn {
   padding: 8px 16px; background: var(--bg3); border: 1px solid var(--border2);
   border-radius: var(--radius); color: var(--text3);

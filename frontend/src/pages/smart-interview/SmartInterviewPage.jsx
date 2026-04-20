@@ -16,6 +16,78 @@ const PHASE_COLOR = {
 const SCORE_COLOR = { 5:'#4ade80', 4:'#60a5fa', 3:'#fbbf24', 2:'#fb923c', 1:'#f87171' };
 const GRADE_COLOR = { Excellent:'#4ade80', Good:'#60a5fa', 'Needs Work':'#fbbf24', 'Keep Practicing':'#f87171' };
 
+// ─── Speech hooks ──────────────────────────────────────────────────────────────
+
+// Text-to-Speech: speak a string, returns a cancel fn
+function useTTS() {
+  const [enabled, setEnabled] = useState(true);
+  const utterRef = useRef(null);
+
+  const speak = useCallback((text) => {
+    if (!enabled || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.rate = 0.95;
+    utt.pitch = 1.05;
+    // Prefer a natural English voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v => v.lang.startsWith('en') && v.localService);
+    if (preferred) utt.voice = preferred;
+    utterRef.current = utt;
+    window.speechSynthesis.speak(utt);
+  }, [enabled]);
+
+  const cancel = useCallback(() => {
+    window.speechSynthesis?.cancel();
+  }, []);
+
+  const toggle = useCallback(() => {
+    window.speechSynthesis?.cancel();
+    setEnabled(e => !e);
+  }, []);
+
+  return { speak, cancel, toggle, enabled };
+}
+
+// Speech-to-Text: returns { listening, start, stop, supported }
+function useSTT(onTranscript) {
+  const recogRef = useRef(null);
+  const [listening, setListening] = useState(false);
+  const supported = typeof window !== 'undefined' &&
+    !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  const start = useCallback(() => {
+    if (!supported || listening) return;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const r = new SR();
+    r.lang = 'en-US';
+    r.interimResults = true;
+    r.continuous = true;
+    recogRef.current = r;
+
+    let finalTranscript = '';
+    r.onresult = (e) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + ' ';
+        else interim = e.results[i][0].transcript;
+      }
+      onTranscript(finalTranscript + interim);
+    };
+    r.onerror = () => setListening(false);
+    r.onend   = () => setListening(false);
+    r.start();
+    setListening(true);
+  }, [supported, listening, onTranscript]);
+
+  const stop = useCallback(() => {
+    recogRef.current?.stop();
+    setListening(false);
+  }, []);
+
+  return { listening, start, stop, supported };
+}
+
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 function useTimer() {
   const [seconds, setSeconds] = useState(0);
@@ -215,6 +287,19 @@ function InterviewRoom({ session, onComplete }) {
   const [complete,   setComplete]   = useState(false);
   const [skipped,    setSkipped]    = useState(new Set());
 
+  // Speech
+  const tts = useTTS();
+  const stt = useSTT(useCallback((transcript) => {
+    setAnswer(transcript);
+  }, []));
+
+  // Speak the first question on mount
+  useEffect(() => {
+    tts.speak(session.firstQuestion);
+    return () => tts.cancel();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const sessionId = session.sessionId;
   const profile   = session.profile;
 
@@ -245,6 +330,7 @@ function InterviewRoom({ session, onComplete }) {
       setMessages(prev => prev.filter(m => m.id !== typingId).concat(
         { role: 'interviewer', content: data.nextQuestion, id: aiMsgId }
       ));
+      tts.speak(data.nextQuestion);
       if (data.evaluation && !skipMode) {
         setEvaluations(prev => ({ ...prev, [candidateId]: data.evaluation }));
       }
@@ -294,6 +380,13 @@ function InterviewRoom({ session, onComplete }) {
         </div>
 
         <div className={styles.topStats}>
+          <button
+            className={`${styles.speakerBtn} ${tts.enabled ? styles.speakerOn : styles.speakerOff}`}
+            onClick={tts.toggle}
+            title={tts.enabled ? 'Mute Alex' : 'Unmute Alex'}
+          >
+            {tts.enabled ? '🔊' : '🔇'}
+          </button>
           <span className={styles.qStat}>Q{qCount + 1}<span className={styles.qTotal}>/20</span></span>
           <span className={styles.timerStat}>⏱ {timer}</span>
         </div>
@@ -362,6 +455,20 @@ function InterviewRoom({ session, onComplete }) {
               disabled={submitting}
             />
             <div className={styles.answerActions}>
+              {stt.supported && (
+                <button
+                  className={`${styles.micBtn} ${stt.listening ? styles.micActive : ''}`}
+                  onClick={stt.listening ? stt.stop : stt.start}
+                  disabled={submitting}
+                  title={stt.listening ? 'Stop recording' : 'Speak your answer'}
+                >
+                  {stt.listening ? (
+                    <><span className={styles.micPulse} />Stop</>
+                  ) : (
+                    '🎤 Speak'
+                  )}
+                </button>
+              )}
               <button className={styles.skipBtn} onClick={() => submitAnswer(true)} disabled={submitting}>
                 Skip
               </button>
