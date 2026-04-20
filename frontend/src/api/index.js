@@ -673,6 +673,21 @@ export const storyApi = {
   themes:  ()           => http.get('/api/stories/themes').then(r => r.data),
 };
 
+// ─── Practice Set ─────────────────────────────────────────────────────────────
+export const practiceSetApi = {
+  generate: (file) => {
+    const form = new FormData();
+    form.append('resume', file);
+    return http.post('/api/practice-set/generate', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 90000,
+    }).then((r) => r.data);
+  },
+  more: (sessionId, topic, existingQuestions = []) =>
+    http.post('/api/practice-set/more', { sessionId, topic, existingQuestions }, { timeout: 45000 })
+      .then((r) => r.data),
+};
+
 // ─── Learning Gate ────────────────────────────────────────────────────────────
 export const gateApi = {
   getStatus: (topicId) =>

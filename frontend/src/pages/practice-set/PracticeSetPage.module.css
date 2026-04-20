@@ -1,0 +1,420 @@
+/* ── Page Layout ─────────────────────────────────────────────────────────── */
+.page {
+  min-height: 100dvh;
+  padding: 28px 32px 80px;
+  background: var(--bg);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  gap: 16px;
+}
+.headerLeft { flex: 1; }
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 6px;
+  letter-spacing: -0.5px;
+}
+.subtitle {
+  font-size: 14px;
+  color: var(--text3);
+  margin: 0;
+}
+.resetBtn {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--bg2);
+  color: var(--text2);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.resetBtn:hover { background: var(--border2); color: var(--text); }
+
+/* ── Upload Zone ─────────────────────────────────────────────────────────── */
+.uploadWrap { display: flex; flex-direction: column; align-items: center; gap: 32px; }
+
+.uploadZone {
+  width: 100%;
+  max-width: 480px;
+  border: 2px dashed var(--border2);
+  border-radius: 16px;
+  padding: 48px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  background: var(--bg2);
+}
+.uploadZone:hover, .dragOver {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--bg2));
+}
+.uploadIcon { font-size: 40px; }
+.uploadTitle { font-size: 16px; font-weight: 600; color: var(--text); margin: 0; }
+.uploadSub   { font-size: 13px; color: var(--text3); margin: 0; }
+
+.errorMsg {
+  color: var(--red);
+  font-size: 13px;
+  background: color-mix(in srgb, var(--red) 10%, var(--bg2));
+  border: 1px solid color-mix(in srgb, var(--red) 30%, transparent);
+  padding: 10px 16px;
+  border-radius: 8px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+}
+
+/* ── Feature Cards ───────────────────────────────────────────────────────── */
+.featureList {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 700px;
+}
+.featureCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  min-width: 120px;
+}
+.featureIcon  { font-size: 22px; }
+.featureLabel { font-size: 12px; font-weight: 600; color: var(--text); }
+.featureDesc  { font-size: 11px; color: var(--text3); text-align: center; }
+
+/* ── Generating ──────────────────────────────────────────────────────────── */
+.generating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 20px;
+}
+.genOrb {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--accent), #8b5cf6, var(--accent));
+  animation: orbSpin 2s linear infinite;
+}
+@keyframes orbSpin { to { transform: rotate(360deg); } }
+
+.genStep { font-size: 15px; color: var(--text2); font-weight: 500; text-align: center; }
+.genDots { display: flex; gap: 6px; }
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: dotBounce .9s ease-in-out infinite;
+}
+@keyframes dotBounce {
+  0%, 100% { transform: translateY(0); opacity: .4; }
+  50%       { transform: translateY(-6px); opacity: 1; }
+}
+
+/* ── Profile Banner ──────────────────────────────────────────────────────── */
+.profileBanner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.profileLeft { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.profileName { font-size: 15px; font-weight: 700; color: var(--text); }
+.profileRole { font-size: 12px; color: var(--text3); }
+.profileChips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+.techChip {
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.projChip {
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: color-mix(in srgb, #f59e0b 10%, var(--bg));
+  color: #f59e0b;
+  font-size: 11px;
+  border: 1px solid color-mix(in srgb, #f59e0b 25%, transparent);
+}
+
+/* ── Study Meta ──────────────────────────────────────────────────────────── */
+.studyMeta { margin-bottom: 12px; }
+.totalBadge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* ── Category Filter ─────────────────────────────────────────────────────── */
+.catFilter {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.catBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--bg2);
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.catBtn:hover { background: var(--border2); color: var(--text); }
+.catActive {
+  background: color-mix(in srgb, var(--cat-color, var(--accent)) 15%, var(--bg));
+  border-color: color-mix(in srgb, var(--cat-color, var(--accent)) 40%, transparent);
+  color: var(--cat-color, var(--accent));
+}
+.catCnt {
+  background: var(--bg3, var(--bg));
+  border-radius: 10px;
+  padding: 0 6px;
+  font-size: 10px;
+  color: inherit;
+  opacity: .8;
+}
+
+/* ── Topic Section ───────────────────────────────────────────────────────── */
+.topicList { display: flex; flex-direction: column; gap: 28px; }
+.topicSection { display: flex; flex-direction: column; gap: 10px; }
+.topicHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border2);
+  margin-bottom: 4px;
+}
+.topicName { font-size: 15px; font-weight: 700; color: var(--text); }
+.topicCount {
+  font-size: 11px;
+  color: var(--text3);
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 2px 8px;
+}
+.qList { display: flex; flex-direction: column; gap: 6px; }
+
+/* ── Question Card ───────────────────────────────────────────────────────── */
+.qCard {
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--bg2);
+  overflow: hidden;
+  border-left: 3px solid var(--cat-color, var(--border2));
+  transition: box-shadow .15s;
+}
+.qCard:hover { box-shadow: 0 4px 16px color-mix(in srgb, var(--cat-color) 15%, transparent); }
+
+.qHeader {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+}
+.qNum {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cat-color) 15%, var(--bg));
+  color: var(--cat-color);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qCatBadge {
+  flex-shrink: 0;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--cat-color) 12%, var(--bg));
+  color: var(--cat-color);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.qDiffBadge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--diff-color) 10%, var(--bg));
+  white-space: nowrap;
+}
+.qTopicChip {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--text3);
+  background: var(--bg3, var(--bg));
+  border: 1px solid var(--border2);
+  padding: 2px 7px;
+  border-radius: 8px;
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qTitle {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.4;
+  text-align: left;
+}
+.qChevron { flex-shrink: 0; font-size: 10px; color: var(--text3); }
+
+/* ── Question Body ───────────────────────────────────────────────────────── */
+.qBody {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid var(--border2);
+}
+.answerBlock {
+  padding: 14px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--cat-color) 5%, var(--bg));
+  border-left: 2px solid var(--cat-color);
+  margin-top: 12px;
+}
+.answerText {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--text);
+  margin: 0;
+}
+.keyPoints {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+}
+.kpLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 6px;
+}
+.keyPoints ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.keyPoints li { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+.followUp {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: color-mix(in srgb, #8b5cf6 8%, var(--bg));
+  border: 1px solid color-mix(in srgb, #8b5cf6 20%, transparent);
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.5;
+}
+.fuIcon { flex-shrink: 0; }
+
+/* ── More Button ─────────────────────────────────────────────────────────── */
+.moreBtn {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 9px 18px;
+  border-radius: 20px;
+  border: 1px dashed var(--border2);
+  background: var(--bg2);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: background .15s, border-color .15s;
+}
+.moreBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg2));
+  border-color: var(--accent);
+}
+.moreBtn:disabled { opacity: .6; cursor: not-allowed; }
+
+.miniSpinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid transparent;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Empty / misc ────────────────────────────────────────────────────────── */
+.emptyMsg { color: var(--text3); font-size: 14px; text-align: center; padding: 40px 0; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .page { padding: 16px 14px 60px; }
+  .qHeader { gap: 6px; padding: 10px 12px; }
+  .qTopicChip, .qDiffBadge { display: none; }
+  .featureList { gap: 8px; }
+  .featureCard { min-width: 100px; padding: 10px 12px; }
+}

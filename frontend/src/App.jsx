@@ -40,6 +40,7 @@ const ResumePage           = lazy(() => import('./pages/resume/ResumePage'));
 const MockInterviewPage    = lazy(() => import('./pages/mock-interview/MockInterviewPage'));
 const SmartInterviewPage   = lazy(() => import('./pages/smart-interview/SmartInterviewPage'));
 const StoriesPage        = lazy(() => import('./pages/stories/StoriesPage'));
+const PracticeSetPage    = lazy(() => import('./pages/practice-set/PracticeSetPage'));
 
 // Apply saved theme on load; fall back to OS preference, then dark
 const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -99,6 +100,7 @@ function AppRoutes() {
           <Route path="/mock-interview"    element={<ProtectedRoute><ErrorBoundary label="Mock Interview"><MockInterviewPage /></ErrorBoundary></ProtectedRoute>} />
           <Route path="/smart-interview"  element={<ProtectedRoute><ErrorBoundary label="Smart Interview"><SmartInterviewPage /></ErrorBoundary></ProtectedRoute>} />
           <Route path="/stories"        element={<ProtectedRoute><ErrorBoundary label="Stories"><StoriesPage /></ErrorBoundary></ProtectedRoute>} />
+          <Route path="/practice-set"   element={<ProtectedRoute><ErrorBoundary label="Practice Set"><PracticeSetPage /></ErrorBoundary></ProtectedRoute>} />
           <Route path="/admin"          element={<AdminRoute><ErrorBoundary label="Admin Panel"><AdminPage /></ErrorBoundary></AdminRoute>} />
           <Route path="*"               element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
         </Routes>

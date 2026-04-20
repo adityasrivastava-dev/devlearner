@@ -41,6 +41,8 @@ const NAV_SECTIONS = [
     items: [
       { path: '/interview-mode',  icon: '⏱', label: 'Interview Mode'      },
       { path: '/mock-interview',  icon: '🎤', label: 'Mock Interview'      },
+      { path: '/smart-interview', icon: '🤖', label: 'AI Interviewer'       },
+      { path: '/practice-set',    icon: '📝', label: 'Practice Set'         },
       { path: '/stories',        icon: '📖', label: 'Story Builder'        },
       { path: '/interview-prep', icon: '📋', label: 'Q&A Bank'       },
       { path: '/revision',       icon: '↺',  label: 'Revision'      },
