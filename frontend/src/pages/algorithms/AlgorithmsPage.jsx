@@ -72,13 +72,16 @@ function AlgorithmCard({ algo, onClick }) {
   const avgColor = complexityColor(algo.timeComplexityAverage || '');
 
   return (
-    <div className={styles.card} onClick={() => onClick(algo)}>
+    <div className={styles.card} onClick={() => onClick(algo)} style={{ '--diff-color': diffColor }}>
       <div className={styles.cardTop}>
         <span className={styles.cardEmoji}>{algo.emoji}</span>
         <span className={styles.cardCategory}>{algo.category}</span>
       </div>
       <div className={styles.cardName}>{algo.name}</div>
-      <div className={styles.cardAnalogy}>{algo.analogy}</div>
+      {algo.keyInsight
+        ? <div className={styles.cardKeyInsight}>{algo.keyInsight.split('.')[0] + '.'}</div>
+        : <div className={styles.cardAnalogy}>{algo.analogy}</div>
+      }
       <div className={styles.cardComplexityRow}>
         <span className={styles.cardComplexity} style={{ color: avgColor }}>
           avg {algo.timeComplexityAverage}
@@ -91,7 +94,7 @@ function AlgorithmCard({ algo, onClick }) {
         ))}
       </div>
       <div className={styles.cardFooter}>
-        <span className={styles.diffBadge} style={{ color: diffColor, borderColor: diffColor + '44' }}>
+        <span className={styles.diffBadge} style={{ color: diffColor, borderColor: diffColor + '44', background: diffColor + '14' }}>
           {algo.difficulty?.charAt(0) + algo.difficulty?.slice(1).toLowerCase()}
         </span>
       </div>
@@ -148,8 +151,10 @@ function AlgorithmDetail({ algo, onBack }) {
       return <div key={i} className={styles.plainLine}>{line}</div>;
     });
 
+  const diffColor = { BEGINNER: 'var(--success)', INTERMEDIATE: 'var(--yellow)', ADVANCED: 'var(--red)' }[algo.difficulty] || 'var(--text3)';
+
   return (
-    <div className={styles.detail}>
+    <div className={styles.detail} style={{ '--diff-color': diffColor }}>
 
       {/* Header */}
       <div className={styles.detailHeader}>
@@ -162,8 +167,9 @@ function AlgorithmDetail({ algo, onBack }) {
           </div>
         </div>
         <span className={styles.diffPill} style={{
-          color: { BEGINNER: 'var(--success)', INTERMEDIATE: 'var(--yellow)', ADVANCED: 'var(--red)' }[algo.difficulty],
-          borderColor: ({ BEGINNER: 'var(--success)', INTERMEDIATE: 'var(--yellow)', ADVANCED: 'var(--red)' }[algo.difficulty] || 'transparent') + '55',
+          color: diffColor,
+          borderColor: diffColor + '55',
+          background: diffColor + '15',
         }}>
           {algo.difficulty?.charAt(0) + algo.difficulty?.slice(1).toLowerCase()}
         </span>
@@ -354,7 +360,7 @@ function AlgorithmDetail({ algo, onBack }) {
             <div className={styles.interviewBox}>
               {(algo.interviewTips || '').split('\n').filter(Boolean).map((tip, i) => (
                 <div key={i} className={styles.interviewTip}>
-                  <span className={styles.interviewBadge}>Key {i + 1}</span>
+                  <span className={styles.interviewBadge}>{i + 1}</span>
                   <span className={styles.interviewText}>{tip.replace(/^•\s*/, '')}</span>
                 </div>
               ))}
@@ -368,7 +374,7 @@ function AlgorithmDetail({ algo, onBack }) {
                   {practiceProblems.map((p, i) => {
                     const dc = { Easy: 'var(--easy)', Medium: 'var(--yellow)', Hard: 'var(--red)' }[p.difficulty] || 'var(--text3)';
                     return (
-                      <div key={i} className={styles.practiceItem}>
+                      <div key={i} className={styles.practiceItem} style={{ '--practice-diff-color': dc }}>
                         <div className={styles.practiceTop}>
                           <span className={styles.practiceNum}>#{i + 1}</span>
                           <span className={styles.practiceName}>{p.name}</span>
