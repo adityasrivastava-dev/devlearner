@@ -38,8 +38,19 @@ public class PracticeSetService {
         // Parse profile with Gemini (better structured extraction)
         Map<String, Object> profile = parseProfile(truncated);
 
-        // Generate initial Q&A set — use Gemini for higher quality answers
-        List<Map<String, Object>> questions = generateQuestions(truncated, profile, null, 30);
+        // Generate in two batches of 15 to avoid token-limit truncation
+        List<Map<String, Object>> batch1 = generateQuestions(truncated, profile, "THEORY,CODING,PROJECT", 15);
+        List<Map<String, Object>> batch2 = generateQuestions(truncated, profile, "BEHAVIORAL,SYSTEM_DESIGN,THEORY", 15);
+
+        List<Map<String, Object>> questions = new ArrayList<>();
+        questions.addAll(batch1);
+        // Re-number ids for batch2
+        int offset = batch1.size();
+        for (int i = 0; i < batch2.size(); i++) {
+            Map<String, Object> q = new java.util.LinkedHashMap<>(batch2.get(i));
+            q.put("id", offset + i + 1);
+            questions.add(q);
+        }
 
         String sessionId = UUID.randomUUID().toString();
         sessions.put(sessionId, new PracticeSession(sessionId, truncated, profile));
@@ -72,7 +83,10 @@ public class PracticeSetService {
         String projList  = formatList(profile.get("projects"),  "name");
         String topicList = formatList(profile.get("topicsToTest"), null);
 
-        String focusClause = focusTopic != null
+        String focusClause = focusTopic != null && focusTopic.contains(",")
+            // batch mode — focusTopic is a comma-separated list of categories
+            ? "Use ONLY these categories: " + focusTopic + ". Spread evenly across them. Make PROJECT questions reference the candidate's actual projects directly."
+            : focusTopic != null
             ? "Focus ONLY on the topic: " + focusTopic + "."
             : "Spread across: THEORY (12), CODING (7), PROJECT (5), BEHAVIORAL (4), SYSTEM_DESIGN (4). " +
               "Make PROJECT questions reference the candidate's actual project names directly.";
@@ -88,13 +102,13 @@ public class PracticeSetService {
               "topic": "HashMap Internals",
               "difficulty": "Medium",
               "question": "How does HashMap handle hash collisions in Java?",
-              "answer": "Comprehensive 3-5 sentence answer with all technical details a MAANG interviewer would expect.",
+              "answer": "Concise 2-3 sentence answer covering key technical details a MAANG interviewer expects.",
               "keyPoints": ["key point 1", "key point 2", "key point 3"],
               "followUp": "One natural follow-up question the interviewer might ask next."
             }
             category must be exactly one of: THEORY, CODING, PROJECT, BEHAVIORAL, SYSTEM_DESIGN
             difficulty must be exactly: Easy, Medium, or Hard
-            Answers must be thorough — include actual code concepts, numbers, trade-offs, real examples.
+            Answers must be technically accurate — include key concepts, trade-offs, and real examples. Keep each answer under 100 words.
             """;
 
         String prompt = String.format("""

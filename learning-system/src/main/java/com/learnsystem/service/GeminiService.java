@@ -130,7 +130,7 @@ public class GeminiService {
                 ObjectNode root = mapper.createObjectNode();
                 root.put("model", model);
                 root.put("temperature", 0.7);
-                root.put("max_tokens",  2048);
+                root.put("max_tokens",  8192);
 
                 ArrayNode messages = root.putArray("messages");
                 messages.addObject().put("role", "system").put("content", systemPrompt);
@@ -177,7 +177,7 @@ public class GeminiService {
                 ObjectNode root = mapper.createObjectNode();
                 root.put("model", model);
                 root.put("temperature", 0.7);
-                root.put("max_tokens",  2048);
+                root.put("max_tokens",  8192);
 
                 ArrayNode messages = root.putArray("messages");
                 messages.addObject().put("role", "system").put("content", systemPrompt);
@@ -264,7 +264,7 @@ public class GeminiService {
                 .putArray("parts").addObject().put("text", userMessage);
             ObjectNode cfg = root.putObject("generationConfig");
             cfg.put("temperature",     0.7);
-            cfg.put("maxOutputTokens", 2048);
+            cfg.put("maxOutputTokens", 8192);
             cfg.putObject("thinkingConfig").put("thinkingBudget", 0);
             return mapper.writeValueAsString(root);
         } catch (Exception e) {
