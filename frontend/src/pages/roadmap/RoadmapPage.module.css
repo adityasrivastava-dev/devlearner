@@ -14,6 +14,13 @@
 }
 .backBtn:hover { color: var(--text); }
 .heading { font-size: 18px; font-weight: 800; color: var(--text); flex: 1; }
+.visualBtn {
+  padding: 5px 12px; background: transparent; border: 1px solid #6366f1;
+  border-radius: 6px; color: #818cf8; font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: var(--font-ui); white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.visualBtn:hover { background: #6366f1; color: #fff; }
 
 .body { flex: 1; overflow-y: auto; padding: 24px; }
 .subtext { font-size: 13px; color: var(--text3); margin-bottom: 20px; }
