@@ -88,6 +88,10 @@ private String firstPrinciples;
 @Column(name = "youtube_urls", columnDefinition = "TEXT")
 private String youtubeUrls;
 
+/** Comma-separated topic IDs that must be completed before this topic, e.g. "1,5,12" */
+@Column(columnDefinition = "TEXT")
+private String prerequisites;
+
 // ── Audit ─────────────────────────────────────────────────────────────────
 
 @Column(name = "created_at", updatable = false)

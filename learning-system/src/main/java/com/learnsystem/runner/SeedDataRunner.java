@@ -63,6 +63,10 @@ public void run(ApplicationArguments args) {
     int totalApplied = 0;
     for (Resource resource : resources) {
         String filename = resource.getFilename();
+        if (filename != null && filename.startsWith("prerequisites")) {
+            log.debug("SeedDataRunner: skipping non-batch file '{}'", filename);
+            continue;
+        }
         try {
             SeedBatchRequest request = objectMapper.readValue(
                     resource.getInputStream(), SeedBatchRequest.class);

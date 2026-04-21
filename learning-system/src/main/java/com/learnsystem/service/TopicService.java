@@ -79,6 +79,7 @@ public Topic updateTopic(Long id, Topic incoming) {
     // Ordering / grouping
     existing.setSubCategory(incoming.getSubCategory());
     if (incoming.getDisplayOrder() != null) existing.setDisplayOrder(incoming.getDisplayOrder());
+    existing.setPrerequisites(incoming.getPrerequisites());
     return topicRepository.save(existing);
 }
 

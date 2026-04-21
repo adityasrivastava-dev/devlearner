@@ -584,6 +584,7 @@ export default function RoadmapPage() {
       <div className={styles.header}>
         <button className={styles.backBtn} onClick={() => navigate('/')}>← Back</button>
         <h1 className={styles.heading}>🗺 My Roadmaps</h1>
+        <button className={styles.visualBtn} onClick={() => navigate('/visual-roadmap')}>⬡ Visual Roadmap</button>
         <button className="btn btn-primary btn-sm" onClick={() => setView('pick-template')}>+ New Roadmap</button>
       </div>
 

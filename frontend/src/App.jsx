@@ -7,6 +7,7 @@ import { ProtectedRoute, AdminRoute, GuestRoute } from './components/shared/Rout
 import ErrorBoundary from './components/shared/ErrorBoundary';
 import { usePageTracking } from './hooks/useTracking';
 import PomodoroWidget from './components/pomodoro/PomodoroWidget';
+import { useLocation } from 'react-router-dom';
 
 // Critical-path pages — loaded eagerly (always needed on first paint)
 import LoginPage from './pages/login/LoginPage';
@@ -16,6 +17,7 @@ import HomePage  from './pages/home/HomePage';
 const ProblemsPage       = lazy(() => import('./pages/problems/ProblemsPage'));
 const AdminPage          = lazy(() => import('./pages/admin/AdminPage'));
 const RoadmapPage        = lazy(() => import('./pages/roadmap/RoadmapPage'));
+const VisualRoadmapPage  = lazy(() => import('./pages/roadmap/VisualRoadmapPage'));
 const PlaygroundPage     = lazy(() => import('./pages/playground/PlaygroundPage'));
 const ProfilePage        = lazy(() => import('./pages/profile/ProfilePage'));
 const QuizPage           = lazy(() => import('./pages/quiz/QuizPage'));
@@ -76,6 +78,7 @@ function AppRoutes() {
           <Route path="/"               element={<ProtectedRoute><ErrorBoundary label="Home"><HomePage /></ErrorBoundary></ProtectedRoute>} />
           <Route path="/problems"       element={<ProtectedRoute><ErrorBoundary label="Problems"><ProblemsPage /></ErrorBoundary></ProtectedRoute>} />
           <Route path="/roadmap"        element={<ProtectedRoute><ErrorBoundary label="Roadmap"><RoadmapPage /></ErrorBoundary></ProtectedRoute>} />
+          <Route path="/visual-roadmap" element={<ProtectedRoute><ErrorBoundary label="VisualRoadmap"><VisualRoadmapPage /></ErrorBoundary></ProtectedRoute>} />
           <Route path="/playground"     element={<ProtectedRoute><ErrorBoundary label="Playground"><PlaygroundPage /></ErrorBoundary></ProtectedRoute>} />
           <Route path="/profile"        element={<ProtectedRoute><ErrorBoundary label="Profile"><ProfilePage /></ErrorBoundary></ProtectedRoute>} />
           <Route path="/quiz"           element={<ProtectedRoute><ErrorBoundary label="Quiz"><QuizPage /></ErrorBoundary></ProtectedRoute>} />
@@ -109,13 +112,20 @@ function AppRoutes() {
   );
 }
 
+const HIDE_POMODORO_PATHS = ['/visual-roadmap'];
+function PomodoroGuard() {
+  const { pathname } = useLocation();
+  if (HIDE_POMODORO_PATHS.includes(pathname)) return null;
+  return <PomodoroWidget />;
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AppRoutes />
-          <PomodoroWidget />
+          <PomodoroGuard />
         </BrowserRouter>
 
         <Toaster

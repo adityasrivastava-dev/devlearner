@@ -244,6 +244,7 @@ function buildForm(t) {
     firstPrinciples:   t?.firstPrinciples   || '',
     youtubeUrls:       t?.youtubeUrls       || '',
     starterCode:       t?.starterCode       || '',
+    prerequisites:     t?.prerequisites     || '',
   };
 }
 
@@ -462,6 +463,7 @@ function TopicEditor({ topic, onSaved }) {
             </div>
             <Field label="Sub-Category (section heading in sidebar)" value={form.subCategory} onChange={set('subCategory')} placeholder="e.g. OOP (VERY IMPORTANT)" wide />
             <Field label="Display Order (lower = first)" value={form.displayOrder} onChange={set('displayOrder')} type="number" />
+            <Field label="Prerequisites (comma-separated topic IDs, e.g. 1,5,12)" value={form.prerequisites} onChange={set('prerequisites')} placeholder="e.g. 1,5,12" wide />
             <Field label="Description" value={form.description} onChange={set('description')} textarea rows={3} wide />
             <Field label="Time Complexity" value={form.timeComplexity} onChange={set('timeComplexity')} />
             <Field label="Space Complexity" value={form.spaceComplexity} onChange={set('spaceComplexity')} />
