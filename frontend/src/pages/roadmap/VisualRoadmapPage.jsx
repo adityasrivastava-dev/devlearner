@@ -28,13 +28,22 @@ const CATEGORY_META = {
   AWS:           { label: 'AWS',              color: '#64748b' },
 };
 
-// ── Gate stage → ring color ───────────────────────────────────────────────────
+// ── Gate stage → border color ─────────────────────────────────────────────────
 const STAGE_COLOR = {
   THEORY:   '#3b82f6',
   EASY:     '#eab308',
   MEDIUM:   '#f97316',
   HARD:     '#ef4444',
   MASTERED: '#22c55e',
+};
+
+// ── Gate stage → background tint ─────────────────────────────────────────────
+const STAGE_BG = {
+  THEORY:   'rgba(59,130,246,0.12)',
+  EASY:     'rgba(234,179,8,0.12)',
+  MEDIUM:   'rgba(249,115,22,0.12)',
+  HARD:     'rgba(239,68,68,0.12)',
+  MASTERED: 'rgba(34,197,94,0.16)',
 };
 
 // ── Root node ──────────────────────────────────────────────────────────────
@@ -64,16 +73,22 @@ function TopicNode({ data }) {
   const catColor   = data.catColor || '#6b7280';
   const mastered   = data.stage === 'MASTERED';
   const revision   = data.isRevision;
+  const hasStage   = !!data.stage;
 
-  const borderColor = stageColor || (revision ? '#f59e0b' : catColor);
-  const bgColor = mastered
-    ? 'rgba(34,197,94,0.13)'
+  const borderColor   = stageColor || (revision ? '#f59e0b' : catColor);
+  const borderWidth   = hasStage ? '2px' : '1.5px';
+  const bgColor       = hasStage
+    ? STAGE_BG[data.stage]
     : revision
       ? 'rgba(245,158,11,0.10)'
       : 'rgba(255,255,255,0.03)';
 
   return (
-    <div className={styles.topicNode} style={{ borderColor, '--cat-color': catColor, background: bgColor }} title={data.label}>
+    <div
+      className={styles.topicNode}
+      style={{ borderColor, borderWidth, '--cat-color': catColor, background: bgColor }}
+      title={data.label}
+    >
       <Handle type="target" position={Position.Top}    id="t" style={{ background: borderColor, width: 6, height: 6 }} />
       <Handle type="target" position={Position.Left}   id="l" style={{ background: borderColor, width: 6, height: 6 }} />
       <div className={styles.nodeInner}>
@@ -332,12 +347,19 @@ function TopicPanel({ topicId, stageSummary, isRevision, onClose, onStudy, onMar
         <div className={styles.panelFooter}>
           <div className={styles.actionRow}>
             <button
-              className={styles.studiedBtn}
+              className={`${styles.studiedBtn} ${stage ? styles.studiedBtnActive : ''}`}
               disabled={studiedMutation.isPending || !!stage}
               onClick={() => studiedMutation.mutate()}
-              title={stage ? `Already at ${stage} stage` : 'Mark as studied'}
+              title={stage
+                ? `Progress: ${stage} — continue studying to advance`
+                : 'Mark as studied (starts Theory stage)'}
+              style={stage ? { borderColor: STAGE_COLOR[stage], color: STAGE_COLOR[stage] } : {}}
             >
-              {stage ? `✓ ${stage}` : studiedMutation.isPending ? '…' : '✓ Studied'}
+              {studiedMutation.isPending
+                ? 'Saving…'
+                : stage
+                  ? `✓ ${stage}`
+                  : '✓ Mark Studied'}
             </button>
             <button
               className={`${styles.revisionBtn} ${isRevision ? styles.revisionBtnActive : ''}`}
@@ -359,12 +381,22 @@ function TopicPanel({ topicId, stageSummary, isRevision, onClose, onStudy, onMar
 export default function VisualRoadmapPage() {
   const navigate = useNavigate();
   const [selectedTopicId, setSelectedTopicId] = useState(null);
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem('devlearn_theme') || 'dark'
+  );
   const [revisionTopics, setRevisionTopics] = useState(() => {
     try {
       const stored = localStorage.getItem('devlearn_revision_topics');
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch { return new Set(); }
   });
+
+  const toggleTheme = useCallback(() => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    localStorage.setItem('devlearn_theme', next);
+    document.documentElement.setAttribute('data-theme', next);
+  }, [theme]);
 
   const toggleRevision = useCallback((topicId) => {
     setRevisionTopics((prev) => {
@@ -424,6 +456,9 @@ export default function VisualRoadmapPage() {
             Not Started
           </span>
         </div>
+        <button className={styles.themeBtn} onClick={toggleTheme} title="Toggle theme">
+          {theme === 'dark' ? '☀' : '🌙'}
+        </button>
       </div>
 
       {/* Canvas */}
@@ -439,7 +474,7 @@ export default function VisualRoadmapPage() {
           maxZoom={2}
           defaultEdgeOptions={{ type: 'smoothstep' }}
         >
-          <Background color="#2d3748" gap={20} size={1} />
+          <Background color={theme === 'dark' ? '#2d3748' : '#cbd5e1'} gap={20} size={1} />
         </ReactFlow>
       </div>
 
