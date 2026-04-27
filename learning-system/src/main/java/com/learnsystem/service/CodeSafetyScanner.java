@@ -1,5 +1,6 @@
 package com.learnsystem.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -16,6 +17,12 @@ import java.util.List;
  *   new Socket("attacker.com") → exfiltrates data, bypasses firewall
  *   System.loadLibrary(...)  → loads native code, full OS access
  *   while(true) {}           → handled by TIMEOUT_SECONDS, not blocked here
+ *
+ * DOCKER MODE
+ * ────────────
+ * When execution.docker.enabled=true, code runs in an isolated container.
+ * System.exit and Runtime.halt are then safe — they kill the container, not the host JVM.
+ * These two entries are skipped in Docker mode. All other blocks remain as defense-in-depth.
  *
  * HOW IT WORKS
  * ─────────────
@@ -36,21 +43,29 @@ public class CodeSafetyScanner {
     /** Max code size accepted. 50 KB is ~1500 lines — plenty for any interview problem. */
     public static final int MAX_CODE_BYTES = 50_000;
 
+    // When Docker is enabled, System.exit/Runtime.halt only kill the container — host JVM is safe.
+    @Value("${execution.docker.enabled:false}")
+    private boolean dockerEnabled;
+
     public record ScanResult(boolean safe, String reason) {
         public static ScanResult ok()              { return new ScanResult(true,  null); }
         public static ScanResult blocked(String r) { return new ScanResult(false, r);   }
     }
 
     /**
-     * Each entry: { "token to find in stripped code", "user-facing reason" }
-     *
+     * Entries that kill the host JVM — only dangerous when NOT running in Docker.
+     * In Docker mode these are allowed: System.exit kills the container, not Spring Boot.
+     */
+    private static final List<String[]> HOST_KILL_BLOCKED = List.of(
+        new String[]{ "System.exit",  "System.exit() is not permitted in submissions" },
+        new String[]{ "Runtime.halt", "Runtime.halt() is not permitted" }
+    );
+
+    /**
+     * Entries that are dangerous regardless of Docker mode.
      * Ordered: most dangerous first so the first match wins quickly.
      */
-    private static final List<String[]> BLOCKED = List.of(
-        // ── JVM suicide — kills the parent Spring Boot process ────────────────
-        new String[]{ "System.exit",             "System.exit() is not permitted in submissions" },
-        new String[]{ "Runtime.halt",            "Runtime.halt() is not permitted" },
-
+    private static final List<String[]> ALWAYS_BLOCKED = List.of(
         // ── Process spawning — executes arbitrary OS commands ─────────────────
         new String[]{ "Runtime.getRuntime",      "Runtime.exec() / process spawning is not permitted" },
         new String[]{ "ProcessBuilder",          "ProcessBuilder is not permitted" },
@@ -95,10 +110,15 @@ public class CodeSafetyScanner {
 
         String stripped = stripCommentsAndStrings(code);
 
-        for (String[] rule : BLOCKED) {
-            if (stripped.contains(rule[0])) {
-                return ScanResult.blocked(rule[1]);
+        // In non-Docker mode, System.exit kills the host JVM — block it.
+        if (!dockerEnabled) {
+            for (String[] rule : HOST_KILL_BLOCKED) {
+                if (stripped.contains(rule[0])) return ScanResult.blocked(rule[1]);
             }
+        }
+
+        for (String[] rule : ALWAYS_BLOCKED) {
+            if (stripped.contains(rule[0])) return ScanResult.blocked(rule[1]);
         }
 
         return ScanResult.ok();

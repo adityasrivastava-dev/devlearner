@@ -5,6 +5,7 @@ import com.learnsystem.dto.ExecuteResponse;
 import com.learnsystem.dto.SubmitRequest;
 import com.learnsystem.dto.SubmitResponse;
 import com.learnsystem.model.ExecutionJob;
+import com.learnsystem.model.Problem;
 import com.learnsystem.model.Submission;
 import com.learnsystem.repository.ProblemRepository;
 import com.learnsystem.repository.SubmissionRepository;
@@ -16,6 +17,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -42,6 +45,7 @@ public class ExecutionWorkerScheduler {
     private final JobQueueService      jobQueue;
     private final ExecutionService     executionService;
     private final EvaluationService    evaluationService;
+    private final ExecutionClient      executionClient;
     private final SubmissionRepository submissionRepo;
     private final ProblemRepository    problemRepo;
     private final PostSubmissionTask   postSubmissionTask;
@@ -98,41 +102,44 @@ public class ExecutionWorkerScheduler {
     // ── RUN ───────────────────────────────────────────────────────────────────
 
     private String processRun(ExecutionJob job) throws Exception {
-        // If the job is linked to a problem, use the problem's codeHarness (if any)
         String harness = null;
         if (job.getProblemId() != null) {
             harness = problemRepo.findById(job.getProblemId())
-                    .map(p -> p.getCodeHarness())
-                    .orElse(null);
+                    .map(Problem::getCodeHarness).orElse(null);
         }
-        ExecuteResponse res = executionService.execute(
-                job.getCode(),
-                job.getStdin() != null ? job.getStdin() : "",
-                job.getJavaVersion(),
-                harness);
+        String javaVersion = job.getJavaVersion() != null ? job.getJavaVersion() : "17";
+        String stdin       = job.getStdin() != null ? job.getStdin() : "";
+
+        ExecuteResponse res = executionClient.isEnabled()
+                ? executionClient.execute(job.getCode(), stdin, javaVersion, harness)
+                : executionService.execute(job.getCode(), stdin, javaVersion, harness);
+
         return objectMapper.writeValueAsString(res);
     }
 
     // ── SUBMIT ────────────────────────────────────────────────────────────────
 
     private String processSubmit(ExecutionJob job) throws Exception {
-        // 1. Evaluate (compile + run all test cases)
-        SubmitRequest req = new SubmitRequest();
-        req.setProblemId(job.getProblemId());
-        req.setCode(job.getCode());
-        req.setJavaVersion(job.getJavaVersion() != null ? job.getJavaVersion() : "17");
-        SubmitResponse result = evaluationService.evaluate(req);
+        String javaVersion = job.getJavaVersion() != null ? job.getJavaVersion() : "17";
+        SubmitResponse result;
 
-        // 2. Map evaluation result → submission status string
+        if (executionClient.isEnabled()) {
+            // Fetch test cases here and send them to the stateless execution service
+            result = remoteEvaluate(job, javaVersion);
+        } else {
+            SubmitRequest req = new SubmitRequest();
+            req.setProblemId(job.getProblemId());
+            req.setCode(job.getCode());
+            req.setJavaVersion(javaVersion);
+            result = evaluationService.evaluate(req);
+        }
+
         String status = resolveStatus(result);
-
-        // 3. Measure max execution time across test cases
         long maxMs = result.getResults() == null ? 0L :
                 result.getResults().stream()
                         .mapToLong(SubmitResponse.TestCaseResult::getExecutionTimeMs)
                         .max().orElse(0L);
 
-        // 4. Persist submission
         Submission sub = Submission.builder()
                 .userId(job.getUserId())
                 .problemId(job.getProblemId())
@@ -143,7 +150,7 @@ public class ExecutionWorkerScheduler {
                 .solveTimeSecs(job.getSolveTimeSecs() != null ? job.getSolveTimeSecs().longValue() : null)
                 .code(job.getCode())
                 .hintAssisted(Boolean.TRUE.equals(job.getHintAssisted()))
-                .javaVersion(job.getJavaVersion())
+                .javaVersion(javaVersion)
                 .approachText(job.getApproachText())
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -151,14 +158,12 @@ public class ExecutionWorkerScheduler {
         log.info("Submission saved: user={} problem={} status={} ms={}",
                 job.getUserId(), job.getProblemId(), status, maxMs);
 
-        // 5. Fire streak/XP/analytics async (never blocks this thread)
         if (job.getUserId() != null) {
             int xpEarned = "ACCEPTED".equals(status) ? 10 : 1;
             Long   topicId        = null;
             String problemTitle   = null;
             String correctPattern = null;
             try {
-                // JOIN FETCH loads topic in the same query — avoids LazyInitializationException
                 var prob = problemRepo.findByIdWithTopic(job.getProblemId()).orElse(null);
                 if (prob != null) {
                     topicId        = prob.getTopic() != null ? prob.getTopic().getId() : null;
@@ -169,14 +174,45 @@ public class ExecutionWorkerScheduler {
 
             postSubmissionTask.run(
                     job.getUserId(), job.getProblemId(), topicId, problemTitle,
-                    status, job.getSolveTimeSecs() != null ? job.getSolveTimeSecs().longValue() : null, Boolean.TRUE.equals(job.getHintAssisted()),
+                    status, job.getSolveTimeSecs() != null ? job.getSolveTimeSecs().longValue() : null,
+                    Boolean.TRUE.equals(job.getHintAssisted()),
                     result.getDetectedPattern(), correctPattern,
                     job.getCode(), xpEarned);
         }
 
-        // 6. Return the full result including submissionId
-        // The frontend uses this exactly like the old sync response
         return objectMapper.writeValueAsString(buildSubmitResponseMap(result, sub.getId(), maxMs, job.getProblemId()));
+    }
+
+    /**
+     * Evaluate via the remote execution service.
+     * Fetches test cases from DB here (main API has DB access), then sends them
+     * to the stateless execution service along with the code.
+     */
+    private SubmitResponse remoteEvaluate(ExecutionJob job, String javaVersion) throws Exception {
+        var problem = problemRepo.findById(job.getProblemId())
+                .orElseThrow(() -> new RuntimeException("Problem not found: " + job.getProblemId()));
+
+        String harness = problem.getCodeHarness();
+
+        List<Map<String, String>> rawTestCases;
+        try {
+            rawTestCases = objectMapper.readValue(problem.getTestCases(),
+                    new com.fasterxml.jackson.core.type.TypeReference<>() {});
+        } catch (Exception e) {
+            rawTestCases = List.of();
+        }
+
+        List<ExecutionClient.TestCaseInput> testCases = rawTestCases.stream()
+                .map(tc -> {
+                    String input    = tc.getOrDefault("input", "");
+                    String expected = tc.containsKey("expectedOutput")
+                            ? tc.getOrDefault("expectedOutput", "")
+                            : tc.getOrDefault("output", "");
+                    return new ExecutionClient.TestCaseInput(input, expected);
+                })
+                .collect(Collectors.toList());
+
+        return executionClient.submit(job.getCode(), javaVersion, harness, testCases);
     }
 
     // ── TEST_RUN ──────────────────────────────────────────────────────────────
@@ -184,14 +220,21 @@ public class ExecutionWorkerScheduler {
     /**
      * TEST_RUN: evaluate against the problem's test cases but do NOT persist a submission.
      * Used when the user clicks Run on a method-based problem (no main() in their code).
-     * Returns the same SubmitResponse shape so the frontend can show per-case results.
      */
     private String processTestRun(ExecutionJob job) throws Exception {
-        SubmitRequest req = new SubmitRequest();
-        req.setProblemId(job.getProblemId());
-        req.setCode(job.getCode());
-        req.setJavaVersion(job.getJavaVersion() != null ? job.getJavaVersion() : "17");
-        SubmitResponse result = evaluationService.evaluate(req);
+        String javaVersion = job.getJavaVersion() != null ? job.getJavaVersion() : "17";
+        SubmitResponse result;
+
+        if (executionClient.isEnabled()) {
+            result = remoteEvaluate(job, javaVersion);
+        } else {
+            SubmitRequest req = new SubmitRequest();
+            req.setProblemId(job.getProblemId());
+            req.setCode(job.getCode());
+            req.setJavaVersion(javaVersion);
+            result = evaluationService.evaluate(req);
+        }
+
         return objectMapper.writeValueAsString(result);
     }
 

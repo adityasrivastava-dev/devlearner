@@ -52,7 +52,7 @@ private static final String      DEFAULT_VERSION = "17";
  *   but we still cap it to bound queue depth and temp-dir creation.
  *
  * Gate 2 — process gate (max-processes, default 16):
- *   Controls how many JVM CHILD PROCESSES exist at any moment, globally.
+ *   Controls how many JVM CHILD PROCESSES / Docker containers exist at any moment.
  *   Each child uses -Xmx128m ≈ 180 MB (heap + JVM overhead).
  *   16 × 180 MB = 2.88 GB — safe headroom on a 4 GB server.
  *
@@ -68,6 +68,27 @@ private int maxConcurrent;
 
 @Value("${execution.max-processes:16}")
 private int maxProcesses;
+
+// ── Docker execution settings ─────────────────────────────────────────────
+// When dockerEnabled=true, code runs inside a Docker container instead of a
+// bare JVM child process. This gives true isolation: System.exit kills only
+// the container, memory/CPU limits are cgroup-enforced, network is disabled.
+// Set execution.docker.enabled=true on any host where Docker daemon is running.
+
+@Value("${execution.docker.enabled:false}")
+private boolean dockerEnabled;
+
+@Value("${execution.docker.image:eclipse-temurin:17-jre-alpine}")
+private String dockerImage;
+
+@Value("${execution.docker.memory-mb:256}")
+private int dockerMemoryMb;
+
+@Value("${execution.docker.cpus:0.5}")
+private String dockerCpus;
+
+@Value("${execution.docker.timeout-seconds:15}")
+private int dockerTimeoutSeconds;
 
 // Lazily initialised so @Value is injected before first use
 private volatile Semaphore concurrencyGate;
@@ -514,13 +535,112 @@ private String formatCompileErrors(List<CompileError> errors) {
     return sb.toString().trim();
 }
 
-// ── Run ───────────────────────────────────────────────────────────────────
+// ── Run — routes to Docker or local JVM based on config ──────────────────
 
 private ExecuteResponse run(Path tempDir, String stdin, String className) throws Exception {
+    return dockerEnabled ? runInDocker(tempDir, stdin, className)
+                         : runLocal(tempDir, stdin, className);
+}
+
+/**
+ * Run compiled .class files inside a Docker container.
+ *
+ * Why compile locally but run in Docker?
+ *   - Compilation uses the Java Compiler API (in-process, fast, exact error locations).
+ *     There is no benefit to compiling inside the container.
+ *   - Execution is where isolation matters: System.exit, infinite loops, memory bombs.
+ *     The container provides cgroup-enforced memory/CPU limits and network isolation.
+ *
+ * Container flags:
+ *   --rm               auto-remove after exit (no zombie containers)
+ *   -m {N}m            hard memory limit — cgroup kills at OOM (exit 137)
+ *   --memory-swap {N}m disable swap (same value disables it)
+ *   --cpus {N}         fractional CPU limit
+ *   --network none     no inbound or outbound network — replaces socket scanner checks
+ *   --pids-limit 64    prevents fork bombs inside the container
+ *   -v {dir}:/sandbox:ro  mount .class files read-only — container cannot write them
+ */
+private ExecuteResponse runInDocker(Path tempDir, String stdin, String className) throws Exception {
+    if (!processGate().tryAcquire(dockerTimeoutSeconds + 5L, TimeUnit.SECONDS)) {
+        return ExecuteResponse.builder().success(false).status("TIMEOUT")
+                .error("Server busy — no execution slot available")
+                .executionTimeMs(0).build();
+    }
+    try {
+        long startTime = System.currentTimeMillis();
+
+        List<String> cmd = new ArrayList<>(List.of(
+            "docker", "run", "--rm",
+            "-m",            dockerMemoryMb + "m",
+            "--memory-swap", dockerMemoryMb + "m",
+            "--cpus",        dockerCpus,
+            "--network",     "none",
+            "--pids-limit",  "64",
+            "-i",
+            "-v", tempDir.toAbsolutePath() + ":/sandbox:ro",
+            dockerImage,
+            "java",
+            "-cp", "/sandbox",
+            "-Xmx128m", "-XX:MaxMetaspaceSize=64m", "-Xss1m",
+            "-XX:+UseSerialGC", "-XX:TieredStopAtLevel=1",
+            "-Dfile.encoding=UTF-8", "-Djava.awt.headless=true",
+            className
+        ));
+
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        Process process = pb.start();
+
+        if (stdin != null && !stdin.isBlank()) {
+            try (OutputStream os = process.getOutputStream()) {
+                os.write(stdin.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+        } else {
+            process.getOutputStream().close();
+        }
+
+        ExecutorService pool = ioPool();
+        Future<String> stdoutFuture = pool.submit(() -> readStream(process.getInputStream(), MAX_OUTPUT_BYTES));
+        Future<String> stderrFuture = pool.submit(() -> readStream(process.getErrorStream(), MAX_OUTPUT_BYTES));
+
+        boolean finished = process.waitFor(dockerTimeoutSeconds, TimeUnit.SECONDS);
+        long elapsed = System.currentTimeMillis() - startTime;
+
+        if (!finished) {
+            process.destroyForcibly();
+            stdoutFuture.cancel(true);
+            stderrFuture.cancel(true);
+            return ExecuteResponse.builder().success(false).status("TIMEOUT")
+                    .error("Program exceeded " + dockerTimeoutSeconds + "s time limit")
+                    .executionTimeMs(elapsed).build();
+        }
+
+        String stdout = stdoutFuture.get(2, TimeUnit.SECONDS);
+        String stderr = stderrFuture.get(2, TimeUnit.SECONDS);
+        int exitCode = process.exitValue();
+
+        if (exitCode != 0) {
+            // Exit 137 = SIGKILL from Docker OOM killer
+            boolean oom = (exitCode == 137);
+            String errMsg = oom ? "Memory limit exceeded (" + dockerMemoryMb + " MB)"
+                    : stderr.isBlank() ? "Exit code " + exitCode : stderr;
+            return ExecuteResponse.builder().success(false)
+                    .status(oom ? "MEMORY_LIMIT" : "RUNTIME_ERROR")
+                    .error(errMsg).executionTimeMs(elapsed).build();
+        }
+
+        return ExecuteResponse.builder().success(true).status("SUCCESS")
+                .output(stdout).executionTimeMs(elapsed).build();
+    } finally {
+        processGate().release();
+    }
+}
+
+/**
+ * Run compiled .class files directly in a child JVM process (no Docker).
+ * Used when execution.docker.enabled=false (default).
+ */
+private ExecuteResponse runLocal(Path tempDir, String stdin, String className) throws Exception {
     // Gate 2: acquire a process slot before spawning any JVM child.
-    // This is the RAM safety valve — it prevents the parallel test-case runner
-    // in executeAll() from spawning unlimited JVM processes concurrently.
-    // Every call to run() — whether from execute() or executeAll() — must pass here.
     if (!processGate().tryAcquire(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
         return ExecuteResponse.builder().success(false).status("TIMEOUT")
                 .error("Server busy — could not acquire execution slot within timeout")
@@ -530,22 +650,13 @@ private ExecuteResponse run(Path tempDir, String stdin, String className) throws
     ProcessBuilder pb = new ProcessBuilder(
             "java",
             "-cp",          tempDir.toString(),
-            // Heap: 128 MB max — more than enough for interview problems
             "-Xmx128m",
-            // Metaspace: 64 MB max — prevents class-generation OOM attacks
             "-XX:MaxMetaspaceSize=64m",
-            // Stack: 1 MB per thread — sufficient for interview-depth recursion (~8K frames)
             "-Xss1m",
-            // Serial GC: simpler, smaller footprint for short-lived processes
             "-XX:+UseSerialGC",
-            // No JIT compilation — faster startup, prevents JIT-based timing attacks
-            // Students notice no difference for interview-sized inputs
             "-XX:TieredStopAtLevel=1",
-            // Disable all network access at the JVM level
             "-Djava.net.preferIPv4Stack=true",
-            // Deterministic output encoding
             "-Dfile.encoding=UTF-8",
-            // No GUI — prevents X11 display attacks
             "-Djava.awt.headless=true",
             className)
             .directory(tempDir.toFile());
@@ -560,7 +671,6 @@ private ExecuteResponse run(Path tempDir, String stdin, String className) throws
         }
     }
 
-    // Use the shared I/O pool — avoids creating a new 2-thread pool per execution
     ExecutorService pool = ioPool();
     Future<String> stdoutFuture = pool.submit(() -> readStream(process.getInputStream(), MAX_OUTPUT_BYTES));
     Future<String> stderrFuture = pool.submit(() -> readStream(process.getErrorStream(), MAX_OUTPUT_BYTES));
@@ -588,7 +698,7 @@ private ExecuteResponse run(Path tempDir, String stdin, String className) throws
     return ExecuteResponse.builder().success(true).status("SUCCESS")
             .output(stdout).executionTimeMs(elapsed).build();
     } finally {
-        processGate().release(); // Gate 2 released — slot available for next process
+        processGate().release();
     }
 }
 

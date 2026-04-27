@@ -6,7 +6,7 @@
 
 ## What is DevLearner?
 
-DevLearner is a full-stack interview prep platform that combines spaced repetition, AI-powered interviews, adaptive question generation, and hands-on coding — all personalised to your resume and experience level.
+DevLearner is a full-stack interview prep platform combining spaced repetition, AI-powered interviews, adaptive question generation, and hands-on coding — all personalised to your resume and experience level.
 
 **Target user:** Backend engineers with 2–6 years of production experience who know the concepts but freeze in interviews due to terminology gaps or coding anxiety.
 
@@ -23,8 +23,8 @@ DevLearner is a full-stack interview prep platform that combines spaced repetiti
 ### AI Interview Suite
 | Feature | Description |
 |---------|-------------|
-| **Smart AI Interviewer** | Upload resume → Alex (AI) conducts a full 20-question adaptive interview covering Theory, Coding, Projects, Behavioral, System Design. Questions get harder/easier based on your answers. Voice support (TTS + STT). |
-| **Practice Set** | Upload resume → all 30 Q&As revealed at once (answers visible). Click "Load More" per topic for 10 deeper questions. Study mode, not quiz mode. |
+| **Smart AI Interviewer** | Upload resume → Alex (AI) conducts a full 20-question adaptive interview. Voice support (TTS + STT). |
+| **Practice Set** | Upload resume → 30 Q&As revealed at once. Study mode, not quiz mode. |
 | **Mock Interview** | Configurable category + difficulty + duration. AI scores each answer. |
 | **Resume Analyzer** | Gap analysis against job requirements + AI interview prep from your PDF. |
 | **Story Builder** | STAR-format behavioral answer builder with AI polish. |
@@ -38,18 +38,11 @@ DevLearner is a full-stack interview prep platform that combines spaced repetiti
 - **Daily Challenge** — one problem per day with leaderboard
 
 ### Progress & Analytics
-- **Streak** — daily streak with pause days earned from activity
-- **XP & Levels** — Beginner → Architect progression
-- **Performance Analytics** — confidence trends, error breakdown, mistake tracker
-- **Mastery Map** — visual topic-by-topic progress
-- **Heatmap** — submission activity calendar
+- Streak + pause days · XP & Levels (Beginner → Architect)
+- Performance Analytics · Mastery Map · Submission Heatmap
 
 ### Content
-- **Videos** — per-topic curated + personal video links
-- **Roadmap** — custom learning paths
-- **Timetable** — AI-generated study schedule
-- **System Design Canvas** — diagram + notes per design
-- **Learning Path** — recommended next topics
+- Videos, Roadmap, Timetable, System Design Canvas, Learning Path
 
 ---
 
@@ -62,9 +55,8 @@ DevLearner is a full-stack interview prep platform that combines spaced repetiti
 | Database | MySQL 8.0 (Hibernate `ddl-auto=update`) |
 | Auth | JWT + Google OAuth2 |
 | AI | Groq (Llama 3.1) → Gemini (Flash 2.0) → OpenAI (gpt-4o-mini) |
-| PDF parsing | Apache PDFBox |
-| HTTP client | OkHttp |
-| Code execution | Java Compiler API + child JVM processes |
+| Code execution | Java Compiler API + Docker containers (or child JVM processes) |
+| Async queue | MySQL job queue (`execution_jobs` table), 400ms poll |
 
 ### Frontend
 | Layer | Technology |
@@ -74,13 +66,14 @@ DevLearner is a full-stack interview prep platform that combines spaced repetiti
 | State / Cache | TanStack Query + Zustand |
 | Code editor | Monaco Editor |
 | Styling | CSS Modules + CSS custom properties |
-| Charts | Recharts |
-| Diagrams | Mermaid, Cytoscape |
 
 ### Infrastructure
-- Docker + Nginx reverse proxy
-- Deployed on Render (backend) + Render Static (frontend)
-- MySQL on Railway
+| Component | Default |
+|-----------|---------|
+| Main API | Render web service (port 8080) |
+| Frontend | Render static site |
+| Database | Railway MySQL 8.0 |
+| Execution service (optional) | Home server / VPS with Docker |
 
 ---
 
@@ -92,21 +85,27 @@ devlearner/
 │   ├── src/
 │   │   ├── api/index.js       # All HTTP calls (Axios + interceptors)
 │   │   ├── components/        # Shared + feature components
-│   │   ├── pages/             # Route-level pages (code-split)
+│   │   ├── pages/             # Route-level pages
 │   │   ├── context/           # AuthContext (JWT + user profile)
 │   │   └── utils/helpers.js   # Category metadata, formatters
 │   └── public/
 │       └── interview-batches/ # Bundled interview Q&A JSON files
 │
-└── learning-system/           # Spring Boot backend
-    └── src/main/java/com/learnsystem/
-        ├── controller/        # REST controllers
-        ├── service/           # Business logic + AI services
-        ├── model/             # JPA entities
-        ├── dto/               # Request/response objects
-        ├── security/          # JWT, OAuth2, SecurityConfig
-        ├── config/            # Seeders, DataInitializer
-        └── runner/            # Startup runners
+├── learning-system/           # Spring Boot main API (port 8080)
+│   └── src/main/java/com/learnsystem/
+│       ├── controller/        # REST controllers
+│       ├── service/           # Business logic, AI, async worker
+│       ├── model/             # JPA entities (incl. ExecutionJob)
+│       ├── dto/               # Request/response objects
+│       ├── security/          # JWT, OAuth2, SecurityConfig
+│       ├── config/            # Seeders, DataInitializer
+│       └── runner/            # Startup runners
+│
+└── execution-service/         # Standalone code execution microservice (port 8081)
+    └── src/main/java/com/execservice/
+        ├── controller/        # POST /internal/execute|submit|syntax-check
+        ├── service/           # ExecutionService (Docker), EvaluationService
+        └── dto/               # Internal request/response objects
 ```
 
 ---
@@ -114,59 +113,423 @@ devlearner/
 ## Running Locally
 
 ### Prerequisites
-- Java 17+
-- Node.js 18+
-- MySQL 8.0 running locally
 
-### Backend
+| Tool | Version | Purpose |
+|------|---------|---------|
+| Java JDK | 17+ | Backend compilation + code runner (JDK required, not JRE) |
+| Maven | 3.8+ | Backend build |
+| Node.js | 18+ | Frontend |
+| MySQL | 8.0 | Database |
+| Docker Desktop | any | Optional — for Docker execution mode |
+
+---
+
+### 1. Database setup
+
+```sql
+-- Connect to MySQL and create the database
+CREATE DATABASE devlearn;
+-- Hibernate creates all tables automatically on first start (ddl-auto=update)
+```
+
+---
+
+### 2. Backend (Main API)
 
 ```bash
 cd learning-system
-
-# Set environment variables (or edit application.properties for local dev)
-export GROQ_API_KEY=your_groq_key
-export GEMINI_API_KEY=your_gemini_key
-export OPENAI_API_KEY=your_openai_key   # optional fallback
-
-mvn spring-boot:run
-# Runs on http://localhost:8080
 ```
 
-### Frontend
+Edit `src/main/resources/application.properties` — the local DB block is already there:
+
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/devlearn?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+spring.datasource.username=root
+spring.datasource.password=password      # change to your MySQL root password
+```
+
+Set AI keys (optional — only needed for AI interview features):
+
+```bash
+# PowerShell
+$env:GROQ_API_KEY   = "gsk_..."
+$env:GEMINI_API_KEY = "AIza..."
+
+# bash / zsh
+export GROQ_API_KEY=gsk_...
+export GEMINI_API_KEY=AIza...
+```
+
+Start the backend:
+
+```bash
+mvn spring-boot:run
+# API available at http://localhost:8080
+# Tables created automatically on first start
+# Seed data loaded on startup (topics, algorithms, quiz sets)
+```
+
+---
+
+### 3. Frontend
 
 ```bash
 cd frontend
 npm install
 npm run dev
-# Runs on http://localhost:3000
-# Proxies /api → http://localhost:8080 automatically
+# App available at http://localhost:3000
+# All /api calls are proxied to http://localhost:8080 via vite.config.js
 ```
 
-### Docker (full stack)
+---
+
+### 4. Execution service (optional — for Docker isolation)
+
+Only needed if you want code to run in isolated Docker containers (matches LeetCode's architecture). Without it, code runs in child JVM processes inside the main API — which is safe and works fine for local dev.
+
+**Prerequisites:** Docker Desktop running.
+
+```bash
+# Pull the runtime image once
+docker pull eclipse-temurin:17-jre-alpine
+
+cd execution-service
+mvn spring-boot:run
+# Runs on http://localhost:8081
+# Docker execution is ON by default in this service
+```
+
+Then tell the main API to use it:
+
+```bash
+# In a new terminal, restart the main API with:
+export EXECUTION_SERVICE_URL=http://localhost:8081
+mvn spring-boot:run
+```
+
+Or add to `application.properties`:
+```properties
+execution.service.url=http://localhost:8081
+```
+
+---
+
+### 5. Enable Docker mode in the main API directly (alternative)
+
+If you don't want to run the execution service separately but still want Docker isolation:
+
+```properties
+# In learning-system/src/main/resources/application.properties
+execution.docker.enabled=true
+# Docker Desktop must be running
+```
+
+This compiles code locally (fast) and runs each program in its own container. `System.exit()` becomes safe — the container dies, Spring Boot lives.
+
+---
+
+### Full local stack summary
+
+| Service | URL | How to start |
+|---------|-----|-------------|
+| MySQL | `localhost:3306` | Start MySQL service |
+| Main API | `http://localhost:8080` | `cd learning-system && mvn spring-boot:run` |
+| Frontend | `http://localhost:3000` | `cd frontend && npm run dev` |
+| Execution service | `http://localhost:8081` | `cd execution-service && mvn spring-boot:run` (optional) |
+
+---
+
+### Docker Compose (all-in-one)
 
 ```bash
 cd frontend
 docker-compose up
+# Builds frontend + backend, runs behind Nginx on port 80
 ```
 
 ---
 
 ## AI Provider Chain
 
-All AI features use a three-tier fallback — the next provider is only called if the previous one fully fails:
+All AI features use a three-tier fallback:
 
 ```
-Groq (Llama 3.1-8b-instant)       ← free, 14 400 req/day
+Groq (llama-3.1-8b-instant)    ← free, 14 400 req/day, no card needed
   ↓ on failure
-Gemini (gemini-2.0-flash)          ← free, Google AI Studio
+Gemini (gemini-2.0-flash)       ← free, Google AI Studio
   ↓ on failure
-OpenAI (gpt-4o-mini)               ← paid fallback, ~$0.15/1M tokens
+OpenAI (gpt-4o-mini)            ← paid fallback, ~$0.15/1M tokens
 ```
 
 Get keys:
-- Groq: [console.groq.com](https://console.groq.com) — free, no card needed
+- Groq: [console.groq.com](https://console.groq.com) — free
 - Gemini: [aistudio.google.com](https://aistudio.google.com/app/apikey) — free
 - OpenAI: [platform.openai.com](https://platform.openai.com/api-keys) — paid
+
+---
+
+## Deploying to a Server
+
+### Architecture overview
+
+```
+Internet
+    │
+    ▼
+[Render — Frontend (static)]       React build, served by Nginx
+    │
+    ▼
+[Render — Main API (port 8080)]    Spring Boot, JWT + Google OAuth2
+    │                                Async job queue (MySQL)
+    │                                WORKER_ENABLED=false on free tier
+    ▼
+[Railway — MySQL 8.0]              Single shared DB
+    │
+    ▼ (optional)
+[VPS / Home Server — Execution Service (port 8081)]
+    │                                Docker containers for code isolation
+    └── docker.sock mount           Real LeetCode-style execution
+```
+
+---
+
+### Step 1 — Database (Railway)
+
+1. Create a project at [railway.app](https://railway.app)
+2. Add a **MySQL** service
+3. Copy the connection string from the Railway dashboard (Variables tab)
+
+---
+
+### Step 2 — Main API (Render)
+
+1. Connect your GitHub repo at [render.com](https://render.com) → New Web Service
+2. **Root directory:** `learning-system`
+3. **Build command:** `mvn clean package -DskipTests`
+4. **Start command:** `java -jar target/learning-system-*.jar`
+5. **Environment:** Java 17
+
+Set these environment variables on Render:
+
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | `jdbc:mysql://interchange.proxy.rlwy.net:PORT/devlearn?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC` |
+| `DATABASE_USERNAME` | `root` |
+| `DATABASE_PASSWORD` | from Railway |
+| `JWT_SECRET` | any long random base64 string |
+| `GOOGLE_CLIENT_ID` | from Google Cloud Console |
+| `GOOGLE_CLIENT_SECRET` | from Google Cloud Console |
+| `FRONTEND_URL` | `https://your-app.onrender.com` |
+| `GROQ_API_KEY` | from console.groq.com |
+| `GEMINI_API_KEY` | from aistudio.google.com |
+| `WORKER_ENABLED` | `false` (Render free tier — no Docker) |
+| `EXECUTION_SERVICE_URL` | `http://YOUR_VPS_IP:8081` (if using execution service) |
+
+> **Note:** `WORKER_ENABLED=false` means code execution jobs are queued but not processed on Render. You need the execution service on a separate machine to actually run code. Alternatively, set `WORKER_ENABLED=true` if Render has enough resources.
+
+---
+
+### Step 3 — Frontend (Render Static Site)
+
+1. New Static Site → connect repo
+2. **Root directory:** `frontend`
+3. **Build command:** `npm install && npm run build`
+4. **Publish directory:** `dist`
+5. Set environment variable:
+
+| Variable | Value |
+|----------|-------|
+| `VITE_API_URL` | *(leave blank — uses relative URLs proxied by Nginx)* |
+
+Add a rewrite rule for React Router:
+- Source: `/*`
+- Destination: `/index.html`
+- Action: Rewrite
+
+---
+
+### Step 4 — Execution Service on VPS / Home Server (for Docker isolation)
+
+This is the component that gives true LeetCode-style isolation. Any Linux server with Docker works: a $6/mo DigitalOcean droplet, a home server, an EC2 instance.
+
+**One-time setup:**
+
+```bash
+# On the VPS/server
+# 1. Install Java 17 JDK
+sudo apt update && sudo apt install -y openjdk-17-jdk
+
+# 2. Install Docker
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+newgrp docker
+
+# 3. Pull the runtime image
+docker pull eclipse-temurin:17-jre-alpine
+```
+
+**Option A — Run as a JAR (recommended for first deploy):**
+
+```bash
+# On your local machine: build the JAR
+cd execution-service
+mvn clean package -DskipTests
+
+# Copy to server
+scp target/execution-service-*.jar user@YOUR_SERVER:/opt/execution-service/app.jar
+
+# On the server: run it
+java -jar /opt/execution-service/app.jar \
+  --server.port=8081 \
+  --execution.docker.enabled=true
+```
+
+**Option B — Run as a Docker container (Docker-in-Docker style):**
+
+```bash
+# On the server: build the image
+cd execution-service
+docker build -t execution-service .
+
+# Run — mount the host Docker socket so containers can be spawned
+docker run -d \
+  --name execution-service \
+  --restart unless-stopped \
+  -p 8081:8081 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  execution-service
+```
+
+**Option C — systemd service (auto-start on reboot):**
+
+```ini
+# /etc/systemd/system/execution-service.service
+[Unit]
+Description=DevLearner Execution Service
+After=docker.service
+Requires=docker.service
+
+[Service]
+ExecStart=/usr/bin/java -jar /opt/execution-service/app.jar \
+  --server.port=8081 \
+  --execution.docker.enabled=true
+Restart=always
+RestartSec=10
+User=ubuntu
+Environment=DOCKER_ENABLED=true
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl enable execution-service
+sudo systemctl start execution-service
+sudo systemctl status execution-service
+```
+
+**Verify it's running:**
+
+```bash
+curl http://localhost:8081/internal/health
+# {"status":"UP","service":"execution-service"}
+```
+
+**Security — expose only to Render, not the public internet:**
+
+```bash
+# UFW — allow port 8081 only from Render's outbound IPs
+sudo ufw allow from <RENDER_IP_RANGE> to any port 8081
+# Or use a private network / VPN between Render and the VPS
+```
+
+---
+
+### Step 5 — Google OAuth2 setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials
+2. Create OAuth 2.0 Client ID (Web application)
+3. Add Authorized redirect URIs:
+   - `https://your-backend.onrender.com/login/oauth2/code/google`
+   - `http://localhost:8080/login/oauth2/code/google` (for local dev)
+4. Copy Client ID and Client Secret → set as `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` on Render
+
+---
+
+### Full production env vars reference
+
+**Main API (Render):**
+
+```
+DATABASE_URL          jdbc:mysql://...railway.../devlearn?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+DATABASE_USERNAME     root
+DATABASE_PASSWORD     <railway password>
+JWT_SECRET            <base64 random string, 64+ chars>
+GOOGLE_CLIENT_ID      <from Google Cloud Console>
+GOOGLE_CLIENT_SECRET  <from Google Cloud Console>
+FRONTEND_URL          https://your-frontend.onrender.com
+GROQ_API_KEY          gsk_...
+GEMINI_API_KEY        AIza...
+OPENAI_API_KEY        sk-... (optional)
+WORKER_ENABLED        false
+EXECUTION_SERVICE_URL http://YOUR_VPS_IP:8081
+```
+
+**Execution service (VPS):**
+
+```
+DOCKER_ENABLED        true
+DOCKER_IMAGE          eclipse-temurin:17-jre-alpine
+DOCKER_MEMORY_MB      256
+DOCKER_CPUS           0.5
+DOCKER_TIMEOUT_SECONDS 15
+```
+
+---
+
+## Code Execution Architecture
+
+```
+User clicks Run / Submit
+        │
+        ▼
+POST /api/execute/async      ← returns {token} in < 5ms
+        │
+        ▼
+execution_jobs table (MySQL) ← job sits at PENDING
+        │
+        ▼ (worker polls every 400ms)
+ExecutionWorkerScheduler
+        │
+        ├── if EXECUTION_SERVICE_URL set
+        │       ▼
+        │   ExecutionClient → POST http://execution-service:8081/internal/execute
+        │                          │
+        │                          ▼
+        │                   docker run --rm -m 256m --cpus 0.5 --network none
+        │                          openjdk:17-jre-alpine java Solution
+        │
+        └── if no EXECUTION_SERVICE_URL
+                ▼
+            Local ExecutionService (child JVM process)
+                docker run if execution.docker.enabled=true
+                child java process if docker.enabled=false
+        │
+        ▼
+Frontend polls GET /api/jobs/{token} every 1.5s
+        │
+        ▼
+PENDING → "Waiting in queue…"
+STARTED → "Running your code…"
+DONE    → show result
+```
+
+Each code execution:
+- Compiles with Java Compiler API (local, fast, gives exact line/col errors)
+- Runs in Docker container with: 256MB memory cap, 0.5 CPU, no network, 64 PID limit
+- `System.exit()` kills only the container — server is unaffected
+- OOM → exit 137 → reported as `MEMORY_LIMIT`
+- Timeout → container killed → reported as `TIMEOUT`
 
 ---
 
@@ -177,41 +540,28 @@ POST /api/auth/login                    JWT login
 POST /api/auth/register                 Register
 GET  /api/topics                        All topics (optional ?category=)
 GET  /api/problems                      Paginated problems
-POST /api/execute                       Run Java code
-POST /api/submissions/submit            Submit solution
+POST /api/execute/async                 Async run (returns token)
+POST /api/submissions/submit/async      Async submit (returns token)
+GET  /api/jobs/{token}                  Poll job status
 
 POST /api/smart-interview/start         Start AI interview (multipart PDF)
 POST /api/smart-interview/:id/respond   Send answer, get next question
 GET  /api/smart-interview/:id/summary   Full performance report
 
 POST /api/practice-set/generate         Generate 30 Q&As from resume
-POST /api/practice-set/more             10 more questions on a topic
-
 POST /api/resume/analyze                Resume gap analysis
 POST /api/mock-interview/start          Start mock interview session
 
 GET  /api/interview-questions           Q&A bank (?category=&difficulty=)
 GET  /api/algorithms                    Algorithm list
 GET  /api/daily                         Today's challenge
+
+# Execution microservice (internal — not exposed to internet)
+POST /internal/execute
+POST /internal/submit
+POST /internal/syntax-check
+GET  /internal/health
 ```
-
----
-
-## Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | Production | MySQL JDBC URL |
-| `DATABASE_USERNAME` | Production | MySQL username |
-| `DATABASE_PASSWORD` | Production | MySQL password |
-| `JWT_SECRET` | Production | HS512 secret (base64) |
-| `GOOGLE_CLIENT_ID` | Production | Google OAuth2 client ID |
-| `GOOGLE_CLIENT_SECRET` | Production | Google OAuth2 client secret |
-| `FRONTEND_URL` | Production | Frontend origin for CORS |
-| `GROQ_API_KEY` | Recommended | Groq free tier key |
-| `GEMINI_API_KEY` | Recommended | Google AI Studio key |
-| `OPENAI_API_KEY` | Optional | OpenAI fallback key |
-| `VITE_API_URL` | Frontend prod | Backend base URL (baked at build time) |
 
 ---
 
@@ -219,9 +569,32 @@ GET  /api/daily                         Today's challenge
 
 | Role | Access |
 |------|--------|
-| `STUDENT` | All learning features (default) |
-| `TEACHER` | — |
+| `STUDENT` | All learning features (default on register) |
 | `ADMIN` | `/admin` panel — topic/problem/quiz/algorithm/user management |
+
+To make yourself admin: update the `user_roles` table directly in MySQL:
+```sql
+INSERT INTO user_roles (user_id, roles) VALUES (<your_user_id>, 'ADMIN');
+```
+
+---
+
+## Local Quick Reference
+
+```bash
+# Start everything locally (3 terminals)
+
+# Terminal 1 — Backend
+cd learning-system && mvn spring-boot:run
+
+# Terminal 2 — Frontend
+cd frontend && npm install && npm run dev
+
+# Terminal 3 — Execution service (optional, needs Docker Desktop)
+cd execution-service && mvn spring-boot:run
+
+# Open http://localhost:3000
+```
 
 ---
 
