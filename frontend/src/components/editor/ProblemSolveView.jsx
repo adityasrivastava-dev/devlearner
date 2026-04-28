@@ -801,14 +801,15 @@ function HintsTab({ problem, hintsShown, onShowHint }) {
 
 // ── Submissions History tab ────────────────────────────────────────────────────
 const STATUS_META = {
-  ACCEPTED:      { color: 'var(--accent)',  label: 'Accepted',           icon: '✅' },
-  WRONG_ANSWER:  { color: 'var(--red)',     label: 'Wrong Answer',        icon: '❌' },
-  COMPILE_ERROR: { color: 'var(--red)',     label: 'Compile Error',       icon: '🔴' },
-  RUNTIME_ERROR: { color: 'var(--red)',     label: 'Runtime Error',       icon: '🔴' },
-  TLE:           { color: 'var(--yellow)',  label: 'Time Limit',          icon: '⏰' },
-  BLOCKED:       { color: 'var(--yellow)',  label: 'Not Permitted',       icon: '🚫' },
-  RATE_LIMITED:  { color: 'var(--yellow)',  label: 'Rate Limit Reached',  icon: '⏳' },
-  SERVER_BUSY:   { color: 'var(--yellow)',  label: 'Server Busy',         icon: '🔄' },
+  ACCEPTED:      { color: 'var(--accent)',  label: 'Accepted',             icon: '✅' },
+  WRONG_ANSWER:  { color: 'var(--red)',     label: 'Wrong Answer',          icon: '❌' },
+  COMPILE_ERROR: { color: 'var(--red)',     label: 'Compile Error',         icon: '🔴' },
+  RUNTIME_ERROR: { color: 'var(--red)',     label: 'Runtime Error',         icon: '🔴' },
+  MEMORY_LIMIT:  { color: 'var(--red)',     label: 'Memory Limit Exceeded', icon: '💾' },
+  TLE:           { color: 'var(--yellow)',  label: 'Time Limit',            icon: '⏰' },
+  BLOCKED:       { color: 'var(--yellow)',  label: 'Not Permitted',         icon: '🚫' },
+  RATE_LIMITED:  { color: 'var(--yellow)',  label: 'Rate Limit Reached',    icon: '⏳' },
+  SERVER_BUSY:   { color: 'var(--yellow)',  label: 'Server Busy',           icon: '🔄' },
 };
 
 function SubmissionsTab({ history }) {
@@ -1282,11 +1283,13 @@ function TestCaseDetail({ tc }) {
   const isCompileErr  = tc.status === 'COMPILE_ERROR';
   const isRuntimeErr  = tc.status === 'RUNTIME_ERROR';
   const isTimeout     = tc.status === 'TIMEOUT';
-  const isErrorStatus = isCompileErr || isRuntimeErr || isTimeout;
+  const isMemoryLimit = tc.status === 'MEMORY_LIMIT';
+  const isErrorStatus = isCompileErr || isRuntimeErr || isTimeout || isMemoryLimit;
 
   const statusText = isCompileErr  ? 'Compile Error'
     : isRuntimeErr                 ? 'Runtime Error'
     : isTimeout                    ? 'Time Limit Exceeded'
+    : isMemoryLimit                ? 'Memory Limit Exceeded'
     : tc.passed                    ? 'Accepted'
     :                                'Wrong Answer';
 
@@ -1306,7 +1309,7 @@ function TestCaseDetail({ tc }) {
 
       {isErrorStatus ? (
         <DetailBlock
-          label={isTimeout ? 'Result' : 'Error'}
+          label={isTimeout || isMemoryLimit ? 'Result' : 'Error'}
           value={tc.actual || statusText}
           color="var(--red)"
         />
@@ -1357,5 +1360,6 @@ function resolveOverallStatus(cases) {
   if (cases.some(r => r.status === 'COMPILE_ERROR')) return 'Compile Error';
   if (cases.some(r => r.status === 'RUNTIME_ERROR')) return 'Runtime Error';
   if (cases.some(r => r.status === 'TIMEOUT'))       return 'Time Limit Exceeded';
+  if (cases.some(r => r.status === 'MEMORY_LIMIT'))  return 'Memory Limit Exceeded';
   return 'Wrong Answer';
 }
