@@ -2,11 +2,15 @@
 // Each question is self-contained — quickAnswer + keyPoints + optional codeExample.
 
 export const CATEGORY_META = {
-  JAVA:          { label: 'Java Core',     color: '#f59e0b', icon: '☕' },
-  ADVANCED_JAVA: { label: 'Advanced Java', color: '#8b5cf6', icon: '⚡' },
-  DSA:           { label: 'DSA',           color: '#10b981', icon: '🌲' },
-  SQL:           { label: 'SQL',           color: '#3b82f6', icon: '🗄' },
-  AWS:           { label: 'AWS',           color: '#f97316', icon: '☁' },
+  JAVA:           { label: 'Java Core',      color: '#f59e0b', icon: '☕' },
+  ADVANCED_JAVA:  { label: 'Advanced Java',  color: '#8b5cf6', icon: '⚡' },
+  DSA:            { label: 'DSA',            color: '#10b981', icon: '🌲' },
+  SQL:            { label: 'SQL',            color: '#3b82f6', icon: '🗄' },
+  AWS:            { label: 'AWS',            color: '#f97316', icon: '☁' },
+  SYSTEM_DESIGN:  { label: 'System Design',  color: '#06b6d4', icon: '🏗' },
+  TESTING:        { label: 'Testing',        color: '#22c55e', icon: '🧪' },
+  BEHAVIOURAL:    { label: 'Behavioural',    color: '#ec4899', icon: '🎯' },
+  SPRING_BOOT:    { label: 'Spring Boot',    color: '#84cc16', icon: '🌱' },
 };
 
 export const QUESTIONS = [
