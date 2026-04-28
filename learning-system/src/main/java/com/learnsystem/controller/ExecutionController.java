@@ -8,6 +8,7 @@ import com.learnsystem.model.User;
 import com.learnsystem.repository.ProblemRepository;
 import com.learnsystem.service.ComplexityAnalyzer;
 import com.learnsystem.service.EvaluationService;
+import com.learnsystem.service.ExecutionLoadBalancer;
 import com.learnsystem.service.ExecutionService;
 import com.learnsystem.service.JobQueueService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,13 +30,14 @@ import java.util.LinkedHashMap;
 @RequiredArgsConstructor
 public class ExecutionController {
 
-    private final ExecutionService    executionService;
-    private final EvaluationService   evaluationService;
-    private final ComplexityAnalyzer  complexityAnalyzer;
-    private final ExecutionRateLimiter rateLimiter;
-    private final JobQueueService     jobQueue;
-    private final ObjectMapper        objectMapper;
-    private final ProblemRepository   problemRepo;
+    private final ExecutionService      executionService;
+    private final EvaluationService     evaluationService;
+    private final ComplexityAnalyzer    complexityAnalyzer;
+    private final ExecutionRateLimiter  rateLimiter;
+    private final JobQueueService       jobQueue;
+    private final ObjectMapper          objectMapper;
+    private final ProblemRepository     problemRepo;
+    private final ExecutionLoadBalancer loadBalancer;
 
     // POST /api/execute — run code freely (rate-limited: 10 runs/min per user)
     @PostMapping("/execute")
@@ -193,6 +195,24 @@ public class ExecutionController {
                     return ResponseEntity.ok(resp);
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ── Execution pool status (admin) ─────────────────────────────────────────
+
+    /**
+     * GET /api/admin/execution-pool
+     * Returns the current state of all execution service instances.
+     * Useful for monitoring which instances are HEALTHY / BUSY / DEAD,
+     * how many were auto-spawned, and when they last hit capacity.
+     */
+    @GetMapping("/admin/execution-pool")
+    public ResponseEntity<?> executionPoolStatus() {
+        var stats = loadBalancer.getStats();
+        return ResponseEntity.ok(Map.of(
+            "poolSize",       loadBalancer.getPoolSize(),
+            "loadBalancer",   loadBalancer.isEnabled() ? "enabled" : "disabled (local executor)",
+            "instances",      stats
+        ));
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

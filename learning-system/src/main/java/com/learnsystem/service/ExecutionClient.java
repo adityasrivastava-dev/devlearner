@@ -1,13 +1,11 @@
 package com.learnsystem.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnsystem.dto.ExecuteResponse;
 import com.learnsystem.dto.SubmitResponse;
 import com.learnsystem.dto.SyntaxCheckResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -20,96 +18,124 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * HTTP client that delegates code execution to the execution microservice.
+ * HTTP client that delegates code execution to the execution microservice pool.
  *
- * When execution.service.url is blank (default), isEnabled() returns false
- * and the caller falls back to the local ExecutionService. No code changes
- * are needed to move between local and remote execution — just set the env var.
+ * Routing strategy:
+ *   1. Ask ExecutionLoadBalancer for the next HEALTHY instance (round-robin).
+ *   2. If the instance returns HTTP 429 (at capacity), mark it BUSY in the load
+ *      balancer and retry with the next available instance.
+ *   3. The load balancer auto-spawns a new Docker container when all instances
+ *      are BUSY (if execution.autoscale.enabled=true).
+ *   4. If a connection fails (server down), mark the instance DEAD and retry.
  *
- * Deployment:
- *   Render main API:  EXECUTION_SERVICE_URL=http://execution-service:8081
- *   Local dev:        leave unset (uses local executor)
+ * isEnabled() returns false when no URLs are configured — callers fall back
+ * to the local ExecutionService with zero code changes.
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class ExecutionClient {
 
-    @Value("${execution.service.url:}")
-    private String serviceUrl;
-
-    private final ObjectMapper objectMapper;
+    private final ExecutionLoadBalancer loadBalancer;
+    private final ObjectMapper          objectMapper;
 
     private static final HttpClient HTTP = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
             .build();
 
-    /** True when a remote execution service URL is configured. */
-    public boolean isEnabled() {
-        return serviceUrl != null && !serviceUrl.isBlank();
-    }
+    /** True when at least one execution service URL is configured. */
+    public boolean isEnabled() { return loadBalancer.isEnabled(); }
 
-    // ── Run ───────────────────────────────────────────────────────────────────
+    // ── Public API ────────────────────────────────────────────────────────────
 
     public ExecuteResponse execute(String code, String stdin, String javaVersion, String harness) {
-        Map<String, Object> body = Map.of(
+        return post("/internal/execute", Map.of(
             "code",        code,
-            "stdin",       stdin != null ? stdin : "",
-            "javaVersion", javaVersion != null ? javaVersion : "17",
-            "harness",     harness != null ? harness : ""
-        );
-        return post("/internal/execute", body, ExecuteResponse.class);
+            "stdin",       stdin        != null ? stdin        : "",
+            "javaVersion", javaVersion  != null ? javaVersion  : "17",
+            "harness",     harness      != null ? harness      : ""
+        ), ExecuteResponse.class);
     }
-
-    // ── Submit ────────────────────────────────────────────────────────────────
 
     public record TestCaseInput(String input, String expectedOutput) {}
 
     public SubmitResponse submit(String code, String javaVersion, String harness,
                                  List<TestCaseInput> testCases) {
-        Map<String, Object> body = Map.of(
+        return post("/internal/submit", Map.of(
             "code",        code,
-            "javaVersion", javaVersion != null ? javaVersion : "17",
-            "harness",     harness != null ? harness : "",
+            "javaVersion", javaVersion  != null ? javaVersion  : "17",
+            "harness",     harness      != null ? harness      : "",
             "testCases",   testCases
-        );
-        return post("/internal/submit", body, SubmitResponse.class);
+        ), SubmitResponse.class);
     }
-
-    // ── Syntax check ──────────────────────────────────────────────────────────
 
     public SyntaxCheckResponse syntaxCheck(String code, String javaVersion) {
-        Map<String, Object> body = Map.of(
+        return post("/internal/syntax-check", Map.of(
             "code",        code,
-            "javaVersion", javaVersion != null ? javaVersion : "17"
-        );
-        return post("/internal/syntax-check", body, SyntaxCheckResponse.class);
+            "javaVersion", javaVersion  != null ? javaVersion  : "17"
+        ), SyntaxCheckResponse.class);
     }
 
-    // ── HTTP helper ───────────────────────────────────────────────────────────
+    // ── HTTP with retry-on-429 ────────────────────────────────────────────────
 
     private <T> T post(String path, Object body, Class<T> responseType) {
-        try {
-            String json = objectMapper.writeValueAsString(body);
-            HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(serviceUrl + path))
-                    .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(30))
-                    .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .build();
+        // Try each instance at most once; cap at 3 attempts to keep latency bounded
+        int maxAttempts = Math.min(loadBalancer.getPoolSize() + 1, 3);
+        Exception lastError = null;
 
-            HttpResponse<String> res = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
-
-            if (res.statusCode() != 200) {
-                log.error("Execution service returned {} for {}: {}", res.statusCode(), path, res.body());
-                throw new RuntimeException("Execution service error: HTTP " + res.statusCode());
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            String url;
+            try {
+                url = loadBalancer.getNextUrl();
+            } catch (Exception e) {
+                throw new RuntimeException("No execution service available: " + e.getMessage(), e);
             }
 
-            return objectMapper.readValue(res.body(), responseType);
+            try {
+                String json = objectMapper.writeValueAsString(body);
 
-        } catch (IOException | InterruptedException e) {
-            log.error("Execution service call failed for {}: {}", path, e.getMessage());
-            throw new RuntimeException("Execution service unavailable: " + e.getMessage(), e);
+                HttpRequest req = HttpRequest.newBuilder()
+                        .uri(URI.create(url + path))
+                        .header("Content-Type", "application/json")
+                        .timeout(Duration.ofSeconds(35))
+                        .POST(HttpRequest.BodyPublishers.ofString(json))
+                        .build();
+
+                HttpResponse<String> res = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
+
+                if (res.statusCode() == 200) {
+                    loadBalancer.markHealthy(url);
+                    return objectMapper.readValue(res.body(), responseType);
+                }
+
+                if (res.statusCode() == 429) {
+                    // Instance semaphore is full — mark it BUSY and try the next one.
+                    // ExecutionLoadBalancer will spawn a new container if all are BUSY.
+                    log.warn("[attempt {}/{}] Instance {} at capacity (429) — routing to next", attempt + 1, maxAttempts, url);
+                    loadBalancer.markBusy(url);
+                    lastError = new RuntimeException("HTTP 429 from " + url);
+                    continue;
+                }
+
+                if (res.statusCode() == 503) {
+                    log.warn("[attempt {}/{}] Instance {} unavailable (503)", attempt + 1, maxAttempts, url);
+                    loadBalancer.markDead(url);
+                    lastError = new RuntimeException("HTTP 503 from " + url);
+                    continue;
+                }
+
+                // Any other non-200 response — do not retry (likely a code/request error)
+                log.error("Instance {} returned {} for {}: {}", url, res.statusCode(), path, res.body());
+                throw new RuntimeException("Execution service error: HTTP " + res.statusCode());
+
+            } catch (IOException | InterruptedException e) {
+                // Connection refused / timeout — instance is down
+                log.warn("[attempt {}/{}] Instance {} unreachable: {}", attempt + 1, maxAttempts, url, e.getMessage());
+                loadBalancer.markDead(url);
+                lastError = e;
+            }
         }
+
+        throw new RuntimeException("All execution instances failed after " + maxAttempts + " attempt(s)", lastError);
     }
 }

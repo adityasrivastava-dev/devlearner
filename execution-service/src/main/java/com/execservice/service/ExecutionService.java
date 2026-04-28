@@ -6,7 +6,9 @@ import com.execservice.dto.SyntaxCheckResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -153,9 +155,11 @@ public class ExecutionService {
         String className = extractPublicClassName(code);
         String runClass  = useHarness ? "__Runner__" : className;
 
+        // HTTP 429 — load balancer detects this and routes to another instance
         if (!gate().tryAcquire()) {
-            return ExecuteResponse.builder().success(false).status("TOO_MANY_REQUESTS")
-                    .error("Server is busy. Please retry in a few seconds.").build();
+            log.warn("Concurrency gate full ({} slots) — returning 429", maxConcurrent);
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Execution service at capacity. Load balancer will retry on another instance.");
         }
         Path tempDir = null;
         try {
@@ -169,6 +173,8 @@ public class ExecutionService {
                         .error(formatCompileErrors(cr.errors())).compileErrors(cr.errors()).build();
             }
             return run(tempDir, stdin, runClass);
+        } catch (ResponseStatusException rse) {
+            throw rse;
         } catch (Exception e) {
             log.error("Execution failed", e);
             return ExecuteResponse.builder().success(false).status("RUNTIME_ERROR")
@@ -194,10 +200,9 @@ public class ExecutionService {
         String runClass  = useHarness ? "__Runner__" : className;
 
         if (!gate().tryAcquire()) {
-            ExecuteResponse busy = ExecuteResponse.builder().success(false)
-                    .status("TOO_MANY_REQUESTS")
-                    .error("Server is busy. Please retry in a few seconds.").build();
-            return Collections.nCopies(inputs.size(), busy);
+            log.warn("Concurrency gate full ({} slots) — returning 429", maxConcurrent);
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Execution service at capacity. Load balancer will retry on another instance.");
         }
         Path tempDir = null;
         try {
@@ -242,6 +247,8 @@ public class ExecutionService {
             }
             return results;
 
+        } catch (ResponseStatusException rse) {
+            throw rse;
         } catch (Exception e) {
             log.error("Batch execution failed", e);
             ExecuteResponse err = ExecuteResponse.builder().success(false)
