@@ -92,6 +92,10 @@ private String youtubeUrls;
 @Column(columnDefinition = "TEXT")
 private String prerequisites;
 
+/** JSON array of related topic IDs, e.g. [1,5,12] — shown as chips in theory tab */
+@Column(name = "related_topic_ids", columnDefinition = "TEXT")
+private String relatedTopicIds;
+
 // ── Audit ─────────────────────────────────────────────────────────────────
 
 @Column(name = "created_at", updatable = false)

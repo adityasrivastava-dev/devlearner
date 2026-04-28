@@ -389,6 +389,20 @@
   color: var(--pink2);
 }
 
+/* ── Related topics card ────────────────────────────────────────────────────── */
+.relatedCard {
+  border-left: 3px solid var(--accent2);
+  background: rgba(var(--accent2-rgb, 100,180,255),.04);
+}
+.relatedCard .cardTitle { color: var(--accent2); }
+.relatedChips { display: flex; flex-wrap: wrap; gap: 8px; }
+.relatedChip {
+  padding: 4px 12px; border-radius: 20px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  color: var(--text2); font-size: 12px; cursor: pointer; transition: .15s;
+}
+.relatedChip:hover { background: var(--accent2); color: #000; border-color: var(--accent2); }
+
 /* ── YouTube videos card ───────────────────────────────────────────────────── */
 .youtubeCard {
   border-left: 3px solid var(--red);

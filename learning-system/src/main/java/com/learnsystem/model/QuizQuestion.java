@@ -60,4 +60,8 @@ private String difficulty = "MEDIUM"; // "EASY" | "MEDIUM" | "HARD"
 
 @Column(length = 100)
 private String tags;                // comma-separated: "collections,hashmap,performance"
+
+/** Topic category tag for custom quiz builder — matches Topic.Category enum name */
+@Column(name = "topic_tag", length = 60)
+private String topicTag;
 }

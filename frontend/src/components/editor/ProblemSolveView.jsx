@@ -35,6 +35,9 @@ export default function ProblemSolveView({
   const [savedAt,         setSavedAt]         = useState(null);
   // ── Recall drill ─────────────────────────────────────────────────────────
   const [recallOpen,      setRecallOpen]      = useState(false);
+  // ── Blind mode — hides examples/hints to simulate real interview ─────────
+  const [blindMode,       setBlindMode]       = useState(false);
+  const [clarifyingNotes, setClarifyingNotes] = useState('');
   // ── Reflect answers (saved to localStorage) ──────────────────────────────
   const [reflectAnswers,  setReflectAnswers]  = useState(() => {
     try { return JSON.parse(localStorage.getItem(`devlearn_reflect_${problemId}`) || 'null') || {}; }
@@ -133,6 +136,9 @@ export default function ProblemSolveView({
   const _pid = Number(problemId);
   const isSolved = submitResult?.allPassed ||
     solvedIds.map(Number).includes(_pid);
+  // Editorial accessible: solved OR 2+ failed attempts this session
+  const failedThisSession = (submitResult && !submitResult.allPassed) ? 1 : 0;
+  const editorialUnlocked = isSolved || (submissionHistory.filter((s) => s.status !== 'ACCEPTED').length + failedThisSession) >= 2;
 
   // ── Does this problem have test cases for automated judging? ──────────────
   const hasTestCases = (() => {
@@ -331,7 +337,7 @@ export default function ProblemSolveView({
     // BUG FIX: editorial query has enabled:false so it never runs automatically.
     // When user clicks the editorial tab (on a previously-solved problem, or after
     // solving this session), manually trigger the fetch.
-    if (tab === 'editorial' && isSolved) refetchEditorial();
+    if (tab === 'editorial' && editorialUnlocked) refetchEditorial();
   }
 
   if (isLoading) return (
@@ -380,6 +386,15 @@ export default function ProblemSolveView({
             </div>
           )}
 
+          <button
+            className={styles.iconBtn}
+            onClick={() => setBlindMode((v) => !v)}
+            title={blindMode ? 'Exit Blind Mode — restore examples and hints' : 'Blind Mode — hide examples/hints, simulate real interview'}
+            style={{ color: blindMode ? 'var(--accent)' : undefined }}
+          >
+            {blindMode ? '👁🗨' : '🙈'}
+          </button>
+
           {onThemeToggle && (
             <button className={styles.iconBtn} onClick={onThemeToggle} title="Toggle theme">
               {currentTheme === 'dark' ? '☀️' : '🌙'}
@@ -427,19 +442,22 @@ export default function ProblemSolveView({
             ))}
           </div>
           <div className={styles.descBody}>
-            {activeDescTab === 'desc'        && <DescriptionTab problem={problem} diff={diff} />}
+            {activeDescTab === 'desc'        && <DescriptionTab problem={problem} diff={diff} blindMode={blindMode} clarifyingNotes={clarifyingNotes} onClarifyChange={setClarifyingNotes} />}
             {activeDescTab === 'approach'    && <ApproachTab problemId={problemId} value={approach} onChange={setApproach} />}
-            {activeDescTab === 'hints'       && <HintsTab problem={problem} hintsShown={hintsShown} onShowHint={(n) => setHintsShown(Math.max(hintsShown, n))} />}
+            {activeDescTab === 'hints'       && (blindMode
+              ? <div style={{ padding: 20, color: 'var(--text3)', fontSize: 13 }}>🙈 Hints are hidden in Blind Mode.</div>
+              : <HintsTab problem={problem} hintsShown={hintsShown} onShowHint={(n) => setHintsShown(Math.max(hintsShown, n))} />
+            )}
             {activeDescTab === 'submissions' && <SubmissionsTab history={submissionHistory} />}
             {activeDescTab === 'editorial'   && (
-              isSolved ? (
+              editorialUnlocked ? (
                 <EditorialTab problem={problem} editorial={editorial} />
               ) : (
                 <div className={styles.editorialLocked}>
                   <span>🔒</span>
-                  <p>Solve the problem to unlock the editorial.</p>
+                  <p>Editorial is locked.</p>
                   <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
-                    Submit a correct solution to see the approach and solution code.
+                    Solve the problem OR make 2 attempts to unlock the editorial.
                   </p>
                 </div>
               )
@@ -689,7 +707,7 @@ function formatTimer(sec) {
 }
 
 // ── Description tab ───────────────────────────────────────────────────────────
-function DescriptionTab({ problem, diff }) {
+function DescriptionTab({ problem, diff, blindMode, clarifyingNotes, onClarifyChange }) {
   return (
     <div className={styles.descContent}>
       <div className={styles.probMeta}>
@@ -697,39 +715,60 @@ function DescriptionTab({ problem, diff }) {
         <h2 className={styles.probTitle}>{problem.title}</h2>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
           <span className={`badge ${diff.cls}`}>{diff.label}</span>
-          {problem.pattern && (
+          {problem.pattern && !blindMode && (
             <span className="badge" style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border2)', fontSize: 10 }}>
               🏷 {problem.pattern}
             </span>
           )}
+          {blindMode && (
+            <span className="badge" style={{ background: 'var(--accent)', color: '#000', fontSize: 10 }}>
+              🙈 BLIND MODE
+            </span>
+          )}
         </div>
       </div>
-      <div className={styles.probDesc}><MDText text={problem.description} /></div>
-      {(problem.inputFormat || problem.outputFormat) && (
-        <div className={styles.formatBlock}>
-          {problem.inputFormat  && <p><strong>Input:</strong> {problem.inputFormat}</p>}
-          {problem.outputFormat && <p><strong>Output:</strong> {problem.outputFormat}</p>}
+      {blindMode ? (
+        <div style={{ padding: '16px 0' }}>
+          <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
+            Blind mode is on. No examples or hints are shown. Write your clarifying questions below before coding.
+          </p>
+          <textarea
+            style={{ width: '100%', background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 6,
+              padding: '10px', color: 'var(--text)', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', minHeight: 120 }}
+            placeholder="Write clarifying questions here (e.g. Can the array be empty? Are values unique?)…"
+            value={clarifyingNotes}
+            onChange={(e) => onClarifyChange(e.target.value)}
+          />
         </div>
-      )}
-      <div className={styles.exampleBlock}>
-        <div className={styles.exLabel}>Example</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 3 }}>Input</div>
-            <pre className={styles.exPre}>{problem.sampleInput || 'N/A'}</pre>
+      ) : (
+        <>
+          <div className={styles.probDesc}><MDText text={problem.description} /></div>
+          {(problem.inputFormat || problem.outputFormat) && (
+            <div className={styles.formatBlock}>
+              {problem.inputFormat  && <p><strong>Input:</strong> {problem.inputFormat}</p>}
+              {problem.outputFormat && <p><strong>Output:</strong> {problem.outputFormat}</p>}
+            </div>
+          )}
+          <div className={styles.exampleBlock}>
+            <div className={styles.exLabel}>Example</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div>
+                <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 3 }}>Input</div>
+                <pre className={styles.exPre}>{problem.sampleInput || 'N/A'}</pre>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 3 }}>Output</div>
+                <pre className={styles.exPre}>{problem.sampleOutput || 'N/A'}</pre>
+              </div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 3 }}>Output</div>
-            <pre className={styles.exPre}>{problem.sampleOutput || 'N/A'}</pre>
-          </div>
-        </div>
-      </div>
-      {/* Constraints section */}
-      {problem.constraints && (
-        <div className={styles.constraintsBlock}>
-          <div className={styles.exLabel}>Constraints</div>
-          <pre className={styles.exPre} style={{ whiteSpace: 'pre-wrap' }}>{problem.constraints}</pre>
-        </div>
+          {problem.constraints && (
+            <div className={styles.constraintsBlock}>
+              <div className={styles.exLabel}>Constraints</div>
+              <pre className={styles.exPre} style={{ whiteSpace: 'pre-wrap' }}>{problem.constraints}</pre>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

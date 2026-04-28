@@ -48,6 +48,7 @@ public class ProblemsController {
             @RequestParam(required = false) String  difficulty,
             @RequestParam(required = false) String  pattern,
             @RequestParam(required = false) String  search,
+            @RequestParam(required = false) String  company,
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
 
@@ -60,6 +61,7 @@ public class ProblemsController {
         String diff  = blank(difficulty) ? null : difficulty.toUpperCase();
         String pat   = blank(pattern)    ? null : pattern;
         String srch  = blank(search)     ? null : search.trim();
+        String comp  = blank(company)    ? null : company.trim();
 
         // Validate category & difficulty enum values; ignore unknown values
         if (cat != null) {
@@ -67,10 +69,10 @@ public class ProblemsController {
             catch (IllegalArgumentException e) { cat = null; }
         }
 
-        log.debug("Problems list: category={} difficulty={} pattern={} search={} page={}", cat, diff, pat, srch, page);
+        log.debug("Problems list: category={} difficulty={} pattern={} search={} company={} page={}", cat, diff, pat, srch, comp, page);
 
         Page<com.learnsystem.model.Problem> pageResult =
-                problemRepo.findPageFiltered(cat, topicId, diff, pat, srch, pageable);
+                problemRepo.findPageFiltered(cat, topicId, diff, pat, srch, comp, pageable);
 
         List<ProblemSummaryDto> content = pageResult.getContent()
                 .stream()
@@ -105,6 +107,17 @@ public class ProblemsController {
                 .map(row -> { Map<String,Object> m = new LinkedHashMap<>(); m.put("name", (String)row[0]); m.put("count", (Long)row[1]); return m; })
                 .collect(Collectors.toList());
 
+        // Company tags with counts
+        List<Map<String, Object>> companyCounts;
+        try {
+            companyCounts = problemRepo.findCompanyCounts().stream()
+                    .map(row -> { Map<String,Object> m = new LinkedHashMap<>(); m.put("name", (String)row[0]); m.put("count", ((Number)row[1]).longValue()); return m; })
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.warn("Company counts query failed (JSON_TABLE not supported?): {}", e.getMessage());
+            companyCounts = List.of();
+        }
+
         // Legacy flat lists (kept for backward compat)
         List<String> patterns    = patternCounts.stream().map(m -> (String)m.get("name")).collect(Collectors.toList());
         List<String> categories  = categoryCounts.stream().map(m -> (String)m.get("name")).collect(Collectors.toList());
@@ -115,6 +128,7 @@ public class ProblemsController {
         filters.put("patterns",      patterns);
         filters.put("patternCounts", patternCounts);
         filters.put("categoryCounts", categoryCounts);
+        filters.put("companyCounts", companyCounts);
         return ResponseEntity.ok(filters);
     }
 

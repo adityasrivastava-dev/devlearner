@@ -49,18 +49,23 @@ public ResponseEntity<?> getEditorial(
 		return ResponseEntity.notFound().build();
 	}
 
-	// Check user has an accepted submission for this problem
+	// Check unlock conditions for this problem
 	List<Submission> submissions = submissionRepo
 			.findByUserIdAndProblemIdOrderByCreatedAtDesc(user.getId(), id);
 
-	boolean hasSolved = submissions.stream()
-			.anyMatch(s -> "ACCEPTED".equalsIgnoreCase(s.getStatus()));
+	boolean hasSolved      = submissions.stream().anyMatch(s -> "ACCEPTED".equalsIgnoreCase(s.getStatus()));
+	long    failedAttempts = submissions.stream().filter(s -> !"ACCEPTED".equalsIgnoreCase(s.getStatus())).count();
 
-	if (!hasSolved) {
-		log.warn("Editorial locked: problemId={} userId={} — not solved yet", id, user.getId());
+	// Unlock after: ACCEPTED, OR 2+ failed attempts (struggle unlock)
+	boolean unlocked = hasSolved || failedAttempts >= 2;
+
+	if (!unlocked) {
+		log.warn("Editorial locked: problemId={} userId={} failedAttempts={}", id, user.getId(), failedAttempts);
 		return ResponseEntity.status(403).body(Map.of(
-				"error",   "Editorial locked",
-				"message", "Solve the problem first to unlock the editorial."
+				"error",        "Editorial locked",
+				"message",      "Solve the problem or make 2 attempts to unlock the editorial.",
+				"failedAttempts", failedAttempts,
+				"attemptsNeeded", 2
 		));
 	}
 	log.info("Editorial accessed: problemId={} userId={}", id, user.getId());

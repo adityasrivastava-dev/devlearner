@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { topicsApi, QUERY_KEYS } from '../../api';
 import EmptyState from '../shared/EmptyState';
 import styles from './TopicView.module.css';
 
@@ -130,6 +133,35 @@ function YoutubeVideosCard({ raw }) {
   );
 }
 
+// ── Related Topics chips ──────────────────────────────────────────────────────
+function RelatedTopicsCard({ relatedIds }) {
+  const navigate = useNavigate();
+  const ids = (() => { try { return JSON.parse(relatedIds || '[]'); } catch { return []; } })();
+  const { data: allTopics = [] } = useQuery({
+    queryKey: QUERY_KEYS.topics,
+    queryFn: () => topicsApi.getAll(),
+    staleTime: 10 * 60 * 1000,
+  });
+  const related = allTopics.filter((t) => ids.includes(t.id));
+  if (!related.length) return null;
+  return (
+    <div className={`${styles.theoryCard} ${styles.relatedCard}`}>
+      <div className={styles.cardTitle}>🔗 Related Topics</div>
+      <div className={styles.relatedChips}>
+        {related.map((t) => (
+          <button
+            key={t.id}
+            className={styles.relatedChip}
+            onClick={() => navigate(`/?topic=${t.id}`)}
+          >
+            {t.title}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Theory Gate ───────────────────────────────────────────────────────────────
 function TheoryGate({ gate, completing, error, onComplete, onPractice }) {
   const [note, setNote] = useState(gate?.theoryNote ?? '');
@@ -238,6 +270,7 @@ export default function TopicTheoryTab({ topic, gate, gateLoading, completing, c
         </div>
       )}
       {topic.youtubeUrls && <YoutubeVideosCard raw={topic.youtubeUrls} />}
+      {topic.relatedTopicIds && <RelatedTopicsCard relatedIds={topic.relatedTopicIds} />}
       {!topic.description && !topic.memoryAnchor && !topic.story && !topic.analogy && !topic.firstPrinciples && !topic.starterCode && (
         <EmptyState icon="✍️" title="Theory content not yet written." hint="An admin needs to add content for this topic." compact />
       )}

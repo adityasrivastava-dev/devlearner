@@ -120,6 +120,10 @@ private String pattern;
 @Column(name = "code_harness", columnDefinition = "LONGTEXT")
 private String codeHarness;
 
+/** JSON array of company names, e.g. ["Amazon","Google","Microsoft"] */
+@Column(columnDefinition = "TEXT")
+private String companies;
+
 // ── Audit ─────────────────────────────────────────────────────────────────
 
 @Column(name = "created_at", updatable = false)

@@ -1,0 +1,82 @@
+{
+  "batchName": "B33-virtual-threads",
+  "skipExisting": true,
+  "topics": [
+    {
+      "title": "Virtual Threads (Project Loom)",
+      "category": "ADVANCED_JAVA",
+      "subCategory": "Java 21+",
+      "displayOrder": 33,
+      "description": "Virtual threads are lightweight threads managed by the JVM, not the OS. Introduced in Java 21 (GA), they allow millions of concurrent threads without the memory overhead of platform (OS) threads. Each virtual thread costs ~1KB on the heap vs ~1MB for a platform thread. Virtual threads are ideal for I/O-bound workloads (HTTP calls, DB queries, file reads) where threads spend most of their time blocked waiting.",
+      "story": "Before virtual threads, a bank had 200 tellers (platform threads) to serve customers. If a teller was helping a customer fill out a form (waiting for I/O), they stood idle — doing nothing but consuming salary (memory). Virtual threads are like giving each customer a slip of paper with a number. When a customer needs to wait, they sit down and the teller helps someone else. The teller (carrier thread) is always busy, but millions of customers can have their own 'virtual teller' experience simultaneously.",
+      "analogy": "Platform thread = 1 OS thread × 1MB stack = 4,096 threads max on a 4GB server. Virtual thread = 1 JVM-managed fiber × ~1KB heap = millions of threads. Carrier thread = actual OS thread running virtual threads. Pinning = virtual thread stuck to carrier (avoid: synchronized blocks, native code). Structured concurrency = StructuredTaskScope — child tasks cancelled when parent fails.",
+      "memoryAnchor": "Thread.ofVirtual().start(runnable). Thread.startVirtualThread(runnable). Executors.newVirtualThreadPerTaskExecutor(). Virtual threads are daemon threads by default. Do NOT pool virtual threads — create on demand. synchronized blocks pin virtual threads to carrier — use ReentrantLock instead. Virtual threads shine for I/O-bound tasks. Platform threads needed for CPU-bound work. Java 21: GA. Java 19-20: Preview.",
+      "firstPrinciples": "Platform threads map 1:1 to OS threads. OS threads have fixed stack memory allocated at creation (~1MB). The OS scheduler context-switches between them — expensive at thousands of threads. Virtual threads are managed in JVM heap as continuations. When a virtual thread blocks on I/O, the JVM unmounts it from the carrier thread (saves its stack to heap), freeing the carrier to run another virtual thread. No OS context switch occurs — the JVM does the scheduling.",
+      "bruteForce": "Thread pool with fixed size (e.g. 200 threads). When a thread blocks on I/O, it holds the OS thread even while idle. Adding more tasks beyond pool size causes queuing. Scaling requires increasing pool size or adding servers.",
+      "optimizedApproach": "One virtual thread per task via Executors.newVirtualThreadPerTaskExecutor(). Each I/O operation mounts/unmounts from carrier thread automatically. No pooling needed — cheap to create. Server handles 100x more concurrent connections on same hardware.",
+      "whenToUse": "Web servers handling thousands of concurrent HTTP requests (Tomcat, Netty, Spring Boot). Database connection handlers. File reading/writing pipelines. Any I/O-bound workload. NOT for: CPU-intensive tasks (use ForkJoinPool), very short tasks where overhead matters, code with heavy synchronized blocks (causes pinning).",
+      "examples": [
+        {
+          "displayOrder": 1,
+          "title": "Virtual Threads vs Platform Threads",
+          "code": "import java.util.concurrent.*;\nimport java.time.*;\n\npublic class VirtualThreadsDemo {\n\n    // Simulated I/O-bound task (sleep = blocking like a DB query)\n    static Runnable ioTask(int id) {\n        return () -> {\n            try {\n                Thread.sleep(100); // 100ms blocking I/O\n                // System.out.println(\"Task \" + id + \" done on: \" + Thread.currentThread());\n            } catch (InterruptedException e) { Thread.currentThread().interrupt(); }\n        };\n    }\n\n    public static void main(String[] args) throws Exception {\n        int taskCount = 10_000;\n\n        // ── Platform threads (100-thread pool) ────────────────────\n        Instant t1 = Instant.now();\n        try (var pool = Executors.newFixedThreadPool(100)) {\n            var futures = new java.util.ArrayList<Future<?>>();\n            for (int i = 0; i < taskCount; i++)\n                futures.add(pool.submit(ioTask(i)));\n            for (var f : futures) f.get();\n        }\n        System.out.println(\"Platform threads: \" + Duration.between(t1, Instant.now()).toMillis() + \"ms\");\n        // ~10 seconds (10,000 tasks / 100 threads × 100ms each)\n\n        // ── Virtual threads (one per task) ────────────────────────\n        Instant t2 = Instant.now();\n        try (var vpool = Executors.newVirtualThreadPerTaskExecutor()) {\n            var futures = new java.util.ArrayList<Future<?>>();\n            for (int i = 0; i < taskCount; i++)\n                futures.add(vpool.submit(ioTask(i)));\n            for (var f : futures) f.get();\n        }\n        System.out.println(\"Virtual threads:   \" + Duration.between(t2, Instant.now()).toMillis() + \"ms\");\n        // ~100ms (all 10,000 run in parallel on carrier threads)\n\n        // ── Direct creation ───────────────────────────────────────\n        Thread vt = Thread.ofVirtual().name(\"my-vthread\").start(() -> {\n            System.out.println(\"Running on: \" + Thread.currentThread());\n            System.out.println(\"Is virtual: \" + Thread.currentThread().isVirtual());\n        });\n        vt.join();\n    }\n}",
+          "explanation": "10,000 tasks each sleeping 100ms. Platform thread pool of 100: needs 10s (100 batches × 100ms). Virtual threads: all 10,000 run concurrently, carriers unmount during sleep, total ~100ms. newVirtualThreadPerTaskExecutor() is the standard way in Java 21. Thread.ofVirtual().start() creates one-off virtual threads. isVirtual() checks the type.",
+          "realWorldUse": "Spring Boot with Tomcat: set tomcat.threads.virtual=true (Spring 3.2+) to use virtual threads for each request. Each HTTP request gets its own virtual thread — 10,000 concurrent requests handled with ~8 carrier threads (one per CPU core)."
+        }
+      ],
+      "problems": [
+        {
+          "displayOrder": 1,
+          "title": "Count Completions with Virtual Threads",
+          "description": "Simulate 1000 concurrent I/O tasks using virtual threads. Each task sleeps for 10ms (simulating I/O) and increments a shared counter. Print the final count.\n\nUse `Executors.newVirtualThreadPerTaskExecutor()` and an `AtomicInteger` for thread-safe counting.\n\nExpected output: `1000`",
+          "difficulty": "EASY",
+          "pattern": "Virtual Threads, AtomicInteger",
+          "hint1": "Use Executors.newVirtualThreadPerTaskExecutor() with a try-with-resources block.",
+          "hint2": "Submit 1000 tasks, each sleeping 10ms then calling counter.incrementAndGet().",
+          "hint3": "Collect Future<?> in a list and call f.get() on each to wait for all tasks to complete before printing.",
+          "starterCode": "import java.util.concurrent.*;\nimport java.util.concurrent.atomic.*;\nimport java.util.*;\n\npublic class Q1 {\n    public static void main(String[] args) throws Exception {\n        AtomicInteger counter = new AtomicInteger(0);\n        // TODO: run 1000 virtual thread tasks, each sleeping 10ms then incrementing counter\n        // Print final counter value\n    }\n}",
+          "solutionCode": "import java.util.concurrent.*;\nimport java.util.concurrent.atomic.*;\nimport java.util.*;\n\npublic class Q1 {\n    public static void main(String[] args) throws Exception {\n        AtomicInteger counter = new AtomicInteger(0);\n        List<Future<?>> futures = new ArrayList<>();\n        try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {\n            for (int i = 0; i < 1000; i++) {\n                futures.add(exec.submit(() -> {\n                    try { Thread.sleep(10); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }\n                    counter.incrementAndGet();\n                    return null;\n                }));\n            }\n            for (var f : futures) f.get();\n        }\n        System.out.println(counter.get());\n    }\n}",
+          "testCases": "[{\"input\":\"\",\"expectedOutput\":\"1000\"}]",
+          "sampleInput": "",
+          "sampleOutput": "1000",
+          "editorial": "Create an ExecutorService with newVirtualThreadPerTaskExecutor(). Submit 1000 Callable tasks. AtomicInteger ensures thread-safe increment without synchronized. Collect all futures and call get() to wait. Virtual threads handle all 1000 concurrently — runs in ~10ms total.",
+          "companies": "[\"Google\",\"Amazon\",\"Netflix\"]"
+        },
+        {
+          "displayOrder": 2,
+          "title": "ReentrantLock vs synchronized in Virtual Threads",
+          "description": "Virtual threads pin to a carrier thread when inside a `synchronized` block, negating their benefit. Write a program that:\n\n1. Runs 100 tasks — each increments a shared counter 1000 times using `synchronized` (incorrect for virtual threads)\n2. Runs 100 tasks — each increments using `ReentrantLock` (correct for virtual threads)\n\nBoth should print final count = 100000.\n\nPrint:\n```\n100000\n100000\n```",
+          "difficulty": "MEDIUM",
+          "pattern": "ReentrantLock, Virtual Threads",
+          "hint1": "synchronized(lock) { count++ } will pin virtual thread; use lock.lock() / lock.unlock() in finally instead.",
+          "hint2": "ReentrantLock.lock() is a JVM-cooperative blocking point — the virtual thread can unmount from the carrier while waiting.",
+          "hint3": "Use Executors.newVirtualThreadPerTaskExecutor(). Create long[] count = {0} so lambdas can close over it. Wrap lock.unlock() in a finally block.",
+          "starterCode": "import java.util.concurrent.*;\nimport java.util.concurrent.locks.*;\nimport java.util.*;\n\npublic class Q2 {\n    public static void main(String[] args) throws Exception {\n        // Part 1: synchronized (works but pins)\n        // Part 2: ReentrantLock (better for virtual threads)\n    }\n}",
+          "solutionCode": "import java.util.concurrent.*;\nimport java.util.concurrent.locks.*;\nimport java.util.*;\n\npublic class Q2 {\n    public static void main(String[] args) throws Exception {\n        final int TASKS = 100, ITERS = 1000;\n\n        // Part 1: synchronized\n        long[] count1 = {0};\n        Object lock1 = new Object();\n        List<Future<?>> f1 = new ArrayList<>();\n        try (var e = Executors.newVirtualThreadPerTaskExecutor()) {\n            for (int t = 0; t < TASKS; t++)\n                f1.add(e.submit(() -> { for (int i = 0; i < ITERS; i++) synchronized(lock1) { count1[0]++; } return null; }));\n            for (var f : f1) f.get();\n        }\n        System.out.println(count1[0]);\n\n        // Part 2: ReentrantLock\n        long[] count2 = {0};\n        ReentrantLock lock2 = new ReentrantLock();\n        List<Future<?>> f2 = new ArrayList<>();\n        try (var e = Executors.newVirtualThreadPerTaskExecutor()) {\n            for (int t = 0; t < TASKS; t++)\n                f2.add(e.submit(() -> {\n                    for (int i = 0; i < ITERS; i++) {\n                        lock2.lock();\n                        try { count2[0]++; } finally { lock2.unlock(); }\n                    }\n                    return null;\n                }));\n            for (var f : f2) f.get();\n        }\n        System.out.println(count2[0]);\n    }\n}",
+          "testCases": "[{\"input\":\"\",\"expectedOutput\":\"100000\\n100000\"}]",
+          "sampleInput": "",
+          "sampleOutput": "100000\n100000",
+          "editorial": "synchronized blocks cause virtual thread pinning — the carrier thread can't run other virtual threads while one is in a synchronized block. ReentrantLock.lock() is a cooperative blocking point; when the lock is not available, the virtual thread unmounts from its carrier, freeing it. Both produce the correct count — the difference is efficiency under load.",
+          "companies": "[\"Google\",\"Amazon\"]"
+        },
+        {
+          "displayOrder": 3,
+          "title": "Virtual Thread Factory",
+          "description": "Create a named virtual thread factory and use it to run 5 tasks, each printing its thread name and whether it's a virtual thread.\n\nExpected output (order may vary):\n```\nworker-1: virtual=true\nworker-2: virtual=true\nworker-3: virtual=true\nworker-4: virtual=true\nworker-5: virtual=true\n```",
+          "difficulty": "EASY",
+          "pattern": "Virtual Threads",
+          "hint1": "Thread.ofVirtual().name(\"worker-\", 1) creates a factory with auto-incrementing names.",
+          "hint2": "Pass the factory to Executors.newThreadPerTaskExecutor(factory) to get an executor.",
+          "hint3": "Each task: System.out.println(Thread.currentThread().getName() + \": virtual=\" + Thread.currentThread().isVirtual())",
+          "starterCode": "import java.util.concurrent.*;\nimport java.util.*;\n\npublic class Q3 {\n    public static void main(String[] args) throws Exception {\n        // TODO: create named virtual thread factory, run 5 tasks\n    }\n}",
+          "solutionCode": "import java.util.concurrent.*;\nimport java.util.*;\n\npublic class Q3 {\n    public static void main(String[] args) throws Exception {\n        ThreadFactory factory = Thread.ofVirtual().name(\"worker-\", 1).factory();\n        List<Future<?>> futures = new ArrayList<>();\n        try (var exec = Executors.newThreadPerTaskExecutor(factory)) {\n            for (int i = 0; i < 5; i++) {\n                futures.add(exec.submit(() -> {\n                    System.out.println(Thread.currentThread().getName() + \": virtual=\" + Thread.currentThread().isVirtual());\n                    return null;\n                }));\n            }\n            for (var f : futures) f.get();\n        }\n    }\n}",
+          "testCases": "[{\"input\":\"\",\"expectedOutput\":\"worker-1: virtual=true\\nworker-2: virtual=true\\nworker-3: virtual=true\\nworker-4: virtual=true\\nworker-5: virtual=true\"}]",
+          "sampleInput": "",
+          "sampleOutput": "worker-1: virtual=true",
+          "editorial": "Thread.ofVirtual().name(prefix, start) creates a builder with auto-incrementing thread names. .factory() returns a ThreadFactory. Executors.newThreadPerTaskExecutor(factory) creates one thread per task using the factory. isVirtual() returns true for virtual threads. Output order may vary since tasks run concurrently.",
+          "companies": "[\"Amazon\",\"Netflix\"]"
+        }
+      ]
+    }
+  ]
+}

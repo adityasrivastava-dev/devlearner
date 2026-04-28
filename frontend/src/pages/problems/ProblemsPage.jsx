@@ -33,13 +33,14 @@ export default function ProblemsPage() {
     difficulty: searchParams.get('difficulty') || '',
     pattern:    searchParams.get('pattern')    || '',
     search:     searchParams.get('search')     || '',
+    company:    searchParams.get('company')    || '',
     page:       parseInt(searchParams.get('page') || '0', 10),
   }), [searchParams]);
 
   const [searchInput, setSearchInput] = useState(() => searchParams.get('search') || '');
 
   // ── Filter metadata ──────────────────────────────────────────────────────────
-  const { data: meta = { patternCounts: [], categoryCounts: [], patterns: [], categories: [] } } = useQuery({
+  const { data: meta = { patternCounts: [], categoryCounts: [], companyCounts: [], patterns: [], categories: [] } } = useQuery({
     queryKey: QUERY_KEYS.problemFilters,
     queryFn:  problemsApi.getFilters,
     staleTime: 60 * 60 * 1000,
@@ -53,6 +54,7 @@ export default function ProblemsPage() {
       difficulty: filters.difficulty || undefined,
       pattern:    filters.pattern    || undefined,
       search:     filters.search     || undefined,
+      company:    filters.company    || undefined,
       page:       filters.page,
       size:       PAGE_SIZE,
     }),
@@ -134,7 +136,7 @@ export default function ProblemsPage() {
     navigate(`/?openProblem=${p.id}&from=problems`);
   }
 
-  const hasActiveFilter = !!(filters.category || filters.difficulty || filters.pattern || filters.search);
+  const hasActiveFilter = !!(filters.category || filters.difficulty || filters.pattern || filters.search || filters.company);
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
@@ -245,6 +247,31 @@ export default function ProblemsPage() {
                 <span className={styles.catIcon}>{getCatIcon(cat.name)}</span>
                 {CATEGORY_LABELS[cat.name] || cat.name.replace(/_/g, ' ')}
                 <span className={styles.catCount}>{cat.count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Company filter row ──────────────────────────────────────────────── */}
+      {(meta.companyCounts?.length > 0) && (
+        <div className={styles.categorySection}>
+          <div className={styles.categoryRow}>
+            <button
+              className={`${styles.catPill} ${!filters.company ? styles.catPillActive : ''}`}
+              onClick={() => setFilter('company', '')}
+            >
+              <span className={styles.catIcon}>🏢</span>
+              All Companies
+            </button>
+            {meta.companyCounts.map((co) => (
+              <button
+                key={co.name}
+                className={`${styles.catPill} ${filters.company === co.name ? styles.catPillActive : ''}`}
+                onClick={() => setFilter('company', filters.company === co.name ? '' : co.name)}
+              >
+                {co.name}
+                <span className={styles.catCount}>{co.count}</span>
               </button>
             ))}
           </div>

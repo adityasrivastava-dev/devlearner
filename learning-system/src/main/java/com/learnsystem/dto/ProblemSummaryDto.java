@@ -15,7 +15,8 @@ public record ProblemSummaryDto(
         Long   topicId,
         String topicTitle,
         String category,
-        Integer displayOrder
+        Integer displayOrder,
+        String companies
 ) {
     /** Convenience factory — builds from a fully-loaded Problem entity. */
     public static ProblemSummaryDto from(Problem p) {
@@ -28,7 +29,8 @@ public record ProblemSummaryDto(
                 t != null ? t.getId()    : null,
                 t != null ? t.getTitle() : null,
                 t != null && t.getCategory() != null ? t.getCategory().name() : null,
-                p.getDisplayOrder()
+                p.getDisplayOrder(),
+                p.getCompanies()
         );
     }
 }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { streakApi, srsApi, submissionsApi, QUERY_KEYS } from '../../api';
+import { streakApi, srsApi, submissionsApi, analyticsApi, QUERY_KEYS } from '../../api';
 import styles from './DashboardPage.module.css';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -150,6 +150,12 @@ export default function DashboardPage() {
     queryKey: QUERY_KEYS.heatmap,
     queryFn: submissionsApi.getHeatmap,
     staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: analytics = {} } = useQuery({
+    queryKey: QUERY_KEYS.analyticsDashboard,
+    queryFn: analyticsApi.getDashboard,
+    staleTime: 5 * 60 * 1000,
   });
 
   // ── Mutations ────────────────────────────────────────────────────────────
@@ -325,6 +331,37 @@ export default function DashboardPage() {
             ? <div className={styles.skeletonBlock} style={{ height: 100 }} />
             : <Heatmap data={heatmapRaw} />}
         </div>
+
+        {/* ── Focus Today ─────────────────────────────────────────────── */}
+        {analytics?.weakAreas?.length > 0 && (
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <h2 className={styles.cardTitle}>Focus Today</h2>
+              <span className={styles.cardSub}>Weakest topics by confidence score</span>
+            </div>
+            <div className={styles.focusList}>
+              {(analytics.weakAreas || []).slice(0, 3).map((area) => (
+                <button
+                  key={area.topicId || area.topic}
+                  className={styles.focusItem}
+                  onClick={() => navigate(`/?topic=${area.topicId}`)}
+                >
+                  <div className={styles.focusLeft}>
+                    <span className={styles.focusIcon}>🎯</span>
+                    <div>
+                      <div className={styles.focusTitle}>{area.topic || area.topicTitle}</div>
+                      <div className={styles.focusMeta}>
+                        Confidence: {Math.round((area.confidenceScore ?? area.confidence ?? 0) * 100)}%
+                        {area.errorRate != null && ` · Error rate: ${Math.round(area.errorRate * 100)}%`}
+                      </div>
+                    </div>
+                  </div>
+                  <span className={styles.focusArrow}>→</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── SRS Queue ───────────────────────────────────────────────── */}
         <div className={styles.srsSection}>

@@ -402,6 +402,21 @@ export const roadmapsApi = {
     http.delete(`/api/roadmaps/${id}`).then((r) => r.data),
 };
 
+// ─── Interview Log ────────────────────────────────────────────────────────────
+export const interviewLogsApi = {
+  getAll: () =>
+    http.get('/api/interview-logs').then((r) => r.data).catch(() => []),
+
+  create: (data) =>
+    http.post('/api/interview-logs', data).then((r) => r.data),
+
+  update: (id, data) =>
+    http.put(`/api/interview-logs/${id}`, data).then((r) => r.data),
+
+  delete: (id) =>
+    http.delete(`/api/interview-logs/${id}`).then((r) => r.data),
+};
+
 // ─── Analytics ────────────────────────────────────────────────────────────────
 export const analyticsApi = {
   getDashboard: () =>
@@ -545,6 +560,7 @@ export const QUERY_KEYS = {
   search:          (q)   => ['search', q],
   notifications:         ['notifications'],
   learningPath:          ['learningPath'],
+  interviewLogs:         ['interviewLogs'],
 };
 // ─── Spaced Repetition ────────────────────────────────────────────────────────
 export const srsApi = {

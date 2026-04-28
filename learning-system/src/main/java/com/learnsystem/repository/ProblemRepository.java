@@ -53,6 +53,18 @@ List<String> findDistinctPatterns();
 @Query("SELECT p.pattern, COUNT(p) FROM Problem p WHERE p.pattern IS NOT NULL GROUP BY p.pattern ORDER BY COUNT(p) DESC")
 List<Object[]> findPatternCounts();
 
+/** Company names extracted from JSON arrays — returns distinct values with counts via native query */
+@Query(value = """
+    SELECT JSON_UNQUOTE(jt.company) AS company, COUNT(*) AS cnt
+    FROM problems p,
+         JSON_TABLE(IFNULL(p.companies, '[]'), '$[*]' COLUMNS (company VARCHAR(100) PATH '$')) AS jt
+    WHERE p.companies IS NOT NULL AND p.companies != '[]'
+    GROUP BY company
+    ORDER BY cnt DESC
+    LIMIT 20
+    """, nativeQuery = true)
+List<Object[]> findCompanyCounts();
+
 /** Category name + problem count, sorted by count desc — for topic pills with counts. */
 @Query("SELECT CAST(t.category AS string), COUNT(p) FROM Problem p JOIN p.topic t GROUP BY t.category ORDER BY COUNT(p) DESC")
 List<Object[]> findCategoryCounts();
@@ -70,6 +82,9 @@ List<Object[]> findCategoryCounts();
           AND (:pattern    IS NULL OR p.pattern           = :pattern)
           AND (:search     IS NULL
                OR LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')))
+          AND (:company    IS NULL
+               OR (p.companies IS NOT NULL
+                   AND LOWER(p.companies) LIKE LOWER(CONCAT('%', :company, '%'))))
         ORDER BY t.category, t.id, p.displayOrder
         """,
 		countQuery = """
@@ -80,6 +95,9 @@ List<Object[]> findCategoryCounts();
           AND (:pattern    IS NULL OR p.pattern           = :pattern)
           AND (:search     IS NULL
                OR LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')))
+          AND (:company    IS NULL
+               OR (p.companies IS NOT NULL
+                   AND LOWER(p.companies) LIKE LOWER(CONCAT('%', :company, '%'))))
         """)
 Page<Problem> findPageFiltered(
 		@Param("category")   String category,
@@ -87,6 +105,7 @@ Page<Problem> findPageFiltered(
 		@Param("difficulty") String difficulty,
 		@Param("pattern")    String pattern,
 		@Param("search")     String search,
+		@Param("company")    String company,
 		Pageable             pageable);
 
 @Modifying
