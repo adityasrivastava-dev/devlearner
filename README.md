@@ -147,25 +147,42 @@ Copy-Item .env.local.example .env.local
 **Step 3 — Run:**
 
 ```powershell
-# From the repo root
+# Backend + frontend only (code runs in child JVM — no Docker needed)
 .\dev.ps1
+
+# Backend + frontend + execution service (code runs in Docker containers)
+.\dev.ps1 -Execution
 ```
 
 That's it. The script:
-- Checks Java, Maven, Node.js are installed
+- Checks Java, Maven, Node.js are installed (and Docker if `-Execution`)
 - Loads your `.env.local` automatically
+- Pulls the Docker image if missing (first `-Execution` run only, ~150 MB)
 - Runs `npm install` if `node_modules` is missing (first run only)
-- Opens **Windows Terminal** with two tabs — `Backend :8080` and `Frontend :3000`
+- Opens **Windows Terminal** with a tab for each service
 
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost:3000 |
-| Backend API | http://localhost:8080 |
-| Health check | http://localhost:8080/actuator/health |
+**Without `-Execution`** (default):
+
+| Tab | Service | URL |
+|-----|---------|-----|
+| 1 | Backend | http://localhost:8080 |
+| 2 | Frontend | http://localhost:3000 |
+
+Code runs in **child JVM processes** — safe for local dev, no Docker needed.
+
+**With `-Execution`** (Docker isolation):
+
+| Tab | Service | URL |
+|-----|---------|-----|
+| 1 | Backend | http://localhost:8080 |
+| 2 | Frontend | http://localhost:3000 |
+| 3 | Execution service | http://localhost:8081 |
+
+Code runs in **isolated Docker containers** — matches production behaviour. `System.exit()` is safe, memory is cgroup-limited, network is disabled inside the container.
 
 To stop: close the terminal tabs (or press `Ctrl+C` inside each tab).
 
-> **Note:** If Windows Terminal is not installed, the script opens two separate PowerShell windows instead.
+> **Note:** If Windows Terminal is not installed, the script opens separate PowerShell windows instead.
 
 ---
 
@@ -618,15 +635,19 @@ INSERT INTO user_roles (user_id, roles) VALUES (<your_user_id>, 'ADMIN');
 ## Local Quick Reference
 
 ```powershell
-# One command — starts backend + frontend in Windows Terminal tabs
+# Backend + frontend (no Docker needed)
 .\dev.ps1
+
+# Backend + frontend + execution service (Docker required)
+.\dev.ps1 -Execution
 
 # Frontend → http://localhost:3000
 # Backend  → http://localhost:8080
+# Execution service → http://localhost:8081  (only with -Execution)
 ```
 
 ```bash
-# Or manually (3 terminals):
+# Or manually (separate terminals):
 
 # Terminal 1 — Backend
 cd learning-system && mvn spring-boot:run
@@ -634,7 +655,7 @@ cd learning-system && mvn spring-boot:run
 # Terminal 2 — Frontend
 cd frontend && npm install && npm run dev
 
-# Terminal 3 — Execution service (optional, needs Docker Desktop)
+# Terminal 3 — Execution service (optional, needs Docker Desktop running)
 cd execution-service && mvn spring-boot:run
 ```
 
