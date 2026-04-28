@@ -175,9 +175,24 @@ public class ExecutionController {
      * of ExecuteResponse (RUN) or the submit response map (SUBMIT).
      */
     @GetMapping("/jobs/{token}")
-    public ResponseEntity<?> pollJob(@PathVariable String token) {
+    public ResponseEntity<?> pollJob(
+            @PathVariable String token,
+            @AuthenticationPrincipal User principal) {
+
         return jobQueue.getJob(token)
                 .map(job -> {
+                    // Ownership check: if the job belongs to a specific user, only that
+                    // user (or an admin) may poll it. Anonymous jobs (userId=null) are public.
+                    Long jobUserId = job.getUserId();
+                    if (jobUserId != null) {
+                        boolean isOwner = principal != null && jobUserId.equals(principal.getId());
+                        boolean isAdmin = principal != null && principal.isAdmin();
+                        if (!isOwner && !isAdmin) {
+                            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                    .<Object>build();
+                        }
+                    }
+
                     Map<String, Object> resp = new LinkedHashMap<>();
                     resp.put("token",   job.getToken());
                     resp.put("status",  job.getStatus());
