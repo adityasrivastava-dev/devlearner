@@ -119,66 +119,102 @@ devlearner/
 | Java JDK | 17+ | Backend compilation + code runner (JDK required, not JRE) |
 | Maven | 3.8+ | Backend build |
 | Node.js | 18+ | Frontend |
-| MySQL | 8.0 | Database |
+| MySQL | 8.0 | Database (must be running before you start) |
 | Docker Desktop | any | Optional — for Docker execution mode |
 
 ---
 
-### 1. Database setup
+### One-command start (recommended)
+
+**Step 1 — Create your database** (first time only):
 
 ```sql
--- Connect to MySQL and create the database
+-- In MySQL Workbench or any MySQL client
 CREATE DATABASE devlearn;
--- Hibernate creates all tables automatically on first start (ddl-auto=update)
 ```
+
+**Step 2 — Set up your environment file** (first time only):
+
+```powershell
+# In the repo root
+Copy-Item .env.local.example .env.local
+# Open .env.local and fill in at minimum:
+#   - spring.datasource.password  (your local MySQL root password)
+#   - GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET  (for Google login)
+#   - GROQ_API_KEY / GEMINI_API_KEY  (for AI features — free keys)
+```
+
+**Step 3 — Run:**
+
+```powershell
+# From the repo root
+.\dev.ps1
+```
+
+That's it. The script:
+- Checks Java, Maven, Node.js are installed
+- Loads your `.env.local` automatically
+- Runs `npm install` if `node_modules` is missing (first run only)
+- Opens **Windows Terminal** with two tabs — `Backend :8080` and `Frontend :3000`
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:8080 |
+| Health check | http://localhost:8080/actuator/health |
+
+To stop: close the terminal tabs (or press `Ctrl+C` inside each tab).
+
+> **Note:** If Windows Terminal is not installed, the script opens two separate PowerShell windows instead.
 
 ---
 
-### 2. Backend (Main API)
+### What goes in `.env.local`
 
+Copy `.env.local.example` to `.env.local` and fill in:
+
+```env
+# Your local MySQL password (if it isn't "password")
+DATABASE_PASSWORD=your_mysql_password
+
+# Google OAuth — from Google Cloud Console
+GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-xxx
+
+# AI hints — free keys, app works without them (hints just won't work)
+GROQ_API_KEY=gsk_...
+GEMINI_API_KEY=AIzaSy...
+
+# JWT secret — any long string is fine for local dev
+JWT_SECRET=any-long-random-string-for-local-dev
+```
+
+The `.env.local` file is git-ignored — your keys are never committed.
+
+---
+
+### Manual start (alternative)
+
+If you prefer running each service yourself:
+
+**Database** (first time only):
+```sql
+CREATE DATABASE devlearn;
+```
+
+**Backend:**
 ```bash
 cd learning-system
-```
-
-Edit `src/main/resources/application.properties` — the local DB block is already there:
-
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/devlearn?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-spring.datasource.username=root
-spring.datasource.password=password      # change to your MySQL root password
-```
-
-Set AI keys (optional — only needed for AI interview features):
-
-```bash
-# PowerShell
-$env:GROQ_API_KEY   = "gsk_..."
-$env:GEMINI_API_KEY = "AIza..."
-
-# bash / zsh
-export GROQ_API_KEY=gsk_...
-export GEMINI_API_KEY=AIza...
-```
-
-Start the backend:
-
-```bash
 mvn spring-boot:run
-# API available at http://localhost:8080
-# Tables created automatically on first start
-# Seed data loaded on startup (topics, algorithms, quiz sets)
+# http://localhost:8080  — tables + seed data created automatically
 ```
 
----
-
-### 3. Frontend
-
+**Frontend:**
 ```bash
 cd frontend
-npm install
+npm install   # first time only
 npm run dev
-# App available at http://localhost:3000
-# All /api calls are proxied to http://localhost:8080 via vite.config.js
+# http://localhost:3000
 ```
 
 ---
@@ -581,8 +617,16 @@ INSERT INTO user_roles (user_id, roles) VALUES (<your_user_id>, 'ADMIN');
 
 ## Local Quick Reference
 
+```powershell
+# One command — starts backend + frontend in Windows Terminal tabs
+.\dev.ps1
+
+# Frontend → http://localhost:3000
+# Backend  → http://localhost:8080
+```
+
 ```bash
-# Start everything locally (3 terminals)
+# Or manually (3 terminals):
 
 # Terminal 1 — Backend
 cd learning-system && mvn spring-boot:run
@@ -592,8 +636,6 @@ cd frontend && npm install && npm run dev
 
 # Terminal 3 — Execution service (optional, needs Docker Desktop)
 cd execution-service && mvn spring-boot:run
-
-# Open http://localhost:3000
 ```
 
 ---
