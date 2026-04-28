@@ -22,7 +22,6 @@ function warn($msg) { Write-Host "  [WARN] $msg" -ForegroundColor Yellow }
 function err($msg)  { Write-Host "  [ERR]  $msg" -ForegroundColor Red }
 function step($msg) { Write-Host "  $msg"         -ForegroundColor Cyan }
 
-Clear-Host
 Write-Host ""
 Write-Host "  DevLearner — Local Dev" -ForegroundColor White
 Write-Host "  ──────────────────────────────────────────" -ForegroundColor DarkGray
