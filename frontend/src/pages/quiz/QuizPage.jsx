@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { quizApi, QUIZ_CATEGORIES, DIFFICULTY_META } from './quizApi';
+import { quizApi, QUIZ_CATEGORIES, DIFFICULTY_META } from '../../api';
 import styles from './QuizPage.module.css';
 
 // ── QUIZ HOME ─────────────────────────────────────────────────────────────────

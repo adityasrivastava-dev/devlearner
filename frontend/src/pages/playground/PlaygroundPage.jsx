@@ -17,9 +17,10 @@ const DEFAULT_CODE = `public class Main {
 const JAVA_VERSIONS = ['8', '11', '17', '21'];
 
 export default function PlaygroundPage() {
-  const navigate  = useNavigate();
-  const editorRef = useRef(null);
-  const monacoRef = useRef(null);
+  const navigate   = useNavigate();
+  const editorRef  = useRef(null);
+  const monacoRef  = useRef(null);
+  const cancelRef  = useRef(false); // set true on unmount to stop in-flight poll loop
 
   const [code,        setCode]        = useState(() => localStorage.getItem(STORAGE_KEY) || DEFAULT_CODE);
   const [stdin,       setStdin]       = useState(() => localStorage.getItem(STORAGE_STDIN) || '');
@@ -38,6 +39,9 @@ export default function PlaygroundPage() {
   useEffect(() => { localStorage.setItem(STORAGE_KEY, code); }, [code]);
   useEffect(() => { localStorage.setItem(STORAGE_STDIN, stdin); }, [stdin]);
 
+  // Cancel any in-flight poll loop when the component unmounts
+  useEffect(() => () => { cancelRef.current = true; }, []);
+
   const handleRun = useCallback(async () => {
     if (!code.trim()) { toast.error('Editor is empty'); return; }
     setIsRunning(true);
@@ -46,6 +50,7 @@ export default function PlaygroundPage() {
     applyMarkers(editorRef, monacoRef, []);
 
     try {
+      cancelRef.current = false;
       const { token } = await codeApi.executeAsync(code, stdin, javaVersion);
       // Poll until done
       const POLL_MS = 1500;
@@ -53,7 +58,9 @@ export default function PlaygroundPage() {
       let res = null;
       for (let i = 0; i < MAX; i++) {
         await new Promise(r => setTimeout(r, POLL_MS));
+        if (cancelRef.current) return;
         const job = await codeApi.pollJob(token);
+        if (cancelRef.current) return;
         if (job.status === 'DONE')  { res = job.result; break; }
         if (job.status === 'ERROR') { res = { status: 'RUNTIME_ERROR', error: job.error || 'Execution failed' }; break; }
       }

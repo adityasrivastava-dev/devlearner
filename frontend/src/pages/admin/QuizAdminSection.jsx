@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { quizApi, QUIZ_CATEGORIES, DIFFICULTY_META } from '../quiz/quizApi';
+import { quizApi, QUIZ_CATEGORIES, DIFFICULTY_META } from '../../api';
 import { adminApi } from '../../api';
 import styles from './AdminPage.module.css';
 import qStyles from './QuizAdmin.module.css';

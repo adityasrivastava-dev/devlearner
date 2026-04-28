@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { problemsApi } from '../../api';
-import { quizApi } from '../quiz/quizApi';
+import { quizApi } from '../../api';
 import styles from './QuickWinPage.module.css';
 
 // ── helpers ───────────────────────────────────────────────────────────────────

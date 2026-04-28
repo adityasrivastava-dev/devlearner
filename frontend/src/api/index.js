@@ -700,3 +700,38 @@ export const gateApi = {
   getAllStages: () =>
     http.get('/api/gate/all').then((r) => r.data),
 };
+
+// ─── Quiz ─────────────────────────────────────────────────────────────────────
+export const quizApi = {
+  getSets: (category) =>
+    http.get('/api/quiz/sets', {
+      params: category && category !== 'ALL' ? { category } : {},
+    }).then((r) => r.data),
+
+  getSet: (id) =>
+    http.get(`/api/quiz/sets/${id}`).then((r) => r.data),
+
+  submit: (setId, answers, timeTakenSecs) =>
+    http.post('/api/quiz/submit', { setId, answers, timeTakenSecs }).then((r) => r.data),
+
+  getHistory: () =>
+    http.get('/api/quiz/history').then((r) => r.data).catch(() => []),
+
+  seedSet: (payload) =>
+    http.post('/api/admin/quiz/seed', payload).then((r) => r.data),
+};
+
+export const QUIZ_CATEGORIES = [
+  { key: 'ALL',          label: 'All',          icon: '🎯' },
+  { key: 'JAVA',         label: 'Java',          icon: '☕' },
+  { key: 'DSA',          label: 'DSA',           icon: '📊' },
+  { key: 'SPRING',       label: 'Spring',        icon: '🌱' },
+  { key: 'SQL',          label: 'SQL',           icon: '🗃️'  },
+  { key: 'SYSTEM_DESIGN',label: 'System Design', icon: '🏗️'  },
+];
+
+export const DIFFICULTY_META = {
+  BEGINNER:     { color: 'var(--success)', bg: 'rgba(74,222,128,.1)',  label: 'Beginner'     },
+  INTERMEDIATE: { color: 'var(--yellow)',  bg: 'rgba(251,191,36,.1)',  label: 'Intermediate' },
+  ADVANCED:     { color: 'var(--red)',     bg: 'rgba(248,113,113,.1)', label: 'Advanced'     },
+};

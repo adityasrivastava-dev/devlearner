@@ -48,6 +48,7 @@ export default function ProblemSolveView({
   const isResizing  = useRef(false);
   const editorRef   = useRef(null);
   const monacoRef   = useRef(null);
+  const pollCancel  = useRef(false); // set true on unmount to stop in-flight poll loops
 
   // ── Problem data ──────────────────────────────────────────────────────────
   const { data: problem, isLoading } = useQuery({
@@ -80,6 +81,9 @@ export default function ProblemSolveView({
     enabled:  false,
     staleTime: 30 * 1000,
   });
+
+  // Cancel any in-flight poll loops when the component unmounts
+  useEffect(() => () => { pollCancel.current = true; }, []);
 
   // ── Initialize on problem change ──────────────────────────────────────────
   useEffect(() => {
@@ -164,9 +168,12 @@ export default function ProblemSolveView({
   async function pollUntilDone(token, onTick) {
     const POLL_INTERVAL = 1500;
     const MAX_ATTEMPTS  = 60; // 90s ceiling
+    pollCancel.current = false;
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       await new Promise(r => setTimeout(r, POLL_INTERVAL));
+      if (pollCancel.current) return { ok: false, cancelled: true };
       const job = await codeApi.pollJob(token);
+      if (pollCancel.current) return { ok: false, cancelled: true };
       onTick?.(attempt, job.status);
       if (job.status === 'DONE')  return { ok: true,  data: job.result };
       if (job.status === 'ERROR') return { ok: false, error: job.error || 'Execution failed' };
@@ -191,11 +198,12 @@ export default function ProblemSolveView({
         : () => codeApi.executeAsync(code, testInput, javaVersion, problemId);
 
       const { token } = await withRetry(enqueueFn);
-      const { ok, data, error } = await pollUntilDone(token, (attempt, status) => {
+      const { ok, data, error, cancelled } = await pollUntilDone(token, (attempt, status) => {
         const secs = attempt * 1.5 | 0;
         const msg  = status === 'STARTED' ? `Running your code… (${secs}s)` : `Waiting in queue… (${secs}s)`;
         setRunResult({ loading: true, retryMsg: msg });
       });
+      if (cancelled) return;
       if (!ok) {
         setRunResult({ status: 'ERROR', error });
       } else {
@@ -224,11 +232,12 @@ export default function ProblemSolveView({
     try {
       const { token } = await withRetry(() =>
         codeApi.submitAsync(problemId, code, solveTimeSecs, hintsShown >= 3, javaVersion, approach));
-      const { ok, data, error } = await pollUntilDone(token, (attempt, status) => {
+      const { ok, data, error, cancelled } = await pollUntilDone(token, (attempt, status) => {
         const secs = attempt * 1.5 | 0;
         const msg  = status === 'STARTED' ? `Judging your code… (${secs}s)` : `Waiting in queue… (${secs}s)`;
         setSubmitResult({ loading: true, retryMsg: msg });
       });
+      if (cancelled) return;
       if (!ok) {
         setSubmitResult({ error });
       } else {

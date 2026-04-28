@@ -110,6 +110,17 @@ public RoadmapDto removeTopicFromRoadmap(Long roadmapId, Long topicId, Long user
 public RoadmapDto reorderTopics(Long roadmapId, List<Long> orderedTopicIds, Long userId) {
     findOwned(roadmapId, userId);
     List<RoadmapTopic> rts = roadmapTopicRepo.findByRoadmapIdOrderByOrderIndex(roadmapId);
+
+    // Validate: every supplied ID must actually belong to this roadmap
+    java.util.Set<Long> validIds = rts.stream()
+            .map(rt -> rt.getTopic().getId())
+            .collect(java.util.stream.Collectors.toSet());
+    for (Long id : orderedTopicIds) {
+        if (!validIds.contains(id)) {
+            throw new IllegalArgumentException("Topic " + id + " does not belong to this roadmap");
+        }
+    }
+
     for (RoadmapTopic rt : rts) {
         int idx = orderedTopicIds.indexOf(rt.getTopic().getId());
         if (idx >= 0) rt.setOrderIndex(idx + 1);
