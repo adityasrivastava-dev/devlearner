@@ -37,6 +37,9 @@ private final OAuth2SuccessHandler oAuth2SuccessHandler;
 @Value("${app.frontend-url}")
 private String frontendUrl;
 
+@Value("${cors.allow-localhost:true}")
+private boolean corsAllowLocalhost;
+
 // Build filter manually — registered once only
 private JwtAuthFilter jwtAuthFilter() {
 	return new JwtAuthFilter(jwtService, userRepository);
@@ -213,12 +216,14 @@ public AuthenticationManager authenticationManager(
 public CorsConfigurationSource corsConfigurationSource() {
 	CorsConfiguration config = new CorsConfiguration();
 
-	// Allow the React frontend origin explicitly
-	// Plus localhost:3000 for local dev even if frontend-url is production
-	config.setAllowedOrigins(List.of(
-			frontendUrl,            // e.g. https://devlearner.onrender.com
-			"http://localhost:3000" // Vite dev server
-	));
+	// Allow the React frontend origin.
+	// Localhost is included by default for dev; set cors.allow-localhost=false in production.
+	List<String> origins = new java.util.ArrayList<>();
+	origins.add(frontendUrl);
+	if (corsAllowLocalhost && !origins.contains("http://localhost:3000")) {
+		origins.add("http://localhost:3000");
+	}
+	config.setAllowedOrigins(origins);
 
 	config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 	// Enumerate specific headers instead of wildcard — wildcard + credentials violates CORS spec
